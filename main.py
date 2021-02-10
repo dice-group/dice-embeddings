@@ -9,7 +9,7 @@ from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
 import os
 from sklearn.model_selection import KFold
-from util import sanity_checking_with_arguments
+from funcs import sanity_checking_with_arguments
 import numpy as np
 
 

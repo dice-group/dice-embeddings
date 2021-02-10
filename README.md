@@ -18,22 +18,15 @@ unzip KGs
 In this section, we provide simple examples on using our project. During our examples, we use our newest
 scalable neural knowledge graph embedding model (Shallom:([Research paper](https://arxiv.org/abs/2101.09090) and [conference presentation](https://www.youtube.com/watch?v=LUDpdgdvTQg)) ).
 
-1. Train Shallom for 3 epochs by using 32 CPU cores on YAGO3-10.
+1. Train Shallom for 3 epochs by using **32 CPU cores** on YAGO3-10. We expect that
+**--path_dataset_folder** leads to a folder containing **train.txt**, **valid.txt** and **test.txt**.
 ```
-python main.py --path_train_dataset 'KGs/YAGO3-10/train.txt' --model 'Shallom' --max_epochs 3  --num_workers 32
+python main.py --path_dataset_folder 'KGs/YAGO3-10' --model 'Shallom' --max_epochs 3  --num_workers 32
 ```
-2. Train Shallom for 3 epochs by using 8 GPUs on YAGO3-10. To check GPU usages, ```watch -n 1 nvidia-smi```.
+Executing this command results in obtaining 0.981. multi-label test accuracy.
+
+2. Train Shallom for 3 epochs by using **8 GPUs** on YAGO3-10. To check GPU usages, ```watch -n 1 nvidia-smi```.
 ```
-python main.py --gpus 8--path_train_dataset 'KGs/YAGO3-10/train.txt' --model 'Shallom' --max_epochs 3 --distributed_backend ddp
+python main.py --gpus 8 --distributed_backend ddp --path_dataset_folder 'KGs/YAGO3-10' --model 'Shallom' --max_epochs 3
 ```
 
-# Examples
-
-1. Executing ```python main.py --model Shallom --path_dataset_folder 'KGs/UMLS' --max_epochs 20 --num_workers 32``` 
-results in obtaining **raw** 0.9726. test accuracy.
-   
-2. Executing ```python main.py --model Shallom --path_dataset_folder 'KGs/WN18RR' --max_epochs 20 --num_workers 32```
-results in obtaining **raw** .952. test accuracy.
-   
-3. Executing ```python main.py --model Shallom --path_dataset_folder 'KGs/YAGO3-10' --max_epochs 20 --num_workers 32```
-results in obtaining **raw** 0.981. test accuracy.

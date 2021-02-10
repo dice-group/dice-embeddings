@@ -1,5 +1,7 @@
 import os
 def sanity_checking_with_arguments(args):
+    assert args.embedding_dim>0
+
     try:
         assert args.num_folds_for_cv >= 0
     except AssertionError:
