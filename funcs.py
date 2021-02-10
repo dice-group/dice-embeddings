@@ -1,11 +1,11 @@
 import os
-def sanity_checking_with_arguments(args):
-    assert args.embedding_dim>0
 
+
+def sanity_checking_with_arguments(args):
     try:
-        assert args.num_folds_for_cv >= 0
+        assert args.embedding_dim > 0
     except AssertionError:
-        print(f'num_folds_for_cv can not be negative. Currently:{args.num_folds_for_cv}')
+        print(f'embedding_dim must be strictly positive. Currently:{args.embedding_dim}')
         raise
 
     try:
@@ -14,6 +14,13 @@ def sanity_checking_with_arguments(args):
         print(f'Training  strategy: If args.kvsall is TRUE, args.negative_sample_ratio must be 0'
               f'args.kvsall:{args.kvsall} and args.negative_sample_ratio:{args.negative_sample_ratio}.')
         raise
+
+    try:
+        assert args.num_folds_for_cv >= 0
+    except AssertionError:
+        print(f'num_folds_for_cv can not be negative. Currently:{args.num_folds_for_cv}')
+        raise
+
     try:
         assert os.path.isdir(args.path_dataset_folder)
     except AssertionError:
@@ -25,5 +32,3 @@ def sanity_checking_with_arguments(args):
     except AssertionError:
         print(f'The directory {args.path_dataset_folder} must contain a **train.txt** .')
         raise
-
-    return args
