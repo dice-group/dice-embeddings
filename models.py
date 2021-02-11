@@ -42,7 +42,7 @@ class Shallom(pl.LightningModule):
 
     def training_epoch_end(self, outputs) -> None:
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-        self.log('avg_loss', avg_loss, on_epoch=True, prog_bar=True)
+        self.log('avg_loss_per_epoch', avg_loss, on_epoch=True, prog_bar=True)
 
     def validation_step(self, batch, batch_idx):
         # s,p,o => s,o predict relation.
@@ -50,13 +50,13 @@ class Shallom(pl.LightningModule):
         predictions = self(x1_batch, x2_batch)
         val_loss = self.loss_function(predictions, y_batch)
         val_accuracy = accuracy(predictions, y_batch)
-        return {'_val_acc.': val_accuracy, 'val_loss': val_loss}
+        return {'val_acc': val_accuracy, 'val_loss': val_loss}
 
     def validation_epoch_end(self, outputs: List[Any]) -> None:
-        x = [[x['_val_acc.'], x['val_loss']] for x in outputs]
+        x = [[x['val_acc'], x['val_loss']] for x in outputs]
         avg_val_acc, avg_loss = torch.tensor(x).mean(dim=0)[:]
-        self.log('avg_loss', avg_loss, on_epoch=True, prog_bar=True)
-        self.log('avg_val_acc', avg_val_acc, on_epoch=True, prog_bar=True)
+        self.log('avg_loss_per_epoch', avg_loss, on_epoch=True, prog_bar=True)
+        self.log('avg_val_acc_per_epoch', avg_val_acc, on_epoch=True, prog_bar=True)
 
     def test_step(self, batch, batch_idx):
         # s,p,o => s,o predict relation.
@@ -67,3 +67,183 @@ class Shallom(pl.LightningModule):
     def test_epoch_end(self, outputs: List[Any]):
         avg_test_accuracy = torch.stack([x['test_accuracy'] for x in outputs]).mean()
         self.log('avg_test_accuracy', avg_test_accuracy, on_epoch=True,  prog_bar=True)
+
+class QMult(pl.LightningModule):
+    def __init__(self, args):
+        super().__init__()
+        self.name = 'QMult'
+        self.loss = torch.nn.BCELoss()
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters())
+
+    def loss_function(self, y_hat, y):
+        return self.loss(y_hat, y)
+
+    def forward(self, s,p):
+        raise NotImplementedError
+
+    def training_step(self, batch, batch_idx):
+        x1_batch, x2_batch, y_batch = batch
+        train_loss = self.loss_function(self(x1_batch, x2_batch), y_batch)
+        return {'loss': train_loss}
+
+    def training_epoch_end(self, outputs) -> None:
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        self.log('avg_loss', avg_loss, on_epoch=True, prog_bar=True)
+
+    def validation_step(self, batch, batch_idx):
+        raise NotImplementedError
+
+    def validation_epoch_end(self, outputs: List[Any]) -> None:
+        raise NotImplementedError
+
+    def test_step(self, batch, batch_idx):
+        raise NotImplementedError
+
+    def test_epoch_end(self, outputs: List[Any]):
+        raise NotImplementedError
+
+class OMult(pl.LightningModule):
+    def __init__(self, args):
+        super().__init__()
+        self.name = 'OMult'
+        self.loss = torch.nn.BCELoss()
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters())
+
+    def loss_function(self, y_hat, y):
+        return self.loss(y_hat, y)
+
+    def forward(self, s,p):
+        raise NotImplementedError
+
+    def training_step(self, batch, batch_idx):
+        x1_batch, x2_batch, y_batch = batch
+        train_loss = self.loss_function(self(x1_batch, x2_batch), y_batch)
+        return {'loss': train_loss}
+
+    def training_epoch_end(self, outputs) -> None:
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        self.log('avg_loss', avg_loss, on_epoch=True, prog_bar=True)
+
+    def validation_step(self, batch, batch_idx):
+        raise NotImplementedError
+
+    def validation_epoch_end(self, outputs: List[Any]) -> None:
+        raise NotImplementedError
+
+    def test_step(self, batch, batch_idx):
+        raise NotImplementedError
+
+    def test_epoch_end(self, outputs: List[Any]):
+        raise NotImplementedError
+
+class ConvQ(pl.LightningModule):
+    def __init__(self, args):
+        super().__init__()
+        self.name = 'ConvQ'
+        self.loss = torch.nn.BCELoss()
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters())
+
+    def loss_function(self, y_hat, y):
+        return self.loss(y_hat, y)
+
+    def forward(self, s,p):
+        raise NotImplementedError
+
+    def training_step(self, batch, batch_idx):
+        x1_batch, x2_batch, y_batch = batch
+        train_loss = self.loss_function(self(x1_batch, x2_batch), y_batch)
+        return {'loss': train_loss}
+
+    def training_epoch_end(self, outputs) -> None:
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        self.log('avg_loss', avg_loss, on_epoch=True, prog_bar=True)
+
+    def validation_step(self, batch, batch_idx):
+        raise NotImplementedError
+
+    def validation_epoch_end(self, outputs: List[Any]) -> None:
+        raise NotImplementedError
+
+    def test_step(self, batch, batch_idx):
+        raise NotImplementedError
+
+    def test_epoch_end(self, outputs: List[Any]):
+        raise NotImplementedError
+
+class ConvO(pl.LightningModule):
+    def __init__(self, args):
+        super().__init__()
+        self.name = 'ConvO'
+        self.loss = torch.nn.BCELoss()
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters())
+
+    def loss_function(self, y_hat, y):
+        return self.loss(y_hat, y)
+
+    def forward(self, s,p):
+        raise NotImplementedError
+
+    def training_step(self, batch, batch_idx):
+        x1_batch, x2_batch, y_batch = batch
+        train_loss = self.loss_function(self(x1_batch, x2_batch), y_batch)
+        return {'loss': train_loss}
+
+    def training_epoch_end(self, outputs) -> None:
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        self.log('avg_loss', avg_loss, on_epoch=True, prog_bar=True)
+
+    def validation_step(self, batch, batch_idx):
+        raise NotImplementedError
+
+    def validation_epoch_end(self, outputs: List[Any]) -> None:
+        raise NotImplementedError
+
+    def test_step(self, batch, batch_idx):
+        raise NotImplementedError
+
+    def test_epoch_end(self, outputs: List[Any]):
+        raise NotImplementedError
+
+class ConEx(pl.LightningModule):
+    def __init__(self, args):
+        super().__init__()
+        self.name = 'ConEx'
+        self.loss = torch.nn.BCELoss()
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters())
+
+    def loss_function(self, y_hat, y):
+        return self.loss(y_hat, y)
+
+    def forward(self, s,p):
+        raise NotImplementedError
+
+    def training_step(self, batch, batch_idx):
+        x1_batch, x2_batch, y_batch = batch
+        train_loss = self.loss_function(self(x1_batch, x2_batch), y_batch)
+        return {'loss': train_loss}
+
+    def training_epoch_end(self, outputs) -> None:
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        self.log('avg_loss', avg_loss, on_epoch=True, prog_bar=True)
+
+    def validation_step(self, batch, batch_idx):
+        raise NotImplementedError
+
+    def validation_epoch_end(self, outputs: List[Any]) -> None:
+        raise NotImplementedError
+
+    def test_step(self, batch, batch_idx):
+        raise NotImplementedError
+
+    def test_epoch_end(self, outputs: List[Any]):
+        raise NotImplementedError

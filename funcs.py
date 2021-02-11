@@ -1,6 +1,6 @@
 import os
-
-
+from typing import AnyStr,Tuple
+from models import *
 def sanity_checking_with_arguments(args):
     try:
         assert args.embedding_dim > 0
@@ -32,3 +32,27 @@ def sanity_checking_with_arguments(args):
     except AssertionError:
         print(f'The directory {args.path_dataset_folder} must contain a **train.txt** .')
         raise
+
+
+def select_model(args) -> Tuple[pl.LightningModule,AnyStr]:
+    if args.model == 'Shallom':
+        model = Shallom(args=args)
+        form_of_labelling = 'RelationPrediction'
+    elif args.model == 'ConEx':
+        model = ConEx(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif args.model == 'QMult':
+        model = QMult(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif args.model == 'OMult':
+        model = OMult(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif args.model == 'ConvQ':
+        model = ConvQ(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif args.model == 'ConvO':
+        model = ConvO(args=args)
+        form_of_labelling = 'EntityPrediction'
+    else:
+        raise ValueError
+    return model, form_of_labelling
