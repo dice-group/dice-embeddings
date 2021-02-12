@@ -130,7 +130,8 @@ class KG:
         self.__relations = self.get_relations(self.__data)
         self.__entity_idxs = {self.__entities[i]: i for i in range(len(self.__entities))}
         self.__relation_idxs = {self.__relations[i]: i for i in range(len(self.__relations))}
-        print(f'\n------------------- Description of Dataset {data_dir}----------------------------')
+        s='------------------- Description of Dataset {data_dir}----------------------------'
+        print(f'\n{s}')
         print(f'Number of triples {len(self.__data)}')
         print(f'Number of entities {len(self.__entities)}')
         print(f'Number of relations {len(self.__relations)}')
@@ -138,7 +139,8 @@ class KG:
         print(f'Number of triples on train set{len(self.__train)}')
         print(f'Number of triples on valid set {len(self.__valid)}')
         print(f'Number of triples on test set {len(self.__test)}')
-        print('----------------------------------------------------------------------\n')
+        s=len(s)*'-'
+        print(f'{s}\n')
 
     @property
     def entities(self):
