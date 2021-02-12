@@ -133,8 +133,12 @@ if __name__ == '__main__':
     parser.add_argument('--hidden_dropout_rate', type=float, default=0.1)
     parser.add_argument("--model", type=str, default='Shallom', help="Models:Shallom")
     parser.add_argument("--logging", default=False)
+    parser.add_argument("--max_num_epochs", type=int, default=10)
     parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.0,
                         help='The ratio of the size of the first affine transformation with respect to size of the embeddings')
     parser.add_argument("--path_dataset_folder", type=str, default='KGs/Carcinogenesis')
-
-    start(parser.parse_args())
+    args = parser.parse_args()
+    # To update the default value of Trainer in pytorch-lightnings
+    args.max_epochs = args.max_num_epochs
+    del args.max_num_epochs
+    start(args)
