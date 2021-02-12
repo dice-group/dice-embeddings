@@ -15,19 +15,21 @@ unzip KGs
 ```
 
 # Examples
-In this section, we provide simple examples on using our project. During our examples, we use our newest
-scalable neural knowledge graph embedding model (Shallom:([Research paper](https://arxiv.org/abs/2101.09090) and [conference presentation](https://www.youtube.com/watch?v=LUDpdgdvTQg)) ).
 
-Note that we require **--path_dataset_folder** to lead a folder containing **train.txt**, **valid.txt** and **test.txt**.
-Soon, we will be able to perform k-fold cross validation on a single dataset.
-
-1. Train Shallom for 1 epochs by using **4 CPU cores** on WN18RR. 
+1. Train Shallom (Shallom:([Research paper](https://arxiv.org/abs/2101.09090) and [conference presentation](https://www.youtube.com/watch?v=LUDpdgdvTQg)) ). for 1 epochs by using **4 CPU cores** on WN18RR. 
 ```
 python main.py --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --max_epochs 1 --check_val_every_n_epoch 5 --num_workers 4
 ```
-Executing this command results in obtaining 0.909. multi-label test accuracy and raw MRR 0.767.
 
-2. Train Shallom for 5 epochs by using **8 GPUs** on WN18RR To check GPU usages, ```watch -n 1 nvidia-smi```.
+Note that we require **--path_dataset_folder** to lead a folder containing **train.txt**, **valid.txt** and **test.txt**.
+If there is no such split found under **--path_dataset_folder**, we apply k-fold cross validation on **train.txt**
+
+3. Train Shallom on Carcinogenesis by using 5-fold cross validation by using  **all available CPU cores** on Carcinogenesis. 
+```
+python main.py --path_dataset_folder 'KGs/Carcinogenesis' --model 'Shallom' --num_folds_for_cv 5 --max_epochs 1
+```
+
+4. Train Shallom for 5 epochs by using **8 GPUs** on WN18RR To check GPU usages, ```watch -n 1 nvidia-smi```.
 ```
 python main.py --gpus 8 --distributed_backend ddp --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --max_epochs 5 --check_val_every_n_epoch 5 --num_workers 4
 ```
