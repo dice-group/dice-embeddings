@@ -1,5 +1,5 @@
 # DAIKIRI-Embedding
-This open-source project contains several Pytorch implementation of knowledge graph embedding approaches
+Need a better name. This open-source project contains several Pytorch implementation of knowledge graph embedding approaches
 
 ## Installation
 
@@ -13,18 +13,41 @@ conda env create -f environment.yml
 conda activate daikiri_emb
 unzip KGs
 ```
+# Dataset Format and Usage
 
-# Examples
+1. A dataset must be located in a folder, e.g. 'KGs/Family'.
 
-1. Train Shallom (Shallom:([Research paper](https://arxiv.org/abs/2101.09090) and [conference presentation](https://www.youtube.com/watch?v=LUDpdgdvTQg)) ). for 1 epochs by using **4 CPU cores** on WN18RR. 
+2. A folder must contain **train.txt**. If the validation and test splits are available, then they must named as **valid.txt** and **test.txt**, respectively.
+
+3. **train.txt**, **valid.txt** and **test.txt** must be in either N-triples format or standard link prediction dataset format.
+
+4. For instance, 'KGs/Family' contains only **train.txt**. To evaluate quality of Shallom embeddings, we rely on the k-fold cross validation metric.
+Concretely, executing ```python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --num_folds_for_cv 10 --max_num_epochs 1```
+results in generating **Mean and standard deviation of raw MRR in 10-fold cross validation => 0.768, 0.023**. 
+   Moreover, all necessary information including embeddings are stored in DAIKIRI_Storage folder (if does not exist it will be created).
+   
+   
+
+Shallom is our most recent knowledge graph embedding model. More information can be found in ([Research paper](https://arxiv.org/abs/2101.09090) and [conference presentation](https://www.youtube.com/watch?v=LUDpdgdvTQg)).
+   
+5. Most link prediction benchmark datasets contain the train, validation and test datasets (see 'KGs/FB15K-237', 'KGs/WN18RR' or 'KGs/YAGO3-10').
+To evaluate quality of embeddings, we rely on the standard metric, i.e. mean reciprocal rank (MRR). Executing ```python main.py --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --max_num_epochs 1```
+results in evaluating quality of SHALLOM embeddings on the test split.
+   
+   
+### More Examples
+
+1. To train Shallom for 1 epochs by using **32 CPU cores** on UMLS. 
 ```
-python main.py --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --max_num_epochs 1 --check_val_every_n_epoch 5 --num_workers 4
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --max_num_epochs 1 --num_workers 32
 ```
 
-Note that we require **--path_dataset_folder** to lead a folder containing **train.txt**, **valid.txt** and **test.txt**.
-If there is no such split found under **--path_dataset_folder**, we apply k-fold cross validation on **train.txt**
+2. To train Shallom for 1 epochs by using **32 CPU cores** on UMLS. All information will be stored in to 'DummyFolder'.
+```
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --storage_path DummyFolder --max_num_epochs 1 --num_workers 32
+```
 
-3. Train Shallom on Carcinogenesis by using 5-fold cross validation by using  **all available CPU cores** on Carcinogenesis. 
+3. To train Shallom on Carcinogenesis by using 5-fold cross validation by using  **all available CPU cores** on Carcinogenesis. 
 ```
 python main.py --path_dataset_folder 'KGs/Carcinogenesis' --model 'Shallom' --num_folds_for_cv 5 --max_num_epochs 1
 ```
@@ -33,14 +56,3 @@ python main.py --path_dataset_folder 'KGs/Carcinogenesis' --model 'Shallom' --nu
 ```
 python main.py --gpus 8 --distributed_backend ddp --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --max_num_epochs 5 --check_val_every_n_epoch 5 --num_workers 4
 ```
-
-# Using [Tensorboard](https://www.tensorflow.org/tensorboard)
-
-If you wish to save log files and analyze them via tensorboard, all you need is run models with different configurations
-```
-python main.py --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --max_num_epochs 5 --check_val_every_n_epoch 5 --logging True
-python main.py --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --max_num_epochs 10 --check_val_every_n_epoch 5 --logging True 
-python main.py --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --max_num_epochs 15 --check_val_every_n_epoch 5  --logging True
-```
-Then, execute ```tensorboard --logdir ./lightng_logs/```
-

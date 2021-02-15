@@ -1,4 +1,4 @@
-from argparse import ArgumentParser
+import argparse
 from dataset import KG, StandardDataModule, KvsAll, RelationPredictionDataset
 import torch
 from torch import nn
@@ -7,138 +7,162 @@ from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
 
 from sklearn.model_selection import KFold
-from funcs import sanity_checking_with_arguments, select_model
+from static_funcs import *
 import numpy as np
 from pytorch_lightning import loggers as pl_loggers
+import pandas as pd
+import json
 
 
-def standard_training(args, dataset):
-    print('Standard training')
-    if not args.logging:
-        args.checkpoint_callback = False
-        args.logger = False
-    print(args.logging)
-    trainer = pl.Trainer.from_argparse_args(args)
+class Execute:
+    def __init__(self, args):
+        sanity_checking_with_arguments(args)
+        self.args = args
+        self.dataset = KG(data_dir=args.path_dataset_folder, add_reciprical=args.add_reciprical)
+        self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
 
-    model, form_of_labelling = select_model(args)
-    dataset = StandardDataModule(dataset=dataset, form=form_of_labelling,
-                                 batch_size=args.batch_size, num_workers=args.num_workers)
+        self.storage_path = create_experiment_folder(folder_name=args.storage_path)
 
-    trainer.fit(model, train_dataloader=dataset.train_dataloader(), val_dataloaders=dataset.val_dataloader())
-    trainer.test(model, test_dataloaders=dataset.test_dataloader())
-    return model
+    def standard_training(self):
+        print('\n---------------------------------------------------------------------------------')
+        print('\nTraining starts')
+        trainer = pl.Trainer.from_argparse_args(self.args)
+        model, form_of_labelling = select_model(self.args)
+        dataset = StandardDataModule(dataset=self.dataset, form=form_of_labelling,
+                                     batch_size=self.args.batch_size, num_workers=self.args.num_workers)
 
+        trainer.fit(model, train_dataloader=dataset.train_dataloader(), val_dataloaders=dataset.val_dataloader())
+        trainer.test(model, test_dataloaders=dataset.test_dataloader())
 
-def k_fold_cv_training(args, dataset):
-    print('k_fold_cv_training')
+        mrr = self.evaluate(model, self.dataset.test_set)
+        print('\n---------------------------------------------------------------------------------')
+        print(f"Raw MRR at testing => {mrr:.3f}")
+        print('---------------------------------------------------------------------------------')
+        return model
 
-    if args.num_folds_for_cv < 2:
+    def k_fold_cross_validation(self) -> pl.LightningModule:
+        """
+        Perform K-fold Cross-Validation
+
+        1. Obtain K train and test splits.
+        2. For each split,
+            2.1 initialize trainer and model
+            2.2. Train model with configuration provided in args.
+            2.3. Compute the mean reciprocal rank (MRR) score of the model on the test respective split.
+        3. Report the mean and average MRR .
+
+        :param self:
+        :return: model
+        """
+        if self.args.num_folds_for_cv < 2:
+            print(
+                f'k-fold cross-validation requires at least one train/test split, but got only ***num_folds_for_cv*** => {args.num_folds_for_cv}.num_folds_for_cv is now set to 10.')
+            self.args.num_folds_for_cv = 10
+        print('\n---------------------------------------------------------------------------------')
+        print(f'\n{self.args.num_folds_for_cv}-fold cross-validation starts')
+        kf = KFold(n_splits=self.args.num_folds_for_cv, shuffle=True)
+        train_set = np.array(self.dataset.train_set)
+        mrr_for_folds = []
+        model = None
+        for train_index, test_index in kf.split(train_set):
+            trainer = pl.Trainer.from_argparse_args(self.args)
+            model, form_of_labelling = select_model(self.args)
+
+            train_set_for_i_th_fold, test_set_for_i_th_fold = train_set[train_index], train_set[test_index]
+
+            train_dataset_loader = DataLoader(KvsAll(train_set_for_i_th_fold, entity_idxs=self.dataset.entity_to_idx,
+                                                     relation_idxs=self.dataset.relation_to_idx,
+                                                     form=form_of_labelling),
+                                              batch_size=self.args.batch_size, shuffle=True,
+                                              num_workers=self.args.num_workers)
+            trainer.fit(model, train_dataloader=train_dataset_loader)
+
+            raw_mrr = self.evaluate(model, test_set_for_i_th_fold)
+            mrr_for_folds.append(raw_mrr)
+
+        mrr_for_folds = np.array(mrr_for_folds)
+        print('\n---------------------------------------------------------------------------------')
         print(
-            f'k-fold cross-validation requires at least one train/test split, but got only ***num_folds_for_cv*** => {args.num_folds_for_cv}.num_folds_for_cv is now set to 10.')
-        args.num_folds_for_cv = 10
+            f'Mean and standard deviation of raw MRR in {self.args.num_folds_for_cv}-fold cross validation => {mrr_for_folds.mean():.3f}, {mrr_for_folds.std():.3f}')
+        print('---------------------------------------------------------------------------------')
+        assert model is not None
+        return model
 
-    kf = KFold(n_splits=args.num_folds_for_cv, shuffle=True)
+    def evaluate(self, trained_model, triples):
+        trained_model.eval()
 
-    train_set = np.array(dataset.train_set)
+        if trained_model.name == 'Shallom':
+            return compute_mrr_based_on_relation_ranking(trained_model, triples, self.dataset.entity_to_idx,
+                                                         self.dataset.relations)
+        else:
+            return compute_mrr_based_on_entity_ranking(trained_model, triples, self.dataset.entity_to_idx,
+                                                       self.dataset.relation_to_idx, self.dataset.entities)
 
-    mrr_for_folds = []
-    model = None
-    for train_index, test_index in kf.split(train_set):
-        trainer = pl.Trainer.from_argparse_args(args)
-        model, form_of_labelling = select_model(args)
+    def start(self):
+        if self.dataset.is_valid_test_available():
+            trained_model = self.standard_training()
+        else:
+            trained_model = self.k_fold_cross_validation()
 
-        train_set_for_i_th_fold, test_set_for_i_th_fold = train_set[train_index], train_set[test_index]
-        train_dataset_loader = DataLoader(KvsAll(train_set_for_i_th_fold, entity_idxs=dataset.entity_to_idx,
-                                                 relation_idxs=dataset.relation_to_idx, form=form_of_labelling),
-                                          batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers)
-        trainer.fit(model, train_dataloader=train_dataset_loader)
+        self.store(trained_model)
 
-        raw_mrr = compute_mrr(model, test_set_for_i_th_fold, dataset.relations, dataset.entity_to_idx)
-        mrr_for_folds.append(raw_mrr)
+    def store(self, trained_model):
+        with open(self.storage_path + '/configuration.json', 'w') as file_descriptor:
+            temp = vars(self.args)
+            temp.pop('gpus')
+            temp.pop('tpu_cores')
+            json.dump(temp, file_descriptor)
 
-    mrr_for_folds = np.array(mrr_for_folds)
-    print(
-        f'Mean and standard deviation of raw MRR in {args.num_folds_for_cv}-fold cross validation => {mrr_for_folds.mean():.3f}, {mrr_for_folds.std():.3f}')
-    assert model is not None
-    return model
+        if trained_model.name == 'Shallom':
+            entity_emb = trained_model.get_embeddings()
+        else:
+            entity_emb, relation_ebm = trained_model.get_embeddings()
+            pd.DataFrame(relation_ebm, index=self.dataset.relations).to_csv(
+                self.storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
 
-
-def compute_mrr(trained_model, triples, relations, entity_to_idx):
-    if trained_model.name != 'Shallom':
-        print(f'Not yet implemented for {trained_model.name}')
-        return
-    # @TODO This needs to integrated into models.
-    #########################################
-    # Evaluation mode. Parallelize below computation.
-    trained_model.eval()
-    rel = np.array(relations)  # for easy indexing.
-    num_rel = len(rel)
-    ranks = []
-
-    predictions_save = []
-    for triple in triples:
-        s, p, o = triple
-        preds = trained_model.forward(torch.LongTensor([entity_to_idx[s]]),
-                                      torch.LongTensor([entity_to_idx[o]]))
-
-        # Rank predicted scores
-        _, ranked_idx_rels = preds.topk(k=num_rel)
-        # Rank all relations based on predicted scores
-        ranked_relations = rel[ranked_idx_rels][0]
-
-        # Compute and store the rank of the true relation.
-        rank = 1 + np.argwhere(ranked_relations == p)[0][0]
-        ranks.append(rank)
-        # Store prediction.
-        predictions_save.append([s, p, o, ranked_relations[0]])
-
-    raw_mrr = np.mean(1. / np.array(ranks))
-    print(f'Raw Mean reciprocal rank: {raw_mrr}')
-
-    """
-    for it, t in enumerate(predictions_save):
-        s, p, o, predicted_p = t
-        print(f'{it}. test triples => {s} {p} {o} \t =>{trained_model.name} => {predicted_p}')
-        if it == 10:
-            break
-    """
-    return raw_mrr
+        pd.DataFrame(entity_emb, index=self.dataset.entities).to_csv(
+            self.storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
 
 
-def start(args):
-    sanity_checking_with_arguments(args)
-    dataset = KG(data_dir=args.path_dataset_folder)
-    args.num_entities = dataset.num_entities
-    args.num_relations = dataset.num_relations
-    if dataset.is_valid_test_available():
-        trained_model = standard_training(args, dataset)
-        compute_mrr(trained_model, dataset.test_set, dataset.relations, dataset.entity_to_idx)
 
-    else:
-        trained_model = k_fold_cv_training(args, dataset)
-
-    return trained_model
-
-
-if __name__ == '__main__':
-    parser = ArgumentParser()
+def argparse_default():
+    parser = argparse.ArgumentParser()
     parser = pl.Trainer.add_argparse_args(parser)
-    parser.add_argument('--num_workers', type=int, default=32, help='Number of cpus used during loadingIncrease ')
+    parser.add_argument('--num_workers', type=int, default=32, help='Number of cpus used during batching')
     parser.add_argument('--kvsall', default=True)
     parser.add_argument('--negative_sample_ratio', type=int, default=0)
     parser.add_argument('--num_folds_for_cv', type=int, default=10)
-    parser.add_argument('--batch_size', type=int, default=1025)
-    parser.add_argument('--embedding_dim', type=int, default=25)
+    parser.add_argument('--batch_size', type=int, default=32)
+    parser.add_argument('--embedding_dim', type=int, default=50)
     parser.add_argument('--input_dropout_rate', type=float, default=0.1)
     parser.add_argument('--hidden_dropout_rate', type=float, default=0.1)
-    parser.add_argument("--model", type=str, default='Shallom', help="Models:Shallom")
-    parser.add_argument("--logging", default=False)
-    parser.add_argument("--max_num_epochs", type=int, default=10)
+    parser.add_argument("--model", type=str, default='ConEx',
+                        help="Models:Shallom")
+    parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
+    parser.add_argument("--num_of_output_channels", type=int, default=8,
+                        help="Number of output channels for a convolution operation")
+    parser.add_argument("--feature_map_dropout_rate", type=int, default=.3,
+                        help="Dropout rate to be applied on feature map produced by a convolution operation")
+    parser.add_argument("--max_num_epochs", type=int, default=5)
     parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.0,
                         help='The ratio of the size of the first affine transformation with respect to size of the embeddings')
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Carcinogenesis')
-    args = parser.parse_args()
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Family')
+    parser.add_argument("--check_val_every_n_epochs", type=int, default=10)
+    parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage')
+    parser.add_argument("--add_reciprical", type=bool, default=False)
+    return parser
+
+def preprocesses_input_args(arg):
     # To update the default value of Trainer in pytorch-lightnings
-    args.max_epochs = args.max_num_epochs
-    del args.max_num_epochs
-    start(args)
+    arg.max_epochs = arg.max_num_epochs
+    del arg.max_num_epochs
+    arg.check_val_every_n_epoch = arg.check_val_every_n_epochs
+    del arg.check_val_every_n_epochs
+
+    arg.checkpoint_callback = False
+    arg.logger = False
+    return arg
+
+if __name__ == '__main__':
+    parser = argparse_default()
+    Execute(preprocesses_input_args(parser.parse_args())).start()
