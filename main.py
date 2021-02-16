@@ -20,12 +20,11 @@ class Execute:
         self.args = args
         self.dataset = KG(data_dir=args.path_dataset_folder, add_reciprical=args.add_reciprical)
         self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
-
         self.storage_path = create_experiment_folder(folder_name=args.storage_path)
+        self.logger = create_logger(name=self.args.model, p=self.storage_path)
 
     def standard_training(self):
-        print('\n---------------------------------------------------------------------------------')
-        print('\nTraining starts')
+        self.logger.info('\nTraining starts')
         trainer = pl.Trainer.from_argparse_args(self.args)
         model, form_of_labelling = select_model(self.args)
         dataset = StandardDataModule(dataset=self.dataset, form=form_of_labelling,
@@ -35,9 +34,7 @@ class Execute:
         trainer.test(model, test_dataloaders=dataset.test_dataloader())
 
         mrr = self.evaluate(model, self.dataset.test_set)
-        print('\n---------------------------------------------------------------------------------')
-        print(f"Raw MRR at testing => {mrr:.3f}")
-        print('---------------------------------------------------------------------------------')
+        self.logger.info(f"Raw MRR at testing => {mrr:.3f}")
         return model
 
     def k_fold_cross_validation(self) -> pl.LightningModule:
@@ -55,11 +52,10 @@ class Execute:
         :return: model
         """
         if self.args.num_folds_for_cv < 2:
-            print(
+            self.logger.info(
                 f'k-fold cross-validation requires at least one train/test split, but got only ***num_folds_for_cv*** => {args.num_folds_for_cv}.num_folds_for_cv is now set to 10.')
             self.args.num_folds_for_cv = 10
-        print('\n---------------------------------------------------------------------------------')
-        print(f'\n{self.args.num_folds_for_cv}-fold cross-validation starts')
+        self.logger.info(f'{self.args.num_folds_for_cv}-fold cross-validation starts')
         kf = KFold(n_splits=self.args.num_folds_for_cv, shuffle=True)
         train_set = np.array(self.dataset.train_set)
         mrr_for_folds = []
@@ -74,17 +70,15 @@ class Execute:
                                                      relation_idxs=self.dataset.relation_to_idx,
                                                      form=form_of_labelling),
                                               batch_size=self.args.batch_size, shuffle=True,
-                                              num_workers=self.args.num_workers)
+                                              num_workers=self.args.num_workers, drop_last=True)
             trainer.fit(model, train_dataloader=train_dataset_loader)
 
             raw_mrr = self.evaluate(model, test_set_for_i_th_fold)
             mrr_for_folds.append(raw_mrr)
 
         mrr_for_folds = np.array(mrr_for_folds)
-        print('\n---------------------------------------------------------------------------------')
-        print(
+        self.logger.info(
             f'Mean and standard deviation of raw MRR in {self.args.num_folds_for_cv}-fold cross validation => {mrr_for_folds.mean():.3f}, {mrr_for_folds.std():.3f}')
-        print('---------------------------------------------------------------------------------')
         assert model is not None
         return model
 
@@ -119,10 +113,8 @@ class Execute:
             entity_emb, relation_ebm = trained_model.get_embeddings()
             pd.DataFrame(relation_ebm, index=self.dataset.relations).to_csv(
                 self.storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
-
         pd.DataFrame(entity_emb, index=self.dataset.entities).to_csv(
             self.storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
-
 
 
 def argparse_default():
@@ -131,26 +123,27 @@ def argparse_default():
     parser.add_argument('--num_workers', type=int, default=32, help='Number of cpus used during batching')
     parser.add_argument('--kvsall', default=True)
     parser.add_argument('--negative_sample_ratio', type=int, default=0)
-    parser.add_argument('--num_folds_for_cv', type=int, default=10)
+    parser.add_argument('--num_folds_for_cv', type=int, default=2)
     parser.add_argument('--batch_size', type=int, default=32)
-    parser.add_argument('--embedding_dim', type=int, default=50)
-    parser.add_argument('--input_dropout_rate', type=float, default=0.1)
-    parser.add_argument('--hidden_dropout_rate', type=float, default=0.1)
-    parser.add_argument("--model", type=str, default='ConEx',
+    parser.add_argument('--embedding_dim', type=int, default=25)
+    parser.add_argument('--input_dropout_rate', type=float, default=0.2)
+    parser.add_argument('--hidden_dropout_rate', type=float, default=0.2)
+    parser.add_argument("--model", type=str, default='Shallom',
                         help="Models:Shallom")
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
     parser.add_argument("--num_of_output_channels", type=int, default=8,
                         help="Number of output channels for a convolution operation")
     parser.add_argument("--feature_map_dropout_rate", type=int, default=.3,
                         help="Dropout rate to be applied on feature map produced by a convolution operation")
-    parser.add_argument("--max_num_epochs", type=int, default=5)
-    parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.0,
+    parser.add_argument("--max_num_epochs", type=int, default=10)
+    parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.5,
                         help='The ratio of the size of the first affine transformation with respect to size of the embeddings')
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Family')
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Biopax')
     parser.add_argument("--check_val_every_n_epochs", type=int, default=10)
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage')
     parser.add_argument("--add_reciprical", type=bool, default=False)
     return parser
+
 
 def preprocesses_input_args(arg):
     # To update the default value of Trainer in pytorch-lightnings
@@ -162,6 +155,7 @@ def preprocesses_input_args(arg):
     arg.checkpoint_callback = False
     arg.logger = False
     return arg
+
 
 if __name__ == '__main__':
     parser = argparse_default()

@@ -21,14 +21,9 @@ unzip KGs
 
 3. **train.txt**, **valid.txt** and **test.txt** must be in either N-triples format or standard link prediction dataset format.
 
-4. For instance, 'KGs/Family' contains only **train.txt**. To evaluate quality of Shallom embeddings, we rely on the k-fold cross validation metric.
+4. For instance, 'KGs/Family' contains only **train.txt**. To evaluate quality of Shallom ([Research paper](https://arxiv.org/abs/2101.09090) and [conference presentation](https://www.youtube.com/watch?v=LUDpdgdvTQg)) embeddings, we rely on the k-fold cross validation metric.
 Concretely, executing ```python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --num_folds_for_cv 10 --max_num_epochs 1```
-results in generating **Mean and standard deviation of raw MRR in 10-fold cross validation => 0.768, 0.023**. 
-   Moreover, all necessary information including embeddings are stored in DAIKIRI_Storage folder (if does not exist it will be created).
-   
-   
-
-Shallom is our most recent knowledge graph embedding model. More information can be found in ([Research paper](https://arxiv.org/abs/2101.09090) and [conference presentation](https://www.youtube.com/watch?v=LUDpdgdvTQg)).
+results in generating **Mean and standard deviation of raw MRR in 10-fold cross validation => 0.768, 0.023**. Moreover, all necessary information including embeddings are stored in DAIKIRI_Storage folder (if does not exist it will be created).
    
 5. Most link prediction benchmark datasets contain the train, validation and test datasets (see 'KGs/FB15K-237', 'KGs/WN18RR' or 'KGs/YAGO3-10').
 To evaluate quality of embeddings, we rely on the standard metric, i.e. mean reciprocal rank (MRR). Executing ```python main.py --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --max_num_epochs 1```
@@ -37,17 +32,17 @@ results in evaluating quality of SHALLOM embeddings on the test split.
    
 ### More Examples
 
-1. To train Shallom for 1 epochs by using **32 CPU cores** on UMLS. 
+1. To train Shallom for 1 epochs by using **32 CPU cores** (if available) on UMLS. 
 ```
-python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --max_num_epochs 1 --num_workers 32
-```
-
-2. To train Shallom for 1 epochs by using **32 CPU cores** on UMLS. All information will be stored in to 'DummyFolder'.
-```
-python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --storage_path DummyFolder --max_num_epochs 1 --num_workers 32
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --max_num_epochs 1
 ```
 
-3. To train Shallom on Carcinogenesis by using 5-fold cross validation by using  **all available CPU cores** on Carcinogenesis. 
+2. To train Shallom for 1 epochs on UMLS. All information will be stored in to 'DummyFolder'.
+```
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --storage_path DummyFolder --max_num_epochs 1
+```
+
+3. To train Shallom on Carcinogenesis by using 5-fold cross validation on Carcinogenesis. 
 ```
 python main.py --path_dataset_folder 'KGs/Carcinogenesis' --model 'Shallom' --num_folds_for_cv 5 --max_num_epochs 1
 ```

@@ -3,6 +3,8 @@ import numpy as np
 import torch
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
+from typing import List
+
 
 class StandardDataModule(pl.LightningDataModule):
     """
@@ -49,6 +51,7 @@ class StandardDataModule(pl.LightningDataModule):
     def prepare_data(self, *args, **kwargs):
         # Nothing to be prepared for now.
         pass
+
 
 class KvsAll(torch.utils.data.Dataset):
     def __init__(self, triples, entity_idxs, relation_idxs, form):
@@ -198,6 +201,29 @@ class KG:
     def num_relations(self):
         return len(self.__relations)
 
+    def obtain_subject_predicate_object(self, l: List) -> List:
+        """
+        l=[<...>,<...>,<...>]
+        :param l:
+        :return:
+        """
+        try:
+            s, p, o = l[0], l[1], l[2]
+            # ...=<...>
+            assert p[0] == '<' and p[-1] == '>'
+            p = p[1:-1]
+            if s[0]=='<':
+                assert s[-1]=='>'
+                s = s[1:-1]
+            if o[0] == '<':
+                assert o[-1] == '>'
+                o = o[1:-1]
+        except AssertionError:
+            print('Parsing error')
+            print(l)
+            exit(1)
+        return [s,p,o]
+
     def load_data(self, data_path, add_reciprical=True):
         # line can be 1 or 2
         # a) <...> <...> <...> .
@@ -215,6 +241,7 @@ class KG:
                     # 1. Ignore lines with *** " *** or does only contain 2 or less characters.
                     if '"' in line or len(line) < 3:
                         continue
+
                     # 2. Tokenize(<...> <...> <...> .) => ['<...>', '<...>','<...>','.']
                     # Tokenize(... ... ...) => ['...', '...', '...',]
                     decomposed_list_of_strings = line.split()
@@ -224,7 +251,7 @@ class KG:
                     # 4. Storing
                     if len(decomposed_list_of_strings) == 4:
                         assert decomposed_list_of_strings[-1] == '.'
-                        data.append(decomposed_list_of_strings[:-1])
+                        data.append(self.obtain_subject_predicate_object(decomposed_list_of_strings[:-1]))
                     if len(decomposed_list_of_strings) == 3:
                         data.append(decomposed_list_of_strings)
         except FileNotFoundError:
