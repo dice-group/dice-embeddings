@@ -123,7 +123,7 @@ def argparse_default():
     parser.add_argument('--num_workers', type=int, default=32, help='Number of cpus used during batching')
     parser.add_argument('--kvsall', default=True)
     parser.add_argument('--negative_sample_ratio', type=int, default=0)
-    parser.add_argument('--num_folds_for_cv', type=int, default=2)
+    parser.add_argument('--num_folds_for_cv', type=int, default=10)
     parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument('--embedding_dim', type=int, default=25)
     parser.add_argument('--input_dropout_rate', type=float, default=0.2)
@@ -138,7 +138,7 @@ def argparse_default():
     parser.add_argument("--max_num_epochs", type=int, default=10)
     parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.5,
                         help='The ratio of the size of the first affine transformation with respect to size of the embeddings')
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Biopax')
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS')
     parser.add_argument("--check_val_every_n_epochs", type=int, default=10)
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage')
     parser.add_argument("--add_reciprical", type=bool, default=False)
@@ -158,5 +158,4 @@ def preprocesses_input_args(arg):
 
 
 if __name__ == '__main__':
-    parser = argparse_default()
-    Execute(preprocesses_input_args(parser.parse_args())).start()
+    Execute(preprocesses_input_args(argparse_default().parse_args())).start()

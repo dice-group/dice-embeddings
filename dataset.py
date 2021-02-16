@@ -158,7 +158,7 @@ class KG:
         self.__relations = self.get_relations(self.__data)
         self.__entity_idxs = {self.__entities[i]: i for i in range(len(self.__entities))}
         self.__relation_idxs = {self.__relations[i]: i for i in range(len(self.__relations))}
-        s = '------------------- Description of Dataset {data_dir}----------------------------'
+        s = '------------------- Description of Dataset' + data_dir + '----------------------------'
         print(f'\n{s}')
         print(f'Number of triples {len(self.__data)}')
         print(f'Number of entities {len(self.__entities)}')
@@ -201,19 +201,27 @@ class KG:
     def num_relations(self):
         return len(self.__relations)
 
-    def obtain_subject_predicate_object(self, l: List) -> List:
+    @staticmethod
+    def ntriple_parser(l: List) -> List:
+        """
+        Given a list of strings (e.g. [<...>,<...>,<...>,''])
+        :param l:
+        :return:
+        """
+
         """
         l=[<...>,<...>,<...>]
         :param l:
         :return:
         """
+        assert len(l) == 0 and l[3] == '.'
         try:
-            s, p, o = l[0], l[1], l[2]
+            s, p, o, _ = l[0], l[1], l[2], l[3]
             # ...=<...>
             assert p[0] == '<' and p[-1] == '>'
             p = p[1:-1]
-            if s[0]=='<':
-                assert s[-1]=='>'
+            if s[0] == '<':
+                assert s[-1] == '>'
                 s = s[1:-1]
             if o[0] == '<':
                 assert o[-1] == '>'
@@ -222,7 +230,7 @@ class KG:
             print('Parsing error')
             print(l)
             exit(1)
-        return [s,p,o]
+        return [s, p, o]
 
     def load_data(self, data_path, add_reciprical=True):
         # line can be 1 or 2
@@ -251,7 +259,7 @@ class KG:
                     # 4. Storing
                     if len(decomposed_list_of_strings) == 4:
                         assert decomposed_list_of_strings[-1] == '.'
-                        data.append(self.obtain_subject_predicate_object(decomposed_list_of_strings[:-1]))
+                        data.append(self.ntriple_parser(decomposed_list_of_strings))
                     if len(decomposed_list_of_strings) == 3:
                         data.append(decomposed_list_of_strings)
         except FileNotFoundError:
@@ -287,62 +295,3 @@ class KG:
     @property
     def test_set(self):
         return self.__test
-
-
-"""
-
-
-class FoldKvsAllDataset(torch.utils.data.Dataset):
-    def __init__(self, data, target, target_dim):
-        super().__init__()
-        self.data, self.target, self.target_dim = data, target, target_dim
-
-    def __len__(self):
-        assert len(self.data) == len(self.target)
-        return len(self.data)
-
-    def __getitem__(self, idx):
-        # 1. Initialize a vector of output.
-        y_vec = torch.zeros(self.target_dim)
-        # 2. Set 1's to crrecponding indexes.
-        y_vec[self.target[idx]] = 1
-        return self.data[idx, 0], self.data[idx, 1], y_vec
-
-"""
-"""
-class TrainKvsAllDataset(torch.utils.data.Dataset):
-    def __init__(self, triples, target_dim, labelling_from='RelationPrediction'):
-        super().__init__()
-        self.triples = triples
-        self.labelling_from = labelling_from
-        self.target_dim = target_dim
-        self.__labelling()
-
-    def __labelling(self):
-        store = dict()
-        if self.labelling_from == 'RelationPrediction':
-            for s, p, o in self.train:
-                store.setdefault((self.kg.__entity_idxs[s], self.kg.__entity_idxs[o]), list()).append(
-                    self.kg.__relation_idxs[p])
-        elif form == 'EntityPrediction':
-            for s, p, o in self.train:
-                store.setdefault((self.kg.__entity_idxs[s], self.kg.__relation_idxs[p]), list()).append(
-                    self.kg.__entity_idxs[o])
-        else:
-            raise NotImplementedError
-
-        self.train_data = torch.torch.LongTensor(list(store.keys()))
-        # To be able to obtain targets by using a list of indexes.
-        self.train_target = np.array(list(store.values()), dtype=object)
-        # self.target is still contains list of integers.
-        assert isinstance(self.train_target, np.ndarray)
-        assert isinstance(self.train_target[0], list)
-        assert isinstance(self.train_target[0][0], int)
-
-
-
-
-
-
-
-"""
