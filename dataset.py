@@ -214,7 +214,7 @@ class KG:
         :param l:
         :return:
         """
-        assert len(l) == 0 and l[3] == '.'
+        assert l[3] == '.'
         try:
             s, p, o, _ = l[0], l[1], l[2], l[3]
             # ...=<...>

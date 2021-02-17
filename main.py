@@ -84,6 +84,7 @@ class Execute:
 
     def evaluate(self, trained_model, triples):
         trained_model.eval()
+        trained_model.cpu()
 
         if trained_model.name == 'Shallom':
             return compute_mrr_based_on_relation_ranking(trained_model, triples, self.dataset.entity_to_idx,
@@ -139,7 +140,7 @@ def argparse_default():
     parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.5,
                         help='The ratio of the size of the first affine transformation with respect to size of the embeddings')
     parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS')
-    parser.add_argument("--check_val_every_n_epochs", type=int, default=10)
+    parser.add_argument("--check_val_every_n_epochs", type=int, default=1000)
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage')
     parser.add_argument("--add_reciprical", type=bool, default=False)
     return parser

@@ -10,7 +10,7 @@ git clone https://github.com/dice-group/DAIKIRI-Embedding.git
 Then obtain the required libraries:
 ```
 conda env create -f environment.yml
-conda activate daikiri_emb
+conda activate daikiri
 unzip KGs
 ```
 # Dataset Format and Usage
@@ -32,22 +32,31 @@ results in evaluating quality of SHALLOM embeddings on the test split.
    
 ### More Examples
 
-1. To train Shallom for 1 epochs by using **32 CPU cores** (if available) on UMLS. 
+1. To train our approaches for 10 epochs by using **32 CPU cores** (if available) on UMLS. 
 ```
-python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --max_num_epochs 1
-```
-
-2. To train Shallom for 1 epochs on UMLS. All information will be stored in to 'DummyFolder'.
-```
-python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --storage_path DummyFolder --max_num_epochs 1
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --max_num_epochs 10
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'ConEx' --max_num_epochs 10
 ```
 
-3. To train Shallom on Carcinogenesis by using 5-fold cross validation on Carcinogenesis. 
+
+2. To train our approaches for 10 epochs by using a single GPU.
 ```
-python main.py --path_dataset_folder 'KGs/Carcinogenesis' --model 'Shallom' --num_folds_for_cv 5 --max_num_epochs 1
+python main.py --gpus 1 --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --max_num_epochs 10
+python main.py --gpus 1 --path_dataset_folder 'KGs/UMLS' --model 'ConEx' --max_num_epochs 10
 ```
 
-4. Train Shallom for 5 epochs by using **8 GPUs** on WN18RR To check GPU usages, ```watch -n 1 nvidia-smi```.
+3. To train Shallom for 1 epochs on UMLS. All information will be stored in to 'DummyFolder'.
 ```
-python main.py --gpus 8 --distributed_backend ddp --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --max_num_epochs 5 --check_val_every_n_epoch 5 --num_workers 4
+python main.py --gpus 1 --path_dataset_folder 'KGs/UMLS' --storage_path DummyFolder --model 'Shallom' --max_num_epochs 10
 ```
+
+4. To train Shallom on Carcinogenesis by using 10-fold cross validation on Carcinogenesis.  To check GPU usages, ```watch -n 1 nvidia-smi```
+```
+python main.py --gpus 1 --path_dataset_folder 'KGs/Carcinogenesis' --model 'Shallom' --num_folds_for_cv 10 --max_num_epochs 10
+```
+5. Train Shallom for 5 epochs by using **8 GPUs** on WN18RR To check GPU usages, ```watch -n 1 nvidia-smi```.
+```
+python main.py --gpus 8 --distributed_backend ddp --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --max_num_epochs 5
+```
+
+For any further questions, please contact:  ```caglar.demir@upb.de```
