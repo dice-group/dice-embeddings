@@ -132,7 +132,7 @@ def argparse_default():
     parser.add_argument("--model", type=str, default='Shallom',
                         help="Models:Shallom")
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
-    parser.add_argument("--num_of_output_channels", type=int, default=8,
+    parser.add_argument("--num_of_output_channels", type=int, default=32,
                         help="Number of output channels for a convolution operation")
     parser.add_argument("--feature_map_dropout_rate", type=int, default=.3,
                         help="Dropout rate to be applied on feature map produced by a convolution operation")
