@@ -197,8 +197,7 @@ class ConEx(pl.LightningModule):
         avg_test_accuracy = torch.stack([x['test_accuracy'] for x in outputs]).mean()
         self.log('avg_test_accuracy', avg_test_accuracy, on_epoch=True, prog_bar=True)
 
-
     def get_embeddings(self):
         entity_emb = torch.cat((self.emb_ent_real.weight.data, self.emb_ent_i.weight.data), 1)
         rel_emb = torch.cat((self.emb_rel_real.weight.data, self.emb_rel_i.weight.data), 1)
-        return entity_emb, rel_emb
+        return entity_emb.data.detach().numpy(), rel_emb.data.detach().numpy()
