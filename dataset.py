@@ -149,6 +149,8 @@ class EntityPredictionDataset(torch.utils.data.Dataset):
 class KG:
     def __init__(self, data_dir=None, add_reciprical=False):
         # 1. First pass through data
+        s = '------------------- Description of Dataset' + data_dir + '----------------------------'
+        print(f'\n{s}')
         self.__train = self.load_data(data_dir + '/train.txt', add_reciprical=add_reciprical)
         self.__valid = self.load_data(data_dir + '/valid.txt', add_reciprical=add_reciprical)
         self.__test = self.load_data(data_dir + '/test.txt', add_reciprical=add_reciprical)
@@ -158,15 +160,13 @@ class KG:
         self.__relations = self.get_relations(self.__data)
         self.__entity_idxs = {self.__entities[i]: i for i in range(len(self.__entities))}
         self.__relation_idxs = {self.__relations[i]: i for i in range(len(self.__relations))}
-        s = '------------------- Description of Dataset' + data_dir + '----------------------------'
-        print(f'\n{s}')
-        print(f'Number of triples {len(self.__data)}')
-        print(f'Number of entities {len(self.__entities)}')
-        print(f'Number of relations {len(self.__relations)}')
+        print(f'Number of triples: {len(self.__data)}')
+        print(f'Number of entities: {len(self.__entities)}')
+        print(f'Number of relations: {len(self.__relations)}')
 
-        print(f'Number of triples on train set{len(self.__train)}')
-        print(f'Number of triples on valid set {len(self.__valid)}')
-        print(f'Number of triples on test set {len(self.__test)}')
+        print(f'Number of triples on train set: {len(self.__train)}')
+        print(f'Number of triples on valid set: {len(self.__valid)}')
+        print(f'Number of triples on test set: {len(self.__test)}')
         s = len(s) * '-'
         print(f'{s}\n')
 
@@ -239,7 +239,7 @@ class KG:
         # c) ... ... ...
         # (a) and (b) correspond to the N-Triples format
         # (c) corresponds to the format of current link prediction benchmark datasets.
-
+        print(f'{data_path} is being read.')
         try:
             data = []
             with open(data_path, "r") as f:
