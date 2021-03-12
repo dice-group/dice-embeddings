@@ -6,6 +6,60 @@ import torch
 import datetime
 import logging
 
+import argparse
+import pytorch_lightning as pl
+import sys
+def argparse_default(description=None):
+    parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser())
+    # Paths.
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/DBpedia')
+    parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage')
+
+    # Models.
+    parser.add_argument("--model", type=str, default='Shallom',
+                        help="Available models: ConvQ, OMult, QMult, ConEx, Shallom, ConEx, ComplEx, DistMult")
+
+    # Hyperparameters pertaining to number of parameters.
+    parser.add_argument('--embedding_dim', type=int, default=25)
+    parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
+    parser.add_argument("--num_of_output_channels", type=int, default=32, help="# of output channels in convolution")
+    parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.5,
+                        help='The ratio of the size of the affine transformation w.r.t. the size of the embeddings')
+
+    # Hyperparameters pertaining to regularization.
+    parser.add_argument('--input_dropout_rate', type=float, default=0.2)
+    parser.add_argument('--hidden_dropout_rate', type=float, default=0.2)
+    parser.add_argument("--feature_map_dropout_rate", type=int, default=.3)
+    parser.add_argument('--apply_unit_norm', type=bool, default=False)
+
+    # Hyperparameters for training.
+    parser.add_argument("--max_num_epochs", type=int, default=3)
+    parser.add_argument('--batch_size', type=int, default=256)
+    parser.add_argument("--check_val_every_n_epochs", type=int, default=1000)
+
+    # Data Augmentation.
+    parser.add_argument("--add_reciprical", type=bool, default=False)
+
+    parser.add_argument('--num_workers', type=int, default=32, help='Number of cpus used during batching')
+    parser.add_argument('--kvsall', default=True)
+    parser.add_argument('--negative_sample_ratio', type=int, default=0)
+    parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
+                                                                        'If >2,no evaluation scenario is applied implies no evaluation.')
+    if description is None:
+        return parser.parse_args()
+    else:
+        return parser.parse_args(description)
+def preprocesses_input_args(arg):
+    # To update the default value of Trainer in pytorch-lightnings
+    arg.max_epochs = arg.max_num_epochs
+    del arg.max_num_epochs
+    arg.check_val_every_n_epoch = arg.check_val_every_n_epochs
+    del arg.check_val_every_n_epochs
+
+    arg.checkpoint_callback = False
+    arg.logger = False
+    return arg
+
 def create_logger(*, name, p):
     logger = logging.getLogger(name)
 
@@ -88,6 +142,12 @@ def select_model(args) -> Tuple[pl.LightningModule, AnyStr]:
         form_of_labelling = 'EntityPrediction'
     elif args.model == 'ConvO':
         model = ConvO(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif args.model == 'ComplEx':
+        model = ComplEx(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif args.model == 'DistMult':
+        model = DistMult(args=args)
         form_of_labelling = 'EntityPrediction'
     else:
         raise ValueError
