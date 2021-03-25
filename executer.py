@@ -108,7 +108,7 @@ class Execute:
                                                  relation_idxs=self.dataset.relation_to_idx,
                                                  form=form_of_labelling),
                                           batch_size=self.args.batch_size, shuffle=True,
-                                          num_workers=self.args.num_workers, drop_last=True)
+                                          num_workers=self.args.num_workers, drop_last=False)
         trainer.fit(model, train_dataloader=train_dataset_loader)
 
         return model

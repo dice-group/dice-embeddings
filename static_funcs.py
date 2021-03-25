@@ -20,7 +20,7 @@ def argparse_default(description=None):
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult")
 
     # Hyperparameters pertaining to number of parameters.
-    parser.add_argument('--embedding_dim', type=int, default=50)
+    parser.add_argument('--embedding_dim', type=int, default=10)
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
     parser.add_argument("--num_of_output_channels", type=int, default=32, help="# of output channels in convolution")
     parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.5,
