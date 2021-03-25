@@ -12,15 +12,15 @@ import sys
 def argparse_default(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser())
     # Paths.
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/DBpedia')
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Family')
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage')
 
     # Models.
-    parser.add_argument("--model", type=str, default='Shallom',
-                        help="Available models: ConvQ, OMult, QMult, ConEx, Shallom, ConEx, ComplEx, DistMult")
+    parser.add_argument("--model", type=str, default='ConEx',
+                        help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult")
 
     # Hyperparameters pertaining to number of parameters.
-    parser.add_argument('--embedding_dim', type=int, default=25)
+    parser.add_argument('--embedding_dim', type=int, default=50)
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
     parser.add_argument("--num_of_output_channels", type=int, default=32, help="# of output channels in convolution")
     parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.5,
@@ -33,13 +33,12 @@ def argparse_default(description=None):
     parser.add_argument('--apply_unit_norm', type=bool, default=False)
 
     # Hyperparameters for training.
-    parser.add_argument("--max_num_epochs", type=int, default=3)
+    parser.add_argument("--max_num_epochs", type=int, default=1)
     parser.add_argument('--batch_size', type=int, default=256)
     parser.add_argument("--check_val_every_n_epochs", type=int, default=1000)
 
     # Data Augmentation.
     parser.add_argument("--add_reciprical", type=bool, default=False)
-
     parser.add_argument('--num_workers', type=int, default=32, help='Number of cpus used during batching')
     parser.add_argument('--kvsall', default=True)
     parser.add_argument('--negative_sample_ratio', type=int, default=0)

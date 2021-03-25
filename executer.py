@@ -1,3 +1,6 @@
+import warnings
+
+warnings.simplefilter("ignore", UserWarning)
 from dataset import KG, StandardDataModule, KvsAll
 import torch
 from torch import nn
@@ -119,7 +122,7 @@ class Execute:
         else:
             if self.args.num_folds_for_cv < 2:
                 self.logger.info(
-                    'fNo test set is found and k-fold cross-validation is set to less than 2 (***num_folds_for_cv*** => {args.num_folds_for_cv}). Hence we do not evaluate the model')
+                    f'No test set is found and k-fold cross-validation is set to less than 2 (***num_folds_for_cv*** => {self.args.num_folds_for_cv}). Hence we do not evaluate the model')
                 trained_model = self.only_train()
 
             else:

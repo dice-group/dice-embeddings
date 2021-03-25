@@ -12,7 +12,8 @@ Then obtain the required libraries:
 ```
 conda env create -f environment.yml
 conda activate daikiri
-unzip KGs
+wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
+unzip KGs.zip
 python -m pytest tests
 ```
 # Available Models
@@ -41,8 +42,8 @@ class DistMult(BaseKGE):
         score = torch.mm(emb_head_real * emb_rel_real, self.emb_ent_real.weight.transpose(1, 0))
         return torch.sigmoid(score)
 ```
-# Dataset Format
 
+# Dataset Format
 1. A dataset must be located in a folder, e.g. 'KGs/YAGO3-10'.
 
 2. A folder must contain **train.txt**. If the validation and test splits are available, then they must named as **valid.txt** and **test.txt**, respectively.
