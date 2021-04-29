@@ -2,22 +2,32 @@
 python --version
 python -u -c 'import torch; print(torch.__version__)'
 echo "Start Training......"
-python main.py --gpus 1 --path_dataset_folder 'KGs/Animals' --model 'ConEx' --max_num_epochs 100 --embedding_dim 25
-python main.py --gpus 1 --path_dataset_folder 'KGs/Biopax' --model 'ConEx' --max_num_epochs 100 --embedding_dim 25
-python main.py --gpus 1 --path_dataset_folder 'KGs/Forte' --model 'ConEx' --max_num_epochs 100 --embedding_dim 25
-python main.py --gpus 1 --path_dataset_folder 'KGs/Carcinogenesis' --model 'ConEx' --max_num_epochs 100 --embedding_dim 25
-python main.py --gpus 1 --path_dataset_folder 'KGs/Hepatitis' --model 'ConEx' --max_num_epochs 100 --embedding_dim 25
-python main.py --gpus 1 --path_dataset_folder 'KGs/Lymphography' --model 'ConEx' --max_num_epochs 100 --embedding_dim 25
-python main.py --gpus 1 --path_dataset_folder 'KGs/Mammographic' --model 'ConEx' --max_num_epochs 100 --embedding_dim 25
-python main.py --gpus 1 --path_dataset_folder 'KGs/Nctrer' --model 'ConEx' --max_num_epochs 100 --embedding_dim 25
-python main.py --gpus 1 --path_dataset_folder 'KGs/Mutagenesis' --model 'ConEx' --max_num_epochs 100 --embedding_dim 25
 
-python main.py --gpus 1 --path_dataset_folder 'KGs/Animals' --model 'Shallom' --max_num_epochs 100 --embedding_dim 50
-python main.py --gpus 1 --path_dataset_folder 'KGs/Biopax' --model 'Shallom' --max_num_epochs 100 --embedding_dim 50
-python main.py --gpus 1 --path_dataset_folder 'KGs/Carcinogenesis' --model 'Shallom' --max_num_epochs 100 --embedding_dim 50
-python main.py --gpus 1 --path_dataset_folder 'KGs/Forte' --model 'Shallom' --max_num_epochs 100 --embedding_dim 50
-python main.py --gpus 1 --path_dataset_folder 'KGs/Hepatitis' --model 'Shallom' --max_num_epochs 100 --embedding_dim 50
-python main.py --gpus 1 --path_dataset_folder 'KGs/Lymphography' --model 'Shallom' --max_num_epochs 100 --embedding_dim 50
-python main.py --gpus 1 --path_dataset_folder 'KGs/Mammographic' --model 'Shallom' --max_num_epochs 100 --embedding_dim 50
-python main.py --gpus 1 --path_dataset_folder 'KGs/Mutagenesis' --model 'Shallom' --max_num_epochs 100 --embedding_dim 50
-python main.py --gpus 1 --path_dataset_folder 'KGs/Nctrer' --model 'Shallom' --max_num_epochs 100 --embedding_dim 50
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --max_num_epochs 3 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --max_num_epochs 3 --scoring_technique 'KvsAll'
+
+
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'DistMult' --max_num_epochs 3 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder 'KGs/Family' --model 'DistMult' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
+
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'ComplEx' --max_num_epochs 3 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder 'KGs/Family' --model 'ComplEx' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
+
+
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'ConEx' --max_num_epochs 3 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder 'KGs/Family' --model 'ConEx' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
+
+
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'QMult' --max_num_epochs 3 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder 'KGs/Family' --model 'QMult' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'ConvQ' --max_num_epochs 3 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder 'KGs/Family' --model 'ConvQ' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
+
+
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'OMult' --max_num_epochs 3 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder 'KGs/Family' --model 'OMult' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
+
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'ConvO' --max_num_epochs 3 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder 'KGs/Family' --model 'ConvO' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
+
+echo "Ends......"

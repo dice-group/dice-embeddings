@@ -55,10 +55,10 @@ class DistMult(BaseKGE):
 ```python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --num_folds_for_cv 10 --max_num_epochs 1```
 This execution results in generating **Mean and standard deviation of raw MRR in 10-fold cross validation => 0.768, 0.023**. Moreover, all necessary information including embeddings are stored in DAIKIRI_Storage folder (if does not exist it will be created).
    
-1. Executing  ```python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --max_num_epochs 1```
+1. Executing  ```python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --max_num_epochs 1 --scoring_technique 'KvsAll'```
    
 2. Most link prediction benchmark datasets contain the train, validation and test datasets (see 'KGs/FB15K-237', 'KGs/WN18RR' or 'KGs/YAGO3-10').
-To evaluate quality of embeddings, we rely on the standard metric, i.e. mean reciprocal rank (MRR). Executing ```python main.py --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --max_num_epochs 1```
+To evaluate quality of embeddings, we rely on the standard metric, i.e. mean reciprocal rank (MRR). Executing ```python main.py --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --max_num_epochs 1 --scoring_technique 'KvsAll'```
 results in evaluating quality of SHALLOM embeddings on the test split.
    
    
@@ -66,20 +66,20 @@ results in evaluating quality of SHALLOM embeddings on the test split.
 
 1. To train our approaches for 10 epochs by using **32 CPU cores** (if available) on UMLS. 
 ```
-python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --max_num_epochs 10
-python main.py --path_dataset_folder 'KGs/UMLS' --model 'ConEx' --max_num_epochs 10
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --max_num_epochs 10 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'ConEx' --max_num_epochs 10 --scoring_technique 'KvsAll'
 ```
 
 
 2. To train our approaches for 10 epochs by using a single GPU.
 ```
-python main.py --gpus 1 --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --max_num_epochs 10
-python main.py --gpus 1 --path_dataset_folder 'KGs/UMLS' --model 'ConEx' --max_num_epochs 10
+python main.py --gpus 1 --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --max_num_epochs 10 --scoring_technique 'KvsAll'
+python main.py --gpus 1 --path_dataset_folder 'KGs/UMLS' --model 'ConEx' --max_num_epochs 10 --scoring_technique 'KvsAll'
 ```
 
 3. To train Shallom for 1 epochs on UMLS. All information will be stored in to 'DummyFolder'.
 ```
-python main.py --gpus 1 --path_dataset_folder 'KGs/UMLS' --storage_path DummyFolder --model 'Shallom' --max_num_epochs 10
+python main.py --gpus 1 --path_dataset_folder 'KGs/UMLS' --storage_path DummyFolder --model 'Shallom' --max_num_epochs 10 --scoring_technique 'KvsAll'
 ```
 
 4. To train Shallom on Carcinogenesis by using 10-fold cross validation on Carcinogenesis.  To check GPU usages, ```watch -n 1 nvidia-smi```
@@ -90,7 +90,6 @@ python main.py --gpus 1 --path_dataset_folder 'KGs/Carcinogenesis' --model 'Shal
 ```
 python main.py --gpus 8 --distributed_backend ddp --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --max_num_epochs 5
 ```
-
 ## How to cite
 If you want to cite the framework, feel free to
 ```

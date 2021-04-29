@@ -6,48 +6,16 @@ import torch
 import datetime
 import logging
 
-import argparse
 import pytorch_lightning as pl
 import sys
-def argparse_default(description=None):
-    parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser())
-    # Paths.
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Family')
-    parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage')
 
-    # Models.
-    parser.add_argument("--model", type=str, default='ConEx',
-                        help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult")
+from models.real import DistMult, Shallom
+from models.complex import ComplEx, ConEx
+from models.octonion import OMult, ConvO
+from models.quaternion import QMult, ConvQ
 
-    # Hyperparameters pertaining to number of parameters.
-    parser.add_argument('--embedding_dim', type=int, default=10)
-    parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
-    parser.add_argument("--num_of_output_channels", type=int, default=32, help="# of output channels in convolution")
-    parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.5,
-                        help='The ratio of the size of the affine transformation w.r.t. the size of the embeddings')
 
-    # Hyperparameters pertaining to regularization.
-    parser.add_argument('--input_dropout_rate', type=float, default=0.2)
-    parser.add_argument('--hidden_dropout_rate', type=float, default=0.2)
-    parser.add_argument("--feature_map_dropout_rate", type=int, default=.3)
-    parser.add_argument('--apply_unit_norm', type=bool, default=False)
 
-    # Hyperparameters for training.
-    parser.add_argument("--max_num_epochs", type=int, default=1)
-    parser.add_argument('--batch_size', type=int, default=256)
-    parser.add_argument("--check_val_every_n_epochs", type=int, default=1000)
-
-    # Data Augmentation.
-    parser.add_argument("--add_reciprical", type=bool, default=False)
-    parser.add_argument('--num_workers', type=int, default=32, help='Number of cpus used during batching')
-    parser.add_argument('--kvsall', default=True)
-    parser.add_argument('--negative_sample_ratio', type=int, default=0)
-    parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
-                                                                        'If >2,no evaluation scenario is applied implies no evaluation.')
-    if description is None:
-        return parser.parse_args()
-    else:
-        return parser.parse_args(description)
 def preprocesses_input_args(arg):
     # To update the default value of Trainer in pytorch-lightnings
     arg.max_epochs = arg.max_num_epochs
@@ -58,6 +26,7 @@ def preprocesses_input_args(arg):
     arg.checkpoint_callback = False
     arg.logger = False
     return arg
+
 
 def create_logger(*, name, p):
     logger = logging.getLogger(name)
@@ -82,6 +51,7 @@ def create_logger(*, name, p):
 
     return logger
 
+
 def create_experiment_folder(folder_name='Experiments'):
     directory = os.getcwd() + '/' + folder_name + '/'
     folder_name = str(datetime.datetime.now())
@@ -97,13 +67,11 @@ def sanity_checking_with_arguments(args):
         print(f'embedding_dim must be strictly positive. Currently:{args.embedding_dim}')
         raise
 
-    try:
-        assert not (args.kvsall is True and args.negative_sample_ratio > 0)
-    except AssertionError:
-        print(f'Training  strategy: If args.kvsall is TRUE, args.negative_sample_ratio must be 0'
-              f'args.kvsall:{args.kvsall} and args.negative_sample_ratio:{args.negative_sample_ratio}.')
-        raise
+    if not (args.scoring_technique == 'KvsAll' or args.scoring_technique == 'NegSample'):
+            print(f'Invalid training strategy => {args.scoring_technique}.')
+            exit(1)
 
+    assert args.learning_rate>0
     try:
         assert args.num_folds_for_cv >= 0
     except AssertionError:
@@ -161,8 +129,8 @@ def compute_mrr_based_on_relation_ranking(trained_model, triples, entity_to_idx,
     predictions_save = []
     for triple in triples:
         s, p, o = triple
-        preds = trained_model.forward(torch.LongTensor([entity_to_idx[s]]),
-                                      torch.LongTensor([entity_to_idx[o]]))
+        x = (torch.LongTensor([entity_to_idx[s]]), torch.LongTensor([entity_to_idx[o]]))
+        preds = trained_model.forward(x)
 
         # Rank predicted scores
         _, ranked_idx_rels = preds.topk(k=num_rel)
@@ -197,8 +165,9 @@ def compute_mrr_based_on_entity_ranking(trained_model, triples, entity_to_idx, r
     predictions_save = []
     for triple in triples:
         s, p, o = triple
-        preds = trained_model.forward(torch.LongTensor([entity_to_idx[s]]),
-                                      torch.LongTensor([relation_to_idx[p]]))
+        x = (torch.LongTensor([entity_to_idx[s]]),
+             torch.LongTensor([relation_to_idx[p]]))
+        preds = trained_model.forward(x)
 
         # Rank predicted scores
         _, ranked_idx_entity = preds.topk(k=num_entities)
