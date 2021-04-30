@@ -8,7 +8,7 @@ def argparse_default(description=None):
     parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS')
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage')
     # Models.
-    parser.add_argument("--model", type=str, default='ConEx',
+    parser.add_argument("--model", type=str, default='DistMult',
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult")
 
     # Hyperparameters pertaining to number of parameters.
@@ -27,8 +27,8 @@ def argparse_default(description=None):
     # Hyperparameters for training.
     parser.add_argument("--max_num_epochs", type=int, default=2)
     parser.add_argument('--batch_size', type=int, default=512)
-    parser.add_argument('--scoring_technique', default=None, help="KvsAll technique or NegSample.")
-    parser.add_argument('--negative_sample_ratio', type=int, default=None)
+    parser.add_argument('--scoring_technique', default='NegSample', help="KvsAll technique or NegSample.")
+    parser.add_argument('--negative_sample_ratio', type=int, default=3)
 
     parser.add_argument('--learning_rate', default=.01)
 

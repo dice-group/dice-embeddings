@@ -1,5 +1,6 @@
 from .base_model import *
 
+
 def octonion_mul(*, O_1, O_2):
     x0, x1, x2, x3, x4, x5, x6, x7 = O_1
     y0, y1, y2, y3, y4, y5, y6, y7 = O_2
@@ -302,6 +303,7 @@ class OMult(BaseKGE):
         score = e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
         return torch.sigmoid(score)
 
+
 class ConvO(BaseKGE):
     def __init__(self, args):
         super().__init__(learning_rate=args.learning_rate)
@@ -528,6 +530,7 @@ class ConvO(BaseKGE):
             e7_score = torch.mm(self.hidden_dp_e7(conv_e7 * e7), self.emb_ent_e7.weight.transpose(1, 0))
         score = e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
         return torch.sigmoid(score)
+
     def forward_triples(self, e1_idx, rel_idx, e2_idx):
         # (1)
         # (1.1) Octonion embeddings of head entities

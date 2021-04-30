@@ -15,7 +15,6 @@ from models.octonion import OMult, ConvO
 from models.quaternion import QMult, ConvQ
 
 
-
 def preprocesses_input_args(arg):
     # To update the default value of Trainer in pytorch-lightnings
     arg.max_epochs = arg.max_num_epochs
@@ -68,10 +67,10 @@ def sanity_checking_with_arguments(args):
         raise
 
     if not (args.scoring_technique == 'KvsAll' or args.scoring_technique == 'NegSample'):
-            print(f'Invalid training strategy => {args.scoring_technique}.')
-            exit(1)
+        print(f'Invalid training strategy => {args.scoring_technique}.')
+        exit(1)
 
-    assert args.learning_rate>0
+    assert args.learning_rate > 0
     try:
         assert args.num_folds_for_cv >= 0
     except AssertionError:

@@ -21,28 +21,6 @@ python -m pytest tests
 
 2. [DistMult](https://arxiv.org/pdf/1412.6575.pdf), [ComplEx](https://arxiv.org/pdf/1606.06357.pdf).
 
-# Including a new KGE model can not be easier
-```python
-class DistMult(BaseKGE):
-    def __init__(self, args):
-        super().__init__()
-        self.name = 'DistMult'
-        self.loss = torch.nn.BCELoss()
-        # Init Embeddings
-        self.embedding_dim = args.embedding_dim
-        self.emb_ent_real = nn.Embedding(args.num_entities, args.embedding_dim)  # real
-        self.emb_rel_real = nn.Embedding(args.num_relations, args.embedding_dim)  # real
-
-    def get_embeddings(self):
-        return self.emb_ent_real.weight.data.data.detach().numpy(), self.emb_rel_real.weight.data.detach().numpy()
-
-    def forward(self, e1_idx, rel_idx):
-        emb_head_real = self.emb_ent_real(e1_idx)
-        emb_rel_real = self.emb_rel_real(rel_idx)
-        score = torch.mm(emb_head_real * emb_rel_real, self.emb_ent_real.weight.transpose(1, 0))
-        return torch.sigmoid(score)
-```
-
 # Dataset Format
 1. A dataset must be located in a folder, e.g. 'KGs/YAGO3-10'.
 
@@ -62,15 +40,13 @@ To evaluate quality of embeddings, we rely on the standard metric, i.e. mean rec
 results in evaluating quality of SHALLOM embeddings on the test split.
    
    
-### More Examples
+### Examples
 
 1. To train our approaches for 10 epochs by using **32 CPU cores** (if available) on UMLS. 
 ```
 python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --max_num_epochs 10 --scoring_technique 'KvsAll'
 python main.py --path_dataset_folder 'KGs/UMLS' --model 'ConEx' --max_num_epochs 10 --scoring_technique 'KvsAll'
 ```
-
-
 2. To train our approaches for 10 epochs by using a single GPU.
 ```
 python main.py --gpus 1 --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --max_num_epochs 10 --scoring_technique 'KvsAll'
@@ -90,6 +66,9 @@ python main.py --gpus 1 --path_dataset_folder 'KGs/Carcinogenesis' --model 'Shal
 ```
 python main.py --gpus 8 --distributed_backend ddp --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --max_num_epochs 5
 ```
+
+6. More examples can be found in run.sh.
+
 ## How to cite
 If you want to cite the framework, feel free to
 ```

@@ -355,3 +355,64 @@ class ConvQ(BaseKGE):
 
         score = real_score + i_score + j_score + k_score
         return torch.sigmoid(score)
+
+    def forward_triples(self, e1_idx, rel_idx, e2_idx):
+        # (1)
+        # (1.1) Quaternion embeddings of head entities
+        emb_head_real = self.emb_ent_real(e1_idx)
+        emb_head_i = self.emb_ent_i(e1_idx)
+        emb_head_j = self.emb_ent_j(e1_idx)
+        emb_head_k = self.emb_ent_k(e1_idx)
+        # (1.2) Quaternion embeddings of relations
+        emb_rel_real = self.emb_rel_real(rel_idx)
+        emb_rel_i = self.emb_rel_i(rel_idx)
+        emb_rel_j = self.emb_rel_j(rel_idx)
+        emb_rel_k = self.emb_rel_k(rel_idx)
+
+        # (1.3) Quaternion embeddings of relations
+        emb_tail_real = self.emb_ent_real(e2_idx)
+        emb_tail_i = self.emb_ent_i(e2_idx)
+        emb_tail_j = self.emb_ent_j(e2_idx)
+        emb_tail_k = self.emb_ent_k(e2_idx)
+
+        # (2) Apply convolution operation on (1.1) and (1.2).
+        Q_3 = self.residual_convolution(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
+                                        Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
+        conv_real, conv_imag_i, conv_imag_j, conv_imag_k = Q_3
+        if self.apply_unit_norm:
+            # (3) Quaternion multiplication of (1.1) and unit normalized (1.2).
+            r_val, i_val, j_val, k_val = quaternion_mul_with_unit_norm(
+                Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
+                Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
+            # (4)
+            # (4.1) Hadamard product of (2) with (3).
+            # (4.2) Inner product of (4.1)
+            real_score = torch.sum(conv_real * r_val * emb_tail_real, dim=1)
+            i_score = torch.sum(conv_imag_i * i_val * emb_tail_i, dim=1)
+            j_score = torch.sum(conv_imag_j * j_val * emb_tail_j, dim=1)
+            k_score = torch.sum(conv_imag_k * k_val * emb_tail_k, dim=1)
+
+        else:
+            # (3)
+            # (3.1) Apply BN + Dropout on (1.2).
+            # (3.2) Apply quaternion multiplication on (1.1) and (3.1).
+            r_val, i_val, j_val, k_val = quaternion_mul(
+                Q_1=(self.input_dp_ent_real(self.bn_ent_real(emb_head_real)),
+                     self.input_dp_ent_i(self.bn_ent_i(emb_head_i)),
+                     self.input_dp_ent_j(self.bn_ent_j(emb_head_j)),
+                     self.input_dp_ent_k(self.bn_ent_k(emb_head_k))),
+                Q_2=(self.input_dp_rel_real(self.bn_rel_real(emb_rel_real)),
+                     self.input_dp_rel_i(self.bn_rel_i(emb_rel_i)),
+                     self.input_dp_rel_j(self.bn_rel_j(emb_rel_j)),
+                     self.input_dp_rel_k(self.bn_rel_k(emb_rel_k))))
+            # (4)
+            # (4.1) Hadamard product of (2) with (3).
+            # (4.2) Dropout on (4.1).
+            # (4.3) Inner product
+            real_score = torch.sum(self.hidden_dp_real(conv_real * r_val) * emb_tail_real, dim=1)
+            i_score = torch.sum(self.hidden_dp_i(conv_imag_i * i_val) * emb_tail_i, dim=1)
+            j_score = torch.sum(self.hidden_dp_j(conv_imag_j * j_val) * emb_tail_j, dim=1)
+            k_score = torch.sum(self.hidden_dp_k(conv_imag_k * k_val) * emb_tail_k, dim=1)
+
+        score = real_score + i_score + j_score + k_score
+        return torch.sigmoid(score)
