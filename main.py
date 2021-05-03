@@ -35,7 +35,7 @@ def argparse_default(description=None):
     parser.add_argument("--check_val_every_n_epochs", type=int, default=1000)
 
     # Data Augmentation.
-    parser.add_argument("--add_reciprical", type=bool, default=True)
+    parser.add_argument("--add_reciprical", type=bool, default=False)
     parser.add_argument('--num_workers', type=int, default=4, help='Number of cpus used during batching')
     parser.add_argument('--kvsall', default=True)
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'

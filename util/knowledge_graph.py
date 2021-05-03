@@ -115,7 +115,12 @@ class KG:
                     decomposed_list_of_strings = line.split()
 
                     # 3. Sanity checking.
-                    assert len(decomposed_list_of_strings) == 3 or len(decomposed_list_of_strings) == 4
+                    try:
+                        assert len(decomposed_list_of_strings) == 3 or len(decomposed_list_of_strings) == 4
+                    except AssertionError:
+                        print(f'Invalid input triple {line}. It can not be split into 3 or 4 items')
+                        print('This triple will be ignored')
+                        continue
                     # 4. Storing
                     if len(decomposed_list_of_strings) == 4:
                         assert decomposed_list_of_strings[-1] == '.'
