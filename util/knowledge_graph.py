@@ -1,14 +1,41 @@
-from typing import Dict, List
+from typing import Dict, List, Generator
 from collections import defaultdict
 import numpy as np
+import multiprocessing as mp
+
+"""
+from multiprocessing import Pool
+
+def process_line(line):
+    return "FOO: %s" % line
+
+if __name__ == "__main__":
+    pool = Pool(4)
+    with open('file.txt') as source_file:
+        # chunk the work into batches of 4 lines at a time
+        results = pool.map(process_line, source_file, 4)
+
+    print results
+    
+or 
+
+"""
 
 
 class KG:
-    def __init__(self, data_dir=None, add_reciprical=False, load_only=None):
+    def __init__(self, data_dir=None, add_reciprical=False, load_only=None, large_kg=True):
         # 1. LOAD Data. (First pass on data)
-        self.train = self.load_data(data_dir + '/train.txt', add_reciprical=add_reciprical, load_only=load_only)
-        self.valid = self.load_data(data_dir + '/valid.txt', add_reciprical=add_reciprical, load_only=load_only)
-        self.test = self.load_data(data_dir + '/test.txt', add_reciprical=add_reciprical, load_only=load_only)
+        if large_kg is False:
+            self.train = self.load_data(data_dir + '/train.txt', add_reciprical=add_reciprical, load_only=load_only)
+            self.valid = self.load_data(data_dir + '/valid.txt', add_reciprical=add_reciprical, load_only=load_only)
+            self.test = self.load_data(data_dir + '/test.txt', add_reciprical=add_reciprical, load_only=load_only)
+        else:
+            self.train = self.load_data_parallel(data_dir + '/train.txt', add_reciprical=add_reciprical,
+                                                 load_only=load_only)
+            self.valid = self.load_data_parallel(data_dir + '/valid.txt', add_reciprical=add_reciprical,
+                                                 load_only=load_only)
+            self.test = self.load_data_parallel(data_dir + '/test.txt', add_reciprical=add_reciprical,
+                                                load_only=load_only)
 
         data = self.train + self.valid + self.test
 
@@ -171,6 +198,59 @@ class KG:
         if add_reciprical:
             data += [[i[2], i[1] + "_reverse", i[0]] for i in data]
         return data
+
+    def process(self, x):
+        # 2. Tokenize(<...> <...> <...> .) => ['<...>', '<...>','<...>','.']
+        # Tokenize(... ... ...) => ['...', '...', '...',]
+        decomposed_list_of_strings = x.split()
+
+        # 3. Sanity checking.
+        try:
+            assert len(decomposed_list_of_strings) == 3 or len(decomposed_list_of_strings) == 4
+        except AssertionError:
+            print(f'Invalid input triple {x}. It can not be split into 3 or 4 items')
+            print('This triple will be ignored')
+        # 4. Storing
+        if len(decomposed_list_of_strings) == 4:
+            assert decomposed_list_of_strings[-1] == '.'
+            decomposed_list_of_strings = self.ntriple_parser(decomposed_list_of_strings)
+        if len(decomposed_list_of_strings) == 3:
+            return decomposed_list_of_strings
+
+    def load_data_parallel(self, data_path, add_reciprical=True, load_only=None)->Generator:
+        # line can be 1 or 2
+        # a) <...> <...> <...> .
+        # b) <...> <...> "..." .
+        # c) ... ... ...
+        # (a) and (b) correspond to the N-Triples format
+        # (c) corresponds to the format of current link prediction benchmark datasets.
+        if add_reciprical:
+            print('In data parallel loading, we do not apply recipriocal triples')
+
+        # init objects
+        pool = mp.Pool(32)
+        print(f'{data_path} is being read.')
+        try:
+            jobs = []
+            with open(data_path, "r") as f:
+                for line in f:
+                    # 1. Ignore lines with *** " *** or does only contain 2 or less characters.
+                    if '"' in line or len(line) < 3:
+                        continue
+                    jobs.append(pool.apply_async(self.process, (line,)))
+                    if load_only is not None:
+                        if len(jobs) == load_only:
+                            break
+        except FileNotFoundError:
+            print(f'{data_path} is not found')
+            return []
+
+        # wait for all jobs to finish
+        for job in jobs:
+            job.get()
+        # clean up
+        pool.close()
+        return [i.get() for i in jobs]
 
     @staticmethod
     def get_entities_and_relations(data):
