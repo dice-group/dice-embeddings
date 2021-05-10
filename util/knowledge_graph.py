@@ -1,71 +1,95 @@
+import time
 from typing import Dict, List, Generator
 from collections import defaultdict
 import numpy as np
-import multiprocessing as mp
-
-"""
-from multiprocessing import Pool
-
-def process_line(line):
-    return "FOO: %s" % line
-
-if __name__ == "__main__":
-    pool = Pool(4)
-    with open('file.txt') as source_file:
-        # chunk the work into batches of 4 lines at a time
-        results = pool.map(process_line, source_file, 4)
-
-    print results
-    
-or 
-
-"""
+import multiprocessing
+from itertools import zip_longest
+import pickle
+import json
 
 
 class KG:
-    def __init__(self, data_dir=None, add_reciprical=False, load_only=None, large_kg=True):
-        # 1. LOAD Data. (First pass on data)
-        if large_kg is False:
+    def __init__(self, data_dir=None, deserialize_flag=None, add_reciprical=False, load_only=None):
+
+        if deserialize_flag is None:
+            # 1. LOAD Data. (First pass on data)
             self.train = self.load_data(data_dir + '/train.txt', add_reciprical=add_reciprical, load_only=load_only)
             self.valid = self.load_data(data_dir + '/valid.txt', add_reciprical=add_reciprical, load_only=load_only)
             self.test = self.load_data(data_dir + '/test.txt', add_reciprical=add_reciprical, load_only=load_only)
+            data = self.train + self.valid + self.test
+
+            self.entity_idx = None
+            self.relation_idx = None
+            self.train_set_idx = None
+            self.val_set_idx = None
+            self.test_set_idx = None
+            # 2. INDEX. (SECOND pass over all triples)
+            self.entity_idx, self.relation_idx, self.er_vocab, self.re_vocab, self.ee_vocab = self.index(data)
+
+            # 3. INDEX Triples for training
+            self.train, self.valid, self.test = self.triple_indexing()
+
+            # 4. Display info
+            s = '------------------- Description of Dataset' + data_dir + '----------------------------'
+            print(f'\n{s}')
+            print(f'Number of triples: {len(data)}')
+            print(f'Number of entities: {len(self.entity_idx)}')
+            print(f'Number of relations: {len(self.relation_idx)}')
+
+            print(f'Number of triples on train set: {len(self.train)}')
+            print(f'Number of triples on valid set: {len(self.valid)}')
+            print(f'Number of triples on test set: {len(self.test)}')
+            s = len(s) * '-'
+            print(f'{s}\n')
+
+            # Free Memory
+            del data
         else:
-            self.train = self.load_data_parallel(data_dir + '/train.txt', add_reciprical=add_reciprical,
-                                                 load_only=load_only)
-            self.valid = self.load_data_parallel(data_dir + '/valid.txt', add_reciprical=add_reciprical,
-                                                 load_only=load_only)
-            self.test = self.load_data_parallel(data_dir + '/test.txt', add_reciprical=add_reciprical,
-                                                load_only=load_only)
+            print('DESERIALIZE')
+            self.deserialize(deserialize_flag)
 
-        data = self.train + self.valid + self.test
+    def deserialize(self, p):
+        """
+        """
+        print('Deserialize er_vocab')
+        with open(p + '/er_vocab.pickle', 'rb') as reader:
+            self.er_vocab = pickle.load(reader)
+        print('Deserialize re_vocab')
+        with open(p + '/re_vocab.pickle', 'rb') as reader:
+            self.re_vocab = pickle.load(reader)
+        print('Deserialize ee_vocab')
+        with open(p + '/ee_vocab.pickle', 'rb') as reader:
+            self.ee_vocab = pickle.load(reader)
 
-        self.entity_idx = None
-        self.relation_idx = None
-        self.train_set_idx = None
-        self.val_set_idx = None
-        self.test_set_idx = None
+        # Serialize JsonFiles
+        print('Deserialize entity_idx')
+        with open(p + "/entity_idx.json", "r") as reader:
+            self.entity_idx = json.load(reader)
+        print('Deserialize relation_idx')
+        with open(p + "/relation_idx.json", "r") as reader:
+            self.relation_idx = json.load(reader)
+        print('Deserialize index datasets')
+        loaded = np.load(p + '/indexed_splits.npz')
 
-        # 2. INDEX. (SECOND pass over all triples)
-        self.entity_idx, self.relation_idx, self.er_vocab, self.re_vocab, self.ee_vocab = self.index(data)
+        self.train = loaded['train']
+        self.valid = loaded['valid']
+        self.test = loaded['test']
 
-        # 3. INDEX Triples for training
-        self.train, self.valid, self.test = self.triple_indexing()
+    def serialize(self, p):
+        # Pickle tuple mappings.
+        with open(p + '/er_vocab.pickle', 'wb') as handle:
+            pickle.dump(self.er_vocab, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        with open(p + '/re_vocab.pickle', 'wb') as handle:
+            pickle.dump(self.re_vocab, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        with open(p + '/ee_vocab.pickle', 'wb') as handle:
+            pickle.dump(self.ee_vocab, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-        # 4. Display info
-        s = '------------------- Description of Dataset' + data_dir + '----------------------------'
-        print(f'\n{s}')
-        print(f'Number of triples: {len(data)}')
-        print(f'Number of entities: {len(self.entity_idx)}')
-        print(f'Number of relations: {len(self.relation_idx)}')
-
-        print(f'Number of triples on train set: {len(self.train)}')
-        print(f'Number of triples on valid set: {len(self.valid)}')
-        print(f'Number of triples on test set: {len(self.test)}')
-        s = len(s) * '-'
-        print(f'{s}\n')
-
-        # Free Memory
-        del data
+        # Serialize JsonFiles
+        with open(p + "/entity_idx.json", "w") as write_file:
+            json.dump(self.entity_idx, write_file)
+        with open(p + "/relation_idx.json", "w") as write_file:
+            json.dump(self.relation_idx, write_file)
+        np.savez_compressed(p + '/indexed_splits', train=self.train, valid=self.valid, test=self.test)
 
     @staticmethod
     def index(data) -> (Dict, Dict, Dict, Dict, Dict):
@@ -112,8 +136,8 @@ class KG:
                 [(self.entity_idx[s], self.relation_idx[p], self.entity_idx[o]) for s, p, o in
                  self.test_set])
         else:
-            val_set_idx = []
-            test_set_idx = []
+            val_set_idx = np.array([])
+            test_set_idx = np.array([])
         return train_set_idx, val_set_idx, test_set_idx
 
     @property
@@ -217,7 +241,7 @@ class KG:
         if len(decomposed_list_of_strings) == 3:
             return decomposed_list_of_strings
 
-    def load_data_parallel(self, data_path, add_reciprical=True, load_only=None)->Generator:
+    def load_data_parallel(self, data_path, add_reciprical=True, load_only=None) -> Generator:
         # line can be 1 or 2
         # a) <...> <...> <...> .
         # b) <...> <...> "..." .
@@ -226,17 +250,64 @@ class KG:
         # (c) corresponds to the format of current link prediction benchmark datasets.
         if add_reciprical:
             print('In data parallel loading, we do not apply recipriocal triples')
+        """
+        https://stackoverflow.com/questions/8717179/chunking-data-from-a-large-file-for-multiprocessing
+        """
+        from pathlib import Path
+        size_in_bytes = Path(data_path).stat().st_size  # the size, in bytes,
+        num_cores = 4
+        import math
 
+        chunk_size_per_core = math.ceil(size_in_bytes / num_cores)
+        pool = multiprocessing.Pool(4)
+        # data = []
+        with open(data_path, "r") as reader:
+            for _ in range(num_cores):
+                reader.seek(chunk_size_per_core, 0)  # move the file pointer forward 6 bytes (i.e. to the 'w')
+                # data.extend(pool.starmap_async(self.process, reader.readlines()[0]))
+        return True
+        exit(1)
+        # wait for all jobs to finish
+        for job in data:
+            job.get()
+
+        # clean up
+        pool.close()
+
+        print(p)
+        p.join()
+        exit(1)
         # init objects
-        pool = mp.Pool(32)
         print(f'{data_path} is being read.')
+
+        exit(1)
+        # init objects
+        pool = mp.Pool(4)
+        jobs = []
+
+        # create jobs
+        for chunkStart, chunkSize in chunkify(data_path):
+            jobs.append(pool.apply_async(process_wrapper, (data_path, chunkStart, chunkSize)))
+
+        # wait for all jobs to finish
+        for job in jobs:
+            job.get()
+
+        # clean up
+        pool.close()
+
+        exit(1)
         try:
-            jobs = []
             with open(data_path, "r") as f:
+
+                print(f)
+                exit(1)
                 for line in f:
                     # 1. Ignore lines with *** " *** or does only contain 2 or less characters.
                     if '"' in line or len(line) < 3:
                         continue
+                    results = pool.map(self.process, line, 4)
+
                     jobs.append(pool.apply_async(self.process, (line,)))
                     if load_only is not None:
                         if len(jobs) == load_only:
@@ -338,3 +409,19 @@ class KG:
         entities = sorted(list(set([d[0] for d in data] + [d[2] for d in data])))
         return entities
     """
+
+
+def process_chunk(d):
+    """Replace this with your own function
+    that processes data one line at a
+    time"""
+
+    d = d.strip() + ' processed'
+    return d
+
+
+def grouper(n, iterable, padvalue=None):
+    """grouper(3, 'abcdefg', 'x') -->
+    ('a','b','c'), ('d','e','f'), ('g','x','x')"""
+
+    return zip_longest(*[iter(iterable)] * n)

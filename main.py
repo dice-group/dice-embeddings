@@ -8,8 +8,8 @@ def argparse_default(description=None):
     # Paths.
     parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS')
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage')
-    parser.add_argument("--load_only", type=int, default=None,help='Loads only first N triples. If None, load all.')
-
+    parser.add_argument("--load_only", type=int, default=None, help='Loads only first N triples. If None, load all.')
+    parser.add_argument("--deserialize_flag", type=str, default=None, help='Path of a folder for deserialization.')
     # Models.
     parser.add_argument("--model", type=str, default='ConEx',
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult")

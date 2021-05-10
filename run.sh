@@ -4,11 +4,10 @@ python -u -c 'import torch; print(torch.__version__)'
 echo "Start Training......"
 
 # Checked
-python main.py --profile True --path_dataset_folder 'KGs/UMLS' --model 'ConEx' --max_num_epochs 3 --scoring_technique 'KvsAll'
+python main.py --load_only 10 --path_dataset_folder 'KGs/UMLS' --model 'ConEx' --max_num_epochs 3 --scoring_technique 'KvsAll'
 python main.py --path_dataset_folder 'KGs/Family' --model 'ConEx' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
 python main.py --path_dataset_folder 'KGs/Family' --model 'ConEx' --max_num_epochs 3 --scoring_technique 'KvsAll' --num_folds_for_cv 3
 python main.py --path_dataset_folder 'KGs/Family' --model 'ConEx' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3 --num_folds_for_cv 3
-
 
 # Checked
 python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --max_num_epochs 3 --scoring_technique 'KvsAll'

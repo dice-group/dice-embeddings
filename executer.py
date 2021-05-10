@@ -20,11 +20,16 @@ class Execute:
         args = preprocesses_input_args(args)
         sanity_checking_with_arguments(args)
         self.args = args
-        self.dataset = KG(data_dir=args.path_dataset_folder, add_reciprical=args.add_reciprical,
+        self.dataset = KG(data_dir=args.path_dataset_folder, deserialize_flag=args.deserialize_flag,
+                          add_reciprical=args.add_reciprical,
                           load_only=args.load_only)
-        # Save
+
+        # Create folder to serialize data
         self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
         self.storage_path = create_experiment_folder(folder_name=args.storage_path)
+        self.dataset.serialize(self.storage_path)
+
+        # Create logger
         self.logger = create_logger(name=self.args.model, p=self.storage_path)
         self.trainer = None
         self.args.default_root_dir = self.storage_path + '/checkpoints'
@@ -146,11 +151,11 @@ class Execute:
         # 5. Train model
         self.trainer.fit(model, train_dataloader=dataset.train_dataloader())
         # 6. Test model on validation and test sets if possible.
-        if self.dataset.val_set_idx:
-            self.evaluate_lp_k_vs_all(model, self.dataset.val_set_idx, 'Evaluation of Validation set via KvsALL',
+        if len(self.dataset.valid) > 0:
+            self.evaluate_lp_k_vs_all(model, self.dataset.valid, 'Evaluation of Validation set via KvsALL',
                                       form_of_labelling)
-        if self.dataset.test_set_idx:
-            self.evaluate_lp_k_vs_all(model, self.dataset.test_set_idx, 'Evaluation of Test set via KvsALL',
+        if len(self.dataset.test) > 0:
+            self.evaluate_lp_k_vs_all(model, self.dataset.test, 'Evaluation of Test set via KvsALL',
                                       form_of_labelling)
         return model
 
