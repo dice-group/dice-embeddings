@@ -4,11 +4,11 @@ import numpy as np
 
 
 class KG:
-    def __init__(self, data_dir=None, add_reciprical=False,load_only=None):
+    def __init__(self, data_dir=None, add_reciprical=False, load_only=None):
         # 1. LOAD Data. (First pass on data)
-        self.train = self.load_data(data_dir + '/train.txt', add_reciprical=add_reciprical,load_only=load_only)
-        self.valid = self.load_data(data_dir + '/valid.txt', add_reciprical=add_reciprical,load_only=load_only)
-        self.test = self.load_data(data_dir + '/test.txt', add_reciprical=add_reciprical,load_only=load_only)
+        self.train = self.load_data(data_dir + '/train.txt', add_reciprical=add_reciprical, load_only=load_only)
+        self.valid = self.load_data(data_dir + '/valid.txt', add_reciprical=add_reciprical, load_only=load_only)
+        self.test = self.load_data(data_dir + '/test.txt', add_reciprical=add_reciprical, load_only=load_only)
 
         data = self.train + self.valid + self.test
 
@@ -128,7 +128,7 @@ class KG:
             exit(1)
         return [s, p, o]
 
-    def load_data(self, data_path, add_reciprical=True,load_only=None):
+    def load_data(self, data_path, add_reciprical=True, load_only=None):
         # line can be 1 or 2
         # a) <...> <...> <...> .
         # b) <...> <...> "..." .
@@ -139,9 +139,7 @@ class KG:
         try:
             data = []
             with open(data_path, "r") as f:
-
-                for line in f.readlines():
-
+                for line in f:
                     # 1. Ignore lines with *** " *** or does only contain 2 or less characters.
                     if '"' in line or len(line) < 3:
                         continue
@@ -164,9 +162,8 @@ class KG:
                     if len(decomposed_list_of_strings) == 3:
                         data.append(decomposed_list_of_strings)
 
-
                     if load_only is not None:
-                        if len(data)==load_only:
+                        if len(data) == load_only:
                             break
         except FileNotFoundError:
             print(f'{data_path} is not found')

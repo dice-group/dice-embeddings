@@ -39,12 +39,12 @@ class BaseKGE(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x_batch, y_batch = batch
         train_loss = self.loss_function(self.forward(x_batch), y_batch)
-        return train_loss#{'loss': train_loss}
+        return {'loss': train_loss}
 
     def training_epoch_end(self, outputs) -> None:
         """ DBpedia debugging removed."""
-        #avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-        #self.log('avg_loss', avg_loss, on_epoch=True, prog_bar=True)
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        self.log('avg_loss', avg_loss, on_epoch=True, prog_bar=True)
 
     def validation_step(self, batch, batch_idx):
         if len(batch) == 4:
