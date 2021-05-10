@@ -7,7 +7,6 @@ from itertools import zip_longest
 import pickle
 import json
 
-
 class KG:
     def __init__(self, data_dir=None, deserialize_flag=None, add_reciprical=False, load_only=None):
 
@@ -216,6 +215,10 @@ class KG:
                     if load_only is not None:
                         if len(data) == load_only:
                             break
+
+                    if len(data) % 50_000_000 == 0:
+                        print(f'Size of already parsed data {len(data)}')
+
         except FileNotFoundError:
             print(f'{data_path} is not found')
             return []
@@ -240,88 +243,6 @@ class KG:
             decomposed_list_of_strings = self.ntriple_parser(decomposed_list_of_strings)
         if len(decomposed_list_of_strings) == 3:
             return decomposed_list_of_strings
-
-    def load_data_parallel(self, data_path, add_reciprical=True, load_only=None) -> Generator:
-        # line can be 1 or 2
-        # a) <...> <...> <...> .
-        # b) <...> <...> "..." .
-        # c) ... ... ...
-        # (a) and (b) correspond to the N-Triples format
-        # (c) corresponds to the format of current link prediction benchmark datasets.
-        if add_reciprical:
-            print('In data parallel loading, we do not apply recipriocal triples')
-        """
-        https://stackoverflow.com/questions/8717179/chunking-data-from-a-large-file-for-multiprocessing
-        """
-        from pathlib import Path
-        size_in_bytes = Path(data_path).stat().st_size  # the size, in bytes,
-        num_cores = 4
-        import math
-
-        chunk_size_per_core = math.ceil(size_in_bytes / num_cores)
-        pool = multiprocessing.Pool(4)
-        # data = []
-        with open(data_path, "r") as reader:
-            for _ in range(num_cores):
-                reader.seek(chunk_size_per_core, 0)  # move the file pointer forward 6 bytes (i.e. to the 'w')
-                # data.extend(pool.starmap_async(self.process, reader.readlines()[0]))
-        return True
-        exit(1)
-        # wait for all jobs to finish
-        for job in data:
-            job.get()
-
-        # clean up
-        pool.close()
-
-        print(p)
-        p.join()
-        exit(1)
-        # init objects
-        print(f'{data_path} is being read.')
-
-        exit(1)
-        # init objects
-        pool = mp.Pool(4)
-        jobs = []
-
-        # create jobs
-        for chunkStart, chunkSize in chunkify(data_path):
-            jobs.append(pool.apply_async(process_wrapper, (data_path, chunkStart, chunkSize)))
-
-        # wait for all jobs to finish
-        for job in jobs:
-            job.get()
-
-        # clean up
-        pool.close()
-
-        exit(1)
-        try:
-            with open(data_path, "r") as f:
-
-                print(f)
-                exit(1)
-                for line in f:
-                    # 1. Ignore lines with *** " *** or does only contain 2 or less characters.
-                    if '"' in line or len(line) < 3:
-                        continue
-                    results = pool.map(self.process, line, 4)
-
-                    jobs.append(pool.apply_async(self.process, (line,)))
-                    if load_only is not None:
-                        if len(jobs) == load_only:
-                            break
-        except FileNotFoundError:
-            print(f'{data_path} is not found')
-            return []
-
-        # wait for all jobs to finish
-        for job in jobs:
-            job.get()
-        # clean up
-        pool.close()
-        return [i.get() for i in jobs]
 
     @staticmethod
     def get_entities_and_relations(data):
@@ -409,19 +330,3 @@ class KG:
         entities = sorted(list(set([d[0] for d in data] + [d[2] for d in data])))
         return entities
     """
-
-
-def process_chunk(d):
-    """Replace this with your own function
-    that processes data one line at a
-    time"""
-
-    d = d.strip() + ' processed'
-    return d
-
-
-def grouper(n, iterable, padvalue=None):
-    """grouper(3, 'abcdefg', 'x') -->
-    ('a','b','c'), ('d','e','f'), ('g','x','x')"""
-
-    return zip_longest(*[iter(iterable)] * n)
