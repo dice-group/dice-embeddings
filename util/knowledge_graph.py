@@ -1,65 +1,101 @@
-from typing import List
+from typing import Dict, List
 from collections import defaultdict
+import numpy as np
 
 
 class KG:
-    def __init__(self, data_dir=None, add_reciprical=False):
-        # 1. First pass through data
+    def __init__(self, data_dir=None, add_reciprical=False,load_only=None):
+        # 1. LOAD Data. (First pass on data)
+        self.train = self.load_data(data_dir + '/train.txt', add_reciprical=add_reciprical,load_only=load_only)
+        self.valid = self.load_data(data_dir + '/valid.txt', add_reciprical=add_reciprical,load_only=load_only)
+        self.test = self.load_data(data_dir + '/test.txt', add_reciprical=add_reciprical,load_only=load_only)
+
+        data = self.train + self.valid + self.test
+
+        self.entity_idx = None
+        self.relation_idx = None
+        self.train_set_idx = None
+        self.val_set_idx = None
+        self.test_set_idx = None
+
+        # 2. INDEX. (SECOND pass over all triples)
+        self.entity_idx, self.relation_idx, self.er_vocab, self.re_vocab, self.ee_vocab = self.index(data)
+
+        # 3. INDEX Triples for training
+        self.train, self.valid, self.test = self.triple_indexing()
+
+        # 4. Display info
         s = '------------------- Description of Dataset' + data_dir + '----------------------------'
         print(f'\n{s}')
-        self.__train = self.load_data(data_dir + '/train.txt', add_reciprical=add_reciprical)
-        self.__valid = self.load_data(data_dir + '/valid.txt', add_reciprical=add_reciprical)
-        self.__test = self.load_data(data_dir + '/test.txt', add_reciprical=add_reciprical)
+        print(f'Number of triples: {len(data)}')
+        print(f'Number of entities: {len(self.entity_idx)}')
+        print(f'Number of relations: {len(self.relation_idx)}')
 
-        self.__data = self.__train + self.__valid + self.__test
-        self.__entities = self.get_entities(self.__data)
-        self.__relations = self.get_relations(self.__data)
-        self.__entity_idxs = {self.__entities[i]: i for i in range(len(self.__entities))}
-        self.__relation_idxs = {self.__relations[i]: i for i in range(len(self.__relations))}
-        print(f'Number of triples: {len(self.__data)}')
-        print(f'Number of entities: {len(self.__entities)}')
-        print(f'Number of relations: {len(self.__relations)}')
-
-        print(f'Number of triples on train set: {len(self.__train)}')
-        print(f'Number of triples on valid set: {len(self.__valid)}')
-        print(f'Number of triples on test set: {len(self.__test)}')
+        print(f'Number of triples on train set: {len(self.train)}')
+        print(f'Number of triples on valid set: {len(self.valid)}')
+        print(f'Number of triples on test set: {len(self.test)}')
         s = len(s) * '-'
         print(f'{s}\n')
 
-        self.train_set_idx = [(self.entity_to_idx[s], self.relation_to_idx[p], self.entity_to_idx[o]) for s, p, o in
-                              self.train_set]
+        # Free Memory
+        del data
+
+    @staticmethod
+    def index(data) -> (Dict, Dict, Dict, Dict, Dict):
+        # Entity to integer indexing
+        entity_idxs = {}
+        # Relation to integer indexing
+        relation_idxs = {}
+
+        # Mapping from (head entity & relation) to tail entity
+        er_vocab = defaultdict(list)
+        # Mapping from (relation & tail entity) to head entity
+        pe_vocab = defaultdict(list)
+        # Mapping from (head entity & tail entity) to relation
+        ee_vocab = defaultdict(list)
+
+        for triple in data:
+            h, r, t = triple[0], triple[1], triple[2]
+
+            # 1. Integer indexing entities and relations
+            entity_idxs.setdefault(h, len(entity_idxs))
+            entity_idxs.setdefault(t, len(entity_idxs))
+            relation_idxs.setdefault(r, len(relation_idxs))
+
+            # 2. Mappings for filtered evaluation
+            # 2.1. (HEAD,RELATION) => TAIL
+            er_vocab[(entity_idxs[h], relation_idxs[r])].append(entity_idxs[t])
+            # 2.2. (RELATION,TAIL) => HEAD
+            pe_vocab[(relation_idxs[r], entity_idxs[t])].append(entity_idxs[h])
+            # 2.3. (HEAD,TAIL) => RELATION
+            ee_vocab[(entity_idxs[h], entity_idxs[t])].append(relation_idxs[r])
+
+        return entity_idxs, relation_idxs, er_vocab, pe_vocab, ee_vocab
+
+    def triple_indexing(self) -> (np.array, np.array, np.array):
+        train_set_idx = np.array(
+            [(self.entity_idx[s], self.relation_idx[p], self.entity_idx[o]) for s, p, o in
+             self.train_set])
+
         if self.is_valid_test_available():
-            self.val_set_idx = [(self.entity_to_idx[s], self.relation_to_idx[p], self.entity_to_idx[o]) for s, p, o in
-                                self.val_set]
-            self.test_set_idx = [(self.entity_to_idx[s], self.relation_to_idx[p], self.entity_to_idx[o]) for s, p, o in
-                                 self.test_set]
+            val_set_idx = np.array(
+                [(self.entity_idx[s], self.relation_idx[p], self.entity_idx[o]) for s, p, o in
+                 self.val_set])
+            test_set_idx = np.array(
+                [(self.entity_idx[s], self.relation_idx[p], self.entity_idx[o]) for s, p, o in
+                 self.test_set])
         else:
-            self.val_set_idx = None
-            self.test_set_idx = None
-
-    @property
-    def entities(self):
-        return self.__entities
-
-    @property
-    def relations(self):
-        return self.__relations
+            val_set_idx = []
+            test_set_idx = []
+        return train_set_idx, val_set_idx, test_set_idx
 
     @property
     def num_entities(self):
-        return len(self.__entities)
-
-    @property
-    def entity_to_idx(self):
-        return self.__entity_idxs
-
-    @property
-    def relation_to_idx(self):
-        return self.__relation_idxs
+        return len(self.entity_idx)
 
     @property
     def num_relations(self):
-        return len(self.__relations)
+        return len(self.relation_idx)
 
     @staticmethod
     def ntriple_parser(l: List) -> List:
@@ -92,7 +128,7 @@ class KG:
             exit(1)
         return [s, p, o]
 
-    def load_data(self, data_path, add_reciprical=True):
+    def load_data(self, data_path, add_reciprical=True,load_only=None):
         # line can be 1 or 2
         # a) <...> <...> <...> .
         # b) <...> <...> "..." .
@@ -127,6 +163,11 @@ class KG:
                         data.append(self.ntriple_parser(decomposed_list_of_strings))
                     if len(decomposed_list_of_strings) == 3:
                         data.append(decomposed_list_of_strings)
+
+
+                    if load_only is not None:
+                        if len(data)==load_only:
+                            break
         except FileNotFoundError:
             print(f'{data_path} is not found')
             return []
@@ -135,32 +176,53 @@ class KG:
         return data
 
     @staticmethod
-    def get_relations(data):
-        relations = sorted(list(set([d[1] for d in data])))
-        return relations
+    def get_entities_and_relations(data):
+        entities = set()
+        relations = set()
 
-    @staticmethod
-    def get_entities(data):
-        entities = sorted(list(set([d[0] for d in data] + [d[2] for d in data])))
-        return entities
+        for triple in data:
+            h, r, t = triple[0], triple[1], triple[2]
+            entities.add(h)
+            entities.add(t)
+            relations.add(r)
+        return sorted(list(entities)), sorted(list(relations))
 
     def is_valid_test_available(self):
-        if len(self.__valid) > 0 and len(self.__test) > 0:
+        if len(self.valid) > 0 and len(self.test) > 0:
             return True
         return False
 
     @property
     def train_set(self):
-        return self.__train
+        return self.train
 
     @property
     def val_set(self):
-        return self.__valid
+        return self.valid
 
     @property
     def test_set(self):
-        return self.__test
+        return self.test
 
+    @property
+    def entities_str(self) -> List:
+        """
+        entity_idx is a dictionary where keys are string representation of entities and
+        values are integer indexes
+        :return: list of ordered entities
+        """
+        return list(self.entity_idx.keys())
+
+    @property
+    def relations_str(self) -> List:
+        """
+        relation_idx is a dictionary where keys are string representation of relations and
+        values are integer indexes
+        :return: list of ordered relations
+        """
+        return list(self.relation_idx.keys())
+
+    """    
     def get_er_idx_vocab(self):
         # head entity and relation
         er_vocab = defaultdict(list)
@@ -186,3 +248,16 @@ class KG:
             s, p, o = triple[0], triple[1], triple[2]
             ee_vocab[(self.entity_to_idx[s], self.entity_to_idx[o])].append(self.relation_to_idx[p])
         return ee_vocab
+    """
+
+    """
+    @staticmethod
+    def get_relations(data):
+        relations = sorted(list(set([d[1] for d in data])))
+        return relations
+
+    @staticmethod
+    def get_entities(data):
+        entities = sorted(list(set([d[0] for d in data] + [d[2] for d in data])))
+        return entities
+    """

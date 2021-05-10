@@ -8,7 +8,7 @@ from torch.nn.init import xavier_normal_
 
 
 class BaseKGE(pl.LightningModule):
-    def __init__(self,learning_rate=.1):
+    def __init__(self, learning_rate=.1):
         super().__init__()
         self.name = 'Not init'
         self.learning_rate = learning_rate
@@ -39,11 +39,12 @@ class BaseKGE(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x_batch, y_batch = batch
         train_loss = self.loss_function(self.forward(x_batch), y_batch)
-        return {'loss': train_loss}
+        return train_loss#{'loss': train_loss}
 
     def training_epoch_end(self, outputs) -> None:
-        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-        self.log('avg_loss', avg_loss, on_epoch=True, prog_bar=True)
+        """ DBpedia debugging removed."""
+        #avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        #self.log('avg_loss', avg_loss, on_epoch=True, prog_bar=True)
 
     def validation_step(self, batch, batch_idx):
         if len(batch) == 4:

@@ -20,7 +20,9 @@ class Execute:
         args = preprocesses_input_args(args)
         sanity_checking_with_arguments(args)
         self.args = args
-        self.dataset = KG(data_dir=args.path_dataset_folder, add_reciprical=args.add_reciprical)
+        self.dataset = KG(data_dir=args.path_dataset_folder, add_reciprical=args.add_reciprical,
+                          load_only=args.load_only)
+        # Save
         self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
         self.storage_path = create_experiment_folder(folder_name=args.storage_path)
         self.logger = create_logger(name=self.args.model, p=self.storage_path)
@@ -61,16 +63,17 @@ class Execute:
         else:
             entity_emb, relation_ebm = trained_model.get_embeddings()
             try:
-                pd.DataFrame(relation_ebm, index=self.dataset.relations).to_csv(
-                    self.storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
-            except:
+                pd.DataFrame(relation_ebm, index=self.dataset.relations_str).to_csv(
+                    self.storage_path + '/' + trained_model.name + '_relation_embeddings.csv', chunksize=100_000)
+            except KeyError or AttributeError as e:
                 print('Exception occurred at saving relation embeddings. Computation will continue')
-
+                print(e)
         try:
-            pd.DataFrame(entity_emb, index=self.dataset.entities).to_csv(
-                self.storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
-        except:
+            pd.DataFrame(entity_emb, index=self.dataset.entities_str).to_csv(
+                self.storage_path + '/' + trained_model.name + '_entity_embeddings.csv', chunksize=100_000)
+        except KeyError or AttributeError as e:
             print('Exception occurred at saving entity embeddings.Computation will continue')
+            print(e)
 
     def start(self) -> None:
         # 1. Train and Evaluate
@@ -130,11 +133,11 @@ class Execute:
         model, form_of_labelling = select_model(self.args)
         self.logger.info(f' Standard training starts: {model.name}-labeling:{form_of_labelling}')
         # 2. Create training data.
-        dataset = StandardDataModule(train_set_idx=self.dataset.train_set_idx,
-                                     valid_set_idx=self.dataset.val_set_idx,
-                                     test_set_idx=self.dataset.test_set_idx,
-                                     entities_idx=self.dataset.entity_to_idx,
-                                     relations_idx=self.dataset.relation_to_idx,
+        dataset = StandardDataModule(train_set_idx=self.dataset.train,
+                                     valid_set_idx=self.dataset.valid,
+                                     test_set_idx=self.dataset.test,
+                                     entities_idx=self.dataset.entity_idx,
+                                     relations_idx=self.dataset.relation_idx,
                                      form=form_of_labelling,
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_workers)
@@ -161,11 +164,11 @@ class Execute:
         form_of_labelling = 'NegativeSampling'
         self.logger.info(f' Training starts: {model.name}-labeling:{form_of_labelling}')
 
-        dataset = StandardDataModule(train_set_idx=self.dataset.train_set_idx,
-                                     valid_set_idx=self.dataset.val_set_idx,
-                                     test_set_idx=self.dataset.test_set_idx,
-                                     entities_idx=self.dataset.entity_to_idx,
-                                     relations_idx=self.dataset.relation_to_idx,
+        dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
+                                     valid_set_idx=self.dataset.val_set,
+                                     test_set_idx=self.dataset.test_set,
+                                     entities_idx=self.dataset.entity_idx,
+                                     relations_idx=self.dataset.relation_idx,
                                      form=form_of_labelling,
                                      neg_sample_ratio=self.neg_ratio,
                                      batch_size=self.args.batch_size,
@@ -188,23 +191,22 @@ class Execute:
             hits.append([])
 
         if form_of_labelling == 'RelationPrediction':
-            ee_vocab = self.dataset.get_ee_idx_vocab()
 
             for i in range(0, len(triple_idx), self.args.batch_size):
-                data_batch, _ = self.get_batch_1_to_N(ee_vocab, triple_idx, i, self.dataset.num_entities)
+                data_batch, _ = self.get_batch_1_to_N(self.dataset.ee_vocab, triple_idx, i, self.dataset.num_entities)
                 e1_idx = torch.tensor(data_batch[:, 0])
                 r_idx = torch.tensor(data_batch[:, 1])
 
                 e2_idx = torch.tensor(data_batch[:, 2])
                 predictions = model.forward_k_vs_all(e1_idx=e1_idx, e2_idx=e2_idx)
                 for j in range(data_batch.shape[0]):
-                    filt = ee_vocab[(data_batch[j][0], data_batch[j][1])]
+                    filt = self.dataset.ee_vocab[(data_batch[j][0], data_batch[j][1])]
                     target_value = predictions[j, r_idx[j]].item()
                     predictions[j, filt] = 0.0
                     predictions[j, r_idx[j]] = target_value
 
                 sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
-                sort_idxs = sort_idxs.cpu().numpy()
+                sort_idxs = sort_idxs.detach()  # cpu().numpy()
                 for j in range(data_batch.shape[0]):
                     rank = np.where(sort_idxs[j] == r_idx[j].item())[0][0]
                     ranks.append(rank + 1)
@@ -212,22 +214,20 @@ class Execute:
                         if rank <= hits_level:
                             hits[hits_level].append(1.0)
         else:
-            er_vocab = self.dataset.get_er_idx_vocab()
-
             for i in range(0, len(triple_idx), self.args.batch_size):
-                data_batch, _ = self.get_batch_1_to_N(er_vocab, triple_idx, i, self.dataset.num_relations)
+                data_batch, _ = self.get_batch_1_to_N(self.dataset.er_vocab, triple_idx, i, self.dataset.num_relations)
                 e1_idx = torch.tensor(data_batch[:, 0])
                 r_idx = torch.tensor(data_batch[:, 1])
                 e2_idx = torch.tensor(data_batch[:, 2])
                 predictions = model.forward_k_vs_all(e1_idx=e1_idx, rel_idx=r_idx)
                 for j in range(data_batch.shape[0]):
-                    filt = er_vocab[(data_batch[j][0], data_batch[j][1])]
+                    filt = self.dataset.er_vocab[(data_batch[j][0], data_batch[j][1])]
                     target_value = predictions[j, e2_idx[j]].item()
                     predictions[j, filt] = 0.0
                     predictions[j, e2_idx[j]] = target_value
 
                 sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
-                sort_idxs = sort_idxs.cpu().numpy()
+                sort_idxs = sort_idxs.detach()  # cpu().numpy()
                 for j in range(data_batch.shape[0]):
                     rank = np.where(sort_idxs[j] == e2_idx[j].item())[0][0]
                     ranks.append(rank + 1)
@@ -249,9 +249,6 @@ class Execute:
         self.logger.info(info)
         hits = dict()
         reciprocal_ranks = []
-        er_vocab = self.dataset.get_er_idx_vocab()
-        po_vocab = self.dataset.get_po_idx_vocab()
-
         for i in range(0, len(triple_idx)):
             # 1. Get a triple
             data_point = triple_idx[i]
@@ -272,23 +269,25 @@ class Execute:
             # 3. Computed filtered ranks.
 
             # 3.1. Compute filtered tail entity rankings
-            filt_tails = er_vocab[(s, p)]
+            filt_tails = self.dataset.er_vocab[(s, p)]
 
             target_value = predictions_tails[o].item()
             predictions_tails[filt_tails] = -np.Inf
             predictions_tails[o] = target_value
             _, sort_idxs = torch.sort(predictions_tails, descending=True)
-            sort_idxs = sort_idxs.cpu().numpy()
+            # sort_idxs = sort_idxs.cpu().numpy()
+            sort_idxs = sort_idxs.detach()  # cpu().numpy()
             filt_tail_entity_rank = np.where(sort_idxs == o)[0][0]
 
             # 3.1. Compute filtered head entity rankings
-            filt_heads = po_vocab[(p, o)]
+            filt_heads = self.dataset.re_vocab[(p, o)]
 
             target_value = predictions_heads[s].item()
             predictions_heads[filt_heads] = -np.Inf
             predictions_heads[s] = target_value
             _, sort_idxs = torch.sort(predictions_heads, descending=True)
-            sort_idxs = sort_idxs.cpu().numpy()
+            # sort_idxs = sort_idxs.cpu().numpy()
+            sort_idxs = sort_idxs.detach()  # cpu().numpy()
             filt_head_entity_rank = np.where(sort_idxs == s)[0][0]
 
             # 4. Add 1 to ranks as numpy array first item has the index of 0.
@@ -330,23 +329,21 @@ class Execute:
         """
         self.logger.info(f'{self.args.num_folds_for_cv}-fold cross-validation starts.')
         kf = KFold(n_splits=self.args.num_folds_for_cv, shuffle=True)
-        train_set_idx = np.array(self.dataset.train_set_idx)
         model = None
         eval_folds = []
 
-        for (ith, (train_index, test_index)) in enumerate(kf.split(train_set_idx)):
+        for (ith, (train_index, test_index)) in enumerate(kf.split(self.dataset.train)):
             trainer = pl.Trainer.from_argparse_args(self.args)
             model, form_of_labelling = select_model(self.args)
             self.logger.info(
                 f'{ith}-fold cross-validation starts: {model.name}-labeling:{form_of_labelling}, scoring technique: {self.scoring_technique}')
 
-            train_set_for_i_th_fold, test_set_for_i_th_fold = train_set_idx[train_index], train_set_idx[test_index]
+            train_set_for_i_th_fold, test_set_for_i_th_fold = self.dataset.train[train_index], self.dataset.train[
+                test_index]
 
-            dataset = StandardDataModule(train_set_idx=self.dataset.train_set_idx,
-                                         valid_set_idx=self.dataset.val_set_idx,
-                                         test_set_idx=self.dataset.test_set_idx,
-                                         entities_idx=self.dataset.entity_to_idx,
-                                         relations_idx=self.dataset.relation_to_idx,
+            dataset = StandardDataModule(train_set_idx=train_set_for_i_th_fold,
+                                         entities_idx=self.dataset.entity_idx,
+                                         relations_idx=self.dataset.relation_idx,
                                          form=form_of_labelling,
                                          batch_size=self.args.batch_size,
                                          num_workers=self.args.num_workers)
