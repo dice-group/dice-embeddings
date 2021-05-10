@@ -2,12 +2,13 @@ from executer import Execute
 import pytorch_lightning as pl
 import argparse
 
+
 def argparse_default(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser())
     # Paths.
     parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS')
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage')
-    parser.add_argument("--load_only", default=None,help='Loads only first N triples. If None, load all.')
+    parser.add_argument("--load_only", type=int, default=None,help='Loads only first N triples. If None, load all.')
 
     # Models.
     parser.add_argument("--model", type=str, default='ConEx',
@@ -46,6 +47,7 @@ def argparse_default(description=None):
         return parser.parse_args()
     else:
         return parser.parse_args(description)
+
 
 if __name__ == '__main__':
     exc = Execute(argparse_default())
