@@ -13,6 +13,7 @@ import numpy as np
 from pytorch_lightning import loggers as pl_loggers
 import pandas as pd
 import json
+import inspect
 
 
 class Execute:
@@ -20,9 +21,10 @@ class Execute:
         args = preprocesses_input_args(args)
         sanity_checking_with_arguments(args)
         self.args = args
-        self.dataset = KG(data_dir=args.path_dataset_folder, deserialize_flag=args.deserialize_flag,
-                          add_reciprical=args.add_reciprical,
-                          load_only=args.load_only)
+        self.dataset = KG(data_dir=args.path_dataset_folder,
+                          deserialize_flag=args.deserialize_flag,
+                          large_kg_parse=args.large_kg_parse,
+                          add_reciprical=args.add_reciprical)
 
         # Create folder to serialize data
         self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
@@ -32,7 +34,7 @@ class Execute:
         # Create logger
         self.logger = create_logger(name=self.args.model, p=self.storage_path)
         self.trainer = None
-        self.args.default_root_dir = self.storage_path + '/checkpoints'
+        #self.args.default_root_dir = self.storage_path + '/checkpoints'
 
         self.scoring_technique = args.scoring_technique
         self.neg_ratio = args.negative_sample_ratio
@@ -98,7 +100,9 @@ class Execute:
         :return:
         """
         self.logger.info('--- Parameters are parsed for training ---')
+        #self.trainer = Our_trainer(self.args)
         self.trainer = pl.Trainer.from_argparse_args(self.args)
+
         # 1. Check validation and test datasets are available.
         if self.dataset.is_valid_test_available():
             if self.scoring_technique == 'NegSample':
@@ -165,6 +169,8 @@ class Execute:
         """
         assert self.neg_ratio > 0
         trainer = pl.Trainer.from_argparse_args(self.args)
+        #trainer = Our_trainer(self.args)
+
         model, _ = select_model(self.args)
         form_of_labelling = 'NegativeSampling'
         self.logger.info(f' Training starts: {model.name}-labeling:{form_of_labelling}')
@@ -181,10 +187,10 @@ class Execute:
 
         self.logger.info(model)
         trainer.fit(model, train_dataloader=dataset.train_dataloader())
-        if self.dataset.val_set_idx:
-            self.evaluate_lp(model, self.dataset.val_set_idx, 'Evaluation of Validation set')
-        if self.dataset.test_set_idx:
-            self.evaluate_lp(model, self.dataset.test_set_idx, 'Evaluation of Test set')
+        if len(self.dataset.val_set)>0:
+            self.evaluate_lp(model, self.dataset.val_set, 'Evaluation of Validation set')
+        if len(self.dataset.test_set)>0:
+            self.evaluate_lp(model, self.dataset.test_set, 'Evaluation of Test set')
         return model
 
     def evaluate_lp_k_vs_all(self, model, triple_idx, info, form_of_labelling):
@@ -339,6 +345,8 @@ class Execute:
 
         for (ith, (train_index, test_index)) in enumerate(kf.split(self.dataset.train)):
             trainer = pl.Trainer.from_argparse_args(self.args)
+            #trainer = Our_trainer(self.args)
+
             model, form_of_labelling = select_model(self.args)
             self.logger.info(
                 f'{ith}-fold cross-validation starts: {model.name}-labeling:{form_of_labelling}, scoring technique: {self.scoring_technique}')
@@ -369,3 +377,16 @@ class Execute:
         self.logger.info('Model trained on last fold will be saved.')
         # Return last model.
         return model
+
+
+class Our_trainer(pl.Trainer):
+    def __init__(self, args_name_space,**kwargs):
+        self.args_name_space=vars(args_name_space)
+
+        # we only want to pass in valid Trainer args, the rest may be user specific
+        #valid_kwargs = inspect.signature(pl.Trainer.__init__).parameters
+        #trainer_kwargs = dict((name, self.args_name_space[name]) for name in valid_kwargs if name in self.args_name_space)
+        #trainer_kwargs.update(**kwargs)
+
+        super().__init__(**trainer_kwargs)
+        #super().__init__()

@@ -6,15 +6,18 @@ import multiprocessing
 from itertools import zip_longest
 import pickle
 import json
+from dask import dataframe as ddf
+import os
+
 
 class KG:
-    def __init__(self, data_dir=None, deserialize_flag=None, add_reciprical=False, load_only=None):
+    def __init__(self, data_dir=None, deserialize_flag=None, large_kg_parse=False,add_reciprical=False):
 
         if deserialize_flag is None:
             # 1. LOAD Data. (First pass on data)
-            self.train = self.load_data(data_dir + '/train.txt', add_reciprical=add_reciprical, load_only=load_only)
-            self.valid = self.load_data(data_dir + '/valid.txt', add_reciprical=add_reciprical, load_only=load_only)
-            self.test = self.load_data(data_dir + '/test.txt', add_reciprical=add_reciprical, load_only=load_only)
+            self.train = self.load_data_parallel(data_dir + '/train.txt',large_kg_parse)
+            self.valid = self.load_data_parallel(data_dir + '/valid.txt',large_kg_parse)
+            self.test = self.load_data_parallel(data_dir + '/test.txt',large_kg_parse)
             data = self.train + self.valid + self.test
 
             self.entity_idx = None
@@ -23,7 +26,7 @@ class KG:
             self.val_set_idx = None
             self.test_set_idx = None
             # 2. INDEX. (SECOND pass over all triples)
-            self.entity_idx, self.relation_idx, self.er_vocab, self.re_vocab, self.ee_vocab = self.index(data)
+            self.entity_idx, self.relation_idx, self.er_vocab, self.re_vocab, self.ee_vocab = self.index(data,add_reciprical=add_reciprical)
 
             # 3. INDEX Triples for training
             self.train, self.valid, self.test = self.triple_indexing()
@@ -91,7 +94,14 @@ class KG:
         np.savez_compressed(p + '/indexed_splits', train=self.train, valid=self.valid, test=self.test)
 
     @staticmethod
-    def index(data) -> (Dict, Dict, Dict, Dict, Dict):
+    def index(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):
+        """
+
+        :param data:
+        :param add_reciprical:
+        :return:
+        """
+        print(f'Indexing {len(data)} triples. Data augmentation flag => {add_reciprical}')
         # Entity to integer indexing
         entity_idxs = {}
         # Relation to integer indexing
@@ -105,7 +115,11 @@ class KG:
         ee_vocab = defaultdict(list)
 
         for triple in data:
-            h, r, t = triple[0], triple[1], triple[2]
+            try:
+                h, r, t = triple[0], triple[1], triple[2]
+            except IndexError:
+                print(f'{triple} is not parsed corrected.')
+                continue
 
             # 1. Integer indexing entities and relations
             entity_idxs.setdefault(h, len(entity_idxs))
@@ -120,9 +134,23 @@ class KG:
             # 2.3. (HEAD,TAIL) => RELATION
             ee_vocab[(entity_idxs[h], entity_idxs[t])].append(relation_idxs[r])
 
+            if add_reciprical:
+                # 1. Create reciprocal triples (t r_reverse h)
+                r_reverse = r + "_reverse"
+                relation_idxs.setdefault(r_reverse, len(relation_idxs))
+
+                er_vocab[(entity_idxs[t], relation_idxs[r_reverse])].append(entity_idxs[h])
+                pe_vocab[(relation_idxs[r_reverse], entity_idxs[h])].append(entity_idxs[t])
+                ee_vocab[(entity_idxs[t], entity_idxs[h])].append(relation_idxs[r_reverse])
+
         return entity_idxs, relation_idxs, er_vocab, pe_vocab, ee_vocab
 
     def triple_indexing(self) -> (np.array, np.array, np.array):
+        """
+
+        :return:
+        """
+        print('Triple indexing')
         train_set_idx = np.array(
             [(self.entity_idx[s], self.relation_idx[p], self.entity_idx[o]) for s, p, o in
              self.train_set])
@@ -177,6 +205,24 @@ class KG:
             print(l)
             exit(1)
         return [s, p, o]
+
+    @staticmethod
+    def load_data_parallel(data_path,large_kg_parse=True) -> List:
+        print(f'LOADING {data_path}')
+        if os.path.exists(data_path):
+            df = ddf.read_csv(data_path,
+                              delim_whitespace=True, header=None,
+                              usecols=[0, 1, 2])
+
+            if large_kg_parse:
+                df = df.compute(scheduler='processes')
+            else:
+                df = df.compute(scheduler='single-threaded')
+            x, y = df.shape
+            assert y == 3
+            return df.values.tolist()
+        else:
+            return []
 
     def load_data(self, data_path, add_reciprical=True, load_only=None):
         # line can be 1 or 2

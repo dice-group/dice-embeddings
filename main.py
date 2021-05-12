@@ -8,8 +8,9 @@ def argparse_default(description=None):
     # Paths.
     parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS')
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage')
-    parser.add_argument("--load_only", type=int, default=None, help='Loads only first N triples. If None, load all.')
     parser.add_argument("--deserialize_flag", type=str, default=None, help='Path of a folder for deserialization.')
+    parser.add_argument("--large_kg_parse", type=bool, default=False, help='Path of a folder for deserialization.')
+
     # Models.
     parser.add_argument("--model", type=str, default='ConEx',
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult")
@@ -39,7 +40,7 @@ def argparse_default(description=None):
 
     # Data Augmentation.
     parser.add_argument("--add_reciprical", type=bool, default=False)
-    parser.add_argument('--num_workers', type=int, default=32, help='Number of cpus used during batching')
+    parser.add_argument('--num_workers', type=int, default=4, help='Number of cpus used during batching')
     parser.add_argument('--kvsall', default=False)
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
                                                                         'If >2,no evaluation scenario is applied implies no evaluation.')

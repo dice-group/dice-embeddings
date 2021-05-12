@@ -3,8 +3,10 @@ python --version
 python -u -c 'import torch; print(torch.__version__)'
 echo "Start Training......"
 
+# To deserialize parsed KG.
+#python main.py --path_dataset_folder 'KGs/UMLS' --model 'ConEx' --deserialize_flag '/home/demir/Desktop/work/DAIKIRI_Emb/DAIKIRI_Storage/2021-05-12 12:11:12.095319'
 # Checked
-python main.py --load_only 10 --path_dataset_folder 'KGs/UMLS' --model 'ConEx' --max_num_epochs 3 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'ConEx'
 python main.py --path_dataset_folder 'KGs/Family' --model 'ConEx' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
 python main.py --path_dataset_folder 'KGs/Family' --model 'ConEx' --max_num_epochs 3 --scoring_technique 'KvsAll' --num_folds_for_cv 3
 python main.py --path_dataset_folder 'KGs/Family' --model 'ConEx' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3 --num_folds_for_cv 3
