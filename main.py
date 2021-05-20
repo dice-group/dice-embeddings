@@ -6,7 +6,7 @@ import argparse
 def argparse_default(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser())
     # Paths.
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS')
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Family')
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage')
     parser.add_argument("--deserialize_flag", type=str, default=None, help='Path of a folder for deserialization.')
     parser.add_argument("--large_kg_parse", type=bool, default=False, help='Path of a folder for deserialization.')

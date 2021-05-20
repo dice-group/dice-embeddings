@@ -34,8 +34,6 @@ class Execute:
         # Create logger
         self.logger = create_logger(name=self.args.model, p=self.storage_path)
         self.trainer = None
-        #self.args.default_root_dir = self.storage_path + '/checkpoints'
-
         self.scoring_technique = args.scoring_technique
         self.neg_ratio = args.negative_sample_ratio
 
@@ -100,7 +98,6 @@ class Execute:
         :return:
         """
         self.logger.info('--- Parameters are parsed for training ---')
-        #self.trainer = Our_trainer(self.args)
         self.trainer = pl.Trainer.from_argparse_args(self.args)
 
         # 1. Check validation and test datasets are available.
@@ -117,7 +114,13 @@ class Execute:
             if self.args.num_folds_for_cv < 2:
                 self.logger.info(
                     f'No test set is found and k-fold cross-validation is set to less than 2 (***num_folds_for_cv*** => {self.args.num_folds_for_cv}). Hence we do not evaluate the model')
-                trained_model = self.training()
+                if self.scoring_technique == 'NegSample':
+                    trained_model = self.training_negative_sampling()
+                elif self.scoring_technique == 'KvsAll':
+                    # KvsAll or negative sampling
+                    trained_model = self.training()
+                else:
+                    raise ValueError(f'Invalid argument: {self.scoring_technique}')
             else:
                 trained_model = self.k_fold_cross_validation()
         self.logger.info('--- Training is completed  ---')
@@ -169,12 +172,15 @@ class Execute:
         """
         assert self.neg_ratio > 0
         trainer = pl.Trainer.from_argparse_args(self.args)
-        #trainer = Our_trainer(self.args)
-
         model, _ = select_model(self.args)
         form_of_labelling = 'NegativeSampling'
         self.logger.info(f' Training starts: {model.name}-labeling:{form_of_labelling}')
-
+        # We do not need to store vocabs here
+        if len(self.dataset.val_set) > 0 and len(self.dataset.val_set) > 0:
+            self.logger.info(f' Free some memory')
+            del self.dataset.er_vocab
+            del self.dataset.ee_vocab
+            del self.dataset.re_vocab
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.val_set,
                                      test_set_idx=self.dataset.test_set,
@@ -187,9 +193,9 @@ class Execute:
 
         self.logger.info(model)
         trainer.fit(model, train_dataloader=dataset.train_dataloader())
-        if len(self.dataset.val_set)>0:
+        if len(self.dataset.val_set) > 0:
             self.evaluate_lp(model, self.dataset.val_set, 'Evaluation of Validation set')
-        if len(self.dataset.test_set)>0:
+        if len(self.dataset.test_set) > 0:
             self.evaluate_lp(model, self.dataset.test_set, 'Evaluation of Test set')
         return model
 
@@ -345,8 +351,6 @@ class Execute:
 
         for (ith, (train_index, test_index)) in enumerate(kf.split(self.dataset.train)):
             trainer = pl.Trainer.from_argparse_args(self.args)
-            #trainer = Our_trainer(self.args)
-
             model, form_of_labelling = select_model(self.args)
             self.logger.info(
                 f'{ith}-fold cross-validation starts: {model.name}-labeling:{form_of_labelling}, scoring technique: {self.scoring_technique}')
@@ -380,13 +384,13 @@ class Execute:
 
 
 class Our_trainer(pl.Trainer):
-    def __init__(self, args_name_space,**kwargs):
-        self.args_name_space=vars(args_name_space)
+    def __init__(self, args_name_space, **kwargs):
+        self.args_name_space = vars(args_name_space)
 
         # we only want to pass in valid Trainer args, the rest may be user specific
-        #valid_kwargs = inspect.signature(pl.Trainer.__init__).parameters
-        #trainer_kwargs = dict((name, self.args_name_space[name]) for name in valid_kwargs if name in self.args_name_space)
-        #trainer_kwargs.update(**kwargs)
+        # valid_kwargs = inspect.signature(pl.Trainer.__init__).parameters
+        # trainer_kwargs = dict((name, self.args_name_space[name]) for name in valid_kwargs if name in self.args_name_space)
+        # trainer_kwargs.update(**kwargs)
 
         super().__init__(**trainer_kwargs)
-        #super().__init__()
+        # super().__init__()

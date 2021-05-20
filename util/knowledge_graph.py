@@ -11,13 +11,13 @@ import os
 
 
 class KG:
-    def __init__(self, data_dir=None, deserialize_flag=None, large_kg_parse=False,add_reciprical=False):
+    def __init__(self, data_dir=None, deserialize_flag=None, large_kg_parse=False, add_reciprical=False):
 
         if deserialize_flag is None:
             # 1. LOAD Data. (First pass on data)
-            self.train = self.load_data_parallel(data_dir + '/train.txt',large_kg_parse)
-            self.valid = self.load_data_parallel(data_dir + '/valid.txt',large_kg_parse)
-            self.test = self.load_data_parallel(data_dir + '/test.txt',large_kg_parse)
+            self.train = self.load_data_parallel(data_dir + '/train.txt', large_kg_parse)
+            self.valid = self.load_data_parallel(data_dir + '/valid.txt', large_kg_parse)
+            self.test = self.load_data_parallel(data_dir + '/test.txt', large_kg_parse)
             data = self.train + self.valid + self.test
 
             self.entity_idx = None
@@ -26,10 +26,11 @@ class KG:
             self.val_set_idx = None
             self.test_set_idx = None
             # 2. INDEX. (SECOND pass over all triples)
-            self.entity_idx, self.relation_idx, self.er_vocab, self.re_vocab, self.ee_vocab = self.index(data,add_reciprical=add_reciprical)
+            self.entity_idx, self.relation_idx, self.er_vocab, self.re_vocab, self.ee_vocab = self.index(data,
+                                                                                                         add_reciprical=add_reciprical)
 
             # 3. INDEX Triples for training
-            self.train, self.valid, self.test = self.triple_indexing()
+            self.train, self.valid, self.test = self.triple_indexing(large_kg_parse)
 
             # 4. Display info
             s = '------------------- Description of Dataset' + data_dir + '----------------------------'
@@ -145,26 +146,38 @@ class KG:
 
         return entity_idxs, relation_idxs, er_vocab, pe_vocab, ee_vocab
 
-    def triple_indexing(self) -> (np.array, np.array, np.array):
+    def __indexing_multiprocessing(self, triples):
+        # Get all cores
+        x = np.array(
+            [(self.entity_idx[s], self.relation_idx[p], self.entity_idx[o]) for s, p, o in
+             self.triples])
+        return x
+
+    def triple_indexing(self, large_kg_parse) -> (np.array, np.array, np.array):
         """
 
         :return:
         """
+        # This part takes the most of the time.
         print('Triple indexing')
-        train_set_idx = np.array(
-            [(self.entity_idx[s], self.relation_idx[p], self.entity_idx[o]) for s, p, o in
-             self.train_set])
-
-        if self.is_valid_test_available():
-            val_set_idx = np.array(
-                [(self.entity_idx[s], self.relation_idx[p], self.entity_idx[o]) for s, p, o in
-                 self.val_set])
-            test_set_idx = np.array(
-                [(self.entity_idx[s], self.relation_idx[p], self.entity_idx[o]) for s, p, o in
-                 self.test_set])
+        if large_kg_parse:
+            raise NotImplementedError()
+            train_set_idx = self.__indexing_multiprocessing(self.train_set)
         else:
-            val_set_idx = np.array([])
-            test_set_idx = np.array([])
+            train_set_idx = np.array(
+                [(self.entity_idx[s], self.relation_idx[p], self.entity_idx[o]) for s, p, o in
+                 self.train_set])
+
+            if self.is_valid_test_available():
+                val_set_idx = np.array(
+                    [(self.entity_idx[s], self.relation_idx[p], self.entity_idx[o]) for s, p, o in
+                     self.val_set])
+                test_set_idx = np.array(
+                    [(self.entity_idx[s], self.relation_idx[p], self.entity_idx[o]) for s, p, o in
+                     self.test_set])
+            else:
+                val_set_idx = np.array([])
+                test_set_idx = np.array([])
         return train_set_idx, val_set_idx, test_set_idx
 
     @property
@@ -207,7 +220,13 @@ class KG:
         return [s, p, o]
 
     @staticmethod
-    def load_data_parallel(data_path,large_kg_parse=True) -> List:
+    def load_data_parallel(data_path, large_kg_parse=True) -> List:
+        """
+        Parse KG via DASK.
+        :param data_path:
+        :param large_kg_parse:
+        :return:
+        """
         print(f'LOADING {data_path}')
         if os.path.exists(data_path):
             df = ddf.read_csv(data_path,
@@ -220,6 +239,7 @@ class KG:
                 df = df.compute(scheduler='single-threaded')
             x, y = df.shape
             assert y == 3
+            print(f'Parsed via DASK: {df.shape}.')
             return df.values.tolist()
         else:
             return []
