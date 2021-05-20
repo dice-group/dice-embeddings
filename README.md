@@ -72,13 +72,12 @@ python main.py --gpus 8 --distributed_backend ddp --path_dataset_folder 'KGs/WN1
 ## How to cite
 If you want to cite the framework, feel free to
 ```
-@article{demir2021Daikiri,
-  title={DAIKIRI Embedding},
-  author={Demir, Caglar},
-  journal={GitHub. Note: https://github.com/dice-group/DAIKIRI-Embedding},
-  volume={1},
-  year={2021}
-}
+@inproceedings{demir2021convolutional,
+title={Convolutional Complex Knowledge Graph Embeddings},
+author={Caglar Demir and Axel-Cyrille Ngonga Ngomo},
+booktitle={Eighteenth Extended Semantic Web Conference - Research Track},
+year={2021},
+url={https://openreview.net/forum?id=6T45-4TFqaX}}
 ```
 
 For any further questions, please contact:  ```caglar.demir@upb.de```
