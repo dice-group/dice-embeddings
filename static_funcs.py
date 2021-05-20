@@ -89,6 +89,7 @@ def sanity_checking_with_arguments(args):
         print(f'The directory {args.path_dataset_folder} must contain a **train.txt** .')
         raise
 
+    args.eval=bool(args.eval)
 
 def select_model(args) -> Tuple[pl.LightningModule, AnyStr]:
     if args.model == 'Shallom':

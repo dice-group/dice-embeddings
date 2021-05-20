@@ -24,7 +24,7 @@ class Execute:
         self.dataset = KG(data_dir=args.path_dataset_folder,
                           deserialize_flag=args.deserialize_flag,
                           large_kg_parse=args.large_kg_parse,
-                          add_reciprical=args.add_reciprical)
+                          add_reciprical=args.add_reciprical, eval=args.eval)
 
         # Create folder to serialize data
         self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations

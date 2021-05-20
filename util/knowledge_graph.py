@@ -11,7 +11,7 @@ import os
 
 
 class KG:
-    def __init__(self, data_dir=None, deserialize_flag=None, large_kg_parse=False, add_reciprical=False):
+    def __init__(self, data_dir=None, deserialize_flag=None, large_kg_parse=False, add_reciprical=False, eval=True):
 
         if deserialize_flag is None:
             # 1. LOAD Data. (First pass on data)
@@ -49,20 +49,23 @@ class KG:
             del data
         else:
             print('DESERIALIZE')
-            self.deserialize(deserialize_flag)
+            self.deserialize(deserialize_flag, eval)
 
-    def deserialize(self, p):
+    def deserialize(self, p, eval=True):
         """
         """
-        print('Deserialize er_vocab')
-        with open(p + '/er_vocab.pickle', 'rb') as reader:
-            self.er_vocab = pickle.load(reader)
-        print('Deserialize re_vocab')
-        with open(p + '/re_vocab.pickle', 'rb') as reader:
-            self.re_vocab = pickle.load(reader)
-        print('Deserialize ee_vocab')
-        with open(p + '/ee_vocab.pickle', 'rb') as reader:
-            self.ee_vocab = pickle.load(reader)
+        if eval:
+            print('Deserialize er_vocab')
+            with open(p + '/er_vocab.pickle', 'rb') as reader:
+                self.er_vocab = pickle.load(reader)
+            print('Deserialize re_vocab')
+            with open(p + '/re_vocab.pickle', 'rb') as reader:
+                self.re_vocab = pickle.load(reader)
+            print('Deserialize ee_vocab')
+            with open(p + '/ee_vocab.pickle', 'rb') as reader:
+                self.ee_vocab = pickle.load(reader)
+        else:
+            self.er_vocab, self.re_vocab, self.ee_vocab = None, None, None
 
         # Serialize JsonFiles
         print('Deserialize entity_idx')
