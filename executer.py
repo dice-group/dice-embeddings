@@ -1,5 +1,7 @@
 import warnings
 
+import models
+
 warnings.simplefilter("ignore", UserWarning)
 from util.dataset_classes import StandardDataModule, KvsAll, CVDataModule
 from util.knowledge_graph import KG
@@ -22,25 +24,35 @@ class Execute:
         args = preprocesses_input_args(args)
         sanity_checking_with_arguments(args)
         self.args = args
+        # 1. Create an instance of KG.
         self.dataset = KG(data_dir=args.path_dataset_folder,
                           deserialize_flag=args.deserialize_flag,
                           large_kg_parse=args.large_kg_parse,
                           add_reciprical=args.add_reciprical, eval=args.eval)
-
-        # Create folder to serialize data
-        self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
+        # 2. Create a storage path  + Serialize dataset object.
         self.storage_path = create_experiment_folder(folder_name=args.storage_path)
         self.dataset.serialize(self.storage_path)
 
-        # Create logger
+        # 3. Save Create folder to serialize data. This two numerical value will be used in embedding initialization.
+        self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
+
+        # 4. Create logger
         self.logger = create_logger(name=self.args.model, p=self.storage_path)
+
+        # 5. KGE related parameters
         self.trainer = None
         self.scoring_technique = args.scoring_technique
         self.neg_ratio = args.negative_sample_ratio
 
+        self.hyperparam_kge_sanity_checking()
+
+    def hyperparam_kge_sanity_checking(self):
+        """
+        Sanity checking for input hyperparams.
+        :return:
+        """
         if self.args.batch_size > len(self.dataset.train_set):
             self.args.batch_size = len(self.dataset.train_set)
-
         if self.args.model == 'Shallom' and self.scoring_technique == 'NegSample':
             self.logger.info(
                 'Shallom can not be trained with Negative Sampling. Scoring technique is changed to KvsALL')
@@ -55,6 +67,7 @@ class Execute:
         :param trained_model:
         :return:
         """
+        self.logger.info('Store full model.')
         # Save Torch model.
         torch.save(trained_model.state_dict(), self.storage_path + '/model.pt')
 
@@ -64,6 +77,8 @@ class Execute:
             temp.pop('tpu_cores')
             json.dump(temp, file_descriptor)
 
+        self.logger.info('Store Embeddings.')
+
         if trained_model.name == 'Shallom':
             entity_emb = trained_model.get_embeddings()
         else:
@@ -72,7 +87,7 @@ class Execute:
                 df = pd.DataFrame(relation_ebm, index=self.dataset.relations_str)
                 num_mb = df.memory_usage(index=True, deep=True).sum() / (10 ** 6)
                 if num_mb > 10 ** 6:
-                    df = dd.from_pandas(df, npartitions=len(df)/100)
+                    df = dd.from_pandas(df, npartitions=len(df) / 100)
                     # PARQUET wants columns to be stn
                     df.columns = df.columns.astype(str)
                     df.to_parquet(self.storage_path + '/' + trained_model.name + '_relation_embeddings')
@@ -102,26 +117,25 @@ class Execute:
             print(e)
 
     def start(self) -> None:
+        """
+        Train and/or Evaluate Model
+        Store Mode
+        """
         # 1. Train and Evaluate
         trained_model = self.train_and_eval()
         # 2. Store trained model
         self.store(trained_model)
 
-    def train_and_eval(self):
+    def train_and_eval(self) -> models.BaseKGE:
         """
-        Training procedure
-
-        1. KvsAll
-
-        2. OnlyTrain
-
-        3. K fold cross validation
-        :return:
+        Training and evaluation procedure
         """
         self.logger.info('--- Parameters are parsed for training ---')
+
+        # 1. Create Pytorch-lightning Trainer object from input configuration
         self.trainer = pl.Trainer.from_argparse_args(self.args)
 
-        # 1. Check validation and test datasets are available.
+        # 2. Check whether validation and test datasets are available.
         if self.dataset.is_valid_test_available():
             if self.scoring_technique == 'NegSample':
                 trained_model = self.training_negative_sampling()
@@ -131,10 +145,12 @@ class Execute:
             else:
                 raise ValueError(f'Invalid argument: {self.scoring_technique}')
         else:
+            # 3. If (2) is FALSE, then check whether cross validation will be applied.
             self.logger.info(f'There is no validation and test sets available.')
             if self.args.num_folds_for_cv < 2:
                 self.logger.info(
                     f'No test set is found and k-fold cross-validation is set to less than 2 (***num_folds_for_cv*** => {self.args.num_folds_for_cv}). Hence we do not evaluate the model')
+                # 3.1. NO CROSS VALIDATION => TRAIN WITH 'NegSample' or KvsALL
                 if self.scoring_technique == 'NegSample':
                     trained_model = self.training_negative_sampling()
                 elif self.scoring_technique == 'KvsAll':

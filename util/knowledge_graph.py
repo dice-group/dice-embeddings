@@ -25,7 +25,16 @@ def performance_debugger(func_name):
 
 
 class KG:
-    def __init__(self, data_dir=None, deserialize_flag=None, large_kg_parse=False, add_reciprical=False, eval=True):
+    def __init__(self, data_dir: str = None, deserialize_flag: str = None, large_kg_parse=False, add_reciprical=False,
+                 eval=True):
+        """
+
+        :param data_dir: A path of a folder containing the input knowledge graph
+        :param deserialize_flag: A path of a folder containing previously parsed data
+        :param large_kg_parse: A flag for using all cores to parse input knowledge graph
+        :param add_reciprical: A flag for applying reciprocal data augmentation technique
+        :param eval: A flag indicating whether evaluation will be applied. If no eval, then entity relation mappings will be deleted to free memory.
+        """
 
         if deserialize_flag is None:
             # 1. LOAD Data. (First pass on data)
@@ -65,7 +74,7 @@ class KG:
             print('DESERIALIZE')
             self.deserialize(deserialize_flag, eval)
 
-    def deserialize(self, p:str, eval=True) -> None:
+    def deserialize(self, p: str, eval=True) -> None:
         """
         Deserialize data
         """
@@ -132,11 +141,8 @@ class KG:
         self.__pickle_dump_obj(self.er_vocab, path=p + '/er_vocab.pickle', info='(HEAD & RELATION) to TAIL')
         self.__pickle_dump_obj(self.re_vocab, path=p + '/re_vocab.pickle', info='(RELATION & TAIL) to HEAD')
         self.__pickle_dump_obj(self.ee_vocab, path=p + '/ee_vocab.pickle', info='(HEAD & TAIL) to RELATION')
-
         self.__json_dump_obj(self.entity_idx, path=p + "/entity_idx.json", info='Entity to Integer Index')
-
         self.__json_dump_obj(self.relation_idx, path=p + "/relation_idx.json", info='Relation to Integer Index')
-
         self.__np_save_as_compressed(train=self.train, valid=self.valid, test=self.test, path=p + '/indexed_splits',
                                      info='Indexed sets of triples')
 
