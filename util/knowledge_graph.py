@@ -10,6 +10,20 @@ from dask import dataframe as ddf
 import os
 
 
+def performance_debugger(func_name):
+    def func_decorator(func):
+        def debug(*args, **kwargs):
+            starT = time.time()
+            print('\n######', func_name, ' ', end='')
+            r = func(*args, **kwargs)
+            print(f' took  {time.time() - starT:.3f}  seconds')
+            return r
+
+        return debug
+
+    return func_decorator
+
+
 class KG:
     def __init__(self, data_dir=None, deserialize_flag=None, large_kg_parse=False, add_reciprical=False, eval=True):
 
@@ -81,21 +95,48 @@ class KG:
         self.valid = loaded['valid']
         self.test = loaded['test']
 
-    def serialize(self, p):
-        # Pickle tuple mappings.
-        with open(p + '/er_vocab.pickle', 'wb') as handle:
-            pickle.dump(self.er_vocab, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        with open(p + '/re_vocab.pickle', 'wb') as handle:
-            pickle.dump(self.re_vocab, handle, protocol=pickle.HIGHEST_PROTOCOL)
-        with open(p + '/ee_vocab.pickle', 'wb') as handle:
-            pickle.dump(self.ee_vocab, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    @performance_debugger('Pickle Dump of')
+    def __pickle_dump_obj(self, obj, path, info):
+        print(info, end='')
+        with open(path, 'wb') as handle:
+            pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-        # Serialize JsonFiles
-        with open(p + "/entity_idx.json", "w") as write_file:
-            json.dump(self.entity_idx, write_file)
-        with open(p + "/relation_idx.json", "w") as write_file:
-            json.dump(self.relation_idx, write_file)
-        np.savez_compressed(p + '/indexed_splits', train=self.train, valid=self.valid, test=self.test)
+    @performance_debugger('JSON Dump of')
+    def __json_dump_obj(self, obj, path, info):
+        print(info, end='')
+        with open(path, 'w') as handle:
+            json.dump(obj, handle)
+
+    @performance_debugger('Numpy Save')
+    def __np_save_as_compressed(self, train, valid, test, path, info):
+        print(info, end='')
+        np.savez_compressed(path, train=train, valid=valid, test=test)
+
+    def serialize(self, p:str) ->None:
+        """
+        Serialize
+        1- the following mappings
+            - head x relation -> tail
+            - relation x tail -> head
+            - head x tail -> relation
+            - Entity to Integer Index
+            - Relation to Integer Index
+        2. Indexed triples
+            - This can be done via DASK @TODO
+
+        :param p:
+        :return:
+        """
+        # Pickle tuple mappings.
+        self.__pickle_dump_obj(self.er_vocab, path=p + '/er_vocab.pickle', info='(HEAD & RELATION) to TAIL')
+        self.__pickle_dump_obj(self.re_vocab, path=p + '/re_vocab.pickle', info='(RELATION & TAIL) to HEAD')
+        self.__pickle_dump_obj(self.ee_vocab, path=p + '/ee_vocab.pickle', info='(HEAD & TAIL) to RELATION')
+
+        self.__json_dump_obj(self.entity_idx, path=p + "/entity_idx.json", info='Entity to Integer Index')
+
+        self.__json_dump_obj(self.relation_idx, path=p + "/relation_idx.json", info='Relation to Integer Index')
+
+        self.__np_save_as_compressed(train=self.train, valid=self.valid, test=self.test, path=p + '/indexed_splits', info='Indexed sets of triples')
 
     @staticmethod
     def index(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):
@@ -158,13 +199,12 @@ class KG:
 
     def triple_indexing(self, large_kg_parse) -> None:
         """
-
         :return:
         """
         # This part takes the most of the time.
         print('Triple indexing')
         if large_kg_parse:
-            print('No paralelisim yet')
+            print('No Parallelism implemented yet')
             # If LARGE WE ASSUME THAT there is no val and test
             self.train = self.map_str_triples_to_numpy_idx(triples=self.train, entity_idx=self.entity_idx,
                                                            relation_idx=self.relation_idx)
