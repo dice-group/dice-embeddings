@@ -14,6 +14,7 @@ from pytorch_lightning import loggers as pl_loggers
 import pandas as pd
 import json
 import inspect
+import dask.dataframe as dd
 
 
 class Execute:
@@ -68,14 +69,34 @@ class Execute:
         else:
             entity_emb, relation_ebm = trained_model.get_embeddings()
             try:
-                pd.DataFrame(relation_ebm, index=self.dataset.relations_str).to_csv(
-                    self.storage_path + '/' + trained_model.name + '_relation_embeddings.csv', chunksize=100_000)
+                df = pd.DataFrame(relation_ebm, index=self.dataset.relations_str)
+                num_mb = df.memory_usage(index=True, deep=True).sum() / (10 ** 6)
+                if num_mb > 10 ** 6:
+                    df = dd.from_pandas(df, npartitions=len(df)/100)
+                    # PARQUET wants columns to be stn
+                    df.columns = df.columns.astype(str)
+                    df.to_parquet(self.storage_path + '/' + trained_model.name + '_relation_embeddings')
+                    # TO READ PARQUET FILE INTO PANDAS
+                    # m=dd.read_parquet(self.storage_path + '/' + trained_model.name + '_relation_embeddings').compute()
+                else:
+                    df.to_csv(self.storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
             except KeyError or AttributeError as e:
                 print('Exception occurred at saving relation embeddings. Computation will continue')
                 print(e)
+
+            # Free mem del
+            del df
+            del relation_ebm
         try:
-            pd.DataFrame(entity_emb, index=self.dataset.entities_str).to_csv(
-                self.storage_path + '/' + trained_model.name + '_entity_embeddings.csv', chunksize=100_000)
+            df = pd.DataFrame(entity_emb, index=self.dataset.entities_str)
+            num_mb = df.memory_usage(index=True, deep=True).sum() / (10 ** 6)
+            if num_mb > 10 ** 6:
+                df = dd.from_pandas(df, npartitions=len(df) / 100)
+                # PARQUET wants columns to be stn
+                df.columns = df.columns.astype(str)
+                df.to_parquet(self.storage_path + '/' + trained_model.name + '_relation_embeddings')
+            else:
+                df.to_csv(self.storage_path + '/' + trained_model.name + '_entity_embeddings.csv', )
         except KeyError or AttributeError as e:
             print('Exception occurred at saving entity embeddings.Computation will continue')
             print(e)
@@ -381,16 +402,3 @@ class Execute:
         self.logger.info('Model trained on last fold will be saved.')
         # Return last model.
         return model
-
-
-class Our_trainer(pl.Trainer):
-    def __init__(self, args_name_space, **kwargs):
-        self.args_name_space = vars(args_name_space)
-
-        # we only want to pass in valid Trainer args, the rest may be user specific
-        # valid_kwargs = inspect.signature(pl.Trainer.__init__).parameters
-        # trainer_kwargs = dict((name, self.args_name_space[name]) for name in valid_kwargs if name in self.args_name_space)
-        # trainer_kwargs.update(**kwargs)
-
-        super().__init__(**trainer_kwargs)
-        # super().__init__()
