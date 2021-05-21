@@ -6,11 +6,11 @@ import argparse
 def argparse_default(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser())
     # Paths.
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Family')
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Mutagenesis')
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage')
     parser.add_argument("--deserialize_flag", type=str, default=None, help='Path of a folder for deserialization.')
-    parser.add_argument("--large_kg_parse", type=bool, default=False, help='Path of a folder for deserialization.')
-    parser.add_argument("--eval", type=int, default=1, help='Binary 1 True, 0 False')
+    parser.add_argument("--large_kg_parse", type=int, default=1, help='A flag for using all cores at parsing.')
+    parser.add_argument("--eval", type=int, default=1, help='A flag for using evaluation. If 0, memory consumption is decreased')
 
     # Models.
     parser.add_argument("--model", type=str, default='ConEx',

@@ -18,6 +18,7 @@ class KG:
             self.train = self.load_data_parallel(data_dir + '/train.txt', large_kg_parse)
             self.valid = self.load_data_parallel(data_dir + '/valid.txt', large_kg_parse)
             self.test = self.load_data_parallel(data_dir + '/test.txt', large_kg_parse)
+            # 2. Concatenate list of triples. Could be done with DASK
             data = self.train + self.valid + self.test
 
             self.entity_idx = None
@@ -30,7 +31,7 @@ class KG:
                                                                                                          add_reciprical=add_reciprical)
 
             # 3. INDEX Triples for training
-            self.train, self.valid, self.test = self.triple_indexing(large_kg_parse)
+            self.triple_indexing(large_kg_parse)
 
             # 4. Display info
             s = '------------------- Description of Dataset' + data_dir + '----------------------------'
@@ -44,7 +45,6 @@ class KG:
             print(f'Number of triples on test set: {len(self.test)}')
             s = len(s) * '-'
             print(f'{s}\n')
-
             # Free Memory
             del data
         else:
@@ -100,6 +100,8 @@ class KG:
     @staticmethod
     def index(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):
         """
+        Index each triples into their integer representation. Performed in a single tread with single core.
+        V
 
         :param data:
         :param add_reciprical:
@@ -149,14 +151,12 @@ class KG:
 
         return entity_idxs, relation_idxs, er_vocab, pe_vocab, ee_vocab
 
-    def __indexing_multiprocessing(self, triples):
+    @staticmethod
+    def map_str_triples_to_numpy_idx(triples, entity_idx, relation_idx) -> np.array:
         # Get all cores
-        x = np.array(
-            [(self.entity_idx[s], self.relation_idx[p], self.entity_idx[o]) for s, p, o in
-             self.triples])
-        return x
+        return np.array([(entity_idx[s], relation_idx[p], entity_idx[o]) for s, p, o in triples])
 
-    def triple_indexing(self, large_kg_parse) -> (np.array, np.array, np.array):
+    def triple_indexing(self, large_kg_parse) -> None:
         """
 
         :return:
@@ -164,24 +164,24 @@ class KG:
         # This part takes the most of the time.
         print('Triple indexing')
         if large_kg_parse:
-            raise NotImplementedError()
-            train_set_idx = self.__indexing_multiprocessing(self.train_set)
+            print('No paralelisim yet')
+            # If LARGE WE ASSUME THAT there is no val and test
+            self.train = self.map_str_triples_to_numpy_idx(triples=self.train, entity_idx=self.entity_idx,
+                                                           relation_idx=self.relation_idx)
+            self.valid = np.array([])
+            self.test = np.array([])
         else:
-            train_set_idx = np.array(
-                [(self.entity_idx[s], self.relation_idx[p], self.entity_idx[o]) for s, p, o in
-                 self.train_set])
-
+            self.train = self.map_str_triples_to_numpy_idx(triples=self.train, entity_idx=self.entity_idx,
+                                                           relation_idx=self.relation_idx)
             if self.is_valid_test_available():
-                val_set_idx = np.array(
-                    [(self.entity_idx[s], self.relation_idx[p], self.entity_idx[o]) for s, p, o in
-                     self.val_set])
-                test_set_idx = np.array(
-                    [(self.entity_idx[s], self.relation_idx[p], self.entity_idx[o]) for s, p, o in
-                     self.test_set])
+                self.valid = self.map_str_triples_to_numpy_idx(triples=self.valid, entity_idx=self.entity_idx,
+                                                               relation_idx=self.relation_idx)
+
+                self.test = self.map_str_triples_to_numpy_idx(triples=self.test, entity_idx=self.entity_idx,
+                                                              relation_idx=self.relation_idx)
             else:
-                val_set_idx = np.array([])
-                test_set_idx = np.array([])
-        return train_set_idx, val_set_idx, test_set_idx
+                self.valid = np.array([])
+                self.test = np.array([])
 
     @property
     def num_entities(self):
@@ -242,8 +242,8 @@ class KG:
                 df = df.compute(scheduler='single-threaded')
             x, y = df.shape
             assert y == 3
-            print(f'Parsed via DASK: {df.shape}.')
-            return df.values.tolist()
+            print(f'Parsed via DASK: {df.shape}. Whitespace is used as delimiter.')
+            return df.values.tolist()  # Possibly time consuming
         else:
             return []
 
