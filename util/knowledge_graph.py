@@ -65,8 +65,9 @@ class KG:
             print('DESERIALIZE')
             self.deserialize(deserialize_flag, eval)
 
-    def deserialize(self, p, eval=True):
+    def deserialize(self, p:str, eval=True) -> None:
         """
+        Deserialize data
         """
         if eval:
             print('Deserialize er_vocab')
@@ -96,23 +97,23 @@ class KG:
         self.test = loaded['test']
 
     @performance_debugger('Pickle Dump of')
-    def __pickle_dump_obj(self, obj, path, info):
+    def __pickle_dump_obj(self, obj, path, info) -> None:
         print(info, end='')
         with open(path, 'wb') as handle:
             pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     @performance_debugger('JSON Dump of')
-    def __json_dump_obj(self, obj, path, info):
+    def __json_dump_obj(self, obj, path, info) -> None:
         print(info, end='')
         with open(path, 'w') as handle:
             json.dump(obj, handle)
 
     @performance_debugger('Numpy Save')
-    def __np_save_as_compressed(self, train, valid, test, path, info):
+    def __np_save_as_compressed(self, train, valid, test, path, info) -> None:
         print(info, end='')
         np.savez_compressed(path, train=train, valid=valid, test=test)
 
-    def serialize(self, p:str) ->None:
+    def serialize(self, p: str) -> None:
         """
         Serialize
         1- the following mappings
@@ -136,7 +137,8 @@ class KG:
 
         self.__json_dump_obj(self.relation_idx, path=p + "/relation_idx.json", info='Relation to Integer Index')
 
-        self.__np_save_as_compressed(train=self.train, valid=self.valid, test=self.test, path=p + '/indexed_splits', info='Indexed sets of triples')
+        self.__np_save_as_compressed(train=self.train, valid=self.valid, test=self.test, path=p + '/indexed_splits',
+                                     info='Indexed sets of triples')
 
     @staticmethod
     def index(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):
@@ -194,7 +196,6 @@ class KG:
 
     @staticmethod
     def map_str_triples_to_numpy_idx(triples, entity_idx, relation_idx) -> np.array:
-        # Get all cores
         return np.array([(entity_idx[s], relation_idx[p], entity_idx[o]) for s, p, o in triples])
 
     def triple_indexing(self, large_kg_parse) -> None:
