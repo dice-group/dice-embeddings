@@ -9,9 +9,12 @@ def argparse_default(description=None):
     parser.add_argument("--path_dataset_folder", type=str, default='KGs/Mutagenesis')
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage')
     parser.add_argument("--deserialize_flag", type=str, default=None, help='Path of a folder for deserialization.')
+
+    # Flags for computation
     parser.add_argument("--large_kg_parse", type=int, default=1, help='A flag for using all cores at parsing.')
     parser.add_argument("--eval", type=int, default=1, help='A flag for using evaluation. If 0, memory consumption is decreased')
     parser.add_argument("--continue_training", type=int, default=1, help='A flag for continues training')
+    parser.add_argument("--read_only_few", type=int, default=0, help='READ only first N triples')
 
     # Models.
     parser.add_argument("--model", type=str, default='ConEx',

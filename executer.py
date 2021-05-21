@@ -28,7 +28,7 @@ class Execute:
         self.dataset = KG(data_dir=args.path_dataset_folder,
                           deserialize_flag=args.deserialize_flag,
                           large_kg_parse=args.large_kg_parse,
-                          add_reciprical=args.add_reciprical, eval=args.eval)
+                          add_reciprical=args.add_reciprical, eval=args.eval,read_only_few=args.read_only_few)
         # 2. Create a storage path  + Serialize dataset object.
         self.storage_path = create_experiment_folder(folder_name=args.storage_path)
         self.dataset.serialize(self.storage_path)

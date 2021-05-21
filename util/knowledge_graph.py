@@ -26,7 +26,7 @@ def performance_debugger(func_name):
 
 class KG:
     def __init__(self, data_dir: str = None, deserialize_flag: str = None, large_kg_parse=False, add_reciprical=False,
-                 eval=True):
+                 eval=True, read_only_few: int = None):
         """
 
         :param data_dir: A path of a folder containing the input knowledge graph
@@ -38,9 +38,9 @@ class KG:
 
         if deserialize_flag is None:
             # 1. LOAD Data. (First pass on data)
-            self.train = self.load_data_parallel(data_dir + '/train.txt', large_kg_parse)
-            self.valid = self.load_data_parallel(data_dir + '/valid.txt', large_kg_parse)
-            self.test = self.load_data_parallel(data_dir + '/test.txt', large_kg_parse)
+            self.train = self.load_data_parallel(data_dir + '/train.txt', large_kg_parse, read_only_few)
+            self.valid = self.load_data_parallel(data_dir + '/valid.txt', large_kg_parse, read_only_few)
+            self.test = self.load_data_parallel(data_dir + '/test.txt', large_kg_parse, read_only_few)
             # 2. Concatenate list of triples. Could be done with DASK
             data = self.train + self.valid + self.test
 
@@ -270,9 +270,10 @@ class KG:
         return [s, p, o]
 
     @staticmethod
-    def load_data_parallel(data_path, large_kg_parse=True) -> List:
+    def load_data_parallel(data_path, large_kg_parse=True, read_only_few: int = None) -> List:
         """
         Parse KG via DASK.
+        :param read_only_few:
         :param data_path:
         :param large_kg_parse:
         :return:
@@ -289,6 +290,10 @@ class KG:
                 df = df.compute(scheduler='single-threaded')
             x, y = df.shape
             assert y == 3
+            if isinstance(read_only_few, int):
+                if read_only_few > 0:
+                    df = df.head(read_only_few)
+
             print(f'Parsed via DASK: {df.shape}. Whitespace is used as delimiter.')
             return df.values.tolist()  # Possibly time consuming
         else:
