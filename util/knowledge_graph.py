@@ -278,7 +278,7 @@ class KG:
         :param large_kg_parse:
         :return:
         """
-        print(f'LOADING {data_path}')
+        print(f'LOADING {data_path} large kg:{large_kg_parse}')
         if os.path.exists(data_path):
             df = ddf.read_csv(data_path,
                               delim_whitespace=True, header=None,

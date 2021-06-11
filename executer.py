@@ -301,6 +301,7 @@ class Execute:
     def evaluate_lp(self, model, triple_idx, info):
         model.eval()
         self.logger.info(info)
+        self.logger.info(f'Num of triples {len(triple_idx)}')
         hits = dict()
         reciprocal_ranks = []
         for i in range(0, len(triple_idx)):
@@ -358,9 +359,21 @@ class Execute:
                     hits.setdefault(hits_level, []).append(I)
 
         mean_reciprocal_rank = sum(reciprocal_ranks) / (float(len(triple_idx) * 2))
-        hit_1 = sum(hits[1]) / (float(len(triple_idx) * 2))
-        hit_3 = sum(hits[3]) / (float(len(triple_idx) * 2))
-        hit_10 = sum(hits[10]) / (float(len(triple_idx) * 2))
+
+        if 1 in hits:
+            hit_1 = sum(hits[1]) / (float(len(triple_idx) * 2))
+        else:
+            hit_1 = 0
+
+        if 3 in hits:
+            hit_3 = sum(hits[3]) / (float(len(triple_idx) * 2))
+        else:
+            hit_3 = 0
+
+        if 10 in hits:
+            hit_10 = sum(hits[10]) / (float(len(triple_idx) * 2))
+        else:
+            hit_10 = 0
 
         results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10,
                    'MRR': mean_reciprocal_rank}
