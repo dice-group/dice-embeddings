@@ -280,6 +280,14 @@ class KG:
         """
         print(f'LOADING {data_path} large kg:{large_kg_parse}')
         if os.path.exists(data_path):
+            with open(data_path, 'r') as reader:
+                s = next(reader)
+                # ntriples checking. Last two characters must be whitespace + . + \n
+                if s[-3:] == ' .\n':
+                    is_nt_format = True
+                else:
+                    is_nt_format = False
+
             df = ddf.read_csv(data_path,
                               delim_whitespace=True, header=None,
                               usecols=[0, 1, 2])
@@ -293,9 +301,23 @@ class KG:
             if isinstance(read_only_few, int):
                 if read_only_few > 0:
                     df = df.head(read_only_few)
-
             print(f'Parsed via DASK: {df.shape}. Whitespace is used as delimiter.')
-            return df.values.tolist()  # Possibly time consuming
+            if is_nt_format:
+                print('File is Ntriple => ')
+                triples = []
+                # TODO: do it by using all cores
+                for i in df.values.tolist():
+                    s, p, o = i[0], i[1], i[2]
+                    if s[0] == '<' and s[-1] == '>':
+                        s = s[1:-1]
+                    if p[0] == '<' and p[-1] == '>':
+                        p = p[1:-1]
+                    if o[0] == '<' and o[-1] == '>':
+                        o = o[1:-1]
+                    triples.append([s, p, o])
+                return triples
+            else:
+                return df.values.tolist()  # Possibly time consuming
         else:
             return []
 
