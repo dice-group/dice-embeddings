@@ -17,7 +17,7 @@ unzip KGs.zip
 python -m pytest tests
 ```
 # Available Models
-1. Our models: [Shallom](https://arxiv.org/pdf/2101.09090.pdf), [ConEx](https://openreview.net/forum?id=6T45-4TFqaX&invitationId=eswc-conferences.org/ESWC/2021/Conference/Research_Track/Paper49/-/Camera_Ready_Revision&referrer=%5BTasks%5D(%2Ftasks)), QMult, OMult, ConvQ, ConvO
+1. Our models: [Shallom](https://arxiv.org/pdf/2101.09090.pdf), [ConEx](https://openreview.net/forum?id=6T45-4TFqaX&invitationId=eswc-conferences.org/ESWC/2021/Conference/Research_Track/Paper49/-/Camera_Ready_Revision&referrer=%5BTasks%5D(%2Ftasks)), [QMult](https://proceedings.mlr.press/v157/demir21a.html), [OMult](https://proceedings.mlr.press/v157/demir21a.html), [ConvQ](https://proceedings.mlr.press/v157/demir21a.html), [ConvO](https://proceedings.mlr.press/v157/demir21a.html)
 
 2. [DistMult](https://arxiv.org/pdf/1412.6575.pdf), [ComplEx](https://arxiv.org/pdf/1606.06357.pdf).
 
