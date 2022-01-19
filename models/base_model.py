@@ -2,7 +2,7 @@ import pytorch_lightning as pl
 import torch
 from torch import nn
 from torch.nn import functional as F
-from pytorch_lightning.metrics.functional import accuracy
+from torchmetrics import Accuracy as accuracy
 from typing import List, Any, Tuple
 from torch.nn.init import xavier_normal_
 
