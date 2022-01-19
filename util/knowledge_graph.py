@@ -291,16 +291,15 @@ class KG:
             df = ddf.read_csv(data_path,
                               delim_whitespace=True, header=None,
                               usecols=[0, 1, 2])
-
+            if isinstance(read_only_few, int):
+                if read_only_few > 0:
+                    df = df.loc[:read_only_few]
             if large_kg_parse:
                 df = df.compute(scheduler='processes')
             else:
                 df = df.compute(scheduler='single-threaded')
             x, y = df.shape
             assert y == 3
-            if isinstance(read_only_few, int):
-                if read_only_few > 0:
-                    df = df.head(read_only_few)
             print(f'Parsed via DASK: {df.shape}. Whitespace is used as delimiter.')
             if is_nt_format:
                 print('File is Ntriple => ')
