@@ -48,7 +48,8 @@ class StandardDataModule(pl.LightningDataModule):
             return DataLoader(train_set, batch_size=self.batch_size,
                               shuffle=True,
                               num_workers=self.num_workers,
-                              collate_fn=train_set.collate_fn, pin_memory=True)
+                              collate_fn=train_set.collate_fn, #pin_memory=True
+                              )
 
         else:
             train_set = KvsAll(self.train_set_idx, entity_idxs=self.entities_idx,

@@ -18,7 +18,7 @@ import json
 import inspect
 import dask.dataframe as dd
 import time
-
+from pytorch_lightning.plugins import DDPPlugin
 from pytorch_lightning.callbacks import Callback
 
 
@@ -161,8 +161,9 @@ class Execute:
                 self.accumulated_batch_losses = 0
                 self.counter += 1
 
+
         # 1. Create Pytorch-lightning Trainer object from input configuration
-        self.trainer = pl.Trainer.from_argparse_args(self.args, callbacks=[MyPrintingCallback(logger=self.logger.info)])
+        self.trainer = pl.Trainer.from_argparse_args(self.args,plugins=DDPPlugin(find_unused_parameters=False),precision=16)# callbacks=[MyPrintingCallback(logger=self.logger.info)])
         # 2. Check whether validation and test datasets are available.
         if self.dataset.is_valid_test_available():
             if self.scoring_technique == 'NegSample':
