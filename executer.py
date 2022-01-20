@@ -163,7 +163,6 @@ class Execute:
 
         # 1. Create Pytorch-lightning Trainer object from input configuration
         self.trainer = pl.Trainer.from_argparse_args(self.args, callbacks=[MyPrintingCallback(logger=self.logger.info)])
-
         # 2. Check whether validation and test datasets are available.
         if self.dataset.is_valid_test_available():
             if self.scoring_technique == 'NegSample':

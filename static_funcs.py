@@ -21,7 +21,7 @@ def preprocesses_input_args(arg):
     del arg.max_num_epochs
     arg.check_val_every_n_epoch = arg.check_val_every_n_epochs
     del arg.check_val_every_n_epochs
-
+    arg.num_processes = arg.num_workers
     arg.checkpoint_callback = False
     arg.logger = False
     return arg
@@ -91,6 +91,7 @@ def sanity_checking_with_arguments(args):
 
     args.eval = bool(args.eval)
     args.large_kg_parse = bool(args.large_kg_parse)
+
 
 def select_model(args) -> Tuple[pl.LightningModule, AnyStr]:
     if args.model == 'Shallom':
