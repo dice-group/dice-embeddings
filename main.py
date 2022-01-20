@@ -6,18 +6,18 @@ import argparse
 def argparse_default(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser())
     # Paths.
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Mutagenesis')
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS')
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage')
     parser.add_argument("--deserialize_flag", type=str, default=None, help='Path of a folder for deserialization.')
 
     # Flags for computation
     parser.add_argument("--large_kg_parse", type=int, default=1, help='A flag for using all cores at parsing.')
-    parser.add_argument("--eval", type=int, default=1, help='A flag for using evaluation. If 0, memory consumption is decreased')
+    parser.add_argument("--eval", type=int, default=0, help='A flag for using evaluation. If 0, memory consumption is decreased')
     parser.add_argument("--continue_training", type=int, default=1, help='A flag for continues training')
     parser.add_argument("--read_only_few", type=int, default=0, help='READ only first N triples')
 
     # Models.
-    parser.add_argument("--model", type=str, default='ConEx',
+    parser.add_argument("--model", type=str, default='QMult',
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult")
 
     # Hyperparameters pertaining to number of parameters.
@@ -34,14 +34,14 @@ def argparse_default(description=None):
     parser.add_argument('--apply_unit_norm', type=bool, default=False)
 
     # Hyperparameters for training.
-    parser.add_argument("--max_num_epochs", type=int, default=1)
-    parser.add_argument('--batch_size', type=int, default=512)
+    parser.add_argument("--max_num_epochs", type=int, default=50)
+    parser.add_argument('--batch_size', type=int, default=2048)
     parser.add_argument('--scoring_technique', default='NegSample', help="KvsAll technique or NegSample.")
     parser.add_argument('--negative_sample_ratio', type=int, default=1)
 
     parser.add_argument('--learning_rate', default=.01)
 
-    parser.add_argument("--check_val_every_n_epochs", type=int, default=1000)
+    parser.add_argument("--check_val_every_n_epochs", type=int, default=10)
 
     # Data Augmentation.
     parser.add_argument("--add_reciprical", type=bool, default=False)

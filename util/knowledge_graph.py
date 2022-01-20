@@ -52,7 +52,6 @@ class KG:
             # 2. INDEX. (SECOND pass over all triples)
             self.entity_idx, self.relation_idx, self.er_vocab, self.re_vocab, self.ee_vocab = self.index(data,
                                                                                                          add_reciprical=add_reciprical)
-
             # 3. INDEX Triples for training
             self.triple_indexing(large_kg_parse)
 
@@ -78,6 +77,7 @@ class KG:
         """
         Deserialize data
         """
+        #@ TODO Serialize data via parque
         if eval:
             print('Deserialize er_vocab')
             with open(p + '/er_vocab.pickle', 'rb') as reader:

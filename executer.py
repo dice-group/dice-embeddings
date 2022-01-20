@@ -17,6 +17,9 @@ import pandas as pd
 import json
 import inspect
 import dask.dataframe as dd
+import time
+
+from pytorch_lightning.callbacks import Callback
 
 
 class Execute:
@@ -28,10 +31,11 @@ class Execute:
         self.dataset = KG(data_dir=args.path_dataset_folder,
                           deserialize_flag=args.deserialize_flag,
                           large_kg_parse=args.large_kg_parse,
-                          add_reciprical=args.add_reciprical, eval=args.eval,read_only_few=args.read_only_few)
+                          add_reciprical=args.add_reciprical, eval=args.eval, read_only_few=args.read_only_few)
         # 2. Create a storage path  + Serialize dataset object.
         self.storage_path = create_experiment_folder(folder_name=args.storage_path)
         self.dataset.serialize(self.storage_path)
+        self.eval_model = True if self.args.eval == 1 else False
 
         # 3. Save Create folder to serialize data. This two numerical value will be used in embedding initialization.
         self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
@@ -121,10 +125,18 @@ class Execute:
         Train and/or Evaluate Model
         Store Mode
         """
+        start_time = time.time()
         # 1. Train and Evaluate
         trained_model = self.train_and_eval()
         # 2. Store trained model
         self.store(trained_model)
+        total_runtime = time.time() - start_time
+        if 60 * 60 > total_runtime:
+            message = f'{total_runtime / 60:.3f} minutes'
+        else:
+            message = f'{total_runtime / (60 ** 2):.3f} hours'
+
+        self.logger.info(f'Total Runtime:{message}')
 
     def train_and_eval(self) -> models.BaseKGE:
         """
@@ -132,8 +144,25 @@ class Execute:
         """
         self.logger.info('--- Parameters are parsed for training ---')
 
+        class MyPrintingCallback(Callback):
+            def __init__(self, logger):
+                self.logger = logger
+                self.counter = 1
+                self.accumulated_batch_losses = 0
+
+            def on_train_start(self, trainer, pl_module):
+                self.logger("Training is starting")
+
+            def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
+                self.accumulated_batch_losses += outputs['loss']
+
+            def on_train_epoch_end(self, trainer, pl_module):
+                self.logger(f'{self.counter} Epoch Loss: {self.accumulated_batch_losses}')
+                self.accumulated_batch_losses = 0
+                self.counter += 1
+
         # 1. Create Pytorch-lightning Trainer object from input configuration
-        self.trainer = pl.Trainer.from_argparse_args(self.args)
+        self.trainer = pl.Trainer.from_argparse_args(self.args, callbacks=[MyPrintingCallback(logger=self.logger.info)])
 
         # 2. Check whether validation and test datasets are available.
         if self.dataset.is_valid_test_available():
@@ -208,16 +237,17 @@ class Execute:
         Train models with Negative Sampling
         """
         assert self.neg_ratio > 0
-        trainer = pl.Trainer.from_argparse_args(self.args)
+        # trainer = pl.Trainer.from_argparse_args(self.args)
         model, _ = select_model(self.args)
         form_of_labelling = 'NegativeSampling'
         self.logger.info(f' Training starts: {model.name}-labeling:{form_of_labelling}')
         # We do not need to store vocabs here
-        if len(self.dataset.val_set) > 0 and len(self.dataset.val_set) > 0:
+        if not self.eval_model:
             self.logger.info(f' Free some memory')
             del self.dataset.er_vocab
             del self.dataset.ee_vocab
             del self.dataset.re_vocab
+
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.val_set,
                                      test_set_idx=self.dataset.test_set,
@@ -229,11 +259,12 @@ class Execute:
                                      num_workers=self.args.num_workers)
 
         self.logger.info(model)
-        trainer.fit(model, train_dataloader=dataset.train_dataloader())
-        if len(self.dataset.val_set) > 0:
-            self.evaluate_lp(model, self.dataset.val_set, 'Evaluation of Validation set')
-        if len(self.dataset.test_set) > 0:
-            self.evaluate_lp(model, self.dataset.test_set, 'Evaluation of Test set')
+        self.trainer.fit(model, train_dataloader=dataset.train_dataloader())
+        if self.eval_model:
+            if len(self.dataset.val_set) > 0:
+                self.evaluate_lp(model, self.dataset.val_set, 'Evaluation of Validation set')
+            if len(self.dataset.test_set) > 0:
+                self.evaluate_lp(model, self.dataset.test_set, 'Evaluation of Test set')
         return model
 
     def evaluate_lp_k_vs_all(self, model, triple_idx, info, form_of_labelling):
