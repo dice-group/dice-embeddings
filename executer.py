@@ -18,7 +18,7 @@ import json
 import inspect
 import dask.dataframe as dd
 import time
-from pytorch_lightning.plugins import DDPPlugin
+from pytorch_lightning.plugins import DDPPlugin,DataParallelPlugin
 from pytorch_lightning.callbacks import Callback
 
 
@@ -144,7 +144,8 @@ class Execute:
         self.logger.info('--- Parameters are parsed for training ---')
         # 1. Create Pytorch-lightning Trainer object from input configuration
         self.trainer = pl.Trainer.from_argparse_args(self.args,
-                                                     plugins=DDPPlugin(find_unused_parameters=False)
+                                                     plugins=DataParallelPlugin()
+                                                     #plugins=DDPPlugin(find_unused_parameters=False)
                                                      )
 
         # 2. Check whether validation and test datasets are available.

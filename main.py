@@ -35,7 +35,7 @@ def argparse_default(description=None):
 
     # Hyperparameters for training.
     parser.add_argument("--max_num_epochs", type=int, default=50)
-    parser.add_argument('--batch_size', type=int, default=2048)
+    parser.add_argument('--batch_size', type=int, default=1024)
     parser.add_argument('--scoring_technique', default='NegSample', help="KvsAll technique or NegSample.")
     parser.add_argument('--negative_sample_ratio', type=int, default=1)
 
