@@ -46,7 +46,6 @@ def argparse_default(description=None):
 
     # Data Augmentation.
     parser.add_argument("--add_reciprical", type=bool, default=False)
-    # parser.add_argument('--num_workers', type=int, default=4, help='Number of cpus used during batching')
     parser.add_argument('--kvsall', default=False)
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
                                                                         'If >2,no evaluation scenario is applied implies no evaluation.')

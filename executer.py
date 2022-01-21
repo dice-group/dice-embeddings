@@ -143,7 +143,7 @@ class Execute:
         """
         self.logger.info('--- Parameters are parsed for training ---')
         # 1. Create Pytorch-lightning Trainer object from input configuration
-        self.trainer = pl.Trainer.from_argparse_args(self.args)# plugins=SingleDevicePlugin('cpu'))
+        self.trainer = pl.Trainer.from_argparse_args(self.args)
 
         # 2. Check whether validation and test datasets are available.
         if self.dataset.is_valid_test_available():
@@ -203,7 +203,7 @@ class Execute:
         # 3. Display the selected model's architecture.
         self.logger.info(model)
         # 5. Train model
-        self.trainer.fit(model, train_dataloader=dataset.train_dataloader())
+        self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
         # 6. Test model on validation and test sets if possible.
         if len(self.dataset.valid) > 0:
             self.evaluate_lp_k_vs_all(model, self.dataset.valid, 'Evaluation of Validation set via KvsALL',

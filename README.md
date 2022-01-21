@@ -18,6 +18,20 @@ wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
 unzip KGs.zip
 python -m pytest tests
 ```
+### Manuel Installation
+```
+conda create -n daikiri python=3.8
+conda activate daikiri
+pip install torch==1.10.1+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+pip install pytorch-lightning==1.5.9
+pip install "dask[complete]"==2022.1.0
+pip install scikit-learn==1.0.2
+pip install pytest==6.2.5
+wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
+unzip KGs.zip
+python -m pytest tests
+```
+
 # Available Models
 1. Our models: [Shallom](https://arxiv.org/pdf/2101.09090.pdf), [ConEx](https://openreview.net/forum?id=6T45-4TFqaX&invitationId=eswc-conferences.org/ESWC/2021/Conference/Research_Track/Paper49/-/Camera_Ready_Revision&referrer=%5BTasks%5D(%2Ftasks)), [QMult](https://proceedings.mlr.press/v157/demir21a.html), [OMult](https://proceedings.mlr.press/v157/demir21a.html), [ConvQ](https://proceedings.mlr.press/v157/demir21a.html), [ConvO](https://proceedings.mlr.press/v157/demir21a.html)
 

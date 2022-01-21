@@ -3,18 +3,19 @@ channels:
   - defaults
 dependencies:
   - _libgcc_mutex=0.1=main
+  - _openmp_mutex=4.5=1_gnu
   - ca-certificates=2021.10.26=h06a4308_2
   - certifi=2021.10.8=py38h06a4308_2
   - ld_impl_linux-64=2.35.1=h7274673_9
   - libffi=3.3=he6710b0_2
-  - libgcc-ng=9.1.0=hdf63c60_0
-  - libstdcxx-ng=9.1.0=hdf63c60_0
+  - libgcc-ng=9.3.0=h5101ec6_17
+  - libgomp=9.3.0=h5101ec6_17
+  - libstdcxx-ng=9.3.0=hd4cf53a_17
   - ncurses=6.3=h7f8727e_2
   - openssl=1.1.1m=h7f8727e_0
   - pip=21.2.4=py38h06a4308_0
   - python=3.8.12=h12debd9_0
   - readline=8.1.2=h7f8727e_1
-  - setuptools=58.0.4=py38h06a4308_0
   - sqlite=3.37.0=hc218d9a_0
   - tk=8.6.11=h1ccaba5_0
   - wheel=0.37.1=pyhd3eb1b0_0
@@ -74,6 +75,7 @@ dependencies:
     - rsa==4.8
     - scikit-learn==1.0.2
     - scipy==1.7.3
+    - setuptools==59.5.0
     - six==1.16.0
     - sortedcontainers==2.4.0
     - tblib==1.7.0
@@ -85,13 +87,11 @@ dependencies:
     - toolz==0.11.2
     - torch==1.10.1+cu113
     - torchmetrics==0.7.0
-    - tornado==6.1
     - tqdm==4.62.3
-    - typing_extensions==4.0.1
+    - typing-extensions==4.0.1
     - urllib3==1.26.8
     - werkzeug==2.0.2
     - yarl==1.7.2
     - zict==2.0.0
     - zipp==3.7.0
-prefix: /upb/users/c/cdemir/profiles/unix/cs/anaconda3/envs/demir
-
+prefix: /home/demir/anaconda3/envs/daikiri
