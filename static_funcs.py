@@ -21,7 +21,6 @@ def preprocesses_input_args(arg):
     del arg.max_num_epochs
     arg.check_val_every_n_epoch = arg.check_val_every_n_epochs
     del arg.check_val_every_n_epochs
-    arg.num_processes = arg.num_workers
     arg.checkpoint_callback = False
     arg.find_unused_parameters = False
     arg.logger = False

@@ -18,7 +18,7 @@ import json
 import inspect
 import dask.dataframe as dd
 import time
-from pytorch_lightning.plugins import DDPPlugin, DataParallelPlugin
+from pytorch_lightning.plugins import *#DDPPlugin, DataParallelPlugin
 from pytorch_lightning.callbacks import Callback
 
 
@@ -143,7 +143,7 @@ class Execute:
         """
         self.logger.info('--- Parameters are parsed for training ---')
         # 1. Create Pytorch-lightning Trainer object from input configuration
-        self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=DataParallelPlugin())
+        self.trainer = pl.Trainer.from_argparse_args(self.args)
 
         # 2. Check whether validation and test datasets are available.
         if self.dataset.is_valid_test_available():
@@ -199,11 +199,11 @@ class Execute:
                                      relations_idx=self.dataset.relation_idx,
                                      form=form_of_labelling,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_workers)
+                                     num_workers=self.args.num_processes)
         # 3. Display the selected model's architecture.
         self.logger.info(model)
         # 5. Train model
-        self.trainer.fit(model, train_dataloader=dataset.train_dataloader())
+        self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
         # 6. Test model on validation and test sets if possible.
         if len(self.dataset.valid) > 0:
             self.evaluate_lp_k_vs_all(model, self.dataset.valid, 'Evaluation of Validation set via KvsALL',
@@ -236,7 +236,7 @@ class Execute:
                                      form=form_of_labelling,
                                      neg_sample_ratio=self.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_workers
+                                     num_workers=self.args.num_processes
                                      )
 
         self.logger.info(model)
