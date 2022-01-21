@@ -48,13 +48,14 @@ class StandardDataModule(pl.LightningDataModule):
             return DataLoader(train_set, batch_size=self.batch_size,
                               shuffle=True,
                               num_workers=self.num_workers,
-                              collate_fn=train_set.collate_fn, #pin_memory=True
+                              collate_fn=train_set.collate_fn, pin_memory=True
                               )
 
         else:
             train_set = KvsAll(self.train_set_idx, entity_idxs=self.entities_idx,
                                relation_idxs=self.relations_idx, form=self.form)
-            return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
+            return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, pin_memory=True,
+                              num_workers=self.num_workers)
 
     def val_dataloader(self) -> DataLoader:
         if self.form == 'NegativeSampling':
@@ -225,6 +226,11 @@ class EntityPredictionDataset(Dataset):
 
 
 class TriplePredictionDataset(Dataset):
+    """
+    Similar Issue =
+    https://github.com/pytorch/pytorch/issues/50089
+    https://github.com/PyTorchLightning/pytorch-lightning/issues/538
+    """
     def __init__(self, triples_idx, num_entities, num_relations, neg_sample_ratio=0):
         self.neg_sample_ratio = neg_sample_ratio  # 0 Implies that we do not add negative samples. This is needed during testing and validation
         triples_idx = torch.LongTensor(triples_idx)

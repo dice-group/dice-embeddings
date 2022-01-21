@@ -42,7 +42,6 @@ class Execute:
 
         # 4. Create logger
         self.logger = create_logger(name=self.args.model, p=self.storage_path)
-
         # 5. KGE related parameters
         self.trainer = None
         self.scoring_technique = args.scoring_technique
@@ -143,27 +142,11 @@ class Execute:
         Training and evaluation procedure
         """
         self.logger.info('--- Parameters are parsed for training ---')
-
-        class MyPrintingCallback(Callback):
-            def __init__(self, logger):
-                self.logger = logger
-                self.counter = 1
-                self.accumulated_batch_losses = 0
-
-            def on_train_start(self, trainer, pl_module):
-                self.logger("Training is starting")
-
-            def on_train_batch_end(self, trainer, pl_module, outputs, batch, batch_idx):
-                self.accumulated_batch_losses += outputs['loss']
-
-            def on_train_epoch_end(self, trainer, pl_module):
-                self.logger(f'{self.counter} Epoch Loss: {self.accumulated_batch_losses}')
-                self.accumulated_batch_losses = 0
-                self.counter += 1
-
-
         # 1. Create Pytorch-lightning Trainer object from input configuration
-        self.trainer = pl.Trainer.from_argparse_args(self.args,plugins=DDPPlugin(find_unused_parameters=False),precision=16)# callbacks=[MyPrintingCallback(logger=self.logger.info)])
+        self.trainer = pl.Trainer.from_argparse_args(self.args,
+                                                     plugins=DDPPlugin(find_unused_parameters=False)
+                                                     )
+
         # 2. Check whether validation and test datasets are available.
         if self.dataset.is_valid_test_available():
             if self.scoring_technique == 'NegSample':
@@ -237,7 +220,6 @@ class Execute:
         Train models with Negative Sampling
         """
         assert self.neg_ratio > 0
-        # trainer = pl.Trainer.from_argparse_args(self.args)
         model, _ = select_model(self.args)
         form_of_labelling = 'NegativeSampling'
         self.logger.info(f' Training starts: {model.name}-labeling:{form_of_labelling}')
@@ -256,10 +238,11 @@ class Execute:
                                      form=form_of_labelling,
                                      neg_sample_ratio=self.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_workers)
+                                     num_workers=self.args.num_workers
+                                     )
 
         self.logger.info(model)
-        self.trainer.fit(model, train_dataloader=dataset.train_dataloader())
+        self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
         if self.eval_model:
             if len(self.dataset.val_set) > 0:
                 self.evaluate_lp(model, self.dataset.val_set, 'Evaluation of Validation set')
@@ -446,7 +429,7 @@ class Execute:
                                          batch_size=self.args.batch_size,
                                          num_workers=self.args.num_workers)
             # 5. Train model
-            trainer.fit(model, train_dataloader=dataset.train_dataloader())
+            trainer.fit(model, train_dataloaders=dataset.train_dataloader())
 
             if self.scoring_technique == 'KvsAll' or model.name == 'Shallom':
                 res = self.evaluate_lp_k_vs_all(model, test_set_for_i_th_fold,
