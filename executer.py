@@ -199,7 +199,7 @@ class Execute:
                                      relations_idx=self.dataset.relation_idx,
                                      form=form_of_labelling,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_workers)
+                                     num_workers=self.args.num_processes)
         # 3. Display the selected model's architecture.
         self.logger.info(model)
         # 5. Train model
@@ -236,7 +236,7 @@ class Execute:
                                      form=form_of_labelling,
                                      neg_sample_ratio=self.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_workers
+                                     num_workers=self.args.num_processes
                                      )
 
         self.logger.info(model)

@@ -46,8 +46,8 @@ results in evaluating quality of SHALLOM embeddings on the test split.
 
 1. To train our approaches for 10 epochs by using **32 CPU cores** (if available) on UMLS. 
 ```
-python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --max_num_epochs 10 --num_workers 32 --scoring_technique 'KvsAll'
-python main.py --path_dataset_folder 'KGs/UMLS' --model 'ConEx' --max_num_epochs 10 --num_workers 32 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --max_num_epochs 10 --num_processes 32 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'ConEx' --max_num_epochs 10 --num_processes 32 --scoring_technique 'KvsAll'
 ```
 2. To train our approaches for 10 epochs by using a single GPU.
 ```

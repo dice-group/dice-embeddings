@@ -11,8 +11,9 @@ def argparse_default(description=None):
     parser.add_argument("--deserialize_flag", type=str, default=None, help='Path of a folder for deserialization.')
 
     # Flags for computation
-    parser.add_argument("--large_kg_parse", type=int, default=1, help='A flag for using all cores at parsing.')
-    parser.add_argument("--eval", type=int, default=0, help='A flag for using evaluation. If 0, memory consumption is decreased')
+    parser.add_argument("--large_kg_parse", type=int, default=0, help='A flag for using all cores at parsing.')
+    parser.add_argument("--eval", type=int, default=0,
+                        help='A flag for using evaluation. If 0, memory consumption is decreased')
     parser.add_argument("--continue_training", type=int, default=1, help='A flag for continues training')
     parser.add_argument("--read_only_few", type=int, default=0, help='READ only first N triples')
 
@@ -34,9 +35,9 @@ def argparse_default(description=None):
     parser.add_argument('--apply_unit_norm', type=bool, default=False)
 
     # Hyperparameters for training.
-    parser.add_argument("--max_num_epochs", type=int, default=50)
+    parser.add_argument("--max_num_epochs", type=int, default=100)
     parser.add_argument('--batch_size', type=int, default=1024)
-    parser.add_argument('--scoring_technique', default='NegSample', help="KvsAll technique or NegSample.")
+    parser.add_argument('--scoring_technique', default='KvsAll', help="KvsAll technique or NegSample.")
     parser.add_argument('--negative_sample_ratio', type=int, default=1)
 
     parser.add_argument('--learning_rate', default=.01)
@@ -45,7 +46,7 @@ def argparse_default(description=None):
 
     # Data Augmentation.
     parser.add_argument("--add_reciprical", type=bool, default=False)
-    parser.add_argument('--num_workers', type=int, default=4, help='Number of cpus used during batching')
+    # parser.add_argument('--num_workers', type=int, default=4, help='Number of cpus used during batching')
     parser.add_argument('--kvsall', default=False)
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
                                                                         'If >2,no evaluation scenario is applied implies no evaluation.')
