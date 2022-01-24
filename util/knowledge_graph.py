@@ -77,7 +77,7 @@ class KG:
         """
         Deserialize data
         """
-        #@ TODO Serialize data via parque
+        # @ TODO Serialize data via parque
         if eval:
             print('Deserialize er_vocab')
             with open(p + '/er_vocab.pickle', 'rb') as reader:
@@ -287,10 +287,8 @@ class KG:
                     is_nt_format = True
                 else:
                     is_nt_format = False
-
-            df = ddf.read_csv(data_path,
-                              delim_whitespace=True, header=None,
-                              usecols=[0, 1, 2])
+            # Whitespace is used as deliminator and first three items are considered.
+            df = ddf.read_csv(data_path, delim_whitespace=True, header=None, usecols=[0, 1, 2])
             if isinstance(read_only_few, int):
                 if read_only_few > 0:
                     df = df.loc[:read_only_few]
@@ -319,72 +317,6 @@ class KG:
                 return df.values.tolist()  # Possibly time consuming
         else:
             return []
-
-    def load_data(self, data_path, add_reciprical=True, load_only=None):
-        # line can be 1 or 2
-        # a) <...> <...> <...> .
-        # b) <...> <...> "..." .
-        # c) ... ... ...
-        # (a) and (b) correspond to the N-Triples format
-        # (c) corresponds to the format of current link prediction benchmark datasets.
-        print(f'{data_path} is being read.')
-        try:
-            data = []
-            with open(data_path, "r") as f:
-                for line in f:
-                    # 1. Ignore lines with *** " *** or does only contain 2 or less characters.
-                    if '"' in line or len(line) < 3:
-                        continue
-
-                    # 2. Tokenize(<...> <...> <...> .) => ['<...>', '<...>','<...>','.']
-                    # Tokenize(... ... ...) => ['...', '...', '...',]
-                    decomposed_list_of_strings = line.split()
-
-                    # 3. Sanity checking.
-                    try:
-                        assert len(decomposed_list_of_strings) == 3 or len(decomposed_list_of_strings) == 4
-                    except AssertionError:
-                        print(f'Invalid input triple {line}. It can not be split into 3 or 4 items')
-                        print('This triple will be ignored')
-                        continue
-                    # 4. Storing
-                    if len(decomposed_list_of_strings) == 4:
-                        assert decomposed_list_of_strings[-1] == '.'
-                        data.append(self.ntriple_parser(decomposed_list_of_strings))
-                    if len(decomposed_list_of_strings) == 3:
-                        data.append(decomposed_list_of_strings)
-
-                    if load_only is not None:
-                        if len(data) == load_only:
-                            break
-
-                    if len(data) % 50_000_000 == 0:
-                        print(f'Size of already parsed data {len(data)}')
-
-        except FileNotFoundError:
-            print(f'{data_path} is not found')
-            return []
-        if add_reciprical:
-            data += [[i[2], i[1] + "_reverse", i[0]] for i in data]
-        return data
-
-    def process(self, x):
-        # 2. Tokenize(<...> <...> <...> .) => ['<...>', '<...>','<...>','.']
-        # Tokenize(... ... ...) => ['...', '...', '...',]
-        decomposed_list_of_strings = x.split()
-
-        # 3. Sanity checking.
-        try:
-            assert len(decomposed_list_of_strings) == 3 or len(decomposed_list_of_strings) == 4
-        except AssertionError:
-            print(f'Invalid input triple {x}. It can not be split into 3 or 4 items')
-            print('This triple will be ignored')
-        # 4. Storing
-        if len(decomposed_list_of_strings) == 4:
-            assert decomposed_list_of_strings[-1] == '.'
-            decomposed_list_of_strings = self.ntriple_parser(decomposed_list_of_strings)
-        if len(decomposed_list_of_strings) == 3:
-            return decomposed_list_of_strings
 
     @staticmethod
     def get_entities_and_relations(data):
@@ -433,42 +365,71 @@ class KG:
         """
         return list(self.relation_idx.keys())
 
-    """    
-    def get_er_idx_vocab(self):
-        # head entity and relation
-        er_vocab = defaultdict(list)
-        for triple in self.__data:
-            er_vocab[(self.entity_to_idx[triple[0]], self.relation_to_idx[triple[1]])].append(
-                self.entity_to_idx[triple[2]])
-        return er_vocab
+    # Not used anymore.
+    def load_data(self, data_path, add_reciprical=True, load_only=None):
+        raise NotImplemented()
+        # line can be 1 or 2
+        # a) <...> <...> <...> .
+        # b) <...> <...> "..." .
+        # c) ... ... ...
+        # (a) and (b) correspond to the N-Triples format
+        # (c) corresponds to the format of current link prediction benchmark datasets.
+        print(f'{data_path} is being read.')
+        try:
+            data = []
+            with open(data_path, "r") as f:
+                for line in f:
+                    # 1. Ignore lines with *** " *** or does only contain 2 or less characters.
+                    if '"' in line or len(line) < 3:
+                        continue
 
-    def get_po_idx_vocab(self):
-        # head entity and tail entity
-        po_vocab = defaultdict(list)
-        for triple in self.__data:
-            # Predicate, Object : Subject
-            s, p, o = triple[0], triple[1], triple[2]
-            po_vocab[(self.relation_to_idx[p], self.entity_to_idx[o])].append(self.entity_to_idx[s])
-        return po_vocab
+                    # 2. Tokenize(<...> <...> <...> .) => ['<...>', '<...>','<...>','.']
+                    # Tokenize(... ... ...) => ['...', '...', '...',]
+                    decomposed_list_of_strings = line.split()
 
-    def get_ee_idx_vocab(self):
-        # head entity and tail entity
-        ee_vocab = defaultdict(list)
-        for triple in self.__data:
-            # Subject, Predicate Object
-            s, p, o = triple[0], triple[1], triple[2]
-            ee_vocab[(self.entity_to_idx[s], self.entity_to_idx[o])].append(self.relation_to_idx[p])
-        return ee_vocab
-    """
+                    # 3. Sanity checking.
+                    try:
+                        assert len(decomposed_list_of_strings) == 3 or len(decomposed_list_of_strings) == 4
+                    except AssertionError:
+                        print(f'Invalid input triple {line}. It can not be split into 3 or 4 items')
+                        print('This triple will be ignored')
+                        continue
+                    # 4. Storing
+                    if len(decomposed_list_of_strings) == 4:
+                        assert decomposed_list_of_strings[-1] == '.'
+                        data.append(self.ntriple_parser(decomposed_list_of_strings))
+                    if len(decomposed_list_of_strings) == 3:
+                        data.append(decomposed_list_of_strings)
 
-    """
-    @staticmethod
-    def get_relations(data):
-        relations = sorted(list(set([d[1] for d in data])))
-        return relations
+                    if load_only is not None:
+                        if len(data) == load_only:
+                            break
 
-    @staticmethod
-    def get_entities(data):
-        entities = sorted(list(set([d[0] for d in data] + [d[2] for d in data])))
-        return entities
-    """
+                    if len(data) % 50_000_000 == 0:
+                        print(f'Size of already parsed data {len(data)}')
+
+        except FileNotFoundError:
+            print(f'{data_path} is not found')
+            return []
+        if add_reciprical:
+            data += [[i[2], i[1] + "_reverse", i[0]] for i in data]
+        return data
+
+    def process(self, x):
+        raise NotImplemented
+        # 2. Tokenize(<...> <...> <...> .) => ['<...>', '<...>','<...>','.']
+        # Tokenize(... ... ...) => ['...', '...', '...',]
+        decomposed_list_of_strings = x.split()
+
+        # 3. Sanity checking.
+        try:
+            assert len(decomposed_list_of_strings) == 3 or len(decomposed_list_of_strings) == 4
+        except AssertionError:
+            print(f'Invalid input triple {x}. It can not be split into 3 or 4 items')
+            print('This triple will be ignored')
+        # 4. Storing
+        if len(decomposed_list_of_strings) == 4:
+            assert decomposed_list_of_strings[-1] == '.'
+            decomposed_list_of_strings = self.ntriple_parser(decomposed_list_of_strings)
+        if len(decomposed_list_of_strings) == 3:
+            return decomposed_list_of_strings

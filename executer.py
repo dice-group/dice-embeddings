@@ -18,8 +18,12 @@ import json
 import inspect
 import dask.dataframe as dd
 import time
-from pytorch_lightning.plugins import *#DDPPlugin, DataParallelPlugin
+from pytorch_lightning.plugins import *  # DDPPlugin, DataParallelPlugin
 from pytorch_lightning.callbacks import Callback
+
+from pytorch_lightning import Trainer, seed_everything
+
+seed_everything(1, workers=True)
 
 
 class Execute:
@@ -76,8 +80,6 @@ class Execute:
 
         with open(self.storage_path + '/configuration.json', 'w') as file_descriptor:
             temp = vars(self.args)
-            temp.pop('gpus')
-            temp.pop('tpu_cores')
             json.dump(temp, file_descriptor)
 
         self.logger.info('Store Embeddings.')
@@ -143,15 +145,17 @@ class Execute:
         """
         self.logger.info('--- Parameters are parsed for training ---')
         # 1. Create Pytorch-lightning Trainer object from input configuration
-        self.trainer = pl.Trainer.from_argparse_args(self.args)
-
+        if self.args.gpus:
+            self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=[DDPPlugin(find_unused_parameters=False)])
+        else:
+            self.trainer = pl.Trainer.from_argparse_args(self.args)
         # 2. Check whether validation and test datasets are available.
         if self.dataset.is_valid_test_available():
             if self.scoring_technique == 'NegSample':
                 trained_model = self.training_negative_sampling()
             elif self.scoring_technique == 'KvsAll':
                 # KvsAll or negative sampling
-                trained_model = self.training()
+                trained_model = self.training_kvsall()
             else:
                 raise ValueError(f'Invalid argument: {self.scoring_technique}')
         else:
@@ -165,7 +169,7 @@ class Execute:
                     trained_model = self.training_negative_sampling()
                 elif self.scoring_technique == 'KvsAll':
                     # KvsAll or negative sampling
-                    trained_model = self.training()
+                    trained_model = self.training_kvsall()
                 else:
                     raise ValueError(f'Invalid argument: {self.scoring_technique}')
             else:
@@ -183,7 +187,7 @@ class Execute:
             targets[idx, er_vocab[pair]] = 1
         return np.array(batch), torch.FloatTensor(targets)
 
-    def training(self):
+    def training_kvsall(self):
         """
         Train models with KvsAll or NegativeSampling
         :return:
@@ -205,12 +209,13 @@ class Execute:
         # 5. Train model
         self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
         # 6. Test model on validation and test sets if possible.
-        if len(self.dataset.valid) > 0:
-            self.evaluate_lp_k_vs_all(model, self.dataset.valid, 'Evaluation of Validation set via KvsALL',
-                                      form_of_labelling)
-        if len(self.dataset.test) > 0:
-            self.evaluate_lp_k_vs_all(model, self.dataset.test, 'Evaluation of Test set via KvsALL',
-                                      form_of_labelling)
+        if self.eval_model:
+            if len(self.dataset.valid) > 0:
+                self.evaluate_lp_k_vs_all(model, self.dataset.valid, 'Evaluation of Validation set via KvsALL',
+                                          form_of_labelling)
+            if len(self.dataset.test) > 0:
+                self.evaluate_lp_k_vs_all(model, self.dataset.test, 'Evaluation of Test set via KvsALL',
+                                          form_of_labelling)
         return model
 
     def training_negative_sampling(self) -> pl.LightningModule:
@@ -249,13 +254,22 @@ class Execute:
         return model
 
     def evaluate_lp_k_vs_all(self, model, triple_idx, info, form_of_labelling):
+        """
+        Filtered link prediction evaluation.
+        :param model:
+        :param triple_idx:
+        :param info:
+        :param form_of_labelling:
+        :return:
+        """
+        # (1) set model to eval model
         model.eval()
         hits = []
         ranks = []
         self.logger.info(info)
         for i in range(10):
             hits.append([])
-
+        # (2) Evaluation mode
         if form_of_labelling == 'RelationPrediction':
 
             for i in range(0, len(triple_idx), self.args.batch_size):
@@ -280,6 +294,7 @@ class Execute:
                         if rank <= hits_level:
                             hits[hits_level].append(1.0)
         else:
+            # (3) Ranks are computed w.r.t. missing entities.
             for i in range(0, len(triple_idx), self.args.batch_size):
                 data_batch, _ = self.get_batch_1_to_N(self.dataset.er_vocab, triple_idx, i, self.dataset.num_relations)
                 e1_idx = torch.tensor(data_batch[:, 0])
@@ -287,9 +302,10 @@ class Execute:
                 e2_idx = torch.tensor(data_batch[:, 2])
                 predictions = model.forward_k_vs_all(e1_idx=e1_idx, rel_idx=r_idx)
                 for j in range(data_batch.shape[0]):
+                    #
                     filt = self.dataset.er_vocab[(data_batch[j][0], data_batch[j][1])]
                     target_value = predictions[j, e2_idx[j]].item()
-                    predictions[j, filt] = 0.0
+                    predictions[j, filt] = float('-inf')
                     predictions[j, e2_idx[j]] = target_value
 
                 sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
@@ -426,6 +442,7 @@ class Execute:
                                          form=form_of_labelling,
                                          batch_size=self.args.batch_size,
                                          num_workers=self.args.num_workers)
+            self.trainer.tune(model)
             # 5. Train model
             trainer.fit(model, train_dataloaders=dataset.train_dataloader())
 

@@ -45,7 +45,7 @@ class StandardDataModule(pl.LightningDataModule):
                                                 num_entities=len(self.entities_idx),
                                                 num_relations=len(self.relations_idx),
                                                 neg_sample_ratio=self.neg_sample_ratio)
-            return DataLoader(train_set, batch_size=self.batch_size,
+            return DataLoader(train_set, batch_size=self.batch_size,# | self.hparams.batch_size,
                               shuffle=True,
                               num_workers=self.num_workers,
                               collate_fn=train_set.collate_fn, pin_memory=True

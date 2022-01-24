@@ -17,12 +17,16 @@ from models.quaternion import QMult, ConvQ
 
 def preprocesses_input_args(arg):
     # To update the default value of Trainer in pytorch-lightnings
-    arg.max_epochs = arg.max_num_epochs
-    del arg.max_num_epochs
-    arg.check_val_every_n_epoch = arg.check_val_every_n_epochs
-    del arg.check_val_every_n_epochs
+    arg.max_epochs = arg.num_epochs
+    arg.min_epochs = arg.num_epochs
+
+    arg.learning_rate = arg.lr
+    arg.deterministic = True
+
+    # Below part will be investigated
+    arg.check_val_every_n_epoch = 10**6
+    # del arg.check_val_every_n_epochs
     arg.checkpoint_callback = False
-    arg.find_unused_parameters = False
     arg.logger = False
     return arg
 
