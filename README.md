@@ -5,7 +5,6 @@ Through [DASK](https://dask.org/), we utilize multi-CPUs at processing the input
 [PytorchLightning](https://www.pytorchlightning.ai/) allow us to use knowledge graph embedding model in hardware-agnostic manner.
 
 ## Installation
-
 First clone the repository:
 ```
 git clone https://github.com/dice-group/DAIKIRI-Embedding.git
@@ -27,6 +26,7 @@ pip install pytorch-lightning==1.5.9
 pip install "dask[complete]"==2022.1.0
 pip install scikit-learn==1.0.2
 pip install pytest==6.2.5
+pip install gradio==2.7.5.2
 wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
 unzip KGs.zip
 python -m pytest tests
@@ -37,14 +37,14 @@ python -m pytest tests
 
 2. [DistMult](https://arxiv.org/pdf/1412.6575.pdf), [ComplEx](https://arxiv.org/pdf/1606.06357.pdf).
 
-# Dataset Format
+# Dataset Format for Training
 1. A dataset must be located in a folder, e.g. 'KGs/YAGO3-10'.
 
 2. A folder must contain **train.txt**. If the validation and test splits are available, then they must named as **valid.txt** and **test.txt**, respectively.
 
 3. **train.txt**, **valid.txt** and **test.txt** must be in either [N-triples](https://www.w3.org/2001/sw/RDFCore/ntriples/) format or standard link prediction dataset format (see KGs folder).
 
-# Usage 
+# Training 
 1. For instance, 'KGs/Family' contains only **train.txt**. To obtain Shallom embeddings ([Research paper](https://arxiv.org/abs/2101.09090) and [conference presentation](https://www.youtube.com/watch?v=LUDpdgdvTQg)) 
 ```python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --num_folds_for_cv 10 --max_num_epochs 1```
 This execution results in generating **Mean and standard deviation of raw MRR in 10-fold cross validation => 0.768, 0.023**. Moreover, all necessary information including embeddings are stored in DAIKIRI_Storage folder (if does not exist it will be created).
@@ -84,6 +84,29 @@ python main.py --gpus 8 --distributed_backend ddp --path_dataset_folder 'KGs/WN1
 ```
 
 6. More examples can be found in run.sh.
+
+# Deployment and Open-sourcing
+Any pretrained model can be deployed with an ease. Moreover, anyone on the internet can use the pretrained model with ```--share``` parameter. 
+
+
+```
+python deploy.py --path_of_experiment_folder 'DAIKIRI_Storage/QMultFamily'
+Loading Model...
+Model is loaded!
+Running on local URL:  http://127.0.0.1:7861/
+To create a public link, set `share=True` in `launch()`.
+```
+```
+python deploy.py --path_of_experiment_folder 'DAIKIRI_Storage/QMultFamily' --share
+Loading Model...
+Model is loaded!
+Running on local URL:  http://127.0.0.1:7860/
+Running on public URL: https://54886.gradio.app
+
+This share link expires in 72 hours. For free permanent hosting, check out Spaces (https://huggingface.co/spaces)
+```
+![alt text](figures/deploy_qmult_family.png)
+
 
 ## How to cite
 If you really liked our work :), feel free to cite 
