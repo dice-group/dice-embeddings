@@ -1,4 +1,5 @@
 import warnings
+import os
 
 import models
 
@@ -36,7 +37,6 @@ class Execute:
         # 2. Create an instance of KG.
         self.dataset = self.read_input_data(args)
         self.dataset.serialize(self.storage_path)
-
 
         self.eval_model = True if self.args.eval == 1 else False
 
@@ -186,6 +186,16 @@ class Execute:
         print('--- Training is completed  ---')
         return trained_model
 
+    def old_get_batch_1_to_N(self, er_vocab, er_vocab_pairs, idx, output_dim):
+        batch = er_vocab_pairs[idx:idx + self.args.batch_size]
+        targets = np.zeros((len(batch), output_dim))
+        for idx, pair in enumerate(batch):
+            if isinstance(pair,
+                          np.ndarray):  # A workaround as test triples in kvold is a numpy array and a numpy array is not hashanle.
+                pair = tuple(pair)
+            targets[idx, er_vocab[pair]] = 1
+        return np.array(batch), torch.FloatTensor(targets)
+
     def get_batch_1_to_N(self, er_vocab, er_vocab_pairs, idx, output_dim):
         batch = er_vocab_pairs[idx:idx + self.args.batch_size]
         targets = np.zeros((len(batch), output_dim))
@@ -193,6 +203,11 @@ class Execute:
             if isinstance(pair,
                           np.ndarray):  # A workaround as test triples in kvold is a numpy array and a numpy array is not hashanle.
                 pair = tuple(pair)
+
+            print(pair)
+            print(batch)
+            print(targets.shape)
+            exit(1)
             targets[idx, er_vocab[pair]] = 1
         return np.array(batch), torch.FloatTensor(targets)
 
@@ -221,11 +236,18 @@ class Execute:
         self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
         # 6. Test model on validation and test sets if possible.
         if self.eval_model:
-            if len(self.dataset.valid) > 0:
-                self.evaluate_lp_k_vs_all(model, self.dataset.valid, 'Evaluation of Validation set via KvsALL',
+
+            # for idx_entity in range(self.dataset.num_entities):
+            #    selected_idx_triples_df = data[data['subject'] == idx_entity]
+            #    unique_relations = selected_idx_triples_df['relation']
+            #    exit(1)
+            #    # er_vocab[(entity_idxs[h], relation_idxs[r])].append(entity_idxs[t])
+
+            if len(self.dataset.valid_set) > 0:
+                self.evaluate_lp_k_vs_all(model, self.dataset.valid_set, 'Evaluation of Validation set via KvsALL',
                                           form_of_labelling)
-            if len(self.dataset.test) > 0:
-                self.evaluate_lp_k_vs_all(model, self.dataset.test, 'Evaluation of Test set via KvsALL',
+            if len(self.dataset.test_set) > 0:
+                self.evaluate_lp_k_vs_all(model, self.dataset.test_set, 'Evaluation of Test set via KvsALL',
                                           form_of_labelling)
         return model
 
@@ -255,17 +277,28 @@ class Execute:
                                      )
         self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
         if self.eval_model:
-            if len(self.dataset.val_set) > 0:
-                self.evaluate_lp(model, self.dataset.val_set, 'Evaluation of Validation set')
+            if len(self.dataset.valid_set) > 0:
+                self.evaluate_lp(model, self.dataset.valid_set, 'Evaluation of Validation set')
             if len(self.dataset.test_set) > 0:
                 self.evaluate_lp(model, self.dataset.test_set, 'Evaluation of Test set')
         return model
+    def deserialize_index_data(self):
+        m=[]
+        if os.path.isfile(self.storage_path + '/idx_train_df.gzip'):
+            m.append(pd.read_parquet(self.storage_path + '/idx_train_df.gzip'))
+        if os.path.isfile(self.storage_path + '/idx_valid_df.gzip'):
+            m.append(pd.read_parquet(self.storage_path + '/idx_valid_df.gzip'))
+        if os.path.isfile(self.storage_path + '/idx_test_df.gzip'):
+            m.append(pd.read_parquet(self.storage_path + '/idx_test_df.gzip'))
+
+        return pd.concat(m,ignore_index=True)
+
 
     def evaluate_lp_k_vs_all(self, model, triple_idx, info, form_of_labelling):
         """
         Filtered link prediction evaluation.
         :param model:
-        :param triple_idx:
+        :param triple_idx: test triples
         :param info:
         :param form_of_labelling:
         :return:
@@ -277,10 +310,28 @@ class Execute:
         print(info)
         for i in range(10):
             hits.append([])
+        print('LOAD indexed train + valid + test data')
+        data = self.deserialize_index_data()
+
         # (2) Evaluation mode
         if form_of_labelling == 'RelationPrediction':
-
-            for i in range(0, len(triple_idx), self.args.batch_size):
+            for i in triple_idx:
+                e1_idx, r_idx, e2_idx = tuple(i)
+                predictions = model.forward_k_vs_all(e1_idx=torch.tensor([e1_idx]), e2_idx=torch.tensor([e2_idx]))[
+                    0]
+                filt = data[(data['subject'] == e1_idx) & (data['object'] == e2_idx)]['relation'].values
+                # filt = self.dataset.er_vocab[(data_batch[j][0], data_batch[j][1])]
+                target_value = predictions[r_idx].item()
+                predictions[filt] = float('-inf')
+                predictions[r_idx] = target_value
+                sort_values, sort_idxs = torch.sort(predictions, descending=True)
+                sort_idxs = sort_idxs.detach()  # cpu().numpy()
+                rank = np.where(sort_idxs == r_idx)[0][0]
+                ranks.append(rank + 1)
+                for hits_level in range(10):
+                    if rank <= hits_level:
+                        hits[hits_level].append(1.0)
+                """
                 data_batch, _ = self.get_batch_1_to_N(self.dataset.ee_vocab, triple_idx, i, self.dataset.num_entities)
                 e1_idx = torch.tensor(data_batch[:, 0])
                 r_idx = torch.tensor(data_batch[:, 1])
@@ -301,29 +352,23 @@ class Execute:
                     for hits_level in range(10):
                         if rank <= hits_level:
                             hits[hits_level].append(1.0)
+                """
         else:
-            # (3) Ranks are computed w.r.t. missing entities.
-            for i in range(0, len(triple_idx), self.args.batch_size):
-                data_batch, _ = self.get_batch_1_to_N(self.dataset.er_vocab, triple_idx, i, self.dataset.num_relations)
-                e1_idx = torch.tensor(data_batch[:, 0])
-                r_idx = torch.tensor(data_batch[:, 1])
-                e2_idx = torch.tensor(data_batch[:, 2])
-                predictions = model.forward_k_vs_all(e1_idx=e1_idx, rel_idx=r_idx)
-                for j in range(data_batch.shape[0]):
-                    #
-                    filt = self.dataset.er_vocab[(data_batch[j][0], data_batch[j][1])]
-                    target_value = predictions[j, e2_idx[j]].item()
-                    predictions[j, filt] = float('-inf')
-                    predictions[j, e2_idx[j]] = target_value
-
-                sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
+            for i in triple_idx:
+                e1_idx, r_idx, e2_idx = tuple(i)
+                predictions = model.forward_k_vs_all(e1_idx=torch.tensor([e1_idx]), rel_idx=torch.tensor([r_idx]))[0]
+                filt = data[(data['subject'] == e1_idx) & (data['relation'] == r_idx)]['object'].values
+                # filt = self.dataset.er_vocab[(data_batch[j][0], data_batch[j][1])]
+                target_value = predictions[e2_idx].item()
+                predictions[filt] = float('-inf')
+                predictions[e2_idx] = target_value
+                sort_values, sort_idxs = torch.sort(predictions, descending=True)
                 sort_idxs = sort_idxs.detach()  # cpu().numpy()
-                for j in range(data_batch.shape[0]):
-                    rank = np.where(sort_idxs[j] == e2_idx[j].item())[0][0]
-                    ranks.append(rank + 1)
-                    for hits_level in range(10):
-                        if rank <= hits_level:
-                            hits[hits_level].append(1.0)
+                rank = np.where(sort_idxs == e2_idx)[0][0]
+                ranks.append(rank + 1)
+                for hits_level in range(10):
+                    if rank <= hits_level:
+                        hits[hits_level].append(1.0)
 
         hit_1 = sum(hits[0]) / (float(len(triple_idx)))
         hit_3 = sum(hits[2]) / (float(len(triple_idx)))
@@ -335,11 +380,25 @@ class Execute:
         return results
 
     def evaluate_lp(self, model, triple_idx, info):
+        """
+        Evaluate model in a standard link prediction task
+
+        for each triple
+        the rank is computed by taking the mean of the filtered missing head entity rank and
+        the filtered missing tail entity rank
+        :param model:
+        :param triple_idx:
+        :param info:
+        :return:
+        """
         model.eval()
         print(info)
         print(f'Num of triples {len(triple_idx)}')
         hits = dict()
         reciprocal_ranks = []
+        print('LOAD indexed train + valid + test data')
+        data = self.deserialize_index_data()
+
         for i in range(0, len(triple_idx)):
             # 1. Get a triple
             data_point = triple_idx[i]
@@ -360,7 +419,8 @@ class Execute:
             # 3. Computed filtered ranks.
 
             # 3.1. Compute filtered tail entity rankings
-            filt_tails = self.dataset.er_vocab[(s, p)]
+            # filt_tails = self.dataset.er_vocab[(s, p)]
+            filt_tails = data[(data['subject'] == s) & (data['relation'] == p)]['object'].values
 
             target_value = predictions_tails[o].item()
             predictions_tails[filt_tails] = -np.Inf
@@ -371,7 +431,8 @@ class Execute:
             filt_tail_entity_rank = np.where(sort_idxs == o)[0][0]
 
             # 3.1. Compute filtered head entity rankings
-            filt_heads = self.dataset.re_vocab[(p, o)]
+            # filt_heads = self.dataset.re_vocab[(p, o)]
+            filt_heads = data[(data['relation'] == p) & (data['object'] == o)]['subject'].values
 
             target_value = predictions_heads[s].item()
             predictions_heads[filt_heads] = -np.Inf
@@ -435,22 +496,25 @@ class Execute:
         model = None
         eval_folds = []
 
-        for (ith, (train_index, test_index)) in enumerate(kf.split(self.dataset.train)):
+        for (ith, (train_index, test_index)) in enumerate(kf.split(self.dataset.train_set)):
             trainer = pl.Trainer.from_argparse_args(self.args)
             model, form_of_labelling = select_model(self.args)
             print(
                 f'{ith}-fold cross-validation starts: {model.name}-labeling:{form_of_labelling}, scoring technique: {self.scoring_technique}')
 
-            train_set_for_i_th_fold, test_set_for_i_th_fold = self.dataset.train[train_index], self.dataset.train[
+            train_set_for_i_th_fold, test_set_for_i_th_fold = self.dataset.train_set[train_index], self.dataset.train_set[
                 test_index]
 
             dataset = StandardDataModule(train_set_idx=train_set_for_i_th_fold,
-                                         entities_idx=self.dataset.entity_idx,
-                                         relations_idx=self.dataset.relation_idx,
+                                         valid_set_idx=self.dataset.valid_set,
+                                         test_set_idx=self.dataset.test_set,
+                                         entity_to_idx=self.dataset.entity_to_idx,
+                                         relation_to_idx=self.dataset.relation_to_idx,
                                          form=form_of_labelling,
+                                         neg_sample_ratio=self.neg_ratio,
                                          batch_size=self.args.batch_size,
-                                         num_workers=self.args.num_workers)
-            self.trainer.tune(model)
+                                         num_workers=self.args.num_processes
+                                         )
             # 5. Train model
             trainer.fit(model, train_dataloaders=dataset.train_dataloader())
 

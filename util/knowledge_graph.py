@@ -31,12 +31,13 @@ class KG:
             # 2. Concatenate list of triples. Could be done with DASK
             data = pd.concat([self.train_set, self.valid_set, self.test_set], ignore_index=True)
 
-            # 3. ordered list of entities and relations
+            # 3. Construct a map of entities to indexes
             ordered_list = pd.unique(data[['subject', 'object']].values.ravel('K'))
             self.entity_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
                                               columns=['entity'],
                                               index=ordered_list)
             ordered_list = pd.unique(data['relation'].values.ravel('K'))
+            # 4. Construct a map of relations to indexes
             self.relation_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
                                                 columns=['relation'],
                                                 index=ordered_list)
@@ -78,9 +79,64 @@ class KG:
             print(f'Number of triples on test set: {len(self.test_set)}')
             s = len(s) * '-'
             print(f'{s}\n')
+
         else:
             print('DESERIALIZE')
             self.deserialize(deserialize_flag, eval)
+
+    @staticmethod
+    def index(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):
+        """
+        Index each triples into their integer representation. Performed in a single tread with single core.
+        V
+
+        :param data:
+        :param add_reciprical:
+        :return:
+        """
+        print(f'Indexing {len(data)} triples. Data augmentation flag => {add_reciprical}')
+        # Entity to integer indexing
+        entity_idxs = {}
+        # Relation to integer indexing
+        relation_idxs = {}
+
+        # Mapping from (head entity & relation) to tail entity
+        er_vocab = defaultdict(list)
+        # Mapping from (relation & tail entity) to head entity
+        pe_vocab = defaultdict(list)
+        # Mapping from (head entity & tail entity) to relation
+        ee_vocab = defaultdict(list)
+
+        for triple in data:
+            try:
+                h, r, t = triple[0], triple[1], triple[2]
+            except IndexError:
+                print(f'{triple} is not parsed corrected.')
+                continue
+
+            # 1. Integer indexing entities and relations
+            entity_idxs.setdefault(h, len(entity_idxs))
+            entity_idxs.setdefault(t, len(entity_idxs))
+            relation_idxs.setdefault(r, len(relation_idxs))
+
+            # 2. Mappings for filtered evaluation
+            # 2.1. (HEAD,RELATION) => TAIL
+            er_vocab[(entity_idxs[h], relation_idxs[r])].append(entity_idxs[t])
+            # 2.2. (RELATION,TAIL) => HEAD
+            pe_vocab[(relation_idxs[r], entity_idxs[t])].append(entity_idxs[h])
+            # 2.3. (HEAD,TAIL) => RELATION
+            ee_vocab[(entity_idxs[h], entity_idxs[t])].append(relation_idxs[r])
+
+            if add_reciprical:
+                # 1. Create reciprocal triples (t r_reverse h)
+                r_reverse = r + "_reverse"
+                relation_idxs.setdefault(r_reverse, len(relation_idxs))
+
+                er_vocab[(entity_idxs[t], relation_idxs[r_reverse])].append(entity_idxs[h])
+                pe_vocab[(relation_idxs[r_reverse], entity_idxs[h])].append(entity_idxs[t])
+                ee_vocab[(entity_idxs[t], entity_idxs[h])].append(relation_idxs[r_reverse])
+
+        return entity_idxs, relation_idxs, er_vocab, pe_vocab, ee_vocab
 
     def serialize(self, p: str) -> None:
         # Serialize entities and relations sotred in pandas dataframe and predicates
@@ -319,7 +375,7 @@ class KG:
         return sorted(list(entities)), sorted(list(relations))
 
     def is_valid_test_available(self):
-        if self.valid_set is not None and self.test_set is not None:
+        if len(self.valid_set)>0 and len(self.test_set)>0 is not None:
             return True
         return False
 
