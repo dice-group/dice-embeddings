@@ -75,13 +75,10 @@ def load_model(args) -> torch.nn.Module:
     for parameter in model.parameters():
         parameter.requires_grad = False
     model.eval()
-    entity_to_idx = dict()
-    relation_to_idx = dict()
-    with open(args.path_of_experiment_folder + '/entity_idx.json', 'r') as r:
-        entity_to_idx.update(json.load(r))
 
-    with open(args.path_of_experiment_folder + '/relation_idx.json', 'r') as r:
-        relation_to_idx.update(json.load(r))
+    entity_to_idx = pd.read_parquet(args.path_of_experiment_folder + '/entity_to_idx.gzip').to_dict()['entity']
+    relation_to_idx = pd.read_parquet(args.path_of_experiment_folder + '/relation_to_idx.gzip').to_dict()['relation']
+
     return model, entity_to_idx, relation_to_idx
 
 

@@ -13,7 +13,20 @@ from models.real import DistMult, Shallom
 from models.complex import ComplEx, ConEx
 from models.octonion import OMult, ConvO
 from models.quaternion import QMult, ConvQ
+import time
 
+def performance_debugger(func_name):
+    def func_decorator(func):
+        def debug(*args, **kwargs):
+            starT = time.time()
+            print('\n######', func_name, ' ', end='')
+            r = func(*args, **kwargs)
+            print(f' took  {time.time() - starT:.3f}  seconds')
+            return r
+
+        return debug
+
+    return func_decorator
 
 def preprocesses_input_args(arg):
     # To update the default value of Trainer in pytorch-lightnings

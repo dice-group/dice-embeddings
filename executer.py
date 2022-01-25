@@ -31,27 +31,35 @@ class Execute:
         args = preprocesses_input_args(args)
         sanity_checking_with_arguments(args)
         self.args = args
-        # 1. Create an instance of KG.
-        self.dataset = KG(data_dir=args.path_dataset_folder,
-                          deserialize_flag=args.deserialize_flag,
-                          large_kg_parse=args.large_kg_parse,
-                          add_reciprical=args.add_reciprical, eval=args.eval, read_only_few=args.read_only_few)
-        # 2. Create a storage path  + Serialize dataset object.
+        # 1. Create a storage path & logger
         self.storage_path = create_experiment_folder(folder_name=args.storage_path)
+        # 2. Create an instance of KG.
+        self.dataset = self.read_input_data(args)
         self.dataset.serialize(self.storage_path)
+
+
         self.eval_model = True if self.args.eval == 1 else False
 
         # 3. Save Create folder to serialize data. This two numerical value will be used in embedding initialization.
         self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
 
         # 4. Create logger
-        self.logger = create_logger(name=self.args.model, p=self.storage_path)
         # 5. KGE related parameters
         self.trainer = None
         self.scoring_technique = args.scoring_technique
         self.neg_ratio = args.negative_sample_ratio
 
         self.config_kge_sanity_checking()
+
+    @staticmethod
+    @performance_debugger('Parse input data')
+    def read_input_data(args):
+        return KG(data_dir=args.path_dataset_folder,
+                  deserialize_flag=args.deserialize_flag,
+                  large_kg_parse=args.large_kg_parse,
+                  add_reciprical=args.add_reciprical,
+                  eval=args.eval,
+                  read_only_few=args.read_only_few)
 
     def config_kge_sanity_checking(self):
         """
@@ -61,7 +69,7 @@ class Execute:
         if self.args.batch_size > len(self.dataset.train_set):
             self.args.batch_size = len(self.dataset.train_set)
         if self.args.model == 'Shallom' and self.scoring_technique == 'NegSample':
-            self.logger.info(
+            print(
                 'Shallom can not be trained with Negative Sampling. Scoring technique is changed to KvsALL')
             self.scoring_technique = 'KvsAll'
 
@@ -74,7 +82,7 @@ class Execute:
         :param trained_model:
         :return:
         """
-        self.logger.info('Store full model.')
+        print('Store full model.')
         # Save Torch model.
         torch.save(trained_model.state_dict(), self.storage_path + '/model.pt')
 
@@ -82,7 +90,7 @@ class Execute:
             temp = vars(self.args)
             json.dump(temp, file_descriptor)
 
-        self.logger.info('Store Embeddings.')
+        print('Store Embeddings.')
 
         if trained_model.name == 'Shallom':
             entity_emb = trained_model.get_embeddings()
@@ -90,6 +98,7 @@ class Execute:
             entity_emb, relation_ebm = trained_model.get_embeddings()
             try:
                 df = pd.DataFrame(relation_ebm, index=self.dataset.relations_str)
+                df.columns = df.columns.astype(str)
                 num_mb = df.memory_usage(index=True, deep=True).sum() / (10 ** 6)
                 if num_mb > 10 ** 6:
                     df = dd.from_pandas(df, npartitions=len(df) / 100)
@@ -137,13 +146,13 @@ class Execute:
         else:
             message = f'{total_runtime / (60 ** 2):.3f} hours'
 
-        self.logger.info(f'Total Runtime:{message}')
+        print(f'Total Runtime:{message}')
 
     def train_and_eval(self) -> models.BaseKGE:
         """
         Training and evaluation procedure
         """
-        self.logger.info('--- Parameters are parsed for training ---')
+        print('--- Parameters are parsed for training ---')
         # 1. Create Pytorch-lightning Trainer object from input configuration
         if self.args.gpus:
             self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=[DDPPlugin(find_unused_parameters=False)])
@@ -160,9 +169,9 @@ class Execute:
                 raise ValueError(f'Invalid argument: {self.scoring_technique}')
         else:
             # 3. If (2) is FALSE, then check whether cross validation will be applied.
-            self.logger.info(f'There is no validation and test sets available.')
+            print(f'There is no validation and test sets available.')
             if self.args.num_folds_for_cv < 2:
-                self.logger.info(
+                print(
                     f'No test set is found and k-fold cross-validation is set to less than 2 (***num_folds_for_cv*** => {self.args.num_folds_for_cv}). Hence we do not evaluate the model')
                 # 3.1. NO CROSS VALIDATION => TRAIN WITH 'NegSample' or KvsALL
                 if self.scoring_technique == 'NegSample':
@@ -174,7 +183,7 @@ class Execute:
                     raise ValueError(f'Invalid argument: {self.scoring_technique}')
             else:
                 trained_model = self.k_fold_cross_validation()
-        self.logger.info('--- Training is completed  ---')
+        print('--- Training is completed  ---')
         return trained_model
 
     def get_batch_1_to_N(self, er_vocab, er_vocab_pairs, idx, output_dim):
@@ -194,18 +203,20 @@ class Execute:
         """
         # 1. Select model and labelling : Entity Prediction or Relation Prediction.
         model, form_of_labelling = select_model(self.args)
-        self.logger.info(f' Standard training starts: {model.name}-labeling:{form_of_labelling}')
+        print(f' Standard training starts: {model.name}-labeling:{form_of_labelling}')
         # 2. Create training data.
-        dataset = StandardDataModule(train_set_idx=self.dataset.train,
-                                     valid_set_idx=self.dataset.valid,
-                                     test_set_idx=self.dataset.test,
-                                     entities_idx=self.dataset.entity_idx,
-                                     relations_idx=self.dataset.relation_idx,
+        dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
+                                     valid_set_idx=self.dataset.valid_set,
+                                     test_set_idx=self.dataset.test_set,
+                                     entity_to_idx=self.dataset.entity_to_idx,
+                                     relation_to_idx=self.dataset.relation_to_idx,
                                      form=form_of_labelling,
+                                     neg_sample_ratio=self.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_processes)
+                                     num_workers=self.args.num_processes
+                                     )
         # 3. Display the selected model's architecture.
-        self.logger.info(model)
+        print(model)
         # 5. Train model
         self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
         # 6. Test model on validation and test sets if possible.
@@ -225,26 +236,23 @@ class Execute:
         assert self.neg_ratio > 0
         model, _ = select_model(self.args)
         form_of_labelling = 'NegativeSampling'
-        self.logger.info(f' Training starts: {model.name}-labeling:{form_of_labelling}')
+        print(f' Training starts: {model.name}-labeling:{form_of_labelling}')
         # We do not need to store vocabs here
-        if not self.eval_model:
-            self.logger.info(f' Free some memory')
-            del self.dataset.er_vocab
-            del self.dataset.ee_vocab
-            del self.dataset.re_vocab
-
+        # if not self.eval_model:
+        #    print(f' Free some memory')
+        #    del self.dataset.er_vocab
+        #    del self.dataset.ee_vocab
+        #    del self.dataset.re_vocab
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
-                                     valid_set_idx=self.dataset.val_set,
+                                     valid_set_idx=self.dataset.valid_set,
                                      test_set_idx=self.dataset.test_set,
-                                     entities_idx=self.dataset.entity_idx,
-                                     relations_idx=self.dataset.relation_idx,
+                                     entity_to_idx=self.dataset.entity_to_idx,
+                                     relation_to_idx=self.dataset.relation_to_idx,
                                      form=form_of_labelling,
                                      neg_sample_ratio=self.neg_ratio,
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_processes
                                      )
-
-        self.logger.info(model)
         self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
         if self.eval_model:
             if len(self.dataset.val_set) > 0:
@@ -266,7 +274,7 @@ class Execute:
         model.eval()
         hits = []
         ranks = []
-        self.logger.info(info)
+        print(info)
         for i in range(10):
             hits.append([])
         # (2) Evaluation mode
@@ -323,13 +331,13 @@ class Execute:
         mean_reciprocal_rank = np.mean(1. / np.array(ranks))
 
         results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10, 'MRR': mean_reciprocal_rank}
-        self.logger.info(results)
+        print(results)
         return results
 
     def evaluate_lp(self, model, triple_idx, info):
         model.eval()
-        self.logger.info(info)
-        self.logger.info(f'Num of triples {len(triple_idx)}')
+        print(info)
+        print(f'Num of triples {len(triple_idx)}')
         hits = dict()
         reciprocal_ranks = []
         for i in range(0, len(triple_idx)):
@@ -405,7 +413,7 @@ class Execute:
 
         results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10,
                    'MRR': mean_reciprocal_rank}
-        self.logger.info(results)
+        print(results)
         return results
 
     def k_fold_cross_validation(self) -> pl.LightningModule:
@@ -422,7 +430,7 @@ class Execute:
         :param self:
         :return: model
         """
-        self.logger.info(f'{self.args.num_folds_for_cv}-fold cross-validation starts.')
+        print(f'{self.args.num_folds_for_cv}-fold cross-validation starts.')
         kf = KFold(n_splits=self.args.num_folds_for_cv, shuffle=True)
         model = None
         eval_folds = []
@@ -430,7 +438,7 @@ class Execute:
         for (ith, (train_index, test_index)) in enumerate(kf.split(self.dataset.train)):
             trainer = pl.Trainer.from_argparse_args(self.args)
             model, form_of_labelling = select_model(self.args)
-            self.logger.info(
+            print(
                 f'{ith}-fold cross-validation starts: {model.name}-labeling:{form_of_labelling}, scoring technique: {self.scoring_technique}')
 
             train_set_for_i_th_fold, test_set_for_i_th_fold = self.dataset.train[train_index], self.dataset.train[
@@ -455,8 +463,8 @@ class Execute:
 
         eval_folds = pd.DataFrame(eval_folds, columns=['MRR', 'Hits@1', 'Hits@3', 'Hits@10'])
         # We may want to store it.
-        self.logger.info(eval_folds.describe())
+        print(eval_folds.describe())
 
-        self.logger.info('Model trained on last fold will be saved.')
+        print('Model trained on last fold will be saved.')
         # Return last model.
         return model
