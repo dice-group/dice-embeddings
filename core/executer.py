@@ -1,16 +1,15 @@
 import warnings
 import os
+from .models import *
 
-import models
-
-from util.dataset_classes import StandardDataModule, KvsAll, CVDataModule
-from util.knowledge_graph import KG
+from .dataset_classes import StandardDataModule, KvsAll, CVDataModule
+from .knowledge_graph import KG
 import torch
 from torch import nn
 from torch.nn import functional as F
 from torch.utils.data import DataLoader, Dataset
 from sklearn.model_selection import KFold
-from static_funcs import *
+from .static_funcs import *
 import numpy as np
 from pytorch_lightning import loggers as pl_loggers
 import pandas as pd
@@ -21,13 +20,11 @@ import time
 from pytorch_lightning.plugins import *  # DDPPlugin, DataParallelPlugin
 from pytorch_lightning.callbacks import Callback
 from pytorch_lightning import Trainer, seed_everything
-
 import logging
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
-
 seed_everything(1, workers=True)
 
 
@@ -155,7 +152,7 @@ class Execute:
         with open(self.storage_path + '/report.json', 'w') as file_descriptor:
             json.dump(self.report, file_descriptor)
 
-    def train_and_eval(self) -> models.BaseKGE:
+    def train_and_eval(self) -> BaseKGE:
         """
         Training and evaluation procedure
         """

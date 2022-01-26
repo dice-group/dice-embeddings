@@ -1,5 +1,5 @@
-from executer import Execute
-from static_funcs import argparse_default
+from core.executer import Execute
+from core.static_funcs import argparse_default
 
 if __name__ == '__main__':
     exc = Execute(argparse_default())

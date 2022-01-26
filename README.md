@@ -106,7 +106,7 @@ Running on public URL: https://54886.gradio.app
 
 This share link expires in 72 hours. For free permanent hosting, check out Spaces (https://huggingface.co/spaces)
 ```
-![alt text](figures/deploy_qmult_family.png)
+![alt text](core/figures/deploy_qmult_family.png)
 
 
 ## How to cite

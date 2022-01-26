@@ -7,34 +7,34 @@ echo "Start Training......"
 #python main.py --path_dataset_folder 'KGs/UMLS' --model 'ConEx' --deserialize_flag '/home/demir/Desktop/work/DAIKIRI_Emb/DAIKIRI_Storage/2021-05-12 12:11:12.095319'
 # Checked
 python main.py --path_dataset_folder 'KGs/UMLS' --model 'ConEx'
-python main.py --path_dataset_folder 'KGs/Family' --model 'ConEx' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
-python main.py --path_dataset_folder 'KGs/Family' --model 'ConEx' --max_num_epochs 3 --scoring_technique 'KvsAll' --num_folds_for_cv 3
-python main.py --path_dataset_folder 'KGs/Family' --model 'ConEx' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3 --num_folds_for_cv 3
+python main.py --path_dataset_folder 'KGs/Family' --model 'ConEx' --num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
+python main.py --path_dataset_folder 'KGs/Family' --model 'ConEx' --num_epochs 3 --scoring_technique 'KvsAll' --num_folds_for_cv 3
+python main.py --path_dataset_folder 'KGs/Family' --model 'ConEx' --num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3 --num_folds_for_cv 3
 
 # Checked
-python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --max_num_epochs 3 --scoring_technique 'KvsAll'
-python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
-python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --max_num_epochs 3 --scoring_technique 'KvsAll' --num_folds_for_cv 3
-python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3 --num_folds_for_cv 3
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --num_epochs 3 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
+python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --num_epochs 3 --scoring_technique 'KvsAll' --num_folds_for_cv 3
+python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3 --num_folds_for_cv 3
 
 # Checked
-python main.py --path_dataset_folder 'KGs/UMLS' --model 'QMult' --max_num_epochs 3 --scoring_technique 'KvsAll'
-python main.py --path_dataset_folder 'KGs/Family' --model 'QMult' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
-python main.py --path_dataset_folder 'KGs/Family' --model 'QMult' --max_num_epochs 3 --scoring_technique 'KvsAll' --num_folds_for_cv 3
-python main.py --path_dataset_folder 'KGs/Family' --model 'QMult' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3 --num_folds_for_cv 3
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'QMult' --num_epochs 3 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder 'KGs/Family' --model 'QMult' --num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
+python main.py --path_dataset_folder 'KGs/Family' --model 'QMult' --num_epochs 3 --scoring_technique 'KvsAll' --num_folds_for_cv 3
+python main.py --path_dataset_folder 'KGs/Family' --model 'QMult' --num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3 --num_folds_for_cv 3
 
 # Checked
-python main.py --path_dataset_folder 'KGs/UMLS' --model 'OMult' --max_num_epochs 3 --scoring_technique 'KvsAll'
-python main.py --path_dataset_folder 'KGs/Family' --model 'OMult' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
-python main.py --path_dataset_folder 'KGs/Family' --model 'OMult' --max_num_epochs 3 --scoring_technique 'KvsAll' --num_folds_for_cv 3
-python main.py --path_dataset_folder 'KGs/Family' --model 'OMult' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3 --num_folds_for_cv 3
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'OMult' --num_epochs 3 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder 'KGs/Family' --model 'OMult' --num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
+python main.py --path_dataset_folder 'KGs/Family' --model 'OMult' --num_epochs 3 --scoring_technique 'KvsAll' --num_folds_for_cv 3
+python main.py --path_dataset_folder 'KGs/Family' --model 'OMult' --num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3 --num_folds_for_cv 3
 
 
 # Checked
-python main.py --path_dataset_folder 'KGs/UMLS' --model 'ConvQ' --max_num_epochs 3 --scoring_technique 'KvsAll'
-python main.py --path_dataset_folder 'KGs/Family' --model 'ConvQ' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
-python main.py --path_dataset_folder 'KGs/Family' --model 'ConvQ' --max_num_epochs 3 --scoring_technique 'KvsAll' --num_folds_for_cv 3
-python main.py --path_dataset_folder 'KGs/Family' --model 'ConvQ' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3 --num_folds_for_cv 3
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'ConvQ' --num_epochs 3 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder 'KGs/Family' --model 'ConvQ' --num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
+python main.py --path_dataset_folder 'KGs/Family' --model 'ConvQ' --num_epochs 3 --scoring_technique 'KvsAll' --num_folds_for_cv 3
+python main.py --path_dataset_folder 'KGs/Family' --model 'ConvQ' --num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3 --num_folds_for_cv 3
 
 
 # Checked
@@ -44,15 +44,15 @@ python main.py --path_dataset_folder 'KGs/Family' --model 'ConvO' --max_num_epoc
 python main.py --path_dataset_folder 'KGs/Family' --model 'ConvO' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3 --num_folds_for_cv 3
 
 # Checked
-python main.py --path_dataset_folder 'KGs/UMLS' --model 'ComplEx' --max_num_epochs 3 --scoring_technique 'KvsAll'
-python main.py --path_dataset_folder 'KGs/Family' --model 'ComplEx' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
-python main.py --path_dataset_folder 'KGs/Family' --model 'ComplEx' --max_num_epochs 3 --scoring_technique 'KvsAll' --num_folds_for_cv 3
-python main.py --path_dataset_folder 'KGs/Family' --model 'ComplEx' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3 --num_folds_for_cv 3
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'ComplEx' --num_epochs 3 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder 'KGs/Family' --model 'ComplEx' --num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
+python main.py --path_dataset_folder 'KGs/Family' --model 'ComplEx' --num_epochs 3 --scoring_technique 'KvsAll' --num_folds_for_cv 3
+python main.py --path_dataset_folder 'KGs/Family' --model 'ComplEx' --num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3 --num_folds_for_cv 3
 
 # Checked
-python main.py --path_dataset_folder 'KGs/UMLS' --model 'DistMult' --max_num_epochs 3 --scoring_technique 'KvsAll'
-python main.py --path_dataset_folder 'KGs/Family' --model 'DistMult' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
-python main.py --path_dataset_folder 'KGs/Family' --model 'DistMult' --max_num_epochs 3 --scoring_technique 'KvsAll' --num_folds_for_cv 3
-python main.py --path_dataset_folder 'KGs/Family' --model 'DistMult' --max_num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3 --num_folds_for_cv 3
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'DistMult' --num_epochs 3 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder 'KGs/Family' --model 'DistMult' --num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3
+python main.py --path_dataset_folder 'KGs/Family' --model 'DistMult' --num_epochs 3 --scoring_technique 'KvsAll' --num_folds_for_cv 3
+python main.py --path_dataset_folder 'KGs/Family' --model 'DistMult' --num_epochs 3 --scoring_technique 'NegSample' --negative_sample_ratio 3 --num_folds_for_cv 3
 
 echo "Ends......"

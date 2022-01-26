@@ -1,10 +1,11 @@
+from abc import ABC
+
 import numpy as np
 import torch
+from typing import Tuple
+from .base_model import *
 
-from models import *
-
-
-class ConEx(BaseKGE):
+class ConEx(BaseKGE, ABC):
     def __init__(self, args):
         super().__init__()
         self.name = 'ConEx'
