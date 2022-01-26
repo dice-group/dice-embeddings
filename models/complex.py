@@ -8,7 +8,7 @@ class ConEx(BaseKGE):
     def __init__(self, args):
         super().__init__()
         self.name = 'ConEx'
-        self.loss = torch.nn.BCELoss()
+        self.loss = torch.nn.BCEWithLogitsLoss()
         self.learning_rate = args.learning_rate
 
         # Init Embeddings
@@ -111,9 +111,7 @@ class ConEx(BaseKGE):
         real_imag_imag = torch.mm(a * emb_head_real * emb_rel_i, self.emb_ent_i.weight.transpose(1, 0))
         imag_real_imag = torch.mm(b * emb_head_i * emb_rel_real, self.emb_ent_i.weight.transpose(1, 0))
         imag_imag_real = torch.mm(b * emb_head_i * emb_rel_i, self.emb_ent_real.weight.transpose(1, 0))
-        score = real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
-
-        return torch.sigmoid(score)
+        return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
 
     def forward_triples(self, e1_idx: torch.Tensor, rel_idx: torch.Tensor, e2_idx: torch.Tensor) -> torch.Tensor:
         """
@@ -153,15 +151,14 @@ class ConEx(BaseKGE):
         real_imag_imag = (a * emb_head_real * emb_rel_i * emb_tail_i).sum(dim=1)
         imag_real_imag = (b * emb_head_i * emb_rel_real * emb_tail_i).sum(dim=1)
         imag_imag_real = (b * emb_head_i * emb_rel_i * emb_tail_real).sum(dim=1)
-        score = real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
-        return torch.sigmoid(score)
+        return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
 
 
 class ComplEx(BaseKGE):
     def __init__(self, args):
         super().__init__()
         self.name = 'ComplEx'
-        self.loss = torch.nn.BCELoss()
+        self.loss = torch.nn.BCEWithLogitsLoss()
         # Init Embeddings
         self.embedding_dim = args.embedding_dim
         self.emb_ent_real = nn.Embedding(args.num_entities, args.embedding_dim)  # real
@@ -202,8 +199,7 @@ class ComplEx(BaseKGE):
         imag_real_imag = torch.mm(emb_head_i * emb_rel_real, self.emb_ent_i.weight.transpose(1, 0))
         imag_imag_real = torch.mm(emb_head_i * emb_rel_i, self.emb_ent_real.weight.transpose(1, 0))
 
-        score = real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
-        return torch.sigmoid(score)
+        return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
 
     def forward_triples(self, e1_idx: torch.Tensor, rel_idx: torch.Tensor, e2_idx: torch.Tensor) -> torch.Tensor:
         """
@@ -234,5 +230,4 @@ class ComplEx(BaseKGE):
         real_imag_imag = (emb_head_real * emb_rel_i * emb_tail_i).sum(dim=1)
         imag_real_imag = (emb_head_i * emb_rel_real * emb_tail_i).sum(dim=1)
         imag_imag_real = (emb_head_i * emb_rel_i * emb_tail_real).sum(dim=1)
-        score = real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
-        return torch.sigmoid(score)
+        return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real

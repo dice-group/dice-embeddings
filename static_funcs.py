@@ -9,7 +9,7 @@ import logging
 import pytorch_lightning as pl
 import sys
 
-from models.real import DistMult, Shallom
+from models.real import DistMult, Shallom, KronE
 from models.complex import ComplEx, ConEx
 from models.octonion import OMult, ConvO
 from models.quaternion import QMult, ConvQ
@@ -26,21 +26,25 @@ def argparse_default(description=None):
     # Number of workers for data loader
     # https: // pytorch - lightning.readthedocs.io / en / latest / guides / speed.html  # num-workers
     # Dataset and storage related
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS')
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Countries-S3')
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage')
     parser.add_argument("--deserialize_flag", type=str, default=None, help='Path of a folder for deserialization.')
     parser.add_argument("--read_only_few", type=int, default=0, help='READ only first N triples. If 0, read all.')
     # Models.
-    parser.add_argument("--model", type=str, default='QMult',
-                        help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult")
+    parser.add_argument("--model", type=str,
+                        #default='DistMult',
+                        default='KronE',
+                        help="Available models: KronE, ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult")
     # Training Parameters
-    parser.add_argument("--num_epochs", type=int, default=5, help='Number of epochs for training. '
-                                                                  'This disables max_epochs and min_epochs of pl.Trainer')
-    parser.add_argument('--batch_size', type=int, default=2048)
+    parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. '
+                                                                    'This disables max_epochs and min_epochs of pl.Trainer')
+    parser.add_argument('--batch_size', type=int, default=32)
     parser.add_argument("--lr", type=float, default=0.1)
     # Model Parameters
     # Hyperparameters pertaining to number of parameters.
-    parser.add_argument('--embedding_dim', type=int, default=32)
+    parser.add_argument('--embedding_dim', type=int, default=8)
+    parser.add_argument('--entity_embedding_dim', type=int, default=7)
+    parser.add_argument('--rel_embedding_dim', type=int, default=7)
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
     parser.add_argument("--num_of_output_channels", type=int, default=8, help="# of output channels in convolution")
     parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.5,
@@ -57,10 +61,9 @@ def argparse_default(description=None):
     parser.add_argument("--feature_map_dropout_rate", type=int, default=.3)
     parser.add_argument('--apply_unit_norm', type=bool, default=False)
     # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='NegSample', help="KvsAll technique or NegSample.")
+    parser.add_argument('--scoring_technique', default='KvsAll', help="KvsAll technique or NegSample.")
     parser.add_argument('--negative_sample_ratio', type=int, default=1)
     # Data Augmentation.
-    parser.add_argument("--add_reciprical", type=bool, default=False)
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
                                                                         'If >2,no evaluation scenario is applied implies no evaluation.')
     # This is a workaround for read
@@ -98,6 +101,9 @@ def preprocesses_input_args(arg):
     arg.logger = False
 
     arg.eval = True if arg.eval == 1 else False
+
+    arg.add_reciprical = True if arg.scoring_technique == 'KvsAll' else False
+
     return arg
 
 
@@ -168,7 +174,10 @@ def sanity_checking_with_arguments(args):
 
 
 def select_model(args) -> Tuple[pl.LightningModule, AnyStr]:
-    if args.model == 'Shallom':
+    if args.model == 'KronE':
+        model = KronE(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif args.model == 'Shallom':
         model = Shallom(args=args)
         form_of_labelling = 'RelationPrediction'
     elif args.model == 'ConEx':
@@ -265,3 +274,6 @@ def compute_mrr_based_on_entity_ranking(trained_model, triples, entity_to_idx, r
             break
     """
     return raw_mrr
+
+def extract_model_summary(s):
+    return {'NumParam': s.total_parameters, 'EstimatedSizeMB': s.model_size}

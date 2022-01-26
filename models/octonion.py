@@ -48,7 +48,7 @@ class OMult(BaseKGE):
     def __init__(self, args):
         super().__init__(learning_rate=args.learning_rate)
         self.name = 'OMult'
-        self.loss = torch.nn.BCELoss()
+        self.loss = torch.nn.BCEWithLogitsLoss()
 
         self.apply_unit_norm = args.apply_unit_norm
         # Octonion embeddings of entities
@@ -216,8 +216,7 @@ class OMult(BaseKGE):
             e5_score = torch.mm(self.hidden_dp_e5(e5), self.emb_ent_e5.weight.transpose(1, 0))
             e6_score = torch.mm(self.hidden_dp_e6(e6), self.emb_ent_e6.weight.transpose(1, 0))
             e7_score = torch.mm(self.hidden_dp_e7(e7), self.emb_ent_e7.weight.transpose(1, 0))
-        score = e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
-        return torch.sigmoid(score)
+        return e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
 
     def forward_triples(self, e1_idx, rel_idx, e2_idx):
         # (1)
@@ -300,15 +299,14 @@ class OMult(BaseKGE):
             e6_score = (self.hidden_dp_e6(e6) * emb_tail_e6).sum(dim=1)
             e7_score = (self.hidden_dp_e7(e7) * emb_tail_e7).sum(dim=1)
 
-        score = e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
-        return torch.sigmoid(score)
+        return e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
 
 
 class ConvO(BaseKGE):
     def __init__(self, args):
         super().__init__(learning_rate=args.learning_rate)
         self.name = 'ConvO'
-        self.loss = torch.nn.BCELoss()
+        self.loss = torch.nn.BCEWithLogitsLoss()
         self.apply_unit_norm = args.apply_unit_norm
         self.embedding_dim = args.embedding_dim  # for reshaping in the residual.
         self.num_entities = args.num_entities
@@ -528,8 +526,7 @@ class ConvO(BaseKGE):
             e5_score = torch.mm(self.hidden_dp_e5(conv_e5 * e5), self.emb_ent_e5.weight.transpose(1, 0))
             e6_score = torch.mm(self.hidden_dp_e6(conv_e6 * e6), self.emb_ent_e6.weight.transpose(1, 0))
             e7_score = torch.mm(self.hidden_dp_e7(conv_e7 * e7), self.emb_ent_e7.weight.transpose(1, 0))
-        score = e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
-        return torch.sigmoid(score)
+        return e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
 
     def forward_triples(self, e1_idx, rel_idx, e2_idx):
         # (1)
@@ -624,5 +621,4 @@ class ConvO(BaseKGE):
             e6_score = (self.hidden_dp_e6(conv_e6 * e6) * emb_tail_e6).sum(dim=1)
             e7_score = (self.hidden_dp_e7(conv_e7 * e7) * emb_tail_e7).sum(dim=1)
 
-        score = e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
-        return torch.sigmoid(score)
+        return e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score

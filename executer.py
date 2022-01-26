@@ -3,7 +3,6 @@ import os
 
 import models
 
-warnings.simplefilter("ignore", UserWarning)
 from util.dataset_classes import StandardDataModule, KvsAll, CVDataModule
 from util.knowledge_graph import KG
 import torch
@@ -21,8 +20,13 @@ import dask.dataframe as dd
 import time
 from pytorch_lightning.plugins import *  # DDPPlugin, DataParallelPlugin
 from pytorch_lightning.callbacks import Callback
-
 from pytorch_lightning import Trainer, seed_everything
+
+import logging
+
+logging.getLogger('pytorch_lightning').setLevel(0)
+warnings.simplefilter(action="ignore", category=UserWarning)
+warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 
 seed_everything(1, workers=True)
 
@@ -36,7 +40,9 @@ class Execute:
         self.storage_path = create_experiment_folder(folder_name=self.args.storage_path)
         # 3. Read input data and store its parts for further use
         self.dataset = self.read_input_data(args)
+        print(self.dataset.description_of_input)
         self.dataset.serialize(self.storage_path)
+        self.report = dict()
 
         # 4. Save Create folder to serialize data. This two numerical value will be used in embedding initialization.
         self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
@@ -50,7 +56,6 @@ class Execute:
         self.config_kge_sanity_checking()
 
     @staticmethod
-    @performance_debugger('Parse input data')
     def read_input_data(args):
         return KG(data_dir=args.path_dataset_folder,
                   deserialize_flag=args.deserialize_flag,
@@ -80,16 +85,15 @@ class Execute:
         :param trained_model:
         :return:
         """
-        print('Store full model.')
+        print('------------------- Store -------------------')
         # Save Torch model.
+        print('Saving torch model..')
         torch.save(trained_model.state_dict(), self.storage_path + '/model.pt')
-
+        print('Saving configuration..')
         with open(self.storage_path + '/configuration.json', 'w') as file_descriptor:
             temp = vars(self.args)
             json.dump(temp, file_descriptor)
-
-        print('Store Embeddings.')
-
+        print('Saving embeddings..')
         if trained_model.name == 'Shallom':
             entity_emb = trained_model.get_embeddings()
         else:
@@ -143,14 +147,19 @@ class Execute:
             message = f'{total_runtime / 60:.3f} minutes'
         else:
             message = f'{total_runtime / (60 ** 2):.3f} hours'
-
-        print(f'Total Runtime:{message}')
+        self.report['Runtime'] = message
+        self.report.update(extract_model_summary(trained_model.summarize()))
+        print(f'Runtime of {trained_model.name}:', total_runtime)
+        print(f'NumParam of {trained_model.name}:', self.report["NumParam"])
+        print(f'Estimated of {trained_model.name}:', self.report["EstimatedSizeMB"])
+        with open(self.storage_path + '/report.json', 'w') as file_descriptor:
+            json.dump(self.report, file_descriptor)
 
     def train_and_eval(self) -> models.BaseKGE:
         """
         Training and evaluation procedure
         """
-        print('--- Parameters are parsed for training ---')
+        print('------------------- Train & Eval -------------------')
         # 1. Create Pytorch-lightning Trainer object from input configuration
         if self.args.gpus:
             self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=[DDPPlugin(find_unused_parameters=False)])
@@ -181,7 +190,6 @@ class Execute:
                     raise ValueError(f'Invalid argument: {self.scoring_technique}')
             else:
                 trained_model = self.k_fold_cross_validation()
-        print('--- Training is completed  ---')
         return trained_model
 
     def old_get_batch_1_to_N(self, er_vocab, er_vocab_pairs, idx, output_dim):
@@ -216,7 +224,7 @@ class Execute:
         """
         # 1. Select model and labelling : Entity Prediction or Relation Prediction.
         model, form_of_labelling = select_model(self.args)
-        print(f' Standard training starts: {model.name}-labeling:{form_of_labelling}')
+        print(f'KvsAll training starts: {model.name}')  # -labeling:{form_of_labelling}')
         # 2. Create training data.
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,
@@ -234,19 +242,15 @@ class Execute:
         self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
         # 6. Test model on validation and test sets if possible.
         if self.args.eval:
-
-            # for idx_entity in range(self.dataset.num_entities):
-            #    selected_idx_triples_df = data[data['subject'] == idx_entity]
-            #    unique_relations = selected_idx_triples_df['relation']
-            #    exit(1)
-            #    # er_vocab[(entity_idxs[h], relation_idxs[r])].append(entity_idxs[t])
-
             if len(self.dataset.valid_set) > 0:
-                self.evaluate_lp_k_vs_all(model, self.dataset.valid_set, 'Evaluation of Validation set via KvsALL',
-                                          form_of_labelling)
+                res = self.evaluate_lp_k_vs_all(model, self.dataset.valid_set,
+                                                f'Evaluate {model.name} on validation set', form_of_labelling)
+                self.report['Val'] = res
             if len(self.dataset.test_set) > 0:
-                self.evaluate_lp_k_vs_all(model, self.dataset.test_set, 'Evaluation of Test set via KvsALL',
-                                          form_of_labelling)
+                res = self.evaluate_lp_k_vs_all(model, self.dataset.test_set, f'Evaluate {model.name} on test set',
+                                                form_of_labelling)
+                self.report['Test'] = res
+
         return model
 
     def training_negative_sampling(self) -> pl.LightningModule:
@@ -267,6 +271,7 @@ class Execute:
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_processes
                                      )
+        print(model)
         self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
         if self.args.eval:
             if len(self.dataset.valid_set) > 0:
@@ -274,8 +279,9 @@ class Execute:
             if len(self.dataset.test_set) > 0:
                 self.evaluate_lp(model, self.dataset.test_set, 'Evaluation of Test set')
         return model
+
     def deserialize_index_data(self):
-        m=[]
+        m = []
         if os.path.isfile(self.storage_path + '/idx_train_df.gzip'):
             m.append(pd.read_parquet(self.storage_path + '/idx_train_df.gzip'))
         if os.path.isfile(self.storage_path + '/idx_valid_df.gzip'):
@@ -283,8 +289,7 @@ class Execute:
         if os.path.isfile(self.storage_path + '/idx_test_df.gzip'):
             m.append(pd.read_parquet(self.storage_path + '/idx_test_df.gzip'))
 
-        return pd.concat(m,ignore_index=True)
-
+        return pd.concat(m, ignore_index=True)
 
     def evaluate_lp_k_vs_all(self, model, triple_idx, info, form_of_labelling):
         """
@@ -299,10 +304,9 @@ class Execute:
         model.eval()
         hits = []
         ranks = []
-        print(info)
+        print(info + ':', end=' ')
         for i in range(10):
             hits.append([])
-        print('LOAD indexed train + valid + test data')
         data = self.deserialize_index_data()
 
         # (2) Evaluation mode
@@ -494,8 +498,9 @@ class Execute:
             print(
                 f'{ith}-fold cross-validation starts: {model.name}-labeling:{form_of_labelling}, scoring technique: {self.scoring_technique}')
 
-            train_set_for_i_th_fold, test_set_for_i_th_fold = self.dataset.train_set[train_index], self.dataset.train_set[
-                test_index]
+            train_set_for_i_th_fold, test_set_for_i_th_fold = self.dataset.train_set[train_index], \
+                                                              self.dataset.train_set[
+                                                                  test_index]
 
             dataset = StandardDataModule(train_set_idx=train_set_for_i_th_fold,
                                          valid_set_idx=self.dataset.valid_set,
@@ -508,6 +513,7 @@ class Execute:
                                          num_workers=self.args.num_processes
                                          )
             # 5. Train model
+            print(model)
             trainer.fit(model, train_dataloaders=dataset.train_dataloader())
 
             if self.scoring_technique == 'KvsAll' or model.name == 'Shallom':

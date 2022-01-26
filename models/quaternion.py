@@ -32,7 +32,7 @@ class QMult(BaseKGE):
     def __init__(self, args):
         super().__init__(learning_rate=args.learning_rate)
         self.name = 'QMult'
-        self.loss = torch.nn.BCELoss()
+        self.loss = torch.nn.BCEWithLogitsLoss()
         self.apply_unit_norm = args.apply_unit_norm
 
         # Quaternion embeddings of entities
@@ -196,8 +196,7 @@ class QMult(BaseKGE):
             j_score = torch.sum(self.hidden_dp_j(j_val) * emb_tail_j, dim=1)
             k_score = torch.sum(self.hidden_dp_k(k_val) * emb_tail_k, dim=1)
 
-        score = real_score + i_score + j_score + k_score
-        return torch.sigmoid(score)
+        return real_score + i_score + j_score + k_score
 
 class ConvQ(BaseKGE):
     """ Convolutional Quaternion Knowledge Graph Embeddings"""
@@ -205,7 +204,7 @@ class ConvQ(BaseKGE):
     def __init__(self, args):
         super().__init__(learning_rate=args.learning_rate)
         self.name = 'ConvQ'
-        self.loss = torch.nn.BCELoss()
+        self.loss = torch.nn.BCEWithLogitsLoss()
         self.apply_unit_norm = args.apply_unit_norm
         self.embedding_dim = args.embedding_dim  # for reshaping in the residual.
 
@@ -414,5 +413,4 @@ class ConvQ(BaseKGE):
             j_score = torch.sum(self.hidden_dp_j(conv_imag_j * j_val) * emb_tail_j, dim=1)
             k_score = torch.sum(self.hidden_dp_k(conv_imag_k * k_val) * emb_tail_k, dim=1)
 
-        score = real_score + i_score + j_score + k_score
-        return torch.sigmoid(score)
+        return real_score + i_score + j_score + k_score

@@ -31,6 +31,12 @@ class KG:
             # 2. Concatenate list of triples. Could be done with DASK
             data = pd.concat([self.train_set, self.valid_set, self.test_set], ignore_index=True)
 
+            if add_reciprical:
+                data = pd.concat([data,
+                                  pd.DataFrame({'subject': data['object'],
+                                                'relation': data['relation'].map(lambda x: x + '_inverse'),
+                                                'object': data['subject']})], ignore_index=True)
+
             # 3. Construct a map of entities to indexes
             ordered_list = pd.unique(data[['subject', 'object']].values.ravel('K'))
             self.entity_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
@@ -69,19 +75,13 @@ class KG:
             """
 
             # 4. Display info
-            s = '------------------- Description of Dataset' + data_dir + '----------------------------'
-            print(f'\n{s}')
-            print(f'Number of entities: {self.num_entities}')
-            print(f'Number of relations: {self.num_relations}')
-
-            print(f'Number of triples on train set: {len(self.train_set)}')
-            print(f'Number of triples on valid set: {len(self.valid_set)}')
-            print(f'Number of triples on test set: {len(self.test_set)}')
-            s = len(s) * '-'
-            print(f'{s}\n')
-
+            self.description_of_input = f'\n------------------- Description of Dataset {data_dir} -------------------'
+            self.description_of_input += f'\nNumber of entities: {self.num_entities}' \
+                                         f'\nNumber of relations: {self.num_relations}' \
+                                         f'\nNumber of triples on train set: {len(self.train_set)}' \
+                                         f'\nNumber of triples on valid set: {len(self.valid_set)}' \
+                                         f'\nNumber of triples on test set: {len(self.test_set)}\n'
         else:
-            print('DESERIALIZE')
             self.deserialize(deserialize_flag, eval)
 
     @staticmethod
@@ -375,7 +375,7 @@ class KG:
         return sorted(list(entities)), sorted(list(relations))
 
     def is_valid_test_available(self):
-        if len(self.valid_set)>0 and len(self.test_set)>0 is not None:
+        if len(self.valid_set) > 0 and len(self.test_set) > 0 is not None:
             return True
         return False
 
