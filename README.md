@@ -27,6 +27,7 @@ pip install "dask[complete]"==2022.1.0
 pip install scikit-learn==1.0.2
 pip install pytest==6.2.5
 pip install gradio==2.7.5.2
+pip install pyarrow==6.0.1
 wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
 unzip KGs.zip
 python -m pytest tests
@@ -46,10 +47,10 @@ python -m pytest tests
 
 # Training 
 1. For instance, 'KGs/Family' contains only **train.txt**. To obtain Shallom embeddings ([Research paper](https://arxiv.org/abs/2101.09090) and [conference presentation](https://www.youtube.com/watch?v=LUDpdgdvTQg)) 
-```python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --num_folds_for_cv 10 --max_num_epochs 1```
+```python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --num_folds_for_cv 10 --num_epochs 1```
 This execution results in generating **Mean and standard deviation of raw MRR in 10-fold cross validation => 0.768, 0.023**. Moreover, all necessary information including embeddings are stored in DAIKIRI_Storage folder (if does not exist it will be created).
    
-1. Executing  ```python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --max_num_epochs 1 --scoring_technique 'KvsAll'```
+1. Executing  ```python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --num_epochs 1 --scoring_technique 'KvsAll'```
    
 2. Most link prediction benchmark datasets contain the train, validation and test datasets (see 'KGs/FB15K-237', 'KGs/WN18RR' or 'KGs/YAGO3-10').
 To evaluate quality of embeddings, we rely on the standard metric, i.e. mean reciprocal rank (MRR). Executing ```python main.py --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --max_num_epochs 1 --scoring_technique 'KvsAll'```
@@ -60,27 +61,27 @@ results in evaluating quality of SHALLOM embeddings on the test split.
 
 1. To train our approaches for 10 epochs by using **32 CPU cores** (if available) on UMLS. 
 ```
-python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --max_num_epochs 10 --num_processes 32 --scoring_technique 'KvsAll'
-python main.py --path_dataset_folder 'KGs/UMLS' --model 'ConEx' --max_num_epochs 10 --num_processes 32 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --num_epochs 10 --num_processes 32 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder 'KGs/UMLS' --model 'ConEx' --num_epochs 10 --num_processes 32 --scoring_technique 'KvsAll'
 ```
 2. To train our approaches for 10 epochs by using a single GPU.
 ```
-python main.py --gpus 1 --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --max_num_epochs 10 --scoring_technique 'KvsAll'
-python main.py --gpus 1 --path_dataset_folder 'KGs/UMLS' --model 'ConEx' --max_num_epochs 10 --scoring_technique 'KvsAll'
+python main.py --gpus 1 --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --num_epochs 10 --scoring_technique 'KvsAll'
+python main.py --gpus 1 --path_dataset_folder 'KGs/UMLS' --model 'ConEx' --num_epochs 10 --scoring_technique 'KvsAll'
 ```
 
 3. To train Shallom for 1 epochs on UMLS. All information will be stored in to 'DummyFolder'.
 ```
-python main.py --gpus 1 --path_dataset_folder 'KGs/UMLS' --storage_path DummyFolder --model 'Shallom' --max_num_epochs 10 --scoring_technique 'KvsAll'
+python main.py --gpus 1 --path_dataset_folder 'KGs/UMLS' --storage_path DummyFolder --model 'Shallom' --num_epochs 10 --scoring_technique 'KvsAll'
 ```
 
 4. To train Shallom on Carcinogenesis by using 10-fold cross validation on Carcinogenesis.  To check GPU usages, ```watch -n 1 nvidia-smi```
 ```
-python main.py --gpus 1 --path_dataset_folder 'KGs/Carcinogenesis' --model 'Shallom' --num_folds_for_cv 10 --max_num_epochs 10
+python main.py --gpus 1 --path_dataset_folder 'KGs/Carcinogenesis' --model 'Shallom' --num_folds_for_cv 10 --num_epochs 10
 ```
 5. Train Shallom for 5 epochs by using **8 GPUs** on WN18RR To check GPU usages, ```watch -n 1 nvidia-smi```.
 ```
-python main.py --gpus 8 --distributed_backend ddp --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --max_num_epochs 5
+python main.py --gpus 8 --distributed_backend ddp --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --num_epochs 5
 ```
 
 6. More examples can be found in run.sh.
