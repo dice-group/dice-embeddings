@@ -375,7 +375,7 @@ class KG:
         return sorted(list(entities)), sorted(list(relations))
 
     def is_valid_test_available(self):
-        if len(self.valid_set) > 0 and len(self.test_set) > 0 is not None:
+        if len(self.valid_set) > 0 and len(self.test_set) > 0:
             return True
         return False
 

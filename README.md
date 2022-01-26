@@ -19,7 +19,7 @@ python -m pytest tests
 ```
 ### Manuel Installation
 ```
-conda create -n daikiri python=3.8
+conda create -n daikiri python=3.9
 conda activate daikiri
 pip install torch==1.10.1+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
 pip install pytorch-lightning==1.5.9
