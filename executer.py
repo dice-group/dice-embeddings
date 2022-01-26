@@ -29,18 +29,16 @@ seed_everything(1, workers=True)
 
 class Execute:
     def __init__(self, args):
-        args = preprocesses_input_args(args)
-        sanity_checking_with_arguments(args)
-        self.args = args
-        # 1. Create a storage path & logger
-        self.storage_path = create_experiment_folder(folder_name=args.storage_path)
-        # 2. Create an instance of KG.
+        # (1) Process arguments and sanity checking
+        self.args = preprocesses_input_args(args)
+        sanity_checking_with_arguments(self.args)
+        # 2 Create a storage
+        self.storage_path = create_experiment_folder(folder_name=self.args.storage_path)
+        # 3. Read input data and store its parts for further use
         self.dataset = self.read_input_data(args)
         self.dataset.serialize(self.storage_path)
 
-        self.eval_model = True if self.args.eval == 1 else False
-
-        # 3. Save Create folder to serialize data. This two numerical value will be used in embedding initialization.
+        # 4. Save Create folder to serialize data. This two numerical value will be used in embedding initialization.
         self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
 
         # 4. Create logger
@@ -235,7 +233,7 @@ class Execute:
         # 5. Train model
         self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
         # 6. Test model on validation and test sets if possible.
-        if self.eval_model:
+        if self.args.eval:
 
             # for idx_entity in range(self.dataset.num_entities):
             #    selected_idx_triples_df = data[data['subject'] == idx_entity]
@@ -259,12 +257,6 @@ class Execute:
         model, _ = select_model(self.args)
         form_of_labelling = 'NegativeSampling'
         print(f' Training starts: {model.name}-labeling:{form_of_labelling}')
-        # We do not need to store vocabs here
-        # if not self.eval_model:
-        #    print(f' Free some memory')
-        #    del self.dataset.er_vocab
-        #    del self.dataset.ee_vocab
-        #    del self.dataset.re_vocab
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,
                                      test_set_idx=self.dataset.test_set,
@@ -276,7 +268,7 @@ class Execute:
                                      num_workers=self.args.num_processes
                                      )
         self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
-        if self.eval_model:
+        if self.args.eval:
             if len(self.dataset.valid_set) > 0:
                 self.evaluate_lp(model, self.dataset.valid_set, 'Evaluation of Validation set')
             if len(self.dataset.test_set) > 0:

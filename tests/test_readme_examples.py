@@ -1,5 +1,4 @@
-from static_funcs import preprocesses_input_args
-from main import argparse_default
+from static_funcs import argparse_default
 from executer import Execute
 import sys
 
