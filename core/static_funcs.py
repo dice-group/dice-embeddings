@@ -1,6 +1,6 @@
 import os
 from typing import AnyStr, Tuple
-from models import *
+from .models import *
 import numpy as np
 import torch
 import datetime
@@ -9,10 +9,10 @@ import logging
 import pytorch_lightning as pl
 import sys
 
-from models.real import DistMult, Shallom, KronE
-from models.complex import ComplEx, ConEx
-from models.octonion import OMult, ConvO
-from models.quaternion import QMult, ConvQ
+from .models import *
+#from .models.complex import ComplEx, ConEx
+#from .models.octonion import OMult, ConvO
+#from .models.quaternion import QMult, ConvQ
 import time
 
 import argparse
@@ -32,7 +32,6 @@ def argparse_default(description=None):
     parser.add_argument("--read_only_few", type=int, default=0, help='READ only first N triples. If 0, read all.')
     # Models.
     parser.add_argument("--model", type=str,
-                        #default='DistMult',
                         default='KronE',
                         help="Available models: KronE, ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult")
     # Training Parameters

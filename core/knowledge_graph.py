@@ -9,7 +9,7 @@ import json
 from dask import dataframe as ddf
 import os
 import pandas as pd
-from static_funcs import performance_debugger
+from .static_funcs import performance_debugger
 
 
 class KG:

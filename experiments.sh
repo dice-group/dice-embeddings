@@ -8,5 +8,5 @@ python main.py --path_dataset_folder 'KGs/Countries-S1' --model 'QMult' --embedd
 python main.py --path_dataset_folder 'KGs/Countries-S1' --model 'ComplEx' --embedding_dim 4 --num_epochs $num_epochs > ComplEx.log
 python main.py --path_dataset_folder 'KGs/Countries-S1' --model 'DistMult' --embedding_dim 8 --num_epochs $num_epochs > DistMult.log
 python main.py --path_dataset_folder 'KGs/Countries-S1' --model 'KronE' --entity_embedding_dim 6 --rel_embedding_dim 2 --num_epochs $num_epochs > KronE.log
-python collect_results_from_logs.py --logs OMult.log QMult.log DistMult.log ComplEx.log KronE.log
+python core/collect_results_from_logs.py --logs OMult.log QMult.log DistMult.log ComplEx.log KronE.log
 echo 'Done!'
