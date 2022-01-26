@@ -20,13 +20,11 @@ import time
 from pytorch_lightning.plugins import *  # DDPPlugin, DataParallelPlugin
 from pytorch_lightning.callbacks import Callback
 from pytorch_lightning import Trainer, seed_everything
-
 import logging
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
-
 seed_everything(1, workers=True)
 
 
