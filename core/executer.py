@@ -17,10 +17,11 @@ import json
 import inspect
 import dask.dataframe as dd
 import time
-from pytorch_lightning.plugins import *  # DDPPlugin, DataParallelPlugin
+from pytorch_lightning.plugins import DDPPlugin
 from pytorch_lightning.callbacks import Callback
 from pytorch_lightning import Trainer, seed_everything
 import logging
+from collections import defaultdict
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
@@ -32,34 +33,27 @@ class Execute:
     def __init__(self, args):
         # (1) Process arguments and sanity checking
         self.args = preprocesses_input_args(args)
-        sanity_checking_with_arguments(self.args)
-        # 2 Create a storage
-        self.storage_path = create_experiment_folder(folder_name=self.args.storage_path)
+        # 2 Create a folder to serialize data
+        self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
         # 3. Read input data and store its parts for further use
-        self.dataset = self.read_input_data(args)
-        print(self.dataset.description_of_input)
-        self.dataset.serialize(self.storage_path)
+        self.dataset = self.read_input_data(self.args)
+        # 4. Store few data in memory for numerical results, e.g. runtime, H@1 etc.
         self.report = dict()
-
-        # 4. Save Create folder to serialize data. This two numerical value will be used in embedding initialization.
-        self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
-
-        # 4. Create logger
-        # 5. KGE related parameters
-        self.trainer = None
-        self.scoring_technique = args.scoring_technique
-        self.neg_ratio = args.negative_sample_ratio
-
         self.config_kge_sanity_checking()
 
     @staticmethod
     def read_input_data(args):
-        return KG(data_dir=args.path_dataset_folder,
-                  deserialize_flag=args.deserialize_flag,
-                  large_kg_parse=args.large_kg_parse,
-                  add_reciprical=args.add_reciprical,
-                  eval=args.eval,
-                  read_only_few=args.read_only_few)
+        kg = KG(data_dir=args.path_dataset_folder,
+                deserialize_flag=args.deserialize_flag,
+                large_kg_parse=args.large_kg_parse,
+                add_reciprical=args.add_reciprical,
+                eval_model=args.eval,
+                read_only_few=args.read_only_few,
+                path_for_serialization=args.full_storage_path)
+        print(kg.description_of_input)
+        # 4. Save Create folder to serialize data. This two numerical value will be used in embedding initialization.
+        args.num_entities, args.num_relations = kg.num_entities, kg.num_relations
+        return kg
 
     def config_kge_sanity_checking(self):
         """
@@ -68,13 +62,13 @@ class Execute:
         """
         if self.args.batch_size > len(self.dataset.train_set):
             self.args.batch_size = len(self.dataset.train_set)
-        if self.args.model == 'Shallom' and self.scoring_technique == 'NegSample':
+        if self.args.model == 'Shallom' and self.args.scoring_technique == 'NegSample':
             print(
                 'Shallom can not be trained with Negative Sampling. Scoring technique is changed to KvsALL')
-            self.scoring_technique = 'KvsAll'
+            self.args.scoring_technique = 'KvsAll'
 
-        if self.scoring_technique == 'KvsAll':
-            self.neg_ratio = None
+        if self.args.scoring_technique == 'KvsAll':
+            self.args.neg_ratio = None
 
     def store(self, trained_model) -> None:
         """
@@ -85,9 +79,9 @@ class Execute:
         print('------------------- Store -------------------')
         # Save Torch model.
         print('Saving torch model..')
-        torch.save(trained_model.state_dict(), self.storage_path + '/model.pt')
+        torch.save(trained_model.state_dict(), self.args.full_storage_path + '/model.pt')
         print('Saving configuration..')
-        with open(self.storage_path + '/configuration.json', 'w') as file_descriptor:
+        with open(self.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
             temp = vars(self.args)
             json.dump(temp, file_descriptor)
         print('Saving embeddings..')
@@ -103,11 +97,11 @@ class Execute:
                     df = dd.from_pandas(df, npartitions=len(df) / 100)
                     # PARQUET wants columns to be stn
                     df.columns = df.columns.astype(str)
-                    df.to_parquet(self.storage_path + '/' + trained_model.name + '_relation_embeddings')
+                    df.to_parquet(self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings')
                     # TO READ PARQUET FILE INTO PANDAS
                     # m=dd.read_parquet(self.storage_path + '/' + trained_model.name + '_relation_embeddings').compute()
                 else:
-                    df.to_csv(self.storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
+                    df.to_csv(self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
             except KeyError or AttributeError as e:
                 print('Exception occurred at saving relation embeddings. Computation will continue')
                 print(e)
@@ -122,14 +116,14 @@ class Execute:
                 df = dd.from_pandas(df, npartitions=len(df) / 100)
                 # PARQUET wants columns to be stn
                 df.columns = df.columns.astype(str)
-                df.to_parquet(self.storage_path + '/' + trained_model.name + '_relation_embeddings')
+                df.to_parquet(self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings')
             else:
-                df.to_csv(self.storage_path + '/' + trained_model.name + '_entity_embeddings.csv', )
+                df.to_csv(self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv', )
         except KeyError or AttributeError as e:
             print('Exception occurred at saving entity embeddings.Computation will continue')
             print(e)
 
-    def start(self) -> None:
+    def start(self) -> dict:
         """
         Train and/or Evaluate Model
         Store Mode
@@ -149,8 +143,9 @@ class Execute:
         print(f'Runtime of {trained_model.name}:', total_runtime)
         print(f'NumParam of {trained_model.name}:', self.report["NumParam"])
         print(f'Estimated of {trained_model.name}:', self.report["EstimatedSizeMB"])
-        with open(self.storage_path + '/report.json', 'w') as file_descriptor:
+        with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
             json.dump(self.report, file_descriptor)
+        return self.report
 
     def train_and_eval(self) -> BaseKGE:
         """
@@ -164,9 +159,9 @@ class Execute:
             self.trainer = pl.Trainer.from_argparse_args(self.args)
         # 2. Check whether validation and test datasets are available.
         if self.dataset.is_valid_test_available():
-            if self.scoring_technique == 'NegSample':
+            if self.args.scoring_technique == 'NegSample':
                 trained_model = self.training_negative_sampling()
-            elif self.scoring_technique == 'KvsAll':
+            elif self.args.scoring_technique == 'KvsAll':
                 # KvsAll or negative sampling
                 trained_model = self.training_kvsall()
             else:
@@ -189,29 +184,15 @@ class Execute:
                 trained_model = self.k_fold_cross_validation()
         return trained_model
 
-    def old_get_batch_1_to_N(self, er_vocab, er_vocab_pairs, idx, output_dim):
-        batch = er_vocab_pairs[idx:idx + self.args.batch_size]
-        targets = np.zeros((len(batch), output_dim))
-        for idx, pair in enumerate(batch):
-            if isinstance(pair,
-                          np.ndarray):  # A workaround as test triples in kvold is a numpy array and a numpy array is not hashanle.
-                pair = tuple(pair)
-            targets[idx, er_vocab[pair]] = 1
-        return np.array(batch), torch.FloatTensor(targets)
-
-    def get_batch_1_to_N(self, er_vocab, er_vocab_pairs, idx, output_dim):
-        batch = er_vocab_pairs[idx:idx + self.args.batch_size]
+    def get_batch_1_to_N(self, input_vocab, triples, idx, output_dim):
+        batch = triples[idx:idx + self.args.batch_size]
         targets = np.zeros((len(batch), output_dim))
         for idx, pair in enumerate(batch):
             if isinstance(pair,
                           np.ndarray):  # A workaround as test triples in kvold is a numpy array and a numpy array is not hashanle.
                 pair = tuple(pair)
 
-            print(pair)
-            print(batch)
-            print(targets.shape)
-            exit(1)
-            targets[idx, er_vocab[pair]] = 1
+            targets[idx, input_vocab[pair]] = 1
         return np.array(batch), torch.FloatTensor(targets)
 
     def training_kvsall(self):
@@ -229,7 +210,7 @@ class Execute:
                                      entity_to_idx=self.dataset.entity_to_idx,
                                      relation_to_idx=self.dataset.relation_to_idx,
                                      form=form_of_labelling,
-                                     neg_sample_ratio=self.neg_ratio,
+                                     neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_processes
                                      )
@@ -279,9 +260,10 @@ class Execute:
 
     def deserialize_index_data(self):
         m = []
-        if os.path.isfile(self.storage_path + '/idx_train_df.gzip'):
-            m.append(pd.read_parquet(self.storage_path + '/idx_train_df.gzip'))
-        if os.path.isfile(self.storage_path + '/idx_valid_df.gzip'):
+        raise NotImplementedError()
+        if os.path.isfile(self.args.full_storage_path + '/idx_train_df.gzip'):
+            m.append(pd.read_parquet(self.args.full_storage_path + '/idx_train_df.gzip'))
+        if os.path.isfile(self.args.full_storage_path + '/idx_valid_df.gzip'):
             m.append(pd.read_parquet(self.storage_path + '/idx_valid_df.gzip'))
         if os.path.isfile(self.storage_path + '/idx_test_df.gzip'):
             m.append(pd.read_parquet(self.storage_path + '/idx_test_df.gzip'))
@@ -304,64 +286,61 @@ class Execute:
         print(info + ':', end=' ')
         for i in range(10):
             hits.append([])
-        data = self.deserialize_index_data()
 
         # (2) Evaluation mode
         if form_of_labelling == 'RelationPrediction':
-            for i in triple_idx:
-                e1_idx, r_idx, e2_idx = tuple(i)
-                predictions = model.forward_k_vs_all(e1_idx=torch.tensor([e1_idx]), e2_idx=torch.tensor([e2_idx]))[
-                    0]
-                filt = data[(data['subject'] == e1_idx) & (data['object'] == e2_idx)]['relation'].values
-                # filt = self.dataset.er_vocab[(data_batch[j][0], data_batch[j][1])]
-                target_value = predictions[r_idx].item()
-                predictions[filt] = float('-inf')
-                predictions[r_idx] = target_value
-                sort_values, sort_idxs = torch.sort(predictions, descending=True)
-                sort_idxs = sort_idxs.detach()  # cpu().numpy()
-                rank = np.where(sort_idxs == r_idx)[0][0]
-                ranks.append(rank + 1)
-                for hits_level in range(10):
-                    if rank <= hits_level:
-                        hits[hits_level].append(1.0)
-                """
-                data_batch, _ = self.get_batch_1_to_N(self.dataset.ee_vocab, triple_idx, i, self.dataset.num_entities)
-                e1_idx = torch.tensor(data_batch[:, 0])
-                r_idx = torch.tensor(data_batch[:, 1])
-
-                e2_idx = torch.tensor(data_batch[:, 2])
-                predictions = model.forward_k_vs_all(e1_idx=e1_idx, e2_idx=e2_idx)
+            # Iterate over integer indexed triples in mini batch fashion
+            for i in range(0, len(triple_idx), self.args.batch_size):
+                # Obtain i.th batch
+                data_batch, _ = self.get_batch_1_to_N(self.dataset.ee_vocab, triple_idx, i, self.args.num_relations)
+                # From numpy array to torch tensor
+                e1_idx, r_idx, e2_idx = torch.tensor(data_batch[:, 0]), torch.tensor(data_batch[:, 1]), torch.tensor(
+                    data_batch[:, 2])
+                # Generate predictions
+                predictions = model.forward_k_vs_all(e1_idx=e1_idx, e2_idx=r_idx)
+                # Filter entities except the target entity
                 for j in range(data_batch.shape[0]):
-                    filt = self.dataset.ee_vocab[(data_batch[j][0], data_batch[j][1])]
+                    filt = self.dataset.ee_vocab[(data_batch[j][0], data_batch[j][2])]
                     target_value = predictions[j, r_idx[j]].item()
                     predictions[j, filt] = 0.0
                     predictions[j, r_idx[j]] = target_value
-
+                # Sort predictions.
                 sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
-                sort_idxs = sort_idxs.detach()  # cpu().numpy()
+                # This can be also done in paralel
                 for j in range(data_batch.shape[0]):
-                    rank = np.where(sort_idxs[j] == r_idx[j].item())[0][0]
+                    rank = torch.where(sort_idxs[j] == r_idx[j])[0].item()
                     ranks.append(rank + 1)
+
                     for hits_level in range(10):
                         if rank <= hits_level:
                             hits[hits_level].append(1.0)
-                """
+
         else:
-            for i in triple_idx:
-                e1_idx, r_idx, e2_idx = tuple(i)
-                predictions = model.forward_k_vs_all(e1_idx=torch.tensor([e1_idx]), rel_idx=torch.tensor([r_idx]))[0]
-                filt = data[(data['subject'] == e1_idx) & (data['relation'] == r_idx)]['object'].values
-                # filt = self.dataset.er_vocab[(data_batch[j][0], data_batch[j][1])]
-                target_value = predictions[e2_idx].item()
-                predictions[filt] = float('-inf')
-                predictions[e2_idx] = target_value
-                sort_values, sort_idxs = torch.sort(predictions, descending=True)
-                sort_idxs = sort_idxs.detach()  # cpu().numpy()
-                rank = np.where(sort_idxs == e2_idx)[0][0]
-                ranks.append(rank + 1)
-                for hits_level in range(10):
-                    if rank <= hits_level:
-                        hits[hits_level].append(1.0)
+            # Iterate over integer indexed triples in mini batch fashion
+            for i in range(0, len(triple_idx), self.args.batch_size):
+                # Obtain i.th batch
+                data_batch, _ = self.get_batch_1_to_N(self.dataset.er_vocab, triple_idx, i, self.args.num_entities)
+                # From numpy array to torch tensor
+                e1_idx, r_idx, e2_idx = torch.tensor(data_batch[:, 0]), torch.tensor(data_batch[:, 1]), torch.tensor(
+                    data_batch[:, 2])
+                # Generate predictions
+                predictions = model.forward_k_vs_all(e1_idx=e1_idx, rel_idx=r_idx)
+                # Filter entities except the target entity
+                for j in range(data_batch.shape[0]):
+                    filt = self.dataset.er_vocab[(data_batch[j][0], data_batch[j][1])]
+                    target_value = predictions[j, e2_idx[j]].item()
+                    predictions[j, filt] = 0.0
+                    predictions[j, e2_idx[j]] = target_value
+                # Sort predictions.
+                sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
+                # This can be also done in paralel
+                for j in range(data_batch.shape[0]):
+                    rank = torch.where(sort_idxs[j] == e2_idx[j])[0].item()
+                    ranks.append(rank + 1)
+
+                    for hits_level in range(10):
+                        if rank <= hits_level:
+                            hits[hits_level].append(1.0)
 
         hit_1 = sum(hits[0]) / (float(len(triple_idx)))
         hit_3 = sum(hits[2]) / (float(len(triple_idx)))

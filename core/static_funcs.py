@@ -5,14 +5,11 @@ import numpy as np
 import torch
 import datetime
 import logging
-
+from collections import defaultdict
 import pytorch_lightning as pl
 import sys
 
 from .models import *
-#from .models.complex import ComplEx, ConEx
-#from .models.octonion import OMult, ConvO
-#from .models.quaternion import QMult, ConvQ
 import time
 
 import argparse
@@ -21,13 +18,14 @@ import argparse
 def argparse_default(description=None):
     """ Extends pytorch_lightning Trainer's arguments with ours """
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
-    # Default parameters of Trainer
-    # https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
-    # Number of workers for data loader
-    # https: // pytorch - lightning.readthedocs.io / en / latest / guides / speed.html  # num-workers
+    # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
+
     # Dataset and storage related
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Countries-S3')
-    parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage')
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
+                        help="The path of a folder containing input data")
+    parser.add_argument("--large_kg_parse", type=int, default=0, help='A flag for using all cores at parsing.')
+    parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage',
+                        help="Embeddings, model, and any other related data will be stored therein.")
     parser.add_argument("--deserialize_flag", type=str, default=None, help='Path of a folder for deserialization.')
     parser.add_argument("--read_only_few", type=int, default=0, help='READ only first N triples. If 0, read all.')
     # Models.
@@ -35,21 +33,20 @@ def argparse_default(description=None):
                         default='KronE',
                         help="Available models: KronE, ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult")
     # Training Parameters
-    parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. '
+    parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. '
                                                                     'This disables max_epochs and min_epochs of pl.Trainer')
-    parser.add_argument('--batch_size', type=int, default=32)
+    parser.add_argument('--batch_size', type=int, default=1024)
     parser.add_argument("--lr", type=float, default=0.1)
     # Model Parameters
     # Hyperparameters pertaining to number of parameters.
-    parser.add_argument('--embedding_dim', type=int, default=8)
-    parser.add_argument('--entity_embedding_dim', type=int, default=7)
-    parser.add_argument('--rel_embedding_dim', type=int, default=7)
+    parser.add_argument('--embedding_dim', type=int, default=200)
+    parser.add_argument('--entity_embedding_dim', type=int, default=32)
+    parser.add_argument('--rel_embedding_dim', type=int, default=32)
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
     parser.add_argument("--num_of_output_channels", type=int, default=8, help="# of output channels in convolution")
     parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.5,
                         help='The ratio of the size of the affine transformation w.r.t. the size of the embeddings')
     # Flags for computation
-    parser.add_argument("--large_kg_parse", type=int, default=0, help='A flag for using all cores at parsing.')
     parser.add_argument("--eval", type=int, default=1,
                         help='A flag for using evaluation. If 0, memory consumption is decreased')
     # Do we use still use it ?
@@ -102,6 +99,7 @@ def preprocesses_input_args(arg):
     arg.eval = True if arg.eval == 1 else False
 
     arg.add_reciprical = True if arg.scoring_technique == 'KvsAll' else False
+    sanity_checking_with_arguments(arg)
 
     return arg
 
@@ -274,5 +272,22 @@ def compute_mrr_based_on_entity_ranking(trained_model, triples, entity_to_idx, r
     """
     return raw_mrr
 
+
 def extract_model_summary(s):
     return {'NumParam': s.total_parameters, 'EstimatedSizeMB': s.model_size}
+
+
+def get_er_vocab(data):
+    # head entity and relation
+    er_vocab = defaultdict(list)
+    for triple in data:
+        er_vocab[(triple[0], triple[1])].append(triple[2])
+    return er_vocab
+
+
+def get_ee_vocab(data):
+    # head entity and relation
+    ee_vocab = defaultdict(list)
+    for triple in data:
+        ee_vocab[(triple[0], triple[2])].append(triple[1])
+    return ee_vocab

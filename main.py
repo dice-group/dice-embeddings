@@ -2,5 +2,4 @@ from core.executer import Execute
 from core.static_funcs import argparse_default
 
 if __name__ == '__main__':
-    exc = Execute(argparse_default())
-    exc.start()
+    Execute(argparse_default()).start()
