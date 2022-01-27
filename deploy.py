@@ -39,7 +39,7 @@ def launch_service(config, pretrained_model, entity_idx, predicate_idx):
                 return 'Failed at mapping the predicate', pd.DataFrame()
 
             if len(str_object) == 0:
-                pred_scores = pretrained_model.forward_k_vs_all(idx_subject, idx_predicate)
+                pred_scores = torch.sigmoid(pretrained_model.forward_k_vs_all(idx_subject, idx_predicate))
                 sort_val, sort_idxs = torch.sort(pred_scores, dim=1, descending=True)
                 top_10_entity, top_10_score = [idx_to_entity[i] for i in sort_idxs[0][:10].tolist()], sort_val[0][
                                                                                                       :10].numpy()
@@ -51,7 +51,7 @@ def launch_service(config, pretrained_model, entity_idx, predicate_idx):
                 except KeyError:
                     print(f'index of object **{str_object}** of length {len(str_object)} is not found.')
                     return 'Failed at mapping the object', pd.DataFrame()
-                pred_score = pretrained_model.forward_k_vs_all(idx_subject, idx_predicate)[0, idx_object]
+                pred_score = torch.sigmoid(pretrained_model.forward_k_vs_all(idx_subject, idx_predicate))[0, idx_object]
                 return f'{str_subject},{str_predicate}, {str_object}', pd.DataFrame(
                     {'Entity': str_object, 'Score': pred_score})
 
@@ -101,6 +101,6 @@ def run(args: dict):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--path_of_experiment_folder", type=str, default='DAIKIRI_Storage/2022-01-26 15:12:33.786330')
+    parser.add_argument("--path_of_experiment_folder", type=str, default='DAIKIRI_Storage/2022-01-27 12:26:04.785730')
     parser.add_argument('--share', default=True, type=eval, choices=[True, False])
     run(vars(parser.parse_args()))
