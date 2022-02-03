@@ -165,7 +165,7 @@ class Execute:
                 # KvsAll or negative sampling
                 trained_model = self.training_kvsall()
             else:
-                raise ValueError(f'Invalid argument: {self.scoring_technique}')
+                raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
         else:
             # 3. If (2) is FALSE, then check whether cross validation will be applied.
             print(f'There is no validation and test sets available.')
@@ -173,13 +173,13 @@ class Execute:
                 print(
                     f'No test set is found and k-fold cross-validation is set to less than 2 (***num_folds_for_cv*** => {self.args.num_folds_for_cv}). Hence we do not evaluate the model')
                 # 3.1. NO CROSS VALIDATION => TRAIN WITH 'NegSample' or KvsALL
-                if self.scoring_technique == 'NegSample':
+                if self.args.scoring_technique == 'NegSample':
                     trained_model = self.training_negative_sampling()
-                elif self.scoring_technique == 'KvsAll':
+                elif self.args.scoring_technique == 'KvsAll':
                     # KvsAll or negative sampling
                     trained_model = self.training_kvsall()
                 else:
-                    raise ValueError(f'Invalid argument: {self.scoring_technique}')
+                    raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
             else:
                 trained_model = self.k_fold_cross_validation()
         return trained_model

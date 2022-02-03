@@ -118,7 +118,7 @@ class KG:
             else:
                 self.test_set = self.test_set.values
 
-            if eval_model:
+            if eval_model and len(self.valid_set)> 0 and len(self.test_set)>0:
                 # 16. Create a bijection mapping from subject-relation pairs to tail entities.
                 data = np.concatenate([self.train_set, self.valid_set, self.test_set])
                 self.er_vocab = get_er_vocab(data)

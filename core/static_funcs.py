@@ -21,7 +21,7 @@ def argparse_default(description=None):
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
 
     # Dataset and storage related
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Family',
                         help="The path of a folder containing input data")
     parser.add_argument("--large_kg_parse", type=int, default=0, help='A flag for using all cores at parsing.')
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage',
@@ -33,7 +33,7 @@ def argparse_default(description=None):
                         default='KronE',
                         help="Available models: KronE, ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult")
     # Training Parameters
-    parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. '
+    parser.add_argument("--num_epochs", type=int, default=500, help='Number of epochs for training. '
                                                                     'This disables max_epochs and min_epochs of pl.Trainer')
     parser.add_argument('--batch_size', type=int, default=1024)
     parser.add_argument("--lr", type=float, default=0.1)
