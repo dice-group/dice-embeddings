@@ -12,7 +12,8 @@ from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab
 
 class KG:
     def __init__(self, data_dir: str = None, deserialize_flag: str = None, large_kg_parse=False, add_reciprical=False,
-                 eval_model=True, read_only_few: int = None, path_for_serialization: str = None):
+                 eval_model=True, read_only_few: int = None, sample_triples_ratio: float = None,
+                 path_for_serialization: str = None):
         """
 
         :param data_dir: A path of a folder containing the input knowledge graph
@@ -20,12 +21,16 @@ class KG:
         :param large_kg_parse: A flag for using all cores to parse input knowledge graph
         :param add_reciprical: A flag for applying reciprocal data augmentation technique
         :param eval_model: A flag indicating whether evaluation will be applied. If no eval, then entity relation mappings will be deleted to free memory.
+        sample_triples_ratio
         """
         if deserialize_flag is None:
             # 1. LOAD Data. (First pass on data)
-            self.train_set = self.load_data_parallel(data_dir + '/train.txt', large_kg_parse, read_only_few)
-            self.valid_set = self.load_data_parallel(data_dir + '/valid.txt', large_kg_parse, read_only_few)
-            self.test_set = self.load_data_parallel(data_dir + '/test.txt', large_kg_parse, read_only_few)
+            self.train_set = self.load_data_parallel(data_dir + '/train.txt', large_kg_parse, read_only_few,
+                                                     sample_triples_ratio)
+            self.valid_set = self.load_data_parallel(data_dir + '/valid.txt', large_kg_parse, read_only_few,
+                                                     sample_triples_ratio)
+            self.test_set = self.load_data_parallel(data_dir + '/test.txt', large_kg_parse, read_only_few,
+                                                    sample_triples_ratio)
             # 2. Concatenate list of triples stored in pandas dataframe.
             df_str_kg = pd.concat([self.train_set, self.valid_set, self.test_set], ignore_index=True)
             # 3. Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
@@ -63,7 +68,8 @@ class KG:
 
             # 7. Convert from pandas dataframe to dictionaries for an easy access
             # We may want to benchmark using python dictionary and pandas frame
-            print('Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...')
+            print(
+                'Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...')
             self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
             self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
             self.num_entities = len(self.entity_to_idx)
@@ -303,12 +309,14 @@ class KG:
         return entity_idxs, relation_idxs, er_vocab, pe_vocab, ee_vocab
 
     @staticmethod
-    def load_data_parallel(data_path, large_kg_parse=True, read_only_few: int = None) -> List:
+    def load_data_parallel(data_path, large_kg_parse=True, read_only_few: int = None,
+                           sample_triples_ratio: float = None) -> List:
         """
         Parse KG via DASK.
         :param read_only_few:
         :param data_path:
         :param large_kg_parse:
+        :param sample_triples_ratio:
         :return:
         """
         print(f'LOADING {data_path} large kg:{large_kg_parse}...')
@@ -329,6 +337,10 @@ class KG:
             if isinstance(read_only_few, int):
                 if read_only_few > 0:
                     df = df.loc[:read_only_few]
+
+            if sample_triples_ratio > 0:
+                df = df.sample(frac=sample_triples_ratio)
+
             if large_kg_parse:
                 df = df.compute(scheduler='processes')
             else:

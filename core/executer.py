@@ -51,6 +51,7 @@ class Execute:
                 add_reciprical=args.add_reciprical,
                 eval_model=args.eval,
                 read_only_few=args.read_only_few,
+                sample_triples_ratio=args.sample_triples_ratio,
                 path_for_serialization=args.full_storage_path)
         print(kg.description_of_input)
         # Save Create folder to serialize data. This two numerical value will be used in embedding initialization.
@@ -237,7 +238,7 @@ class Execute:
         """
         Train models with Negative Sampling
         """
-        assert self.neg_ratio > 0
+        assert self.args.neg_ratio > 0
         model, _ = select_model(self.args)
         form_of_labelling = 'NegativeSampling'
         print(f' Training starts: {model.name}-labeling:{form_of_labelling}')
@@ -247,7 +248,7 @@ class Execute:
                                      entity_to_idx=self.dataset.entity_to_idx,
                                      relation_to_idx=self.dataset.relation_to_idx,
                                      form=form_of_labelling,
-                                     neg_sample_ratio=self.neg_ratio,
+                                     neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_processes
                                      )

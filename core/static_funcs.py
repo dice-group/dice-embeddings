@@ -28,6 +28,8 @@ def argparse_default(description=None):
                         help="Embeddings, model, and any other related data will be stored therein.")
     parser.add_argument("--deserialize_flag", type=str, default=None, help='Path of a folder for deserialization.')
     parser.add_argument("--read_only_few", type=int, default=0, help='READ only first N triples. If 0, read all.')
+    parser.add_argument("--sample_triples_ratio", type=float, default=0, help='Sample some triples')
+
     # Models.
     parser.add_argument("--model", type=str,
                         default='KronE',
@@ -57,8 +59,8 @@ def argparse_default(description=None):
     parser.add_argument("--feature_map_dropout_rate", type=int, default=.3)
     parser.add_argument('--apply_unit_norm', type=bool, default=False)
     # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='KvsAll', help="KvsAll technique or NegSample.")
-    parser.add_argument('--negative_sample_ratio', type=int, default=1)
+    parser.add_argument('--scoring_technique', default='NegSample', help="KvsAll technique or NegSample.")
+    parser.add_argument('--neg_ratio', type=int, default=1)
     # Data Augmentation.
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
                                                                         'If >2,no evaluation scenario is applied implies no evaluation.')
@@ -99,8 +101,9 @@ def preprocesses_input_args(arg):
     arg.eval = True if arg.eval == 1 else False
 
     arg.add_reciprical = True if arg.scoring_technique == 'KvsAll' else False
-    sanity_checking_with_arguments(arg)
 
+    assert 1.0>=arg.sample_triples_ratio>=0.0
+    sanity_checking_with_arguments(arg)
     return arg
 
 
