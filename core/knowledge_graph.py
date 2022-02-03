@@ -35,41 +35,67 @@ class KG:
                                                      'relation': df_str_kg['relation'].map(lambda x: x + '_inverse'),
                                                      'object': df_str_kg['subject']})], ignore_index=True)
             # 4. Create a bijection mapping  from entities to integer indexes.
+            print('Creating a mapping from entities to integer indexes..')
             ordered_list = pd.unique(df_str_kg[['subject', 'object']].values.ravel('K'))
             self.entity_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
                                               columns=['entity'],
                                               index=ordered_list)
+            print('Done!\n')
+
             # 5. Create a bijection mapping  from relations to to integer indexes.
+            print('Creating a mapping from relations to integer indexes..')
             ordered_list = pd.unique(df_str_kg['relation'].values.ravel('K'))
             self.relation_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
                                                 columns=['relation'],
                                                 index=ordered_list)
+            print('Done!\n')
             # Free memory
             del ordered_list, df_str_kg
 
             ## 6. Serialize indexed entities and relations into disk for further usage.
+            print('Serializing compressed entity integer mapping...')
             self.entity_to_idx.to_parquet(path_for_serialization + '/entity_to_idx.gzip', compression='gzip')
+            print('Done!\n')
+
+            print('Serializing compressed relation integer mapping...')
             self.relation_to_idx.to_parquet(path_for_serialization + '/relation_to_idx.gzip', compression='gzip')
+            print('Done!\n')
+
             # 7. Convert from pandas dataframe to dictionaries for an easy access
             # We may want to benchmark using python dictionary and pandas frame
+            print('Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...')
             self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
             self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
             self.num_entities = len(self.entity_to_idx)
             self.num_relations = len(self.relation_to_idx)
+            print('Done!\n')
 
             if len(self.train_set) > 0:
                 # 8. Serialize already read training data in parquet format so that
                 # the training data is stored in more memory efficient manner as well as
                 # it can be reread later faster
+                print('Serializing training data...')
                 self.train_set.to_parquet(path_for_serialization + '/train_df.gzip', compression='gzip')
+                print('Done!\n')
+
+                print('Mapping training data into integers for training...')
                 # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
                 self.train_set['subject'] = self.train_set['subject'].map(lambda x: self.entity_to_idx[x])
                 self.train_set['relation'] = self.train_set['relation'].map(lambda x: self.relation_to_idx[x])
                 self.train_set['object'] = self.train_set['object'].map(lambda x: self.entity_to_idx[x])
+                print('Done!\n')
+
                 # 10. Serialize (9).
+                print('Serializing integer mapped data...')
                 self.train_set.to_parquet(path_for_serialization + '/idx_train_df.gzip', compression='gzip')
+                print('Done!\n')
+
                 # 11. Convert data from pandas dataframe to numpy ndarray.
+                print('Mapping from pandas data frame to numpy ndarray to reduce memory usage...')
                 self.train_set = self.train_set.values
+                print('Done!\n')
+
+                print('Sanity checking...')
                 # 12. Sanity checking: indexed training set can not have an indexed entity assigned with larger indexed than the number of entities.
                 assert self.num_entities > max(self.train_set[:, 0]) and self.num_entities > max(self.train_set[:, 2])
                 assert self.num_relations > max(self.train_set[:, 1])
@@ -118,7 +144,7 @@ class KG:
             else:
                 self.test_set = self.test_set.values
 
-            if eval_model and len(self.valid_set)> 0 and len(self.test_set)>0:
+            if eval_model and len(self.valid_set) > 0 and len(self.test_set) > 0:
                 # 16. Create a bijection mapping from subject-relation pairs to tail entities.
                 data = np.concatenate([self.train_set, self.valid_set, self.test_set])
                 self.er_vocab = get_er_vocab(data)
@@ -285,7 +311,7 @@ class KG:
         :param large_kg_parse:
         :return:
         """
-        print(f'LOADING {data_path} large kg:{large_kg_parse}')
+        print(f'LOADING {data_path} large kg:{large_kg_parse}...')
         if os.path.exists(data_path):
             with open(data_path, 'r') as reader:
                 s = next(reader)
@@ -319,29 +345,13 @@ class KG:
                 df['subject'] = df['subject'].str.removeprefix("<").str.removesuffix(">")
                 df['relation'] = df['relation'].str.removeprefix("<").str.removesuffix(">")
                 df['object'] = df['object'].str.removeprefix("<").str.removesuffix(">")
-                return df  # .values.tolist()
+                print(f'Done!\n')
+                return df
             else:
-                return df  # .values.tolist()
-            """
-            if is_nt_format:
-                print('File is Ntriple => ')
-                triples = []
-                # TODO: do it by using all cores
-                for i in df.values.tolist():
-                    s, p, o = i[0], i[1], i[2]
-                    if s[0] == '<' and s[-1] == '>':
-                        s = s[1:-1]
-                    if p[0] == '<' and p[-1] == '>':
-                        p = p[1:-1]
-                    if o[0] == '<' and o[-1] == '>':
-                        o = o[1:-1]
-                    triples.append([s, p, o])
-                return triples
-            else:
-                return df.values.tolist()
-            """
+                print(f'Done!\n')
+                return df
         else:
-            print(f'{data_path} could not found ')
+            print(f'{data_path} could not found!\n')
             return pd.DataFrame()
 
     @staticmethod

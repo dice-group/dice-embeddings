@@ -43,6 +43,8 @@ class Execute:
 
     @staticmethod
     def read_input_data(args):
+        # 1. Read & Parse input data
+        print("1. Read & Parse input data")
         kg = KG(data_dir=args.path_dataset_folder,
                 deserialize_flag=args.deserialize_flag,
                 large_kg_parse=args.large_kg_parse,
@@ -51,7 +53,7 @@ class Execute:
                 read_only_few=args.read_only_few,
                 path_for_serialization=args.full_storage_path)
         print(kg.description_of_input)
-        # 4. Save Create folder to serialize data. This two numerical value will be used in embedding initialization.
+        # Save Create folder to serialize data. This two numerical value will be used in embedding initialization.
         args.num_entities, args.num_relations = kg.num_entities, kg.num_relations
         return kg
 
