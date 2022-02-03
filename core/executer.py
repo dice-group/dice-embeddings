@@ -88,6 +88,7 @@ class Execute:
             temp = vars(self.args)
             json.dump(temp, file_descriptor)
         print('Saving embeddings..')
+        # TODO: Find a faster way to store embeddings.
         if trained_model.name == 'Shallom':
             entity_emb = trained_model.get_embeddings()
         else:
@@ -185,6 +186,7 @@ class Execute:
                     raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
             else:
                 trained_model = self.k_fold_cross_validation()
+        print('Train & Eval Done!\n')
         return trained_model
 
     def get_batch_1_to_N(self, input_vocab, triples, idx, output_dim):
@@ -242,6 +244,7 @@ class Execute:
         model, _ = select_model(self.args)
         form_of_labelling = 'NegativeSampling'
         print(f' Training starts: {model.name}-labeling:{form_of_labelling}')
+        print('Creating training data...')
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,
                                      test_set_idx=self.dataset.test_set,
@@ -252,8 +255,11 @@ class Execute:
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_processes
                                      )
+        print('Done!\n')
         print(model)
+        print('Fitting the model...')
         self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
+        print('Done!n')
         if self.args.eval:
             if len(self.dataset.valid_set) > 0:
                 self.evaluate_lp(model, self.dataset.valid_set, 'Evaluation of Validation set')
