@@ -17,7 +17,7 @@ class TestDefaultParams:
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'KvsAll'
         result = Execute(args).start()
-        assert 0.48 >= result['Val']['H@1'] >= 0.45
+        assert 0.48 >= result['Val']['H@1'] >= 0.41
 
     def test_shallom(self):
         args = argparse_default([])
@@ -32,7 +32,7 @@ class TestDefaultParams:
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'KvsAll'
         result = Execute(args).start()
-        assert 0.25 >= result['Val']['H@1'] >= 0.22
+        assert 0.29 >= result['Val']['H@1'] >= 0.22
 
     def test_krone(self):
         args = argparse_default([])
@@ -47,5 +47,5 @@ class TestDefaultParams:
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'KvsAll'
         result = Execute(args).start()
-        assert 0.60 >= result['Val']['H@1'] >= 0.57
+        assert 0.60 >= result['Val']['H@1'] >= 0.53
 

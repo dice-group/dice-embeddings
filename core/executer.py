@@ -36,10 +36,11 @@ class Execute:
         # 2 Create a folder to serialize data
         self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
         # 3. Read input data and store its parts for further use
-        self.dataset = self.read_input_data(self.args)
+        self.trainer = None
+        self.dataset = None  # self.read_input_data(self.args)
         # 4. Store few data in memory for numerical results, e.g. runtime, H@1 etc.
         self.report = dict()
-        self.config_kge_sanity_checking()
+        # self.config_kge_sanity_checking()
 
     @staticmethod
     def read_input_data(args):
@@ -133,6 +134,11 @@ class Execute:
         Store Mode
         """
         start_time = time.time()
+
+        # 3. Read input data and store its parts for further use
+        self.dataset = self.read_input_data(self.args)
+        self.config_kge_sanity_checking()
+
         # 1. Train and Evaluate
         trained_model = self.train_and_eval()
         # 2. Store trained model
