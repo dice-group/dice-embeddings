@@ -7,11 +7,11 @@ import logging
 from collections import defaultdict
 import pytorch_lightning as pl
 import sys
-
+from .helper_classes import CustomArg
 from .models import *
 import time
 import pandas as pd
-
+import json
 import argparse
 
 
@@ -40,7 +40,7 @@ def argparse_default(description=None):
     parser.add_argument("--lr", type=float, default=0.1)
     # Model Parameters
     # Hyperparameters pertaining to number of parameters.
-    parser.add_argument('--embedding_dim', type=int, default=200)
+    parser.add_argument('--embedding_dim', type=int, default=32)
     parser.add_argument('--entity_embedding_dim', type=int, default=32)
     parser.add_argument('--rel_embedding_dim', type=int, default=32)
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
@@ -309,3 +309,9 @@ def get_ee_vocab(data):
     for triple in data:
         ee_vocab[(triple[0], triple[2])].append(triple[1])
     return ee_vocab
+
+def load_configuration(p: str) -> CustomArg:
+    assert os.path.isfile(p)
+    with open(p, 'r') as r:
+        args = json.load(r)
+    return CustomArg(**args)
