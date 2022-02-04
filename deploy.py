@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 
 import numpy as np
 import pandas as pd
-from core.static_funcs import select_model
+from core.static_funcs import load_model
 import json
 from collections import namedtuple
 import torch
@@ -10,7 +10,24 @@ import gradio as gr
 import random
 
 
+def update_arguments_with_training_configuration(args: dict) -> namedtuple:
+    """ namedTuple from input argument """
+    settings = dict()
+    with open(args['path_of_experiment_folder'] + '/configuration.json', 'r') as r:
+        settings.update(json.load(r))
+    settings.update(args)
+    return namedtuple('CustomNamed', settings.keys())(**settings)
+
+
 def launch_service(config, pretrained_model, entity_idx, predicate_idx):
+    """
+    Launch a web service for the deployment of a pretrained model.
+    :param config:
+    :param pretrained_model:
+    :param entity_idx:
+    :param predicate_idx:
+    :return:
+    """
     idx_to_entity = {v: k for k, v in entity_idx.items()}
 
     def predict(str_subject: str, str_predicate: str, str_object: str, random_examples: bool):
@@ -67,30 +84,6 @@ def launch_service(config, pretrained_model, entity_idx, predicate_idx):
                     'To compute 1vsK scores, fill only the two former fields').launch(share=config.share)
 
 
-def load_model(args) -> torch.nn.Module:
-    """ Load weights and initialize pytorch module"""
-    # (1) Load weights from experiment repo
-    weights = torch.load(args.path_of_experiment_folder + '/model.pt', torch.device('cpu'))
-    model, _ = select_model(args)
-    model.load_state_dict(weights)
-    for parameter in model.parameters():
-        parameter.requires_grad = False
-    model.eval()
-
-    entity_to_idx = pd.read_parquet(args.path_of_experiment_folder + '/entity_to_idx.gzip').to_dict()['entity']
-    relation_to_idx = pd.read_parquet(args.path_of_experiment_folder + '/relation_to_idx.gzip').to_dict()['relation']
-
-    return model, entity_to_idx, relation_to_idx
-
-
-def update_arguments_with_training_configuration(args: dict):
-    settings = dict()
-    with open(args['path_of_experiment_folder'] + '/configuration.json', 'r') as r:
-        settings.update(json.load(r))
-    settings.update(args)
-    return namedtuple('CustomNamed', settings.keys())(**settings)
-
-
 def run(args: dict):
     print('Loading Model...')
     config = update_arguments_with_training_configuration(args)
@@ -101,6 +94,6 @@ def run(args: dict):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--path_of_experiment_folder", type=str, default='DAIKIRI_Storage/2022-02-01 08:31:15.841686')
+    parser.add_argument("--path_of_experiment_folder", type=str, default='DAIKIRI_Storage/2022-02-04 08:19:00.138481')
     parser.add_argument('--share', default=True, type=eval, choices=[True, False])
     run(vars(parser.parse_args()))

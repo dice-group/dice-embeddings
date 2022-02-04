@@ -1,6 +1,5 @@
 import os
 from typing import AnyStr, Tuple
-from .models import *
 import numpy as np
 import torch
 import datetime
@@ -11,6 +10,7 @@ import sys
 
 from .models import *
 import time
+import pandas as pd
 
 import argparse
 
@@ -204,6 +204,21 @@ def select_model(args) -> Tuple[pl.LightningModule, AnyStr]:
     else:
         raise ValueError
     return model, form_of_labelling
+
+def load_model(args) -> torch.nn.Module:
+    """ Load weights and initialize pytorch module from namespace arguments"""
+    # (1) Load weights from experiment repo
+    weights = torch.load(args.path_of_experiment_folder + '/model.pt', torch.device('cpu'))
+    model, _ = select_model(args)
+    model.load_state_dict(weights)
+    for parameter in model.parameters():
+        parameter.requires_grad = False
+    model.eval()
+
+    entity_to_idx = pd.read_parquet(args.path_of_experiment_folder + '/entity_to_idx.gzip').to_dict()['entity']
+    relation_to_idx = pd.read_parquet(args.path_of_experiment_folder + '/relation_to_idx.gzip').to_dict()['relation']
+
+    return model, entity_to_idx, relation_to_idx
 
 
 def compute_mrr_based_on_relation_ranking(trained_model, triples, entity_to_idx, relations):
