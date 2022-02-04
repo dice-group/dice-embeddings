@@ -35,15 +35,16 @@ class Execute:
         self.args = preprocesses_input_args(args)
         # 2 Create a folder to serialize data
         self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
-        # 3. Read input data and store its parts for further use
+        # 3. A variable is initialized for pytorch lightning trainer
         self.trainer = None
-        self.dataset = None  # self.read_input_data(self.args)
-        # 4. Store few data in memory for numerical results, e.g. runtime, H@1 etc.
+        # 4. A variable is initialized for storing input data
+        self.dataset = None
+        # 5. Store few data in memory for numerical results, e.g. runtime, H@1 etc.
         self.report = dict()
-        # self.config_kge_sanity_checking()
 
     @staticmethod
-    def read_input_data(args):
+    def read_input_data(args) -> KG:
+        """ Read & Parse input data for training and testing"""
         # 1. Read & Parse input data
         print("1. Read & Parse input data")
         kg = KG(data_dir=args.path_dataset_folder,
@@ -58,6 +59,79 @@ class Execute:
         # Save Create folder to serialize data. This two numerical value will be used in embedding initialization.
         args.num_entities, args.num_relations = kg.num_entities, kg.num_relations
         return kg
+
+    def start(self) -> dict:
+        """
+        Main computation.
+        1. Read and Parse Input Data
+        2. Train and Eval a knowledge graph embedding mode
+        3. Store relevant intermediate data including the trained model, embeddings and configuration
+        4. Return brief summary of the computation in dictionary format.
+        """
+        start_time = time.time()
+        # 1. Read input data and store its parts for further use
+        self.dataset = self.read_input_data(self.args)
+        self.config_kge_sanity_checking()
+        # 2. Train and Evaluate
+        trained_model = self.train_and_eval()
+        # 3. Store trained model
+        self.store(trained_model)
+        total_runtime = time.time() - start_time
+        if 60 * 60 > total_runtime:
+            message = f'{total_runtime / 60:.3f} minutes'
+        else:
+            message = f'{total_runtime / (60 ** 2):.3f} hours'
+        self.report['Runtime'] = message
+        self.report.update(extract_model_summary(trained_model.summarize()))
+        print(f'Runtime of {trained_model.name}:', total_runtime)
+        print(f'NumParam of {trained_model.name}:', self.report["NumParam"])
+        print(f'Estimated of {trained_model.name}:', self.report["EstimatedSizeMB"])
+        with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
+            json.dump(self.report, file_descriptor)
+        return self.report
+
+    def train_and_eval(self) -> BaseKGE:
+        """
+        Training and evaluation procedure
+
+        1. Create Pytorch-lightning Trainer object from input configuration
+        2a. Train and Test a model if  test dataset is available
+        2b. Train a model in k-fold cross validation mode if it is requested
+        2c. Train a model
+        """
+        print('------------------- Train & Eval -------------------')
+        # 1. Create Pytorch-lightning Trainer object from input configuration
+        if self.args.gpus:
+            self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=[DDPPlugin(find_unused_parameters=False)])
+        else:
+            self.trainer = pl.Trainer.from_argparse_args(self.args)
+        # 2. Check whether validation and test datasets are available.
+        if self.dataset.is_valid_test_available():
+            if self.args.scoring_technique == 'NegSample':
+                trained_model = self.training_negative_sampling()
+            elif self.args.scoring_technique == 'KvsAll':
+                # KvsAll or negative sampling
+                trained_model = self.training_kvsall()
+            else:
+                raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
+        else:
+            # 3. If (2) is FALSE, then check whether cross validation will be applied.
+            print(f'There is no validation and test sets available.')
+            if self.args.num_folds_for_cv < 2:
+                print(
+                    f'No test set is found and k-fold cross-validation is set to less than 2 (***num_folds_for_cv*** => {self.args.num_folds_for_cv}). Hence we do not evaluate the model')
+                # 3.1. NO CROSS VALIDATION => TRAIN WITH 'NegSample' or KvsALL
+                if self.args.scoring_technique == 'NegSample':
+                    trained_model = self.training_negative_sampling()
+                elif self.args.scoring_technique == 'KvsAll':
+                    # KvsAll or negative sampling
+                    trained_model = self.training_kvsall()
+                else:
+                    raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
+            else:
+                trained_model = self.k_fold_cross_validation()
+        print('Train & Eval Done!\n')
+        return trained_model
 
     def config_kge_sanity_checking(self):
         """
@@ -128,74 +202,14 @@ class Execute:
             print('Exception occurred at saving entity embeddings.Computation will continue')
             print(e)
 
-    def start(self) -> dict:
+    def get_batch_1_to_N(self, input_vocab, triples, idx, output_dim) -> Tuple[np.array, torch.FloatTensor]:
+        """ A mini-batch for training on multi-labels (x,y) -> [0.,0.,0.,----, 1.,1,]
+        :param input_vocab:
+        :param triples:
+        :param idx:
+        :param output_dim:
+        :return:
         """
-        Train and/or Evaluate Model
-        Store Mode
-        """
-        start_time = time.time()
-
-        # 3. Read input data and store its parts for further use
-        self.dataset = self.read_input_data(self.args)
-        self.config_kge_sanity_checking()
-
-        # 1. Train and Evaluate
-        trained_model = self.train_and_eval()
-        # 2. Store trained model
-        self.store(trained_model)
-        total_runtime = time.time() - start_time
-        if 60 * 60 > total_runtime:
-            message = f'{total_runtime / 60:.3f} minutes'
-        else:
-            message = f'{total_runtime / (60 ** 2):.3f} hours'
-        self.report['Runtime'] = message
-        self.report.update(extract_model_summary(trained_model.summarize()))
-        print(f'Runtime of {trained_model.name}:', total_runtime)
-        print(f'NumParam of {trained_model.name}:', self.report["NumParam"])
-        print(f'Estimated of {trained_model.name}:', self.report["EstimatedSizeMB"])
-        with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
-            json.dump(self.report, file_descriptor)
-        return self.report
-
-    def train_and_eval(self) -> BaseKGE:
-        """
-        Training and evaluation procedure
-        """
-        print('------------------- Train & Eval -------------------')
-        # 1. Create Pytorch-lightning Trainer object from input configuration
-        if self.args.gpus:
-            self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=[DDPPlugin(find_unused_parameters=False)])
-        else:
-            self.trainer = pl.Trainer.from_argparse_args(self.args)
-        # 2. Check whether validation and test datasets are available.
-        if self.dataset.is_valid_test_available():
-            if self.args.scoring_technique == 'NegSample':
-                trained_model = self.training_negative_sampling()
-            elif self.args.scoring_technique == 'KvsAll':
-                # KvsAll or negative sampling
-                trained_model = self.training_kvsall()
-            else:
-                raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
-        else:
-            # 3. If (2) is FALSE, then check whether cross validation will be applied.
-            print(f'There is no validation and test sets available.')
-            if self.args.num_folds_for_cv < 2:
-                print(
-                    f'No test set is found and k-fold cross-validation is set to less than 2 (***num_folds_for_cv*** => {self.args.num_folds_for_cv}). Hence we do not evaluate the model')
-                # 3.1. NO CROSS VALIDATION => TRAIN WITH 'NegSample' or KvsALL
-                if self.args.scoring_technique == 'NegSample':
-                    trained_model = self.training_negative_sampling()
-                elif self.args.scoring_technique == 'KvsAll':
-                    # KvsAll or negative sampling
-                    trained_model = self.training_kvsall()
-                else:
-                    raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
-            else:
-                trained_model = self.k_fold_cross_validation()
-        print('Train & Eval Done!\n')
-        return trained_model
-
-    def get_batch_1_to_N(self, input_vocab, triples, idx, output_dim):
         batch = triples[idx:idx + self.args.batch_size]
         targets = np.zeros((len(batch), output_dim))
         for idx, pair in enumerate(batch):
@@ -272,18 +286,6 @@ class Execute:
             if len(self.dataset.test_set) > 0:
                 self.evaluate_lp(model, self.dataset.test_set, 'Evaluation of Test set')
         return model
-
-    def deserialize_index_data(self):
-        m = []
-        raise NotImplementedError()
-        if os.path.isfile(self.args.full_storage_path + '/idx_train_df.gzip'):
-            m.append(pd.read_parquet(self.args.full_storage_path + '/idx_train_df.gzip'))
-        if os.path.isfile(self.args.full_storage_path + '/idx_valid_df.gzip'):
-            m.append(pd.read_parquet(self.storage_path + '/idx_valid_df.gzip'))
-        if os.path.isfile(self.storage_path + '/idx_test_df.gzip'):
-            m.append(pd.read_parquet(self.storage_path + '/idx_test_df.gzip'))
-
-        return pd.concat(m, ignore_index=True)
 
     def evaluate_lp_k_vs_all(self, model, triple_idx, info, form_of_labelling):
         """
