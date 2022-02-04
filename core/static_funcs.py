@@ -21,12 +21,11 @@ def argparse_default(description=None):
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
 
     # Dataset and storage related
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Family',
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
                         help="The path of a folder containing input data")
     parser.add_argument("--large_kg_parse", type=int, default=0, help='A flag for using all cores at parsing.')
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage',
                         help="Embeddings, model, and any other related data will be stored therein.")
-    parser.add_argument("--deserialize_flag", type=str, default=None, help='Path of a folder for deserialization.')
     parser.add_argument("--read_only_few", type=int, default=0, help='READ only first N triples. If 0, read all.')
     parser.add_argument("--sample_triples_ratio", type=float, default=0, help='Sample some triples')
 
@@ -36,7 +35,7 @@ def argparse_default(description=None):
                         help="Available models: KronE, ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult")
     # Training Parameters
     parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. '
-                                                                    'This disables max_epochs and min_epochs of pl.Trainer')
+                                                                  'This disables max_epochs and min_epochs of pl.Trainer')
     parser.add_argument('--batch_size', type=int, default=1024)
     parser.add_argument("--lr", type=float, default=0.1)
     # Model Parameters
@@ -102,7 +101,7 @@ def preprocesses_input_args(arg):
 
     arg.add_reciprical = True if arg.scoring_technique == 'KvsAll' else False
 
-    assert 1.0>=arg.sample_triples_ratio>=0.0
+    assert 1.0 >= arg.sample_triples_ratio >= 0.0
     sanity_checking_with_arguments(arg)
     return arg
 
@@ -204,6 +203,7 @@ def select_model(args) -> Tuple[pl.LightningModule, AnyStr]:
     else:
         raise ValueError
     return model, form_of_labelling
+
 
 def load_model(args) -> torch.nn.Module:
     """ Load weights and initialize pytorch module from namespace arguments"""

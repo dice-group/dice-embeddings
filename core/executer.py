@@ -30,11 +30,20 @@ seed_everything(1, workers=True)
 
 
 class Execute:
-    def __init__(self, args):
+    def __init__(self, args, continuous_training=False):
         # (1) Process arguments and sanity checking
         self.args = preprocesses_input_args(args)
-        # 2 Create a folder to serialize data
-        self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
+
+        self.continuous_training = continuous_training
+        if self.continuous_training is False:
+            # 2 Create a folder to serialize data and replace the previous path info
+            self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
+            self.storage_path=self.args.full_storage_path
+        else:
+            # 2 Create a folder to serialize data
+            self.storage_path=self.args.full_storage_path
+            self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
+
         # 3. A variable is initialized for pytorch lightning trainer
         self.trainer = None
         # 4. A variable is initialized for storing input data
@@ -48,7 +57,6 @@ class Execute:
         # 1. Read & Parse input data
         print("1. Read & Parse input data")
         kg = KG(data_dir=args.path_dataset_folder,
-                deserialize_flag=args.deserialize_flag,
                 large_kg_parse=args.large_kg_parse,
                 add_reciprical=args.add_reciprical,
                 eval_model=args.eval,
@@ -57,8 +65,13 @@ class Execute:
                 path_for_serialization=args.full_storage_path)
         print(kg.description_of_input)
         # Save Create folder to serialize data. This two numerical value will be used in embedding initialization.
-        args.num_entities, args.num_relations = kg.num_entities, kg.num_relations
         return kg
+
+    @staticmethod
+    def reload_input_data(p: str) -> KG:
+        # 1. Read & Parse input data
+        print("1. Reload Parsed Input Data")
+        return KG(deserialize_flag=p)
 
     def start(self) -> dict:
         """
@@ -70,8 +83,12 @@ class Execute:
         """
         start_time = time.time()
         # 1. Read input data and store its parts for further use
-        self.dataset = self.read_input_data(self.args)
-        self.config_kge_sanity_checking()
+        if self.continuous_training is False:
+            self.dataset = self.read_input_data(self.args)
+            self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
+            self.config_kge_sanity_checking()
+        else:
+            self.dataset = self.reload_input_data(self.storage_path)
         # 2. Train and Evaluate
         trained_model = self.train_and_eval()
         # 3. Store trained model
@@ -85,7 +102,7 @@ class Execute:
         self.report.update(extract_model_summary(trained_model.summarize()))
         print(f'Runtime of {trained_model.name}:', total_runtime)
         print(f'NumParam of {trained_model.name}:', self.report["NumParam"])
-        print(f'Estimated of {trained_model.name}:', self.report["EstimatedSizeMB"])
+        # print(f'Estimated of {trained_model.name}:', self.report["EstimatedSizeMB"])
         with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
             json.dump(self.report, file_descriptor)
         return self.report
@@ -279,7 +296,7 @@ class Execute:
         print(model)
         print('Fitting the model...')
         self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
-        print('Done!n')
+        print('Done!\n')
         if self.args.eval:
             if len(self.dataset.valid_set) > 0:
                 self.evaluate_lp(model, self.dataset.valid_set, 'Evaluation of Validation set')
@@ -367,6 +384,22 @@ class Execute:
         results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10, 'MRR': mean_reciprocal_rank}
         print(results)
         return results
+
+    def deserialize_index_data(self):
+        m = []
+        if os.path.isfile(self.storage_path + '/idx_train_df.gzip'):
+            m.append(pd.read_parquet(self.storage_path + '/idx_train_df.gzip'))
+        if os.path.isfile(self.storage_path + '/idx_valid_df.gzip'):
+            m.append(pd.read_parquet(self.storage_path + '/idx_valid_df.gzip'))
+        if os.path.isfile(self.storage_path + '/idx_test_df.gzip'):
+            m.append(pd.read_parquet(self.storage_path + '/idx_test_df.gzip'))
+        try:
+            assert len(m) > 1
+        except AssertionError as e:
+            print(f'Could not find indexed find under idx_*_df files {self.storage_path}')
+            raise e
+
+        return pd.concat(m, ignore_index=True)
 
     def evaluate_lp(self, model, triple_idx, info):
         """

@@ -165,8 +165,7 @@ class KG:
                                          f'\nNumber of triples on valid set: {len(self.valid_set)}' \
                                          f'\nNumber of triples on test set: {len(self.test_set)}\n'
         else:
-            raise NotImplementedError('Not yet tested.')
-            self.deserialize(deserialize_flag, eval_model)
+            self.deserialize(deserialize_flag)
 
     @staticmethod
     def index(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):
@@ -222,37 +221,39 @@ class KG:
 
         return entity_idxs, relation_idxs, er_vocab, pe_vocab, ee_vocab
 
-    def deserialize(self, p: str, eval=True) -> None:
+    def deserialize(self, p: str) -> None:
         """
         Deserialize data
         """
-        # @ TODO Serialize data via parque
-        if eval:
-            print('Deserialize er_vocab')
-            with open(p + '/er_vocab.pickle', 'rb') as reader:
-                self.er_vocab = pickle.load(reader)
-            print('Deserialize re_vocab')
-            with open(p + '/re_vocab.pickle', 'rb') as reader:
-                self.re_vocab = pickle.load(reader)
-            print('Deserialize ee_vocab')
-            with open(p + '/ee_vocab.pickle', 'rb') as reader:
-                self.ee_vocab = pickle.load(reader)
-        else:
-            self.er_vocab, self.re_vocab, self.ee_vocab = None, None, None
 
-        # Serialize JsonFiles
-        print('Deserialize entity_idx')
-        with open(p + "/entity_idx.json", "r") as reader:
-            self.entity_idx = json.load(reader)
-        print('Deserialize relation_idx')
-        with open(p + "/relation_idx.json", "r") as reader:
-            self.relation_idx = json.load(reader)
-        print('Deserialize index datasets')
-        loaded = np.load(p + '/indexed_splits.npz')
+        print('Deserializing compressed entity integer mapping...')
+        self.entity_to_idx = ddf.read_parquet(p + '/entity_to_idx.gzip').compute()
+        print('Done!\n')
+        self.num_entities=len(self.entity_to_idx)
+        print('Deserializing compressed relation integer mapping...')
+        self.relation_to_idx = ddf.read_parquet(p + '/relation_to_idx.gzip').compute()
+        self.num_relations=len(self.entity_to_idx)
 
-        self.train = loaded['train']
-        self.valid = loaded['valid']
-        self.test = loaded['test']
+        print('Done!\n')
+        print(
+            'Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...')
+        self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
+        self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
+        print('Done!\n')
+
+        # 10. Serialize (9).
+        print('Deserializing integer mapped data and mapping it to numpy ndarray...')
+        self.train_set = ddf.read_parquet(p + '/idx_train_df.gzip').values.compute()
+        print('Done!\n')
+
+        print('Deserializing integer mapped data and mapping it to numpy ndarray...')
+        self.valid_set = ddf.read_parquet(p + '/idx_valid_df.gzip').values.compute()
+        print('Done!\n')
+
+        print('Deserializing integer mapped data and mapping it to numpy ndarray...')
+        self.test_set = ddf.read_parquet(p + '/idx_test_df.gzip').values.compute()
+        print('Done!\n')
+
 
     @staticmethod
     def index_parallel(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):

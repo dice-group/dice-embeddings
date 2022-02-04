@@ -94,6 +94,6 @@ def run(args: dict):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--path_of_experiment_folder", type=str, default='DAIKIRI_Storage/2022-02-04 09:04:04.509208')
-    parser.add_argument('--share', default=False, type=eval, choices=[True, False])
+    parser.add_argument("--path_of_experiment_folder", type=str, default='DAIKIRI_Storage/2022-02-04 12:31:42.276900')
+    parser.add_argument('--share', default=True, type=eval, choices=[True, False])
     run(vars(parser.parse_args()))
