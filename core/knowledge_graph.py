@@ -339,7 +339,7 @@ class KG:
                 if read_only_few > 0:
                     df = df.loc[:read_only_few]
 
-            if sample_triples_ratio > 0:
+            if sample_triples_ratio:
                 df = df.sample(frac=sample_triples_ratio)
 
             if large_kg_parse:

@@ -26,8 +26,8 @@ def argparse_default(description=None):
     parser.add_argument("--large_kg_parse", type=int, default=0, help='A flag for using all cores at parsing.')
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage',
                         help="Embeddings, model, and any other related data will be stored therein.")
-    parser.add_argument("--read_only_few", type=int, default=0, help='READ only first N triples. If 0, read all.')
-    parser.add_argument("--sample_triples_ratio", type=float, default=0, help='Sample some triples')
+    parser.add_argument("--read_only_few", type=int, default=None, help='READ only first N triples. If 0, read all.')
+    parser.add_argument("--sample_triples_ratio", type=float, default=None, help='Sample input data.')
 
     # Models.
     parser.add_argument("--model", type=str,
@@ -100,8 +100,8 @@ def preprocesses_input_args(arg):
     arg.eval = True if arg.eval == 1 else False
 
     arg.add_reciprical = True if arg.scoring_technique == 'KvsAll' else False
-
-    assert 1.0 >= arg.sample_triples_ratio >= 0.0
+    if arg.sample_triples_ratio is not None:
+        assert 1.0 >= arg.sample_triples_ratio >= 0.0
     sanity_checking_with_arguments(arg)
     return arg
 
