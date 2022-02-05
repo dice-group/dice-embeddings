@@ -31,13 +31,14 @@ def argparse_default(description=None):
 
     # Models.
     parser.add_argument("--model", type=str,
-                        default='Shallom',
+                        default='KronE',
                         help="Available models: KronE, ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult")
     # Training Parameters
-    parser.add_argument("--num_epochs", type=int, default=2, help='Number of epochs for training. '
+    parser.add_argument("--num_epochs", type=int, default=150, help='Number of epochs for training. '
                                                                   'This disables max_epochs and min_epochs of pl.Trainer')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.1, help='Learning rate')
+    parser.add_argument("--label_smoothing_rate", type=float, default=None, help='None for not using it.')
 
     # Model Parameters
     # Hyperparameters pertaining to number of parameters.

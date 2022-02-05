@@ -256,8 +256,8 @@ class Execute:
                                      form=form_of_labelling,
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_processes
-                                     )
+                                     num_workers=self.args.num_processes,
+                                     label_smoothing_rate=self.args.label_smoothing_rate)
         # 5. Train model
         self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
 

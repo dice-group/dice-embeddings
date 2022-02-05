@@ -12,7 +12,7 @@ class StandardDataModule(pl.LightningDataModule):
     """
 
     def __init__(self, train_set_idx, entity_to_idx, relation_to_idx, batch_size, form,
-                 num_workers=32, valid_set_idx=None, test_set_idx=None, neg_sample_ratio=None):
+                 num_workers=32, valid_set_idx=None, test_set_idx=None, neg_sample_ratio=None, label_smoothing_rate=None):
         super().__init__()
         assert isinstance(train_set_idx, np.ndarray)
         if len(valid_set_idx) > 0:
@@ -33,6 +33,7 @@ class StandardDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.neg_sample_ratio = neg_sample_ratio
+        self.label_smoothing_rate = label_smoothing_rate
         if self.form == 'RelationPrediction':
             self.dataset_type_class = RelationPredictionDataset
             self.target_dim = len(self.relation_to_idx)
@@ -61,9 +62,9 @@ class StandardDataModule(pl.LightningDataModule):
                               num_workers=self.num_workers,
                               collate_fn=train_set.collate_fn, pin_memory=True
                               )
-        elif self.form == 'EntityPrediction' or self.form=='RelationPrediction':
+        elif self.form == 'EntityPrediction' or self.form == 'RelationPrediction':
             train_set = KvsAll(self.train_set_idx, entity_idxs=self.entity_to_idx,
-                               relation_idxs=self.relation_to_idx, form=self.form)
+                               relation_idxs=self.relation_to_idx, form=self.form, label_smoothing_rate=self.label_smoothing_rate)
             return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, pin_memory=True,
                               num_workers=self.num_workers)
 
@@ -153,10 +154,12 @@ class CVDataModule(pl.LightningDataModule):
 
 
 class KvsAll(Dataset):
-    def __init__(self, triples_idx, entity_idxs, relation_idxs, form, store=None):
+    def __init__(self, triples_idx, entity_idxs, relation_idxs, form, store=None, label_smoothing_rate=None):
         super().__init__()
         self.train_data = None
         self.train_target = None
+        self.label_smoothing_rate = label_smoothing_rate
+
         if store is None:
             store = dict()
             if form == 'RelationPrediction':
@@ -194,6 +197,10 @@ class KvsAll(Dataset):
         # 1. Initialize a vector of output.
         y_vec = torch.zeros(self.target_dim)
         y_vec[self.train_target[idx]] = 1
+
+        if self.label_smoothing_rate:
+            # y_vec = ((1.0 - self.label_smoothing_rate) * y_vec) + (1.0 / y_batch.size(1))
+            y_vec = y_vec*(1 - self.label_smoothing_rate) + (self.label_smoothing_rate / y_vec.sum())
         return (self.train_data[idx, 0], self.train_data[idx, 1]), y_vec
 
 
@@ -304,7 +311,6 @@ class OneVsAllEntityPredictionDataset(Dataset):
     def __init__(self, idx_triples):
         super().__init__()
         assert len(idx_triples) > 0
-
 
         self.idx_triples = torch.torch.LongTensor(idx_triples)
 
