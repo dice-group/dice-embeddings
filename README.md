@@ -15,7 +15,7 @@ conda env create -f environment.yml
 conda activate daikiri
 wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
 unzip KGs.zip
-python -m pytest tests
+python -m pytest -x tests
 ```
 ### Manuel Installation
 ```

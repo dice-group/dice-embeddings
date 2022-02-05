@@ -9,7 +9,7 @@ import os
 import pandas as pd
 from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab
 
-
+pd.set_option('display.max_columns', None)
 class KG:
     def __init__(self, data_dir: str = None, deserialize_flag: str = None, large_kg_parse=False, add_reciprical=False,
                  eval_model=True, read_only_few: int = None, sample_triples_ratio: float = None,
@@ -25,22 +25,53 @@ class KG:
         """
         if deserialize_flag is None:
             # 1. LOAD Data. (First pass on data)
+            print(
+                f'[1 / 14] Loading training data: large_kg_parse: {large_kg_parse}, read_only_few: {read_only_few} , sample_triples_ratio: {sample_triples_ratio}...')
             self.train_set = self.load_data_parallel(data_dir + '/train.txt', large_kg_parse, read_only_few,
                                                      sample_triples_ratio)
+            print('Done !\n')
+            print(
+                f'[2 / 14] Loading valid data: large_kg_parse: {large_kg_parse}, read_only_few: {read_only_few}, sample_triples_ratio: {sample_triples_ratio}...')
+
             self.valid_set = self.load_data_parallel(data_dir + '/valid.txt', large_kg_parse, read_only_few,
                                                      sample_triples_ratio)
+            print('Done !\n')
+            print(
+                f'[3 / 14] Loading test data: large_kg_parse: {large_kg_parse}, read_only_few: {read_only_few}, sample_triples_ratio: {sample_triples_ratio}...')
+
             self.test_set = self.load_data_parallel(data_dir + '/test.txt', large_kg_parse, read_only_few,
                                                     sample_triples_ratio)
-            # 2. Concatenate list of triples stored in pandas dataframe.
-            df_str_kg = pd.concat([self.train_set, self.valid_set, self.test_set], ignore_index=True)
-            # 3. Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
+            print('Done !\n')
+
+            # 2. Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
             if add_reciprical:
-                df_str_kg = pd.concat([df_str_kg,
-                                       pd.DataFrame({'subject': df_str_kg['object'],
-                                                     'relation': df_str_kg['relation'].map(lambda x: x + '_inverse'),
-                                                     'object': df_str_kg['subject']})], ignore_index=True)
+                print(
+                    '[3.1 / 14] Add reciprocal triples to train, validation, and test sets, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}')
+                self.train_set = pd.concat([self.train_set,
+                                            pd.DataFrame({'subject': self.train_set['object'],
+                                                          'relation': self.train_set['relation'].map(
+                                                              lambda x: x + '_inverse'),
+                                                          'object': self.train_set['subject']})], ignore_index=True)
+                if len(self.valid_set) > 0:
+                    self.valid_set = pd.concat([self.valid_set,
+                                                pd.DataFrame({'subject': self.valid_set['object'],
+                                                              'relation': self.valid_set['relation'].map(
+                                                                  lambda x: x + '_inverse'),
+                                                              'object': self.valid_set['subject']})], ignore_index=True)
+                if len(self.test_set) > 0:
+                    self.test_set = pd.concat([self.test_set,
+                                               pd.DataFrame({'subject': self.test_set['object'],
+                                                             'relation': self.test_set['relation'].map(
+                                                                 lambda x: x + '_inverse'),
+                                                             'object': self.valid_set['subject']})], ignore_index=True)
+                print('Done !\n')
+
+            # 3. Concatenate dataframes.
+            print(f'[4 / 14] Concatenating data to obtain index...')
+            df_str_kg = pd.concat([self.train_set, self.valid_set, self.test_set], ignore_index=True)
+            print('Done !\n')
             # 4. Create a bijection mapping  from entities to integer indexes.
-            print('Creating a mapping from entities to integer indexes..')
+            print('[5 / 14] Creating a mapping from entities to integer indexes...')
             ordered_list = pd.unique(df_str_kg[['subject', 'object']].values.ravel('K'))
             self.entity_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
                                               columns=['entity'],
@@ -48,7 +79,7 @@ class KG:
             print('Done!\n')
 
             # 5. Create a bijection mapping  from relations to to integer indexes.
-            print('Creating a mapping from relations to integer indexes..')
+            print('[6 / 14] Creating a mapping from relations to integer indexes...')
             ordered_list = pd.unique(df_str_kg['relation'].values.ravel('K'))
             self.relation_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
                                                 columns=['relation'],
@@ -58,59 +89,59 @@ class KG:
             del ordered_list, df_str_kg
 
             ## 6. Serialize indexed entities and relations into disk for further usage.
-            print('Serializing compressed entity integer mapping...')
+            print('[7 / 14]Serializing compressed entity integer mapping...')
             self.entity_to_idx.to_parquet(path_for_serialization + '/entity_to_idx.gzip', compression='gzip')
             print('Done!\n')
 
-            print('Serializing compressed relation integer mapping...')
+            print('[8 / 14]Serializing compressed relation integer mapping...')
             self.relation_to_idx.to_parquet(path_for_serialization + '/relation_to_idx.gzip', compression='gzip')
             print('Done!\n')
 
             # 7. Convert from pandas dataframe to dictionaries for an easy access
             # We may want to benchmark using python dictionary and pandas frame
             print(
-                'Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...')
+                '[9 / 14]Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...')
             self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
             self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
             self.num_entities = len(self.entity_to_idx)
             self.num_relations = len(self.relation_to_idx)
             print('Done!\n')
 
-            if len(self.train_set) > 0:
-                # 8. Serialize already read training data in parquet format so that
-                # the training data is stored in more memory efficient manner as well as
-                # it can be reread later faster
-                print('Serializing training data...')
-                self.train_set.to_parquet(path_for_serialization + '/train_df.gzip', compression='gzip')
-                print('Done!\n')
+            # 8. Serialize already read training data in parquet format so that
+            # the training data is stored in more memory efficient manner as well as
+            # it can be reread later faster
+            print('[10 / 14] Serializing training data...')  # TODO: Do we really need it ?!
+            self.train_set.to_parquet(path_for_serialization + '/train_df.gzip', compression='gzip')
+            print('Done!\n')
 
-                print('Mapping training data into integers for training...')
-                # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
-                self.train_set['subject'] = self.train_set['subject'].map(lambda x: self.entity_to_idx[x])
-                self.train_set['relation'] = self.train_set['relation'].map(lambda x: self.relation_to_idx[x])
-                self.train_set['object'] = self.train_set['object'].map(lambda x: self.entity_to_idx[x])
-                print('Done!\n')
+            print('[11 / 14] Mapping training data into integers for training...')
+            # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
+            self.train_set['subject'] = self.train_set['subject'].map(lambda x: self.entity_to_idx[x])
+            self.train_set['relation'] = self.train_set['relation'].map(lambda x: self.relation_to_idx[x])
+            self.train_set['object'] = self.train_set['object'].map(lambda x: self.entity_to_idx[x])
+            print('Done!\n')
 
-                # 10. Serialize (9).
-                print('Serializing integer mapped data...')
-                self.train_set.to_parquet(path_for_serialization + '/idx_train_df.gzip', compression='gzip')
-                print('Done!\n')
+            # 10. Serialize (9).
+            print('[12 / 14] Serializing integer mapped data...')  # TODO: Do we really need it ?!
+            self.train_set.to_parquet(path_for_serialization + '/idx_train_df.gzip', compression='gzip')
+            print('Done!\n')
 
-                # 11. Convert data from pandas dataframe to numpy ndarray.
-                print('Mapping from pandas data frame to numpy ndarray to reduce memory usage...')
-                self.train_set = self.train_set.values
-                print('Done!\n')
+            # 11. Convert data from pandas dataframe to numpy ndarray.
+            print('[13 / 14] Mapping from pandas data frame to numpy ndarray to reduce memory usage...')
+            self.train_set = self.train_set.values
+            print('Done!\n')
 
-                print('Sanity checking...')
-                # 12. Sanity checking: indexed training set can not have an indexed entity assigned with larger indexed than the number of entities.
-                assert self.num_entities > max(self.train_set[:, 0]) and self.num_entities > max(self.train_set[:, 2])
-                assert self.num_relations > max(self.train_set[:, 1])
-                # 13. Sanity checking: data types
-                assert isinstance(self.train_set[0], np.ndarray)
-                assert isinstance(self.train_set[0][0], np.int64) and isinstance(self.train_set[0][1], np.int64)
-                assert isinstance(self.train_set[0][2], np.int64)
+            print('[14 / 14 ] Sanity checking on training dataset...')
+            # 12. Sanity checking: indexed training set can not have an indexed entity assigned with larger indexed than the number of entities.
+            assert self.num_entities > max(self.train_set[:, 0]) and self.num_entities > max(self.train_set[:, 2])
+            assert self.num_relations > max(self.train_set[:, 1])
+            # 13. Sanity checking: data types
+            assert isinstance(self.train_set[0], np.ndarray)
+            assert isinstance(self.train_set[0][0], np.int64) and isinstance(self.train_set[0][1], np.int64)
+            assert isinstance(self.train_set[0][2], np.int64)
             # 14. Repeat computations carried out from 8-13 on validation dataset.
             if len(self.valid_set) > 0:
+                print('Serializing validation data...')  # TODO: Do we really need it ?!
                 self.valid_set.to_parquet(path_for_serialization + '/valid_df.gzip', compression='gzip')
                 self.valid_set['subject'] = self.valid_set['subject'].map(lambda x: self.entity_to_idx[x])
                 self.valid_set['relation'] = self.valid_set['relation'].map(lambda x: self.relation_to_idx[x])
@@ -127,10 +158,12 @@ class KG:
                 assert isinstance(self.valid_set[0][0], np.int64)
                 assert isinstance(self.valid_set[0][1], np.int64)
                 assert isinstance(self.valid_set[0][2], np.int64)
+                print('Done !\n')
             else:
                 self.valid_set = self.valid_set.values
             # 15. Repeat computations carried out from 8-13 on test dataset.
             if len(self.test_set) > 0:
+                print('Serializing test data...')  # TODO: Do we really need it ?!
                 self.test_set.to_parquet(path_for_serialization + '/test_df.gzip', compression='gzip')
                 self.test_set['subject'] = self.test_set['subject'].map(lambda x: self.entity_to_idx[x])
                 self.test_set['relation'] = self.test_set['relation'].map(lambda x: self.relation_to_idx[x])
@@ -147,6 +180,7 @@ class KG:
                 assert isinstance(self.test_set[0][0], np.int64)
                 assert isinstance(self.test_set[0][1], np.int64)
                 assert isinstance(self.test_set[0][2], np.int64)
+                print('Done !\n')
             else:
                 self.test_set = self.test_set.values
 
@@ -229,10 +263,10 @@ class KG:
         print('Deserializing compressed entity integer mapping...')
         self.entity_to_idx = ddf.read_parquet(p + '/entity_to_idx.gzip').compute()
         print('Done!\n')
-        self.num_entities=len(self.entity_to_idx)
+        self.num_entities = len(self.entity_to_idx)
         print('Deserializing compressed relation integer mapping...')
         self.relation_to_idx = ddf.read_parquet(p + '/relation_to_idx.gzip').compute()
-        self.num_relations=len(self.entity_to_idx)
+        self.num_relations = len(self.entity_to_idx)
 
         print('Done!\n')
         print(
@@ -253,7 +287,6 @@ class KG:
         print('Deserializing integer mapped data and mapping it to numpy ndarray...')
         self.test_set = ddf.read_parquet(p + '/idx_test_df.gzip').values.compute()
         print('Done!\n')
-
 
     @staticmethod
     def index_parallel(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):
@@ -320,7 +353,6 @@ class KG:
         :param sample_triples_ratio:
         :return:
         """
-        print(f'LOADING {data_path} large kg:{large_kg_parse}...')
         if os.path.exists(data_path):
             with open(data_path, 'r') as reader:
                 s = next(reader)
@@ -358,10 +390,8 @@ class KG:
                 df['subject'] = df['subject'].str.removeprefix("<").str.removesuffix(">")
                 df['relation'] = df['relation'].str.removeprefix("<").str.removesuffix(">")
                 df['object'] = df['object'].str.removeprefix("<").str.removesuffix(">")
-                print(f'Done!\n')
                 return df
             else:
-                print(f'Done!\n')
                 return df
         else:
             print(f'{data_path} could not found!\n')

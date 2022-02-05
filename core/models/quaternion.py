@@ -137,8 +137,7 @@ class QMult(BaseKGE):
             j_score = torch.mm(self.hidden_dp_j(j_val), self.emb_ent_j.weight.transpose(1, 0))
             k_score = torch.mm(self.hidden_dp_k(k_val), self.emb_ent_k.weight.transpose(1, 0))
 
-        score = real_score + i_score + j_score + k_score
-        return torch.sigmoid(score)
+        return real_score + i_score + j_score + k_score
 
     def forward_triples(self, e1_idx, rel_idx, e2_idx):
         # (1)
@@ -352,8 +351,7 @@ class ConvQ(BaseKGE):
                                self.input_dp_ent_j(self.bn_ent_j(self.emb_ent_j.weight)).transpose(1, 0))
             k_score = torch.mm(self.hidden_dp_k(conv_imag_k * k_val), self.emb_ent_k.weight.transpose(1, 0))
 
-        score = real_score + i_score + j_score + k_score
-        return torch.sigmoid(score)
+        return real_score + i_score + j_score + k_score
 
     def forward_triples(self, e1_idx, rel_idx, e2_idx):
         # (1)

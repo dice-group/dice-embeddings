@@ -21,7 +21,7 @@ def argparse_default(description=None):
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
 
     # Dataset and storage related
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Countries-S1',
                         help="The path of a folder containing input data")
     parser.add_argument("--large_kg_parse", type=int, default=0, help='A flag for using all cores at parsing.')
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage',
@@ -31,34 +31,40 @@ def argparse_default(description=None):
 
     # Models.
     parser.add_argument("--model", type=str,
-                        default='KronE',
+                        default='Shallom',
                         help="Available models: KronE, ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult")
     # Training Parameters
-    parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. '
+    parser.add_argument("--num_epochs", type=int, default=2, help='Number of epochs for training. '
                                                                   'This disables max_epochs and min_epochs of pl.Trainer')
-    parser.add_argument('--batch_size', type=int, default=1024)
-    parser.add_argument("--lr", type=float, default=0.1)
+    parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
+    parser.add_argument("--lr", type=float, default=0.1, help='Learning rate')
+
     # Model Parameters
     # Hyperparameters pertaining to number of parameters.
-    parser.add_argument('--embedding_dim', type=int, default=32)
-    parser.add_argument('--entity_embedding_dim', type=int, default=32)
-    parser.add_argument('--rel_embedding_dim', type=int, default=32)
+    parser.add_argument('--embedding_dim', type=int, default=32,
+                        help='Number of dimensions for an embedding vector. This parameter is used for those models requiring same number of embedding vector for entities and relations.')
+    parser.add_argument('--entity_embedding_dim', type=int, default=32,
+                        help='Number of dimensions for an entity embedding vector. '
+                             'This parameter is used for those model having flexibility of using different sized entity and relation embeddings.')
+    parser.add_argument('--rel_embedding_dim', type=int, default=32,
+                        help='Number of dimensions for an entity embedding vector. '
+                             'This parameter is used for those model having flexibility of using different sized entity and relation embeddings.')
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
     parser.add_argument("--num_of_output_channels", type=int, default=8, help="# of output channels in convolution")
     parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.5,
                         help='The ratio of the size of the affine transformation w.r.t. the size of the embeddings')
     # Flags for computation
     parser.add_argument("--eval", type=int, default=1,
-                        help='A flag for using evaluation. If 0, memory consumption is decreased')
-    # Do we use still use it ?
-    parser.add_argument("--continue_training", type=int, default=1, help='A flag for continues training')
+                        help='A flag for using evaluation')
+    parser.add_argument("--eval_on_train", type=int, default=1,
+                        help='A flag for using train data to evaluation ')
     # Hyperparameters pertaining to regularization.
     parser.add_argument('--input_dropout_rate', type=float, default=0.1)
     parser.add_argument('--hidden_dropout_rate', type=float, default=0.1)
     parser.add_argument("--feature_map_dropout_rate", type=int, default=.3)
     parser.add_argument('--apply_unit_norm', type=bool, default=False)
     # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='NegSample', help="KvsAll technique or NegSample.")
+    parser.add_argument('--scoring_technique', default='KvsAll', help="1vsAll, KvsAll, NegSample.")
     parser.add_argument('--neg_ratio', type=int, default=1)
     # Data Augmentation.
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
@@ -99,7 +105,7 @@ def preprocesses_input_args(arg):
 
     arg.eval = True if arg.eval == 1 else False
 
-    arg.add_reciprical = True if arg.scoring_technique == 'KvsAll' else False
+    arg.add_reciprical = True if arg.scoring_technique in ['KvsAll', '1vsAll'] else False
     if arg.sample_triples_ratio is not None:
         assert 1.0 >= arg.sample_triples_ratio >= 0.0
     sanity_checking_with_arguments(arg)
@@ -145,9 +151,9 @@ def sanity_checking_with_arguments(args):
         print(f'embedding_dim must be strictly positive. Currently:{args.embedding_dim}')
         raise
 
-    if not (args.scoring_technique == 'KvsAll' or args.scoring_technique == 'NegSample'):
-        print(f'Invalid training strategy => {args.scoring_technique}.')
-        exit(1)
+    if not (args.scoring_technique in ['KvsAll', 'NegSample', '1vsAll']):
+        # print(f'Invalid training strategy => {args.scoring_technique}.')
+        raise KeyError(f'Invalid training strategy => {args.scoring_technique}.')
 
     assert args.learning_rate > 0
     try:
@@ -309,6 +315,7 @@ def get_ee_vocab(data):
     for triple in data:
         ee_vocab[(triple[0], triple[2])].append(triple[1])
     return ee_vocab
+
 
 def load_configuration(p: str) -> CustomArg:
     assert os.path.isfile(p)

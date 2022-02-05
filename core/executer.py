@@ -28,20 +28,20 @@ warnings.simplefilter(action="ignore", category=UserWarning)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 seed_everything(1, workers=True)
 
+# TODO later measure the spent time for every done ! operation
 
 class Execute:
     def __init__(self, args, continuous_training=False):
         # (1) Process arguments and sanity checking
         self.args = preprocesses_input_args(args)
-
         self.continuous_training = continuous_training
         if self.continuous_training is False:
             # 2 Create a folder to serialize data and replace the previous path info
             self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
-            self.storage_path=self.args.full_storage_path
+            self.storage_path = self.args.full_storage_path
         else:
             # 2 Create a folder to serialize data
-            self.storage_path=self.args.full_storage_path
+            self.storage_path = self.args.full_storage_path
             self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
 
         # 3. A variable is initialized for pytorch lightning trainer
@@ -54,8 +54,8 @@ class Execute:
     @staticmethod
     def read_input_data(args) -> KG:
         """ Read & Parse input data for training and testing"""
+        print('*** Read & Parse input data for training and testing***')
         # 1. Read & Parse input data
-        print("1. Read & Parse input data")
         kg = KG(data_dir=args.path_dataset_folder,
                 large_kg_parse=args.large_kg_parse,
                 add_reciprical=args.add_reciprical,
@@ -64,7 +64,6 @@ class Execute:
                 sample_triples_ratio=args.sample_triples_ratio,
                 path_for_serialization=args.full_storage_path)
         print(kg.description_of_input)
-        # Save Create folder to serialize data. This two numerical value will be used in embedding initialization.
         return kg
 
     @staticmethod
@@ -129,6 +128,9 @@ class Execute:
             elif self.args.scoring_technique == 'KvsAll':
                 # KvsAll or negative sampling
                 trained_model = self.training_kvsall()
+            elif self.args.scoring_technique == '1vsAll':
+                # KvsAll or negative sampling
+                trained_model = self.training_1vsall()
             else:
                 raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
         else:
@@ -256,11 +258,56 @@ class Execute:
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_processes
                                      )
+        # 5. Train model
+        self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
+
+        if self.args.eval_on_train:
+            res = self.evaluate_lp_k_vs_all(model, self.dataset.train_set,
+                                            f'Evaluate {model.name} on Train set', form_of_labelling)
+            self.report['Train'] = res
+
+        # 6. Test model on validation and test sets if possible.
+        if self.args.eval:
+            if len(self.dataset.valid_set) > 0:
+                res = self.evaluate_lp_k_vs_all(model, self.dataset.valid_set,
+                                                f'Evaluate {model.name} on validation set', form_of_labelling)
+                self.report['Val'] = res
+            if len(self.dataset.test_set) > 0:
+                res = self.evaluate_lp_k_vs_all(model, self.dataset.test_set, f'Evaluate {model.name} on test set',
+                                                form_of_labelling)
+                self.report['Test'] = res
+
+        return model
+
+    def training_1vsall(self):
+        # 1. Select model and labelling : Entity Prediction or Relation Prediction.
+        model, form_of_labelling = select_model(self.args)
+        print(f'1vsAll training starts: {model.name}')
+        form_of_labelling = '1VsAll'
+
+        # 2. Create training data.
+        dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
+                                     valid_set_idx=self.dataset.valid_set,
+                                     test_set_idx=self.dataset.test_set,
+                                     entity_to_idx=self.dataset.entity_to_idx,
+                                     relation_to_idx=self.dataset.relation_to_idx,
+                                     form=form_of_labelling,
+                                     neg_sample_ratio=self.args.neg_ratio,
+                                     batch_size=self.args.batch_size,
+                                     num_workers=self.args.num_processes
+                                     )
+
         # 3. Display the selected model's architecture.
-        print(model)
+        model.loss = nn.CrossEntropyLoss()
+
         # 5. Train model
         self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
         # 6. Test model on validation and test sets if possible.
+        if self.args.eval_on_train:
+            res = self.evaluate_lp_k_vs_all(model, self.dataset.train_set,
+                                            f'Evaluate {model.name} on Train set', form_of_labelling)
+            self.report['Train'] = res
+
         if self.args.eval:
             if len(self.dataset.valid_set) > 0:
                 res = self.evaluate_lp_k_vs_all(model, self.dataset.valid_set,
@@ -297,11 +344,17 @@ class Execute:
         print('Fitting the model...')
         self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
         print('Done!\n')
+        if self.args.eval_on_train:
+            res = self.evaluate_lp(model, self.dataset.train_set,f'Evaluate {model.name} on Train set')
+            self.report['Train'] = res
+
         if self.args.eval:
             if len(self.dataset.valid_set) > 0:
-                self.evaluate_lp(model, self.dataset.valid_set, 'Evaluation of Validation set')
+                self.report['Val']=self.evaluate_lp(model, self.dataset.valid_set, 'Evaluation of Validation set')
+
             if len(self.dataset.test_set) > 0:
-                self.evaluate_lp(model, self.dataset.test_set, 'Evaluation of Test set')
+                self.report['Test']=self.evaluate_lp(model, self.dataset.test_set, 'Evaluation of Test set')
+
         return model
 
     def evaluate_lp_k_vs_all(self, model, triple_idx, info, form_of_labelling):
@@ -354,6 +407,7 @@ class Execute:
             for i in range(0, len(triple_idx), self.args.batch_size):
                 # Obtain i.th batch
                 data_batch, _ = self.get_batch_1_to_N(self.dataset.er_vocab, triple_idx, i, self.args.num_entities)
+                del _
                 # From numpy array to torch tensor
                 e1_idx, r_idx, e2_idx = torch.tensor(data_batch[:, 0]), torch.tensor(data_batch[:, 1]), torch.tensor(
                     data_batch[:, 2])
