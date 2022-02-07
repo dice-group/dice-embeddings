@@ -2,13 +2,13 @@
 dataset_path="KGs/Countries-S1"
 storage_path='Exp_Results_X'
 # Number of epochs
-num_epochs=50
+num_epochs=1
 input_DR=0.0
 hidden_DR=0.0
 
-embedding_dim=4
-entity_embedding_dim=4
-rel_embedding_dim=4
+embedding_dim=3
+entity_embedding_dim=3
+rel_embedding_dim=3
 lr=.01
 rm -rf $storage_path
 mkdir $storage_path

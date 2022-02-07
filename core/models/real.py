@@ -67,6 +67,7 @@ class DistMult(BaseKGE):
         # Batch Normalization
         self.bn_ent_real = torch.nn.BatchNorm1d(args.embedding_dim)
         self.bn_rel_real = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_hidden_real = torch.nn.BatchNorm1d(args.embedding_dim)
 
         self.hidden_dropout = torch.nn.Dropout(args.hidden_dropout_rate)
 
@@ -79,7 +80,7 @@ class DistMult(BaseKGE):
         emb_head_real = self.input_dp_ent_real(self.bn_ent_real(self.emb_ent_real(e1_idx)))
         # (1.2) Real embeddings of relations
         emb_rel_real = self.input_dp_rel_real(self.bn_rel_real(self.emb_rel_real(rel_idx)))
-        return torch.mm(self.hidden_dropout(emb_head_real * emb_rel_real), self.emb_ent_real.weight.transpose(1, 0))
+        return torch.mm(self.hidden_dropout(self.bn_hidden_real(emb_head_real * emb_rel_real)), self.emb_ent_real.weight.transpose(1, 0))
 
     def forward_triples(self, e1_idx: torch.Tensor, rel_idx: torch.Tensor, e2_idx: torch.Tensor) -> torch.Tensor:
         """
@@ -98,7 +99,7 @@ class DistMult(BaseKGE):
 
         # (1.3) Complex embeddings of tail entities.
         emb_tail_real = self.emb_ent_real(e2_idx)
-        return (emb_head_real * emb_rel_real * emb_tail_real).sum(dim=1)
+        return (self.hidden_dropout(self.bn_hidden_real(emb_head_real * emb_rel_real)) * emb_tail_real).sum(dim=1)
 
 
 class KronE(BaseKGE):
@@ -109,8 +110,8 @@ class KronE(BaseKGE):
         # Init Embeddings
         self.entity_embedding_dim = args.entity_embedding_dim
         self.rel_embedding_dim = args.rel_embedding_dim
-        self.emb_ent_real = nn.Embedding(args.num_entities, self.entity_embedding_dim)  # real
-        self.emb_rel_real = nn.Embedding(args.num_relations, self.rel_embedding_dim)  # real
+        self.emb_ent_real = nn.Embedding(args.num_entities, self.entity_embedding_dim)
+        self.emb_rel_real = nn.Embedding(args.num_relations, self.rel_embedding_dim)
         xavier_normal_(self.emb_ent_real.weight.data), xavier_normal_(self.emb_rel_real.weight.data)
         self.normalizer = torch.nn.BatchNorm1d  # or nn.LayerNorm
         # Dropouts
@@ -118,7 +119,7 @@ class KronE(BaseKGE):
         self.input_dp_rel_real = torch.nn.Dropout(args.input_dropout_rate)
         # Batch Normalization
         self.bn_ent_real = self.normalizer(self.entity_embedding_dim)
-        self.bn_rel_real = self.normalizer(args.rel_embedding_dim)
+        self.bn_rel_real = self.normalizer(self.rel_embedding_dim)
         # (2) With additional parameters
         self.down_features = nn.Sequential(self.normalizer(self.entity_embedding_dim * self.rel_embedding_dim),
                                            nn.Linear(in_features=self.entity_embedding_dim * self.rel_embedding_dim,
