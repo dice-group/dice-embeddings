@@ -8,6 +8,7 @@ class TestDefaultParams:
         args = argparse_default([])
         args.num_epochs = 1
         args.model = 'Shallom'
+        args.scoring_technique = 'KvsAll'
         Execute(args).start()
 
     def test_conex(self):

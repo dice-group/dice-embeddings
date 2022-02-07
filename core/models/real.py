@@ -68,6 +68,8 @@ class DistMult(BaseKGE):
         self.bn_ent_real = torch.nn.BatchNorm1d(args.embedding_dim)
         self.bn_rel_real = torch.nn.BatchNorm1d(args.embedding_dim)
 
+        self.hidden_dropout = torch.nn.Dropout(args.hidden_dropout_rate)
+
     def get_embeddings(self):
         return self.emb_ent_real.weight.data.data.detach().numpy(), self.emb_rel_real.weight.data.detach().numpy()
 
@@ -77,7 +79,7 @@ class DistMult(BaseKGE):
         emb_head_real = self.input_dp_ent_real(self.bn_ent_real(self.emb_ent_real(e1_idx)))
         # (1.2) Real embeddings of relations
         emb_rel_real = self.input_dp_rel_real(self.bn_rel_real(self.emb_rel_real(rel_idx)))
-        return torch.mm(emb_head_real * emb_rel_real, self.emb_ent_real.weight.transpose(1, 0))
+        return torch.mm(self.hidden_dropout(emb_head_real * emb_rel_real), self.emb_ent_real.weight.transpose(1, 0))
 
     def forward_triples(self, e1_idx: torch.Tensor, rel_idx: torch.Tensor, e2_idx: torch.Tensor) -> torch.Tensor:
         """
@@ -106,38 +108,24 @@ class KronE(BaseKGE):
         self.loss = torch.nn.BCEWithLogitsLoss()
         # Init Embeddings
         self.entity_embedding_dim = args.entity_embedding_dim
+        self.rel_embedding_dim = args.rel_embedding_dim
         self.emb_ent_real = nn.Embedding(args.num_entities, self.entity_embedding_dim)  # real
-        self.emb_rel_real = nn.Embedding(args.num_relations, args.rel_embedding_dim)  # real
+        self.emb_rel_real = nn.Embedding(args.num_relations, self.rel_embedding_dim)  # real
         xavier_normal_(self.emb_ent_real.weight.data), xavier_normal_(self.emb_rel_real.weight.data)
-
+        self.normalizer = torch.nn.BatchNorm1d  # or nn.LayerNorm
         # Dropouts
         self.input_dp_ent_real = torch.nn.Dropout(args.input_dropout_rate)
         self.input_dp_rel_real = torch.nn.Dropout(args.input_dropout_rate)
         # Batch Normalization
-        self.bn_ent_real = torch.nn.BatchNorm1d(self.entity_embedding_dim)
-        self.bn_rel_real = torch.nn.BatchNorm1d(args.rel_embedding_dim)
-        # How to down output of kronecker product
-        # (1) Without cost of additional parameters
-        # Pooling often leads underperformence.
-        # Average often performs not well
-        # self.down_features = nn.AvgPool1d(kernel_size=3, stride=self.entity_embedding_dim)
-        # self.down_features = nn.AdaptiveAvgPool1d(output_size=self.entity_embedding_dim)
-        # self.down_features = nn.MaxPool1d(kernel_size=32, stride=self.entity_embedding_dim)
-        # self.down_features = nn.LPPool1d(2, kernel_size=3, stride=self.entity_embedding_dim)
-        # self.down_features = nn.AdaptiveMaxPool1d(output_size=self.entity_embedding_dim)
-        # self.down_features = nn.AdaptiveMaxPool1d(output_size=self.entity_embedding_dim)
-        # self.down_features = nn.Linear(in_features=int(self.entity_embedding_dim * args.rel_embedding_dim),
-        #                               out_features=self.entity_embedding_dim)
+        self.bn_ent_real = self.normalizer(self.entity_embedding_dim)
+        self.bn_rel_real = self.normalizer(args.rel_embedding_dim)
         # (2) With additional parameters
-        self.down_features = nn.Sequential(
-            nn.Linear(in_features=self.entity_embedding_dim * args.rel_embedding_dim,
-                                                     out_features=self.entity_embedding_dim,
-                                                     bias=False),
+        self.down_features = nn.Sequential(self.normalizer(self.entity_embedding_dim * self.rel_embedding_dim),
+                                           nn.Linear(in_features=self.entity_embedding_dim * self.rel_embedding_dim,
+                                                     out_features=self.entity_embedding_dim),
                                            nn.ReLU(),
-                                           nn.BatchNorm1d(self.entity_embedding_dim),
+                                           self.normalizer(self.entity_embedding_dim),
                                            torch.nn.Dropout(args.hidden_dropout_rate))
-
-        # self.down_features = nn.Sequential(nn.Conv1d(in_channels=1,out_channels=1,kernel_size=3,stride=32),nn.Flatten(1),nn.ReLU(),nn.BatchNorm1d(self.entity_embedding_dim),torch.nn.Dropout(args.hidden_dropout_rate))
 
     def get_embeddings(self):
         return self.emb_ent_real.weight.data.data.detach().numpy(), self.emb_rel_real.weight.data.detach().numpy()
@@ -187,4 +175,4 @@ class KronE(BaseKGE):
 
         # (1.3) Complex embeddings of tail entities.
         emb_tail_real = self.emb_ent_real(e2_idx)
-        return (features * emb_head_real*emb_rel_real*emb_tail_real).sum(dim=1)
+        return (features * emb_head_real * emb_rel_real * emb_tail_real).sum(dim=1)

@@ -28,6 +28,7 @@ warnings.simplefilter(action="ignore", category=UserWarning)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 seed_everything(1, workers=True)
 
+
 # TODO later measure the spent time for every done ! operation
 
 class Execute:
@@ -299,15 +300,14 @@ class Execute:
 
         # 3. Display the selected model's architecture.
         model.loss = nn.CrossEntropyLoss()
-
         # 5. Train model
         self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
-        # 6. Test model on validation and test sets if possible.
         if self.args.eval_on_train:
             res = self.evaluate_lp_k_vs_all(model, self.dataset.train_set,
-                                            f'Evaluate {model.name} on Train set', form_of_labelling)
+                                            f'Evaluate {model.name} on train set', form_of_labelling)
             self.report['Train'] = res
 
+        # 6. Test model on validation and test sets if possible.
         if self.args.eval:
             if len(self.dataset.valid_set) > 0:
                 res = self.evaluate_lp_k_vs_all(model, self.dataset.valid_set,
@@ -345,15 +345,15 @@ class Execute:
         self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
         print('Done!\n')
         if self.args.eval_on_train:
-            res = self.evaluate_lp(model, self.dataset.train_set,f'Evaluate {model.name} on Train set')
+            res = self.evaluate_lp(model, self.dataset.train_set, f'Evaluate {model.name} on Train set')
             self.report['Train'] = res
 
         if self.args.eval:
             if len(self.dataset.valid_set) > 0:
-                self.report['Val']=self.evaluate_lp(model, self.dataset.valid_set, 'Evaluation of Validation set')
+                self.report['Val'] = self.evaluate_lp(model, self.dataset.valid_set, 'Evaluation of Validation set')
 
             if len(self.dataset.test_set) > 0:
-                self.report['Test']=self.evaluate_lp(model, self.dataset.test_set, 'Evaluation of Test set')
+                self.report['Test'] = self.evaluate_lp(model, self.dataset.test_set, 'Evaluation of Test set')
 
         return model
 

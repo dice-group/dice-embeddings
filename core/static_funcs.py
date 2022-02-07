@@ -34,24 +34,24 @@ def argparse_default(description=None):
                         default='KronE',
                         help="Available models: KronE, ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult")
     # Training Parameters
-    parser.add_argument("--num_epochs", type=int, default=150, help='Number of epochs for training. '
+    parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. '
                                                                   'This disables max_epochs and min_epochs of pl.Trainer')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
-    parser.add_argument("--lr", type=float, default=0.1, help='Learning rate')
+    parser.add_argument("--lr", type=float, default=0.01, help='Learning rate')
     parser.add_argument("--label_smoothing_rate", type=float, default=None, help='None for not using it.')
 
     # Model Parameters
     # Hyperparameters pertaining to number of parameters.
     parser.add_argument('--embedding_dim', type=int, default=32,
                         help='Number of dimensions for an embedding vector. This parameter is used for those models requiring same number of embedding vector for entities and relations.')
-    parser.add_argument('--entity_embedding_dim', type=int, default=32,
+    parser.add_argument('--entity_embedding_dim', type=int, default=16,
                         help='Number of dimensions for an entity embedding vector. '
                              'This parameter is used for those model having flexibility of using different sized entity and relation embeddings.')
-    parser.add_argument('--rel_embedding_dim', type=int, default=32,
+    parser.add_argument('--rel_embedding_dim', type=int, default=16,
                         help='Number of dimensions for an entity embedding vector. '
                              'This parameter is used for those model having flexibility of using different sized entity and relation embeddings.')
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
-    parser.add_argument("--num_of_output_channels", type=int, default=8, help="# of output channels in convolution")
+    parser.add_argument("--num_of_output_channels", type=int, default=1, help="# of output channels in convolution")
     parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.5,
                         help='The ratio of the size of the affine transformation w.r.t. the size of the embeddings')
     # Flags for computation
@@ -60,12 +60,12 @@ def argparse_default(description=None):
     parser.add_argument("--eval_on_train", type=int, default=1,
                         help='A flag for using train data to evaluation ')
     # Hyperparameters pertaining to regularization.
-    parser.add_argument('--input_dropout_rate', type=float, default=0.1)
-    parser.add_argument('--hidden_dropout_rate', type=float, default=0.1)
-    parser.add_argument("--feature_map_dropout_rate", type=int, default=.3)
+    parser.add_argument('--input_dropout_rate', type=float, default=0.0)
+    parser.add_argument('--hidden_dropout_rate', type=float, default=0.0)
+    parser.add_argument("--feature_map_dropout_rate", type=int, default=0.0)
     parser.add_argument('--apply_unit_norm', type=bool, default=False)
     # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='KvsAll', help="1vsAll, KvsAll, NegSample.")
+    parser.add_argument('--scoring_technique', default='1vsAll', help="1vsAll, KvsAll, NegSample.")
     parser.add_argument('--neg_ratio', type=int, default=1)
     # Data Augmentation.
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'

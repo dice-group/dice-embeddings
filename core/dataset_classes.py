@@ -199,8 +199,7 @@ class KvsAll(Dataset):
         y_vec[self.train_target[idx]] = 1
 
         if self.label_smoothing_rate:
-            # y_vec = ((1.0 - self.label_smoothing_rate) * y_vec) + (1.0 / y_batch.size(1))
-            y_vec = y_vec*(1 - self.label_smoothing_rate) + (self.label_smoothing_rate / y_vec.sum())
+            y_vec = y_vec*(1 - self.label_smoothing_rate) + (self.label_smoothing_rate / y_vec.size(0))
         return (self.train_data[idx, 0], self.train_data[idx, 1]), y_vec
 
 

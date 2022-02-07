@@ -174,6 +174,12 @@ class ComplEx(BaseKGE):
         self.input_dp_ent_i = torch.nn.Dropout(args.input_dropout_rate)
         self.input_dp_rel_real = torch.nn.Dropout(args.input_dropout_rate)
         self.input_dp_rel_i = torch.nn.Dropout(args.input_dropout_rate)
+
+        self.hidden_dp_a = torch.nn.Dropout(args.hidden_dropout_rate)
+        self.hidden_dp_b = torch.nn.Dropout(args.hidden_dropout_rate)
+        self.hidden_dp_c = torch.nn.Dropout(args.hidden_dropout_rate)
+        self.hidden_dp_d = torch.nn.Dropout(args.hidden_dropout_rate)
+
         # Batch Normalization
         self.bn_ent_real = torch.nn.BatchNorm1d(args.embedding_dim)
         self.bn_ent_i = torch.nn.BatchNorm1d(args.embedding_dim)
@@ -195,10 +201,10 @@ class ComplEx(BaseKGE):
         emb_rel_real = self.input_dp_rel_real(self.bn_rel_real(self.emb_rel_real(rel_idx)))
         emb_rel_i = self.input_dp_rel_i(self.bn_rel_i(self.emb_rel_i(rel_idx)))
 
-        real_real_real = torch.mm(emb_head_real * emb_rel_real, self.emb_ent_real.weight.transpose(1, 0))
-        real_imag_imag = torch.mm(emb_head_real * emb_rel_i, self.emb_ent_i.weight.transpose(1, 0))
-        imag_real_imag = torch.mm(emb_head_i * emb_rel_real, self.emb_ent_i.weight.transpose(1, 0))
-        imag_imag_real = torch.mm(emb_head_i * emb_rel_i, self.emb_ent_real.weight.transpose(1, 0))
+        real_real_real = torch.mm(self.hidden_dp_a(emb_head_real * emb_rel_real), self.emb_ent_real.weight.transpose(1, 0))
+        real_imag_imag = torch.mm(self.hidden_dp_b(emb_head_real * emb_rel_i), self.emb_ent_i.weight.transpose(1, 0))
+        imag_real_imag = torch.mm(self.hidden_dp_c(emb_head_i * emb_rel_real), self.emb_ent_i.weight.transpose(1, 0))
+        imag_imag_real = torch.mm(self.hidden_dp_d(emb_head_i * emb_rel_i), self.emb_ent_real.weight.transpose(1, 0))
 
         return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
 
