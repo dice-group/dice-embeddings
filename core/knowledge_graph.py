@@ -7,13 +7,16 @@ import json
 from dask import dataframe as ddf
 import os
 import pandas as pd
-from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab
+from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_re_vocab
 
+np.random.seed(1)
 pd.set_option('display.max_columns', None)
+
+
 class KG:
     def __init__(self, data_dir: str = None, deserialize_flag: str = None, large_kg_parse=False, add_reciprical=False,
                  eval_model=True, read_only_few: int = None, sample_triples_ratio: float = None,
-                 path_for_serialization: str = None):
+                 path_for_serialization: str = None, add_noise_rate: float = None):
         """
 
         :param data_dir: A path of a folder containing the input knowledge graph
@@ -21,6 +24,7 @@ class KG:
         :param large_kg_parse: A flag for using all cores to parse input knowledge graph
         :param add_reciprical: A flag for applying reciprocal data augmentation technique
         :param eval_model: A flag indicating whether evaluation will be applied. If no eval, then entity relation mappings will be deleted to free memory.
+        :param add_noise_rate: Add say 10% noise in the input data
         sample_triples_ratio
         """
         if deserialize_flag is None:
@@ -66,6 +70,26 @@ class KG:
                                                              'object': self.valid_set['subject']})], ignore_index=True)
                 print('Done !\n')
 
+            if add_noise_rate is not None:
+                num_noisy_triples = int(len(self.train_set) * add_noise_rate)
+                print(f'[4 / 14] Generating {num_noisy_triples} noisy triples for training data...')
+                s = len(self.train_set)
+                list_of_entities = pd.unique(self.train_set[['subject', 'object']].values.ravel('K'))
+
+                self.train_set = pd.concat([self.train_set,
+                                            # Noisy triples
+                                            pd.DataFrame(
+                                                {'subject': np.random.choice(list_of_entities, num_noisy_triples),
+                                                 'relation': np.random.choice(
+                                                     pd.unique(self.train_set[['relation']].values.ravel('K')),
+                                                     num_noisy_triples),
+                                                 'object': np.random.choice(list_of_entities, num_noisy_triples)}
+                                                )
+                                            ], ignore_index=True)
+
+                del list_of_entities
+
+                assert s + num_noisy_triples == len(self.train_set)
             # 3. Concatenate dataframes.
             print(f'[4 / 14] Concatenating data to obtain index...')
             df_str_kg = pd.concat([self.train_set, self.valid_set, self.test_set], ignore_index=True)
@@ -184,10 +208,14 @@ class KG:
             else:
                 self.test_set = self.test_set.values
 
-            if eval_model and len(self.valid_set) > 0 and len(self.test_set) > 0:
-                # 16. Create a bijection mapping from subject-relation pairs to tail entities.
-                data = np.concatenate([self.train_set, self.valid_set, self.test_set])
+            if eval_model:  # and len(self.valid_set) > 0 and len(self.test_set) > 0:
+                if len(self.valid_set) > 0 and len(self.test_set) > 0:
+                    # 16. Create a bijection mapping from subject-relation pairs to tail entities.
+                    data = np.concatenate([self.train_set, self.valid_set, self.test_set])
+                else:
+                    data = self.train_set
                 self.er_vocab = get_er_vocab(data)
+                self.re_vocab = get_re_vocab(data)
                 # 17. Create a bijection mapping from subject-object pairs to relations.
                 self.ee_vocab = get_ee_vocab(data)
 

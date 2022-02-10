@@ -15,10 +15,14 @@ class StandardDataModule(pl.LightningDataModule):
                  num_workers=32, valid_set_idx=None, test_set_idx=None, neg_sample_ratio=None, label_smoothing_rate=None):
         super().__init__()
         assert isinstance(train_set_idx, np.ndarray)
-        if len(valid_set_idx) > 0:
-            assert isinstance(valid_set_idx, np.ndarray)
-        if len(test_set_idx) > 0:
-            assert isinstance(test_set_idx, np.ndarray)
+
+        if valid_set_idx is not None:
+            if len(valid_set_idx) > 0:
+                assert isinstance(valid_set_idx, np.ndarray)
+        if test_set_idx is not None:
+            if len(test_set_idx) > 0:
+                assert isinstance(test_set_idx, np.ndarray)
+
         assert isinstance(entity_to_idx, dict)
         assert isinstance(relation_to_idx, dict)
 
