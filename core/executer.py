@@ -1,7 +1,7 @@
 import warnings
 import os
 from .models import *
-
+from .helper_classes import LabelRelaxationLoss,LabelSmoothingLossCanonical
 from .dataset_classes import StandardDataModule, KvsAll, CVDataModule
 from .knowledge_graph import KG
 import torch
@@ -303,7 +303,15 @@ class Execute:
                                      )
 
         # 3. Display the selected model's architecture.
-        model.loss = nn.CrossEntropyLoss()
+        if self.args.label_relaxation_rate:
+            model.loss=LabelRelaxationLoss(alpha=self.args.label_relaxation_rate)
+            #model.loss=LabelSmoothingLossCanonical()
+
+        elif self.args.label_smoothing_rate:
+            model.loss = nn.CrossEntropyLoss(label_smoothing=self.args.label_smoothing_rate)
+        else:
+            model.loss = nn.CrossEntropyLoss()
+
         # 5. Train model
         self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
         if self.args.eval_on_train:

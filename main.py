@@ -19,15 +19,16 @@ def argparse_default(description=None):
 
     # Models.
     parser.add_argument("--model", type=str,
-                        default='DistMult',#KPDistMult
+                        default='KronE',  # KronE, KPDistMult
                         help="Available models: KronE, ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult")
     # Training Parameters
-    parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. '
-                                                                  'This disables max_epochs and min_epochs of pl.Trainer')
+    parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. '
+                                                                   'This disables max_epochs and min_epochs of pl.Trainer')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.01, help='Learning rate')
     parser.add_argument("--label_smoothing_rate", type=float, default=None, help='None for not using it.')
-    parser.add_argument("--add_noise_rate", type=float, default=.10, help='None for not using it. '
+    parser.add_argument("--label_relaxation_rate", type=float, default=None, help='None for not using it.')
+    parser.add_argument("--add_noise_rate", type=float, default=None, help='None for not using it. '
                                                                            '.1 means extand train data by adding 10% random data')
 
     # Model Parameters
@@ -65,6 +66,7 @@ def argparse_default(description=None):
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)
+
 
 if __name__ == '__main__':
     Execute(argparse_default()).start()
