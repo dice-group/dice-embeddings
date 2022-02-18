@@ -19,11 +19,11 @@ def argparse_default(description=None):
 
     # Models.
     parser.add_argument("--model", type=str,
-                        default='KronE',  # KronE, KPDistMult
+                        default='KPDistMult',  # KronE(), KPDistMult
                         help="Available models: KronE, ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult")
     # Training Parameters
-    parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. '
-                                                                   'This disables max_epochs and min_epochs of pl.Trainer')
+    parser.add_argument("--num_epochs", type=int, default=1000, help='Number of epochs for training. '
+                                                                     'This disables max_epochs and min_epochs of pl.Trainer')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.01, help='Learning rate')
     parser.add_argument("--label_smoothing_rate", type=float, default=None, help='None for not using it.')
@@ -33,13 +33,12 @@ def argparse_default(description=None):
 
     # Model Parameters
     # Hyperparameters pertaining to number of parameters.
-    parser.add_argument('--embedding_dim', type=int, default=36,
-
+    parser.add_argument('--embedding_dim', type=int, default=256,
                         help='Number of dimensions for an embedding vector. This parameter is used for those models requiring same number of embedding vector for entities and relations.')
-    parser.add_argument('--entity_embedding_dim', type=int, default=32,
+    parser.add_argument('--entity_embedding_dim', type=int, default=8,
                         help='Number of dimensions for an entity embedding vector. '
                              'This parameter is used for those model having flexibility of using different sized entity and relation embeddings.')
-    parser.add_argument('--rel_embedding_dim', type=int, default=32,
+    parser.add_argument('--rel_embedding_dim', type=int, default=8,
                         help='Number of dimensions for an entity embedding vector. '
                              'This parameter is used for those model having flexibility of using different sized entity and relation embeddings.')
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")

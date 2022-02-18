@@ -120,7 +120,10 @@ def sanity_checking_with_arguments(args):
 
 
 def select_model(args) -> Tuple[pl.LightningModule, AnyStr]:
-    if args.model == 'KPDistMult':
+    if args.model == 'KronELinear':
+        model = KronELinear(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif args.model == 'KPDistMult':
         model = KPDistMult(args=args)
         form_of_labelling = 'EntityPrediction'
     elif args.model == 'KPFullDistMult':

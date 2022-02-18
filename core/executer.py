@@ -312,6 +312,8 @@ class Execute:
         else:
             model.loss = nn.CrossEntropyLoss()
 
+        print(model)
+        print(model.loss)
         # 5. Train model
         self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
         if self.args.eval_on_train:

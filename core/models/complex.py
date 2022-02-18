@@ -5,6 +5,7 @@ import torch
 from typing import Tuple
 from .base_model import *
 
+
 class ConEx(BaseKGE, ABC):
     def __init__(self, args):
         super().__init__()
@@ -201,7 +202,8 @@ class ComplEx(BaseKGE):
         emb_rel_real = self.input_dp_rel_real(self.bn_rel_real(self.emb_rel_real(rel_idx)))
         emb_rel_i = self.input_dp_rel_i(self.bn_rel_i(self.emb_rel_i(rel_idx)))
 
-        real_real_real = torch.mm(self.hidden_dp_a(emb_head_real * emb_rel_real), self.emb_ent_real.weight.transpose(1, 0))
+        real_real_real = torch.mm(self.hidden_dp_a(emb_head_real * emb_rel_real),
+                                  self.emb_ent_real.weight.transpose(1, 0))
         real_imag_imag = torch.mm(self.hidden_dp_b(emb_head_real * emb_rel_i), self.emb_ent_i.weight.transpose(1, 0))
         imag_real_imag = torch.mm(self.hidden_dp_c(emb_head_i * emb_rel_real), self.emb_ent_i.weight.transpose(1, 0))
         imag_imag_real = torch.mm(self.hidden_dp_d(emb_head_i * emb_rel_i), self.emb_ent_real.weight.transpose(1, 0))
@@ -237,4 +239,63 @@ class ComplEx(BaseKGE):
         real_imag_imag = (emb_head_real * emb_rel_i * emb_tail_i).sum(dim=1)
         imag_real_imag = (emb_head_i * emb_rel_real * emb_tail_i).sum(dim=1)
         imag_imag_real = (emb_head_i * emb_rel_i * emb_tail_real).sum(dim=1)
+        return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
+
+
+class KDComplEx(BaseKGE):
+    def __init__(self, args):
+        super().__init__()
+        self.name = 'KPDistMult'
+        self.loss = torch.nn.BCEWithLogitsLoss()
+        # Init Embeddings
+        self.embedding_dim = args.embedding_dim
+        self.emb_ent_real = nn.Embedding(args.num_entities, args.embedding_dim)  # real
+        self.emb_ent_i = nn.Embedding(args.num_entities, args.embedding_dim)  # imaginary i
+        self.emb_rel_real = nn.Embedding(args.num_relations, int(sqrt(args.embedding_dim)))  # real
+        self.emb_rel_i = nn.Embedding(args.num_relations, int(sqrt(args.embedding_dim)))  # imaginary i
+        xavier_normal_(self.emb_ent_real.weight.data), xavier_normal_(self.emb_ent_i.weight.data)
+        xavier_normal_(self.emb_rel_real.weight.data), xavier_normal_(self.emb_rel_i.weight.data)
+
+        # Dropouts
+        self.input_dp_ent_real = torch.nn.Dropout(args.input_dropout_rate)
+        self.input_dp_ent_i = torch.nn.Dropout(args.input_dropout_rate)
+        self.input_dp_rel_real = torch.nn.Dropout(args.input_dropout_rate)
+        self.input_dp_rel_i = torch.nn.Dropout(args.input_dropout_rate)
+
+        self.hidden_dp_a = torch.nn.Dropout(args.hidden_dropout_rate)
+        self.hidden_dp_b = torch.nn.Dropout(args.hidden_dropout_rate)
+        self.hidden_dp_c = torch.nn.Dropout(args.hidden_dropout_rate)
+        self.hidden_dp_d = torch.nn.Dropout(args.hidden_dropout_rate)
+
+        # Batch Normalization
+        self.bn_ent_real = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_ent_i = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_rel_real = torch.nn.BatchNorm1d(int(sqrt(args.embedding_dim)))
+        self.bn_rel_i = torch.nn.BatchNorm1d(int(sqrt(args.embedding_dim)))
+
+    def get_embeddings(self):
+        entity_emb = torch.cat((self.emb_ent_real.weight.data, self.emb_ent_i.weight.data), 1)
+        rel_emb = torch.cat((self.emb_rel_real.weight.data, self.emb_rel_i.weight.data), 1)
+        return entity_emb.data.detach().numpy(), rel_emb.data.detach().numpy()
+
+    def forward_k_vs_all(self, e1_idx, rel_idx):
+        # (1)
+        # (1.1) Complex embeddings of head entities and apply batch norm.
+        emb_head_real = self.input_dp_ent_real(self.bn_ent_real(self.emb_ent_real(e1_idx)))
+        emb_head_i = self.input_dp_ent_i(self.bn_ent_i(self.emb_ent_i(e1_idx)))
+
+        # (1.2) Complex embeddings of relations and apply batch norm.
+        emb_rel_real = self.input_dp_rel_real(self.bn_rel_real(self.emb_rel_real(rel_idx)))
+        # (2) Retrieve  relation embeddings and apply kronecker_product
+        emb_rel_real = batch_kronecker_product(emb_rel_real.unsqueeze(1), emb_rel_real.unsqueeze(1)).flatten(1)
+
+        emb_rel_i = self.input_dp_rel_i(self.bn_rel_i(self.emb_rel_i(rel_idx)))
+        emb_rel_i = batch_kronecker_product(emb_rel_i.unsqueeze(1), emb_rel_i.unsqueeze(1)).flatten(1)
+
+        real_real_real = torch.mm(self.hidden_dp_a(emb_head_real * emb_rel_real),
+                                  self.emb_ent_real.weight.transpose(1, 0))
+        real_imag_imag = torch.mm(self.hidden_dp_b(emb_head_real * emb_rel_i), self.emb_ent_i.weight.transpose(1, 0))
+        imag_real_imag = torch.mm(self.hidden_dp_c(emb_head_i * emb_rel_real), self.emb_ent_i.weight.transpose(1, 0))
+        imag_imag_real = torch.mm(self.hidden_dp_d(emb_head_i * emb_rel_i), self.emb_ent_real.weight.transpose(1, 0))
+
         return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real

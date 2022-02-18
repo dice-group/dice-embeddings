@@ -20,8 +20,14 @@ def batch_kronecker_product(a, b):
     return res
 
 
-def kronecker_linear_transformation(A, B, x):
+def kronecker_linear_transformation(X, Z, x):
     """
+    W:X\otimes Z: mp by nq matrix
+      X :m1 by n1
+      Z : mp/m1 by nq/n1
+
+    1) R(x) nq/n1 by n1 matrix
+    2) Z (1)
     Let a linear transformation defined by $W\ in R^{mp\times nq}$
     Let a matrix $A \in \mathbb{R}^{m_1  \times n_1} $ and
     a matrix $ B \in \mathbb{R}^{ \frac{mp}{m_1} \times \frac{nq}{n_1}}$.
@@ -44,8 +50,14 @@ def kronecker_linear_transformation(A, B, x):
 
     :rtype: torch.Tensor
     """
+    m1, n1 = X.shape
+    mp_div_m1, nq_div_n1 = Z.shape
+    n, dim = x.shape
 
-    return
+    x = x.reshape(n, n1,nq_div_n1) # x tranpose for the batch computation
+    Zx = torch.matmul(x, Z).transpose(1,2)
+    out = torch.matmul(Zx, X.T)
+    return out.flatten(1)
 
 
 class DistMult(BaseKGE):
@@ -106,6 +118,9 @@ class DistMult(BaseKGE):
 
 
 class KPDistMult(BaseKGE):
+    """
+    Named as KD-Rel-DistMult  in our paper
+    """
 
     def __init__(self, args):
         super().__init__(args.learning_rate)
@@ -142,63 +157,147 @@ class KPDistMult(BaseKGE):
         return torch.mm(self.hidden_dropout(self.bn_hidden_real(emb_head_real * emb_rel_real)),
                         self.emb_ent_real.weight.transpose(1, 0))
 
-
 class KronE(BaseKGE):
     """
-
+    KP-DistMul
     """
-
     def __init__(self, args):
         super().__init__(args.learning_rate)
         self.name = 'KronE'
         self.loss = torch.nn.BCEWithLogitsLoss()
         # Init Embeddings # must have valid root
         # (1) Initialize embeddings
-        self.embedding_dim = args.embedding_dim
-        self.embedding_dim_rel = args.embedding_dim
-
+        self.embedding_dim = int(sqrt(args.embedding_dim))
+        self.embedding_dim_rel = int(sqrt(args.embedding_dim))
         self.emb_ent_real = nn.Embedding(args.num_entities, self.embedding_dim)
         self.emb_rel_real = nn.Embedding(args.num_relations, self.embedding_dim_rel)
         xavier_normal_(self.emb_ent_real.weight.data), xavier_normal_(self.emb_rel_real.weight.data)
         # (2) Initialize Dropouts
         self.input_dp_ent_real = torch.nn.Dropout(args.input_dropout_rate)
         self.input_dp_rel_real = torch.nn.Dropout(args.input_dropout_rate)
-        self.hidden_dropout = torch.nn.Dropout(args.hidden_dropout_rate)
-
-        # (3) Initialize Batch Norms
-        self.bn_ent_real = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_real = torch.nn.BatchNorm1d(self.embedding_dim_rel)
-        self.bn_hidden_1 = torch.nn.BatchNorm1d(int(self.embedding_dim * self.embedding_dim_rel))
-        self.bn_hidden_2 = torch.nn.BatchNorm1d(self.embedding_dim)
-
+        """
         # Linear transformation W is a by m by n matrix ,
         # where n is the kronecker product of h and r
         self.m = self.embedding_dim
-        self.n = int(self.embedding_dim * self.embedding_dim_rel)
-
+        self.n = int((self.embedding_dim * self.embedding_dim_rel))
+        # (2) With additional parameters
         self.m1, self.n1 = self.m, self.n // self.m
         self.A = nn.parameter.Parameter(torch.randn(self.m1, self.n1, requires_grad=True))
 
         self.m2, self.n2 = self.m // self.m1, self.n // self.n1
         self.B = nn.parameter.Parameter(torch.randn(self.m2, self.n2, requires_grad=True))
-        print(f'Linear trans : {self.m1 * self.m2}  {self.n1 * self.n2}')
+        """
+
+        # (3) Initialize Batch Norms
+        self.bn_ent_real = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_real = torch.nn.BatchNorm1d(self.embedding_dim_rel)
 
     def get_embeddings(self):
         return self.emb_ent_real.weight.data.data.detach().numpy(), self.emb_rel_real.weight.data.detach().numpy()
 
+    def construct_entity_embeddings(self, e1_idx: torch.Tensor):
+        emb_head = self.bn_ent_real(self.emb_ent_real(e1_idx)).unsqueeze(1)
+        return batch_kronecker_product(emb_head, emb_head).flatten(1)
+
+    def construct_relation_embeddings(self, rel_idx):
+        emb_rel = self.bn_rel_real(self.emb_rel_real(rel_idx)).unsqueeze(1)
+        return batch_kronecker_product(emb_rel, emb_rel).flatten(1)
+
     def forward_k_vs_all(self, e1_idx: torch.Tensor, rel_idx: torch.Tensor):
-        # (1) Retrieve  head entity embeddings and apply BN + DP
-        emb_head_real = self.input_dp_ent_real(self.bn_ent_real(self.emb_ent_real(e1_idx)))
-        emb_rel_real = self.input_dp_rel_real(self.bn_rel_real(self.emb_rel_real(rel_idx)))
-        # (2) Retrieve  relation embeddings and apply kronecker_product
-        feature = batch_kronecker_product(emb_head_real.unsqueeze(1), emb_rel_real.unsqueeze(1)).flatten(1)
-        feature = self.bn_hidden_1(feature)
-        # (3) Reshape
-        feature = feature.reshape(len(feature), self.n2, self.n1)
-        # (3.1)
-        feature = torch.relu((torch.matmul(feature.transpose(1, 2), self.B.T).transpose(1, 2) @ self.A).flatten(1))
-        # feature = (torch.matmul(feature.transpose(1, 2), self.B.T).transpose(1, 2) @ self.A).flatten(1)
-        return torch.mm(self.hidden_dropout(self.bn_hidden_2(feature)), self.emb_ent_real.weight.transpose(1, 0))
+        # (1) Prepare compressed embeddings, from d to d^2.
+        # (1.1) Retrieve compressed embeddings
+        # (1.2) Apply BN (1.1)
+        # (1.3) Uncompress (1.2)
+        # (1.4) Apply DP (1.3)
+        emb_head_real = self.input_dp_ent_real(self.construct_entity_embeddings(e1_idx))
+        # (1) Prepare compressed embeddings, from d to d^2.
+        # (1.1) Retrieve compressed embeddings
+        # (1.2) Apply BN (1.1)
+        # (1.3) Uncompress (1.2)
+        # (1.4) Apply DP (1.3)
+        emb_rel_real = self.input_dp_rel_real(self.construct_relation_embeddings(rel_idx))
+        # (3)
+        # (3.1) Capture interactions via Hadamard Product (1) and (2);
+        feature = emb_head_real * emb_rel_real
+        n, dim = feature.shape
+        n_rows = dim // self.embedding_dim
+        feature = feature.reshape(n, n_rows, self.embedding_dim)
+        # (6) Compute sum of logics Logits
+        logits = torch.matmul(feature, self.emb_ent_real.weight.transpose(1, 0)).sum(dim=1)
+        return logits
+
+class KronELinear(BaseKGE):
+    def __init__(self, args):
+        super().__init__(args.learning_rate)
+        self.name = 'KronELinear'
+        self.loss = torch.nn.BCEWithLogitsLoss()
+        # Init Embeddings # must have valid root
+        # (1) Initialize embeddings
+        self.entity_embedding_dim = args.embedding_dim
+        self.rel_embedding_dim = args.embedding_dim
+        self.emb_ent_real = nn.Embedding(args.num_entities, self.entity_embedding_dim)
+        self.emb_rel_real = nn.Embedding(args.num_relations, self.rel_embedding_dim)
+        xavier_normal_(self.emb_ent_real.weight.data), xavier_normal_(self.emb_rel_real.weight.data)
+
+        # (2) Initialize Dropouts
+        self.input_dp_ent_real = torch.nn.Dropout(args.input_dropout_rate)
+        self.input_dp_rel_real = torch.nn.Dropout(args.input_dropout_rate)
+
+
+        # Linear transformation W is a by mp by nq matrix
+        # where
+        # mp is the kronecker product of h and r and
+        # nq is the entity_embedding_dim
+        # W: X \otimes Z : W mp by nq
+        # X m1 by n1
+        # Z mp/m1 by nq/n1
+
+        # output features
+        mp = self.entity_embedding_dim
+        # Input features
+        nq = int((self.entity_embedding_dim ** 2))
+        # (2) With additional parameters
+        self.m1, self.n1 = mp // 4, nq // 4
+        self.X = nn.parameter.Parameter(torch.randn(self.m1, self.n1, requires_grad=True))
+
+        self.m2, self.n2 = mp // self.m1, nq // self.n1
+        self.Z = nn.parameter.Parameter(torch.randn(self.m2, self.n2, requires_grad=True))
+
+        # (3) Initialize Batch Norms
+        self.bn_ent_real = torch.nn.BatchNorm1d(self.entity_embedding_dim)
+        self.bn_rel_real = torch.nn.BatchNorm1d(self.rel_embedding_dim)
+
+    def get_embeddings(self):
+        return self.emb_ent_real.weight.data.data.detach().numpy(), self.emb_rel_real.weight.data.detach().numpy()
+
+    def construct_entity_embeddings(self, e1_idx: torch.Tensor):
+        emb_head = self.bn_ent_real(self.emb_ent_real(e1_idx)).unsqueeze(1)
+        return batch_kronecker_product(emb_head, emb_head).flatten(1)
+
+    def construct_relation_embeddings(self, rel_idx):
+        emb_rel = self.bn_rel_real(self.emb_rel_real(rel_idx)).unsqueeze(1)
+        return batch_kronecker_product(emb_rel, emb_rel).flatten(1)
+
+    def forward_k_vs_all(self, e1_idx: torch.Tensor, rel_idx: torch.Tensor):
+        # (1) Prepare compressed embeddings, from d to d^2.
+        # (1.1) Retrieve compressed embeddings
+        # (1.2) Apply BN (1.1)
+        # (1.3) Uncompress (1.2)
+        # (1.4) Apply DP (1.3)
+        emb_head_real = self.input_dp_ent_real(self.construct_entity_embeddings(e1_idx))
+        # (1) Prepare compressed embeddings, from d to d^2.
+        # (1.1) Retrieve compressed embeddings
+        # (1.2) Apply BN (1.1)
+        # (1.3) Uncompress (1.2)
+        # (1.4) Apply DP (1.3)
+        emb_rel_real = self.input_dp_rel_real(self.construct_relation_embeddings(rel_idx))
+        # (3)
+        # (3.1) Capture interactions via Hadamard Product (1) and (2);
+        feature = emb_head_real + emb_rel_real
+        feature = kronecker_linear_transformation(self.X, self.Z, feature)
+        # (6) Compute sum of logics Logits
+        logits = torch.matmul(feature, self.emb_ent_real.weight.transpose(1, 0))
+        return logits
 
 
 class oldKronE(BaseKGE):
