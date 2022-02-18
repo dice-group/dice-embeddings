@@ -28,6 +28,7 @@ def quaternion_mul(*, Q_1, Q_2):
     k_val = a_h * d_r + b_h * c_r - c_h * b_r + d_h * a_r
     return r_val, i_val, j_val, k_val
 
+
 class QMult(BaseKGE):
     def __init__(self, args):
         super().__init__(learning_rate=args.learning_rate)
@@ -77,6 +78,12 @@ class QMult(BaseKGE):
         self.bn_rel_i = torch.nn.BatchNorm1d(args.embedding_dim)
         self.bn_rel_j = torch.nn.BatchNorm1d(args.embedding_dim)
         self.bn_rel_k = torch.nn.BatchNorm1d(args.embedding_dim)
+
+        # Batch normalization for quaternion embeddings of relations.
+        self.bn_hidden_real = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_hidden_i = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_hidden_j = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_hidden_k = torch.nn.BatchNorm1d(args.embedding_dim)
 
     def get_embeddings(self):
         entity_emb = torch.cat((self.emb_ent_real.weight.data, self.emb_ent_i.weight.data,
@@ -132,13 +139,13 @@ class QMult(BaseKGE):
             # (3)
             # (3.1) Dropout on (2)-result of quaternion multiplication.
             # (3.2) Inner product
-            real_score = torch.mm(self.hidden_dp_real(r_val), self.emb_ent_real.weight.transpose(1, 0))
-            i_score = torch.mm(self.hidden_dp_i(i_val), self.emb_ent_i.weight.transpose(1, 0))
-            j_score = torch.mm(self.hidden_dp_j(j_val), self.emb_ent_j.weight.transpose(1, 0))
-            k_score = torch.mm(self.hidden_dp_k(k_val), self.emb_ent_k.weight.transpose(1, 0))
+            real_score = torch.mm(self.hidden_dp_real(self.bn_hidden_real(r_val)),
+                                  self.emb_ent_real.weight.transpose(1, 0))
+            i_score = torch.mm(self.hidden_dp_i(self.bn_hidden_i(i_val)), self.emb_ent_i.weight.transpose(1, 0))
+            j_score = torch.mm(self.hidden_dp_j(self.bn_hidden_j(j_val)), self.emb_ent_j.weight.transpose(1, 0))
+            k_score = torch.mm(self.hidden_dp_k(self.bn_hidden_k(k_val)), self.emb_ent_k.weight.transpose(1, 0))
 
-        score = real_score + i_score + j_score + k_score
-        return torch.sigmoid(score)
+        return real_score + i_score + j_score + k_score
 
     def forward_triples(self, e1_idx, rel_idx, e2_idx):
         # (1)
@@ -191,12 +198,13 @@ class QMult(BaseKGE):
             # (3)
             # (3.1) Dropout on (2)-result of quaternion multiplication.
             # (3.2) Inner product
-            real_score = torch.sum(self.hidden_dp_real(r_val) * emb_tail_real, dim=1)
-            i_score = torch.sum(self.hidden_dp_i(i_val) * emb_tail_i, dim=1)
-            j_score = torch.sum(self.hidden_dp_j(j_val) * emb_tail_j, dim=1)
-            k_score = torch.sum(self.hidden_dp_k(k_val) * emb_tail_k, dim=1)
+            real_score = torch.sum(self.hidden_dp_real(self.bn_hidden_real(r_val)) * emb_tail_real, dim=1)
+            i_score = torch.sum(self.hidden_dp_i(self.bn_hidden_i(i_val)) * emb_tail_i, dim=1)
+            j_score = torch.sum(self.hidden_dp_j(self.bn_hidden_j(j_val)) * emb_tail_j, dim=1)
+            k_score = torch.sum(self.hidden_dp_k(self.bn_hidden_k(k_val)) * emb_tail_k, dim=1)
 
         return real_score + i_score + j_score + k_score
+
 
 class ConvQ(BaseKGE):
     """ Convolutional Quaternion Knowledge Graph Embeddings"""
@@ -352,8 +360,7 @@ class ConvQ(BaseKGE):
                                self.input_dp_ent_j(self.bn_ent_j(self.emb_ent_j.weight)).transpose(1, 0))
             k_score = torch.mm(self.hidden_dp_k(conv_imag_k * k_val), self.emb_ent_k.weight.transpose(1, 0))
 
-        score = real_score + i_score + j_score + k_score
-        return torch.sigmoid(score)
+        return real_score + i_score + j_score + k_score
 
     def forward_triples(self, e1_idx, rel_idx, e2_idx):
         # (1)

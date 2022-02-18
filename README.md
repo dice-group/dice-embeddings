@@ -4,7 +4,7 @@ To scale on large knowledge graphs, we rely on [DASK](https://dask.org/) and [Py
 Through [DASK](https://dask.org/), we utilize multi-CPUs at processing the input data, while
 [PytorchLightning](https://www.pytorchlightning.ai/) allow us to use knowledge graph embedding model in hardware-agnostic manner.
 
-## Installation
+### Installation
 First clone the repository:
 ```
 git clone https://github.com/dice-group/DAIKIRI-Embedding.git
@@ -15,11 +15,11 @@ conda env create -f environment.yml
 conda activate daikiri
 wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
 unzip KGs.zip
-python -m pytest tests
+python -m pytest -x tests
 ```
 ### Manuel Installation
 ```
-conda create -n daikiri python=3.8
+conda create -n daikiri python=3.9
 conda activate daikiri
 pip install torch==1.10.1+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
 pip install pytorch-lightning==1.5.9
@@ -30,34 +30,58 @@ pip install gradio==2.7.5.2
 pip install pyarrow==6.0.1
 wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
 unzip KGs.zip
-python -m pytest tests
+python -m pytest -x tests
 ```
+# Deployment and Open-sourcing
+Any pretrained model can be deployed with an ease. Moreover, anyone on the internet can use the pretrained model with ```--share``` parameter. 
 
-# Available Models
-1. Our models: [Shallom](https://arxiv.org/pdf/2101.09090.pdf), [ConEx](https://openreview.net/forum?id=6T45-4TFqaX&invitationId=eswc-conferences.org/ESWC/2021/Conference/Research_Track/Paper49/-/Camera_Ready_Revision&referrer=%5BTasks%5D(%2Ftasks)), [QMult](https://proceedings.mlr.press/v157/demir21a.html), [OMult](https://proceedings.mlr.press/v157/demir21a.html), [ConvQ](https://proceedings.mlr.press/v157/demir21a.html), [ConvO](https://proceedings.mlr.press/v157/demir21a.html)
+```
+python deploy.py --path_of_experiment_folder 'DAIKIRI_Storage/QMultFamily' --share
+Loading Model...
+Model is loaded!
+Running on local URL:  http://127.0.0.1:7860/
+Running on public URL: https://54886.gradio.app
 
-2. [DistMult](https://arxiv.org/pdf/1412.6575.pdf), [ComplEx](https://arxiv.org/pdf/1606.06357.pdf).
+This share link expires in 72 hours. For free permanent hosting, check out Spaces (https://huggingface.co/spaces)
+```
+![alt text](core/figures/deploy_qmult_family.png)
 
-# Dataset Format for Training
+### Available Models
+1. [DistMult](https://arxiv.org/pdf/1412.6575.pdf)
+2. [ComplEx](https://arxiv.org/pdf/1606.06357.pdf)
+3. [Shallom](https://arxiv.org/pdf/2101.09090.pdf) 
+4. [ConEx](https://openreview.net/forum?id=6T45-4TFqaX&invitationId=eswc-conferences.org/ESWC/2021/Conference/Research_Track/Paper49/-/Camera_Ready_Revision&referrer=%5BTasks%5D(%2Ftasks))
+5. [QMult](https://proceedings.mlr.press/v157/demir21a.html) 
+6. [OMult](https://proceedings.mlr.press/v157/demir21a.html) 
+7. [ConvQ](https://proceedings.mlr.press/v157/demir21a.html) 
+8. [ConvO](https://proceedings.mlr.press/v157/demir21a.html)
+9. Contact us to add your favorite one :)
+
+
+### Pretrained Models
+TODO: Add a script to load and deploy a pretrained model
+
+
+
+### Training
 1. A dataset must be located in a folder, e.g. 'KGs/YAGO3-10'.
 
 2. A folder must contain **train.txt**. If the validation and test splits are available, then they must named as **valid.txt** and **test.txt**, respectively.
 
 3. **train.txt**, **valid.txt** and **test.txt** must be in either [N-triples](https://www.w3.org/2001/sw/RDFCore/ntriples/) format or standard link prediction dataset format (see KGs folder).
 
-# Training 
-1. For instance, 'KGs/Family' contains only **train.txt**. To obtain Shallom embeddings ([Research paper](https://arxiv.org/abs/2101.09090) and [conference presentation](https://www.youtube.com/watch?v=LUDpdgdvTQg)) 
+4. For instance, 'KGs/Family' contains only **train.txt**. To obtain Shallom embeddings ([Research paper](https://arxiv.org/abs/2101.09090) and [conference presentation](https://www.youtube.com/watch?v=LUDpdgdvTQg)) 
 ```python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --num_folds_for_cv 10 --num_epochs 1```
 This execution results in generating **Mean and standard deviation of raw MRR in 10-fold cross validation => 0.768, 0.023**. Moreover, all necessary information including embeddings are stored in DAIKIRI_Storage folder (if does not exist it will be created).
    
-1. Executing  ```python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --num_epochs 1 --scoring_technique 'KvsAll'```
+5. Executing  ```python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --num_epochs 1 --scoring_technique 'KvsAll'```
    
-2. Most link prediction benchmark datasets contain the train, validation and test datasets (see 'KGs/FB15K-237', 'KGs/WN18RR' or 'KGs/YAGO3-10').
+6. Most link prediction benchmark datasets contain the train, validation and test datasets (see 'KGs/FB15K-237', 'KGs/WN18RR' or 'KGs/YAGO3-10').
 To evaluate quality of embeddings, we rely on the standard metric, i.e. mean reciprocal rank (MRR). Executing ```python main.py --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --max_num_epochs 1 --scoring_technique 'KvsAll'```
 results in evaluating quality of SHALLOM embeddings on the test split.
    
    
-### Examples
+### Example Commands
 
 1. To train our approaches for 10 epochs by using **32 CPU cores** (if available) on UMLS. 
 ```
@@ -86,27 +110,6 @@ python main.py --gpus 8 --distributed_backend ddp --path_dataset_folder 'KGs/WN1
 
 6. More examples can be found in run.sh.
 
-# Deployment and Open-sourcing
-Any pretrained model can be deployed with an ease. Moreover, anyone on the internet can use the pretrained model with ```--share``` parameter. 
-
-
-```
-python deploy.py --path_of_experiment_folder 'DAIKIRI_Storage/QMultFamily'
-Loading Model...
-Model is loaded!
-Running on local URL:  http://127.0.0.1:7861/
-To create a public link, set `share=True` in `launch()`.
-```
-```
-python deploy.py --path_of_experiment_folder 'DAIKIRI_Storage/QMultFamily' --share
-Loading Model...
-Model is loaded!
-Running on local URL:  http://127.0.0.1:7860/
-Running on public URL: https://54886.gradio.app
-
-This share link expires in 72 hours. For free permanent hosting, check out Spaces (https://huggingface.co/spaces)
-```
-![alt text](core/figures/deploy_qmult_family.png)
 
 
 ## How to cite
@@ -146,5 +149,5 @@ url={https://openreview.net/forum?id=6T45-4TFqaX}}
 
 ```
 
-For any further questions, please contact:  ```caglar.demir@upb.de``` or ```caglardemir8@gmailcom.de```
+For any questions or wishes, please contact:  ```caglar.demir@upb.de``` or ```caglardemir8@gmailcom.de```
 

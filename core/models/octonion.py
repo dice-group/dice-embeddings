@@ -125,6 +125,17 @@ class OMult(BaseKGE):
         self.bn_rel_e6 = torch.nn.BatchNorm1d(args.embedding_dim)
         self.bn_rel_e7 = torch.nn.BatchNorm1d(args.embedding_dim)
 
+
+        # Batch normalization for octonion embeddings of relations.
+        self.bn_hidden_e0 = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_hidden_e1 = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_hidden_e2 = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_hidden_e3 = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_hidden_e4 = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_hidden_e5 = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_hidden_e6 = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_hidden_e7 = torch.nn.BatchNorm1d(args.embedding_dim)
+
     def get_embeddings(self):
         entity_emb = torch.cat((
             self.emb_ent_e0.weight.data, self.emb_ent_e1.weight.data,
@@ -206,16 +217,17 @@ class OMult(BaseKGE):
             # (3.1) Dropout on (2)-result of octonion multiplication.
             # (3.2) Apply BN + DP on ALL entities.
             # (3.3) Inner product
-            e0_score = torch.mm(self.hidden_dp_e0(e0), self.emb_ent_e0.weight.transpose(1, 0))
+            e0_score = torch.mm(self.hidden_dp_e0(self.bn_hidden_e0(e0)), self.emb_ent_e0.weight.transpose(1, 0))
 
-            e1_score = torch.mm(self.hidden_dp_e1(e1), self.emb_ent_e1.weight.transpose(1, 0))
-            e2_score = torch.mm(self.hidden_dp_e2(e2), self.emb_ent_e2.weight.transpose(1, 0))
-            e3_score = torch.mm(self.hidden_dp_e3(e3),
+            e1_score = torch.mm(self.hidden_dp_e1(self.bn_hidden_e1(e1)), self.emb_ent_e1.weight.transpose(1, 0))
+            e2_score = torch.mm(self.hidden_dp_e2(self.bn_hidden_e2(e2)), self.emb_ent_e2.weight.transpose(1, 0))
+            e3_score = torch.mm(self.hidden_dp_e3(self.bn_hidden_e3(e3)),
                                 self.emb_ent_e3.weight.transpose(1, 0))
-            e4_score = torch.mm(self.hidden_dp_e4(e4), self.emb_ent_e4.weight.transpose(1, 0))
-            e5_score = torch.mm(self.hidden_dp_e5(e5), self.emb_ent_e5.weight.transpose(1, 0))
-            e6_score = torch.mm(self.hidden_dp_e6(e6), self.emb_ent_e6.weight.transpose(1, 0))
-            e7_score = torch.mm(self.hidden_dp_e7(e7), self.emb_ent_e7.weight.transpose(1, 0))
+            e4_score = torch.mm(self.hidden_dp_e4(self.bn_hidden_e4(e4)), self.emb_ent_e4.weight.transpose(1, 0))
+            e5_score = torch.mm(self.hidden_dp_e5(self.bn_hidden_e5(e5)), self.emb_ent_e5.weight.transpose(1, 0))
+            e6_score = torch.mm(self.hidden_dp_e6(self.bn_hidden_e6(e6)), self.emb_ent_e6.weight.transpose(1, 0))
+            e7_score = torch.mm(self.hidden_dp_e7(self.bn_hidden_e7(e7)), self.emb_ent_e7.weight.transpose(1, 0))
+
         return e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
 
     def forward_triples(self, e1_idx, rel_idx, e2_idx):

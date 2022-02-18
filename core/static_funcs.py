@@ -1,74 +1,17 @@
 import os
 from typing import AnyStr, Tuple
-from .models import *
 import numpy as np
 import torch
 import datetime
 import logging
-
+from collections import defaultdict
 import pytorch_lightning as pl
 import sys
-
+from .helper_classes import CustomArg
 from .models import *
-#from .models.complex import ComplEx, ConEx
-#from .models.octonion import OMult, ConvO
-#from .models.quaternion import QMult, ConvQ
 import time
-
-import argparse
-
-
-def argparse_default(description=None):
-    """ Extends pytorch_lightning Trainer's arguments with ours """
-    parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
-    # Default parameters of Trainer
-    # https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
-    # Number of workers for data loader
-    # https: // pytorch - lightning.readthedocs.io / en / latest / guides / speed.html  # num-workers
-    # Dataset and storage related
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Countries-S3')
-    parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage')
-    parser.add_argument("--deserialize_flag", type=str, default=None, help='Path of a folder for deserialization.')
-    parser.add_argument("--read_only_few", type=int, default=0, help='READ only first N triples. If 0, read all.')
-    # Models.
-    parser.add_argument("--model", type=str,
-                        default='KronE',
-                        help="Available models: KronE, ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult")
-    # Training Parameters
-    parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. '
-                                                                    'This disables max_epochs and min_epochs of pl.Trainer')
-    parser.add_argument('--batch_size', type=int, default=32)
-    parser.add_argument("--lr", type=float, default=0.1)
-    # Model Parameters
-    # Hyperparameters pertaining to number of parameters.
-    parser.add_argument('--embedding_dim', type=int, default=8)
-    parser.add_argument('--entity_embedding_dim', type=int, default=7)
-    parser.add_argument('--rel_embedding_dim', type=int, default=7)
-    parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
-    parser.add_argument("--num_of_output_channels", type=int, default=8, help="# of output channels in convolution")
-    parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.5,
-                        help='The ratio of the size of the affine transformation w.r.t. the size of the embeddings')
-    # Flags for computation
-    parser.add_argument("--large_kg_parse", type=int, default=0, help='A flag for using all cores at parsing.')
-    parser.add_argument("--eval", type=int, default=1,
-                        help='A flag for using evaluation. If 0, memory consumption is decreased')
-    # Do we use still use it ?
-    parser.add_argument("--continue_training", type=int, default=1, help='A flag for continues training')
-    # Hyperparameters pertaining to regularization.
-    parser.add_argument('--input_dropout_rate', type=float, default=0.1)
-    parser.add_argument('--hidden_dropout_rate', type=float, default=0.1)
-    parser.add_argument("--feature_map_dropout_rate", type=int, default=.3)
-    parser.add_argument('--apply_unit_norm', type=bool, default=False)
-    # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='KvsAll', help="KvsAll technique or NegSample.")
-    parser.add_argument('--negative_sample_ratio', type=int, default=1)
-    # Data Augmentation.
-    parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
-                                                                        'If >2,no evaluation scenario is applied implies no evaluation.')
-    # This is a workaround for read
-    if description is None:
-        return parser.parse_args()
-    return parser.parse_args(description)
+import pandas as pd
+import json
 
 
 def performance_debugger(func_name):
@@ -89,6 +32,8 @@ def preprocesses_input_args(arg):
     # To update the default value of Trainer in pytorch-lightnings
     arg.max_epochs = arg.num_epochs
     arg.min_epochs = arg.num_epochs
+    if arg.add_noise_rate is not None:
+        assert 1. >= arg.add_noise_rate > 0.
 
     arg.learning_rate = arg.lr
     arg.deterministic = True
@@ -101,8 +46,10 @@ def preprocesses_input_args(arg):
 
     arg.eval = True if arg.eval == 1 else False
 
-    arg.add_reciprical = True if arg.scoring_technique == 'KvsAll' else False
-
+    arg.add_reciprical = True if arg.scoring_technique in ['KvsAll', '1vsAll'] else False
+    if arg.sample_triples_ratio is not None:
+        assert 1.0 >= arg.sample_triples_ratio >= 0.0
+    sanity_checking_with_arguments(arg)
     return arg
 
 
@@ -145,9 +92,9 @@ def sanity_checking_with_arguments(args):
         print(f'embedding_dim must be strictly positive. Currently:{args.embedding_dim}')
         raise
 
-    if not (args.scoring_technique == 'KvsAll' or args.scoring_technique == 'NegSample'):
-        print(f'Invalid training strategy => {args.scoring_technique}.')
-        exit(1)
+    if not (args.scoring_technique in ['KvsAll', 'NegSample', '1vsAll']):
+        # print(f'Invalid training strategy => {args.scoring_technique}.')
+        raise KeyError(f'Invalid training strategy => {args.scoring_technique}.')
 
     assert args.learning_rate > 0
     try:
@@ -173,8 +120,24 @@ def sanity_checking_with_arguments(args):
 
 
 def select_model(args) -> Tuple[pl.LightningModule, AnyStr]:
-    if args.model == 'KronE':
+    if args.model == 'KronELinear':
+        model = KronELinear(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif args.model == 'KPDistMult':
+        model = KPDistMult(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif args.model == 'KPFullDistMult':
+        # Full compression of entities and relations.
+        model = KPFullDistMult(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif args.model == 'KronE':
         model = KronE(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif args.model == 'KronE_wo_f':
+        model = KronE_wo_f(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif args.model == 'BaseKronE':
+        model = BaseKronE(args=args)
         form_of_labelling = 'EntityPrediction'
     elif args.model == 'Shallom':
         model = Shallom(args=args)
@@ -203,6 +166,22 @@ def select_model(args) -> Tuple[pl.LightningModule, AnyStr]:
     else:
         raise ValueError
     return model, form_of_labelling
+
+
+def load_model(args) -> torch.nn.Module:
+    """ Load weights and initialize pytorch module from namespace arguments"""
+    # (1) Load weights from experiment repo
+    weights = torch.load(args.path_of_experiment_folder + '/model.pt', torch.device('cpu'))
+    model, _ = select_model(args)
+    model.load_state_dict(weights)
+    for parameter in model.parameters():
+        parameter.requires_grad = False
+    model.eval()
+
+    entity_to_idx = pd.read_parquet(args.path_of_experiment_folder + '/entity_to_idx.gzip').to_dict()['entity']
+    relation_to_idx = pd.read_parquet(args.path_of_experiment_folder + '/relation_to_idx.gzip').to_dict()['relation']
+
+    return model, entity_to_idx, relation_to_idx
 
 
 def compute_mrr_based_on_relation_ranking(trained_model, triples, entity_to_idx, relations):
@@ -274,5 +253,37 @@ def compute_mrr_based_on_entity_ranking(trained_model, triples, entity_to_idx, r
     """
     return raw_mrr
 
+
 def extract_model_summary(s):
     return {'NumParam': s.total_parameters, 'EstimatedSizeMB': s.model_size}
+
+
+def get_er_vocab(data):
+    # head entity and relation
+    er_vocab = defaultdict(list)
+    for triple in data:
+        er_vocab[(triple[0], triple[1])].append(triple[2])
+    return er_vocab
+
+
+def get_re_vocab(data):
+    # head entity and relation
+    re_vocab = defaultdict(list)
+    for triple in data:
+        re_vocab[(triple[1], triple[2])].append(triple[0])
+    return re_vocab
+
+
+def get_ee_vocab(data):
+    # head entity and relation
+    ee_vocab = defaultdict(list)
+    for triple in data:
+        ee_vocab[(triple[0], triple[2])].append(triple[1])
+    return ee_vocab
+
+
+def load_configuration(p: str) -> CustomArg:
+    assert os.path.isfile(p)
+    with open(p, 'r') as r:
+        args = json.load(r)
+    return CustomArg(**args)

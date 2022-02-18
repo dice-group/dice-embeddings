@@ -38,7 +38,8 @@ class BaseKGE(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x_batch, y_batch = batch
-        train_loss = self.loss_function(self.forward(x_batch), y_batch)
+        pred_batch=self.forward(x_batch)
+        train_loss = self.loss_function(pred_batch, y_batch)
         return {'loss': train_loss}
 
     #def training_epoch_end(self, outputs) -> None:
