@@ -1,7 +1,7 @@
 import warnings
 import os
 from .models import *
-from .helper_classes import LabelRelaxationLoss,LabelSmoothingLossCanonical
+from .helper_classes import LabelRelaxationLoss, LabelSmoothingLossCanonical
 from .dataset_classes import StandardDataModule, KvsAll, CVDataModule
 from .knowledge_graph import KG
 import torch
@@ -28,9 +28,8 @@ warnings.simplefilter(action="ignore", category=UserWarning)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 seed_everything(1, workers=True)
 
-
-# TODO later measure the spent time for every done ! operation
-
+# TODO: Execute can inherit from Trainer and Evaluator Classes
+# By doing so we can increase the modularity of our code.
 class Execute:
     def __init__(self, args, continuous_training=False):
         # (1) Process arguments and sanity checking
@@ -101,7 +100,7 @@ class Execute:
         else:
             message = f'{total_runtime / (60 ** 2):.3f} hours'
         self.report['Runtime'] = message
-        self.report.update(extract_model_summary(trained_model.summarize()))
+
         print(f'Runtime of {trained_model.name}:', total_runtime)
         print(f'NumParam of {trained_model.name}:', self.report["NumParam"])
         # print(f'Estimated of {trained_model.name}:', self.report["EstimatedSizeMB"])
@@ -172,6 +171,30 @@ class Execute:
         if self.args.scoring_technique == 'KvsAll':
             self.args.neg_ratio = None
 
+    def save_embeddings(self, embeddings: np.ndarray, indexes, path: str) -> None:
+        """
+
+        :param embeddings:
+        :param indexes:
+        :param path:
+        :return:
+        """
+        try:
+            df = pd.DataFrame(embeddings, index=indexes)
+            del embeddings
+            num_mb = df.memory_usage(index=True, deep=True).sum() / (10 ** 6)
+            if num_mb > 10 ** 6:
+                df = dd.from_pandas(df, npartitions=len(df) / 100)
+                # PARQUET wants columns to be stn
+                df.columns = df.columns.astype(str)
+                df.to_parquet(self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings')
+            else:
+                df.to_csv(path)
+        except KeyError or AttributeError as e:
+            print('Exception occurred at saving entity embeddings. Computation will continue')
+            print(e)
+        del df
+
     def store(self, trained_model) -> None:
         """
         Store trained_model model and save embeddings into csv file.
@@ -186,45 +209,25 @@ class Execute:
         with open(self.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
             temp = vars(self.args)
             json.dump(temp, file_descriptor)
-        print('Saving embeddings..')
-        # TODO: Find a faster way to store embeddings.
-        if trained_model.name == 'Shallom':
-            entity_emb = trained_model.get_embeddings()
-        else:
-            entity_emb, relation_ebm = trained_model.get_embeddings()
-            try:
-                df = pd.DataFrame(relation_ebm, index=self.dataset.relations_str)
-                df.columns = df.columns.astype(str)
-                num_mb = df.memory_usage(index=True, deep=True).sum() / (10 ** 6)
-                if num_mb > 10 ** 6:
-                    df = dd.from_pandas(df, npartitions=len(df) / 100)
-                    # PARQUET wants columns to be stn
-                    df.columns = df.columns.astype(str)
-                    df.to_parquet(self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings')
-                    # TO READ PARQUET FILE INTO PANDAS
-                    # m=dd.read_parquet(self.storage_path + '/' + trained_model.name + '_relation_embeddings').compute()
-                else:
-                    df.to_csv(self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
-            except KeyError or AttributeError as e:
-                print('Exception occurred at saving relation embeddings. Computation will continue')
-                print(e)
+        # See available memory and decide whether embeddings are stored separately or not.
+        available_memory = [i.split() for i in os.popen('free -h').read().splitlines()][1][-1]  # ,e.g., 10Gi
+        available_memory_mb = float(available_memory[:-2]) * 1000
+        self.report.update(extract_model_summary(trained_model.summarize()))
 
-            # Free mem del
-            del df
+        if available_memory_mb * .01 > self.report['EstimatedSizeMB']:
+            """ We have enough space for data conversion"""
+            print('Saving embeddings..')
+            entity_emb, relation_ebm = trained_model.get_embeddings()
+
+            self.save_embeddings(entity_emb, indexes=self.dataset.entities_str,
+                                 path=self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
+            del entity_emb
+            if relation_ebm is not None:
+                self.save_embeddings(relation_ebm, indexes=self.dataset.relations_str,
+                                     path=self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
             del relation_ebm
-        try:
-            df = pd.DataFrame(entity_emb, index=self.dataset.entities_str)
-            num_mb = df.memory_usage(index=True, deep=True).sum() / (10 ** 6)
-            if num_mb > 10 ** 6:
-                df = dd.from_pandas(df, npartitions=len(df) / 100)
-                # PARQUET wants columns to be stn
-                df.columns = df.columns.astype(str)
-                df.to_parquet(self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings')
-            else:
-                df.to_csv(self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv', )
-        except KeyError or AttributeError as e:
-            print('Exception occurred at saving entity embeddings.Computation will continue')
-            print(e)
+        else:
+            print('There is not enough memory to store embeddings separately.')
 
     def get_batch_1_to_N(self, input_vocab, triples, idx, output_dim) -> Tuple[np.array, torch.FloatTensor]:
         """ A mini-batch for training on multi-labels (x,y) -> [0.,0.,0.,----, 1.,1,]
@@ -243,6 +246,14 @@ class Execute:
 
             targets[idx, input_vocab[pair]] = 1
         return np.array(batch), torch.FloatTensor(targets)
+
+    @staticmethod
+    def model_fitting(trainer, model, train_dataloaders) -> None:
+        print(model)
+        print(model.summarize())
+        print("Model fitting...")
+        trainer.fit(model, train_dataloaders=train_dataloaders)
+        print("Done!")
 
     def training_kvsall(self):
         """
@@ -263,15 +274,14 @@ class Execute:
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_processes,
                                      label_smoothing_rate=self.args.label_smoothing_rate)
-        # 5. Train model
-        self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
-
+        # 3. Train model.
+        self.model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
+        # 4. Test model on the training dataset if it is needed.
         if self.args.eval_on_train:
             res = self.evaluate_lp_k_vs_all(model, self.dataset.train_set,
                                             f'Evaluate {model.name} on Train set', form_of_labelling)
             self.report['Train'] = res
-
-        # 6. Test model on validation and test sets if possible.
+        # 5. Test model on the validation and test dataset if it is needed.
         if self.args.eval:
             if len(self.dataset.valid_set) > 0:
                 res = self.evaluate_lp_k_vs_all(model, self.dataset.valid_set,
@@ -289,7 +299,6 @@ class Execute:
         model, form_of_labelling = select_model(self.args)
         print(f'1vsAll training starts: {model.name}')
         form_of_labelling = '1VsAll'
-
         # 2. Create training data.
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,
@@ -301,27 +310,23 @@ class Execute:
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_processes
                                      )
-
-        # 3. Display the selected model's architecture.
         if self.args.label_relaxation_rate:
-            model.loss=LabelRelaxationLoss(alpha=self.args.label_relaxation_rate)
-            #model.loss=LabelSmoothingLossCanonical()
+            model.loss = LabelRelaxationLoss(alpha=self.args.label_relaxation_rate)
+            # model.loss=LabelSmoothingLossCanonical()
 
         elif self.args.label_smoothing_rate:
             model.loss = nn.CrossEntropyLoss(label_smoothing=self.args.label_smoothing_rate)
         else:
             model.loss = nn.CrossEntropyLoss()
-
-        print(model)
-        print(model.loss)
-        # 5. Train model
-        self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
+        # 3. Train model
+        self.model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
+        # 4. Test model on the training dataset if it is needed.
         if self.args.eval_on_train:
             res = self.evaluate_lp_k_vs_all(model, self.dataset.train_set,
                                             f'Evaluate {model.name} on train set', form_of_labelling)
             self.report['Train'] = res
 
-        # 6. Test model on validation and test sets if possible.
+        # 5. Test model on the validation and test dataset if it is needed.
         if self.args.eval:
             if len(self.dataset.valid_set) > 0:
                 res = self.evaluate_lp_k_vs_all(model, self.dataset.valid_set,
@@ -353,15 +358,13 @@ class Execute:
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_processes
                                      )
-        print('Done!\n')
-        print(model)
-        print('Fitting the model...')
-        self.trainer.fit(model, train_dataloaders=dataset.train_dataloader())
-        print('Done!\n')
+        # 3. Train model
+        self.model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
+        # 4. Test model on the training dataset if it is needed.
         if self.args.eval_on_train:
             res = self.evaluate_lp(model, self.dataset.train_set, f'Evaluate {model.name} on Train set')
             self.report['Train'] = res
-
+        # 5. Test model on the validation and test dataset if it is needed.
         if self.args.eval:
             if len(self.dataset.valid_set) > 0:
                 self.report['Val'] = self.evaluate_lp(model, self.dataset.valid_set, 'Evaluation of Validation set')
@@ -606,8 +609,8 @@ class Execute:
                                          batch_size=self.args.batch_size,
                                          num_workers=self.args.num_processes
                                          )
-            # 5. Train model
-            trainer.fit(model, train_dataloaders=dataset.train_dataloader())
+            # 3. Train model
+            self.model_fitting(trainer=trainer, model=model, train_dataloaders=dataset.train_dataloader())
 
             # 6. Test model on validation and test sets if possible.
             res = self.evaluate_lp_k_vs_all(model, test_set_for_i_th_fold, form_of_labelling=form_of_labelling)

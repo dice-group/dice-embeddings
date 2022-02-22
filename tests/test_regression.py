@@ -1,4 +1,4 @@
-from core.static_funcs import argparse_default
+from main import argparse_default
 from core.executer import Execute
 import sys
 

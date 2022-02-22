@@ -46,21 +46,34 @@ This share link expires in 72 hours. For free permanent hosting, check out Space
 ```
 ![alt text](core/figures/deploy_qmult_family.png)
 
+## Pre-trained Models
+Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmai.com ``` , if you lack hardware resources to obtain embeddings of a specific knowledge Graph.
+- [English-French DBpedia Shallom embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/shallom/Shallom_EN_FR_15K_V1.zip)
+- [YAGO3-10 ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/YAGO3-10.zip)
+- [FB15K-237 ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/FB15K-237.zip)
+- [FB15K ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/FB15K.zip)
+- [WN18RR ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/WN18RR.zip)
+- [WN18 ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/WN18.zip)
+- [Forte ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/ConEx_Forte.zip)
+- [Hepatitis ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/ConEx_Hepatitis.zip)
+- [Lymphography ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/ConEx_Lymphography.zip)
+- [Mammographic ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/ConEx_Mammographic.zip)
+- [Animals ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/Animals.zip)
+- For more please look at [Hobbit Data](https://hobbitdata.informatik.uni-leipzig.de/KGE/)
+
 ### Available Models
-1. [DistMult](https://arxiv.org/pdf/1412.6575.pdf)
-2. [ComplEx](https://arxiv.org/pdf/1606.06357.pdf)
-3. [Shallom](https://arxiv.org/pdf/2101.09090.pdf) 
-4. [ConEx](https://openreview.net/forum?id=6T45-4TFqaX&invitationId=eswc-conferences.org/ESWC/2021/Conference/Research_Track/Paper49/-/Camera_Ready_Revision&referrer=%5BTasks%5D(%2Ftasks))
-5. [QMult](https://proceedings.mlr.press/v157/demir21a.html) 
-6. [OMult](https://proceedings.mlr.press/v157/demir21a.html) 
-7. [ConvQ](https://proceedings.mlr.press/v157/demir21a.html) 
-8. [ConvO](https://proceedings.mlr.press/v157/demir21a.html)
-9. Contact us to add your favorite one :)
-
-
-### Pretrained Models
-TODO: Add a script to load and deploy a pretrained model
-
+1. Multiplicative based KGE models:
+   1. [DistMult](https://arxiv.org/pdf/1412.6575.pdf)
+   2. [ComplEx](https://arxiv.org/pdf/1606.06357.pdf)
+   3. [QMult](https://proceedings.mlr.press/v157/demir21a.html)
+   4. [OMult](https://proceedings.mlr.press/v157/demir21a.html) 
+2. Feed Forward Neural Models 
+   1. [Shallom](https://arxiv.org/pdf/2101.09090.pdf)
+3. Convolutional Neural models
+   1. [ConEx](https://openreview.net/forum?id=6T45-4TFqaX&invitationId=eswc-conferences.org/ESWC/2021/Conference/Research_Track/Paper49/-/Camera_Ready_Revision&referrer=%5BTasks%5D(%2Ftasks))
+   2. [ConvQ](https://proceedings.mlr.press/v157/demir21a.html) 
+   3. [ConvO](https://proceedings.mlr.press/v157/demir21a.html)
+4. Contact us to add your favorite one :)
 
 
 ### Training
@@ -146,7 +159,6 @@ url={https://openreview.net/forum?id=6T45-4TFqaX}}
   pages={179--182},
   year={2021},
   organization={IEEE}
-
 ```
 
 For any questions or wishes, please contact:  ```caglar.demir@upb.de``` or ```caglardemir8@gmailcom.de```

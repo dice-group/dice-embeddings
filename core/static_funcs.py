@@ -106,8 +106,7 @@ def sanity_checking_with_arguments(args):
     try:
         assert os.path.isdir(args.path_dataset_folder)
     except AssertionError:
-        print(f'The path does not direct to a file {args.path_train_dataset}')
-        raise
+        raise AssertionError(f'The path does not direct to a file {args.path_dataset_folder}')
 
     try:
         assert os.path.isfile(args.path_dataset_folder + '/train.txt')

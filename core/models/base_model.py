@@ -1,5 +1,6 @@
 import pytorch_lightning as pl
 import torch
+from pytorch_lightning.utilities.types import TRAIN_DATALOADERS, EVAL_DATALOADERS
 from torch import nn
 from torch.nn import functional as F
 from torchmetrics import Accuracy as accuracy
@@ -8,6 +9,7 @@ from torch.nn.init import xavier_normal_
 
 
 class BaseKGE(pl.LightningModule):
+
     def __init__(self, learning_rate=.1):
         super().__init__()
         self.name = 'Not init'
@@ -38,11 +40,11 @@ class BaseKGE(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x_batch, y_batch = batch
-        pred_batch=self.forward(x_batch)
+        pred_batch = self.forward(x_batch)
         train_loss = self.loss_function(pred_batch, y_batch)
         return {'loss': train_loss}
 
-    #def training_epoch_end(self, outputs) -> None:
+    # def training_epoch_end(self, outputs) -> None:
     #    """ DBpedia debugging removed."""
     #    #avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
     #    #self.log('avg_loss', avg_loss, on_epoch=False, prog_bar=True)
@@ -78,3 +80,15 @@ class BaseKGE(pl.LightningModule):
     def test_epoch_end(self, outputs: List[Any]):
         avg_test_accuracy = torch.stack([x['test_accuracy'] for x in outputs]).mean()
         self.log('avg_test_accuracy', avg_test_accuracy, on_epoch=True, prog_bar=True)
+
+    def test_dataloader(self) -> EVAL_DATALOADERS:
+        pass
+
+    def val_dataloader(self) -> EVAL_DATALOADERS:
+        pass
+
+    def predict_dataloader(self) -> EVAL_DATALOADERS:
+        pass
+
+    def train_dataloader(self) -> TRAIN_DATALOADERS:
+        pass
