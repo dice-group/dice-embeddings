@@ -1,40 +1,26 @@
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "UMLS" 4 > UMLS_4.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "UMLS" 9 > UMLS_9.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "UMLS" 16 > UMLS_16.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "UMLS" 25 > UMLS_25.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "UMLS" 36 > UMLS_36.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "UMLS" 49 > UMLS_49.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "UMLS" 64 > UMLS_64.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "UMLS" 81 > UMLS_81.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "UMLS" 100 > UMLS_100.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "UMLS" 121 > UMLS_121.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "UMLS" 144 > UMLS_144.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "UMLS" 169 > UMLS_169.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "UMLS" 196 > UMLS_196.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "UMLS" 225 > UMLS_225.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "UMLS" 256 > UMLS_256.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "UMLS" 289 > UMLS_289.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "UMLS" 324 > UMLS_324.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "UMLS" 361 > UMLS_361.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "UMLS" 400 > UMLS_400.log
+#!/bin/sh
+# (1) main working directory
+# shellcheck disable=SC2164
+main_wd="$(cd "$PWD"; cd ..; pwd)"
+# (2) Script in (1)
+python_script_path="$main_wd/main.py"
 
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "KINSHIP" 4 > KINSHIP_4.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "KINSHIP" 9 > KINSHIP_9.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "KINSHIP" 16 > KINSHIP_16.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "KINSHIP" 25 > KINSHIP_25.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "KINSHIP" 36 > KINSHIP_36.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "KINSHIP" 49 > KINSHIP_49.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "KINSHIP" 64 > KINSHIP_64.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "KINSHIP" 81 > KINSHIP_81.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "KINSHIP" 100 > KINSHIP_100.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "KINSHIP" 121 > KINSHIP_121.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "KINSHIP" 144 > KINSHIP_144.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "KINSHIP" 169 > KINSHIP_169.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "KINSHIP" 196 > KINSHIP_196.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "KINSHIP" 225 > KINSHIP_225.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "KINSHIP" 256 > KINSHIP_256.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "KINSHIP" 289 > KINSHIP_289.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "KINSHIP" 324 > KINSHIP_324.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "KINSHIP" 361 > KINSHIP_361.log
-/bin/bash /home/demir/Desktop/Softwares/DAIKIRI_Emb/config_runner.sh "KINSHIP" 400 > KINSHIP_400.log
-
+# shellcheck disable=SC2043
+for kgname in "UMLS" "KINSHIP"
+do
+  kg_path="$main_wd/KGs/$kgname"
+  for model in "QMult" "OMult"
+  do
+    for epoch in 1
+    do
+      for dim in 25 50
+      do
+          # shellcheck disable=SC2154
+          log_name="$kg_path-$model-$epoch-$dim"
+          echo "Running $log_name configuration"
+          /bin/bash "$PWD/config_runner.sh" "$python_script_path" "$kg_path" "$model" "$epoch" "$dim" > "$log_name.log"
+          echo "Done!"
+      done
+    done
+  done
+done
