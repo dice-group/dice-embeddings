@@ -16,9 +16,9 @@ do
       for dim in 25 50
       do
           # shellcheck disable=SC2154
-          log_name="$kg_path-$model-$epoch-$dim"
-          echo "Running $log_name configuration"
-          /bin/bash "$PWD/config_runner.sh" "$python_script_path" "$kg_path" "$model" "$epoch" "$dim" > "$log_name.log"
+          config_name="$kgname-$model-$epoch-$dim"
+          echo "Running $config_name configuration"
+          /bin/bash "$PWD/config_runner.sh" "$python_script_path" "$kg_path" "$model" "$epoch" "$dim" > "$config_name.log"
           echo "Done!"
       done
     done
