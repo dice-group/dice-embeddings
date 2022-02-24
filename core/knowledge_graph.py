@@ -67,7 +67,7 @@ class KG:
                                                pd.DataFrame({'subject': self.test_set['object'],
                                                              'relation': self.test_set['relation'].map(
                                                                  lambda x: x + '_inverse'),
-                                                             'object': self.valid_set['subject']})], ignore_index=True)
+                                                             'object': self.test_set['subject']})], ignore_index=True)
                 print('Done !\n')
 
             if add_noise_rate is not None:
@@ -90,6 +90,7 @@ class KG:
                 del list_of_entities
 
                 assert s + num_noisy_triples == len(self.train_set)
+
             # 3. Concatenate dataframes.
             print(f'[4 / 14] Concatenating data to obtain index...')
             df_str_kg = pd.concat([self.train_set, self.valid_set, self.test_set], ignore_index=True)
