@@ -1,5 +1,5 @@
 import time
-from typing import Dict, List, Generator
+from typing import Dict, List
 from collections import defaultdict
 import numpy as np
 import pickle
@@ -14,6 +14,15 @@ pd.set_option('display.max_columns', None)
 
 
 class KG:
+    """ Knowledge Graph Class
+        1- Reading : Large input data is read via DASK
+        2- Cleaning & Preprocessing :
+                                    Remove triples with literals if exists
+                                    Apply reciprocal data augmentation triples into train, valid and test datasets
+                                    Add noisy triples (random facts sampled from all possible triples E x R x E)
+        3- Serializing and Deserializing in parquet format
+    """
+
     def __init__(self, data_dir: str = None, deserialize_flag: str = None, large_kg_parse=False, add_reciprical=False,
                  eval_model=True, read_only_few: int = None, sample_triples_ratio: float = None,
                  path_for_serialization: str = None, add_noise_rate: float = None):
@@ -84,7 +93,7 @@ class KG:
                                                      pd.unique(self.train_set[['relation']].values.ravel('K')),
                                                      num_noisy_triples),
                                                  'object': np.random.choice(list_of_entities, num_noisy_triples)}
-                                                )
+                                            )
                                             ], ignore_index=True)
 
                 del list_of_entities
@@ -103,7 +112,7 @@ class KG:
                                               index=ordered_list)
             print('Done!\n')
 
-            # 5. Create a bijection mapping  from relations to to integer indexes.
+            # 5. Create a bijection mapping  from relations to integer indexes.
             print('[6 / 14] Creating a mapping from relations to integer indexes...')
             ordered_list = pd.unique(df_str_kg['relation'].values.ravel('K'))
             self.relation_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
@@ -284,17 +293,15 @@ class KG:
 
         return entity_idxs, relation_idxs, er_vocab, pe_vocab, ee_vocab
 
-    def deserialize(self, p: str) -> None:
-        """
-        Deserialize data
-        """
+    def deserialize(self, storage_path: str) -> None:
+        """ Deserialize data """
 
         print('Deserializing compressed entity integer mapping...')
-        self.entity_to_idx = ddf.read_parquet(p + '/entity_to_idx.gzip').compute()
+        self.entity_to_idx = ddf.read_parquet(storage_path + '/entity_to_idx.gzip').compute()
         print('Done!\n')
         self.num_entities = len(self.entity_to_idx)
         print('Deserializing compressed relation integer mapping...')
-        self.relation_to_idx = ddf.read_parquet(p + '/relation_to_idx.gzip').compute()
+        self.relation_to_idx = ddf.read_parquet(storage_path + '/relation_to_idx.gzip').compute()
         self.num_relations = len(self.entity_to_idx)
 
         print('Done!\n')
@@ -306,16 +313,35 @@ class KG:
 
         # 10. Serialize (9).
         print('Deserializing integer mapped data and mapping it to numpy ndarray...')
-        self.train_set = ddf.read_parquet(p + '/idx_train_df.gzip').values.compute()
+        self.train_set = ddf.read_parquet(storage_path + '/idx_train_df.gzip').values.compute()
         print('Done!\n')
+        try:
+            print('Deserializing integer mapped data and mapping it to numpy ndarray...')
+            self.valid_set = ddf.read_parquet(storage_path + '/idx_valid_df.gzip').values.compute()
+            print('Done!\n')
+        except FileNotFoundError:
+            print('No valid data found')
+            self.valid_set = pd.DataFrame()
 
-        print('Deserializing integer mapped data and mapping it to numpy ndarray...')
-        self.valid_set = ddf.read_parquet(p + '/idx_valid_df.gzip').values.compute()
-        print('Done!\n')
+        try:
+            print('Deserializing integer mapped data and mapping it to numpy ndarray...')
+            self.test_set = ddf.read_parquet(storage_path + '/idx_test_df.gzip').values.compute()
+            print('Done!\n')
+        except FileNotFoundError:
+            print('No test data found')
+            self.test_set = pd.DataFrame()
 
-        print('Deserializing integer mapped data and mapping it to numpy ndarray...')
-        self.test_set = ddf.read_parquet(p + '/idx_test_df.gzip').values.compute()
-        print('Done!\n')
+        print(storage_path)
+        with open(storage_path+'/configuration.json', 'r') as f:
+            args = json.load(f)
+
+        if args['eval']:
+            if len(self.valid_set) > 0 and len(self.test_set) > 0:
+                # 16. Create a bijection mapping from subject-relation pairs to tail entities.
+                data = np.concatenate([self.train_set, self.valid_set, self.test_set])
+            else:
+                data = self.train_set
+            self.er_vocab = get_er_vocab(data)
 
     @staticmethod
     def index_parallel(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):
@@ -461,75 +487,6 @@ class KG:
         """
         return list(self.relation_to_idx.keys())
 
-    # Not used anymore.
-    def load_data(self, data_path, add_reciprical=True, load_only=None):
-        raise NotImplemented()
-        # line can be 1 or 2
-        # a) <...> <...> <...> .
-        # b) <...> <...> "..." .
-        # c) ... ... ...
-        # (a) and (b) correspond to the N-Triples format
-        # (c) corresponds to the format of current link prediction benchmark datasets.
-        print(f'{data_path} is being read.')
-        try:
-            data = []
-            with open(data_path, "r") as f:
-                for line in f:
-                    # 1. Ignore lines with *** " *** or does only contain 2 or less characters.
-                    if '"' in line or len(line) < 3:
-                        continue
-
-                    # 2. Tokenize(<...> <...> <...> .) => ['<...>', '<...>','<...>','.']
-                    # Tokenize(... ... ...) => ['...', '...', '...',]
-                    decomposed_list_of_strings = line.split()
-
-                    # 3. Sanity checking.
-                    try:
-                        assert len(decomposed_list_of_strings) == 3 or len(decomposed_list_of_strings) == 4
-                    except AssertionError:
-                        print(f'Invalid input triple {line}. It can not be split into 3 or 4 items')
-                        print('This triple will be ignored')
-                        continue
-                    # 4. Storing
-                    if len(decomposed_list_of_strings) == 4:
-                        assert decomposed_list_of_strings[-1] == '.'
-                        data.append(self.ntriple_parser(decomposed_list_of_strings))
-                    if len(decomposed_list_of_strings) == 3:
-                        data.append(decomposed_list_of_strings)
-
-                    if load_only is not None:
-                        if len(data) == load_only:
-                            break
-
-                    if len(data) % 50_000_000 == 0:
-                        print(f'Size of already parsed data {len(data)}')
-
-        except FileNotFoundError:
-            print(f'{data_path} is not found')
-            return []
-        if add_reciprical:
-            data += [[i[2], i[1] + "_reverse", i[0]] for i in data]
-        return data
-
-    def process(self, x):
-        raise NotImplemented
-        # 2. Tokenize(<...> <...> <...> .) => ['<...>', '<...>','<...>','.']
-        # Tokenize(... ... ...) => ['...', '...', '...',]
-        decomposed_list_of_strings = x.split()
-
-        # 3. Sanity checking.
-        try:
-            assert len(decomposed_list_of_strings) == 3 or len(decomposed_list_of_strings) == 4
-        except AssertionError:
-            print(f'Invalid input triple {x}. It can not be split into 3 or 4 items')
-            print('This triple will be ignored')
-        # 4. Storing
-        if len(decomposed_list_of_strings) == 4:
-            assert decomposed_list_of_strings[-1] == '.'
-            decomposed_list_of_strings = self.ntriple_parser(decomposed_list_of_strings)
-        if len(decomposed_list_of_strings) == 3:
-            return decomposed_list_of_strings
-
     @staticmethod
     def ntriple_parser(l: List) -> List:
         """
@@ -543,6 +500,7 @@ class KG:
         :param l:
         :return:
         """
+        raise NotImplementedError()
         assert l[3] == '.'
         try:
             s, p, o, _ = l[0], l[1], l[2], l[3]
@@ -661,68 +619,3 @@ class KG:
             else:
                 self.valid = np.array([])
                 self.test = np.array([])
-
-
-"""
-def serialize(self, p: str) -> None:
-    # Serialize entities and relations sotred in pandas dataframe and predicates
-
-    assert len(self.entity_to_idx) == self.num_entities
-    assert len(self.relation_to_idx) == self.num_relations
-
-    # Store data in parquet format
-    if len(self.train_set) > 0:
-        self.train_set.to_parquet(p + '/train_df.gzip', compression='gzip')
-        # Store as numpy
-        self.train_set['subject'] = self.train_set['subject'].map(lambda x: self.entity_to_idx[x])
-        self.train_set['relation'] = self.train_set['relation'].map(lambda x: self.relation_to_idx[x])
-        self.train_set['object'] = self.train_set['object'].map(lambda x: self.entity_to_idx[x])
-        self.train_set.to_parquet(p + '/idx_train_df.gzip', compression='gzip')
-        self.train_set = self.train_set.values
-        # Sanity checking
-        assert self.num_entities > max(self.train_set[0])
-        assert self.num_entities > max(self.train_set[0])
-        assert self.num_entities > max(self.train_set[2])
-        assert self.num_entities > max(self.train_set[2])
-
-        assert isinstance(self.train_set[0], np.ndarray)
-        assert isinstance(self.train_set[0][0], np.int64)
-        assert isinstance(self.train_set[0][1], np.int64)
-        assert isinstance(self.train_set[0][2], np.int64)
-
-    if len(self.valid_set) > 0:
-        self.valid_set.to_parquet(p + '/valid_df.gzip', compression='gzip')
-        self.valid_set['subject'] = self.valid_set['subject'].map(lambda x: self.entity_to_idx[x])
-        self.valid_set['relation'] = self.valid_set['relation'].map(lambda x: self.relation_to_idx[x])
-        self.valid_set['object'] = self.valid_set['object'].map(lambda x: self.entity_to_idx[x])
-        self.valid_set.to_parquet(p + '/idx_valid_df.gzip', compression='gzip')
-        self.valid_set = self.valid_set.values
-        # Sanity checking
-        assert self.num_entities > max(self.valid_set[0])
-        assert self.num_entities > max(self.valid_set[0])
-        assert self.num_entities > max(self.valid_set[2])
-        assert self.num_entities > max(self.valid_set[2])
-
-        assert isinstance(self.valid_set[0], np.ndarray)
-        assert isinstance(self.valid_set[0][0], np.int64)
-        assert isinstance(self.valid_set[0][1], np.int64)
-        assert isinstance(self.valid_set[0][2], np.int64)
-
-    if len(self.test_set) > 0:
-        self.test_set.to_parquet(p + '/test_df.gzip', compression='gzip')
-        self.test_set['subject'] = self.test_set['subject'].map(lambda x: self.entity_to_idx[x])
-        self.test_set['relation'] = self.test_set['relation'].map(lambda x: self.relation_to_idx[x])
-        self.test_set['object'] = self.test_set['object'].map(lambda x: self.entity_to_idx[x])
-        self.test_set.to_parquet(p + '/idx_test_df.gzip', compression='gzip')
-        self.test_set = self.test_set.values
-        # Sanity checking
-        assert self.num_entities > max(self.test_set[0])
-        assert self.num_entities > max(self.test_set[0])
-        assert self.num_entities > max(self.test_set[2])
-        assert self.num_entities > max(self.test_set[2])
-
-        assert isinstance(self.test_set[0], np.ndarray)
-        assert isinstance(self.test_set[0][0], np.int64)
-        assert isinstance(self.test_set[0][1], np.int64)
-        assert isinstance(self.test_set[0][2], np.int64)
-"""

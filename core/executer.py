@@ -70,10 +70,10 @@ class Execute:
         return kg
 
     @staticmethod
-    def reload_input_data(p: str) -> KG:
+    def reload_input_data(storage_path: str) -> KG:
         # 1. Read & Parse input data
         print("1. Reload Parsed Input Data")
-        return KG(deserialize_flag=p)
+        return KG(deserialize_flag=storage_path)
 
     def start(self) -> dict:
         """
