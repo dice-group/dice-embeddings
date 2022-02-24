@@ -1,23 +1,28 @@
 # Knowledge Graph Embeddings at Scale
-This open-source project facilitates learning embeddings of large knowledge graphs. 
-To scale on large knowledge graphs, we rely on [DASK](https://dask.org/) and [PytorchLightning](https://www.pytorchlightning.ai/). 
-Through [DASK](https://dask.org/), we utilize multi-CPUs at processing the input data, while
-[PytorchLightning](https://www.pytorchlightning.ai/) allow us to use knowledge graph embedding model in hardware-agnostic manner.
+
+This open-source project is designed to ease real-world applications of knowledge graph embeddings. 
+Wit this aim, we apply rely on
+1. [DASK](https://dask.org/) to use multi-CPUs at preprocessing a large knowledge graph,
+2. [PytorchLightning](https://www.pytorchlightning.ai/) to learn knowledge graph embeddings via multi-CPUs, GPUs, TPUs or  computing cluster, and
+3. [Gradio](https://gradio.app/) to ease the deployment of pre-trained models.
+
 
 ### Installation
-First clone the repository:
+Clone the repository:
 ```
 git clone https://github.com/dice-group/DAIKIRI-Embedding.git
 ```
-Then obtain the required libraries:
+Install dependencies via conda:
 ```
 conda env create -f environment.yml
 conda activate daikiri
-wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
-unzip KGs.zip
-python -m pytest -x tests
 ```
-### Manuel Installation
+or via pip:
+```
+# ensure that python 3.9 is available
+pip install -r requirements.txt
+```
+or manually
 ```
 conda create -n daikiri python=3.9
 conda activate daikiri
@@ -28,6 +33,9 @@ pip install scikit-learn==1.0.2
 pip install pytest==6.2.5
 pip install gradio==2.7.5.2
 pip install pyarrow==6.0.1
+```
+To test the Installation
+```
 wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
 unzip KGs.zip
 python -m pytest -x tests
@@ -62,19 +70,10 @@ Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmai.com ``` , if
 - For more please look at [Hobbit Data](https://hobbitdata.informatik.uni-leipzig.de/KGE/)
 
 ### Available Models
-1. Multiplicative based KGE models:
-   1. [DistMult](https://arxiv.org/pdf/1412.6575.pdf)
-   2. [ComplEx](https://arxiv.org/pdf/1606.06357.pdf)
-   3. [QMult](https://proceedings.mlr.press/v157/demir21a.html)
-   4. [OMult](https://proceedings.mlr.press/v157/demir21a.html) 
-2. Feed Forward Neural Models 
-   1. [Shallom](https://arxiv.org/pdf/2101.09090.pdf)
-3. Convolutional Neural models
-   1. [ConEx](https://openreview.net/forum?id=6T45-4TFqaX&invitationId=eswc-conferences.org/ESWC/2021/Conference/Research_Track/Paper49/-/Camera_Ready_Revision&referrer=%5BTasks%5D(%2Ftasks))
-   2. [ConvQ](https://proceedings.mlr.press/v157/demir21a.html) 
-   3. [ConvO](https://proceedings.mlr.press/v157/demir21a.html)
+1. Multiplicative based KGE models: [DistMult](https://arxiv.org/pdf/1412.6575.pdf), [ComplEx](https://arxiv.org/pdf/1606.06357.pdf), [QMult](https://proceedings.mlr.press/v157/demir21a.html), and [OMult](https://proceedings.mlr.press/v157/demir21a.html) 
+2. Feed Forward Neural Models: [Shallom](https://arxiv.org/pdf/2101.09090.pdf)
+3. Convolutional Neural models [ConEx](https://openreview.net/forum?id=6T45-4TFqaX&invitationId=eswc-conferences.org/ESWC/2021/Conference/Research_Track/Paper49/-/Camera_Ready_Revision&referrer=%5BTasks%5D(%2Ftasks)), [ConvQ](https://proceedings.mlr.press/v157/demir21a.html), [ConvO](https://proceedings.mlr.press/v157/demir21a.html)
 4. Contact us to add your favorite one :)
-
 
 ### Training
 1. A dataset must be located in a folder, e.g. 'KGs/YAGO3-10'.

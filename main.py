@@ -20,7 +20,7 @@ def argparse_default(description=None):
     # Models.
     parser.add_argument("--model", type=str,
                         default='DistMult',
-                        help="Available models: KronE, ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult,KPDistMult")
+                        help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult, KronE, KPDistMult")
     # Training Parameters
     parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. '
                                                                    'This disables max_epochs and '
@@ -30,7 +30,7 @@ def argparse_default(description=None):
     parser.add_argument("--label_smoothing_rate", type=float, default=None, help='None for not using it.')
     parser.add_argument("--label_relaxation_rate", type=float, default=None, help='None for not using it.')
     parser.add_argument("--add_noise_rate", type=float, default=None, help='None for not using it. '
-                                                                           '.1 means extand train data by adding 10% random data')
+                                                                           '.1 means extend train data by adding 10% random data')
 
     # Model Parameters
     # Hyperparameters
@@ -62,7 +62,7 @@ def argparse_default(description=None):
     parser.add_argument('--neg_ratio', type=int, default=0)
     # Data Augmentation.
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
-                                                                         'If >2 ,no evaluation scenario is applied implies no evaluation.')
+                                                                        'If >2 ,no evaluation scenario is applied implies no evaluation.')
     # This is a workaround for read
     if description is None:
         return parser.parse_args()
