@@ -4,6 +4,7 @@ from .models import *
 from .helper_classes import LabelRelaxationLoss, LabelSmoothingLossCanonical
 from .dataset_classes import StandardDataModule, KvsAll, CVDataModule
 from .knowledge_graph import KG
+from .callbacks import PrintCallback
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -18,7 +19,6 @@ import inspect
 import dask.dataframe as dd
 import time
 from pytorch_lightning.plugins import DDPPlugin
-from pytorch_lightning.callbacks import Callback
 from pytorch_lightning import Trainer, seed_everything
 import logging
 from collections import defaultdict
@@ -27,6 +27,7 @@ logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 seed_everything(1, workers=True)
+
 
 # TODO: Execute can inherit from Trainer and Evaluator Classes
 # By doing so we can increase the modularity of our code.
@@ -69,10 +70,10 @@ class Execute:
         return kg
 
     @staticmethod
-    def reload_input_data(p: str) -> KG:
+    def reload_input_data(storage_path: str) -> KG:
         # 1. Read & Parse input data
         print("1. Reload Parsed Input Data")
-        return KG(deserialize_flag=p)
+        return KG(deserialize_flag=storage_path)
 
     def start(self) -> dict:
         """
@@ -118,11 +119,13 @@ class Execute:
         2c. Train a model
         """
         print('------------------- Train & Eval -------------------')
-        # 1. Create Pytorch-lightning Trainer object from input configuration
+
+
         if self.args.gpus:
             self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=[DDPPlugin(find_unused_parameters=False)])
         else:
-            self.trainer = pl.Trainer.from_argparse_args(self.args)
+            self.trainer = pl.Trainer.from_argparse_args(self.args,callbacks=[PrintCallback()])
+
         # 2. Check whether validation and test datasets are available.
         if self.dataset.is_valid_test_available():
             if self.args.scoring_technique == 'NegSample':
@@ -249,11 +252,7 @@ class Execute:
 
     @staticmethod
     def model_fitting(trainer, model, train_dataloaders) -> None:
-        print(model)
-        print(model.summarize())
-        print("Model fitting...")
         trainer.fit(model, train_dataloaders=train_dataloaders)
-        print("Done!")
 
     def training_kvsall(self):
         """
