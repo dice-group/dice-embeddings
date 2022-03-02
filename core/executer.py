@@ -1,10 +1,9 @@
-import warnings
 import os
 from .models import *
 from .helper_classes import LabelRelaxationLoss, LabelSmoothingLossCanonical
 from .dataset_classes import StandardDataModule, KvsAll, CVDataModule
 from .knowledge_graph import KG
-from .callbacks import PrintCallback
+from .callbacks import PrintCallback, KGESaveCallback
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -18,7 +17,7 @@ import json
 import time
 from pytorch_lightning.plugins import DDPPlugin
 from pytorch_lightning import Trainer, seed_everything
-import logging
+import logging, warnings
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
@@ -95,10 +94,12 @@ class Execute:
         """
         print('------------------- Train & Eval -------------------')
 
+        callbacks = [PrintCallback(), KGESaveCallback(every_x_epoch=self.args.num_epochs, path=self.args.full_storage_path)]
         if self.args.gpus:
-            self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=[DDPPlugin(find_unused_parameters=False)])
+            self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=[DDPPlugin(find_unused_parameters=False)],
+                                                         callbacks=callbacks)
         else:
-            self.trainer = pl.Trainer.from_argparse_args(self.args, callbacks=[PrintCallback()])
+            self.trainer = pl.Trainer.from_argparse_args(self.args, callbacks=callbacks)
 
         # 2. Check whether validation and test datasets are available.
         if self.dataset.is_valid_test_available():
@@ -132,16 +133,17 @@ class Execute:
         print('Train & Eval Done!\n')
         return trained_model
 
-    def store(self, trained_model) -> None:
+    def store(self, trained_model, model_name='model') -> None:
         """
         Store trained_model model and save embeddings into csv file.
+        :param model_name:
         :param trained_model:
         :return:
         """
         print('------------------- Store -------------------')
         # Save Torch model.
-        print('Saving torch model..')
-        torch.save(trained_model.state_dict(), self.args.full_storage_path + '/model.pt')
+        store_kge(trained_model, path=self.args.full_storage_path + f'/{model_name}.pt')
+
         print('Saving configuration..')
         with open(self.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
             temp = vars(self.args)
@@ -157,11 +159,11 @@ class Execute:
             entity_emb, relation_ebm = trained_model.get_embeddings()
 
             save_embeddings(entity_emb, indexes=self.dataset.entities_str,
-                                 path=self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
+                            path=self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
             del entity_emb
             if relation_ebm is not None:
                 save_embeddings(relation_ebm, indexes=self.dataset.relations_str,
-                                     path=self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
+                                path=self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
             del relation_ebm
         else:
             print('There is not enough memory to store embeddings separately.')
