@@ -9,7 +9,7 @@ def argparse_default(description=None):
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
 
     # Dataset and storage related
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Family',
                         help="The path of a folder containing input data")
     parser.add_argument("--large_kg_parse", type=int, default=0, help='A flag for using all cores at parsing.')
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage',
@@ -19,10 +19,10 @@ def argparse_default(description=None):
 
     # Models.
     parser.add_argument("--model", type=str,
-                        default='DistMult',
+                        default='QMult',
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult, KronE, KPDistMult")
     # Training Parameters
-    parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. '
+    parser.add_argument("--num_epochs", type=int, default=500, help='Number of epochs for training. '
                                                                    'This disables max_epochs and '
                                                                    'min_epochs of pl.Trainer')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
@@ -34,7 +34,7 @@ def argparse_default(description=None):
 
     # Model Parameters
     # Hyperparameters
-    parser.add_argument('--embedding_dim', type=int, default=300,
+    parser.add_argument('--embedding_dim', type=int, default=200,
                         help='Number of dimensions for an embedding vector. This parameter is used for those models requiring same number of embedding vector for entities and relations.')
     parser.add_argument('--entity_embedding_dim', type=int, default=8,
                         help='Number of dimensions for an entity embedding vector. '
@@ -55,7 +55,7 @@ def argparse_default(description=None):
     # Flags for computation
     parser.add_argument("--eval", type=int, default=1,
                         help='A flag for using evaluation')
-    parser.add_argument("--eval_on_train", type=int, default=0,
+    parser.add_argument("--eval_on_train", type=int, default=1,
                         help='A flag for using train data to evaluation ')
     # Hyperparameters for training.
     parser.add_argument('--scoring_technique', default='KvsAll', help="1vsAll, KvsAll, NegSample.")

@@ -423,13 +423,9 @@ class Execute:
         else:
             # Iterate over integer indexed triples in mini batch fashion
             for i in range(0, len(triple_idx), self.args.batch_size):
-                #data_batch = torch.tensor(triple_idx[i:i + self.args.batch_size])
-                data_batch, _ = self.get_batch_1_to_N(self.dataset.er_vocab, triple_idx, i, self.args.num_entities)
-                del _
-                data_batch=torch.tensor(data_batch)
+                data_batch = torch.tensor(triple_idx[i:i + self.args.batch_size])
                 e1_idx_r_idx, e2_idx = data_batch[:, [0, 1]], data_batch[:, 2]
                 predictions = model.forward_k_vs_all(e1_idx_r_idx)
-
                 # Filter entities except the target entity
                 for j in range(data_batch.shape[0]):
                     filt = self.dataset.er_vocab[(data_batch[j][0], data_batch[j][1])]
@@ -446,7 +442,6 @@ class Execute:
                     for hits_level in range(10):
                         if rank <= hits_level:
                             hits[hits_level].append(1.0)
-
         hit_1 = sum(hits[0]) / (float(len(triple_idx)))
         hit_3 = sum(hits[2]) / (float(len(triple_idx)))
         hit_10 = sum(hits[9]) / (float(len(triple_idx)))
