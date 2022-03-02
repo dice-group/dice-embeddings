@@ -32,9 +32,9 @@ class BaseKGE(pl.LightningModule):
             h, r, t = x[0], x[1], x[2]
             return self.forward_triples(h, r, t)
         elif len(x) == 2:
-            h, y = x[0], x[1]
+            # h, y = x[0], x[1]
             # Note that y can be relation or tail entity.
-            return self.forward_k_vs_all(h, y)
+            return self.forward_k_vs_all(x=x)
         else:
             raise ValueError('Not valid input')
 

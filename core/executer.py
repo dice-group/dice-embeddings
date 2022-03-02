@@ -120,21 +120,18 @@ class Execute:
         """
         print('------------------- Train & Eval -------------------')
 
-
         if self.args.gpus:
             self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=[DDPPlugin(find_unused_parameters=False)])
         else:
-            self.trainer = pl.Trainer.from_argparse_args(self.args,callbacks=[PrintCallback()])
+            self.trainer = pl.Trainer.from_argparse_args(self.args, callbacks=[PrintCallback()])
 
         # 2. Check whether validation and test datasets are available.
         if self.dataset.is_valid_test_available():
             if self.args.scoring_technique == 'NegSample':
                 trained_model = self.training_negative_sampling()
             elif self.args.scoring_technique == 'KvsAll':
-                # KvsAll or negative sampling
                 trained_model = self.training_kvsall()
             elif self.args.scoring_technique == '1vsAll':
-                # KvsAll or negative sampling
                 trained_model = self.training_1vsall()
             else:
                 raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
@@ -239,6 +236,9 @@ class Execute:
         :param idx:
         :param output_dim:
         :return:
+
+        @ TODO: To decrease the runtime during testing, we may need to use pytorch lightning instead of
+        this single loop implementation
         """
         batch = triples[idx:idx + self.args.batch_size]
         targets = np.zeros((len(batch), output_dim))
@@ -254,10 +254,13 @@ class Execute:
     def model_fitting(trainer, model, train_dataloaders) -> None:
         trainer.fit(model, train_dataloaders=train_dataloaders)
 
-    def training_kvsall(self):
+    def training_kvsall(self) -> BaseKGE:
         """
-        Train models with KvsAll or NegativeSampling
-        :return:
+        Train models with KvsAll
+        D= {(x,y)_i }_i ^n where
+        1. x denotes a tuple of indexes of a head entity and a relation
+        2. y denotes a vector of probabilities, y_j corresponds to probability of j.th indexed entity
+        :return: trained BASEKGE
         """
         # 1. Select model and labelling : Entity Prediction or Relation Prediction.
         model, form_of_labelling = select_model(self.args)
@@ -401,7 +404,7 @@ class Execute:
                 e1_idx, r_idx, e2_idx = torch.tensor(data_batch[:, 0]), torch.tensor(data_batch[:, 1]), torch.tensor(
                     data_batch[:, 2])
                 # Generate predictions
-                predictions = model.forward_k_vs_all(e1_idx=e1_idx, e2_idx=r_idx)
+                predictions = model.forward_k_vs_all(x=(e1_idx, r_idx))
                 # Filter entities except the target entity
                 for j in range(data_batch.shape[0]):
                     filt = self.dataset.ee_vocab[(data_batch[j][0], data_batch[j][2])]
@@ -429,7 +432,7 @@ class Execute:
                 e1_idx, r_idx, e2_idx = torch.tensor(data_batch[:, 0]), torch.tensor(data_batch[:, 1]), torch.tensor(
                     data_batch[:, 2])
                 # Generate predictions
-                predictions = model.forward_k_vs_all(e1_idx=e1_idx, rel_idx=r_idx)
+                predictions = model.forward_k_vs_all(x=(e1_idx, r_idx))
                 # Filter entities except the target entity
                 for j in range(data_batch.shape[0]):
                     filt = self.dataset.er_vocab[(data_batch[j][0], data_batch[j][1])]

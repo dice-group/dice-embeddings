@@ -5,7 +5,6 @@ import numpy as np
 from math import sqrt
 
 
-
 class DistMult(BaseKGE):
     """
     Embedding Entities and Relations for Learning and Inference in Knowledge Bases
@@ -34,7 +33,10 @@ class DistMult(BaseKGE):
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
         return self.emb_ent_real.weight.data.data.detach().numpy(), self.emb_rel_real.weight.data.detach().numpy()
 
-    def forward_k_vs_all(self, e1_idx: torch.Tensor, rel_idx: torch.Tensor):
+    def forward_k_vs_all(self, x):
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e1_idx, rel_idx = x
         # (1)
         # (1.1) Real embeddings of head entities
         emb_head_real = self.input_dp_ent_real(self.bn_ent_real(self.emb_ent_real(e1_idx)))
@@ -63,10 +65,6 @@ class DistMult(BaseKGE):
         return (self.hidden_dropout(self.bn_hidden_real(emb_head_real * emb_rel_real)) * emb_tail_real).sum(dim=1)
 
 
-
-
-
-
 class Shallom(BaseKGE):
     """ A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090) """
 
@@ -87,11 +85,17 @@ class Shallom(BaseKGE):
     def get_embeddings(self) -> Tuple[np.ndarray, None]:
         return self.entity_embeddings.weight.data.detach().numpy(), None
 
-    def forward_k_vs_all(self, e1_idx, e2_idx):
+    def forward_k_vs_all(self, x):
+        e1_idx: torch.Tensor
+        e2_idx: torch.Tensor
+        e1_idx, e2_idx = x
         emb_s, emb_o = self.entity_embeddings(e1_idx), self.entity_embeddings(e2_idx)
         return self.shallom(torch.cat((emb_s, emb_o), 1))
 
+
 """ On going works"""
+
+
 class KPDistMult(BaseKGE):
     """
     Named as KD-Rel-DistMult  in our paper
@@ -120,7 +124,10 @@ class KPDistMult(BaseKGE):
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
         return self.emb_ent_real.weight.data.data.detach().numpy(), self.emb_rel_real.weight.data.detach().numpy()
 
-    def forward_k_vs_all(self, e1_idx: torch.Tensor, rel_idx: torch.Tensor):
+    def forward_k_vs_all(self, x):
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e1_idx, rel_idx = x
         # (1) Retrieve  head entity embeddings and apply BN + DP
         emb_head_real = self.input_dp_ent_real(self.bn_ent_real(self.emb_ent_real(e1_idx)))
         emb_rel_real = self.emb_rel_real(rel_idx)
@@ -131,6 +138,7 @@ class KPDistMult(BaseKGE):
         # (4) Compute scores
         return torch.mm(self.hidden_dropout(self.bn_hidden_real(emb_head_real * emb_rel_real)),
                         self.emb_ent_real.weight.transpose(1, 0))
+
 
 class KronE(BaseKGE):
     """ Kronecker Decomposition applied on Entitiy and Relation Embedding matrices KP-DistMult """
@@ -177,7 +185,10 @@ class KronE(BaseKGE):
         emb_rel = self.bn_rel_real(self.emb_rel_real(rel_idx)).unsqueeze(1)
         return batch_kronecker_product(emb_rel, emb_rel).flatten(1)
 
-    def forward_k_vs_all(self, e1_idx: torch.Tensor, rel_idx: torch.Tensor):
+    def forward_k_vs_all(self, x):
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e1_idx, rel_idx = x
         # (1) Prepare compressed embeddings, from d to d^2.
         # (1.1) Retrieve compressed embeddings
         # (1.2) Apply BN (1.1)
@@ -199,6 +210,7 @@ class KronE(BaseKGE):
         # (6) Compute sum of logics Logits
         logits = torch.matmul(feature, self.emb_ent_real.weight.transpose(1, 0)).sum(dim=1)
         return logits
+
 
 class KronELinear(BaseKGE):
     def __init__(self, args):
@@ -251,7 +263,10 @@ class KronELinear(BaseKGE):
         emb_rel = self.bn_rel_real(self.emb_rel_real(rel_idx)).unsqueeze(1)
         return batch_kronecker_product(emb_rel, emb_rel).flatten(1)
 
-    def forward_k_vs_all(self, e1_idx: torch.Tensor, rel_idx: torch.Tensor):
+    def forward_k_vs_all(self, x):
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e1_idx, rel_idx = x
         # (1) Prepare compressed embeddings, from d to d^2.
         # (1.1) Retrieve compressed embeddings
         # (1.2) Apply BN (1.1)
@@ -271,7 +286,6 @@ class KronELinear(BaseKGE):
         # (6) Compute sum of logics Logits
         logits = torch.matmul(feature, self.emb_ent_real.weight.transpose(1, 0))
         return logits
-
 
 
 def batch_kronecker_product(a, b):
@@ -327,4 +341,3 @@ def kronecker_linear_transformation(X, Z, x):
     Zx = torch.matmul(x, Z).transpose(1, 2)
     out = torch.matmul(Zx, X.T)
     return out.flatten(1)
-

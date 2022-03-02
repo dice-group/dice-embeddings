@@ -92,13 +92,17 @@ class QMult(BaseKGE):
                              self.emb_rel_j.weight.data, self.emb_rel_k.weight.data), 1)
         return entity_emb.data.detach().numpy(), rel_emb.data.detach().numpy()
 
-    def forward_k_vs_all(self, e1_idx, rel_idx):
+    def forward_k_vs_all(self, x):
         """
         Completed.
         Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,
         [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
         Given a batch of head entities and relations => shape (size of batch,| Entities|)
         """
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e1_idx, rel_idx = x
+
         # (1)
         # (1.1) Quaternion embeddings of head entities
         emb_head_real = self.emb_ent_real(e1_idx)
@@ -303,12 +307,15 @@ class ConvQ(BaseKGE):
         x = F.relu(self.bn_conv2(self.fc1(x)))
         return torch.chunk(x, 4, dim=1)
 
-    def forward_k_vs_all(self, e1_idx, rel_idx):
+    def forward_k_vs_all(self, x):
         """
         Given a head entity and a relation (h,r), we compute scores for all entities.
         [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
         Given a batch of head entities and relations => shape (size of batch,| Entities|)
         """
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e1_idx, rel_idx = x
         # (1)
         # (1.1) Quaternion embeddings of head entities
         emb_head_real = self.emb_ent_real(e1_idx)

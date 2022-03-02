@@ -150,12 +150,15 @@ class OMult(BaseKGE):
 
         return entity_emb.data.detach().numpy(), rel_emb.data.detach().numpy()
 
-    def forward_k_vs_all(self, e1_idx, rel_idx):
+    def forward_k_vs_all(self, x):
         """
         Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,
             [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
             Given a batch of head entities and relations => shape (size of batch,| Entities|)
         """
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e1_idx, rel_idx = x
         # (1)
         # (1.1) Octonion embeddings of head entities
         emb_head_e0 = self.emb_ent_e0(e1_idx)
@@ -458,7 +461,10 @@ class ConvO(BaseKGE):
         x = F.relu(x)
         return torch.chunk(x, 8, dim=1)
 
-    def forward_k_vs_all(self, e1_idx, rel_idx):
+    def forward_k_vs_all(self, x):
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e1_idx, rel_idx = x
         # (1)
         # (1.1) Octonion embeddings of head entities
         emb_head_e0 = self.emb_ent_e0(e1_idx)
