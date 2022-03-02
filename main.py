@@ -20,11 +20,15 @@ def argparse_default(description=None):
     # Models.
     parser.add_argument("--model", type=str,
                         default='QMult',
-                        help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult, KronE, KPDistMult")
+                        help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, "
+                             "Shallom, ConEx, ComplEx, DistMult, KronE, KPDistMult")
     # Training Parameters
     parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. '
-                                                                   'This disables max_epochs and '
-                                                                   'min_epochs of pl.Trainer')
+                                                                    'This disables max_epochs and '
+                                                                    'min_epochs of pl.Trainer')
+    parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
+                        help='At every X number of epochs model will be saved.')
+
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.01, help='Learning rate')
     parser.add_argument("--label_smoothing_rate", type=float, default=None, help='None for not using it.')
@@ -57,6 +61,9 @@ def argparse_default(description=None):
                         help='A flag for using evaluation')
     parser.add_argument("--eval_on_train", type=int, default=1,
                         help='A flag for using train data to evaluation ')
+
+
+
     # Hyperparameters for training.
     parser.add_argument('--scoring_technique', default='KvsAll', help="1vsAll, KvsAll, NegSample.")
     parser.add_argument('--neg_ratio', type=int, default=0)

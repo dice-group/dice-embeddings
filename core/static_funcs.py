@@ -109,19 +109,19 @@ def preprocesses_input_args(arg):
 
     arg.learning_rate = arg.lr
     arg.deterministic = True
-
     # Below part will be investigated
     arg.check_val_every_n_epoch = 10 ** 6
     # del arg.check_val_every_n_epochs
     arg.checkpoint_callback = False
     arg.logger = False
-
     arg.eval = True if arg.eval == 1 else False
 
     arg.add_reciprical = True if arg.scoring_technique in ['KvsAll', '1vsAll'] else False
     if arg.sample_triples_ratio is not None:
         assert 1.0 >= arg.sample_triples_ratio >= 0.0
     sanity_checking_with_arguments(arg)
+    if arg.save_model_at_every_epoch is None:
+        arg.save_model_at_every_epoch = arg.max_epochs
     return arg
 
 
