@@ -101,8 +101,7 @@ class QMult(BaseKGE):
         """
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
-        e1_idx, rel_idx = x
-
+        e1_idx, rel_idx = x[:, 0], x[:, 1]
         # (1)
         # (1.1) Quaternion embeddings of head entities
         emb_head_real = self.emb_ent_real(e1_idx)
@@ -307,7 +306,7 @@ class ConvQ(BaseKGE):
         x = F.relu(self.bn_conv2(self.fc1(x)))
         return torch.chunk(x, 4, dim=1)
 
-    def forward_k_vs_all(self, x):
+    def forward_k_vs_all(self, x: torch.Tensor):
         """
         Given a head entity and a relation (h,r), we compute scores for all entities.
         [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
@@ -315,7 +314,7 @@ class ConvQ(BaseKGE):
         """
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
-        e1_idx, rel_idx = x
+        e1_idx, rel_idx = x[:, 0], x[:, 1]
         # (1)
         # (1.1) Quaternion embeddings of head entities
         emb_head_real = self.emb_ent_real(e1_idx)

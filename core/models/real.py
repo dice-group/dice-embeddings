@@ -36,7 +36,7 @@ class DistMult(BaseKGE):
     def forward_k_vs_all(self, x):
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
-        e1_idx, rel_idx = x
+        e1_idx, rel_idx = x[:, 0], x[:, 1]
         # (1)
         # (1.1) Real embeddings of head entities
         emb_head_real = self.input_dp_ent_real(self.bn_ent_real(self.emb_ent_real(e1_idx)))
@@ -88,7 +88,7 @@ class Shallom(BaseKGE):
     def forward_k_vs_all(self, x):
         e1_idx: torch.Tensor
         e2_idx: torch.Tensor
-        e1_idx, e2_idx = x
+        e1_idx, e2_idx = x[:, 0], x[:, 1]
         emb_s, emb_o = self.entity_embeddings(e1_idx), self.entity_embeddings(e2_idx)
         return self.shallom(torch.cat((emb_s, emb_o), 1))
 
@@ -127,7 +127,8 @@ class KPDistMult(BaseKGE):
     def forward_k_vs_all(self, x):
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
-        e1_idx, rel_idx = x
+        e1_idx, rel_idx = x[:, 0], x[:, 1]
+
         # (1) Retrieve  head entity embeddings and apply BN + DP
         emb_head_real = self.input_dp_ent_real(self.bn_ent_real(self.emb_ent_real(e1_idx)))
         emb_rel_real = self.emb_rel_real(rel_idx)
@@ -188,7 +189,7 @@ class KronE(BaseKGE):
     def forward_k_vs_all(self, x):
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
-        e1_idx, rel_idx = x
+        e1_idx, rel_idx = x[:, 0], x[:, 1]
         # (1) Prepare compressed embeddings, from d to d^2.
         # (1.1) Retrieve compressed embeddings
         # (1.2) Apply BN (1.1)
@@ -266,7 +267,7 @@ class KronELinear(BaseKGE):
     def forward_k_vs_all(self, x):
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
-        e1_idx, rel_idx = x
+        e1_idx, rel_idx = x[:, 0], x[:, 1]
         # (1) Prepare compressed embeddings, from d to d^2.
         # (1.1) Retrieve compressed embeddings
         # (1.2) Apply BN (1.1)

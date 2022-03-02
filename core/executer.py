@@ -135,6 +135,7 @@ class Execute:
                 trained_model = self.training_1vsall()
             else:
                 raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
+
         else:
             # 3. If (2) is FALSE, then check whether cross validation will be applied.
             print(f'There is no validation and test sets available.')
@@ -246,7 +247,6 @@ class Execute:
             if isinstance(pair,
                           np.ndarray):  # A workaround as test triples in kvold is a numpy array and a numpy array is not hashanle.
                 pair = tuple(pair)
-
             targets[idx, input_vocab[pair]] = 1
         return np.array(batch), torch.FloatTensor(targets)
 
@@ -265,7 +265,7 @@ class Execute:
         # 1. Select model and labelling : Entity Prediction or Relation Prediction.
         model, form_of_labelling = select_model(self.args)
         print(f'KvsAll training starts: {model.name}')  # -labeling:{form_of_labelling}')
-        # 2. Create training data.
+        # 2. Create training data.)
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,
                                      test_set_idx=self.dataset.test_set,
@@ -283,6 +283,7 @@ class Execute:
             res = self.evaluate_lp_k_vs_all(model, self.dataset.train_set,
                                             f'Evaluate {model.name} on Train set', form_of_labelling)
             self.report['Train'] = res
+
         # 5. Test model on the validation and test dataset if it is needed.
         if self.args.eval:
             if len(self.dataset.valid_set) > 0:
@@ -398,13 +399,10 @@ class Execute:
         if form_of_labelling == 'RelationPrediction':
             # Iterate over integer indexed triples in mini batch fashion
             for i in range(0, len(triple_idx), self.args.batch_size):
-                # Obtain i.th batch
-                data_batch, _ = self.get_batch_1_to_N(self.dataset.ee_vocab, triple_idx, i, self.args.num_relations)
-                # From numpy array to torch tensor
-                e1_idx, r_idx, e2_idx = torch.tensor(data_batch[:, 0]), torch.tensor(data_batch[:, 1]), torch.tensor(
-                    data_batch[:, 2])
+                data_batch = torch.tensor(triple_idx[i:i + self.args.batch_size])
+                e1_idx_e2_idx, r_idx = data_batch[:, [0, 2]], data_batch[:, 1]
                 # Generate predictions
-                predictions = model.forward_k_vs_all(x=(e1_idx, r_idx))
+                predictions = model.forward_k_vs_all(x=e1_idx_e2_idx)
                 # Filter entities except the target entity
                 for j in range(data_batch.shape[0]):
                     filt = self.dataset.ee_vocab[(data_batch[j][0], data_batch[j][2])]
@@ -425,14 +423,13 @@ class Execute:
         else:
             # Iterate over integer indexed triples in mini batch fashion
             for i in range(0, len(triple_idx), self.args.batch_size):
-                # Obtain i.th batch
+                #data_batch = torch.tensor(triple_idx[i:i + self.args.batch_size])
                 data_batch, _ = self.get_batch_1_to_N(self.dataset.er_vocab, triple_idx, i, self.args.num_entities)
                 del _
-                # From numpy array to torch tensor
-                e1_idx, r_idx, e2_idx = torch.tensor(data_batch[:, 0]), torch.tensor(data_batch[:, 1]), torch.tensor(
-                    data_batch[:, 2])
-                # Generate predictions
-                predictions = model.forward_k_vs_all(x=(e1_idx, r_idx))
+                data_batch=torch.tensor(data_batch)
+                e1_idx_r_idx, e2_idx = data_batch[:, [0, 1]], data_batch[:, 2]
+                predictions = model.forward_k_vs_all(e1_idx_r_idx)
+
                 # Filter entities except the target entity
                 for j in range(data_batch.shape[0]):
                     filt = self.dataset.er_vocab[(data_batch[j][0], data_batch[j][1])]

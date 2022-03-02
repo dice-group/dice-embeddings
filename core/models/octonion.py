@@ -1,3 +1,5 @@
+import torch
+
 from .base_model import *
 
 
@@ -158,7 +160,8 @@ class OMult(BaseKGE):
         """
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
-        e1_idx, rel_idx = x
+        e1_idx, rel_idx = x[:, 0], x[:, 1]
+
         # (1)
         # (1.1) Octonion embeddings of head entities
         emb_head_e0 = self.emb_ent_e0(e1_idx)
@@ -461,10 +464,11 @@ class ConvO(BaseKGE):
         x = F.relu(x)
         return torch.chunk(x, 8, dim=1)
 
-    def forward_k_vs_all(self, x):
+    def forward_k_vs_all(self, x:torch.Tensor):
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
-        e1_idx, rel_idx = x
+        e1_idx, rel_idx = x[:, 0], x[:, 1]
+
         # (1)
         # (1.1) Octonion embeddings of head entities
         emb_head_e0 = self.emb_ent_e0(e1_idx)

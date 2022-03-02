@@ -39,10 +39,10 @@ class StandardDataModule(pl.LightningDataModule):
         self.neg_sample_ratio = neg_sample_ratio
         self.label_smoothing_rate = label_smoothing_rate
         if self.form == 'RelationPrediction':
-            self.dataset_type_class = RelationPredictionDataset
+            #self.dataset_type_class = RelationPredictionDataset
             self.target_dim = len(self.relation_to_idx)
         elif self.form == 'EntityPrediction':
-            self.dataset_type_class = EntityPredictionDataset
+            #self.dataset_type_class = EntityPredictionDataset
             self.target_dim = len(self.entity_to_idx)
         elif self.form == 'NegativeSampling':  # we can name it as TriplePrediction
             self.dataset_type_class = TriplePredictionDataset
@@ -53,6 +53,7 @@ class StandardDataModule(pl.LightningDataModule):
             self.dataset_type_class = OneVsAllEntityPredictionDataset
         else:
             raise ValueError(f'Invalid input : {self.form}')
+
 
     # Train, Valid, TestDATALOADERs
     def train_dataloader(self) -> DataLoader:
@@ -204,10 +205,10 @@ class KvsAll(Dataset):
 
         if self.label_smoothing_rate:
             y_vec = y_vec*(1 - self.label_smoothing_rate) + (1 / y_vec.size(0))
-        return (self.train_data[idx, 0], self.train_data[idx, 1]), y_vec
+        return self.train_data[idx], y_vec
 
 
-class RelationPredictionDataset(Dataset):
+class old_RelationPredictionDataset(Dataset):
     def __init__(self, idx_triples, target_dim):
         super().__init__()
         assert len(idx_triples) > 0
@@ -231,7 +232,7 @@ class RelationPredictionDataset(Dataset):
         return (self.head_entities[idx], self.tail_entities[idx]), y_vec
 
 
-class EntityPredictionDataset(Dataset):
+class old_EntityPredictionDataset(Dataset):
     def __init__(self, idx_triples, target_dim):
         super().__init__()
         assert len(idx_triples) > 0

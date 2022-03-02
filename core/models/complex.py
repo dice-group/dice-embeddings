@@ -80,16 +80,17 @@ class ConEx(BaseKGE, ABC):
         x = F.relu(self.bn_conv2(self.fc(x)))
         return torch.chunk(x, 2, dim=1)
 
-    def forward_k_vs_all(self, x) -> torch.Tensor:
+    def forward_k_vs_all(self, x:torch.Tensor) -> torch.Tensor:
         """
         Compute scores of all entities
+        :param x:
         :param e1_idx:
         :param rel_idx:
         :return:
         """
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
-        e1_idx, rel_idx = x
+        e1_idx, rel_idx = x[:, 0], x[:, 1]
         # (1)
         # (1.1) Complex embeddings of head entities and apply batch norm.
         emb_head_real = self.bn_ent_real(self.emb_ent_real(e1_idx))
@@ -198,7 +199,7 @@ class ComplEx(BaseKGE):
     def forward_k_vs_all(self, x):
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
-        e1_idx, rel_idx = x
+        e1_idx, rel_idx = x[:, 0], x[:, 1]
         # (1)
         # (1.1) Complex embeddings of head entities and apply batch norm.
         emb_head_real = self.input_dp_ent_real(self.bn_ent_real(self.emb_ent_real(e1_idx)))
@@ -287,7 +288,7 @@ class KDComplEx(BaseKGE):
     def forward_k_vs_all(self, x):
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
-        e1_idx, rel_idx = x
+        e1_idx, rel_idx = x[:, 0], x[:, 1]
         # (1)
         # (1.1) Complex embeddings of head entities and apply batch norm.
         emb_head_real = self.input_dp_ent_real(self.bn_ent_real(self.emb_ent_real(e1_idx)))
