@@ -22,7 +22,7 @@ def argparse_default(description=None):
                         default='QMult',
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, Shallom, ConEx, ComplEx, DistMult, KronE, KPDistMult")
     # Training Parameters
-    parser.add_argument("--num_epochs", type=int, default=500, help='Number of epochs for training. '
+    parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. '
                                                                    'This disables max_epochs and '
                                                                    'min_epochs of pl.Trainer')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')

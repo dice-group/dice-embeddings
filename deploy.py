@@ -34,13 +34,13 @@ def launch_service(config, pretrained_model, entity_idx, predicate_idx):
         if random_examples:
             str_subject = random.sample(list(entity_idx.keys()), 1)[0]
             str_predicate = random.sample(list(predicate_idx.keys()), 1)[0]
-            idx_subject = torch.LongTensor([entity_idx[str_subject]])
-            idx_predicate = torch.LongTensor([predicate_idx[str_predicate]])
+
+            idx_subject_idx_predicate = torch.LongTensor([entity_idx[str_subject], predicate_idx[str_predicate]]).reshape(1,2)
             # Normalize logits via sigmoid
-            pred_scores = torch.sigmoid(pretrained_model.forward_k_vs_all(idx_subject, idx_predicate))
+            pred_scores = torch.sigmoid(pretrained_model.forward_k_vs_all(idx_subject_idx_predicate))
             sort_val, sort_idxs = torch.sort(pred_scores, dim=1, descending=True)
             top_10_entity, top_10_score = [idx_to_entity[i] for i in sort_idxs[0][:config.top_k].tolist()], sort_val[0][
-                                                                                                  :config.top_k].numpy()
+                                                                                                            :config.top_k].numpy()
             return f'( {str_subject},{str_predicate}, ? )', pd.DataFrame(
                 {'Entity': top_10_entity, 'Score': top_10_score})
 
@@ -57,10 +57,12 @@ def launch_service(config, pretrained_model, entity_idx, predicate_idx):
                 return 'Failed at mapping the predicate', pd.DataFrame()
 
             if len(str_object) == 0:
-                pred_scores = torch.sigmoid(pretrained_model.forward_k_vs_all(idx_subject, idx_predicate))
+
+                pred_scores = torch.sigmoid(pretrained_model.forward_k_vs_all(torch.cat([idx_subject,idx_predicate]).reshape(1,2)))
                 sort_val, sort_idxs = torch.sort(pred_scores, dim=1, descending=True)
-                top_10_entity, top_10_score = [idx_to_entity[i] for i in sort_idxs[0][:config.top_k].tolist()], sort_val[0][
-                                                                                                      :config.top_k].numpy()
+                top_10_entity, top_10_score = [idx_to_entity[i] for i in sort_idxs[0][:config.top_k].tolist()], \
+                                              sort_val[0][
+                                              :config.top_k].numpy()
                 return f'( {str_subject},{str_predicate}, ? ) ', pd.DataFrame(
                     {'Entity': top_10_entity, 'Score': np.around(top_10_score, 3)})
             else:
@@ -69,7 +71,7 @@ def launch_service(config, pretrained_model, entity_idx, predicate_idx):
                 except KeyError:
                     print(f'index of object **{str_object}** of length {len(str_object)} is not found.')
                     return 'Failed at mapping the object', pd.DataFrame()
-                pred_score = torch.sigmoid(pretrained_model.forward_k_vs_all(idx_subject, idx_predicate))[0, idx_object]
+                pred_score = torch.sigmoid(pretrained_model.forward_k_vs_all(torch.cat([idx_subject,idx_predicate]).reshape(1,2)))[0, idx_object]
                 return f'( {str_subject}, {str_predicate}, {str_object} )', pd.DataFrame(
                     {'Entity': str_object, 'Score': pred_score})
 
@@ -96,7 +98,7 @@ def run(args: dict):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--path_of_experiment_folder", type=str, default='DAIKIRI_Storage/2022-02-05 18:02:57.114012')
+    parser.add_argument("--path_of_experiment_folder", type=str, default='DAIKIRI_Storage/2022-03-02 15:22:46.797385')
     parser.add_argument('--share', default=False, type=eval, choices=[True, False])
     parser.add_argument('--top_k', default=25, type=int)
     run(vars(parser.parse_args()))

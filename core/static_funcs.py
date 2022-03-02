@@ -13,6 +13,69 @@ import time
 import pandas as pd
 import json
 
+def model_fitting(trainer, model, train_dataloaders) -> None:
+    trainer.fit(model, train_dataloaders=train_dataloaders)
+
+
+def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
+    """
+
+    :param embeddings:
+    :param indexes:
+    :param path:
+    :return:
+    """
+    try:
+        df = pd.DataFrame(embeddings, index=indexes)
+        del embeddings
+        num_mb = df.memory_usage(index=True, deep=True).sum() / (10 ** 6)
+        if num_mb > 10 ** 6:
+            df = dd.from_pandas(df, npartitions=len(df) / 100)
+            # PARQUET wants columns to be stn
+            df.columns = df.columns.astype(str)
+            df.to_parquet(path)
+        else:
+            df.to_csv(path)
+    except KeyError or AttributeError as e:
+        print('Exception occurred at saving entity embeddings. Computation will continue')
+        print(e)
+    del df
+
+def read_input_data(args,cls):
+    """ Read & Parse input data for training and testing"""
+    print('*** Read & Parse input data for training and testing***')
+    # 1. Read & Parse input data
+    kg = cls(data_dir=args.path_dataset_folder,
+            large_kg_parse=args.large_kg_parse,
+            add_reciprical=args.add_reciprical,
+            eval_model=args.eval,
+            read_only_few=args.read_only_few,
+            sample_triples_ratio=args.sample_triples_ratio,
+            path_for_serialization=args.full_storage_path,
+            add_noise_rate=args.add_noise_rate)
+    print(kg.description_of_input)
+    return kg
+
+def reload_input_data(storage_path: str,cls):
+    # 1. Read & Parse input data
+    print("1. Reload Parsed Input Data")
+    return cls(deserialize_flag=storage_path)
+
+def config_kge_sanity_checking(args,dataset):
+    """
+    Sanity checking for input hyperparams.
+    :return:
+    """
+    if args.batch_size > len(dataset.train_set):
+        args.batch_size = len(dataset.train_set)
+    if args.model == 'Shallom' and args.scoring_technique == 'NegSample':
+        print(
+            'Shallom can not be trained with Negative Sampling. Scoring technique is changed to KvsALL')
+        args.scoring_technique = 'KvsAll'
+
+    if args.scoring_technique == 'KvsAll':
+        args.neg_ratio = None
+    return args,dataset
 
 def performance_debugger(func_name):
     def func_decorator(func):

@@ -15,13 +15,10 @@ import numpy as np
 from pytorch_lightning import loggers as pl_loggers
 import pandas as pd
 import json
-import inspect
-import dask.dataframe as dd
 import time
 from pytorch_lightning.plugins import DDPPlugin
 from pytorch_lightning import Trainer, seed_everything
 import logging
-from collections import defaultdict
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
@@ -31,6 +28,7 @@ seed_everything(1, workers=True)
 
 # TODO: Execute can inherit from Trainer and Evaluator Classes
 # By doing so we can increase the modularity of our code.
+
 class Execute:
     def __init__(self, args, continuous_training=False):
         # (1) Process arguments and sanity checking
@@ -52,29 +50,6 @@ class Execute:
         # 5. Store few data in memory for numerical results, e.g. runtime, H@1 etc.
         self.report = dict()
 
-    # @TODO Move statos to static script
-    @staticmethod
-    def read_input_data(args) -> KG:
-        """ Read & Parse input data for training and testing"""
-        print('*** Read & Parse input data for training and testing***')
-        # 1. Read & Parse input data
-        kg = KG(data_dir=args.path_dataset_folder,
-                large_kg_parse=args.large_kg_parse,
-                add_reciprical=args.add_reciprical,
-                eval_model=args.eval,
-                read_only_few=args.read_only_few,
-                sample_triples_ratio=args.sample_triples_ratio,
-                path_for_serialization=args.full_storage_path,
-                add_noise_rate=args.add_noise_rate)
-        print(kg.description_of_input)
-        return kg
-
-    @staticmethod
-    def reload_input_data(storage_path: str) -> KG:
-        # 1. Read & Parse input data
-        print("1. Reload Parsed Input Data")
-        return KG(deserialize_flag=storage_path)
-
     def start(self) -> dict:
         """
         Main computation.
@@ -86,11 +61,11 @@ class Execute:
         start_time = time.time()
         # 1. Read input data and store its parts for further use
         if self.continuous_training is False:
-            self.dataset = self.read_input_data(self.args)
+            self.dataset = read_input_data(self.args, cls=KG)
             self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
-            self.config_kge_sanity_checking()
+            self.args, self.dataset = config_kge_sanity_checking(self.args, self.dataset)
         else:
-            self.dataset = self.reload_input_data(self.storage_path)
+            self.dataset = reload_input_data(self.storage_path, cls=KG)
         # 2. Train and Evaluate
         trained_model = self.train_and_eval()
         # 3. Store trained model
@@ -157,45 +132,6 @@ class Execute:
         print('Train & Eval Done!\n')
         return trained_model
 
-    def config_kge_sanity_checking(self):
-        """
-        Sanity checking for input hyperparams.
-        :return:
-        """
-        if self.args.batch_size > len(self.dataset.train_set):
-            self.args.batch_size = len(self.dataset.train_set)
-        if self.args.model == 'Shallom' and self.args.scoring_technique == 'NegSample':
-            print(
-                'Shallom can not be trained with Negative Sampling. Scoring technique is changed to KvsALL')
-            self.args.scoring_technique = 'KvsAll'
-
-        if self.args.scoring_technique == 'KvsAll':
-            self.args.neg_ratio = None
-
-    def save_embeddings(self, embeddings: np.ndarray, indexes, path: str) -> None:
-        """
-
-        :param embeddings:
-        :param indexes:
-        :param path:
-        :return:
-        """
-        try:
-            df = pd.DataFrame(embeddings, index=indexes)
-            del embeddings
-            num_mb = df.memory_usage(index=True, deep=True).sum() / (10 ** 6)
-            if num_mb > 10 ** 6:
-                df = dd.from_pandas(df, npartitions=len(df) / 100)
-                # PARQUET wants columns to be stn
-                df.columns = df.columns.astype(str)
-                df.to_parquet(self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings')
-            else:
-                df.to_csv(path)
-        except KeyError or AttributeError as e:
-            print('Exception occurred at saving entity embeddings. Computation will continue')
-            print(e)
-        del df
-
     def store(self, trained_model) -> None:
         """
         Store trained_model model and save embeddings into csv file.
@@ -220,39 +156,15 @@ class Execute:
             print('Saving embeddings..')
             entity_emb, relation_ebm = trained_model.get_embeddings()
 
-            self.save_embeddings(entity_emb, indexes=self.dataset.entities_str,
+            save_embeddings(entity_emb, indexes=self.dataset.entities_str,
                                  path=self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
             del entity_emb
             if relation_ebm is not None:
-                self.save_embeddings(relation_ebm, indexes=self.dataset.relations_str,
+                save_embeddings(relation_ebm, indexes=self.dataset.relations_str,
                                      path=self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
             del relation_ebm
         else:
             print('There is not enough memory to store embeddings separately.')
-
-    def get_batch_1_to_N(self, input_vocab, triples, idx, output_dim) -> Tuple[np.array, torch.FloatTensor]:
-        """ A mini-batch for training on multi-labels (x,y) -> [0.,0.,0.,----, 1.,1,]
-        :param input_vocab:
-        :param triples:
-        :param idx:
-        :param output_dim:
-        :return:
-
-        @ TODO: To decrease the runtime during testing, we may need to use pytorch lightning instead of
-        this single loop implementation
-        """
-        batch = triples[idx:idx + self.args.batch_size]
-        targets = np.zeros((len(batch), output_dim))
-        for idx, pair in enumerate(batch):
-            if isinstance(pair,
-                          np.ndarray):  # A workaround as test triples in kvold is a numpy array and a numpy array is not hashanle.
-                pair = tuple(pair)
-            targets[idx, input_vocab[pair]] = 1
-        return np.array(batch), torch.FloatTensor(targets)
-
-    @staticmethod
-    def model_fitting(trainer, model, train_dataloaders) -> None:
-        trainer.fit(model, train_dataloaders=train_dataloaders)
 
     def training_kvsall(self) -> BaseKGE:
         """
@@ -277,7 +189,7 @@ class Execute:
                                      num_workers=self.args.num_processes,
                                      label_smoothing_rate=self.args.label_smoothing_rate)
         # 3. Train model.
-        self.model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
+        model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
         # 4. Test model on the training dataset if it is needed.
         if self.args.eval_on_train:
             res = self.evaluate_lp_k_vs_all(model, self.dataset.train_set,
@@ -322,7 +234,7 @@ class Execute:
         else:
             model.loss = nn.CrossEntropyLoss()
         # 3. Train model
-        self.model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
+        model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
         # 4. Test model on the training dataset if it is needed.
         if self.args.eval_on_train:
             res = self.evaluate_lp_k_vs_all(model, self.dataset.train_set,
@@ -362,7 +274,7 @@ class Execute:
                                      num_workers=self.args.num_processes
                                      )
         # 3. Train model
-        self.model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
+        model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
         # 4. Test model on the training dataset if it is needed.
         if self.args.eval_on_train:
             res = self.evaluate_lp(model, self.dataset.train_set, f'Evaluate {model.name} on Train set')
@@ -399,8 +311,8 @@ class Execute:
         if form_of_labelling == 'RelationPrediction':
             # Iterate over integer indexed triples in mini batch fashion
             for i in range(0, len(triple_idx), self.args.batch_size):
-                data_batch = torch.tensor(triple_idx[i:i + self.args.batch_size])
-                e1_idx_e2_idx, r_idx = data_batch[:, [0, 2]], data_batch[:, 1]
+                data_batch = triple_idx[i:i + self.args.batch_size]
+                e1_idx_e2_idx, r_idx = torch.tensor(data_batch[:, [0, 2]]), torch.tensor(data_batch[:, 1])
                 # Generate predictions
                 predictions = model.forward_k_vs_all(x=e1_idx_e2_idx)
                 # Filter entities except the target entity
@@ -423,8 +335,8 @@ class Execute:
         else:
             # Iterate over integer indexed triples in mini batch fashion
             for i in range(0, len(triple_idx), self.args.batch_size):
-                data_batch = torch.tensor(triple_idx[i:i + self.args.batch_size])
-                e1_idx_r_idx, e2_idx = data_batch[:, [0, 1]], data_batch[:, 2]
+                data_batch = triple_idx[i:i + self.args.batch_size]
+                e1_idx_r_idx, e2_idx = torch.tensor(data_batch[:, [0, 1]]), torch.tensor(data_batch[:, 2])
                 predictions = model.forward_k_vs_all(e1_idx_r_idx)
                 # Filter entities except the target entity
                 for j in range(data_batch.shape[0]):
@@ -451,22 +363,6 @@ class Execute:
         if info:
             print(results)
         return results
-
-    def deserialize_index_data(self):
-        m = []
-        if os.path.isfile(self.storage_path + '/idx_train_df.gzip'):
-            m.append(pd.read_parquet(self.storage_path + '/idx_train_df.gzip'))
-        if os.path.isfile(self.storage_path + '/idx_valid_df.gzip'):
-            m.append(pd.read_parquet(self.storage_path + '/idx_valid_df.gzip'))
-        if os.path.isfile(self.storage_path + '/idx_test_df.gzip'):
-            m.append(pd.read_parquet(self.storage_path + '/idx_test_df.gzip'))
-        try:
-            assert len(m) > 1
-        except AssertionError as e:
-            print(f'Could not find indexed find under idx_*_df files {self.storage_path}')
-            raise e
-
-        return pd.concat(m, ignore_index=True)
 
     def evaluate_lp(self, model, triple_idx, info):
         """
@@ -604,7 +500,7 @@ class Execute:
                                          num_workers=self.args.num_processes
                                          )
             # 3. Train model
-            self.model_fitting(trainer=trainer, model=model, train_dataloaders=dataset.train_dataloader())
+            model_fitting(trainer=trainer, model=model, train_dataloaders=dataset.train_dataloader())
 
             # 6. Test model on validation and test sets if possible.
             res = self.evaluate_lp_k_vs_all(model, test_set_for_i_th_fold, form_of_labelling=form_of_labelling)
@@ -618,3 +514,20 @@ class Execute:
 
         # Return last model.
         return model
+
+    """
+    def deserialize_index_data(self):
+        m = []
+        if os.path.isfile(self.storage_path + '/idx_train_df.gzip'):
+            m.append(pd.read_parquet(self.storage_path + '/idx_train_df.gzip'))
+        if os.path.isfile(self.storage_path + '/idx_valid_df.gzip'):
+            m.append(pd.read_parquet(self.storage_path + '/idx_valid_df.gzip'))
+        if os.path.isfile(self.storage_path + '/idx_test_df.gzip'):
+            m.append(pd.read_parquet(self.storage_path + '/idx_test_df.gzip'))
+        try:
+            assert len(m) > 1
+        except AssertionError as e:
+            print(f'Could not find indexed find under idx_*_df files {self.storage_path}')
+            raise e
+        return pd.concat(m, ignore_index=True)
+    """
