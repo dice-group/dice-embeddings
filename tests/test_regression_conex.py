@@ -48,4 +48,4 @@ class TestRegressionConEx:
         args.scoring_technique = 'NegSample'
         args.neg_ratio = 1
         result = Execute(args).start()
-        assert 0.449 >= result['Test']['H@1'] >= .43
+        assert 0.46 >= result['Test']['H@1'] >= .43
