@@ -33,7 +33,7 @@ class DistMult(BaseKGE):
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
         return self.emb_ent_real.weight.data.data.detach().numpy(), self.emb_rel_real.weight.data.detach().numpy()
 
-    def forward_k_vs_all(self, x):
+    def forward_k_vs_all(self, x:torch.Tensor):
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
         e1_idx, rel_idx = x[:, 0], x[:, 1]
@@ -45,14 +45,11 @@ class DistMult(BaseKGE):
         return torch.mm(self.hidden_dropout(self.bn_hidden_real(emb_head_real * emb_rel_real)),
                         self.emb_ent_real.weight.transpose(1, 0))
 
-    def forward_triples(self, e1_idx: torch.Tensor, rel_idx: torch.Tensor, e2_idx: torch.Tensor) -> torch.Tensor:
-        """
-        Compute score of given triple
-        :param e1_idx:
-        :param rel_idx:
-        :param e2_idx:
-        :return:
-        """
+    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e2_idx: torch.Tensor
+        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1],x[:, 2]
         # (1)
         # (1.1) Complex embeddings of head entities and apply batch norm.
         emb_head_real = self.input_dp_ent_real(self.bn_ent_real(self.emb_ent_real(e1_idx)))

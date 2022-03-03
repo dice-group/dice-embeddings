@@ -27,12 +27,11 @@ class BaseKGE(pl.LightningModule):
     def forward_k_vs_all(self, *args, **kwargs):
         raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_all function')
 
-    def forward(self, x:torch.Tensor):
+    def forward(self, x: torch.Tensor):
 
         batch_size, dim = x.shape
         if dim == 3:
-            h, r, t = x[0], x[1], x[2]
-            return self.forward_triples(h, r, t)
+            return self.forward_triples(x)
         elif dim == 2:
             # h, y = x[0], x[1]
             # Note that y can be relation or tail entity.

@@ -236,7 +236,11 @@ class OMult(BaseKGE):
 
         return e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
 
-    def forward_triples(self, e1_idx, rel_idx, e2_idx):
+    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e2_idx: torch.Tensor
+        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1],x[:, 2]
         # (1)
         # (1.1) Octonion embeddings of head entities
         emb_head_e0 = self.emb_ent_e0(e1_idx)
@@ -550,7 +554,11 @@ class ConvO(BaseKGE):
             e7_score = torch.mm(self.hidden_dp_e7(conv_e7 * e7), self.emb_ent_e7.weight.transpose(1, 0))
         return e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
 
-    def forward_triples(self, e1_idx, rel_idx, e2_idx):
+    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e2_idx: torch.Tensor
+        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1],x[:, 2]
         # (1)
         # (1.1) Octonion embeddings of head entities
         emb_head_e0 = self.emb_ent_e0(e1_idx)

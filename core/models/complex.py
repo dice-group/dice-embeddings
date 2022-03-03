@@ -119,14 +119,11 @@ class ConEx(BaseKGE, ABC):
         imag_imag_real = torch.mm(b * emb_head_i * emb_rel_i, self.emb_ent_real.weight.transpose(1, 0))
         return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
 
-    def forward_triples(self, e1_idx: torch.Tensor, rel_idx: torch.Tensor, e2_idx: torch.Tensor) -> torch.Tensor:
-        """
-        Compute score of given triple
-        :param e1_idx:
-        :param rel_idx:
-        :param e2_idx:
-        :return:
-        """
+    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e2_idx: torch.Tensor
+        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1],x[:, 2]
         # (1)
         # (1.1) Complex embeddings of head entities and apply batch norm.
         emb_head_real = self.emb_ent_real(e1_idx)
@@ -217,14 +214,11 @@ class ComplEx(BaseKGE):
 
         return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
 
-    def forward_triples(self, e1_idx: torch.Tensor, rel_idx: torch.Tensor, e2_idx: torch.Tensor) -> torch.Tensor:
-        """
-        Compute score of given triple
-        :param e1_idx:
-        :param rel_idx:
-        :param e2_idx:
-        :return:
-        """
+    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e2_idx: torch.Tensor
+        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1],x[:, 2]
         # (1)
         # (1.1) Complex embeddings of head entities and apply batch norm.
         emb_head_real = self.input_dp_ent_real(self.bn_ent_real(self.emb_ent_real(e1_idx)))

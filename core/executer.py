@@ -94,7 +94,8 @@ class Execute:
         """
         print('------------------- Train & Eval -------------------')
 
-        callbacks = [PrintCallback(), KGESaveCallback(every_x_epoch=self.args.num_epochs, path=self.args.full_storage_path)]
+        callbacks = [PrintCallback(),
+                     KGESaveCallback(every_x_epoch=self.args.num_epochs, path=self.args.full_storage_path)]
         if self.args.gpus:
             self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=[DDPPlugin(find_unused_parameters=False)],
                                                          callbacks=callbacks)
@@ -197,7 +198,15 @@ class Execute:
             res = self.evaluate_lp_k_vs_all(model, self.dataset.train_set,
                                             f'Evaluate {model.name} on Train set', form_of_labelling)
             self.report['Train'] = res
-
+            """
+            @TODO: Laplace can not be implemented at the moment
+            from laplace import Laplace
+            # User-specified LA flavor
+            la = Laplace(model, 'classification',
+                         subset_of_weights='all',
+                         hessian_structure='diag')
+            la.fit(dataset.train_dataloader())
+            """
         # 5. Test model on the validation and test dataset if it is needed.
         if self.args.eval:
             if len(self.dataset.valid_set) > 0:
@@ -392,13 +401,18 @@ class Execute:
             s, p, o = data_point[0], data_point[1], data_point[2]
 
             # 2. Predict missing heads and tails
-            predictions_tails = model.forward_triples(e1_idx=torch.tensor(s).repeat(self.dataset.num_entities, ),
-                                                      rel_idx=torch.tensor(p).repeat(self.dataset.num_entities, ),
-                                                      e2_idx=all_entities)
+            x = torch.stack((torch.tensor(s).repeat(self.dataset.num_entities, ),
+                             torch.tensor(p).repeat(self.dataset.num_entities, ),
+                             all_entities
+                             ), dim=1)
+            predictions_tails = model.forward_triples(x)
+            x = torch.stack((all_entities,
+                             torch.tensor(p).repeat(self.dataset.num_entities, ),
+                             torch.tensor(o).repeat(self.dataset.num_entities)
+                             ), dim=1)
 
-            predictions_heads = model.forward_triples(e1_idx=all_entities,
-                                                      rel_idx=torch.tensor(p).repeat(self.dataset.num_entities, ),
-                                                      e2_idx=torch.tensor(o).repeat(self.dataset.num_entities))
+            predictions_heads = model.forward_triples(x)
+            del x
 
             # 3. Computed filtered ranks for missing tail entities.
             # 3.1. Compute filtered tail entity rankings
