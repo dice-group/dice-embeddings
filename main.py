@@ -9,7 +9,7 @@ def argparse_default(description=None):
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
 
     # Dataset and storage related
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Family',
                         help="The path of a folder containing input data")
     parser.add_argument("--large_kg_parse", type=int, default=0, help='A flag for using all cores at parsing.')
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage',
@@ -19,11 +19,11 @@ def argparse_default(description=None):
 
     # Models.
     parser.add_argument("--model", type=str,
-                        default='DistMult',
+                        default='QMult',
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, "
                              "Shallom, ConEx, ComplEx, DistMult, KronE, KPDistMult")
     # Training Parameters
-    parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. '
+    parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. '
                                                                     'This disables max_epochs and '
                                                                     'min_epochs of pl.Trainer')
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
@@ -63,8 +63,8 @@ def argparse_default(description=None):
                         help='A flag for using train data to evaluation ')
 
     # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='NegSample', help="1vsAll, KvsAll, NegSample.")
-    parser.add_argument('--neg_ratio', type=int, default=1)
+    parser.add_argument('--scoring_technique', default='KvsAll', help="1vsAll, KvsAll, NegSample.")
+    parser.add_argument('--neg_ratio', type=int, default=0)
     # Data Augmentation.
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
                                                                         'If >2 ,no evaluation scenario is applied implies no evaluation.')
