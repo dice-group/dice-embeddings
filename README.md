@@ -6,7 +6,6 @@ Wit this aim, we apply rely on
 2. [PytorchLightning](https://www.pytorchlightning.ai/) to learn knowledge graph embeddings via multi-CPUs, GPUs, TPUs or  computing cluster, and
 3. [Gradio](https://gradio.app/) to ease the deployment of pre-trained models.
 
-
 ### Installation
 Clone the repository:
 ```
@@ -55,7 +54,7 @@ This share link expires in 72 hours. For free permanent hosting, check out Space
 ![alt text](core/figures/deploy_qmult_family.png)
 
 ## Pre-trained Models
-Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmai.com ``` , if you lack hardware resources to obtain embeddings of a specific knowledge Graph.
+Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , if you lack hardware resources to obtain embeddings of a specific knowledge Graph.
 - [OpenEA V1.1 DBpedia English-French 100K embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/OpenEA_V1.1_DBpedia_EN_FR_100K/)
 - [OpenEA V2.0 DBpedia English-French 100K embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/OpenEA_V2.0_DBpedia_EN_FR_100K/)
 - [YAGO3-10 ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/YAGO3-10.zip)
@@ -92,8 +91,7 @@ This execution results in generating **Mean and standard deviation of raw MRR in
 6. Most link prediction benchmark datasets contain the train, validation and test datasets (see 'KGs/FB15K-237', 'KGs/WN18RR' or 'KGs/YAGO3-10').
 To evaluate quality of embeddings, we rely on the standard metric, i.e. mean reciprocal rank (MRR). Executing ```python main.py --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --max_num_epochs 1 --scoring_technique 'KvsAll'```
 results in evaluating quality of SHALLOM embeddings on the test split.
-   
-   
+
 ### Example Commands
 
 1. To train our approaches for 10 epochs by using **32 CPU cores** (if available) on UMLS. 
@@ -120,10 +118,7 @@ python main.py --gpus 1 --path_dataset_folder 'KGs/Carcinogenesis' --model 'Shal
 ```
 python main.py --gpus 8 --distributed_backend ddp --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --num_epochs 5
 ```
-
 6. More examples can be found in run.sh.
-
-
 
 ## How to cite
 If you really liked our work :), feel free to cite 
@@ -143,6 +138,7 @@ If you really liked our work :), feel free to cite
   pdf = 	 {https://proceedings.mlr.press/v157/demir21a/demir21a.pdf},
   url = 	 {https://proceedings.mlr.press/v157/demir21a.html},
 }
+
 # ConEx
 @inproceedings{demir2021convolutional,
 title={Convolutional Complex Knowledge Graph Embeddings},
@@ -160,6 +156,5 @@ url={https://openreview.net/forum?id=6T45-4TFqaX}}
   year={2021},
   organization={IEEE}
 ```
-
 For any questions or wishes, please contact:  ```caglar.demir@upb.de``` or ```caglardemir8@gmail.com.de```
 

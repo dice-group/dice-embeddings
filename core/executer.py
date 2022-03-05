@@ -193,29 +193,37 @@ class Execute:
                                      label_smoothing_rate=self.args.label_smoothing_rate)
         # 3. Train model.
         model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
+        """
+        # @TODO
+        from laplace import Laplace
+        from laplace.utils.subnetmask import ModuleNameSubnetMask
+        from laplace.utils import ModuleNameSubnetMask
+        from laplace import Laplace
+        # No change in link prediciton results
+        subnetwork_mask = ModuleNameSubnetMask(model, module_names=['emb_ent_real'])
+        subnetwork_mask.select()
+        subnetwork_indices = subnetwork_mask.indices
+        la = Laplace(model, 'classification',
+                     subset_of_weights='subnetwork',
+                     hessian_structure='full',
+                     subnetwork_indices=subnetwork_indices)
+        # la.fit(dataset.train_dataloader())
+        # la.optimize_prior_precision(method='CV', val_loader=dataset.val_dataloader())
+        """
         # 4. Test model on the training dataset if it is needed.
         if self.args.eval_on_train:
             res = self.evaluate_lp_k_vs_all(model, self.dataset.train_set,
-                                            f'Evaluate {model.name} on Train set', form_of_labelling)
+                                            info=f'Evaluate {model.name} on Train set',form_of_labelling=form_of_labelling)
             self.report['Train'] = res
-            """
-            @TODO: Laplace can not be implemented at the moment
-            from laplace import Laplace
-            # User-specified LA flavor
-            la = Laplace(model, 'classification',
-                         subset_of_weights='all',
-                         hessian_structure='diag')
-            la.fit(dataset.train_dataloader())
-            """
+
         # 5. Test model on the validation and test dataset if it is needed.
         if self.args.eval:
             if len(self.dataset.valid_set) > 0:
                 res = self.evaluate_lp_k_vs_all(model, self.dataset.valid_set,
-                                                f'Evaluate {model.name} on validation set', form_of_labelling)
+                                                f'Evaluate {model.name} on validation set', form_of_labelling=form_of_labelling)
                 self.report['Val'] = res
             if len(self.dataset.test_set) > 0:
-                res = self.evaluate_lp_k_vs_all(model, self.dataset.test_set, f'Evaluate {model.name} on test set',
-                                                form_of_labelling)
+                res = self.evaluate_lp_k_vs_all(model, self.dataset.test_set, f'Evaluate {model.name} on test set',form_of_labelling=form_of_labelling)
                 self.report['Test'] = res
 
         return model

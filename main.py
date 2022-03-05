@@ -38,7 +38,7 @@ def argparse_default(description=None):
 
     # Model Parameters
     # Hyperparameters
-    parser.add_argument('--embedding_dim', type=int, default=200,
+    parser.add_argument('--embedding_dim', type=int, default=100,
                         help='Number of dimensions for an embedding vector. This parameter is used for those models requiring same number of embedding vector for entities and relations.')
     parser.add_argument('--entity_embedding_dim', type=int, default=8,
                         help='Number of dimensions for an entity embedding vector. '
