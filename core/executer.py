@@ -22,16 +22,14 @@ import logging, warnings
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
-seed_everything(1, workers=True)
-
 
 # TODO: Execute can inherit from Trainer and Evaluator Classes
 # By doing so we can increase the modularity of our code.
-
 class Execute:
     def __init__(self, args, continuous_training=False):
         # (1) Process arguments and sanity checking
         self.args = preprocesses_input_args(args)
+        seed_everything(args.seed_for_computation, workers=True)
         self.continuous_training = continuous_training
         if self.continuous_training is False:
             # 2 Create a folder to serialize data and replace the previous path info

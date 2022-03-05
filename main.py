@@ -9,13 +9,14 @@ def argparse_default(description=None):
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
 
     # Dataset and storage related
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Family',
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
                         help="The path of a folder containing input data")
     parser.add_argument("--large_kg_parse", type=int, default=0, help='A flag for using all cores at parsing.')
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage',
                         help="Embeddings, model, and any other related data will be stored therein.")
     parser.add_argument("--read_only_few", type=int, default=None, help='READ only first N triples. If 0, read all.')
     parser.add_argument("--sample_triples_ratio", type=float, default=None, help='Sample input data.')
+    parser.add_argument("--seed_for_computation", type=int, default=1, help='Seed for all, see pl seed_everything().')
 
     # Models.
     parser.add_argument("--model", type=str,
@@ -23,9 +24,8 @@ def argparse_default(description=None):
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, "
                              "Shallom, ConEx, ComplEx, DistMult, KronE, KPDistMult")
     # Training Parameters
-    parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. '
-                                                                    'This disables max_epochs and '
-                                                                    'min_epochs of pl.Trainer')
+    parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. '
+                                                                   'max and min_epochs of pl.Trainer disabled')
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
                         help='At every X number of epochs model will be saved.')
 
@@ -38,7 +38,7 @@ def argparse_default(description=None):
 
     # Model Parameters
     # Hyperparameters
-    parser.add_argument('--embedding_dim', type=int, default=100,
+    parser.add_argument('--embedding_dim', type=int, default=25,
                         help='Number of dimensions for an embedding vector. This parameter is used for those models requiring same number of embedding vector for entities and relations.')
     parser.add_argument('--entity_embedding_dim', type=int, default=8,
                         help='Number of dimensions for an entity embedding vector. '
@@ -52,7 +52,7 @@ def argparse_default(description=None):
     parser.add_argument("--feature_map_dropout_rate", type=int, default=0.0)
     parser.add_argument('--apply_unit_norm', type=bool, default=False)
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
-    parser.add_argument("--num_of_output_channels", type=int, default=1, help="# of output channels in convolution")
+    parser.add_argument("--num_of_output_channels", type=int, default=3, help="# of output channels in convolution")
     parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.5,
                         help='The ratio of the size of the affine transformation w.r.t. the size of the embeddings')
 
