@@ -49,7 +49,8 @@ def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
 
 def read_input_data(args, cls):
     """ Read & Parse input data for training and testing"""
-    print('*** Read & Parse input data for training and testing***')
+    print('*** Read & Parse input data for training and testing ***')
+    start_time = time.time()
     # 1. Read & Parse input data
     kg = cls(data_dir=args.path_dataset_folder,
              large_kg_parse=args.large_kg_parse,
@@ -59,6 +60,7 @@ def read_input_data(args, cls):
              sample_triples_ratio=args.sample_triples_ratio,
              path_for_serialization=args.full_storage_path,
              add_noise_rate=args.add_noise_rate)
+    print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
     print(kg.description_of_input)
     return kg
 

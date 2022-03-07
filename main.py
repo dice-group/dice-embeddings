@@ -9,7 +9,7 @@ def argparse_default(description=None):
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
 
     # Dataset and storage related
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/YAGO3-10',
                         help="The path of a folder containing input data")
     parser.add_argument("--large_kg_parse", type=int, default=0, help='A flag for using all cores at parsing.')
     parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage',
@@ -26,7 +26,7 @@ def argparse_default(description=None):
     parser.add_argument('--embedding_dim', type=int, default=100,
                         help='Number of dimensions for an embedding vector. ')
 
-    parser.add_argument("--num_epochs", type=int, default=50, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.1, help='Learning rate')
     # Hyperparameters for training.
@@ -59,9 +59,9 @@ def argparse_default(description=None):
                         help='The ratio of the size of the affine transformation w.r.t. the size of the embeddings')
 
     # Flags for computation
-    parser.add_argument("--eval", type=int, default=1,
+    parser.add_argument("--eval", type=int, default=0,
                         help='A flag for using evaluation')
-    parser.add_argument("--eval_on_train", type=int, default=1,
+    parser.add_argument("--eval_on_train", type=int, default=0,
                         help='A flag for using train data to evaluation ')
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
                                                                         'If >2 ,no evaluation scenario is applied implies no evaluation.')
