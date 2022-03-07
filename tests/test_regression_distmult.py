@@ -15,6 +15,10 @@ class TestRegressionDistMult:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
+        args.eval = 1
+        args.sample_triples_ratio = None
+        args.read_only_few = None
+        args.sample_triples_ratio = None
         args.scoring_technique = 'KvsAll'
         result = Execute(args).start()
         assert 0.58 >= result['Val']['H@1'] >= 0.10
@@ -30,6 +34,10 @@ class TestRegressionDistMult:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
+        args.eval = 1
+        args.sample_triples_ratio = None
+        args.read_only_few = None
+        args.sample_triples_ratio = None
         args.scoring_technique = '1vsAll'
         result = Execute(args).start()
         assert 0.80 >= result['Test']['H@1'] >= 0.67
@@ -47,5 +55,9 @@ class TestRegressionDistMult:
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'NegSample'
         args.neg_ratio = 1
+        args.eval = 1
+        args.sample_triples_ratio = None
+        args.read_only_few = None
+        args.sample_triples_ratio = None
         result = Execute(args).start()
         assert 0.45 >= result['Test']['H@1'] >= .40

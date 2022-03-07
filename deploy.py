@@ -98,7 +98,7 @@ def run(args: dict):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--path_of_experiment_folder", type=str, default='DAIKIRI_Storage/2022-03-04 14:32:51.411267')
-    parser.add_argument('--share', default=True, type=eval, choices=[True, False])
+    parser.add_argument("--path_of_experiment_folder", type=str, default='MergedModel/2022-03-07 12:39:00.751536')
+    parser.add_argument('--share', default=False, type=eval, choices=[True, False])
     parser.add_argument('--top_k', default=25, type=int)
     run(vars(parser.parse_args()))

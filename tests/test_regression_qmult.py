@@ -16,6 +16,10 @@ class TestRegressionQmult:
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'KvsAll'
+        args.eval = 1
+        args.sample_triples_ratio = None
+        args.read_only_few = None
+        args.sample_triples_ratio = None
         result = Execute(args).start()
         assert 0.71 >= result['Val']['H@1'] >= 0.24
 
@@ -31,6 +35,10 @@ class TestRegressionQmult:
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = '1vsAll'
+        args.eval = 1
+        args.sample_triples_ratio = None
+        args.read_only_few = None
+        args.sample_triples_ratio = None
         result = Execute(args).start()
         assert 0.72 >= result['Test']['H@1'] >= 0.70
 
@@ -47,5 +55,9 @@ class TestRegressionQmult:
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'NegSample'
         args.neg_ratio = 1
+        args.eval = 1
+        args.sample_triples_ratio = None
+        args.read_only_few = None
+        args.sample_triples_ratio = None
         result = Execute(args).start()
         assert 0.35 >= result['Test']['H@1'] >= .33

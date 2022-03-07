@@ -6,49 +6,126 @@ import sys
 class TestDefaultParams:
     def test_shallom(self):
         args = argparse_default([])
-        args.num_epochs = 1
         args.model = 'Shallom'
+        args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
+        args.path_dataset_folder = 'KGs/UMLS'
+        args.num_epochs = 10
+        args.batch_size = 1024
+        args.lr = 0.01
+        args.embedding_dim = 10
+        args.input_dropout_rate = 0.0
+        args.hidden_dropout_rate = 0.0
+        args.feature_map_dropout_rate = 0.0
+        args.sample_triples_ratio = None
+        args.read_only_few = None
+        args.sample_triples_ratio = None
         Execute(args).start()
 
     def test_conex(self):
         args = argparse_default([])
+        args.model = 'ConEx'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
-        args.model = 'ConEx'
+        args.path_dataset_folder = 'KGs/UMLS'
+        args.num_epochs = 10
+        args.batch_size = 1024
+        args.lr = 0.01
+        args.embedding_dim = 10
+        args.input_dropout_rate = 0.0
+        args.hidden_dropout_rate = 0.0
+        args.feature_map_dropout_rate = 0.0
+        args.sample_triples_ratio = None
+        args.read_only_few = None
+        args.sample_triples_ratio = None
         Execute(args).start()
 
     def test_qmult(self):
         args = argparse_default([])
-        args.num_epochs = 1
         args.model = 'QMult'
+        args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
+        args.path_dataset_folder = 'KGs/UMLS'
+        args.num_epochs = 10
+        args.batch_size = 1024
+        args.lr = 0.01
+        args.embedding_dim = 10
+        args.input_dropout_rate = 0.0
+        args.hidden_dropout_rate = 0.0
+        args.feature_map_dropout_rate = 0.0
+        args.sample_triples_ratio = None
+        args.read_only_few = None
+        args.sample_triples_ratio = None
         Execute(args).start()
 
     def test_convq(self):
         args = argparse_default([])
-        args.num_epochs = 1
         args.model = 'ConvQ'
+        args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
+        args.path_dataset_folder = 'KGs/UMLS'
+        args.num_epochs = 10
+        args.batch_size = 1024
+        args.lr = 0.01
+        args.embedding_dim = 10
+        args.input_dropout_rate = 0.0
+        args.hidden_dropout_rate = 0.0
+        args.feature_map_dropout_rate = 0.0
+        args.sample_triples_ratio = None
+        args.read_only_few = None
+        args.sample_triples_ratio = None
         Execute(args).start()
 
     def test_omult(self):
         args = argparse_default([])
-        args.num_epochs = 1
         args.model = 'OMult'
+        args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
+        args.path_dataset_folder = 'KGs/UMLS'
+        args.num_epochs = 10
+        args.batch_size = 1024
+        args.lr = 0.01
+        args.embedding_dim = 10
+        args.input_dropout_rate = 0.0
+        args.hidden_dropout_rate = 0.0
+        args.feature_map_dropout_rate = 0.0
+        args.sample_triples_ratio = None
+        args.read_only_few = None
+        args.sample_triples_ratio = None
         Execute(args).start()
 
     def test_convo(self):
         args = argparse_default([])
-        args.num_epochs = 1
         args.model = 'ConvO'
+        args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
+        args.path_dataset_folder = 'KGs/UMLS'
+        args.num_epochs = 10
+        args.batch_size = 1024
+        args.lr = 0.01
+        args.embedding_dim = 10
+        args.input_dropout_rate = 0.0
+        args.hidden_dropout_rate = 0.0
+        args.feature_map_dropout_rate = 0.0
+        args.sample_triples_ratio = None
+        args.read_only_few = None
+        args.sample_triples_ratio = None
         Execute(args).start()
 
     def test_distmult(self):
         args = argparse_default([])
-        args.num_epochs = 1
         args.model = 'DistMult'
+        args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
+        args.path_dataset_folder = 'KGs/UMLS'
+        args.num_epochs = 10
+        args.batch_size = 1024
+        args.lr = 0.01
+        args.embedding_dim = 10
+        args.input_dropout_rate = 0.0
+        args.hidden_dropout_rate = 0.0
+        args.feature_map_dropout_rate = 0.0
+        args.sample_triples_ratio = None
+        args.read_only_few = None
+        args.sample_triples_ratio = None
         Execute(args).start()
