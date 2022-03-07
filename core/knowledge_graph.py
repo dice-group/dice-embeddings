@@ -332,7 +332,7 @@ class KG:
             self.test_set = pd.DataFrame()
 
         print(storage_path)
-        with open(storage_path+'/configuration.json', 'r') as f:
+        with open(storage_path + '/configuration.json', 'r') as f:
             args = json.load(f)
 
         if args['eval']:
@@ -421,25 +421,24 @@ class KG:
             # Whitespace is used as deliminator and first three items are considered.
             df = ddf.read_csv(data_path, delim_whitespace=True, header=None, usecols=[0, 1, 2],
                               names=['subject', 'relation', 'object'])
+
             if isinstance(read_only_few, int):
                 if read_only_few > 0:
                     df = df.loc[:read_only_few]
             if sample_triples_ratio:
                 df = df.sample(frac=sample_triples_ratio)
+
+            if is_nt_format:
+                # Drop rows having ^^
+                df = df[df["object"].str.contains("<http://www.w3.org/2001/XMLSchema#double>") == False]
+                df = df[df["object"].str.contains("<http://www.w3.org/2001/XMLSchema#boolean>") == False]
+                df['subject'] = df['subject'].str.removeprefix("<").str.removesuffix(">")
+                df['relation'] = df['relation'].str.removeprefix("<").str.removesuffix(">")
+                df['object'] = df['object'].str.removeprefix("<").str.removesuffix(">")
             if large_kg_parse:
                 df = df.compute(scheduler='processes')
             else:
                 df = df.compute(scheduler='single-threaded')
-            if is_nt_format:
-                # Drop rows having ^^
-                df.drop(df[df["object"].str.contains('<http://www.w3.org/2001/XMLSchema#double>')].index, inplace=True)
-                print(f'Drop triples having numerical values are droped: Current size {len(df)}')
-                df.drop(df[df["object"].str.contains('<http://www.w3.org/2001/XMLSchema#boolean>')].index, inplace=True)
-                print(f'Drop triples having boolean values are droped: Current size {len(df)}')
-                df['subject'] = df['subject'].str.removeprefix("<").str.removesuffix(">")
-                df['relation'] = df['relation'].str.removeprefix("<").str.removesuffix(">")
-                df['object'] = df['object'].str.removeprefix("<").str.removesuffix(">")
-
             x, y = df.shape
             assert y == 3
             # print(f'Parsed via DASK: {df.shape}. Whitespace is used as delimiter.')
