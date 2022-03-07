@@ -426,6 +426,10 @@ class KG:
                     df = df.loc[:read_only_few]
             if sample_triples_ratio:
                 df = df.sample(frac=sample_triples_ratio)
+            if large_kg_parse:
+                df = df.compute(scheduler='processes')
+            else:
+                df = df.compute(scheduler='single-threaded')
             if is_nt_format:
                 # Drop rows having ^^
                 df.drop(df[df["object"].str.contains('<http://www.w3.org/2001/XMLSchema#double>')].index, inplace=True)
@@ -435,10 +439,7 @@ class KG:
                 df['subject'] = df['subject'].str.removeprefix("<").str.removesuffix(">")
                 df['relation'] = df['relation'].str.removeprefix("<").str.removesuffix(">")
                 df['object'] = df['object'].str.removeprefix("<").str.removesuffix(">")
-            if large_kg_parse:
-                df = df.compute(scheduler='processes')
-            else:
-                df = df.compute(scheduler='single-threaded')
+
             x, y = df.shape
             assert y == 3
             # print(f'Parsed via DASK: {df.shape}. Whitespace is used as delimiter.')
