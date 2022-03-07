@@ -1,5 +1,6 @@
 import itertools
 from argparse import ArgumentParser
+from glob import glob
 
 import torch
 
@@ -27,13 +28,17 @@ class Merger:
         self.merged_pre_trained_model = None
 
     def load_embedding_matrices(self):
+        """
+
+        :return:
+        """
         # (1) Temporarily initialize embeddings as an empty list
         self.entity_embeddings = []
         self.relation_embeddings = []
         # (2) Counters for sanity checking in the concatenated dataframes.
         num_entity_rows = 0
         num_relation_rows = 0
-
+        print('Loading models..')
         for path_experiment_folder in self.args.trained_model_paths:
             previous_args = load_configuration(path_experiment_folder + '/configuration.json')
             previous_args.path_of_experiment_folder = previous_args.full_storage_path
@@ -65,6 +70,11 @@ class Merger:
         assert len(self.relation_embeddings) == num_relation_rows
 
     def weights_averaging(self):
+        """
+
+        :return:
+        """
+        print('Averaging weights..')
         # (1) Average embeddings of entities sharing same index.
         self.entity_embeddings = self.entity_embeddings.groupby(self.entity_embeddings.index).mean()
         self.relation_embeddings = self.relation_embeddings.groupby(self.relation_embeddings.index).mean()
@@ -109,12 +119,13 @@ class Merger:
                         # Batch norm has num_batches_tracked param. I dunno what do do with it iat merging
                         if non_embedding_weights_state_dict[key].dtype == torch.float:
                             non_embedding_weights_state_dict[key] += i_th_state_dict[key]
+
         embdding_keys = []
         for key in non_embedding_weights_state_dict:
             if 'emb' not in key:
                 # Batch norm has num_batches_tracked param. I dunno what do do with it iat merging
                 if non_embedding_weights_state_dict[key].dtype == torch.float:
-                    print('Update:', key)
+                    print('Updated:', key)
                     non_embedding_weights_state_dict[key] /= num_models
             else:
                 embdding_keys.append(key)
@@ -122,8 +133,13 @@ class Merger:
         embedding_entity_keys, embedding_relation_keys = embdding_keys[:len(embdding_keys) // 2], embdding_keys[
                                                                                                   len(embdding_keys) // 2:]
 
+        assert len(embedding_entity_keys) == len(embedding_relation_keys)
         for key, val in zip(embedding_entity_keys, torch.hsplit(torch.from_numpy(self.entity_embeddings.to_numpy()),
                                                                 len(embedding_entity_keys))):
+            non_embedding_weights_state_dict[key] = val
+
+        for key, val in zip(embedding_relation_keys, torch.hsplit(torch.from_numpy(self.relation_embeddings.to_numpy()),
+                                                                  len(embedding_relation_keys))):
             non_embedding_weights_state_dict[key] = val
 
         self.configuration.num_entities = len(self.entity_embeddings)
@@ -139,12 +155,13 @@ class Merger:
         self.args.input_dropout_rate = .0
         self.args.hidden_dropout_rate = .0
         self.args.apply_unit_norm = False
-        self.args.embedding_dim = self.entity_embeddings.shape[1]//len(embedding_entity_keys)
+        self.args.embedding_dim = self.entity_embeddings.shape[1] // len(embedding_entity_keys)
 
         final_model, _ = select_model(self.configuration)
         final_model.load_state_dict(non_embedding_weights_state_dict)
         final_model.eval()
 
+        print('Storing merged model..')
         store_kge(final_model, path=self.args.full_storage_path + f'/model.pt')
 
         with open(self.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
@@ -158,28 +175,30 @@ class Merger:
         self.load_embedding_matrices()
         # (2) Take the average of duplicated indexes
         self.merged_pre_trained_model = self.weights_averaging()
-
-        exit(1)
+        print('Done!')
 
     @staticmethod
     def argument_sanity_checking(args):
         # Sanity checking
+
         for path_experiment_folder in args.trained_model_paths:
             assert os.path.exists(path_experiment_folder)
             assert os.path.isfile(path_experiment_folder + '/idx_train_df.gzip')
             assert os.path.isfile(path_experiment_folder + '/configuration.json')
+        else:
+            args.trained_model_paths = [i for i in glob("DAIKIRI_Storage/*", recursive=False)]
 
 
 if __name__ == '__main__':
     parser = ArgumentParser(add_help=False)
-    parser.add_argument("--storage_path", type=str, default='MergedModel')
-
+    parser.add_argument("--storage_path", type=str, default='Merged')
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
+                        help="The path of a folder containing input data")
     parser.add_argument("--trained_model_paths",
                         nargs="*",  # 0 or more values expected => creates a list
                         type=str,
-                        default=['DAIKIRI_Storage/2022-03-07 08:02:13.107971',
-                                 'DAIKIRI_Storage/2022-03-07 08:29:56.238096',
-                                 'DAIKIRI_Storage/2022-03-07 08:48:39.828155'],  # default if nothing is provided
+                        default=[],  # default if nothing is provided
+                        # default=[],  # If empty, work on all data
                         )
 
     Merger(parser.parse_args()).start()

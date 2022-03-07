@@ -23,6 +23,7 @@ logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 
+
 # TODO: Execute can inherit from Trainer and Evaluator Classes
 # By doing so we can increase the modularity of our code.
 class Execute:
@@ -211,17 +212,20 @@ class Execute:
         # 4. Test model on the training dataset if it is needed.
         if self.args.eval_on_train:
             res = self.evaluate_lp_k_vs_all(model, self.dataset.train_set,
-                                            info=f'Evaluate {model.name} on Train set',form_of_labelling=form_of_labelling)
+                                            info=f'Evaluate {model.name} on Train set',
+                                            form_of_labelling=form_of_labelling)
             self.report['Train'] = res
 
         # 5. Test model on the validation and test dataset if it is needed.
         if self.args.eval:
             if len(self.dataset.valid_set) > 0:
                 res = self.evaluate_lp_k_vs_all(model, self.dataset.valid_set,
-                                                f'Evaluate {model.name} on validation set', form_of_labelling=form_of_labelling)
+                                                f'Evaluate {model.name} on validation set',
+                                                form_of_labelling=form_of_labelling)
                 self.report['Val'] = res
             if len(self.dataset.test_set) > 0:
-                res = self.evaluate_lp_k_vs_all(model, self.dataset.test_set, f'Evaluate {model.name} on test set',form_of_labelling=form_of_labelling)
+                res = self.evaluate_lp_k_vs_all(model, self.dataset.test_set, f'Evaluate {model.name} on test set',
+                                                form_of_labelling=form_of_labelling)
                 self.report['Test'] = res
 
         return model

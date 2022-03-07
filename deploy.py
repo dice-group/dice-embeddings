@@ -28,6 +28,8 @@ def launch_service(config, pretrained_model, entity_idx, predicate_idx):
     :param predicate_idx:
     :return:
     """
+    # WN18RR strings are ints. Later read it as string.
+    entity_idx = {str(k): v for k, v in entity_idx.items()}
     idx_to_entity = {v: k for k, v in entity_idx.items()}
 
     def predict(str_subject: str, str_predicate: str, str_object: str, random_examples: bool):
@@ -98,7 +100,7 @@ def run(args: dict):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--path_of_experiment_folder", type=str, default='MergedModel/2022-03-07 12:39:00.751536')
+    parser.add_argument("--path_of_experiment_folder", type=str, default='DAIKIRI_Storage/2022-03-07 16:22:50.129892')
     parser.add_argument('--share', default=False, type=eval, choices=[True, False])
     parser.add_argument('--top_k', default=25, type=int)
     run(vars(parser.parse_args()))

@@ -251,7 +251,6 @@ def load_model(args) -> torch.nn.Module:
 
     entity_to_idx = pd.read_parquet(args.path_of_experiment_folder + '/entity_to_idx.gzip').to_dict()['entity']
     relation_to_idx = pd.read_parquet(args.path_of_experiment_folder + '/relation_to_idx.gzip').to_dict()['relation']
-
     return model, entity_to_idx, relation_to_idx
 
 
