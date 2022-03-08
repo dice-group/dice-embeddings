@@ -323,7 +323,7 @@ class Execute:
         assert self.args.neg_ratio > 0
         model, _ = select_model(vars(self.args))
         form_of_labelling = 'NegativeSampling'
-        print(f' Training starts: {model.name}-labeling:{form_of_labelling}')
+        print(f'Training starts: {model.name}-labeling:{form_of_labelling}')
         print('Creating training data...')
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,
@@ -333,8 +333,7 @@ class Execute:
                                      form=form_of_labelling,
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_processes
-                                     )
+                                     num_workers=self.args.num_processes)
         # 3. Train model
         model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
         # 4. Test model on the training dataset if it is needed.
@@ -498,8 +497,11 @@ class Execute:
             # 4. Add 1 to ranks as numpy array first item has the index of 0.
             filt_head_entity_rank += 1
             filt_tail_entity_rank += 1
+
+            rr=1.0 / filt_head_entity_rank + (1.0 / filt_tail_entity_rank)
             # 5. Store reciprocal ranks.
-            reciprocal_ranks.append(1.0 / filt_head_entity_rank + (1.0 / filt_tail_entity_rank))
+            reciprocal_ranks.append(rr)
+            #print(f'{i}.th triple: mean reciprical rank:{rr}')
 
             # 4. Compute Hit@N
             for hits_level in range(1, 11):

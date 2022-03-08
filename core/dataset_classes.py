@@ -43,7 +43,6 @@ class StandardDataModule(pl.LightningDataModule):
         if self.form == 'RelationPrediction':
             self.target_dim = len(self.relation_to_idx)
         elif self.form == 'EntityPrediction':
-            # self.dataset_type_class = EntityPredictionDataset
             self.target_dim = len(self.entity_to_idx)
         elif self.form == 'NegativeSampling':  # we can name it as TriplePrediction
             self.dataset_type_class = TriplePredictionDataset
