@@ -39,16 +39,19 @@ class Merger:
         print('Loading models..')
         for path_experiment_folder in self.args.trained_model_paths:
             previous_args = load_configuration(path_experiment_folder + '/configuration.json')
-            previous_args.path_of_experiment_folder = previous_args.full_storage_path
+            previous_args['path_of_experiment_folder'] = previous_args['full_storage_path']
+
+            self.configuration = previous_args
             if self.model_name is None:
-                self.model_name = previous_args.model
+                self.model_name = previous_args['model']
             else:
                 try:
-                    assert self.model_name == previous_args.model
+                    assert self.model_name == previous_args['model']
                 except AssertionError:
-                    raise AssertionError(f'{self.model_name} can be ensembled with {previous_args.model}')
+                    raise AssertionError(f'{self.model_name} can be ensembled with {previous_args["model"]}')
 
-            path_entity_emb = previous_args.path_of_experiment_folder + f'/{self.model_name}_entity_embeddings'
+            path_entity_emb = previous_args['path_of_experiment_folder'] + f'/{self.model_name}_entity_embeddings'
+
 
             if os.path.isfile(path_entity_emb + '.csv'):
                 df_entities = pd.read_csv(path_entity_emb + '.csv', index_col=0)
@@ -56,40 +59,37 @@ class Merger:
 
                 df_entities = pd.DataFrame(data=np.load(path_entity_emb + '.npz')['entity_emb'],
                                            index=pd.read_parquet(
-                                               path=previous_args.path_of_experiment_folder + f'/entity_to_idx.gzip').index)
+                                               path=previous_args['path_of_experiment_folder'] + f'/entity_to_idx.gzip').index)
             else:
                 raise FileNotFoundError(
-                    f"{previous_args.path_of_experiment_folder} + f'/{self.model_name}_entity_embeddings")
-
-            path_relations_emb = previous_args.path_of_experiment_folder + f'/{self.model_name}_relation_embeddings'
-
-            if os.path.isfile(path_relations_emb + '.csv'):
-                df_relations = pd.read_csv(path_relations_emb + '.csv', index_col=0)
-            elif os.path.isfile(path_relations_emb + '.npz'):
-                df_relations = pd.DataFrame(data=np.load(path_relations_emb + '.npz')['relation_ebm'],
-                                            index=pd.read_parquet(
-                                                path=previous_args.path_of_experiment_folder + f'/relation_to_idx.gzip').index)
-
-            else:
-                raise FileNotFoundError(
-                    f"{previous_args.path_of_experiment_folder} + f'/{self.model_name}_relation_embeddings")
+                    f"{previous_args['path_of_experiment_folder']} + f'/{self.model_name}_entity_embeddings")
 
             num_entity_rows += len(df_entities)
-            num_relation_rows += len(df_relations)
-
             self.entity_embeddings.append(df_entities)
-            self.relation_embeddings.append(df_relations)
-            self.configuration = previous_args
+
+            if self.model_name != 'Shallom':
+                path_relations_emb = previous_args['path_of_experiment_folder']+ f'/{self.model_name}_relation_embeddings'
+                if os.path.isfile(path_relations_emb + '.csv'):
+                    df_relations = pd.read_csv(path_relations_emb + '.csv', index_col=0)
+                elif os.path.isfile(path_relations_emb + '.npz'):
+                    df_relations = pd.DataFrame(data=np.load(path_relations_emb + '.npz')['relation_ebm'],
+                                                index=pd.read_parquet(
+                                                    path=previous_args['path_of_experiment_folder'] + f'/relation_to_idx.gzip').index)
+                else:
+                    raise FileNotFoundError(
+                        f"{previous_args['path_of_experiment_folder']} + f'/{self.model_name}_relation_embeddings")
+
+                num_relation_rows += len(df_relations)
+            else:
+                raise NotImplementedError('Not quite sure how to combine different shalloms')
 
         # (2) Concatenate entity embedding dataframes
         self.entity_embeddings = pd.concat(self.entity_embeddings, ignore_index=False)
-        self.relation_embeddings = pd.concat(self.relation_embeddings, ignore_index=False)
-
-
         self.entity_embeddings.columns = self.entity_embeddings.columns.astype(str)
-        self.relation_embeddings.columns = self.relation_embeddings.columns.astype(str)
         assert len(self.entity_embeddings) == num_entity_rows
         assert len(self.relation_embeddings) == num_relation_rows
+        self.relation_embeddings = pd.concat(self.relation_embeddings, ignore_index=False)
+        self.relation_embeddings.columns = self.relation_embeddings.columns.astype(str)
 
     def weights_averaging(self):
         """
@@ -99,37 +99,39 @@ class Merger:
         print('Averaging weights..')
         # (1) Average embeddings of entities sharing same index.
         self.entity_embeddings = self.entity_embeddings.groupby(self.entity_embeddings.index).mean()
-        self.relation_embeddings = self.relation_embeddings.groupby(self.relation_embeddings.index).mean()
-
         self.entity_embeddings.to_parquet(self.args.full_storage_path + f'/{self.model_name}_entity_embeddings.gzip',
                                           compression='gzip')
-        self.relation_embeddings.to_parquet(
-            self.args.full_storage_path + f'/{self.model_name}_relation_embeddings.gzip', compression='gzip')
-
         pd.DataFrame(data=np.arange(len(self.entity_embeddings)),
                      columns=['entity'],
                      index=self.entity_embeddings.index).to_parquet(self.args.full_storage_path + '/entity_to_idx.gzip',
                                                                     compression='gzip')
+
+
+        self.relation_embeddings = self.relation_embeddings.groupby(self.relation_embeddings.index).mean()
+        self.relation_embeddings.to_parquet(
+            self.args.full_storage_path + f'/{self.model_name}_relation_embeddings.gzip', compression='gzip')
+
         pd.DataFrame(data=np.arange(len(self.relation_embeddings)),
                      columns=['relation'],
                      index=self.relation_embeddings.index).to_parquet(
             self.args.full_storage_path + '/relation_to_idx.gzip', compression='gzip')
 
         # (2) Average non embedding weights
-
         non_embedding_weights_state_dict = None
         num_models = 0
         for path_experiment_folder in self.args.trained_model_paths:
             previous_args = load_configuration(path_experiment_folder + '/configuration.json')
-            previous_args.path_of_experiment_folder = previous_args.full_storage_path
+            previous_args['path_of_experiment_folder'] = previous_args['full_storage_path']
             if self.model_name is None:
-                self.model_name = previous_args.model
+                self.model_name = previous_args['model']
             else:
                 try:
-                    assert self.model_name == previous_args.model
+                    assert self.model_name == previous_args['model']
                 except AssertionError:
-                    raise AssertionError(f'{self.model_name} can be ensembled with {previous_args.model}')
+                    raise AssertionError(f'{self.model_name} can be ensembled with {previous_args["model"]}')
             num_models += 1.
+
+
             i_th_pretrained, _, __ = load_model(previous_args)
             i_th_state_dict = i_th_pretrained.state_dict()
 
@@ -152,6 +154,7 @@ class Merger:
             else:
                 embdding_keys.append(key)
 
+
         embedding_entity_keys, embedding_relation_keys = embdding_keys[:len(embdding_keys) // 2], embdding_keys[
                                                                                                   len(embdding_keys) // 2:]
 
@@ -170,14 +173,11 @@ class Merger:
 
         self.args.num_entities = len(self.entity_embeddings)
         self.args.num_relations = len(self.relation_embeddings)
+
         self.args.model = self.model_name
-        # Becase, we cant intialize a model with dummy values
-        # TODO: We should ensure that dummy values init. is possible
-        self.args.learning_rate = self.configuration.learning_rate
-        self.args.input_dropout_rate = .0
-        self.args.hidden_dropout_rate = .0
-        self.args.apply_unit_norm = False
         self.args.embedding_dim = self.entity_embeddings.shape[1] // len(embedding_entity_keys)
+        self.args.num_relations =self.relation_embeddings.shape[0]
+        self.args.num_entities =self.entity_embeddings.shape[0]
 
         final_model, _ = select_model(self.configuration)
         final_model.load_state_dict(non_embedding_weights_state_dict)

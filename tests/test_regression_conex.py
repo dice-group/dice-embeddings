@@ -42,7 +42,7 @@ class TestRegressionConEx:
         args.read_only_few = None
         args.scoring_technique = '1vsAll'
         result = Execute(args).start()
-        assert 0.82 >= result['Test']['H@1'] >= 0.79
+        assert 0.50 >= result['Test']['H@1'] >= 0.35
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):
@@ -63,4 +63,4 @@ class TestRegressionConEx:
         args.read_only_few = None
         args.neg_ratio = 1
         result = Execute(args).start()
-        assert 0.48 >= result['Test']['H@1'] >= .43
+        assert 0.48 >= result['Test']['H@1'] >= .40

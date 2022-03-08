@@ -5,7 +5,6 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from typing import List
 
-
 class StandardDataModule(pl.LightningDataModule):
     """
     train, valid and test sets are available.
@@ -39,8 +38,9 @@ class StandardDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
         self.neg_sample_ratio = neg_sample_ratio
         self.label_smoothing_rate = label_smoothing_rate
+
+
         if self.form == 'RelationPrediction':
-            # self.dataset_type_class = RelationPredictionDataset
             self.target_dim = len(self.relation_to_idx)
         elif self.form == 'EntityPrediction':
             # self.dataset_type_class = EntityPredictionDataset
@@ -69,13 +69,15 @@ class StandardDataModule(pl.LightningDataModule):
                               )
         elif self.form == 'EntityPrediction' or self.form == 'RelationPrediction':
             train_set = KvsAll(self.train_set_idx, entity_idxs=self.entity_to_idx,
-                               relation_idxs=self.relation_to_idx, form=self.form,
-                               label_smoothing_rate=self.label_smoothing_rate)
+                               relation_idxs=self.relation_to_idx, form=self.form, label_smoothing_rate=self.label_smoothing_rate)
+
             return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, pin_memory=True,
                               num_workers=self.num_workers)
 
         elif self.form == '1VsAll':
-            train_set = OneVsAllEntityPredictionDataset(self.train_set_idx)
+            train_set = OnevsAll(self.train_set_idx, entity_idxs=self.entity_to_idx,
+                               relation_idxs=self.relation_to_idx, form=self.form, label_smoothing_rate=self.label_smoothing_rate)
+
             return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, pin_memory=True,
                               num_workers=self.num_workers)
         else:
@@ -169,6 +171,9 @@ class CVDataModule(pl.LightningDataModule):
 
 
 class KvsAll(Dataset):
+    """
+    For entitiy or relation prediciton
+    """
     def __init__(self, triples_idx, entity_idxs, relation_idxs, form, store=None, label_smoothing_rate=None):
         super().__init__()
         assert len(triples_idx)>0
@@ -176,6 +181,8 @@ class KvsAll(Dataset):
         self.train_target = None
         self.label_smoothing_rate = label_smoothing_rate
 
+        # (1) Create a dictionary of training data pints
+        # Either from tuple of entitiies or tuple of an entity and a relation
         if store is None:
             store = dict()
             if form == 'RelationPrediction':

@@ -20,6 +20,7 @@ def store_kge(trained_model, path: str):
 
 
 def model_fitting(trainer, model, train_dataloaders) -> None:
+    print(f'Number of mini-batches to compute for a single epoch: {len(train_dataloaders)}')
     trainer.fit(model, train_dataloaders=train_dataloaders)
 
 
@@ -129,9 +130,11 @@ def preprocesses_input_args(arg):
     if arg.num_folds_for_cv > 0:
         arg.eval = True
 
+    if arg.model=='Shallom':
+        arg.scoring_technique='KvsAll'
     # By default PL sets it to 1
-    if arg.num_processes == 1:
-        arg.num_processes = os.cpu_count()
+    #if arg.num_processes == 1:
+    #    arg.num_processes = os.cpu_count()
     return arg
 
 
@@ -367,4 +370,4 @@ def load_configuration(p: str) -> CustomArg:
     assert os.path.isfile(p)
     with open(p, 'r') as r:
         args = json.load(r)
-    return CustomArg(**args)
+    return args #CustomArg(**args)

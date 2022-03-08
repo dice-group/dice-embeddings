@@ -74,8 +74,8 @@ class BaseKGE(pl.LightningModule):
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
 
-    def loss_function(self, y_hat, y):
-        return self.loss(y_hat, y)
+    def loss_function(self, input, target):
+        return self.loss(input=input, target=target)
 
     def forward_triples(self, *args, **kwargs):
         raise ValueError(f'MODEL:{self.name} does not have forward_triples function')
@@ -98,13 +98,8 @@ class BaseKGE(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x_batch, y_batch = batch
         pred_batch = self.forward(x_batch)
-        train_loss = self.loss_function(pred_batch, y_batch)
+        train_loss = self.loss_function(input=pred_batch, target=y_batch)
         return {'loss': train_loss}
-
-    # def training_epoch_end(self, outputs) -> None:
-    #    """ DBpedia debugging removed."""
-    #    #avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-    #    #self.log('avg_loss', avg_loss, on_epoch=False, prog_bar=True)
 
     def validation_step(self, batch, batch_idx):
         if len(batch) == 4:

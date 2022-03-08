@@ -37,6 +37,7 @@ class KG:
         :param add_noise_rate: Add say 10% noise in the input data
         sample_triples_ratio
         """
+
         if deserialize_flag is None:
             # 1. LOAD Data. (First pass on data)
             print(
@@ -58,9 +59,10 @@ class KG:
             print('Done !\n')
 
             # 2. Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
-            if add_reciprical:
+            if add_reciprical and eval_model:
                 print(
                     '[3.1 / 14] Add reciprocal triples to train, validation, and test sets, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}')
+
                 self.train_set = pd.concat([self.train_set,
                                             pd.DataFrame({'subject': self.train_set['object'],
                                                           'relation': self.train_set['relation'].map(

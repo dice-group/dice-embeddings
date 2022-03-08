@@ -37,7 +37,7 @@ To test the Installation
 ```
 wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
 unzip KGs.zip
-python -m pytest -x tests
+pytest -p no:warnings
 ```
 # Deployment and Open-sourcing
 Any pretrained model can be deployed with an ease. Moreover, anyone on the internet can use the pretrained model with ```--share``` parameter. 
@@ -96,10 +96,10 @@ results in evaluating quality of SHALLOM embeddings on the test split.
 
 ### Example Commands
 
-1. To train our approaches for 10 epochs by using **32 CPU cores** (if available) on UMLS. 
+1. To train our approaches for 10 epochs by using all available CPUs on UMLS. 
 ```
-python main.py --path_dataset_folder "KGs/UMLS" --model "Shallom" --num_epochs 10 --num_processes 32 --scoring_technique "KvsAll"
-python main.py --path_dataset_folder "KGs/UMLS" --model "ConEx" --num_epochs 10 --num_processes 32 --scoring_technique "KvsAll"
+python main.py --path_dataset_folder "KGs/UMLS" --model "Shallom" --num_epochs 10 --scoring_technique "KvsAll"
+python main.py --path_dataset_folder "KGs/UMLS" --model "ConEx" --num_epochs 10 --scoring_technique "KvsAll"
 ```
 2. To train our approaches for 10 epochs by using a single GPU.
 ```

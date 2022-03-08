@@ -95,12 +95,45 @@ class Execute:
         callbacks = [PrintCallback(),
                      KGESaveCallback(every_x_epoch=self.args.num_epochs, path=self.args.full_storage_path)]
 
-        # PL has some problems with DDPPlugin. It will likely to be solved in their next relase.
+        # PL has some problems with DDPPlugin. It will likely to be solved in their next release.
+        # (1) Explicitly setting num_process > 1 gives you
+        """
+        [W reducer.cpp: 1303] Warning: find_unused_parameters = True
+        was specified in DDP constructor, but did not find any unused parameters in the
+        forward pass.
+        This flag results in an extra traversal of the autograd graph every iteration, which can adversely affect
+        performance. If your
+        model indeed
+        never has any unused parameters in the forward
+        pass, consider turning this flag off. Note
+        that this warning may
+        be
+        a
+        false
+        positive if your
+        model
+        has
+        flow
+        control
+        causing
+        later
+        iterations
+        to
+        have
+        unused
+        parameters.(function
+        operator())
+        """
+        # (2) Adding plugins=[DDPPlugin(find_unused_parameters=False)] and explicitly using num_process > 1
+        """ pytorch_lightning.utilities.exceptions.DeadlockDetectedException: DeadLock detected from rank: 1  """
+
+        # (3) Suprisingly, if you do not ask explicitly num_process > 1, computation runs smoothly while using many CPUs
         if self.args.gpus:
             self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=[DDPPlugin(find_unused_parameters=False)],
                                                          callbacks=callbacks)
         else:
-            self.trainer = pl.Trainer.from_argparse_args(self.args, callbacks=callbacks)
+            self.trainer = pl.Trainer.from_argparse_args(self.args,
+                                                         callbacks=callbacks)
         # 2. Check whether validation and test datasets are available.
         if self.dataset.is_valid_test_available():
             if self.args.scoring_technique == 'NegSample':
@@ -244,7 +277,6 @@ class Execute:
         # 1. Select model and labelling : Entity Prediction or Relation Prediction.
         model, form_of_labelling = select_model(vars(self.args))
         print(f'1vsAll training starts: {model.name}')
-        form_of_labelling = '1VsAll'
         # 2. Create training data.
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,

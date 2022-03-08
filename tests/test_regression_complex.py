@@ -44,9 +44,9 @@ class TestRegressionComplEx:
         args.eval_on_train = 1
         args.scoring_technique = '1vsAll'
         result = Execute(args).start()
-        assert 1.0 >= result['Train']['H@1'] >= 0.90
-        assert 0.87 >= result['Val']['H@1'] >= 0.75
-        assert 0.87 >= result['Test']['H@1'] >= 0.75
+        assert 1.0 >= result['Train']['H@1'] >= 0.75
+        assert 0.87 >= result['Val']['H@1'] >= 0.50
+        assert 0.87 >= result['Test']['H@1'] >= 0.50
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):
