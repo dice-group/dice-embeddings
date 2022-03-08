@@ -10,13 +10,13 @@ import gradio as gr
 import random
 
 
-def update_arguments_with_training_configuration(args: dict) -> namedtuple:
+def update_arguments_with_training_configuration(args: dict) -> dict:
     """ namedTuple from input argument """
     settings = dict()
     with open(args['path_of_experiment_folder'] + '/configuration.json', 'r') as r:
         settings.update(json.load(r))
     settings.update(args)
-    return namedtuple('CustomNamed', settings.keys())(**settings)
+    return settings
 
 
 def launch_service(config, pretrained_model, entity_idx, predicate_idx):
@@ -100,7 +100,7 @@ def run(args: dict):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--path_of_experiment_folder", type=str, default='DAIKIRI_Storage/2022-03-07 16:22:50.129892')
+    parser.add_argument("--path_of_experiment_folder", type=str, default='Merged/2022-03-08 11:29:46.597427')
     parser.add_argument('--share', default=False, type=eval, choices=[True, False])
     parser.add_argument('--top_k', default=25, type=int)
     run(vars(parser.parse_args()))

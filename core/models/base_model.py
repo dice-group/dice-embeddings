@@ -10,10 +10,66 @@ from torch.nn.init import xavier_normal_
 
 class BaseKGE(pl.LightningModule):
 
-    def __init__(self, learning_rate=.1):
+    def __init__(self, args: dict):
         super().__init__()
-        self.name = 'Not init'
-        self.learning_rate = learning_rate
+        self.args = args
+        self.embedding_dim = None
+        self.num_entities = None
+        self.num_relations = None
+        self.learning_rate = None
+        self.apply_unit_norm = None
+        self.input_dropout_rate = None
+        self.hidden_dropout_rate = None
+        self.feature_map_dropout_rate = None
+        self.kernel_size = None
+        self.num_of_output_channels = None
+        self.loss = torch.nn.BCEWithLogitsLoss()
+        self.sanity_checking()
+
+    def sanity_checking(self):
+
+        assert self.args['model'] in ['DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO', 'ConEx','Shallom']
+
+        assert self.args['embedding_dim'] > 0
+        assert self.args['num_entities'] > 0
+        assert self.args['num_relations'] > 0
+
+        self.embedding_dim = self.args['embedding_dim']
+        self.num_entities = self.args['num_entities']
+        self.num_relations = self.args['num_relations']
+
+        if self.args.get('learning_rate'):
+            self.learning_rate = self.args['learning_rate']
+        else:
+            self.learning_rate = .1
+        if self.args.get("input_dropout_rate"):
+            self.input_dropout_rate = self.args['input_dropout_rate']
+        else:
+            self.input_dropout_rate = 0.0
+        if self.args.get("hidden_dropout_rate"):
+            self.hidden_dropout_rate = self.args['hidden_dropout_rate']
+        else:
+            self.hidden_dropout_rate = 0.0
+
+        if self.args['model'] in ['QMult', 'OMult', 'ConvQ', 'ConvO']:
+            if self.args.get("apply_unit_norm"):
+                self.apply_unit_norm = self.args['apply_unit_norm']
+            else:
+                self.apply_unit_norm = False
+
+        if self.args['model'] in ['ConvQ', 'ConvO','ConEx']:
+            if self.args.get("kernel_size"):
+                self.kernel_size = self.args['kernel_size']
+            else:
+                self.kernel_size = 3
+            if self.args.get("num_of_output_channels"):
+                self.num_of_output_channels = self.args['num_of_output_channels']
+            else:
+                self.num_of_output_channels = 3
+            if self.args.get("feature_map_dropout_rate"):
+                self.feature_map_dropout_rate = self.args['feature_map_dropout_rate']
+            else:
+                self.feature_map_dropout_rate = 0.0
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.learning_rate)

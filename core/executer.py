@@ -75,8 +75,8 @@ class Execute:
             message = f'{total_runtime / (60 ** 2):.3f} hours'
         self.report['Runtime'] = message
 
-        print(f'Runtime of {trained_model.name}:', total_runtime)
-        print(f'NumParam of {trained_model.name}:', self.report["NumParam"])
+        print(f'Total computation time: {message}')
+        print(f'Number of parameters in {trained_model.name}:', self.report["NumParam"])
         # print(f'Estimated of {trained_model.name}:', self.report["EstimatedSizeMB"])
         with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
             json.dump(self.report, file_descriptor)
@@ -92,15 +92,15 @@ class Execute:
         2c. Train a model
         """
         print('------------------- Train & Eval -------------------')
-
         callbacks = [PrintCallback(),
                      KGESaveCallback(every_x_epoch=self.args.num_epochs, path=self.args.full_storage_path)]
+
+        # PL has some problems with DDPPlugin. It will likely to be solved in their next relase.
         if self.args.gpus:
             self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=[DDPPlugin(find_unused_parameters=False)],
                                                          callbacks=callbacks)
         else:
             self.trainer = pl.Trainer.from_argparse_args(self.args, callbacks=callbacks)
-
         # 2. Check whether validation and test datasets are available.
         if self.dataset.is_valid_test_available():
             if self.args.scoring_technique == 'NegSample':
@@ -130,7 +130,6 @@ class Execute:
                     raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
             else:
                 trained_model = self.k_fold_cross_validation()
-        print('Train & Eval Done!\n')
         return trained_model
 
     def store(self, trained_model, model_name='model') -> None:
@@ -158,13 +157,24 @@ class Execute:
             print('Saving embeddings..')
             entity_emb, relation_ebm = trained_model.get_embeddings()
 
-            save_embeddings(entity_emb, indexes=self.dataset.entities_str,
-                            path=self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
+            if len(entity_emb) > 10:
+                np.savez_compressed(self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings',
+                                    entity_emb=entity_emb)
+            else:
+                save_embeddings(entity_emb, indexes=self.dataset.entities_str,
+                                path=self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
+
             del entity_emb
+
             if relation_ebm is not None:
-                save_embeddings(relation_ebm, indexes=self.dataset.relations_str,
-                                path=self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
+                if len(relation_ebm) > 10:
+                    np.savez_compressed(self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings',
+                                        relation_ebm=relation_ebm)
+                else:
+                    save_embeddings(relation_ebm, indexes=self.dataset.relations_str,
+                                    path=self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
             del relation_ebm
+
         else:
             print('There is not enough memory to store embeddings separately.')
 
@@ -177,7 +187,7 @@ class Execute:
         :return: trained BASEKGE
         """
         # 1. Select model and labelling : Entity Prediction or Relation Prediction.
-        model, form_of_labelling = select_model(self.args)
+        model, form_of_labelling = select_model(vars(self.args))
         print(f'KvsAll training starts: {model.name}')  # -labeling:{form_of_labelling}')
         # 2. Create training data.)
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
@@ -220,11 +230,11 @@ class Execute:
         if self.args.eval:
             if len(self.dataset.valid_set) > 0:
                 res = self.evaluate_lp_k_vs_all(model, self.dataset.valid_set,
-                                                f'Evaluate {model.name} on validation set',
+                                                f'Evaluate {model.name} on Validation set',
                                                 form_of_labelling=form_of_labelling)
                 self.report['Val'] = res
             if len(self.dataset.test_set) > 0:
-                res = self.evaluate_lp_k_vs_all(model, self.dataset.test_set, f'Evaluate {model.name} on test set',
+                res = self.evaluate_lp_k_vs_all(model, self.dataset.test_set, f'Evaluate {model.name} on Test set',
                                                 form_of_labelling=form_of_labelling)
                 self.report['Test'] = res
 
@@ -232,7 +242,7 @@ class Execute:
 
     def training_1vsall(self):
         # 1. Select model and labelling : Entity Prediction or Relation Prediction.
-        model, form_of_labelling = select_model(self.args)
+        model, form_of_labelling = select_model(vars(self.args))
         print(f'1vsAll training starts: {model.name}')
         form_of_labelling = '1VsAll'
         # 2. Create training data.
@@ -249,7 +259,6 @@ class Execute:
         if self.args.label_relaxation_rate:
             model.loss = LabelRelaxationLoss(alpha=self.args.label_relaxation_rate)
             # model.loss=LabelSmoothingLossCanonical()
-
         elif self.args.label_smoothing_rate:
             model.loss = nn.CrossEntropyLoss(label_smoothing=self.args.label_smoothing_rate)
         else:
@@ -280,7 +289,7 @@ class Execute:
         Train models with Negative Sampling
         """
         assert self.args.neg_ratio > 0
-        model, _ = select_model(self.args)
+        model, _ = select_model(vars(self.args))
         form_of_labelling = 'NegativeSampling'
         print(f' Training starts: {model.name}-labeling:{form_of_labelling}')
         print('Creating training data...')
@@ -344,7 +353,7 @@ class Execute:
                     predictions[j, r_idx[j]] = target_value
                 # Sort predictions.
                 sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
-                # This can be also done in paralel
+                # This can be also done in parallel
                 for j in range(data_batch.shape[0]):
                     rank = torch.where(sort_idxs[j] == r_idx[j])[0].item()
                     ranks.append(rank + 1)
@@ -510,7 +519,7 @@ class Execute:
 
         for (ith, (train_index, test_index)) in enumerate(kf.split(self.dataset.train_set)):
             trainer = pl.Trainer.from_argparse_args(self.args)
-            model, form_of_labelling = select_model(self.args)
+            model, form_of_labelling = select_model(vars(self.args))
             print(f'{form_of_labelling} training starts: {model.name}')  # -labeling:{form_of_labelling}')
 
             train_set_for_i_th_fold, test_set_for_i_th_fold = self.dataset.train_set[train_index], \

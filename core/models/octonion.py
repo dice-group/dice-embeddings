@@ -48,95 +48,91 @@ def octonion_mul_norm(*, O_1, O_2):
 class OMult(BaseKGE):
 
     def __init__(self, args):
-        super().__init__(learning_rate=args.learning_rate)
-        self.name = 'OMult'
-        self.loss = torch.nn.BCEWithLogitsLoss()
-
-        self.apply_unit_norm = args.apply_unit_norm
+        super().__init__(args)
+        self.name='QMult'
         # Octonion embeddings of entities
-        self.emb_ent_e0 = nn.Embedding(args.num_entities, args.embedding_dim)  # real
-        self.emb_ent_e1 = nn.Embedding(args.num_entities, args.embedding_dim)  # e1
-        self.emb_ent_e2 = nn.Embedding(args.num_entities, args.embedding_dim)  # e2
-        self.emb_ent_e3 = nn.Embedding(args.num_entities, args.embedding_dim)  # e3
-        self.emb_ent_e4 = nn.Embedding(args.num_entities, args.embedding_dim)  # e3
-        self.emb_ent_e5 = nn.Embedding(args.num_entities, args.embedding_dim)  # e4
-        self.emb_ent_e6 = nn.Embedding(args.num_entities, args.embedding_dim)  # e6
-        self.emb_ent_e7 = nn.Embedding(args.num_entities, args.embedding_dim)  # e7
+        self.emb_ent_e0 = nn.Embedding(self.num_entities, self.embedding_dim)  # real
+        self.emb_ent_e1 = nn.Embedding(self.num_entities, self.embedding_dim)  # e1
+        self.emb_ent_e2 = nn.Embedding(self.num_entities, self.embedding_dim)  # e2
+        self.emb_ent_e3 = nn.Embedding(self.num_entities, self.embedding_dim)  # e3
+        self.emb_ent_e4 = nn.Embedding(self.num_entities, self.embedding_dim)  # e3
+        self.emb_ent_e5 = nn.Embedding(self.num_entities, self.embedding_dim)  # e4
+        self.emb_ent_e6 = nn.Embedding(self.num_entities, self.embedding_dim)  # e6
+        self.emb_ent_e7 = nn.Embedding(self.num_entities, self.embedding_dim)  # e7
         xavier_normal_(self.emb_ent_e0.weight.data), xavier_normal_(self.emb_ent_e1.weight.data)
         xavier_normal_(self.emb_ent_e2.weight.data), xavier_normal_(self.emb_ent_e3.weight.data)
         xavier_normal_(self.emb_ent_e4.weight.data), xavier_normal_(self.emb_ent_e5.weight.data)
         xavier_normal_(self.emb_ent_e6.weight.data), xavier_normal_(self.emb_ent_e7.weight.data)
 
         # Octonion embeddings of relations
-        self.emb_rel_e0 = nn.Embedding(args.num_relations, args.embedding_dim)  # real
-        self.emb_rel_e1 = nn.Embedding(args.num_relations, args.embedding_dim)  # e1
-        self.emb_rel_e2 = nn.Embedding(args.num_relations, args.embedding_dim)  # e2
-        self.emb_rel_e3 = nn.Embedding(args.num_relations, args.embedding_dim)  # e3
-        self.emb_rel_e4 = nn.Embedding(args.num_relations, args.embedding_dim)  # e4
-        self.emb_rel_e5 = nn.Embedding(args.num_relations, args.embedding_dim)  # e5
-        self.emb_rel_e6 = nn.Embedding(args.num_relations, args.embedding_dim)  # e6
-        self.emb_rel_e7 = nn.Embedding(args.num_relations, args.embedding_dim)  # e7
+        self.emb_rel_e0 = nn.Embedding(self.num_relations, self.embedding_dim)  # real
+        self.emb_rel_e1 = nn.Embedding(self.num_relations, self.embedding_dim)  # e1
+        self.emb_rel_e2 = nn.Embedding(self.num_relations, self.embedding_dim)  # e2
+        self.emb_rel_e3 = nn.Embedding(self.num_relations, self.embedding_dim)  # e3
+        self.emb_rel_e4 = nn.Embedding(self.num_relations, self.embedding_dim)  # e4
+        self.emb_rel_e5 = nn.Embedding(self.num_relations, self.embedding_dim)  # e5
+        self.emb_rel_e6 = nn.Embedding(self.num_relations, self.embedding_dim)  # e6
+        self.emb_rel_e7 = nn.Embedding(self.num_relations, self.embedding_dim)  # e7
         xavier_normal_(self.emb_rel_e0.weight.data), xavier_normal_(self.emb_rel_e1.weight.data)
         xavier_normal_(self.emb_rel_e2.weight.data), xavier_normal_(self.emb_rel_e3.weight.data)
         xavier_normal_(self.emb_rel_e4.weight.data), xavier_normal_(self.emb_rel_e5.weight.data)
         xavier_normal_(self.emb_rel_e6.weight.data), xavier_normal_(self.emb_rel_e7.weight.data)
 
         # Dropouts for octonion embeddings of subject entities.
-        self.input_dp_ent_e0 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_e1 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_e2 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_e3 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_e4 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_e5 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_e6 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_e7 = torch.nn.Dropout(args.input_dropout_rate)
+        self.input_dp_ent_e0 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_e1 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_e2 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_e3 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_e4 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_e5 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_e6 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_e7 = torch.nn.Dropout(self.input_dropout_rate)
         # Dropouts for octonion embeddings of relations.
-        self.input_dp_rel_e0 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_e1 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_e2 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_e3 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_e4 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_e5 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_e6 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_e7 = torch.nn.Dropout(args.input_dropout_rate)
+        self.input_dp_rel_e0 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_e1 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_e2 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_e3 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_e4 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_e5 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_e6 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_e7 = torch.nn.Dropout(self.input_dropout_rate)
         # Dropouts for octonion embeddings obtained from octonion multiplication.
-        self.hidden_dp_e0 = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_e1 = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_e2 = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_e3 = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_e4 = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_e5 = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_e6 = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_e7 = torch.nn.Dropout(args.hidden_dropout_rate)
+        self.hidden_dp_e0 = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_e1 = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_e2 = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_e3 = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_e4 = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_e5 = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_e6 = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_e7 = torch.nn.Dropout(self.hidden_dropout_rate)
         # Batch normalization for octonion embeddings of subject entities.
-        self.bn_ent_e0 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_ent_e1 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_ent_e2 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_ent_e3 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_ent_e4 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_ent_e5 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_ent_e6 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_ent_e7 = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_ent_e0 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_e1 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_e2 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_e3 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_e4 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_e5 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_e6 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_e7 = torch.nn.BatchNorm1d(self.embedding_dim)
         # Batch normalization for octonion embeddings of relations.
-        self.bn_rel_e0 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_rel_e1 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_rel_e2 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_rel_e3 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_rel_e4 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_rel_e5 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_rel_e6 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_rel_e7 = torch.nn.BatchNorm1d(args.embedding_dim)
-
+        self.bn_rel_e0 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_e1 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_e2 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_e3 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_e4 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_e5 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_e6 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_e7 = torch.nn.BatchNorm1d(self.embedding_dim)
 
         # Batch normalization for octonion embeddings of relations.
-        self.bn_hidden_e0 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_hidden_e1 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_hidden_e2 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_hidden_e3 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_hidden_e4 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_hidden_e5 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_hidden_e6 = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_hidden_e7 = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_hidden_e0 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_hidden_e1 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_hidden_e2 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_hidden_e3 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_hidden_e4 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_hidden_e5 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_hidden_e6 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_hidden_e7 = torch.nn.BatchNorm1d(self.embedding_dim)
 
     def get_embeddings(self):
         entity_emb = torch.cat((
@@ -240,7 +236,7 @@ class OMult(BaseKGE):
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
         e2_idx: torch.Tensor
-        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1],x[:, 2]
+        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1], x[:, 2]
         # (1)
         # (1.1) Octonion embeddings of head entities
         emb_head_e0 = self.emb_ent_e0(e1_idx)
@@ -325,15 +321,9 @@ class OMult(BaseKGE):
 
 
 class ConvO(BaseKGE):
-    def __init__(self, args):
-        super().__init__(learning_rate=args.learning_rate)
+    def __init__(self, args: dict):
+        super().__init__(args=args)
         self.name = 'ConvO'
-        self.loss = torch.nn.BCEWithLogitsLoss()
-        self.apply_unit_norm = args.apply_unit_norm
-        self.embedding_dim = args.embedding_dim  # for reshaping in the residual.
-        self.num_entities = args.num_entities
-        self.num_relations = args.num_relations
-
         # Octonion embeddings of entities
         self.emb_ent_e0 = nn.Embedding(self.num_entities, self.embedding_dim)  # real
         self.emb_ent_e1 = nn.Embedding(self.num_entities, self.embedding_dim)  # e1
@@ -363,34 +353,34 @@ class ConvO(BaseKGE):
         xavier_normal_(self.emb_rel_e6.weight.data), xavier_normal_(self.emb_rel_e7.weight.data)
 
         # Dropouts for octonion embeddings of entities.
-        self.input_dp_ent_e0 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_e1 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_e2 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_e3 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_e4 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_e5 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_e6 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_e7 = torch.nn.Dropout(args.input_dropout_rate)
+        self.input_dp_ent_e0 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_e1 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_e2 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_e3 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_e4 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_e5 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_e6 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_e7 = torch.nn.Dropout(self.input_dropout_rate)
 
         # Dropouts for octonion embeddings of relations.
-        self.input_dp_rel_e0 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_e1 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_e2 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_e3 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_e4 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_e5 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_e6 = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_e7 = torch.nn.Dropout(args.input_dropout_rate)
+        self.input_dp_rel_e0 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_e1 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_e2 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_e3 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_e4 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_e5 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_e6 = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_e7 = torch.nn.Dropout(self.input_dropout_rate)
 
         # Dropouts for octonion embeddings obtained from octonion multiplication.
-        self.hidden_dp_e0 = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_e1 = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_e2 = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_e3 = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_e4 = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_e5 = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_e6 = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_e7 = torch.nn.Dropout(args.hidden_dropout_rate)
+        self.hidden_dp_e0 = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_e1 = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_e2 = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_e3 = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_e4 = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_e5 = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_e6 = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_e7 = torch.nn.Dropout(self.hidden_dropout_rate)
 
         # Batch normalization for octonion embeddings of ALL entities.
         self.bn_ent_e0 = torch.nn.BatchNorm1d(self.embedding_dim)
@@ -412,19 +402,16 @@ class ConvO(BaseKGE):
         self.bn_rel_e7 = torch.nn.BatchNorm1d(self.embedding_dim)
 
         # Convolution
-        self.kernel_size = args.kernel_size
-        self.num_of_output_channels = args.num_of_output_channels
-
         self.conv1 = torch.nn.Conv1d(in_channels=1, out_channels=self.num_of_output_channels,
                                      kernel_size=(self.kernel_size, self.kernel_size), stride=1, padding=1, bias=True)
 
-        self.fc_num_input = args.embedding_dim * 16 * self.num_of_output_channels  # 8 because of 8 real values in 2 quaternions
+        self.fc_num_input = self.embedding_dim * 16 * self.num_of_output_channels  # 8 because of 8 real values in 2 quaternions
         self.fc1 = torch.nn.Linear(self.fc_num_input, self.embedding_dim * 8)  # Hard compression.
         self.bn_conv1 = torch.nn.BatchNorm2d(self.num_of_output_channels)
-        self.bn_conv2 = torch.nn.BatchNorm1d(args.embedding_dim * 8)
+        self.bn_conv2 = torch.nn.BatchNorm1d(self.embedding_dim * 8)
 
         # Convolution Dropout
-        self.feature_map_dropout = torch.nn.Dropout2d(args.feature_map_dropout_rate)
+        self.feature_map_dropout = torch.nn.Dropout2d(self.feature_map_dropout_rate)
 
     def get_embeddings(self):
         entity_emb = torch.cat((
@@ -463,12 +450,10 @@ class ConvO(BaseKGE):
         x = F.relu(x)
         x = self.feature_map_dropout(x)
         x = x.view(x.shape[0], -1)  # reshape for NN.
-        x = self.fc1(x)
-        x = self.bn_conv2(x)
-        x = F.relu(x)
+        x = F.relu(self.bn_conv2(self.fc1(x)))
         return torch.chunk(x, 8, dim=1)
 
-    def forward_k_vs_all(self, x:torch.Tensor):
+    def forward_k_vs_all(self, x: torch.Tensor):
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
         e1_idx, rel_idx = x[:, 0], x[:, 1]
@@ -543,8 +528,7 @@ class ConvO(BaseKGE):
             # (4.2) Dropout on (4.1).
             # (4.3) Apply BN + DP on ALL entities.
             # (4.4) Inner product
-            e0_score = torch.mm(self.hidden_dp_e0(conv_e0 * e0),
-                                self.emb_ent_e0.weight.transpose(1, 0))
+            e0_score = torch.mm(self.hidden_dp_e0(conv_e0 * e0), self.emb_ent_e0.weight.transpose(1, 0))
             e1_score = torch.mm(self.hidden_dp_e1(conv_e1 * e1), self.emb_ent_e1.weight.transpose(1, 0))
             e2_score = torch.mm(self.hidden_dp_e2(conv_e2 * e2), self.emb_ent_e2.weight.transpose(1, 0))
             e3_score = torch.mm(self.hidden_dp_e3(conv_e3 * e3), self.emb_ent_e3.weight.transpose(1, 0))
@@ -558,7 +542,7 @@ class ConvO(BaseKGE):
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
         e2_idx: torch.Tensor
-        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1],x[:, 2]
+        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1], x[:, 2]
         # (1)
         # (1.1) Octonion embeddings of head entities
         emb_head_e0 = self.emb_ent_e0(e1_idx)

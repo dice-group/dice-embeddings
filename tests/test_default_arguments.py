@@ -1,9 +1,9 @@
 from main import argparse_default
 from core.executer import Execute
 import sys
-
-
+import pytest
 class TestDefaultParams:
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_shallom(self):
         args = argparse_default([])
         args.model = 'Shallom'
@@ -22,6 +22,7 @@ class TestDefaultParams:
         args.sample_triples_ratio = None
         Execute(args).start()
 
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_conex(self):
         args = argparse_default([])
         args.model = 'ConEx'
@@ -40,6 +41,7 @@ class TestDefaultParams:
         args.sample_triples_ratio = None
         Execute(args).start()
 
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult(self):
         args = argparse_default([])
         args.model = 'QMult'
@@ -58,6 +60,7 @@ class TestDefaultParams:
         args.sample_triples_ratio = None
         Execute(args).start()
 
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_convq(self):
         args = argparse_default([])
         args.model = 'ConvQ'
@@ -76,6 +79,7 @@ class TestDefaultParams:
         args.sample_triples_ratio = None
         Execute(args).start()
 
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_omult(self):
         args = argparse_default([])
         args.model = 'OMult'
@@ -94,6 +98,7 @@ class TestDefaultParams:
         args.sample_triples_ratio = None
         Execute(args).start()
 
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_convo(self):
         args = argparse_default([])
         args.model = 'ConvO'

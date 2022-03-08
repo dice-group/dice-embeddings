@@ -8,6 +8,7 @@ from dask import dataframe as ddf
 import os
 import pandas as pd
 from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_re_vocab
+import glob
 
 np.random.seed(1)
 pd.set_option('display.max_columns', None)
@@ -40,19 +41,19 @@ class KG:
             # 1. LOAD Data. (First pass on data)
             print(
                 f'[1 / 14] Loading training data: large_kg_parse: {large_kg_parse}, read_only_few: {read_only_few} , sample_triples_ratio: {sample_triples_ratio}...')
-            self.train_set = self.load_data_parallel(data_dir + '/train.txt', large_kg_parse, read_only_few,
+            self.train_set = self.load_data_parallel(data_dir + '/train', large_kg_parse, read_only_few,
                                                      sample_triples_ratio)
             print('Done !\n')
             print(
                 f'[2 / 14] Loading valid data: large_kg_parse: {large_kg_parse}, read_only_few: {read_only_few}, sample_triples_ratio: {sample_triples_ratio}...')
 
-            self.valid_set = self.load_data_parallel(data_dir + '/valid.txt', large_kg_parse, read_only_few,
+            self.valid_set = self.load_data_parallel(data_dir + '/valid', large_kg_parse, read_only_few,
                                                      sample_triples_ratio)
             print('Done !\n')
             print(
                 f'[3 / 14] Loading test data: large_kg_parse: {large_kg_parse}, read_only_few: {read_only_few}, sample_triples_ratio: {sample_triples_ratio}...')
 
-            self.test_set = self.load_data_parallel(data_dir + '/test.txt', large_kg_parse, read_only_few,
+            self.test_set = self.load_data_parallel(data_dir + '/test', large_kg_parse, read_only_few,
                                                     sample_triples_ratio)
             print('Done !\n')
 
@@ -144,7 +145,7 @@ class KG:
             # 8. Serialize already read training data in parquet format so that
             # the training data is stored in more memory efficient manner as well as
             # it can be reread later faster
-            print('[10 / 14] Serializing training data...')  # TODO: Do we really need it ?!
+            print('[10 / 14] Serializing training data for Continual Learning...')  # TODO: Do we really need it ?!
             self.train_set.to_parquet(path_for_serialization + '/train_df.gzip', compression='gzip')
             print('Done!\n')
 
@@ -175,7 +176,7 @@ class KG:
             assert isinstance(self.train_set[0][2], np.int64)
             # 14. Repeat computations carried out from 8-13 on validation dataset.
             if len(self.valid_set) > 0:
-                print('Serializing validation data...')  # TODO: Do we really need it ?!
+                print('Serializing validation data for Continual Learning...')  # TODO: Do we really need it ?!
                 self.valid_set.to_parquet(path_for_serialization + '/valid_df.gzip', compression='gzip')
                 self.valid_set['subject'] = self.valid_set['subject'].map(lambda x: self.entity_to_idx[x])
                 self.valid_set['relation'] = self.valid_set['relation'].map(lambda x: self.relation_to_idx[x])
@@ -197,7 +198,7 @@ class KG:
                 self.valid_set = self.valid_set.values
             # 15. Repeat computations carried out from 8-13 on test dataset.
             if len(self.test_set) > 0:
-                print('Serializing test data...')  # TODO: Do we really need it ?!
+                print('Serializing test data for Continual Learning...')  # TODO: Do we really need it ?!
                 self.test_set.to_parquet(path_for_serialization + '/test_df.gzip', compression='gzip')
                 self.test_set['subject'] = self.test_set['subject'].map(lambda x: self.entity_to_idx[x])
                 self.test_set['relation'] = self.test_set['relation'].map(lambda x: self.relation_to_idx[x])
@@ -408,7 +409,10 @@ class KG:
         :param sample_triples_ratio:
         :return:
         """
-        if os.path.exists(data_path):
+        # (1) Check file exists, .e.g, ../../train.* exists
+
+        if glob.glob(data_path+'.*'):
+            """
             with open(data_path, 'r') as reader:
                 s = next(reader)
                 # Heuristic to infer the format of the input data
@@ -417,9 +421,12 @@ class KG:
                     is_nt_format = True
                 else:
                     is_nt_format = False
-
-            # Whitespace is used as deliminator and first three items are considered.
-            df = ddf.read_csv(data_path, delim_whitespace=True, header=None, usecols=[0, 1, 2],
+            """
+            # (1) Read knowledge graph  via
+            # (1.1) Using the whitespace as a deliminator
+            # (1.2) Taking first three columns detected in (1.1.)
+            # Task would even allow us to read compressed KGs.
+            df = ddf.read_csv(data_path+'.*', delim_whitespace=True, header=None, usecols=[0, 1, 2],
                               names=['subject', 'relation', 'object'])
 
             if isinstance(read_only_few, int):
@@ -428,18 +435,17 @@ class KG:
             if sample_triples_ratio:
                 df = df.sample(frac=sample_triples_ratio)
 
-            if is_nt_format:
-                # Drop rows having ^^
-                df = df[df["object"].str.contains("<http://www.w3.org/2001/XMLSchema#double>") == False]
-                df = df[df["object"].str.contains("<http://www.w3.org/2001/XMLSchema#boolean>") == False]
-                df['subject'] = df['subject'].str.removeprefix("<").str.removesuffix(">")
-                df['relation'] = df['relation'].str.removeprefix("<").str.removesuffix(">")
-                df['object'] = df['object'].str.removeprefix("<").str.removesuffix(">")
+            # Drop rows having ^^
+            df = df[df["object"].str.contains("<http://www.w3.org/2001/XMLSchema#double>") == False]
+            df = df[df["object"].str.contains("<http://www.w3.org/2001/XMLSchema#boolean>") == False]
+            df['subject'] = df['subject'].str.removeprefix("<").str.removesuffix(">")
+            df['relation'] = df['relation'].str.removeprefix("<").str.removesuffix(">")
+            df['object'] = df['object'].str.removeprefix("<").str.removesuffix(">")
             if large_kg_parse:
                 df = df.compute(scheduler='processes')
             else:
                 df = df.compute(scheduler='single-threaded')
-            x, y = df.shape
+            num_triples, y = df.shape
             assert y == 3
             # print(f'Parsed via DASK: {df.shape}. Whitespace is used as delimiter.')
             return df

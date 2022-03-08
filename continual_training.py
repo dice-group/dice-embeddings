@@ -19,7 +19,7 @@ class ContinuousExecute(Execute):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(add_help=False)
     # Dataset and storage related
-    parser.add_argument("--path_experiment_folder", type=str, default="DAIKIRI_Storage/2022-03-07 08:02:13.107971",
+    parser.add_argument("--path_experiment_folder", type=str, default="DAIKIRI_Storage/2022-03-08 07:56:41.961150",
                         help="The path of a folder containing pretrained model")
     # Training Parameters
     parser.add_argument("--num_epochs", type=int, default=10,

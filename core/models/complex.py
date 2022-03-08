@@ -1,4 +1,3 @@
-from abc import ABC
 
 import numpy as np
 import torch
@@ -6,46 +5,39 @@ from typing import Tuple
 from .base_model import *
 
 
-class ConEx(BaseKGE, ABC):
+class ConEx(BaseKGE):
     def __init__(self, args):
-        super().__init__()
+        super().__init__(args)
         self.name = 'ConEx'
-        self.loss = torch.nn.BCEWithLogitsLoss()
-        self.learning_rate = args.learning_rate
 
-        # Init Embeddings
-        self.embedding_dim = args.embedding_dim
-        self.emb_ent_real = nn.Embedding(args.num_entities, args.embedding_dim)  # real
-        self.emb_ent_i = nn.Embedding(args.num_entities, args.embedding_dim)  # imaginary i
-        self.emb_rel_real = nn.Embedding(args.num_relations, args.embedding_dim)  # real
-        self.emb_rel_i = nn.Embedding(args.num_relations, args.embedding_dim)  # imaginary i
+        self.emb_ent_real = nn.Embedding(self.num_entities, self.embedding_dim)  # real
+        self.emb_ent_i = nn.Embedding(self.num_entities, self.embedding_dim)  # imaginary i
+        self.emb_rel_real = nn.Embedding(self.num_relations, self.embedding_dim)  # real
+        self.emb_rel_i = nn.Embedding(self.num_relations, self.embedding_dim)  # imaginary i
         xavier_normal_(self.emb_ent_real.weight.data), xavier_normal_(self.emb_ent_i.weight.data)
         xavier_normal_(self.emb_rel_real.weight.data), xavier_normal_(self.emb_rel_i.weight.data)
 
-        # Init Conv.
-        self.kernel_size = args.kernel_size  # Square filter.
-        self.num_of_output_channels = args.num_of_output_channels
         # Convolution
-        self.conv1 = torch.nn.Conv1d(in_channels=1, out_channels=args.num_of_output_channels,
-                                     kernel_size=(args.kernel_size, args.kernel_size), stride=1, padding=1, bias=True)
+        self.conv1 = torch.nn.Conv1d(in_channels=1, out_channels=self.num_of_output_channels,
+                                     kernel_size=(self.kernel_size, self.kernel_size), stride=1, padding=1, bias=True)
 
-        fc_num_input = args.embedding_dim * 4 * args.num_of_output_channels  # 4 because of 4 real values in 2 complex numbers
-        self.fc = torch.nn.Linear(fc_num_input, args.embedding_dim * 2)
+        fc_num_input = self.embedding_dim * 4 * self.num_of_output_channels  # 4 because of 4 real values in 2 complex numbers
+        self.fc = torch.nn.Linear(fc_num_input, self.embedding_dim * 2)
 
         # Dropouts
-        self.input_dp_ent_real = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_i = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_real = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_i = torch.nn.Dropout(args.input_dropout_rate)
+        self.input_dp_ent_real = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_i = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_real = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_i = torch.nn.Dropout(self.input_dropout_rate)
         # Batch Normalization
-        self.bn_ent_real = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_ent_i = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_rel_real = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_rel_i = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_ent_real = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_i = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_real = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_i = torch.nn.BatchNorm1d(self.embedding_dim)
 
-        self.bn_conv1 = torch.nn.BatchNorm2d(args.num_of_output_channels)
-        self.bn_conv2 = torch.nn.BatchNorm1d(args.embedding_dim * 2)
-        self.feature_map_dropout = torch.nn.Dropout2d(args.feature_map_dropout_rate)
+        self.bn_conv1 = torch.nn.BatchNorm2d(self.num_of_output_channels)
+        self.bn_conv2 = torch.nn.BatchNorm1d(self.embedding_dim * 2)
+        self.feature_map_dropout = torch.nn.Dropout2d(self.feature_map_dropout_rate)
 
     def get_embeddings(self) -> Tuple[np.array, np.array]:
         """
@@ -159,34 +151,32 @@ class ConEx(BaseKGE, ABC):
 
 class ComplEx(BaseKGE):
     def __init__(self, args):
-        super().__init__()
+        super().__init__(args)
         self.name = 'ComplEx'
-        self.loss = torch.nn.BCEWithLogitsLoss()
         # Init Embeddings
-        self.embedding_dim = args.embedding_dim
-        self.emb_ent_real = nn.Embedding(args.num_entities, args.embedding_dim)  # real
-        self.emb_ent_i = nn.Embedding(args.num_entities, args.embedding_dim)  # imaginary i
-        self.emb_rel_real = nn.Embedding(args.num_relations, args.embedding_dim)  # real
-        self.emb_rel_i = nn.Embedding(args.num_relations, args.embedding_dim)  # imaginary i
+        self.emb_ent_real = nn.Embedding(self.num_entities, self.embedding_dim)  # real
+        self.emb_ent_i = nn.Embedding(self.num_entities, self.embedding_dim)  # imaginary i
+        self.emb_rel_real = nn.Embedding(self.num_relations, self.embedding_dim)  # real
+        self.emb_rel_i = nn.Embedding(self.num_relations, self.embedding_dim)  # imaginary i
         xavier_normal_(self.emb_ent_real.weight.data), xavier_normal_(self.emb_ent_i.weight.data)
         xavier_normal_(self.emb_rel_real.weight.data), xavier_normal_(self.emb_rel_i.weight.data)
 
         # Dropouts
-        self.input_dp_ent_real = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_i = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_real = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_i = torch.nn.Dropout(args.input_dropout_rate)
+        self.input_dp_ent_real = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_i = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_real = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_i = torch.nn.Dropout(self.input_dropout_rate)
 
-        self.hidden_dp_a = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_b = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_c = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_d = torch.nn.Dropout(args.hidden_dropout_rate)
+        self.hidden_dp_a = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_b = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_c = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_d = torch.nn.Dropout(self.hidden_dropout_rate)
 
         # Batch Normalization
-        self.bn_ent_real = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_ent_i = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_rel_real = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_rel_i = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_ent_real = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_i = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_real = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_i = torch.nn.BatchNorm1d(self.embedding_dim)
 
     def get_embeddings(self):
         entity_emb = torch.cat((self.emb_ent_real.weight.data, self.emb_ent_i.weight.data), 1)
@@ -247,7 +237,6 @@ class KDComplEx(BaseKGE):
     def __init__(self, args):
         super().__init__()
         self.name = 'KPDistMult'
-        self.loss = torch.nn.BCEWithLogitsLoss()
         # Init Embeddings
         self.embedding_dim = args.embedding_dim
         self.emb_ent_real = nn.Embedding(args.num_entities, args.embedding_dim)  # real

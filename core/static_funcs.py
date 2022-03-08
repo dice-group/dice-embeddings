@@ -12,6 +12,7 @@ from .models import *
 import time
 import pandas as pd
 import json
+import glob
 
 
 def store_kge(trained_model, path: str):
@@ -124,6 +125,13 @@ def preprocesses_input_args(arg):
     sanity_checking_with_arguments(arg)
     if arg.save_model_at_every_epoch is None:
         arg.save_model_at_every_epoch = arg.max_epochs
+
+    if arg.num_folds_for_cv > 0:
+        arg.eval = True
+
+    # By default PL sets it to 1
+    if arg.num_processes == 1:
+        arg.num_processes = os.cpu_count()
     return arg
 
 
@@ -183,57 +191,58 @@ def sanity_checking_with_arguments(args):
         raise AssertionError(f'The path does not direct to a file {args.path_dataset_folder}')
 
     try:
-        assert os.path.isfile(args.path_dataset_folder + '/train.txt')
+        assert glob.glob(args.path_dataset_folder + '/train.*')
     except AssertionError:
-        print(f'The directory {args.path_dataset_folder} must contain a **train.txt** .')
+        print(f'The directory {args.path_dataset_folder} must contain a train.*  .')
         raise
 
     args.eval = bool(args.eval)
     args.large_kg_parse = bool(args.large_kg_parse)
 
 
-def select_model(args) -> Tuple[pl.LightningModule, AnyStr]:
-    if args.model == 'KronELinear':
+def select_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
+    model_name = args['model']
+    if model_name == 'KronELinear':
         model = KronELinear(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'KPDistMult':
+    elif model_name == 'KPDistMult':
         model = KPDistMult(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'KPFullDistMult':
+    elif model_name == 'KPFullDistMult':
         # Full compression of entities and relations.
         model = KPFullDistMult(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'KronE':
+    elif model_name == 'KronE':
         model = KronE(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'KronE_wo_f':
+    elif model_name == 'KronE_wo_f':
         model = KronE_wo_f(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'BaseKronE':
+    elif model_name == 'BaseKronE':
         model = BaseKronE(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'Shallom':
+    elif model_name == 'Shallom':
         model = Shallom(args=args)
         form_of_labelling = 'RelationPrediction'
-    elif args.model == 'ConEx':
+    elif model_name == 'ConEx':
         model = ConEx(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'QMult':
+    elif model_name == 'QMult':
         model = QMult(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'OMult':
+    elif model_name == 'OMult':
         model = OMult(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'ConvQ':
+    elif model_name == 'ConvQ':
         model = ConvQ(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'ConvO':
+    elif model_name == 'ConvO':
         model = ConvO(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'ComplEx':
+    elif model_name == 'ComplEx':
         model = ComplEx(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'DistMult':
+    elif model_name == 'DistMult':
         model = DistMult(args=args)
         form_of_labelling = 'EntityPrediction'
     else:
@@ -244,15 +253,15 @@ def select_model(args) -> Tuple[pl.LightningModule, AnyStr]:
 def load_model(args) -> torch.nn.Module:
     """ Load weights and initialize pytorch module from namespace arguments"""
     # (1) Load weights from experiment repo
-    weights = torch.load(args.path_of_experiment_folder + '/model.pt', torch.device('cpu'))
+    weights = torch.load(args['path_of_experiment_folder'] + '/model.pt', torch.device('cpu'))
     model, _ = select_model(args)
     model.load_state_dict(weights)
     for parameter in model.parameters():
         parameter.requires_grad = False
     model.eval()
 
-    entity_to_idx = pd.read_parquet(args.path_of_experiment_folder + '/entity_to_idx.gzip').to_dict()['entity']
-    relation_to_idx = pd.read_parquet(args.path_of_experiment_folder + '/relation_to_idx.gzip').to_dict()['relation']
+    entity_to_idx = pd.read_parquet(args['path_of_experiment_folder'] + '/entity_to_idx.gzip').to_dict()['entity']
+    relation_to_idx = pd.read_parquet(args['path_of_experiment_folder'] + '/relation_to_idx.gzip').to_dict()['relation']
     return model, entity_to_idx, relation_to_idx
 
 

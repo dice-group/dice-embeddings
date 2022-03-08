@@ -11,24 +11,22 @@ class DistMult(BaseKGE):
     https://arxiv.org/abs/1412.6575"""
 
     def __init__(self, args):
-        super().__init__(args.learning_rate)
+        super().__init__(args)
         self.name = 'DistMult'
-        self.loss = torch.nn.BCEWithLogitsLoss()
         # Init Embeddings
-        self.embedding_dim = args.embedding_dim
-        self.emb_ent_real = nn.Embedding(args.num_entities, args.embedding_dim)  # real
-        self.emb_rel_real = nn.Embedding(args.num_relations, args.embedding_dim)  # real
+        self.emb_ent_real = nn.Embedding(self.num_entities, self.embedding_dim)  # real
+        self.emb_rel_real = nn.Embedding(self.num_relations, self.embedding_dim)  # real
         xavier_normal_(self.emb_ent_real.weight.data), xavier_normal_(self.emb_rel_real.weight.data)
 
         # Dropouts
-        self.input_dp_ent_real = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_real = torch.nn.Dropout(args.input_dropout_rate)
+        self.input_dp_ent_real = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_real = torch.nn.Dropout(self.input_dropout_rate)
         # Batch Normalization
-        self.bn_ent_real = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_rel_real = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_hidden_real = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_ent_real = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_real = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_hidden_real = torch.nn.BatchNorm1d(self.embedding_dim)
 
-        self.hidden_dropout = torch.nn.Dropout(args.hidden_dropout_rate)
+        self.hidden_dropout = torch.nn.Dropout(self.hidden_dropout_rate)
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
         return self.emb_ent_real.weight.data.data.detach().numpy(), self.emb_rel_real.weight.data.detach().numpy()
@@ -66,18 +64,17 @@ class Shallom(BaseKGE):
     """ A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090) """
 
     def __init__(self, args):
-        super().__init__(args.learning_rate)
+        super().__init__(args)
         self.name = 'Shallom'
-        shallom_width = int(args.shallom_width_ratio_of_emb * args.embedding_dim)
-        self.loss = torch.nn.BCEWithLogitsLoss()
-        self.entity_embeddings = nn.Embedding(args.num_entities, args.embedding_dim)
+        shallom_width = int(args['shallom_width_ratio_of_emb'] * self.embedding_dim)
+        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
         xavier_normal_(self.entity_embeddings.weight.data)
-        self.shallom = nn.Sequential(nn.Dropout(args.input_dropout_rate),
-                                     torch.nn.Linear(args.embedding_dim * 2, shallom_width),
+        self.shallom = nn.Sequential(nn.Dropout(self.input_dropout_rate),
+                                     torch.nn.Linear(self.embedding_dim * 2, shallom_width),
                                      nn.BatchNorm1d(shallom_width),
                                      nn.ReLU(),
-                                     nn.Dropout(args.hidden_dropout_rate),
-                                     torch.nn.Linear(shallom_width, args.num_relations))
+                                     nn.Dropout(self.hidden_dropout_rate),
+                                     torch.nn.Linear(shallom_width, self.num_relations))
 
     def get_embeddings(self) -> Tuple[np.ndarray, None]:
         return self.entity_embeddings.weight.data.detach().numpy(), None
@@ -212,9 +209,8 @@ class KronE(BaseKGE):
 
 class KronELinear(BaseKGE):
     def __init__(self, args):
-        super().__init__(args.learning_rate)
+        super().__init__(args)
         self.name = 'KronELinear'
-        self.loss = torch.nn.BCEWithLogitsLoss()
         # Init Embeddings # must have valid root
         # (1) Initialize embeddings
         self.entity_embedding_dim = args.embedding_dim

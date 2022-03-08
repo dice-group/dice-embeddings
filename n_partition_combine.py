@@ -1,9 +1,7 @@
 import itertools
 from argparse import ArgumentParser
 from glob import glob
-
 import torch
-
 from core.executer import Execute
 from core import load_configuration
 from core.static_funcs import load_model, select_model, create_experiment_folder, store_kge
@@ -50,12 +48,32 @@ class Merger:
                 except AssertionError:
                     raise AssertionError(f'{self.model_name} can be ensembled with {previous_args.model}')
 
-            df_entities = pd.read_csv(
-                previous_args.path_of_experiment_folder + f'/{self.model_name}_entity_embeddings.csv',
-                index_col=0)
-            df_relations = pd.read_csv(
-                previous_args.path_of_experiment_folder + f'/{self.model_name}_relation_embeddings.csv',
-                index_col=0)
+            path_entity_emb = previous_args.path_of_experiment_folder + f'/{self.model_name}_entity_embeddings'
+
+            if os.path.isfile(path_entity_emb + '.csv'):
+                df_entities = pd.read_csv(path_entity_emb + '.csv', index_col=0)
+            elif os.path.isfile(path_entity_emb + '.npz'):
+
+                df_entities = pd.DataFrame(data=np.load(path_entity_emb + '.npz')['entity_emb'],
+                                           index=pd.read_parquet(
+                                               path=previous_args.path_of_experiment_folder + f'/entity_to_idx.gzip').index)
+            else:
+                raise FileNotFoundError(
+                    f"{previous_args.path_of_experiment_folder} + f'/{self.model_name}_entity_embeddings")
+
+            path_relations_emb = previous_args.path_of_experiment_folder + f'/{self.model_name}_relation_embeddings'
+
+            if os.path.isfile(path_relations_emb + '.csv'):
+                df_relations = pd.read_csv(path_relations_emb + '.csv', index_col=0)
+            elif os.path.isfile(path_relations_emb + '.npz'):
+                df_relations = pd.DataFrame(data=np.load(path_relations_emb + '.npz')['relation_ebm'],
+                                            index=pd.read_parquet(
+                                                path=previous_args.path_of_experiment_folder + f'/relation_to_idx.gzip').index)
+
+            else:
+                raise FileNotFoundError(
+                    f"{previous_args.path_of_experiment_folder} + f'/{self.model_name}_relation_embeddings")
+
             num_entity_rows += len(df_entities)
             num_relation_rows += len(df_relations)
 
@@ -66,6 +84,10 @@ class Merger:
         # (2) Concatenate entity embedding dataframes
         self.entity_embeddings = pd.concat(self.entity_embeddings, ignore_index=False)
         self.relation_embeddings = pd.concat(self.relation_embeddings, ignore_index=False)
+
+
+        self.entity_embeddings.columns = self.entity_embeddings.columns.astype(str)
+        self.relation_embeddings.columns = self.relation_embeddings.columns.astype(str)
         assert len(self.entity_embeddings) == num_entity_rows
         assert len(self.relation_embeddings) == num_relation_rows
 
