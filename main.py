@@ -22,10 +22,10 @@ def argparse_default(description=None):
                         default='QMult',
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, "
                              "Shallom, ConEx, ComplEx, DistMult, KronE, KPDistMult")
-    parser.add_argument('--embedding_dim', type=int, default=100,
+    parser.add_argument('--embedding_dim', type=int, default=25,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=5, help='Number of epochs for training. ')
-    parser.add_argument('--batch_size', type=int, default=100_000, help='Mini batch size')
+    parser.add_argument("--num_epochs", type=int, default=2, help='Number of epochs for training. ')
+    parser.add_argument('--batch_size', type=int, default=1_000_000, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.1, help='Learning rate')
     # Hyperparameters for training.
     parser.add_argument('--scoring_technique', default='NegSample', help="1vsAll, KvsAll, NegSample.")
@@ -57,7 +57,7 @@ def argparse_default(description=None):
                         help='The ratio of the size of the affine transformation w.r.t. the size of the embeddings')
 
     # Flags for computation
-    parser.add_argument("--eval", type=int, default=0,
+    parser.add_argument("--eval", type=int, default=1,
                         help='A flag for using evaluation')
     parser.add_argument("--eval_on_train", type=int, default=0,
                         help='A flag for using train data to evaluation ')

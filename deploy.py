@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 
 import numpy as np
 import pandas as pd
-from core.static_funcs import load_model
+from core.static_funcs import load_model, select_model
 import json
 from collections import namedtuple
 import torch
@@ -93,14 +93,23 @@ def launch_service(config, pretrained_model, entity_idx, predicate_idx):
 def run(args: dict):
     print('Loading Model...')
     config = update_arguments_with_training_configuration(args)
-    pretrained_model, entity_idx, predicate_idx = load_model(config)
+
+    pretrained_model, _ = select_model(config)
+    weights = torch.load(args['path_of_experiment_folder'] + '/model.pt', torch.device('cpu'))
+    pretrained_model.load_state_dict(weights)
+    for parameter in pretrained_model.parameters():
+        parameter.requires_grad = False
+    pretrained_model.eval()
+
+    entity_to_idx = pd.read_parquet(args['path_of_experiment_folder'] + '/entity_to_idx.gzip').to_dict()['entity']
+    relation_to_idx = pd.read_parquet(args['path_of_experiment_folder'] + '/relation_to_idx.gzip').to_dict()['relation']
     print(f'Done!\n')
-    launch_service(config, pretrained_model, entity_idx, predicate_idx)
+    launch_service(config, pretrained_model, entity_to_idx, relation_to_idx)
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--path_of_experiment_folder", type=str, default='DAIKIRI_Storage/2022-03-08 19:56:59.314898')
+    parser.add_argument("--path_of_experiment_folder", type=str, default='Merged/2022-03-09 16:02:42.138607')
     parser.add_argument('--share', default=False, type=eval, choices=[True, False])
     parser.add_argument('--top_k', default=25, type=int)
     run(vars(parser.parse_args()))

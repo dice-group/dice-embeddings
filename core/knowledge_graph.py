@@ -318,6 +318,7 @@ class KG:
                 if read_only_few > 0:
                     df = df.loc[:read_only_few]
             if sample_triples_ratio:
+                print(f'Subsampling {sample_triples_ratio} of input data...')
                 df = df.sample(frac=sample_triples_ratio)
 
             # Drop rows having ^^
@@ -326,13 +327,13 @@ class KG:
             df['subject'] = df['subject'].str.removeprefix("<").str.removesuffix(">")
             df['relation'] = df['relation'].str.removeprefix("<").str.removesuffix(">")
             df['object'] = df['object'].str.removeprefix("<").str.removesuffix(">")
+            print('Dask Scheduler starts computation...')
             if large_kg_parse:
                 df = df.compute(scheduler='processes')
             else:
                 df = df.compute(scheduler='single-threaded')
             num_triples, y = df.shape
             assert y == 3
-            # print(f'Parsed via DASK: {df.shape}. Whitespace is used as delimiter.')
             return df
         else:
             print(f'{data_path} could not found!\n')
