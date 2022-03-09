@@ -5,36 +5,36 @@ import numpy as np
 from math import sqrt
 
 
-
 class DistMult(BaseKGE):
     """
     Embedding Entities and Relations for Learning and Inference in Knowledge Bases
     https://arxiv.org/abs/1412.6575"""
 
     def __init__(self, args):
-        super().__init__(args.learning_rate)
+        super().__init__(args)
         self.name = 'DistMult'
-        self.loss = torch.nn.BCEWithLogitsLoss()
         # Init Embeddings
-        self.embedding_dim = args.embedding_dim
-        self.emb_ent_real = nn.Embedding(args.num_entities, args.embedding_dim)  # real
-        self.emb_rel_real = nn.Embedding(args.num_relations, args.embedding_dim)  # real
+        self.emb_ent_real = nn.Embedding(self.num_entities, self.embedding_dim)  # real
+        self.emb_rel_real = nn.Embedding(self.num_relations, self.embedding_dim)  # real
         xavier_normal_(self.emb_ent_real.weight.data), xavier_normal_(self.emb_rel_real.weight.data)
 
         # Dropouts
-        self.input_dp_ent_real = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_real = torch.nn.Dropout(args.input_dropout_rate)
+        self.input_dp_ent_real = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_real = torch.nn.Dropout(self.input_dropout_rate)
         # Batch Normalization
-        self.bn_ent_real = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_rel_real = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_hidden_real = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_ent_real = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_real = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_hidden_real = torch.nn.BatchNorm1d(self.embedding_dim)
 
-        self.hidden_dropout = torch.nn.Dropout(args.hidden_dropout_rate)
+        self.hidden_dropout = torch.nn.Dropout(self.hidden_dropout_rate)
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
         return self.emb_ent_real.weight.data.data.detach().numpy(), self.emb_rel_real.weight.data.detach().numpy()
 
-    def forward_k_vs_all(self, e1_idx: torch.Tensor, rel_idx: torch.Tensor):
+    def forward_k_vs_all(self, x:torch.Tensor):
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e1_idx, rel_idx = x[:, 0], x[:, 1]
         # (1)
         # (1.1) Real embeddings of head entities
         emb_head_real = self.input_dp_ent_real(self.bn_ent_real(self.emb_ent_real(e1_idx)))
@@ -43,14 +43,11 @@ class DistMult(BaseKGE):
         return torch.mm(self.hidden_dropout(self.bn_hidden_real(emb_head_real * emb_rel_real)),
                         self.emb_ent_real.weight.transpose(1, 0))
 
-    def forward_triples(self, e1_idx: torch.Tensor, rel_idx: torch.Tensor, e2_idx: torch.Tensor) -> torch.Tensor:
-        """
-        Compute score of given triple
-        :param e1_idx:
-        :param rel_idx:
-        :param e2_idx:
-        :return:
-        """
+    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e2_idx: torch.Tensor
+        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1],x[:, 2]
         # (1)
         # (1.1) Complex embeddings of head entities and apply batch norm.
         emb_head_real = self.input_dp_ent_real(self.bn_ent_real(self.emb_ent_real(e1_idx)))
@@ -63,35 +60,36 @@ class DistMult(BaseKGE):
         return (self.hidden_dropout(self.bn_hidden_real(emb_head_real * emb_rel_real)) * emb_tail_real).sum(dim=1)
 
 
-
-
-
-
 class Shallom(BaseKGE):
     """ A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090) """
 
     def __init__(self, args):
-        super().__init__(args.learning_rate)
+        super().__init__(args)
         self.name = 'Shallom'
-        shallom_width = int(args.shallom_width_ratio_of_emb * args.embedding_dim)
-        self.loss = torch.nn.BCEWithLogitsLoss()
-        self.entity_embeddings = nn.Embedding(args.num_entities, args.embedding_dim)
+        shallom_width = int(args['shallom_width_ratio_of_emb'] * self.embedding_dim)
+        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
         xavier_normal_(self.entity_embeddings.weight.data)
-        self.shallom = nn.Sequential(nn.Dropout(args.input_dropout_rate),
-                                     torch.nn.Linear(args.embedding_dim * 2, shallom_width),
+        self.shallom = nn.Sequential(nn.Dropout(self.input_dropout_rate),
+                                     torch.nn.Linear(self.embedding_dim * 2, shallom_width),
                                      nn.BatchNorm1d(shallom_width),
                                      nn.ReLU(),
-                                     nn.Dropout(args.hidden_dropout_rate),
-                                     torch.nn.Linear(shallom_width, args.num_relations))
+                                     nn.Dropout(self.hidden_dropout_rate),
+                                     torch.nn.Linear(shallom_width, self.num_relations))
 
     def get_embeddings(self) -> Tuple[np.ndarray, None]:
         return self.entity_embeddings.weight.data.detach().numpy(), None
 
-    def forward_k_vs_all(self, e1_idx, e2_idx):
+    def forward_k_vs_all(self, x):
+        e1_idx: torch.Tensor
+        e2_idx: torch.Tensor
+        e1_idx, e2_idx = x[:, 0], x[:, 1]
         emb_s, emb_o = self.entity_embeddings(e1_idx), self.entity_embeddings(e2_idx)
         return self.shallom(torch.cat((emb_s, emb_o), 1))
 
+
 """ On going works"""
+
+
 class KPDistMult(BaseKGE):
     """
     Named as KD-Rel-DistMult  in our paper
@@ -120,7 +118,11 @@ class KPDistMult(BaseKGE):
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
         return self.emb_ent_real.weight.data.data.detach().numpy(), self.emb_rel_real.weight.data.detach().numpy()
 
-    def forward_k_vs_all(self, e1_idx: torch.Tensor, rel_idx: torch.Tensor):
+    def forward_k_vs_all(self, x):
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e1_idx, rel_idx = x[:, 0], x[:, 1]
+
         # (1) Retrieve  head entity embeddings and apply BN + DP
         emb_head_real = self.input_dp_ent_real(self.bn_ent_real(self.emb_ent_real(e1_idx)))
         emb_rel_real = self.emb_rel_real(rel_idx)
@@ -131,6 +133,7 @@ class KPDistMult(BaseKGE):
         # (4) Compute scores
         return torch.mm(self.hidden_dropout(self.bn_hidden_real(emb_head_real * emb_rel_real)),
                         self.emb_ent_real.weight.transpose(1, 0))
+
 
 class KronE(BaseKGE):
     """ Kronecker Decomposition applied on Entitiy and Relation Embedding matrices KP-DistMult """
@@ -177,7 +180,10 @@ class KronE(BaseKGE):
         emb_rel = self.bn_rel_real(self.emb_rel_real(rel_idx)).unsqueeze(1)
         return batch_kronecker_product(emb_rel, emb_rel).flatten(1)
 
-    def forward_k_vs_all(self, e1_idx: torch.Tensor, rel_idx: torch.Tensor):
+    def forward_k_vs_all(self, x):
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e1_idx, rel_idx = x[:, 0], x[:, 1]
         # (1) Prepare compressed embeddings, from d to d^2.
         # (1.1) Retrieve compressed embeddings
         # (1.2) Apply BN (1.1)
@@ -200,11 +206,11 @@ class KronE(BaseKGE):
         logits = torch.matmul(feature, self.emb_ent_real.weight.transpose(1, 0)).sum(dim=1)
         return logits
 
+
 class KronELinear(BaseKGE):
     def __init__(self, args):
-        super().__init__(args.learning_rate)
+        super().__init__(args)
         self.name = 'KronELinear'
-        self.loss = torch.nn.BCEWithLogitsLoss()
         # Init Embeddings # must have valid root
         # (1) Initialize embeddings
         self.entity_embedding_dim = args.embedding_dim
@@ -251,7 +257,10 @@ class KronELinear(BaseKGE):
         emb_rel = self.bn_rel_real(self.emb_rel_real(rel_idx)).unsqueeze(1)
         return batch_kronecker_product(emb_rel, emb_rel).flatten(1)
 
-    def forward_k_vs_all(self, e1_idx: torch.Tensor, rel_idx: torch.Tensor):
+    def forward_k_vs_all(self, x):
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e1_idx, rel_idx = x[:, 0], x[:, 1]
         # (1) Prepare compressed embeddings, from d to d^2.
         # (1.1) Retrieve compressed embeddings
         # (1.2) Apply BN (1.1)
@@ -271,7 +280,6 @@ class KronELinear(BaseKGE):
         # (6) Compute sum of logics Logits
         logits = torch.matmul(feature, self.emb_ent_real.weight.transpose(1, 0))
         return logits
-
 
 
 def batch_kronecker_product(a, b):
@@ -327,4 +335,3 @@ def kronecker_linear_transformation(X, Z, x):
     Zx = torch.matmul(x, Z).transpose(1, 2)
     out = torch.matmul(Zx, X.T)
     return out.flatten(1)
-

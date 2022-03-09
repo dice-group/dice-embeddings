@@ -12,6 +12,85 @@ from .models import *
 import time
 import pandas as pd
 import json
+import glob
+
+
+def store_kge(trained_model, path: str):
+    torch.save(trained_model.state_dict(), path)
+
+
+def model_fitting(trainer, model, train_dataloaders) -> None:
+    print(f'Number of mini-batches to compute for a single epoch: {len(train_dataloaders)}')
+    trainer.fit(model, train_dataloaders=train_dataloaders)
+
+
+def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
+    """
+
+    :param embeddings:
+    :param indexes:
+    :param path:
+    :return:
+    """
+    try:
+        df = pd.DataFrame(embeddings, index=indexes)
+        del embeddings
+        num_mb = df.memory_usage(index=True, deep=True).sum() / (10 ** 6)
+        if num_mb > 10 ** 6:
+            df = dd.from_pandas(df, npartitions=len(df) / 100)
+            # PARQUET wants columns to be stn
+            df.columns = df.columns.astype(str)
+            df.to_parquet(path)
+        else:
+            df.to_csv(path)
+    except KeyError or AttributeError as e:
+        print('Exception occurred at saving entity embeddings. Computation will continue')
+        print(e)
+    del df
+
+
+def read_input_data(args, cls):
+    """ Read & Parse input data for training and testing"""
+    print('*** Read, Parse, and Serialize Knowledge Graph  ***')
+    start_time = time.time()
+    # 1. Read & Parse input data
+    kg = cls(data_dir=args.path_dataset_folder,
+             large_kg_parse=args.large_kg_parse,
+             add_reciprical=args.add_reciprical,
+             eval_model=args.eval,
+             read_only_few=args.read_only_few,
+             sample_triples_ratio=args.sample_triples_ratio,
+             path_for_serialization=args.full_storage_path,
+             add_noise_rate=args.add_noise_rate)
+    print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
+    print(kg.description_of_input)
+    return kg
+
+
+def reload_input_data(storage_path: str, cls):
+    print('*** Reload Knowledge Graph  ***')
+    start_time = time.time()
+    kg = cls(deserialize_flag=storage_path)
+    print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
+    print(kg.description_of_input)
+    return kg
+
+
+def config_kge_sanity_checking(args, dataset):
+    """
+    Sanity checking for input hyperparams.
+    :return:
+    """
+    if args.batch_size > len(dataset.train_set):
+        args.batch_size = len(dataset.train_set)
+    if args.model == 'Shallom' and args.scoring_technique == 'NegSample':
+        print(
+            'Shallom can not be trained with Negative Sampling. Scoring technique is changed to KvsALL')
+        args.scoring_technique = 'KvsAll'
+
+    if args.scoring_technique == 'KvsAll':
+        args.neg_ratio = None
+    return args, dataset
 
 
 def performance_debugger(func_name):
@@ -37,19 +116,28 @@ def preprocesses_input_args(arg):
 
     arg.learning_rate = arg.lr
     arg.deterministic = True
-
     # Below part will be investigated
     arg.check_val_every_n_epoch = 10 ** 6
     # del arg.check_val_every_n_epochs
     arg.checkpoint_callback = False
     arg.logger = False
-
     arg.eval = True if arg.eval == 1 else False
 
     arg.add_reciprical = True if arg.scoring_technique in ['KvsAll', '1vsAll'] else False
     if arg.sample_triples_ratio is not None:
         assert 1.0 >= arg.sample_triples_ratio >= 0.0
     sanity_checking_with_arguments(arg)
+    if arg.save_model_at_every_epoch is None:
+        arg.save_model_at_every_epoch = arg.max_epochs
+
+    if arg.num_folds_for_cv > 0:
+        arg.eval = True
+
+    if arg.model == 'Shallom':
+        arg.scoring_technique = 'KvsAll'
+    # By default PL sets it to 1
+    # if arg.num_processes == 1:
+    #    arg.num_processes = os.cpu_count()
     return arg
 
 
@@ -109,57 +197,58 @@ def sanity_checking_with_arguments(args):
         raise AssertionError(f'The path does not direct to a file {args.path_dataset_folder}')
 
     try:
-        assert os.path.isfile(args.path_dataset_folder + '/train.txt')
+        assert glob.glob(args.path_dataset_folder + '/train.*')
     except AssertionError:
-        print(f'The directory {args.path_dataset_folder} must contain a **train.txt** .')
+        print(f'The directory {args.path_dataset_folder} must contain a train.*  .')
         raise
 
     args.eval = bool(args.eval)
     args.large_kg_parse = bool(args.large_kg_parse)
 
 
-def select_model(args) -> Tuple[pl.LightningModule, AnyStr]:
-    if args.model == 'KronELinear':
+def select_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
+    model_name = args['model']
+    if model_name == 'KronELinear':
         model = KronELinear(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'KPDistMult':
+    elif model_name == 'KPDistMult':
         model = KPDistMult(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'KPFullDistMult':
+    elif model_name == 'KPFullDistMult':
         # Full compression of entities and relations.
         model = KPFullDistMult(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'KronE':
+    elif model_name == 'KronE':
         model = KronE(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'KronE_wo_f':
+    elif model_name == 'KronE_wo_f':
         model = KronE_wo_f(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'BaseKronE':
+    elif model_name == 'BaseKronE':
         model = BaseKronE(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'Shallom':
+    elif model_name == 'Shallom':
         model = Shallom(args=args)
         form_of_labelling = 'RelationPrediction'
-    elif args.model == 'ConEx':
+    elif model_name == 'ConEx':
         model = ConEx(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'QMult':
+    elif model_name == 'QMult':
         model = QMult(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'OMult':
+    elif model_name == 'OMult':
         model = OMult(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'ConvQ':
+    elif model_name == 'ConvQ':
         model = ConvQ(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'ConvO':
+    elif model_name == 'ConvO':
         model = ConvO(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'ComplEx':
+    elif model_name == 'ComplEx':
         model = ComplEx(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif args.model == 'DistMult':
+    elif model_name == 'DistMult':
         model = DistMult(args=args)
         form_of_labelling = 'EntityPrediction'
     else:
@@ -170,16 +259,15 @@ def select_model(args) -> Tuple[pl.LightningModule, AnyStr]:
 def load_model(args) -> torch.nn.Module:
     """ Load weights and initialize pytorch module from namespace arguments"""
     # (1) Load weights from experiment repo
-    weights = torch.load(args.path_of_experiment_folder + '/model.pt', torch.device('cpu'))
+    weights = torch.load(args['path_of_experiment_folder'] + '/model.pt', torch.device('cpu'))
     model, _ = select_model(args)
     model.load_state_dict(weights)
     for parameter in model.parameters():
         parameter.requires_grad = False
     model.eval()
 
-    entity_to_idx = pd.read_parquet(args.path_of_experiment_folder + '/entity_to_idx.gzip').to_dict()['entity']
-    relation_to_idx = pd.read_parquet(args.path_of_experiment_folder + '/relation_to_idx.gzip').to_dict()['relation']
-
+    entity_to_idx = pd.read_parquet(args['path_of_experiment_folder'] + '/entity_to_idx.gzip').to_dict()['entity']
+    relation_to_idx = pd.read_parquet(args['path_of_experiment_folder'] + '/relation_to_idx.gzip').to_dict()['relation']
     return model, entity_to_idx, relation_to_idx
 
 
@@ -281,8 +369,8 @@ def get_ee_vocab(data):
     return ee_vocab
 
 
-def load_configuration(p: str) -> CustomArg:
+def load_json(p: str) -> dict:
     assert os.path.isfile(p)
     with open(p, 'r') as r:
         args = json.load(r)
-    return CustomArg(**args)
+    return args

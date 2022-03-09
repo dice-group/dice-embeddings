@@ -10,16 +10,72 @@ from torch.nn.init import xavier_normal_
 
 class BaseKGE(pl.LightningModule):
 
-    def __init__(self, learning_rate=.1):
+    def __init__(self, args: dict):
         super().__init__()
-        self.name = 'Not init'
-        self.learning_rate = learning_rate
+        self.args = args
+        self.embedding_dim = None
+        self.num_entities = None
+        self.num_relations = None
+        self.learning_rate = None
+        self.apply_unit_norm = None
+        self.input_dropout_rate = None
+        self.hidden_dropout_rate = None
+        self.feature_map_dropout_rate = None
+        self.kernel_size = None
+        self.num_of_output_channels = None
+        self.loss = torch.nn.BCEWithLogitsLoss()
+        self.sanity_checking()
+
+    def sanity_checking(self):
+
+        assert self.args['model'] in ['DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO', 'ConEx','Shallom']
+
+        assert self.args['embedding_dim'] > 0
+        assert self.args['num_entities'] > 0
+        assert self.args['num_relations'] > 0
+
+        self.embedding_dim = self.args['embedding_dim']
+        self.num_entities = self.args['num_entities']
+        self.num_relations = self.args['num_relations']
+
+        if self.args.get('learning_rate'):
+            self.learning_rate = self.args['learning_rate']
+        else:
+            self.learning_rate = .1
+        if self.args.get("input_dropout_rate"):
+            self.input_dropout_rate = self.args['input_dropout_rate']
+        else:
+            self.input_dropout_rate = 0.0
+        if self.args.get("hidden_dropout_rate"):
+            self.hidden_dropout_rate = self.args['hidden_dropout_rate']
+        else:
+            self.hidden_dropout_rate = 0.0
+
+        if self.args['model'] in ['QMult', 'OMult', 'ConvQ', 'ConvO']:
+            if self.args.get("apply_unit_norm"):
+                self.apply_unit_norm = self.args['apply_unit_norm']
+            else:
+                self.apply_unit_norm = False
+
+        if self.args['model'] in ['ConvQ', 'ConvO','ConEx']:
+            if self.args.get("kernel_size"):
+                self.kernel_size = self.args['kernel_size']
+            else:
+                self.kernel_size = 3
+            if self.args.get("num_of_output_channels"):
+                self.num_of_output_channels = self.args['num_of_output_channels']
+            else:
+                self.num_of_output_channels = 3
+            if self.args.get("feature_map_dropout_rate"):
+                self.feature_map_dropout_rate = self.args['feature_map_dropout_rate']
+            else:
+                self.feature_map_dropout_rate = 0.0
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
 
-    def loss_function(self, y_hat, y):
-        return self.loss(y_hat, y)
+    def loss_function(self, yhat_batch, y_batch):
+        return self.loss(input=yhat_batch, target=y_batch)
 
     def forward_triples(self, *args, **kwargs):
         raise ValueError(f'MODEL:{self.name} does not have forward_triples function')
@@ -27,27 +83,23 @@ class BaseKGE(pl.LightningModule):
     def forward_k_vs_all(self, *args, **kwargs):
         raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_all function')
 
-    def forward(self, x):
-        if len(x) == 3:
-            h, r, t = x[0], x[1], x[2]
-            return self.forward_triples(h, r, t)
-        elif len(x) == 2:
-            h, y = x[0], x[1]
+    def forward(self, x: torch.Tensor):
+
+        batch_size, dim = x.shape
+        if dim == 3:
+            return self.forward_triples(x)
+        elif dim == 2:
+            # h, y = x[0], x[1]
             # Note that y can be relation or tail entity.
-            return self.forward_k_vs_all(h, y)
+            return self.forward_k_vs_all(x=x)
         else:
             raise ValueError('Not valid input')
 
     def training_step(self, batch, batch_idx):
         x_batch, y_batch = batch
-        pred_batch = self.forward(x_batch)
-        train_loss = self.loss_function(pred_batch, y_batch)
+        yhat_batch = self.forward(x_batch)
+        train_loss = self.loss_function(yhat_batch=yhat_batch, y_batch=y_batch)
         return {'loss': train_loss}
-
-    # def training_epoch_end(self, outputs) -> None:
-    #    """ DBpedia debugging removed."""
-    #    #avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-    #    #self.log('avg_loss', avg_loss, on_epoch=False, prog_bar=True)
 
     def validation_step(self, batch, batch_idx):
         if len(batch) == 4:

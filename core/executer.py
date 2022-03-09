@@ -1,10 +1,9 @@
-import warnings
 import os
 from .models import *
 from .helper_classes import LabelRelaxationLoss, LabelSmoothingLossCanonical
 from .dataset_classes import StandardDataModule, KvsAll, CVDataModule
 from .knowledge_graph import KG
-from .callbacks import PrintCallback
+from .callbacks import PrintCallback, KGESaveCallback
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -15,98 +14,85 @@ import numpy as np
 from pytorch_lightning import loggers as pl_loggers
 import pandas as pd
 import json
-import inspect
-import dask.dataframe as dd
 import time
 from pytorch_lightning.plugins import DDPPlugin
 from pytorch_lightning import Trainer, seed_everything
-import logging
-from collections import defaultdict
+import logging, warnings
+
+from types import SimpleNamespace
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
-seed_everything(1, workers=True)
 
 
 # TODO: Execute can inherit from Trainer and Evaluator Classes
 # By doing so we can increase the modularity of our code.
 class Execute:
     def __init__(self, args, continuous_training=False):
-        # (1) Process arguments and sanity checking
+        # (1) Process arguments and sanity checking.
         self.args = preprocesses_input_args(args)
-        self.continuous_training = continuous_training
-        if self.continuous_training is False:
-            # 2 Create a folder to serialize data and replace the previous path info
-            self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
+        # (2) Ensure reproducibility.
+        seed_everything(args.seed_for_computation, workers=True)
+        # (3) Set the continual training flag
+        self.is_continual_training = continuous_training
+        # (4) Create an experiment folder or use the previous one
+        if self.is_continual_training:
             self.storage_path = self.args.full_storage_path
         else:
-            # 2 Create a folder to serialize data
-            self.storage_path = self.args.full_storage_path
             self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
-
-        # 3. A variable is initialized for pytorch lightning trainer
+            self.storage_path = self.args.full_storage_path
+            print('Saving configuration..')
+            with open(self.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
+                temp = vars(self.args)
+                json.dump(temp, file_descriptor, indent=3)
+        # (5) A variable is initialized for pytorch lightning trainer.
         self.trainer = None
-        # 4. A variable is initialized for storing input data
+        # (6) A variable is initialized for storing input data.
         self.dataset = None
-        # 5. Store few data in memory for numerical results, e.g. runtime, H@1 etc.
+        # (7) Store few data in memory for numerical results, e.g. runtime, H@1 etc.
         self.report = dict()
-
-    # @TODO Move statos to static script
-    @staticmethod
-    def read_input_data(args) -> KG:
-        """ Read & Parse input data for training and testing"""
-        print('*** Read & Parse input data for training and testing***')
-        # 1. Read & Parse input data
-        kg = KG(data_dir=args.path_dataset_folder,
-                large_kg_parse=args.large_kg_parse,
-                add_reciprical=args.add_reciprical,
-                eval_model=args.eval,
-                read_only_few=args.read_only_few,
-                sample_triples_ratio=args.sample_triples_ratio,
-                path_for_serialization=args.full_storage_path,
-                add_noise_rate=args.add_noise_rate)
-        print(kg.description_of_input)
-        return kg
-
-    @staticmethod
-    def reload_input_data(storage_path: str) -> KG:
-        # 1. Read & Parse input data
-        print("1. Reload Parsed Input Data")
-        return KG(deserialize_flag=storage_path)
 
     def start(self) -> dict:
         """
-        Main computation.
-        1. Read and Parse Input Data
+        1. READ/LOAD input knowledge graph
         2. Train and Eval a knowledge graph embedding mode
         3. Store relevant intermediate data including the trained model, embeddings and configuration
         4. Return brief summary of the computation in dictionary format.
         """
         start_time = time.time()
-        # 1. Read input data and store its parts for further use
-        if self.continuous_training is False:
-            self.dataset = self.read_input_data(self.args)
+        # (1) READ/LOAD input knowledge graph
+        if self.is_continual_training is False:
+            self.dataset = read_input_data(self.args, cls=KG)
             self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
-            self.config_kge_sanity_checking()
+            self.args, self.dataset = config_kge_sanity_checking(self.args, self.dataset)
         else:
-            self.dataset = self.reload_input_data(self.storage_path)
-        # 2. Train and Evaluate
+            self.dataset = reload_input_data(self.storage_path, cls=KG)
+
+        self.report['num_entities'] = self.dataset.num_entities
+        self.report['num_relations'] = self.dataset.num_relations
+
+        # (2) Train and Evaluate
         trained_model = self.train_and_eval()
-        # 3. Store trained model
-        self.store(trained_model)
+        # (3) Store trained model
+        if self.is_continual_training is False:
+            self.store(trained_model, model_name='model')
+        else:
+            self.store(trained_model, model_name='model_'+str(datetime.datetime.now()))
+
         total_runtime = time.time() - start_time
         if 60 * 60 > total_runtime:
             message = f'{total_runtime / 60:.3f} minutes'
         else:
             message = f'{total_runtime / (60 ** 2):.3f} hours'
         self.report['Runtime'] = message
+        self.report['path_experiment_folder']=self.storage_path
 
-        print(f'Runtime of {trained_model.name}:', total_runtime)
-        print(f'NumParam of {trained_model.name}:', self.report["NumParam"])
+        print(f'Total computation time: {message}')
+        print(f'Number of parameters in {trained_model.name}:', self.report["NumParam"])
         # print(f'Estimated of {trained_model.name}:', self.report["EstimatedSizeMB"])
         with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
-            json.dump(self.report, file_descriptor)
+            json.dump(self.report, file_descriptor,indent=4)
         return self.report
 
     def train_and_eval(self) -> BaseKGE:
@@ -119,22 +105,51 @@ class Execute:
         2c. Train a model
         """
         print('------------------- Train & Eval -------------------')
+        callbacks = [PrintCallback(),
+                     KGESaveCallback(every_x_epoch=self.args.num_epochs, path=self.args.full_storage_path)]
 
+        # PL has some problems with DDPPlugin. It will likely to be solved in their next release.
+        # (1) Explicitly setting num_process > 1 gives you
+        """
+        [W reducer.cpp: 1303] Warning: find_unused_parameters = True
+        was specified in DDP constructor, but did not find any unused parameters in the
+        forward pass.
+        This flag results in an extra traversal of the autograd graph every iteration, which can adversely affect
+        performance. If your model indeed never has any unused parameters in the forward pass, 
+        consider turning this flag off. Note that this warning may be a false positive 
+        if your model has flow        control        causing        later        iterations        to        have        unused
+        parameters.(function        operator())
+        """
+        # (2) Adding plugins=[DDPPlugin(find_unused_parameters=False)] and explicitly using num_process > 1
+        """ pytorch_lightning.utilities.exceptions.DeadlockDetectedException: DeadLock detected from rank: 1  """
 
+        # (3) Surprisingly, if you do not ask explicitly num_process > 1, computation runs smoothly while using many CPUs
         if self.args.gpus:
-            self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=[DDPPlugin(find_unused_parameters=False)])
+            self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=[DDPPlugin(find_unused_parameters=False)],
+                                                         callbacks=callbacks)
         else:
-            self.trainer = pl.Trainer.from_argparse_args(self.args,callbacks=[PrintCallback()])
+            self.trainer = pl.Trainer.from_argparse_args(self.args,
+                                                         callbacks=callbacks)
 
+        if self.args.num_folds_for_cv >= 2:
+            trained_model = self.k_fold_cross_validation()
+        else:
+            if self.args.scoring_technique == 'NegSample':
+                trained_model = self.training_negative_sampling()
+            elif self.args.scoring_technique == 'KvsAll':
+                trained_model = self.training_kvsall()
+            elif self.args.scoring_technique == '1vsAll':
+                trained_model = self.training_1vsall()
+            else:
+                raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
+        """
         # 2. Check whether validation and test datasets are available.
         if self.dataset.is_valid_test_available():
             if self.args.scoring_technique == 'NegSample':
                 trained_model = self.training_negative_sampling()
             elif self.args.scoring_technique == 'KvsAll':
-                # KvsAll or negative sampling
                 trained_model = self.training_kvsall()
             elif self.args.scoring_technique == '1vsAll':
-                # KvsAll or negative sampling
                 trained_model = self.training_1vsall()
             else:
                 raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
@@ -156,62 +171,21 @@ class Execute:
                     raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
             else:
                 trained_model = self.k_fold_cross_validation()
-        print('Train & Eval Done!\n')
+        """
+
         return trained_model
 
-    def config_kge_sanity_checking(self):
-        """
-        Sanity checking for input hyperparams.
-        :return:
-        """
-        if self.args.batch_size > len(self.dataset.train_set):
-            self.args.batch_size = len(self.dataset.train_set)
-        if self.args.model == 'Shallom' and self.args.scoring_technique == 'NegSample':
-            print(
-                'Shallom can not be trained with Negative Sampling. Scoring technique is changed to KvsALL')
-            self.args.scoring_technique = 'KvsAll'
-
-        if self.args.scoring_technique == 'KvsAll':
-            self.args.neg_ratio = None
-
-    def save_embeddings(self, embeddings: np.ndarray, indexes, path: str) -> None:
-        """
-
-        :param embeddings:
-        :param indexes:
-        :param path:
-        :return:
-        """
-        try:
-            df = pd.DataFrame(embeddings, index=indexes)
-            del embeddings
-            num_mb = df.memory_usage(index=True, deep=True).sum() / (10 ** 6)
-            if num_mb > 10 ** 6:
-                df = dd.from_pandas(df, npartitions=len(df) / 100)
-                # PARQUET wants columns to be stn
-                df.columns = df.columns.astype(str)
-                df.to_parquet(self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings')
-            else:
-                df.to_csv(path)
-        except KeyError or AttributeError as e:
-            print('Exception occurred at saving entity embeddings. Computation will continue')
-            print(e)
-        del df
-
-    def store(self, trained_model) -> None:
+    def store(self, trained_model, model_name='model') -> None:
         """
         Store trained_model model and save embeddings into csv file.
+        :param model_name:
         :param trained_model:
         :return:
         """
         print('------------------- Store -------------------')
         # Save Torch model.
-        print('Saving torch model..')
-        torch.save(trained_model.state_dict(), self.args.full_storage_path + '/model.pt')
-        print('Saving configuration..')
-        with open(self.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
-            temp = vars(self.args)
-            json.dump(temp, file_descriptor)
+        store_kge(trained_model, path=self.args.full_storage_path + f'/{model_name}.pt')
+
         # See available memory and decide whether embeddings are stored separately or not.
         available_memory = [i.split() for i in os.popen('free -h').read().splitlines()][1][-1]  # ,e.g., 10Gi
         available_memory_mb = float(available_memory[:-2]) * 1000
@@ -222,47 +196,39 @@ class Execute:
             print('Saving embeddings..')
             entity_emb, relation_ebm = trained_model.get_embeddings()
 
-            self.save_embeddings(entity_emb, indexes=self.dataset.entities_str,
-                                 path=self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
+            if len(entity_emb) > 10:
+                np.savez_compressed(self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings',
+                                    entity_emb=entity_emb)
+            else:
+                save_embeddings(entity_emb, indexes=self.dataset.entities_str,
+                                path=self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
+
             del entity_emb
+
             if relation_ebm is not None:
-                self.save_embeddings(relation_ebm, indexes=self.dataset.relations_str,
-                                     path=self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
+                if len(relation_ebm) > 10:
+                    np.savez_compressed(self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings',
+                                        relation_ebm=relation_ebm)
+                else:
+                    save_embeddings(relation_ebm, indexes=self.dataset.relations_str,
+                                    path=self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
             del relation_ebm
+
         else:
             print('There is not enough memory to store embeddings separately.')
 
-    def get_batch_1_to_N(self, input_vocab, triples, idx, output_dim) -> Tuple[np.array, torch.FloatTensor]:
-        """ A mini-batch for training on multi-labels (x,y) -> [0.,0.,0.,----, 1.,1,]
-        :param input_vocab:
-        :param triples:
-        :param idx:
-        :param output_dim:
-        :return:
+    def training_kvsall(self) -> BaseKGE:
         """
-        batch = triples[idx:idx + self.args.batch_size]
-        targets = np.zeros((len(batch), output_dim))
-        for idx, pair in enumerate(batch):
-            if isinstance(pair,
-                          np.ndarray):  # A workaround as test triples in kvold is a numpy array and a numpy array is not hashanle.
-                pair = tuple(pair)
-
-            targets[idx, input_vocab[pair]] = 1
-        return np.array(batch), torch.FloatTensor(targets)
-
-    @staticmethod
-    def model_fitting(trainer, model, train_dataloaders) -> None:
-        trainer.fit(model, train_dataloaders=train_dataloaders)
-
-    def training_kvsall(self):
-        """
-        Train models with KvsAll or NegativeSampling
-        :return:
+        Train models with KvsAll
+        D= {(x,y)_i }_i ^n where
+        1. x denotes a tuple of indexes of a head entity and a relation
+        2. y denotes a vector of probabilities, y_j corresponds to probability of j.th indexed entity
+        :return: trained BASEKGE
         """
         # 1. Select model and labelling : Entity Prediction or Relation Prediction.
-        model, form_of_labelling = select_model(self.args)
+        model, form_of_labelling = self.select_model(vars(self.args))
         print(f'KvsAll training starts: {model.name}')  # -labeling:{form_of_labelling}')
-        # 2. Create training data.
+        # 2. Create training data.)
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,
                                      test_set_idx=self.dataset.test_set,
@@ -274,30 +240,49 @@ class Execute:
                                      num_workers=self.args.num_processes,
                                      label_smoothing_rate=self.args.label_smoothing_rate)
         # 3. Train model.
-        self.model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
+        model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
+        """
+        # @TODO
+        from laplace import Laplace
+        from laplace.utils.subnetmask import ModuleNameSubnetMask
+        from laplace.utils import ModuleNameSubnetMask
+        from laplace import Laplace
+        # No change in link prediciton results
+        subnetwork_mask = ModuleNameSubnetMask(model, module_names=['emb_ent_real'])
+        subnetwork_mask.select()
+        subnetwork_indices = subnetwork_mask.indices
+        la = Laplace(model, 'classification',
+                     subset_of_weights='subnetwork',
+                     hessian_structure='full',
+                     subnetwork_indices=subnetwork_indices)
+        # la.fit(dataset.train_dataloader())
+        # la.optimize_prior_precision(method='CV', val_loader=dataset.val_dataloader())
+        """
         # 4. Test model on the training dataset if it is needed.
         if self.args.eval_on_train:
             res = self.evaluate_lp_k_vs_all(model, self.dataset.train_set,
-                                            f'Evaluate {model.name} on Train set', form_of_labelling)
+                                            info=f'Evaluate {model.name} on Train set',
+                                            form_of_labelling=form_of_labelling)
             self.report['Train'] = res
+
         # 5. Test model on the validation and test dataset if it is needed.
         if self.args.eval:
             if len(self.dataset.valid_set) > 0:
                 res = self.evaluate_lp_k_vs_all(model, self.dataset.valid_set,
-                                                f'Evaluate {model.name} on validation set', form_of_labelling)
+                                                f'Evaluate {model.name} on Validation set',
+                                                form_of_labelling=form_of_labelling)
                 self.report['Val'] = res
             if len(self.dataset.test_set) > 0:
-                res = self.evaluate_lp_k_vs_all(model, self.dataset.test_set, f'Evaluate {model.name} on test set',
-                                                form_of_labelling)
+                res = self.evaluate_lp_k_vs_all(model, self.dataset.test_set, f'Evaluate {model.name} on Test set',
+                                                form_of_labelling=form_of_labelling)
                 self.report['Test'] = res
 
         return model
 
     def training_1vsall(self):
         # 1. Select model and labelling : Entity Prediction or Relation Prediction.
-        model, form_of_labelling = select_model(self.args)
+        model, form_of_labelling = self.select_model(vars(self.args))
         print(f'1vsAll training starts: {model.name}')
-        form_of_labelling = '1VsAll'
         # 2. Create training data.
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,
@@ -312,13 +297,12 @@ class Execute:
         if self.args.label_relaxation_rate:
             model.loss = LabelRelaxationLoss(alpha=self.args.label_relaxation_rate)
             # model.loss=LabelSmoothingLossCanonical()
-
         elif self.args.label_smoothing_rate:
             model.loss = nn.CrossEntropyLoss(label_smoothing=self.args.label_smoothing_rate)
         else:
             model.loss = nn.CrossEntropyLoss()
         # 3. Train model
-        self.model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
+        model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
         # 4. Test model on the training dataset if it is needed.
         if self.args.eval_on_train:
             res = self.evaluate_lp_k_vs_all(model, self.dataset.train_set,
@@ -338,14 +322,28 @@ class Execute:
 
         return model
 
+    def select_model(self, args: dict):
+        if self.is_continual_training:
+            print('Loading pre-trained model...')
+            model, _ = select_model(args)
+            try:
+                weights = torch.load(self.storage_path + '/model.pt', torch.device('cpu'))
+                model.load_state_dict(weights)
+            except FileNotFoundError:
+                print(f"{self.storage_path}/model.pt is not found. The model will be trained with random weights")
+            model.train()
+            return model, _
+        else:
+            return select_model(args)
+
     def training_negative_sampling(self) -> pl.LightningModule:
         """
         Train models with Negative Sampling
         """
         assert self.args.neg_ratio > 0
-        model, _ = select_model(self.args)
+        model, _ = self.select_model(vars(self.args))
         form_of_labelling = 'NegativeSampling'
-        print(f' Training starts: {model.name}-labeling:{form_of_labelling}')
+        print(f'Training starts: {model.name}-labeling:{form_of_labelling}')
         print('Creating training data...')
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,
@@ -355,10 +353,9 @@ class Execute:
                                      form=form_of_labelling,
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_processes
-                                     )
+                                     num_workers=self.args.num_processes)
         # 3. Train model
-        self.model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
+        model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
         # 4. Test model on the training dataset if it is needed.
         if self.args.eval_on_train:
             res = self.evaluate_lp(model, self.dataset.train_set, f'Evaluate {model.name} on Train set')
@@ -395,13 +392,10 @@ class Execute:
         if form_of_labelling == 'RelationPrediction':
             # Iterate over integer indexed triples in mini batch fashion
             for i in range(0, len(triple_idx), self.args.batch_size):
-                # Obtain i.th batch
-                data_batch, _ = self.get_batch_1_to_N(self.dataset.ee_vocab, triple_idx, i, self.args.num_relations)
-                # From numpy array to torch tensor
-                e1_idx, r_idx, e2_idx = torch.tensor(data_batch[:, 0]), torch.tensor(data_batch[:, 1]), torch.tensor(
-                    data_batch[:, 2])
+                data_batch = triple_idx[i:i + self.args.batch_size]
+                e1_idx_e2_idx, r_idx = torch.tensor(data_batch[:, [0, 2]]), torch.tensor(data_batch[:, 1])
                 # Generate predictions
-                predictions = model.forward_k_vs_all(e1_idx=e1_idx, e2_idx=r_idx)
+                predictions = model.forward_k_vs_all(x=e1_idx_e2_idx)
                 # Filter entities except the target entity
                 for j in range(data_batch.shape[0]):
                     filt = self.dataset.ee_vocab[(data_batch[j][0], data_batch[j][2])]
@@ -410,7 +404,7 @@ class Execute:
                     predictions[j, r_idx[j]] = target_value
                 # Sort predictions.
                 sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
-                # This can be also done in paralel
+                # This can be also done in parallel
                 for j in range(data_batch.shape[0]):
                     rank = torch.where(sort_idxs[j] == r_idx[j])[0].item()
                     ranks.append(rank + 1)
@@ -422,14 +416,9 @@ class Execute:
         else:
             # Iterate over integer indexed triples in mini batch fashion
             for i in range(0, len(triple_idx), self.args.batch_size):
-                # Obtain i.th batch
-                data_batch, _ = self.get_batch_1_to_N(self.dataset.er_vocab, triple_idx, i, self.args.num_entities)
-                del _
-                # From numpy array to torch tensor
-                e1_idx, r_idx, e2_idx = torch.tensor(data_batch[:, 0]), torch.tensor(data_batch[:, 1]), torch.tensor(
-                    data_batch[:, 2])
-                # Generate predictions
-                predictions = model.forward_k_vs_all(e1_idx=e1_idx, rel_idx=r_idx)
+                data_batch = triple_idx[i:i + self.args.batch_size]
+                e1_idx_r_idx, e2_idx = torch.tensor(data_batch[:, [0, 1]]), torch.tensor(data_batch[:, 2])
+                predictions = model.forward_k_vs_all(e1_idx_r_idx)
                 # Filter entities except the target entity
                 for j in range(data_batch.shape[0]):
                     filt = self.dataset.er_vocab[(data_batch[j][0], data_batch[j][1])]
@@ -446,7 +435,6 @@ class Execute:
                     for hits_level in range(10):
                         if rank <= hits_level:
                             hits[hits_level].append(1.0)
-
         hit_1 = sum(hits[0]) / (float(len(triple_idx)))
         hit_3 = sum(hits[2]) / (float(len(triple_idx)))
         hit_10 = sum(hits[9]) / (float(len(triple_idx)))
@@ -456,22 +444,6 @@ class Execute:
         if info:
             print(results)
         return results
-
-    def deserialize_index_data(self):
-        m = []
-        if os.path.isfile(self.storage_path + '/idx_train_df.gzip'):
-            m.append(pd.read_parquet(self.storage_path + '/idx_train_df.gzip'))
-        if os.path.isfile(self.storage_path + '/idx_valid_df.gzip'):
-            m.append(pd.read_parquet(self.storage_path + '/idx_valid_df.gzip'))
-        if os.path.isfile(self.storage_path + '/idx_test_df.gzip'):
-            m.append(pd.read_parquet(self.storage_path + '/idx_test_df.gzip'))
-        try:
-            assert len(m) > 1
-        except AssertionError as e:
-            print(f'Could not find indexed find under idx_*_df files {self.storage_path}')
-            raise e
-
-        return pd.concat(m, ignore_index=True)
 
     def evaluate_lp(self, model, triple_idx, info):
         """
@@ -488,6 +460,7 @@ class Execute:
         model.eval()
         print(info)
         print(f'Num of triples {len(triple_idx)}')
+        print('** sequential computation ')
         hits = dict()
         reciprocal_ranks = []
         # Iterate over test triples
@@ -499,13 +472,18 @@ class Execute:
             s, p, o = data_point[0], data_point[1], data_point[2]
 
             # 2. Predict missing heads and tails
-            predictions_tails = model.forward_triples(e1_idx=torch.tensor(s).repeat(self.dataset.num_entities, ),
-                                                      rel_idx=torch.tensor(p).repeat(self.dataset.num_entities, ),
-                                                      e2_idx=all_entities)
+            x = torch.stack((torch.tensor(s).repeat(self.dataset.num_entities, ),
+                             torch.tensor(p).repeat(self.dataset.num_entities, ),
+                             all_entities
+                             ), dim=1)
+            predictions_tails = model.forward_triples(x)
+            x = torch.stack((all_entities,
+                             torch.tensor(p).repeat(self.dataset.num_entities, ),
+                             torch.tensor(o).repeat(self.dataset.num_entities)
+                             ), dim=1)
 
-            predictions_heads = model.forward_triples(e1_idx=all_entities,
-                                                      rel_idx=torch.tensor(p).repeat(self.dataset.num_entities, ),
-                                                      e2_idx=torch.tensor(o).repeat(self.dataset.num_entities))
+            predictions_heads = model.forward_triples(x)
+            del x
 
             # 3. Computed filtered ranks for missing tail entities.
             # 3.1. Compute filtered tail entity rankings
@@ -540,8 +518,11 @@ class Execute:
             # 4. Add 1 to ranks as numpy array first item has the index of 0.
             filt_head_entity_rank += 1
             filt_tail_entity_rank += 1
+
+            rr = 1.0 / filt_head_entity_rank + (1.0 / filt_tail_entity_rank)
             # 5. Store reciprocal ranks.
-            reciprocal_ranks.append(1.0 / filt_head_entity_rank + (1.0 / filt_tail_entity_rank))
+            reciprocal_ranks.append(rr)
+            # print(f'{i}.th triple: mean reciprical rank:{rr}')
 
             # 4. Compute Hit@N
             for hits_level in range(1, 11):
@@ -593,7 +574,7 @@ class Execute:
 
         for (ith, (train_index, test_index)) in enumerate(kf.split(self.dataset.train_set)):
             trainer = pl.Trainer.from_argparse_args(self.args)
-            model, form_of_labelling = select_model(self.args)
+            model, form_of_labelling = self.select_model(vars(self.args))
             print(f'{form_of_labelling} training starts: {model.name}')  # -labeling:{form_of_labelling}')
 
             train_set_for_i_th_fold, test_set_for_i_th_fold = self.dataset.train_set[train_index], \
@@ -609,7 +590,7 @@ class Execute:
                                          num_workers=self.args.num_processes
                                          )
             # 3. Train model
-            self.model_fitting(trainer=trainer, model=model, train_dataloaders=dataset.train_dataloader())
+            model_fitting(trainer=trainer, model=model, train_dataloaders=dataset.train_dataloader())
 
             # 6. Test model on validation and test sets if possible.
             res = self.evaluate_lp_k_vs_all(model, test_set_for_i_th_fold, form_of_labelling=form_of_labelling)
@@ -623,3 +604,33 @@ class Execute:
 
         # Return last model.
         return model
+
+    """
+    def deserialize_index_data(self):
+        m = []
+        if os.path.isfile(self.storage_path + '/idx_train_df.gzip'):
+            m.append(pd.read_parquet(self.storage_path + '/idx_train_df.gzip'))
+        if os.path.isfile(self.storage_path + '/idx_valid_df.gzip'):
+            m.append(pd.read_parquet(self.storage_path + '/idx_valid_df.gzip'))
+        if os.path.isfile(self.storage_path + '/idx_test_df.gzip'):
+            m.append(pd.read_parquet(self.storage_path + '/idx_test_df.gzip'))
+        try:
+            assert len(m) > 1
+        except AssertionError as e:
+            print(f'Could not find indexed find under idx_*_df files {self.storage_path}')
+            raise e
+        return pd.concat(m, ignore_index=True)
+    """
+
+class ContinuousExecute(Execute):
+    def __init__(self, args):
+        assert os.path.exists(args.path_experiment_folder)
+        assert os.path.isfile(args.path_experiment_folder + '/idx_train_df.gzip')
+        assert os.path.isfile(args.path_experiment_folder + '/configuration.json')
+        previous_args = load_json(args.path_experiment_folder + '/configuration.json')
+        previous_args.update(vars(args))
+        report = load_json(args.path_experiment_folder + '/report.json')
+        previous_args['num_entities'] = report['num_entities']
+        previous_args['num_relations'] = report['num_relations']
+        previous_args = SimpleNamespace(**previous_args)
+        super().__init__(previous_args, continuous_training=True)

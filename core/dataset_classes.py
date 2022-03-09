@@ -5,14 +5,14 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from typing import List
 
-
 class StandardDataModule(pl.LightningDataModule):
     """
     train, valid and test sets are available.
     """
 
     def __init__(self, train_set_idx, entity_to_idx, relation_to_idx, batch_size, form,
-                 num_workers=32, valid_set_idx=None, test_set_idx=None, neg_sample_ratio=None, label_smoothing_rate=None):
+                 num_workers=32, valid_set_idx=None, test_set_idx=None, neg_sample_ratio=None,
+                 label_smoothing_rate=None):
         super().__init__()
         assert isinstance(train_set_idx, np.ndarray)
 
@@ -38,11 +38,11 @@ class StandardDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
         self.neg_sample_ratio = neg_sample_ratio
         self.label_smoothing_rate = label_smoothing_rate
+
+
         if self.form == 'RelationPrediction':
-            self.dataset_type_class = RelationPredictionDataset
             self.target_dim = len(self.relation_to_idx)
         elif self.form == 'EntityPrediction':
-            self.dataset_type_class = EntityPredictionDataset
             self.target_dim = len(self.entity_to_idx)
         elif self.form == 'NegativeSampling':  # we can name it as TriplePrediction
             self.dataset_type_class = TriplePredictionDataset
@@ -69,11 +69,14 @@ class StandardDataModule(pl.LightningDataModule):
         elif self.form == 'EntityPrediction' or self.form == 'RelationPrediction':
             train_set = KvsAll(self.train_set_idx, entity_idxs=self.entity_to_idx,
                                relation_idxs=self.relation_to_idx, form=self.form, label_smoothing_rate=self.label_smoothing_rate)
+
             return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, pin_memory=True,
                               num_workers=self.num_workers)
 
         elif self.form == '1VsAll':
-            train_set = OneVsAllEntityPredictionDataset(self.train_set_idx)
+            train_set = OnevsAll(self.train_set_idx, entity_idxs=self.entity_to_idx,
+                               relation_idxs=self.relation_to_idx, form=self.form, label_smoothing_rate=self.label_smoothing_rate)
+
             return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, pin_memory=True,
                               num_workers=self.num_workers)
         else:
@@ -81,17 +84,26 @@ class StandardDataModule(pl.LightningDataModule):
 
     def val_dataloader(self) -> DataLoader:
         if self.form == 'NegativeSampling':
-            val_set = TriplePredictionDataset(self.valid_set_idx,
-                                              num_entities=len(self.entity_to_idx),
-                                              num_relations=len(self.relation_to_idx))
-            return DataLoader(val_set, batch_size=self.batch_size, num_workers=self.num_workers,
-                              pin_memory=True)
+            valid_set = TriplePredictionDataset(self.valid_set_idx,
+                                                num_entities=len(self.entity_to_idx),
+                                                num_relations=len(self.relation_to_idx),
+                                                neg_sample_ratio=self.neg_sample_ratio)
+            return DataLoader(valid_set, batch_size=self.batch_size,
+                              shuffle=True,
+                              num_workers=self.num_workers,
+                              collate_fn=valid_set.collate_fn, pin_memory=True
+                              )
+        elif self.form == 'EntityPrediction' or self.form == 'RelationPrediction':
+            valid_set = KvsAll(self.valid_set_idx, entity_idxs=self.entity_to_idx,
+                               relation_idxs=self.relation_to_idx, form=self.form,
+                               label_smoothing_rate=self.label_smoothing_rate)
+            return DataLoader(valid_set, batch_size=self.batch_size, shuffle=True, pin_memory=True,
+                              num_workers=self.num_workers)
 
-        elif self.form == 'EntityPrediction':
-            val_set = KvsAll(self.valid_set_idx, entity_idxs=self.entity_to_idx,
-                             relation_idxs=self.relation_to_idx, form=self.form)
-            return DataLoader(val_set, batch_size=self.batch_size, num_workers=self.num_workers,
-                              pin_memory=True)
+        elif self.form == '1VsAll':
+            valid_set = OneVsAllEntityPredictionDataset(self.valid_set_idx)
+            return DataLoader(valid_set, batch_size=self.batch_size, shuffle=True, pin_memory=True,
+                              num_workers=self.num_workers)
         else:
             raise KeyError(f'{self.form} illegal input.')
 
@@ -158,12 +170,18 @@ class CVDataModule(pl.LightningDataModule):
 
 
 class KvsAll(Dataset):
+    """
+    For entitiy or relation prediciton
+    """
     def __init__(self, triples_idx, entity_idxs, relation_idxs, form, store=None, label_smoothing_rate=None):
         super().__init__()
+        assert len(triples_idx)>0
         self.train_data = None
         self.train_target = None
         self.label_smoothing_rate = label_smoothing_rate
 
+        # (1) Create a dictionary of training data pints
+        # Either from tuple of entitiies or tuple of an entity and a relation
         if store is None:
             store = dict()
             if form == 'RelationPrediction':
@@ -177,15 +195,20 @@ class KvsAll(Dataset):
             else:
                 raise NotImplementedError
         else:
-            pass
-            # Keys in store correspond to integer representation (index) of subject and predicate
+            raise ValueError()
+        assert len(store) > 0
+        # Keys in store correspond to integer representation (index) of subject and predicate
         # Values correspond to a list of integer representations of entities.
         self.train_data = torch.torch.LongTensor(list(store.keys()))
 
         if sum([len(i) for i in store.values()]) == len(store):
             # if each s,p pair contains at most 1 entity
             self.train_target = np.array(list(store.values()), dtype=np.int64)
-            assert isinstance(self.train_target[0], np.ndarray)
+            try:
+                assert isinstance(self.train_target[0], np.ndarray)
+            except IndexError or AssertionError:
+                print(self.train_target)
+                exit(1)
             assert isinstance(self.train_target[0][0], np.int64)
         else:
             # list of lists where each list has different size
@@ -203,56 +226,8 @@ class KvsAll(Dataset):
         y_vec[self.train_target[idx]] = 1
 
         if self.label_smoothing_rate:
-            y_vec = y_vec*(1 - self.label_smoothing_rate) + (1 / y_vec.size(0))
-        return (self.train_data[idx, 0], self.train_data[idx, 1]), y_vec
-
-
-class RelationPredictionDataset(Dataset):
-    def __init__(self, idx_triples, target_dim):
-        super().__init__()
-        assert len(idx_triples) > 0
-        self.idx_triples = torch.torch.LongTensor(idx_triples)
-        self.target_dim = target_dim
-
-        self.head_entities = self.idx_triples[:, 0]
-        self.relations = self.idx_triples[:, 1]
-        self.tail_entities = self.idx_triples[:, 2]
-        del self.idx_triples
-
-        assert len(self.head_entities) == len(self.relations) == len(self.tail_entities)
-
-    def __len__(self):
-        return len(self.head_entities)
-
-    def __getitem__(self, idx):
-        # 1. Initialize a vector of output.
-        y_vec = torch.zeros(self.target_dim)
-        y_vec[self.relations[idx]] = 1
-        return (self.head_entities[idx], self.tail_entities[idx]), y_vec
-
-
-class EntityPredictionDataset(Dataset):
-    def __init__(self, idx_triples, target_dim):
-        super().__init__()
-        assert len(idx_triples) > 0
-        self.idx_triples = torch.torch.LongTensor(idx_triples)
-        self.target_dim = target_dim
-
-        self.head_entities = self.idx_triples[:, 0]
-        self.relations = self.idx_triples[:, 1]
-        self.tail_entities = self.idx_triples[:, 2]
-        del self.idx_triples
-
-        assert len(self.head_entities) == len(self.relations) == len(self.tail_entities)
-
-    def __len__(self):
-        return len(self.head_entities)
-
-    def __getitem__(self, idx):
-        # 1. Initialize a vector of output.
-        y_vec = torch.zeros(self.target_dim)
-        y_vec[self.tail_entities[idx]] = 1
-        return (self.head_entities[idx], self.relations[idx]), y_vec
+            y_vec = y_vec * (1 - self.label_smoothing_rate) + (1 / y_vec.size(0))
+        return self.train_data[idx], y_vec
 
 
 class TriplePredictionDataset(Dataset):
@@ -305,9 +280,12 @@ class TriplePredictionDataset(Dataset):
         h = torch.cat((h, h_head_corr, h_tail_corr), 0)
         r = torch.cat((r, r_head_corr, r_tail_corr), 0)
         t = torch.cat((t, t_head_corr, t_tail_corr), 0)
+
+        x = torch.stack((h, r, t), dim=1)
+
         label = torch.cat((label, label_head_corr, label_tail_corr), 0)
 
-        return (h, r, t), label
+        return x, label
 
 
 class OneVsAllEntityPredictionDataset(Dataset):
@@ -315,92 +293,10 @@ class OneVsAllEntityPredictionDataset(Dataset):
         super().__init__()
         assert len(idx_triples) > 0
 
-        self.idx_triples = torch.torch.LongTensor(idx_triples)
-
-        self.head_entities = self.idx_triples[:, 0]
-        self.relations = self.idx_triples[:, 1]
-        self.tail_entities = self.idx_triples[:, 2]
-        del self.idx_triples
-
-        assert len(self.head_entities) == len(self.relations) == len(self.tail_entities)
+        self.train_data = torch.torch.LongTensor(idx_triples)
 
     def __len__(self):
-        return len(self.head_entities)
+        return len(self.train_data)
 
     def __getitem__(self, idx):
-        return (self.head_entities[idx], self.relations[idx]), self.tail_entities[idx]
-
-
-"""
-class StandardDataModuleOLD(pl.LightningDataModule):
-    def __init__(self, dataset, batch_size, form, num_workers=4, neg_sample_ratio=None):
-        super().__init__()
-        self.dataset = dataset
-        self.form = form
-        self.batch_size = batch_size
-        self.num_workers = num_workers
-        self.neg_sample_ratio = neg_sample_ratio
-        if self.form == 'RelationPrediction':
-            self.dataset_type_class = RelationPredictionDataset
-            self.target_dim = self.dataset.num_relations
-        elif self.form == 'EntityPrediction':
-            self.dataset_type_class = EntityPredictionDataset
-            self.target_dim = self.dataset.num_entities
-        elif self.form == 'NegativeSampling':  # we can name it as TriplePrediction
-            self.dataset_type_class = TriplePredictionDataset
-            self.target_dim = 1
-            self.neg_sample_ratio = neg_sample_ratio
-        else:
-            raise ValueError
-
-    # Train, Valid, TestDATALOADERs
-    def train_dataloader(self) -> DataLoader:
-        if self.form == 'NegativeSampling':
-            train_set = TriplePredictionDataset(self.dataset.train_set_idx,
-                                                num_entities=self.dataset.num_entities,
-                                                num_relations=self.dataset.num_relations,
-                                                neg_sample_ratio=self.neg_sample_ratio)
-            return DataLoader(train_set, batch_size=self.batch_size,
-                              shuffle=True,
-                              num_workers=self.num_workers,
-                              collate_fn=train_set.collate_fn)
-
-        else:
-            train_set = KvsAll(self.dataset.train_set_idx, entity_idxs=self.dataset.entity_to_idx,
-                               relation_idxs=self.dataset.relation_to_idx, form=self.form)
-            return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
-
-    def val_dataloader(self) -> DataLoader:
-        if self.form == 'NegativeSampling':
-            val_set = TriplePredictionDataset(self.dataset.val_idx,
-                                              num_entities=self.dataset.num_entities,
-                                              num_relations=self.dataset.num_relations)
-            return DataLoader(val_set, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
-
-        else:
-            val_set = KvsAll(self.dataset.val_idx, entity_idxs=self.dataset.entity_to_idx,
-                             relation_idxs=self.dataset.relation_to_idx, form=self.form)
-            return DataLoader(val_set, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
-
-    def test_dataloader(self) -> DataLoader:
-        if self.form == 'NegativeSampling':
-            test_set = TriplePredictionDataset(self.dataset.test_set_idx,
-                                               num_entities=self.dataset.num_entities,
-                                               num_relations=self.dataset.num_relations, )
-            return DataLoader(test_set, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
-
-        else:
-            test_set = KvsAll(self.dataset.test_set_idx, entity_idxs=self.dataset.entity_to_idx,
-                              relation_idxs=self.dataset.relation_to_idx, form=self.form)
-            return DataLoader(test_set, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
-
-    def setup(self, *args, **kwargs):
-        pass
-
-    def transfer_batch_to_device(self, *args, **kwargs):
-        pass
-
-    def prepare_data(self, *args, **kwargs):
-        # Nothing to be prepared for now.
-        pass
-"""
+        return self.train_data[idx, :2], self.train_data[idx, 2]

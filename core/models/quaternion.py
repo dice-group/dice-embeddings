@@ -31,59 +31,57 @@ def quaternion_mul(*, Q_1, Q_2):
 
 class QMult(BaseKGE):
     def __init__(self, args):
-        super().__init__(learning_rate=args.learning_rate)
+        super().__init__(args)
         self.name = 'QMult'
-        self.loss = torch.nn.BCEWithLogitsLoss()
-        self.apply_unit_norm = args.apply_unit_norm
 
         # Quaternion embeddings of entities
-        self.emb_ent_real = nn.Embedding(args.num_entities, args.embedding_dim)  # real
-        self.emb_ent_i = nn.Embedding(args.num_entities, args.embedding_dim)  # imaginary i
-        self.emb_ent_j = nn.Embedding(args.num_entities, args.embedding_dim)  # imaginary j
-        self.emb_ent_k = nn.Embedding(args.num_entities, args.embedding_dim)  # imaginary k
+        self.emb_ent_real = nn.Embedding(self.num_entities, self.embedding_dim)  # real
+        self.emb_ent_i = nn.Embedding(self.num_entities, self.embedding_dim)  # imaginary i
+        self.emb_ent_j = nn.Embedding(self.num_entities, self.embedding_dim)  # imaginary j
+        self.emb_ent_k = nn.Embedding(self.num_entities, self.embedding_dim)  # imaginary k
         xavier_normal_(self.emb_ent_real.weight.data), xavier_normal_(self.emb_ent_i.weight.data)
         xavier_normal_(self.emb_ent_j.weight.data), xavier_normal_(self.emb_ent_k.weight.data)
 
         # Quaternion embeddings of relations.
-        self.emb_rel_real = nn.Embedding(args.num_relations, args.embedding_dim)  # real
-        self.emb_rel_i = nn.Embedding(args.num_relations, args.embedding_dim)  # imaginary i
-        self.emb_rel_j = nn.Embedding(args.num_relations, args.embedding_dim)  # imaginary j
-        self.emb_rel_k = nn.Embedding(args.num_relations, args.embedding_dim)  # imaginary k
+        self.emb_rel_real = nn.Embedding(self.num_relations, self.embedding_dim)  # real
+        self.emb_rel_i = nn.Embedding(self.num_relations, self.embedding_dim)  # imaginary i
+        self.emb_rel_j = nn.Embedding(self.num_relations, self.embedding_dim)  # imaginary j
+        self.emb_rel_k = nn.Embedding(self.num_relations, self.embedding_dim)  # imaginary k
         xavier_normal_(self.emb_rel_real.weight.data), xavier_normal_(self.emb_rel_i.weight.data)
         xavier_normal_(self.emb_rel_j.weight.data), xavier_normal_(self.emb_rel_k.weight.data)
 
         # Dropouts for quaternion embeddings of ALL entities.
-        self.input_dp_ent_real = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_i = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_j = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_k = torch.nn.Dropout(args.input_dropout_rate)
+        self.input_dp_ent_real = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_i = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_j = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_k = torch.nn.Dropout(self.input_dropout_rate)
         # Dropouts for quaternion embeddings of relations.
-        self.input_dp_rel_real = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_i = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_j = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_k = torch.nn.Dropout(args.input_dropout_rate)
+        self.input_dp_rel_real = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_i = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_j = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_k = torch.nn.Dropout(self.input_dropout_rate)
         # Dropouts for quaternion embeddings obtained from quaternion multiplication.
-        self.hidden_dp_real = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_i = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_j = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_k = torch.nn.Dropout(args.hidden_dropout_rate)
+        self.hidden_dp_real = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_i = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_j = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_k = torch.nn.Dropout(self.hidden_dropout_rate)
 
         # Batch normalization for quaternion embeddings of ALL entities.
-        self.bn_ent_real = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_ent_i = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_ent_j = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_ent_k = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_ent_real = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_i = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_j = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_k = torch.nn.BatchNorm1d(self.embedding_dim)
         # Batch normalization for quaternion embeddings of relations.
-        self.bn_rel_real = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_rel_i = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_rel_j = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_rel_k = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_rel_real = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_i = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_j = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_k = torch.nn.BatchNorm1d(self.embedding_dim)
 
         # Batch normalization for quaternion embeddings of relations.
-        self.bn_hidden_real = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_hidden_i = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_hidden_j = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_hidden_k = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_hidden_real = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_hidden_i = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_hidden_j = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_hidden_k = torch.nn.BatchNorm1d(self.embedding_dim)
 
     def get_embeddings(self):
         entity_emb = torch.cat((self.emb_ent_real.weight.data, self.emb_ent_i.weight.data,
@@ -92,13 +90,16 @@ class QMult(BaseKGE):
                              self.emb_rel_j.weight.data, self.emb_rel_k.weight.data), 1)
         return entity_emb.data.detach().numpy(), rel_emb.data.detach().numpy()
 
-    def forward_k_vs_all(self, e1_idx, rel_idx):
+    def forward_k_vs_all(self, x):
         """
         Completed.
         Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,
         [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
         Given a batch of head entities and relations => shape (size of batch,| Entities|)
         """
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e1_idx, rel_idx = x[:, 0], x[:, 1]
         # (1)
         # (1.1) Quaternion embeddings of head entities
         emb_head_real = self.emb_ent_real(e1_idx)
@@ -147,7 +148,11 @@ class QMult(BaseKGE):
 
         return real_score + i_score + j_score + k_score
 
-    def forward_triples(self, e1_idx, rel_idx, e2_idx):
+    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e2_idx: torch.Tensor
+        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1],x[:, 2]
         # (1)
         # (1.1) Quaternion embeddings of head entities
         emb_head_real = self.emb_ent_real(e1_idx)
@@ -210,68 +215,61 @@ class ConvQ(BaseKGE):
     """ Convolutional Quaternion Knowledge Graph Embeddings"""
 
     def __init__(self, args):
-        super().__init__(learning_rate=args.learning_rate)
+        super().__init__(args)
         self.name = 'ConvQ'
-        self.loss = torch.nn.BCEWithLogitsLoss()
-        self.apply_unit_norm = args.apply_unit_norm
-        self.embedding_dim = args.embedding_dim  # for reshaping in the residual.
-
         # Quaternion embeddings of entities
-        self.emb_ent_real = nn.Embedding(args.num_entities, args.embedding_dim)  # real
-        self.emb_ent_i = nn.Embedding(args.num_entities, args.embedding_dim)  # imaginary i
-        self.emb_ent_j = nn.Embedding(args.num_entities, args.embedding_dim)  # imaginary j
-        self.emb_ent_k = nn.Embedding(args.num_entities, args.embedding_dim)  # imaginary k
+        self.emb_ent_real = nn.Embedding(self.num_entities, self.embedding_dim)  # real
+        self.emb_ent_i = nn.Embedding(self.num_entities, self.embedding_dim)  # imaginary i
+        self.emb_ent_j = nn.Embedding(self.num_entities, self.embedding_dim)  # imaginary j
+        self.emb_ent_k = nn.Embedding(self.num_entities, self.embedding_dim)  # imaginary k
         xavier_normal_(self.emb_ent_real.weight.data), xavier_normal_(self.emb_ent_i.weight.data)
         xavier_normal_(self.emb_ent_j.weight.data), xavier_normal_(self.emb_ent_k.weight.data)
 
         # Quaternion embeddings of relations.
-        self.emb_rel_real = nn.Embedding(args.num_relations, args.embedding_dim)  # real
-        self.emb_rel_i = nn.Embedding(args.num_relations, args.embedding_dim)  # imaginary i
-        self.emb_rel_j = nn.Embedding(args.num_relations, args.embedding_dim)  # imaginary j
-        self.emb_rel_k = nn.Embedding(args.num_relations, args.embedding_dim)  # imaginary k
+        self.emb_rel_real = nn.Embedding(self.num_relations, self.embedding_dim)  # real
+        self.emb_rel_i = nn.Embedding(self.num_relations, self.embedding_dim)  # imaginary i
+        self.emb_rel_j = nn.Embedding(self.num_relations, self.embedding_dim)  # imaginary j
+        self.emb_rel_k = nn.Embedding(self.num_relations, self.embedding_dim)  # imaginary k
         xavier_normal_(self.emb_rel_real.weight.data), xavier_normal_(self.emb_rel_i.weight.data)
         xavier_normal_(self.emb_rel_j.weight.data), xavier_normal_(self.emb_rel_k.weight.data)
 
         # Dropouts for quaternion embeddings of ALL entities.
-        self.input_dp_ent_real = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_i = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_j = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_ent_k = torch.nn.Dropout(args.input_dropout_rate)
+        self.input_dp_ent_real = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_i = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_j = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_ent_k = torch.nn.Dropout(self.input_dropout_rate)
         # Dropouts for quaternion embeddings of relations.
-        self.input_dp_rel_real = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_i = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_j = torch.nn.Dropout(args.input_dropout_rate)
-        self.input_dp_rel_k = torch.nn.Dropout(args.input_dropout_rate)
+        self.input_dp_rel_real = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_i = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_j = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_k = torch.nn.Dropout(self.input_dropout_rate)
         # Dropouts for quaternion embeddings obtained from quaternion multiplication.
-        self.hidden_dp_real = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_i = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_j = torch.nn.Dropout(args.hidden_dropout_rate)
-        self.hidden_dp_k = torch.nn.Dropout(args.hidden_dropout_rate)
+        self.hidden_dp_real = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_i = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_j = torch.nn.Dropout(self.hidden_dropout_rate)
+        self.hidden_dp_k = torch.nn.Dropout(self.hidden_dropout_rate)
 
         # Batch normalization for quaternion embeddings of ALL entities.
-        self.bn_ent_real = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_ent_i = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_ent_j = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_ent_k = torch.nn.BatchNorm1d(args.embedding_dim)
+        self.bn_ent_real = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_i = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_j = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_k = torch.nn.BatchNorm1d(self.embedding_dim)
         # Batch normalization for quaternion embeddings of relations.
-        self.bn_rel_real = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_rel_i = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_rel_j = torch.nn.BatchNorm1d(args.embedding_dim)
-        self.bn_rel_k = torch.nn.BatchNorm1d(args.embedding_dim)
-
-        self.kernel_size = args.kernel_size
-        self.num_of_output_channels = args.num_of_output_channels
+        self.bn_rel_real = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_i = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_j = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_k = torch.nn.BatchNorm1d(self.embedding_dim)
 
         # Convolution
         self.conv1 = torch.nn.Conv1d(in_channels=1, out_channels=self.num_of_output_channels,
                                      kernel_size=(self.kernel_size, self.kernel_size), stride=1, padding=1, bias=True)
 
-        self.fc_num_input = args.embedding_dim * 8 * self.num_of_output_channels  # 8 because of 8 real values in 2 quaternions
-        self.fc1 = torch.nn.Linear(self.fc_num_input, args.embedding_dim * 4)  # Hard compression.
+        self.fc_num_input = self.embedding_dim * 8 * self.num_of_output_channels  # 8 because of 8 real values in 2 quaternions
+        self.fc1 = torch.nn.Linear(self.fc_num_input, self.embedding_dim * 4)  # Hard compression.
 
         self.bn_conv1 = torch.nn.BatchNorm2d(self.num_of_output_channels)
-        self.bn_conv2 = torch.nn.BatchNorm1d(args.embedding_dim * 4)
-        self.feature_map_dropout = torch.nn.Dropout2d(args.feature_map_dropout_rate)
+        self.bn_conv2 = torch.nn.BatchNorm1d(self.embedding_dim * 4)
+        self.feature_map_dropout = torch.nn.Dropout2d(self.feature_map_dropout_rate)
 
     def get_embeddings(self):
         entity_emb = torch.cat((self.emb_ent_real.weight.data, self.emb_ent_i.weight.data,
@@ -303,12 +301,15 @@ class ConvQ(BaseKGE):
         x = F.relu(self.bn_conv2(self.fc1(x)))
         return torch.chunk(x, 4, dim=1)
 
-    def forward_k_vs_all(self, e1_idx, rel_idx):
+    def forward_k_vs_all(self, x: torch.Tensor):
         """
         Given a head entity and a relation (h,r), we compute scores for all entities.
         [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
         Given a batch of head entities and relations => shape (size of batch,| Entities|)
         """
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e1_idx, rel_idx = x[:, 0], x[:, 1]
         # (1)
         # (1.1) Quaternion embeddings of head entities
         emb_head_real = self.emb_ent_real(e1_idx)
@@ -362,7 +363,11 @@ class ConvQ(BaseKGE):
 
         return real_score + i_score + j_score + k_score
 
-    def forward_triples(self, e1_idx, rel_idx, e2_idx):
+    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e2_idx: torch.Tensor
+        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1],x[:, 2]
         # (1)
         # (1.1) Quaternion embeddings of head entities
         emb_head_real = self.emb_ent_real(e1_idx)

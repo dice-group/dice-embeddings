@@ -6,7 +6,6 @@ Wit this aim, we apply rely on
 2. [PytorchLightning](https://www.pytorchlightning.ai/) to learn knowledge graph embeddings via multi-CPUs, GPUs, TPUs or  computing cluster, and
 3. [Gradio](https://gradio.app/) to ease the deployment of pre-trained models.
 
-
 ### Installation
 Clone the repository:
 ```
@@ -38,7 +37,7 @@ To test the Installation
 ```
 wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
 unzip KGs.zip
-python -m pytest -x tests
+pytest -p no:warnings
 ```
 # Deployment and Open-sourcing
 Any pretrained model can be deployed with an ease. Moreover, anyone on the internet can use the pretrained model with ```--share``` parameter. 
@@ -55,8 +54,9 @@ This share link expires in 72 hours. For free permanent hosting, check out Space
 ![alt text](core/figures/deploy_qmult_family.png)
 
 ## Pre-trained Models
-Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmai.com ``` , if you lack hardware resources to obtain embeddings of a specific knowledge Graph.
-- [English-French DBpedia Shallom embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/shallom/Shallom_EN_FR_15K_V1.zip)
+Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , if you lack hardware resources to obtain embeddings of a specific knowledge Graph.
+- [OpenEA V1.1 DBpedia English-French 100K embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/OpenEA_V1.1_DBpedia_EN_FR_100K/)
+- [OpenEA V2.0 DBpedia English-French 100K embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/OpenEA_V2.0_DBpedia_EN_FR_100K/)
 - [YAGO3-10 ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/YAGO3-10.zip)
 - [FB15K-237 ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/FB15K-237.zip)
 - [FB15K ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/FB15K.zip)
@@ -78,27 +78,28 @@ Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmai.com ``` , if
 ### Training
 1. A dataset must be located in a folder, e.g. 'KGs/YAGO3-10'.
 
-2. A folder must contain **train.txt**. If the validation and test splits are available, then they must named as **valid.txt** and **test.txt**, respectively.
+2. A folder must contain **train** file. If the validation and test splits are available, then they must named as **valid** and **test**, respectively.
 
-3. **train.txt**, **valid.txt** and **test.txt** must be in either [N-triples](https://www.w3.org/2001/sw/RDFCore/ntriples/) format or standard link prediction dataset format (see KGs folder).
+3. **train**, **valid** and **test** must be in either [N-triples](https://www.w3.org/2001/sw/RDFCore/ntriples/) format or standard link prediction dataset format (see KGs folder).
 
-4. For instance, 'KGs/Family' contains only **train.txt**. To obtain Shallom embeddings ([Research paper](https://arxiv.org/abs/2101.09090) and [conference presentation](https://www.youtube.com/watch?v=LUDpdgdvTQg)) 
-```python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --num_folds_for_cv 10 --num_epochs 1```
+4. Large **train**, **valid**, and **test** can be stored in any of the following compression techniques [.gz, .bz2, or .zip]. For more please visit [PANDAS](https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html). Otherwise, .txt or .nt works.
+
+5. For instance, 'KGs/Family' contains only **train.txt**. To obtain Shallom embeddings ([Research paper](https://arxiv.org/abs/2101.09090) and [conference presentation](https://www.youtube.com/watch?v=LUDpdgdvTQg)) 
+```python main.py --path_dataset_folder "KGs/Family" --model "Shallom" --num_folds_for_cv 10 --num_epochs 1```
 This execution results in generating **Mean and standard deviation of raw MRR in 10-fold cross validation => 0.768, 0.023**. Moreover, all necessary information including embeddings are stored in DAIKIRI_Storage folder (if does not exist it will be created).
    
-5. Executing  ```python main.py --path_dataset_folder 'KGs/Family' --model 'Shallom' --num_epochs 1 --scoring_technique 'KvsAll'```
+6. Executing  ```python main.py --path_dataset_folder "KGs/Family" --model "Shallom" --num_epochs 1 --scoring_technique "KvsAll"```
    
-6. Most link prediction benchmark datasets contain the train, validation and test datasets (see 'KGs/FB15K-237', 'KGs/WN18RR' or 'KGs/YAGO3-10').
+7. Most link prediction benchmark datasets contain the train, validation and test datasets (see 'KGs/FB15K-237', 'KGs/WN18RR' or 'KGs/YAGO3-10').
 To evaluate quality of embeddings, we rely on the standard metric, i.e. mean reciprocal rank (MRR). Executing ```python main.py --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --max_num_epochs 1 --scoring_technique 'KvsAll'```
 results in evaluating quality of SHALLOM embeddings on the test split.
-   
-   
+
 ### Example Commands
 
-1. To train our approaches for 10 epochs by using **32 CPU cores** (if available) on UMLS. 
+1. To train our approaches for 10 epochs by using all available CPUs on UMLS. 
 ```
-python main.py --path_dataset_folder 'KGs/UMLS' --model 'Shallom' --num_epochs 10 --num_processes 32 --scoring_technique 'KvsAll'
-python main.py --path_dataset_folder 'KGs/UMLS' --model 'ConEx' --num_epochs 10 --num_processes 32 --scoring_technique 'KvsAll'
+python main.py --path_dataset_folder "KGs/UMLS" --model "Shallom" --num_epochs 10 --scoring_technique "KvsAll"
+python main.py --path_dataset_folder "KGs/UMLS" --model "ConEx" --num_epochs 10 --scoring_technique "KvsAll"
 ```
 2. To train our approaches for 10 epochs by using a single GPU.
 ```
@@ -113,16 +114,13 @@ python main.py --gpus 1 --path_dataset_folder 'KGs/UMLS' --storage_path DummyFol
 
 4. To train Shallom on Carcinogenesis by using 10-fold cross validation on Carcinogenesis.  To check GPU usages, ```watch -n 1 nvidia-smi```
 ```
-python main.py --gpus 1 --path_dataset_folder 'KGs/Carcinogenesis' --model 'Shallom' --num_folds_for_cv 10 --num_epochs 10
+python main.py --gpus 1 --path_dataset_folder "KGs/Carcinogenesis" --model "Shallom" --num_folds_for_cv 10 --num_epochs 10
 ```
 5. Train Shallom for 5 epochs by using **8 GPUs** on WN18RR To check GPU usages, ```watch -n 1 nvidia-smi```.
 ```
-python main.py --gpus 8 --distributed_backend ddp --path_dataset_folder 'KGs/WN18RR' --model 'Shallom' --num_epochs 5
+python main.py --gpus 8 --distributed_backend ddp --path_dataset_folder "KGs/WN18RR" --model 'Shallom' --num_epochs 5
 ```
-
 6. More examples can be found in run.sh.
-
-
 
 ## How to cite
 If you really liked our work :), feel free to cite 
@@ -142,6 +140,7 @@ If you really liked our work :), feel free to cite
   pdf = 	 {https://proceedings.mlr.press/v157/demir21a/demir21a.pdf},
   url = 	 {https://proceedings.mlr.press/v157/demir21a.html},
 }
+
 # ConEx
 @inproceedings{demir2021convolutional,
 title={Convolutional Complex Knowledge Graph Embeddings},
@@ -159,6 +158,5 @@ url={https://openreview.net/forum?id=6T45-4TFqaX}}
   year={2021},
   organization={IEEE}
 ```
-
-For any questions or wishes, please contact:  ```caglar.demir@upb.de``` or ```caglardemir8@gmailcom.de```
+For any questions or wishes, please contact:  ```caglar.demir@upb.de``` or ```caglardemir8@gmail.com.de```
 
