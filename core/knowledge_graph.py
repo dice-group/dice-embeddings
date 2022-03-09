@@ -126,18 +126,18 @@ class KG:
             del ordered_list, df_str_kg
 
             ## 6. Serialize indexed entities and relations into disk for further usage.
-            print('[7 / 14]Serializing compressed entity integer mapping...')
+            print('[7 / 14] Serializing compressed entity integer mapping...')
             self.entity_to_idx.to_parquet(path_for_serialization + '/entity_to_idx.gzip', compression='gzip')
             print('Done!\n')
 
-            print('[8 / 14]Serializing compressed relation integer mapping...')
+            print('[8 / 14] Serializing compressed relation integer mapping...')
             self.relation_to_idx.to_parquet(path_for_serialization + '/relation_to_idx.gzip', compression='gzip')
             print('Done!\n')
 
             # 7. Convert from pandas dataframe to dictionaries for an easy access
             # We may want to benchmark using python dictionary and pandas frame
             print(
-                '[9 / 14]Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...')
+                '[9 / 14] Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...')
             self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
             self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
             self.num_entities = len(self.entity_to_idx)
@@ -232,69 +232,16 @@ class KG:
                 # 17. Create a bijection mapping from subject-object pairs to relations.
                 self.ee_vocab = get_ee_vocab(data)
 
-            # 4. Display info
-            self.description_of_input = f'\n------------------- Description of Dataset {data_dir} -------------------'
-            self.description_of_input += f'\nNumber of entities: {self.num_entities}' \
-                                         f'\nNumber of relations: {self.num_relations}' \
-                                         f'\nNumber of triples on train set: {len(self.train_set)}' \
-                                         f'\nNumber of triples on valid set: {len(self.valid_set)}' \
-                                         f'\nNumber of triples on test set: {len(self.test_set)}\n'
         else:
             self.deserialize(deserialize_flag)
 
-    @staticmethod
-    def index(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):
-        """
-        Index each triples into their integer representation. Performed in a single tread with single core.
-        V
-
-        :param data:
-        :param add_reciprical:
-        :return:
-        """
-        print(f'Indexing {len(data)} triples. Data augmentation flag => {add_reciprical}')
-        # Entity to integer indexing
-        entity_idxs = {}
-        # Relation to integer indexing
-        relation_idxs = {}
-
-        # Mapping from (head entity & relation) to tail entity
-        er_vocab = defaultdict(list)
-        # Mapping from (relation & tail entity) to head entity
-        pe_vocab = defaultdict(list)
-        # Mapping from (head entity & tail entity) to relation
-        ee_vocab = defaultdict(list)
-
-        for triple in data:
-            try:
-                h, r, t = triple[0], triple[1], triple[2]
-            except IndexError:
-                print(f'{triple} is not parsed corrected.')
-                continue
-
-            # 1. Integer indexing entities and relations
-            entity_idxs.setdefault(h, len(entity_idxs))
-            entity_idxs.setdefault(t, len(entity_idxs))
-            relation_idxs.setdefault(r, len(relation_idxs))
-
-            # 2. Mappings for filtered evaluation
-            # 2.1. (HEAD,RELATION) => TAIL
-            er_vocab[(entity_idxs[h], relation_idxs[r])].append(entity_idxs[t])
-            # 2.2. (RELATION,TAIL) => HEAD
-            pe_vocab[(relation_idxs[r], entity_idxs[t])].append(entity_idxs[h])
-            # 2.3. (HEAD,TAIL) => RELATION
-            ee_vocab[(entity_idxs[h], entity_idxs[t])].append(relation_idxs[r])
-
-            if add_reciprical:
-                # 1. Create reciprocal triples (t r_reverse h)
-                r_reverse = r + "_reverse"
-                relation_idxs.setdefault(r_reverse, len(relation_idxs))
-
-                er_vocab[(entity_idxs[t], relation_idxs[r_reverse])].append(entity_idxs[h])
-                pe_vocab[(relation_idxs[r_reverse], entity_idxs[h])].append(entity_idxs[t])
-                ee_vocab[(entity_idxs[t], entity_idxs[h])].append(relation_idxs[r_reverse])
-
-        return entity_idxs, relation_idxs, er_vocab, pe_vocab, ee_vocab
+        # 4. Display info
+        self.description_of_input = f'\n------------------- Description of Dataset {data_dir} -------------------'
+        self.description_of_input += f'\nNumber of entities: {self.num_entities}' \
+                                     f'\nNumber of relations: {self.num_relations}' \
+                                     f'\nNumber of triples on train set: {len(self.train_set)}' \
+                                     f'\nNumber of triples on valid set: {len(self.valid_set)}' \
+                                     f'\nNumber of triples on test set: {len(self.test_set)}\n'
 
     def deserialize(self, storage_path: str) -> None:
         """ Deserialize data """
@@ -305,7 +252,7 @@ class KG:
         self.num_entities = len(self.entity_to_idx)
         print('Deserializing compressed relation integer mapping...')
         self.relation_to_idx = ddf.read_parquet(storage_path + '/relation_to_idx.gzip').compute()
-        self.num_relations = len(self.entity_to_idx)
+        self.num_relations = len(self.relation_to_idx)
 
         print('Done!\n')
         print(
@@ -347,60 +294,6 @@ class KG:
             self.er_vocab = get_er_vocab(data)
 
     @staticmethod
-    def index_parallel(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):
-        """
-        Index each triples into their integer representation. Performed in a single tread with single core.
-        V
-
-        :param data:
-        :param add_reciprical:
-        :return:
-        """
-        print(f'Indexing {len(data)} triples. Data augmentation flag => {add_reciprical}')
-        # Entity to integer indexing
-        entity_idxs = {}
-        # Relation to integer indexing
-        relation_idxs = {}
-
-        # Mapping from (head entity & relation) to tail entity
-        er_vocab = defaultdict(list)
-        # Mapping from (relation & tail entity) to head entity
-        pe_vocab = defaultdict(list)
-        # Mapping from (head entity & tail entity) to relation
-        ee_vocab = defaultdict(list)
-
-        for triple in data:
-            try:
-                h, r, t = triple[0], triple[1], triple[2]
-            except IndexError:
-                print(f'{triple} is not parsed corrected.')
-                continue
-
-            # 1. Integer indexing entities and relations
-            entity_idxs.setdefault(h, len(entity_idxs))
-            entity_idxs.setdefault(t, len(entity_idxs))
-            relation_idxs.setdefault(r, len(relation_idxs))
-
-            # 2. Mappings for filtered evaluation
-            # 2.1. (HEAD,RELATION) => TAIL
-            er_vocab[(entity_idxs[h], relation_idxs[r])].append(entity_idxs[t])
-            # 2.2. (RELATION,TAIL) => HEAD
-            pe_vocab[(relation_idxs[r], entity_idxs[t])].append(entity_idxs[h])
-            # 2.3. (HEAD,TAIL) => RELATION
-            ee_vocab[(entity_idxs[h], entity_idxs[t])].append(relation_idxs[r])
-
-            if add_reciprical:
-                # 1. Create reciprocal triples (t r_reverse h)
-                r_reverse = r + "_reverse"
-                relation_idxs.setdefault(r_reverse, len(relation_idxs))
-
-                er_vocab[(entity_idxs[t], relation_idxs[r_reverse])].append(entity_idxs[h])
-                pe_vocab[(relation_idxs[r_reverse], entity_idxs[h])].append(entity_idxs[t])
-                ee_vocab[(entity_idxs[t], entity_idxs[h])].append(relation_idxs[r_reverse])
-
-        return entity_idxs, relation_idxs, er_vocab, pe_vocab, ee_vocab
-
-    @staticmethod
     def load_data_parallel(data_path, large_kg_parse=True, read_only_few: int = None,
                            sample_triples_ratio: float = None) -> List:
         """
@@ -413,23 +306,13 @@ class KG:
         """
         # (1) Check file exists, .e.g, ../../train.* exists
 
-        if glob.glob(data_path+'.*'):
-            """
-            with open(data_path, 'r') as reader:
-                s = next(reader)
-                # Heuristic to infer the format of the input data
-                # ntriples checking: Last two characters must be whitespace + . + \n
-                if s[-3:] == ' .\n':
-                    is_nt_format = True
-                else:
-                    is_nt_format = False
-            """
+        if glob.glob(data_path + '.*'):
             # (1) Read knowledge graph  via
             # (1.1) Using the whitespace as a deliminator
             # (1.2) Taking first three columns detected in (1.1.)
             # Task would even allow us to read compressed KGs.
-            df = ddf.read_csv(data_path+'.*', delim_whitespace=True, header=None, usecols=[0, 1, 2],
-                              names=['subject', 'relation', 'object'],dtype=str)
+            df = ddf.read_csv(data_path + '.*', delim_whitespace=True, header=None, usecols=[0, 1, 2],
+                              names=['subject', 'relation', 'object'], dtype=str)
 
             if isinstance(read_only_few, int):
                 if read_only_few > 0:
@@ -490,38 +373,6 @@ class KG:
         """
         return list(self.relation_to_idx.keys())
 
-    @staticmethod
-    def ntriple_parser(l: List) -> List:
-        """
-        Given a list of strings (e.g. [<...>,<...>,<...>,''])
-        :param l:
-        :return:
-        """
-
-        """
-        l=[<...>,<...>,<...>]
-        :param l:
-        :return:
-        """
-        raise NotImplementedError()
-        assert l[3] == '.'
-        try:
-            s, p, o, _ = l[0], l[1], l[2], l[3]
-            # ...=<...>
-            assert p[0] == '<' and p[-1] == '>'
-            p = p[1:-1]
-            if s[0] == '<':
-                assert s[-1] == '>'
-                s = s[1:-1]
-            if o[0] == '<':
-                assert o[-1] == '>'
-                o = o[1:-1]
-        except AssertionError:
-            print('Parsing error')
-            print(l)
-            exit(1)
-        return [s, p, o]
-
     @performance_debugger('Pickle Dump of')
     def __pickle_dump_obj(self, obj, path, info) -> None:
         print(info, end='')
@@ -540,15 +391,11 @@ class KG:
         np.savez_compressed(path, train=train, valid=valid, test=test)
 
     @staticmethod
-    def index(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):
-        """
-        Index each triples into their integer representation. Performed in a single tread with single core.
-        V
+    def map_str_triples_to_numpy_idx(triples, entity_idx, relation_idx) -> np.array:
+        return np.array([(entity_idx[s], relation_idx[p], entity_idx[o]) for s, p, o in triples])
 
-        :param data:
-        :param add_reciprical:
-        :return:
-        """
+    """
+    def index_parallel(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):
         print(f'Indexing {len(data)} triples. Data augmentation flag => {add_reciprical}')
         # Entity to integer indexing
         entity_idxs = {}
@@ -592,15 +439,75 @@ class KG:
                 ee_vocab[(entity_idxs[t], entity_idxs[h])].append(relation_idxs[r_reverse])
 
         return entity_idxs, relation_idxs, er_vocab, pe_vocab, ee_vocab
+    """
+    """
+    def ntriple_parser(l: List) -> List:
+        raise NotImplementedError()
+        assert l[3] == '.'
+        try:
+            s, p, o, _ = l[0], l[1], l[2], l[3]
+            # ...=<...>
+            assert p[0] == '<' and p[-1] == '>'
+            p = p[1:-1]
+            if s[0] == '<':
+                assert s[-1] == '>'
+                s = s[1:-1]
+            if o[0] == '<':
+                assert o[-1] == '>'
+                o = o[1:-1]
+        except AssertionError:
+            print('Parsing error')
+            print(l)
+            exit(1)
+        return [s, p, o]
+    """
+    """
+    
+    def index(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):
+        print(f'Indexing {len(data)} triples. Data augmentation flag => {add_reciprical}')
+        # Entity to integer indexing
+        entity_idxs = {}
+        # Relation to integer indexing
+        relation_idxs = {}
 
-    @staticmethod
-    def map_str_triples_to_numpy_idx(triples, entity_idx, relation_idx) -> np.array:
-        return np.array([(entity_idx[s], relation_idx[p], entity_idx[o]) for s, p, o in triples])
+        # Mapping from (head entity & relation) to tail entity
+        er_vocab = defaultdict(list)
+        # Mapping from (relation & tail entity) to head entity
+        pe_vocab = defaultdict(list)
+        # Mapping from (head entity & tail entity) to relation
+        ee_vocab = defaultdict(list)
 
-    def triple_indexing(self, large_kg_parse) -> None:
-        """
-        :return:
-        """
+        for triple in data:
+            try:
+                h, r, t = triple[0], triple[1], triple[2]
+            except IndexError:
+                print(f'{triple} is not parsed corrected.')
+                continue
+
+            # 1. Integer indexing entities and relations
+            entity_idxs.setdefault(h, len(entity_idxs))
+            entity_idxs.setdefault(t, len(entity_idxs))
+            relation_idxs.setdefault(r, len(relation_idxs))
+
+            # 2. Mappings for filtered evaluation
+            # 2.1. (HEAD,RELATION) => TAIL
+            er_vocab[(entity_idxs[h], relation_idxs[r])].append(entity_idxs[t])
+            # 2.2. (RELATION,TAIL) => HEAD
+            pe_vocab[(relation_idxs[r], entity_idxs[t])].append(entity_idxs[h])
+            # 2.3. (HEAD,TAIL) => RELATION
+            ee_vocab[(entity_idxs[h], entity_idxs[t])].append(relation_idxs[r])
+
+            if add_reciprical:
+                # 1. Create reciprocal triples (t r_reverse h)
+                r_reverse = r + "_reverse"
+                relation_idxs.setdefault(r_reverse, len(relation_idxs))
+
+                er_vocab[(entity_idxs[t], relation_idxs[r_reverse])].append(entity_idxs[h])
+                pe_vocab[(relation_idxs[r_reverse], entity_idxs[h])].append(entity_idxs[t])
+                ee_vocab[(entity_idxs[t], entity_idxs[h])].append(relation_idxs[r_reverse])
+
+        return entity_idxs, relation_idxs, er_vocab, pe_vocab, ee_vocab
+        def triple_indexing(self, large_kg_parse) -> None:
         # This part takes the most of the time.
         print('Triple indexing')
         if large_kg_parse:
@@ -622,3 +529,62 @@ class KG:
             else:
                 self.valid = np.array([])
                 self.test = np.array([])
+
+    """
+    """
+    
+    def index(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):
+        print(f'Indexing {len(data)} triples. Data augmentation flag => {add_reciprical}')
+        # Entity to integer indexing
+        entity_idxs = {}
+        # Relation to integer indexing
+        relation_idxs = {}
+
+        # Mapping from (head entity & relation) to tail entity
+        er_vocab = defaultdict(list)
+        # Mapping from (relation & tail entity) to head entity
+        pe_vocab = defaultdict(list)
+        # Mapping from (head entity & tail entity) to relation
+        ee_vocab = defaultdict(list)
+
+        for triple in data:
+            try:
+                h, r, t = triple[0], triple[1], triple[2]
+            except IndexError:
+                print(f'{triple} is not parsed corrected.')
+                continue
+
+            # 1. Integer indexing entities and relations
+            entity_idxs.setdefault(h, len(entity_idxs))
+            entity_idxs.setdefault(t, len(entity_idxs))
+            relation_idxs.setdefault(r, len(relation_idxs))
+
+            # 2. Mappings for filtered evaluation
+            # 2.1. (HEAD,RELATION) => TAIL
+            er_vocab[(entity_idxs[h], relation_idxs[r])].append(entity_idxs[t])
+            # 2.2. (RELATION,TAIL) => HEAD
+            pe_vocab[(relation_idxs[r], entity_idxs[t])].append(entity_idxs[h])
+            # 2.3. (HEAD,TAIL) => RELATION
+            ee_vocab[(entity_idxs[h], entity_idxs[t])].append(relation_idxs[r])
+
+            if add_reciprical:
+                # 1. Create reciprocal triples (t r_reverse h)
+                r_reverse = r + "_reverse"
+                relation_idxs.setdefault(r_reverse, len(relation_idxs))
+
+                er_vocab[(entity_idxs[t], relation_idxs[r_reverse])].append(entity_idxs[h])
+                pe_vocab[(relation_idxs[r_reverse], entity_idxs[h])].append(entity_idxs[t])
+                ee_vocab[(entity_idxs[t], entity_idxs[h])].append(relation_idxs[r_reverse])
+
+        return entity_idxs, relation_idxs, er_vocab, pe_vocab, ee_vocab
+    """
+    """
+    with open(data_path, 'r') as reader:
+        s = next(reader)
+        # Heuristic to infer the format of the input data
+        # ntriples checking: Last two characters must be whitespace + . + \n
+        if s[-3:] == ' .\n':
+            is_nt_format = True
+        else:
+            is_nt_format = False
+    """

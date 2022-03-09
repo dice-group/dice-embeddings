@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 from glob import glob
 import torch
 from core.executer import Execute
-from core import load_configuration
+from core import load_json
 from core.static_funcs import load_model, select_model, create_experiment_folder, store_kge
 import pandas as pd
 import numpy as np
@@ -38,7 +38,7 @@ class Merger:
         num_relation_rows = 0
         print('Loading models..')
         for path_experiment_folder in self.args.trained_model_paths:
-            previous_args = load_configuration(path_experiment_folder + '/configuration.json')
+            previous_args = load_json(path_experiment_folder + '/configuration.json')
             previous_args['path_of_experiment_folder'] = previous_args['full_storage_path']
 
             self.configuration = previous_args
@@ -120,7 +120,7 @@ class Merger:
         non_embedding_weights_state_dict = None
         num_models = 0
         for path_experiment_folder in self.args.trained_model_paths:
-            previous_args = load_configuration(path_experiment_folder + '/configuration.json')
+            previous_args = load_json(path_experiment_folder + '/configuration.json')
             previous_args['path_of_experiment_folder'] = previous_args['full_storage_path']
             if self.model_name is None:
                 self.model_name = previous_args['model']

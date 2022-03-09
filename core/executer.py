@@ -19,6 +19,8 @@ from pytorch_lightning.plugins import DDPPlugin
 from pytorch_lightning import Trainer, seed_everything
 import logging, warnings
 
+from types import SimpleNamespace
+
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
@@ -28,58 +30,69 @@ warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 # By doing so we can increase the modularity of our code.
 class Execute:
     def __init__(self, args, continuous_training=False):
-        # (1) Process arguments and sanity checking
+        # (1) Process arguments and sanity checking.
         self.args = preprocesses_input_args(args)
+        # (2) Ensure reproducibility.
         seed_everything(args.seed_for_computation, workers=True)
-        self.continuous_training = continuous_training
-        if self.continuous_training is False:
-            # 2 Create a folder to serialize data and replace the previous path info
-            self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
+        # (3) Set the continual training flag
+        self.is_continual_training = continuous_training
+        # (4) Create an experiment folder or use the previous one
+        if self.is_continual_training:
             self.storage_path = self.args.full_storage_path
         else:
-            # 2 Create a folder to serialize data
-            self.storage_path = self.args.full_storage_path
             self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
-
-        # 3. A variable is initialized for pytorch lightning trainer
+            self.storage_path = self.args.full_storage_path
+            print('Saving configuration..')
+            with open(self.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
+                temp = vars(self.args)
+                json.dump(temp, file_descriptor, indent=3)
+        # (5) A variable is initialized for pytorch lightning trainer.
         self.trainer = None
-        # 4. A variable is initialized for storing input data
+        # (6) A variable is initialized for storing input data.
         self.dataset = None
-        # 5. Store few data in memory for numerical results, e.g. runtime, H@1 etc.
+        # (7) Store few data in memory for numerical results, e.g. runtime, H@1 etc.
         self.report = dict()
 
     def start(self) -> dict:
         """
-        Main computation.
-        1. Read and Parse Input Data
+        1. READ/LOAD input knowledge graph
         2. Train and Eval a knowledge graph embedding mode
         3. Store relevant intermediate data including the trained model, embeddings and configuration
         4. Return brief summary of the computation in dictionary format.
         """
         start_time = time.time()
-        # 1. Read input data and store its parts for further use
-        if self.continuous_training is False:
+        # (1) READ/LOAD input knowledge graph
+        if self.is_continual_training is False:
             self.dataset = read_input_data(self.args, cls=KG)
             self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
             self.args, self.dataset = config_kge_sanity_checking(self.args, self.dataset)
         else:
             self.dataset = reload_input_data(self.storage_path, cls=KG)
-        # 2. Train and Evaluate
+
+        self.report['num_entities'] = self.dataset.num_entities
+        self.report['num_relations'] = self.dataset.num_relations
+
+        # (2) Train and Evaluate
         trained_model = self.train_and_eval()
-        # 3. Store trained model
-        self.store(trained_model)
+        # (3) Store trained model
+        if self.is_continual_training is False:
+            self.store(trained_model, model_name='model')
+        else:
+            self.store(trained_model, model_name='model_'+str(datetime.datetime.now()))
+
         total_runtime = time.time() - start_time
         if 60 * 60 > total_runtime:
             message = f'{total_runtime / 60:.3f} minutes'
         else:
             message = f'{total_runtime / (60 ** 2):.3f} hours'
         self.report['Runtime'] = message
+        self.report['path_experiment_folder']=self.storage_path
 
         print(f'Total computation time: {message}')
         print(f'Number of parameters in {trained_model.name}:', self.report["NumParam"])
         # print(f'Estimated of {trained_model.name}:', self.report["EstimatedSizeMB"])
         with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
-            json.dump(self.report, file_descriptor)
+            json.dump(self.report, file_descriptor,indent=4)
         return self.report
 
     def train_and_eval(self) -> BaseKGE:
@@ -102,38 +115,34 @@ class Execute:
         was specified in DDP constructor, but did not find any unused parameters in the
         forward pass.
         This flag results in an extra traversal of the autograd graph every iteration, which can adversely affect
-        performance. If your
-        model indeed
-        never has any unused parameters in the forward
-        pass, consider turning this flag off. Note
-        that this warning may
-        be
-        a
-        false
-        positive if your
-        model
-        has
-        flow
-        control
-        causing
-        later
-        iterations
-        to
-        have
-        unused
-        parameters.(function
-        operator())
+        performance. If your model indeed never has any unused parameters in the forward pass, 
+        consider turning this flag off. Note that this warning may be a false positive 
+        if your model has flow        control        causing        later        iterations        to        have        unused
+        parameters.(function        operator())
         """
         # (2) Adding plugins=[DDPPlugin(find_unused_parameters=False)] and explicitly using num_process > 1
         """ pytorch_lightning.utilities.exceptions.DeadlockDetectedException: DeadLock detected from rank: 1  """
 
-        # (3) Suprisingly, if you do not ask explicitly num_process > 1, computation runs smoothly while using many CPUs
+        # (3) Surprisingly, if you do not ask explicitly num_process > 1, computation runs smoothly while using many CPUs
         if self.args.gpus:
             self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=[DDPPlugin(find_unused_parameters=False)],
                                                          callbacks=callbacks)
         else:
             self.trainer = pl.Trainer.from_argparse_args(self.args,
                                                          callbacks=callbacks)
+
+        if self.args.num_folds_for_cv >= 2:
+            trained_model = self.k_fold_cross_validation()
+        else:
+            if self.args.scoring_technique == 'NegSample':
+                trained_model = self.training_negative_sampling()
+            elif self.args.scoring_technique == 'KvsAll':
+                trained_model = self.training_kvsall()
+            elif self.args.scoring_technique == '1vsAll':
+                trained_model = self.training_1vsall()
+            else:
+                raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
+        """
         # 2. Check whether validation and test datasets are available.
         if self.dataset.is_valid_test_available():
             if self.args.scoring_technique == 'NegSample':
@@ -144,7 +153,6 @@ class Execute:
                 trained_model = self.training_1vsall()
             else:
                 raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
-
         else:
             # 3. If (2) is FALSE, then check whether cross validation will be applied.
             print(f'There is no validation and test sets available.')
@@ -163,6 +171,8 @@ class Execute:
                     raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
             else:
                 trained_model = self.k_fold_cross_validation()
+        """
+
         return trained_model
 
     def store(self, trained_model, model_name='model') -> None:
@@ -176,10 +186,6 @@ class Execute:
         # Save Torch model.
         store_kge(trained_model, path=self.args.full_storage_path + f'/{model_name}.pt')
 
-        print('Saving configuration..')
-        with open(self.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
-            temp = vars(self.args)
-            json.dump(temp, file_descriptor)
         # See available memory and decide whether embeddings are stored separately or not.
         available_memory = [i.split() for i in os.popen('free -h').read().splitlines()][1][-1]  # ,e.g., 10Gi
         available_memory_mb = float(available_memory[:-2]) * 1000
@@ -220,7 +226,7 @@ class Execute:
         :return: trained BASEKGE
         """
         # 1. Select model and labelling : Entity Prediction or Relation Prediction.
-        model, form_of_labelling = select_model(vars(self.args))
+        model, form_of_labelling = self.select_model(vars(self.args))
         print(f'KvsAll training starts: {model.name}')  # -labeling:{form_of_labelling}')
         # 2. Create training data.)
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
@@ -275,7 +281,7 @@ class Execute:
 
     def training_1vsall(self):
         # 1. Select model and labelling : Entity Prediction or Relation Prediction.
-        model, form_of_labelling = select_model(vars(self.args))
+        model, form_of_labelling = self.select_model(vars(self.args))
         print(f'1vsAll training starts: {model.name}')
         # 2. Create training data.
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
@@ -316,12 +322,26 @@ class Execute:
 
         return model
 
+    def select_model(self, args: dict):
+        if self.is_continual_training:
+            print('Loading pre-trained model...')
+            model, _ = select_model(args)
+            try:
+                weights = torch.load(self.storage_path + '/model.pt', torch.device('cpu'))
+                model.load_state_dict(weights)
+            except FileNotFoundError:
+                print(f"{self.storage_path}/model.pt is not found. The model will be trained with random weights")
+            model.train()
+            return model, _
+        else:
+            return select_model(args)
+
     def training_negative_sampling(self) -> pl.LightningModule:
         """
         Train models with Negative Sampling
         """
         assert self.args.neg_ratio > 0
-        model, _ = select_model(vars(self.args))
+        model, _ = self.select_model(vars(self.args))
         form_of_labelling = 'NegativeSampling'
         print(f'Training starts: {model.name}-labeling:{form_of_labelling}')
         print('Creating training data...')
@@ -440,6 +460,7 @@ class Execute:
         model.eval()
         print(info)
         print(f'Num of triples {len(triple_idx)}')
+        print('** sequential computation ')
         hits = dict()
         reciprocal_ranks = []
         # Iterate over test triples
@@ -498,10 +519,10 @@ class Execute:
             filt_head_entity_rank += 1
             filt_tail_entity_rank += 1
 
-            rr=1.0 / filt_head_entity_rank + (1.0 / filt_tail_entity_rank)
+            rr = 1.0 / filt_head_entity_rank + (1.0 / filt_tail_entity_rank)
             # 5. Store reciprocal ranks.
             reciprocal_ranks.append(rr)
-            #print(f'{i}.th triple: mean reciprical rank:{rr}')
+            # print(f'{i}.th triple: mean reciprical rank:{rr}')
 
             # 4. Compute Hit@N
             for hits_level in range(1, 11):
@@ -553,7 +574,7 @@ class Execute:
 
         for (ith, (train_index, test_index)) in enumerate(kf.split(self.dataset.train_set)):
             trainer = pl.Trainer.from_argparse_args(self.args)
-            model, form_of_labelling = select_model(vars(self.args))
+            model, form_of_labelling = self.select_model(vars(self.args))
             print(f'{form_of_labelling} training starts: {model.name}')  # -labeling:{form_of_labelling}')
 
             train_set_for_i_th_fold, test_set_for_i_th_fold = self.dataset.train_set[train_index], \
@@ -600,3 +621,16 @@ class Execute:
             raise e
         return pd.concat(m, ignore_index=True)
     """
+
+class ContinuousExecute(Execute):
+    def __init__(self, args):
+        assert os.path.exists(args.path_experiment_folder)
+        assert os.path.isfile(args.path_experiment_folder + '/idx_train_df.gzip')
+        assert os.path.isfile(args.path_experiment_folder + '/configuration.json')
+        previous_args = load_json(args.path_experiment_folder + '/configuration.json')
+        previous_args.update(vars(args))
+        report = load_json(args.path_experiment_folder + '/report.json')
+        previous_args['num_entities'] = report['num_entities']
+        previous_args['num_relations'] = report['num_relations']
+        previous_args = SimpleNamespace(**previous_args)
+        super().__init__(previous_args, continuous_training=True)

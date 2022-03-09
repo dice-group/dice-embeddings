@@ -41,8 +41,8 @@ def launch_service(config, pretrained_model, entity_idx, predicate_idx):
             # Normalize logits via sigmoid
             pred_scores = torch.sigmoid(pretrained_model.forward_k_vs_all(idx_subject_idx_predicate))
             sort_val, sort_idxs = torch.sort(pred_scores, dim=1, descending=True)
-            top_10_entity, top_10_score = [idx_to_entity[i] for i in sort_idxs[0][:config.top_k].tolist()], sort_val[0][
-                                                                                                            :config.top_k].numpy()
+            top_10_entity, top_10_score = [idx_to_entity[i] for i in sort_idxs[0][:config['top_k']].tolist()], sort_val[0][
+                                                                                                            :config['top_k']].numpy()
             return f'( {str_subject},{str_predicate}, ? )', pd.DataFrame(
                 {'Entity': top_10_entity, 'Score': top_10_score})
 
@@ -62,9 +62,9 @@ def launch_service(config, pretrained_model, entity_idx, predicate_idx):
 
                 pred_scores = torch.sigmoid(pretrained_model.forward_k_vs_all(torch.cat([idx_subject,idx_predicate]).reshape(1,2)))
                 sort_val, sort_idxs = torch.sort(pred_scores, dim=1, descending=True)
-                top_10_entity, top_10_score = [idx_to_entity[i] for i in sort_idxs[0][:config.top_k].tolist()], \
+                top_10_entity, top_10_score = [idx_to_entity[i] for i in sort_idxs[0][:config['top_k']].tolist()], \
                                               sort_val[0][
-                                              :config.top_k].numpy()
+                                              :config['top_k']].numpy()
                 return f'( {str_subject},{str_predicate}, ? ) ', pd.DataFrame(
                     {'Entity': top_10_entity, 'Score': np.around(top_10_score, 3)})
             else:
@@ -87,7 +87,7 @@ def launch_service(config, pretrained_model, entity_idx, predicate_idx):
         title=f'{pretrained_model.name} Deployment',
         description='1. Enter a triple to compute its score,\n'
                     '2. Enter a subject and predicate pair to obtain most likely top ten entities or\n'
-                    '3. Checked the random examples box and click submit').launch(share=config.share)
+                    '3. Checked the random examples box and click submit').launch(share=config['share'])
 
 
 def run(args: dict):
@@ -100,7 +100,7 @@ def run(args: dict):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--path_of_experiment_folder", type=str, default='Merged/2022-03-08 14:51:03.509724')
+    parser.add_argument("--path_of_experiment_folder", type=str, default='DAIKIRI_Storage/2022-03-08 19:56:59.314898')
     parser.add_argument('--share', default=False, type=eval, choices=[True, False])
     parser.add_argument('--top_k', default=25, type=int)
     run(vars(parser.parse_args()))
