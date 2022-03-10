@@ -19,11 +19,6 @@ def store_kge(trained_model, path: str):
     torch.save(trained_model.state_dict(), path)
 
 
-def model_fitting(trainer, model, train_dataloaders) -> None:
-    print(f'Number of mini-batches to compute for a single epoch: {len(train_dataloaders)}')
-    trainer.fit(model, train_dataloaders=train_dataloaders)
-
-
 def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
     """
 
@@ -122,7 +117,7 @@ def preprocesses_input_args(arg):
     arg.checkpoint_callback = False
     arg.logger = False
     arg.eval = True if arg.eval == 1 else False
-
+    arg.eval_on_train = True if arg.eval_on_train == 1 else False
     arg.add_reciprical = True if arg.scoring_technique in ['KvsAll', '1vsAll'] else False
     if arg.sample_triples_ratio is not None:
         assert 1.0 >= arg.sample_triples_ratio >= 0.0

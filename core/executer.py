@@ -77,7 +77,7 @@ class Execute:
         if self.is_continual_training is False:
             self.store(trained_model, model_name='model')
         else:
-            self.store(trained_model, model_name='model_'+str(datetime.datetime.now()))
+            self.store(trained_model, model_name='model_' + str(datetime.datetime.now()))
 
         total_runtime = time.time() - start_time
         if 60 * 60 > total_runtime:
@@ -85,13 +85,13 @@ class Execute:
         else:
             message = f'{total_runtime / (60 ** 2):.3f} hours'
         self.report['Runtime'] = message
-        self.report['path_experiment_folder']=self.storage_path
+        self.report['path_experiment_folder'] = self.storage_path
 
         print(f'Total computation time: {message}')
         print(f'Number of parameters in {trained_model.name}:', self.report["NumParam"])
         # print(f'Estimated of {trained_model.name}:', self.report["EstimatedSizeMB"])
         with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
-            json.dump(self.report, file_descriptor,indent=4)
+            json.dump(self.report, file_descriptor, indent=4)
         return self.report
 
     def train_and_eval(self) -> BaseKGE:
@@ -238,7 +238,7 @@ class Execute:
                                      num_workers=self.args.num_processes,
                                      label_smoothing_rate=self.args.label_smoothing_rate)
         # 3. Train model.
-        model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
+        self.model_fitting(trainer=self.trainer, model=model, dataset=dataset)
         """
         # @TODO
         from laplace import Laplace
@@ -300,7 +300,7 @@ class Execute:
         else:
             model.loss = nn.CrossEntropyLoss()
         # 3. Train model
-        model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
+        self.model_fitting(trainer=self.trainer, model=model, dataset=dataset)
         # 4. Test model on the training dataset if it is needed.
         if self.args.eval_on_train:
             res = self.evaluate_lp_k_vs_all(model, self.dataset.train_set,
@@ -334,6 +334,15 @@ class Execute:
         else:
             return select_model(args)
 
+    def model_fitting(self, trainer, model, dataset) -> None:
+        train_dataloaders = dataset.train_dataloader()
+        del dataset
+        if self.args.eval is False and self.args.eval_on_train is False:
+            # release some memory
+            del self.dataset
+        print(f'Number of mini-batches to compute for a single epoch: {len(train_dataloaders)}')
+        trainer.fit(model, train_dataloaders=train_dataloaders)
+
     def training_negative_sampling(self) -> pl.LightningModule:
         """
         Train models with Negative Sampling
@@ -353,7 +362,7 @@ class Execute:
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_processes)
         # 3. Train model
-        model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
+        self.model_fitting(trainer=self.trainer, model=model, dataset=dataset)
         # 4. Test model on the training dataset if it is needed.
         if self.args.eval_on_train:
             res = self.evaluate_lp(model, self.dataset.train_set, f'Evaluate {model.name} on Train set')
@@ -587,8 +596,9 @@ class Execute:
                                          batch_size=self.args.batch_size,
                                          num_workers=self.args.num_processes
                                          )
+
             # 3. Train model
-            model_fitting(trainer=trainer, model=model, train_dataloaders=dataset.train_dataloader())
+            self.model_fitting(trainer=self.trainer, model=model, dataset=dataset)
 
             # 6. Test model on validation and test sets if possible.
             res = self.evaluate_lp_k_vs_all(model, test_set_for_i_th_fold, form_of_labelling=form_of_labelling)
@@ -602,23 +612,6 @@ class Execute:
 
         # Return last model.
         return model
-
-    """
-    def deserialize_index_data(self):
-        m = []
-        if os.path.isfile(self.storage_path + '/idx_train_df.gzip'):
-            m.append(pd.read_parquet(self.storage_path + '/idx_train_df.gzip'))
-        if os.path.isfile(self.storage_path + '/idx_valid_df.gzip'):
-            m.append(pd.read_parquet(self.storage_path + '/idx_valid_df.gzip'))
-        if os.path.isfile(self.storage_path + '/idx_test_df.gzip'):
-            m.append(pd.read_parquet(self.storage_path + '/idx_test_df.gzip'))
-        try:
-            assert len(m) > 1
-        except AssertionError as e:
-            print(f'Could not find indexed find under idx_*_df files {self.storage_path}')
-            raise e
-        return pd.concat(m, ignore_index=True)
-    """
 
 class ContinuousExecute(Execute):
     def __init__(self, args):
