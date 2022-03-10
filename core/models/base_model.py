@@ -27,7 +27,6 @@ class BaseKGE(pl.LightningModule):
         self.sanity_checking()
 
     def sanity_checking(self):
-
         assert self.args['model'] in ['DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO', 'ConEx','Shallom']
 
         assert self.args['embedding_dim'] > 0

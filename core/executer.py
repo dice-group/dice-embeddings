@@ -196,21 +196,20 @@ class Execute:
             print('Saving embeddings..')
             entity_emb, relation_ebm = trained_model.get_embeddings()
 
-            if len(entity_emb) > 10:
-                np.savez_compressed(self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings',
-                                    entity_emb=entity_emb)
+            if len(entity_emb) > 1:
+                torch.save(entity_emb, self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings.pt')
             else:
-                save_embeddings(entity_emb, indexes=self.dataset.entities_str,
+                save_embeddings(entity_emb.numpy(), indexes=self.dataset.entities_str,
                                 path=self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
 
             del entity_emb
 
             if relation_ebm is not None:
-                if len(relation_ebm) > 10:
-                    np.savez_compressed(self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings',
-                                        relation_ebm=relation_ebm)
+                if len(relation_ebm) > 1:
+                    torch.save(relation_ebm,
+                               self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings.pt')
                 else:
-                    save_embeddings(relation_ebm, indexes=self.dataset.relations_str,
+                    save_embeddings(relation_ebm.numpy(), indexes=self.dataset.relations_str,
                                     path=self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
             del relation_ebm
 

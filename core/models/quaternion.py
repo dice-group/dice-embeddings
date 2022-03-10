@@ -88,7 +88,7 @@ class QMult(BaseKGE):
                                 self.emb_ent_j.weight.data, self.emb_ent_k.weight.data), 1)
         rel_emb = torch.cat((self.emb_rel_real.weight.data, self.emb_rel_i.weight.data,
                              self.emb_rel_j.weight.data, self.emb_rel_k.weight.data), 1)
-        return entity_emb.data.detach().numpy(), rel_emb.data.detach().numpy()
+        return entity_emb.data.detach(), rel_emb.data.detach()
 
     def forward_k_vs_all(self, x):
         """
@@ -276,7 +276,7 @@ class ConvQ(BaseKGE):
                                 self.emb_ent_j.weight.data, self.emb_ent_k.weight.data), 1)
         rel_emb = torch.cat((self.emb_rel_real.weight.data, self.emb_rel_i.weight.data,
                              self.emb_rel_j.weight.data, self.emb_rel_k.weight.data), 1)
-        return entity_emb.data.detach().numpy(), rel_emb.data.detach().numpy()
+        return entity_emb.data.detach(), rel_emb.data.detach()
 
     def residual_convolution(self, Q_1, Q_2):
         emb_ent_real, emb_ent_imag_i, emb_ent_imag_j, emb_ent_imag_k = Q_1

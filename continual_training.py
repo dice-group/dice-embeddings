@@ -8,7 +8,7 @@ from types import SimpleNamespace
 def argparse_default(description=None):
     parser = argparse.ArgumentParser(add_help=False)
     # Dataset and storage related
-    parser.add_argument("--path_experiment_folder", type=str, default="DAIKIRI_Storage/2022-03-09 16:04:38.660301",
+    parser.add_argument("--path_experiment_folder", type=str, default="DAIKIRI_Storage/2022-03-10 13:47:05.197194",
                         help="The path of a folder containing pretrained model")
     # Training Parameters
     parser.add_argument("--num_epochs", type=int, default=10,

@@ -38,6 +38,9 @@ class KG:
         sample_triples_ratio
         """
 
+        # TODO: If input KG is really large:
+        # Call a c++ code to partition this graph into many train.txt files
+        # Add call dask read_csv(*) to read all of it in parallel.
         if deserialize_flag is None:
             # 1. LOAD Data. (First pass on data)
             print(
