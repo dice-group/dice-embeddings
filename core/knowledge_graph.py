@@ -309,12 +309,12 @@ class KG:
         """
         # (1) Check file exists, .e.g, ../../train.* exists
 
-        if glob.glob(data_path + '.*'):
+        if glob.glob(data_path + '*'):
             # (1) Read knowledge graph  via
             # (1.1) Using the whitespace as a deliminator
             # (1.2) Taking first three columns detected in (1.1.)
             # Task would even allow us to read compressed KGs.
-            df = ddf.read_csv(data_path + '.*', delim_whitespace=True, header=None, usecols=[0, 1, 2],
+            df = ddf.read_csv(data_path + '*', delim_whitespace=True, header=None, usecols=[0, 1, 2],
                               names=['subject', 'relation', 'object'], dtype=str)
 
             if isinstance(read_only_few, int):

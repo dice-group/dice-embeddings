@@ -8,10 +8,10 @@ def argparse_default(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Dataset and storage related
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Family',
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/YAGO3-10',
                         help="The path of a folder containing input data")
     parser.add_argument("--large_kg_parse", type=int, default=0, help='A flag for using all cores at parsing.')
-    parser.add_argument("--storage_path", type=str, default='DAIKIRI_Storage',
+    parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="Embeddings, model, and any other related data will be stored therein.")
     parser.add_argument("--read_only_few", type=int, default=None, help='READ only first N triples. If 0, read all.')
     parser.add_argument("--sample_triples_ratio", type=float, default=None, help='Sample input data.')

@@ -68,7 +68,6 @@ class Execute:
             self.args, self.dataset = config_kge_sanity_checking(self.args, self.dataset)
         else:
             self.dataset = reload_input_data(self.storage_path, cls=KG)
-
         self.report['num_entities'] = self.dataset.num_entities
         self.report['num_relations'] = self.dataset.num_relations
 

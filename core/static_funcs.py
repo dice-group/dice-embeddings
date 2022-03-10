@@ -197,7 +197,7 @@ def sanity_checking_with_arguments(args):
         raise AssertionError(f'The path does not direct to a file {args.path_dataset_folder}')
 
     try:
-        assert glob.glob(args.path_dataset_folder + '/train.*')
+        assert glob.glob(args.path_dataset_folder + '/train*')
     except AssertionError:
         print(f'The directory {args.path_dataset_folder} must contain a train.*  .')
         raise
