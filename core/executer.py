@@ -15,7 +15,7 @@ from pytorch_lightning import loggers as pl_loggers
 import pandas as pd
 import json
 import time
-from pytorch_lightning.plugins import DDPPlugin
+from pytorch_lightning.plugins import DDPPlugin, DeepSpeedPlugin
 from pytorch_lightning import Trainer, seed_everything
 import logging, warnings
 
@@ -122,12 +122,16 @@ class Execute:
         # (2) Adding plugins=[DDPPlugin(find_unused_parameters=False)] and explicitly using num_process > 1
         """ pytorch_lightning.utilities.exceptions.DeadlockDetectedException: DeadLock detected from rank: 1  """
 
+        plugins = []
+        self.args.stochastic_weight_avg = True  # => https://pytorch.org/blog/pytorch-1.6-now-includes-stochastic-weight-averaging/
         # (3) Surprisingly, if you do not ask explicitly num_process > 1, computation runs smoothly while using many CPUs
         if self.args.gpus:
-            self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=[DDPPlugin(find_unused_parameters=False)],
+            plugins.append(DDPPlugin(find_unused_parameters=False))
+            plugins.append(DeepSpeedPlugin(stage=3))  # experiment with it when we use GPUs
+            self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=plugins,
                                                          callbacks=callbacks)
         else:
-            self.trainer = pl.Trainer.from_argparse_args(self.args,
+            self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=plugins,
                                                          callbacks=callbacks)
 
         if self.args.num_folds_for_cv >= 2:
@@ -612,6 +616,7 @@ class Execute:
 
         # Return last model.
         return model
+
 
 class ContinuousExecute(Execute):
     def __init__(self, args):
