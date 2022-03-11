@@ -37,21 +37,9 @@ To test the Installation
 ```
 wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
 unzip KGs.zip
-pytest -p no:warnings
+pytest -p no:warnings -x
+pytest -p no:warnings --lf
 ```
-# Deployment and Open-sourcing
-Any pretrained model can be deployed with an ease. Moreover, anyone on the internet can use the pretrained model with ```--share``` parameter.
-```
-python deploy.py --path_of_experiment_folder 'DAIKIRI_Storage/QMultFamily' --share
-Loading Model...
-Model is loaded!
-Running on local URL:  http://127.0.0.1:7860/
-Running on public URL: https://54886.gradio.app
-
-This share link expires in 72 hours. For free permanent hosting, check out Spaces (https://huggingface.co/spaces)
-```
-![alt text](core/figures/deploy_qmult_family.png)
-
 ## Pre-trained Models
 Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , if you lack hardware resources to obtain embeddings of a specific knowledge Graph.
 - [DBpedia version: 03-2021 Embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpediaQMultEmbeddings):
@@ -66,11 +54,55 @@ Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , i
 - [Mammographic ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/ConEx_Mammographic.zip)
 - For more please look at [Hobbit Data](https://hobbitdata.informatik.uni-leipzig.de/KGE/)
 
-### Available Models
+## Link Prediction on DBpedia 
+```python
+from core import KGE
+
+# (1) Train a knowledge graph embedding model on a dataset (example from UMLS)
+# (2) Give the path of serialized (1).
+pre_trained_kge = KGE(path_of_pretrained_model_dir='Experiments/2022-03-11 08:30:52.896174')
+# (3) Head entity prediction : <?,relation,entity>
+pre_trained_kge.predict(relation=['interacts_with'], tail_entity=['eicosanoid'], k=10)
+# Returns Generator of ((tensor(0.9806), 'organophosphorus_compound'), (tensor(0.9787), 'chemical_viewed_structurally'),...)
+
+# (4) Tail entity prediction : <entity,relation,?>
+pre_trained_kge.predict(head_entity=['eicosanoid'],
+                                              relation=['interacts_with'], k=10)
+# Returns Generator of ((tensor(0.9900), 'immunologic_factor'), (tensor(0.9784), 'eicosanoid'),...)
+
+# (5) Relation prediction : <entity,?relation>
+scores_and_relations = pre_trained_kge.predict(head_entity=['eicosanoid'],
+                                               tail_entity=['eicosanoid'], k=10)
+# Returns Generator of ((tensor(0.9784), 'interacts_with'), (tensor(0.6074), 'isa'),...)
+
+# (6) Triple score: <entity, relation,entity>
+pre_trained_kge.predict(head_entity=['eicosanoid'],
+                                       relation=['interacts_with'],
+                                       tail_entity=['eicosanoid'])
+# tensor([0.9784])
+# (7) Randomly sampled triple score: <entity, relation,entity>
+triple_score = pre_trained_kge.predict(head_entity=pre_trained_kge.sample_entity(1),
+                                       relation=pre_trained_kge.sample_relation(1),
+                                       tail_entity=pre_trained_kge.sample_entity(1))
+#tensor([0.0452])
+```
+### Available KGE Models
 1. Multiplicative based KGE models: [DistMult](https://arxiv.org/pdf/1412.6575.pdf), [ComplEx](https://arxiv.org/pdf/1606.06357.pdf), [QMult](https://proceedings.mlr.press/v157/demir21a.html), and [OMult](https://proceedings.mlr.press/v157/demir21a.html) 
 2. Feed Forward Neural Models: [Shallom](https://arxiv.org/pdf/2101.09090.pdf)
 3. Convolutional Neural models [ConEx](https://openreview.net/forum?id=6T45-4TFqaX&invitationId=eswc-conferences.org/ESWC/2021/Conference/Research_Track/Paper49/-/Camera_Ready_Revision&referrer=%5BTasks%5D(%2Ftasks)), [ConvQ](https://proceedings.mlr.press/v157/demir21a.html), [ConvO](https://proceedings.mlr.press/v157/demir21a.html)
 4. Contact us to add your favorite one :)
+# How to Deploy Pretrained KGE Model
+Any pretrained model can be deployed with an ease. Moreover, anyone on the internet can use the pretrained model with ```--share``` parameter.
+```
+python deploy.py --path_of_experiment_folder 'DAIKIRI_Storage/QMultFamily' --share
+Loading Model...
+Model is loaded!
+Running on local URL:  http://127.0.0.1:7860/
+Running on public URL: https://54886.gradio.app
+
+This share link expires in 72 hours. For free permanent hosting, check out Spaces (https://huggingface.co/spaces)
+```
+![alt text](core/figures/deploy_qmult_family.png)
 
 ### Knowledge Graphs Format
 1. A dataset must be located in a folder, e.g. 'KGs/YAGO3-10'.

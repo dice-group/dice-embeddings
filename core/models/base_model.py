@@ -27,20 +27,29 @@ class BaseKGE(pl.LightningModule):
         self.sanity_checking()
 
     def sanity_checking(self):
-        assert self.args['model'] in ['DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO', 'ConEx','Shallom']
+        assert self.args['model'] in ['DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO', 'ConEx', 'Shallom']
 
-        assert self.args['embedding_dim'] > 0
-        assert self.args['num_entities'] > 0
-        assert self.args['num_relations'] > 0
 
-        self.embedding_dim = self.args['embedding_dim']
-        self.num_entities = self.args['num_entities']
-        self.num_relations = self.args['num_relations']
+        if self.args.get('embedding_dim'):
+            self.embedding_dim = self.args['embedding_dim']
+        else:
+            self.embedding_dim = 1
+
+        if self.args.get('num_entities'):
+            self.num_entities = self.args['num_entities']
+        else:
+            self.num_entities = 1
+
+        if self.args.get('num_relations'):
+            self.num_relations = self.args['num_relations']
+        else:
+            self.num_relations = 1
 
         if self.args.get('learning_rate'):
             self.learning_rate = self.args['learning_rate']
         else:
             self.learning_rate = .1
+
         if self.args.get("input_dropout_rate"):
             self.input_dropout_rate = self.args['input_dropout_rate']
         else:
@@ -56,7 +65,7 @@ class BaseKGE(pl.LightningModule):
             else:
                 self.apply_unit_norm = False
 
-        if self.args['model'] in ['ConvQ', 'ConvO','ConEx']:
+        if self.args['model'] in ['ConvQ', 'ConvO', 'ConEx']:
             if self.args.get("kernel_size"):
                 self.kernel_size = self.args['kernel_size']
             else:

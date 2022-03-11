@@ -24,8 +24,8 @@ class TestRegressionConvO:
         args.sample_triples_ratio = None
         result = Execute(args).start()
         assert 0.61 >= result['Train']['H@1'] >= 0.09
-        assert 0.25 >= result['Val']['H@1'] >= 0.09
-        assert 0.25 >= result['Test']['H@1'] >= 0.09
+        assert 0.30 >= result['Val']['H@1'] >= 0.09
+        assert 0.30 >= result['Test']['H@1'] >= 0.09
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
@@ -45,9 +45,9 @@ class TestRegressionConvO:
         args.sample_triples_ratio = None
         args.scoring_technique = '1vsAll'
         result = Execute(args).start()
-        assert 1.0 >= result['Train']['H@1'] >= 0.0
-        assert 0.75 >= result['Val']['H@1'] >= 0.0
-        assert 0.75 >= result['Test']['H@1'] >= 0.0
+        assert 1.0 >= result['Train']['H@1'] >= 0.1
+        assert 0.75 >= result['Val']['H@1'] >= 0.1
+        assert 0.75 >= result['Test']['H@1'] >= 0.1
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):
@@ -63,12 +63,11 @@ class TestRegressionConvO:
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'NegSample'
+        args.neg_ratio = 1
         args.sample_triples_ratio = None
         args.read_only_few = None
-        args.sample_triples_ratio = None
-        args.neg_ratio = 1
         result = Execute(args).start()
-        assert 0.61 >= result['Train']['H@1'] >= 0.09
-        assert 0.30 >= result['Val']['H@1'] >= 0.09
-        assert 0.30 >= result['Test']['H@1'] >= 0.09
+        assert 0.61 >= result['Train']['H@1'] >= 0.05
+        assert 0.30 >= result['Val']['H@1'] >= 0.05
+        assert 0.30 >= result['Test']['H@1'] >= 0.05
 

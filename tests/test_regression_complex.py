@@ -68,5 +68,5 @@ class TestRegressionComplEx:
         args.read_only_few = None
         result = Execute(args).start()
         assert 0.66 >= result['Train']['H@1'] >= .20
-        assert 0.55 >= result['Val']['H@1'] >= .10
-        assert 0.55 >= result['Test']['H@1'] >= .10
+        assert 0.55 >= result['Val']['H@1'] >= .05
+        assert 0.55 >= result['Test']['H@1'] >= .05

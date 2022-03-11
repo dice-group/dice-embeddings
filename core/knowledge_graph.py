@@ -331,6 +331,14 @@ class KG:
             df['relation'] = df['relation'].str.removeprefix("<").str.removesuffix(">")
             df['object'] = df['object'].str.removeprefix("<").str.removesuffix(">")
             print('Dask Scheduler starts computation...')
+            """
+            # Use this at writing as well to disk
+            from distributed import Client
+            
+            with Client(threads_per_worker, n_worker) as client
+            
+            """
+
             if large_kg_parse:
                 df = df.compute(scheduler='processes')
             else:

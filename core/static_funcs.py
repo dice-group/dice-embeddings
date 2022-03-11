@@ -251,18 +251,23 @@ def select_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     return model, form_of_labelling
 
 
-def load_model(args) -> torch.nn.Module:
+def load_model(path_of_experiment_folder) -> torch.nn.Module:
     """ Load weights and initialize pytorch module from namespace arguments"""
+    print('Loading model..')
     # (1) Load weights from experiment repo
-    weights = torch.load(args['path_of_experiment_folder'] + '/model.pt', torch.device('cpu'))
-    model, _ = select_model(args)
+    weights = torch.load(path_of_experiment_folder + '/model.pt', torch.device('cpu'))
+    configs = load_json(path_of_experiment_folder + '/configuration.json')
+    report = load_json(path_of_experiment_folder + '/report.json')
+    configs["num_entities"]=report["num_entities"]
+    configs["num_relations"] = report["num_relations"]
+    model, _ = select_model(configs)
     model.load_state_dict(weights)
     for parameter in model.parameters():
         parameter.requires_grad = False
     model.eval()
-
-    entity_to_idx = pd.read_parquet(args['path_of_experiment_folder'] + '/entity_to_idx.gzip').to_dict()['entity']
-    relation_to_idx = pd.read_parquet(args['path_of_experiment_folder'] + '/relation_to_idx.gzip').to_dict()['relation']
+    print('Loading entity and relation indexes..')
+    entity_to_idx = pd.read_parquet(path_of_experiment_folder + '/entity_to_idx.gzip')#.to_dict()['entity']
+    relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')#.to_dict()['relation']
     return model, entity_to_idx, relation_to_idx
 
 
