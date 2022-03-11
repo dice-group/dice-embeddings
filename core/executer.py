@@ -100,7 +100,8 @@ class Execute:
         """
         print('------------------- Train & Eval -------------------')
         callbacks = [PrintCallback(),
-                     KGESaveCallback(every_x_epoch=self.args.num_epochs, path=self.args.full_storage_path)]
+                     KGESaveCallback(every_x_epoch=self.args.save_model_at_every_epoch,
+                                     path=self.args.full_storage_path)]
 
         # PL has some problems with DDPPlugin. It will likely to be solved in their next release.
         # (1) Explicitly setting num_process > 1 gives you
@@ -327,7 +328,7 @@ class Execute:
                 weights = torch.load(self.storage_path + '/model.pt', torch.device('cpu'))
                 model.load_state_dict(weights)
             except FileNotFoundError:
-                print(f"{self.storage_path}/model.pt is not found. The model will be trained with random weights")
+                raise FileNotFoundError(f"{self.storage_path}/model.pt is not found. The model will be trained with random weights")
             model.train()
             return model, _
         else:
@@ -624,4 +625,8 @@ class ContinuousExecute(Execute):
         previous_args['num_entities'] = report['num_entities']
         previous_args['num_relations'] = report['num_relations']
         previous_args = SimpleNamespace(**previous_args)
+
+        previous_args.full_storage_path = previous_args.path_experiment_folder
+
+        print('ContinuousExecute starting...')
         super().__init__(previous_args, continuous_training=True)

@@ -26,7 +26,8 @@ class KG:
 
     def __init__(self, data_dir: str = None, deserialize_flag: str = None, large_kg_parse=False, add_reciprical=False,
                  eval_model=True, read_only_few: int = None, sample_triples_ratio: float = None,
-                 path_for_serialization: str = None, add_noise_rate: float = None):
+                 path_for_serialization: str = None, add_noise_rate: float = None, entity_to_idx=None,
+                 relation_to_idx=None):
         """
 
         :param data_dir: A path of a folder containing the input knowledge graph
@@ -106,53 +107,60 @@ class KG:
 
                 assert s + num_noisy_triples == len(self.train_set)
 
-            # 3. Concatenate dataframes.
-            print(f'[4 / 14] Concatenating data to obtain index...')
-            df_str_kg = pd.concat([self.train_set, self.valid_set, self.test_set], ignore_index=True)
-            print('Done !\n')
-            # 4. Create a bijection mapping  from entities to integer indexes.
-            print('[5 / 14] Creating a mapping from entities to integer indexes...')
-            ordered_list = pd.unique(df_str_kg[['subject', 'object']].values.ravel('K'))
-            self.entity_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
-                                              columns=['entity'],
-                                              index=ordered_list)
-            print('Done!\n')
+            if entity_to_idx is None and relation_to_idx is None:
+                # 3. Concatenate dataframes.
+                print(f'[4 / 14] Concatenating data to obtain index...')
+                df_str_kg = pd.concat([self.train_set, self.valid_set, self.test_set], ignore_index=True)
+                print('Done !\n')
+                # 4. Create a bijection mapping  from entities to integer indexes.
+                print('[5 / 14] Creating a mapping from entities to integer indexes...')
+                ordered_list = pd.unique(df_str_kg[['subject', 'object']].values.ravel('K'))
+                self.entity_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
+                                                  columns=['entity'],
+                                                  index=ordered_list)
+                print('Done!\n')
 
-            # 5. Create a bijection mapping  from relations to integer indexes.
-            print('[6 / 14] Creating a mapping from relations to integer indexes...')
-            ordered_list = pd.unique(df_str_kg['relation'].values.ravel('K'))
-            self.relation_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
-                                                columns=['relation'],
-                                                index=ordered_list)
-            print('Done!\n')
-            # Free memory
-            del ordered_list, df_str_kg
+                # 5. Create a bijection mapping  from relations to integer indexes.
+                print('[6 / 14] Creating a mapping from relations to integer indexes...')
+                ordered_list = pd.unique(df_str_kg['relation'].values.ravel('K'))
+                self.relation_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
+                                                    columns=['relation'],
+                                                    index=ordered_list)
+                print('Done!\n')
+                # Free memory
+                del ordered_list, df_str_kg
 
-            ## 6. Serialize indexed entities and relations into disk for further usage.
-            print('[7 / 14] Serializing compressed entity integer mapping...')
-            self.entity_to_idx.to_parquet(path_for_serialization + '/entity_to_idx.gzip', compression='gzip')
-            print('Done!\n')
+                ## 6. Serialize indexed entities and relations into disk for further usage.
+                print('[7 / 14] Serializing compressed entity integer mapping...')
+                self.entity_to_idx.to_parquet(path_for_serialization + '/entity_to_idx.gzip', compression='gzip')
+                print('Done!\n')
 
-            print('[8 / 14] Serializing compressed relation integer mapping...')
-            self.relation_to_idx.to_parquet(path_for_serialization + '/relation_to_idx.gzip', compression='gzip')
-            print('Done!\n')
+                print('[8 / 14] Serializing compressed relation integer mapping...')
+                self.relation_to_idx.to_parquet(path_for_serialization + '/relation_to_idx.gzip', compression='gzip')
+                print('Done!\n')
 
-            # 7. Convert from pandas dataframe to dictionaries for an easy access
-            # We may want to benchmark using python dictionary and pandas frame
-            print(
-                '[9 / 14] Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...')
-            self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
-            self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
-            self.num_entities = len(self.entity_to_idx)
-            self.num_relations = len(self.relation_to_idx)
-            print('Done!\n')
+                # 7. Convert from pandas dataframe to dictionaries for an easy access
+                # We may want to benchmark using python dictionary and pandas frame
+                print(
+                    '[9 / 14] Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...')
+                self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
+                self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
+                self.num_entities = len(self.entity_to_idx)
+                self.num_relations = len(self.relation_to_idx)
+                print('Done!\n')
+            else:
+                self.entity_to_idx = entity_to_idx.to_dict()['entity']
+                self.relation_to_idx = relation_to_idx.to_dict()['relation']
+                self.num_entities = len(self.entity_to_idx)
+                self.num_relations = len(self.relation_to_idx)
 
-            # 8. Serialize already read training data in parquet format so that
-            # the training data is stored in more memory efficient manner as well as
-            # it can be reread later faster
-            print('[10 / 14] Serializing training data for Continual Learning...')  # TODO: Do we really need it ?!
-            self.train_set.to_parquet(path_for_serialization + '/train_df.gzip', compression='gzip')
-            print('Done!\n')
+            if path_for_serialization is not None:
+                # 8. Serialize already read training data in parquet format so that
+                # the training data is stored in more memory efficient manner as well as
+                # it can be reread later faster
+                print('[10 / 14] Serializing training data for Continual Learning...')  # TODO: Do we really need it ?!
+                self.train_set.to_parquet(path_for_serialization + '/train_df.gzip', compression='gzip')
+                print('Done!\n')
 
             print('[11 / 14] Mapping training data into integers for training...')
             # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
@@ -161,10 +169,11 @@ class KG:
             self.train_set['object'] = self.train_set['object'].map(lambda x: self.entity_to_idx[x])
             print('Done!\n')
 
-            # 10. Serialize (9).
-            print('[12 / 14] Serializing integer mapped data...')  # TODO: Do we really need it ?!
-            self.train_set.to_parquet(path_for_serialization + '/idx_train_df.gzip', compression='gzip')
-            print('Done!\n')
+            if path_for_serialization is not None:
+                # 10. Serialize (9).
+                print('[12 / 14] Serializing integer mapped data...')  # TODO: Do we really need it ?!
+                self.train_set.to_parquet(path_for_serialization + '/idx_train_df.gzip', compression='gzip')
+                print('Done!\n')
 
             # 11. Convert data from pandas dataframe to numpy ndarray.
             print('[13 / 14] Mapping from pandas data frame to numpy ndarray to reduce memory usage...')
@@ -350,18 +359,6 @@ class KG:
             print(f'{data_path} could not found!\n')
             return pd.DataFrame()
 
-    @staticmethod
-    def get_entities_and_relations(data):
-        entities = set()
-        relations = set()
-
-        for triple in data:
-            h, r, t = triple[0], triple[1], triple[2]
-            entities.add(h)
-            entities.add(t)
-            relations.add(r)
-        return sorted(list(entities)), sorted(list(relations))
-
     def is_valid_test_available(self):
         if len(self.valid_set) > 0 and len(self.test_set) > 0:
             return True
@@ -385,218 +382,7 @@ class KG:
         """
         return list(self.relation_to_idx.keys())
 
-    @performance_debugger('Pickle Dump of')
-    def __pickle_dump_obj(self, obj, path, info) -> None:
-        print(info, end='')
-        with open(path, 'wb') as handle:
-            pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-    @performance_debugger('JSON Dump of')
-    def __json_dump_obj(self, obj, path, info) -> None:
-        print(info, end='')
-        with open(path, 'w') as handle:
-            json.dump(obj, handle)
-
-    @performance_debugger('Numpy Save')
-    def __np_save_as_compressed(self, train, valid, test, path, info) -> None:
-        print(info, end='')
-        np.savez_compressed(path, train=train, valid=valid, test=test)
 
     @staticmethod
     def map_str_triples_to_numpy_idx(triples, entity_idx, relation_idx) -> np.array:
         return np.array([(entity_idx[s], relation_idx[p], entity_idx[o]) for s, p, o in triples])
-
-    """
-    def index_parallel(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):
-        print(f'Indexing {len(data)} triples. Data augmentation flag => {add_reciprical}')
-        # Entity to integer indexing
-        entity_idxs = {}
-        # Relation to integer indexing
-        relation_idxs = {}
-
-        # Mapping from (head entity & relation) to tail entity
-        er_vocab = defaultdict(list)
-        # Mapping from (relation & tail entity) to head entity
-        pe_vocab = defaultdict(list)
-        # Mapping from (head entity & tail entity) to relation
-        ee_vocab = defaultdict(list)
-
-        for triple in data:
-            try:
-                h, r, t = triple[0], triple[1], triple[2]
-            except IndexError:
-                print(f'{triple} is not parsed corrected.')
-                continue
-
-            # 1. Integer indexing entities and relations
-            entity_idxs.setdefault(h, len(entity_idxs))
-            entity_idxs.setdefault(t, len(entity_idxs))
-            relation_idxs.setdefault(r, len(relation_idxs))
-
-            # 2. Mappings for filtered evaluation
-            # 2.1. (HEAD,RELATION) => TAIL
-            er_vocab[(entity_idxs[h], relation_idxs[r])].append(entity_idxs[t])
-            # 2.2. (RELATION,TAIL) => HEAD
-            pe_vocab[(relation_idxs[r], entity_idxs[t])].append(entity_idxs[h])
-            # 2.3. (HEAD,TAIL) => RELATION
-            ee_vocab[(entity_idxs[h], entity_idxs[t])].append(relation_idxs[r])
-
-            if add_reciprical:
-                # 1. Create reciprocal triples (t r_reverse h)
-                r_reverse = r + "_reverse"
-                relation_idxs.setdefault(r_reverse, len(relation_idxs))
-
-                er_vocab[(entity_idxs[t], relation_idxs[r_reverse])].append(entity_idxs[h])
-                pe_vocab[(relation_idxs[r_reverse], entity_idxs[h])].append(entity_idxs[t])
-                ee_vocab[(entity_idxs[t], entity_idxs[h])].append(relation_idxs[r_reverse])
-
-        return entity_idxs, relation_idxs, er_vocab, pe_vocab, ee_vocab
-    """
-    """
-    def ntriple_parser(l: List) -> List:
-        raise NotImplementedError()
-        assert l[3] == '.'
-        try:
-            s, p, o, _ = l[0], l[1], l[2], l[3]
-            # ...=<...>
-            assert p[0] == '<' and p[-1] == '>'
-            p = p[1:-1]
-            if s[0] == '<':
-                assert s[-1] == '>'
-                s = s[1:-1]
-            if o[0] == '<':
-                assert o[-1] == '>'
-                o = o[1:-1]
-        except AssertionError:
-            print('Parsing error')
-            print(l)
-            exit(1)
-        return [s, p, o]
-    """
-    """
-    
-    def index(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):
-        print(f'Indexing {len(data)} triples. Data augmentation flag => {add_reciprical}')
-        # Entity to integer indexing
-        entity_idxs = {}
-        # Relation to integer indexing
-        relation_idxs = {}
-
-        # Mapping from (head entity & relation) to tail entity
-        er_vocab = defaultdict(list)
-        # Mapping from (relation & tail entity) to head entity
-        pe_vocab = defaultdict(list)
-        # Mapping from (head entity & tail entity) to relation
-        ee_vocab = defaultdict(list)
-
-        for triple in data:
-            try:
-                h, r, t = triple[0], triple[1], triple[2]
-            except IndexError:
-                print(f'{triple} is not parsed corrected.')
-                continue
-
-            # 1. Integer indexing entities and relations
-            entity_idxs.setdefault(h, len(entity_idxs))
-            entity_idxs.setdefault(t, len(entity_idxs))
-            relation_idxs.setdefault(r, len(relation_idxs))
-
-            # 2. Mappings for filtered evaluation
-            # 2.1. (HEAD,RELATION) => TAIL
-            er_vocab[(entity_idxs[h], relation_idxs[r])].append(entity_idxs[t])
-            # 2.2. (RELATION,TAIL) => HEAD
-            pe_vocab[(relation_idxs[r], entity_idxs[t])].append(entity_idxs[h])
-            # 2.3. (HEAD,TAIL) => RELATION
-            ee_vocab[(entity_idxs[h], entity_idxs[t])].append(relation_idxs[r])
-
-            if add_reciprical:
-                # 1. Create reciprocal triples (t r_reverse h)
-                r_reverse = r + "_reverse"
-                relation_idxs.setdefault(r_reverse, len(relation_idxs))
-
-                er_vocab[(entity_idxs[t], relation_idxs[r_reverse])].append(entity_idxs[h])
-                pe_vocab[(relation_idxs[r_reverse], entity_idxs[h])].append(entity_idxs[t])
-                ee_vocab[(entity_idxs[t], entity_idxs[h])].append(relation_idxs[r_reverse])
-
-        return entity_idxs, relation_idxs, er_vocab, pe_vocab, ee_vocab
-        def triple_indexing(self, large_kg_parse) -> None:
-        # This part takes the most of the time.
-        print('Triple indexing')
-        if large_kg_parse:
-            print('No Parallelism implemented yet')
-            # If LARGE WE ASSUME THAT there is no val and test
-            self.train = self.map_str_triples_to_numpy_idx(triples=self.train, entity_idx=self.entity_idx,
-                                                           relation_idx=self.relation_idx)
-            self.valid = np.array([])
-            self.test = np.array([])
-        else:
-            self.train = self.map_str_triples_to_numpy_idx(triples=self.train, entity_idx=self.entity_idx,
-                                                           relation_idx=self.relation_idx)
-            if self.is_valid_test_available():
-                self.valid = self.map_str_triples_to_numpy_idx(triples=self.valid, entity_idx=self.entity_idx,
-                                                               relation_idx=self.relation_idx)
-
-                self.test = self.map_str_triples_to_numpy_idx(triples=self.test, entity_idx=self.entity_idx,
-                                                              relation_idx=self.relation_idx)
-            else:
-                self.valid = np.array([])
-                self.test = np.array([])
-
-    """
-    """
-    
-    def index(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):
-        print(f'Indexing {len(data)} triples. Data augmentation flag => {add_reciprical}')
-        # Entity to integer indexing
-        entity_idxs = {}
-        # Relation to integer indexing
-        relation_idxs = {}
-
-        # Mapping from (head entity & relation) to tail entity
-        er_vocab = defaultdict(list)
-        # Mapping from (relation & tail entity) to head entity
-        pe_vocab = defaultdict(list)
-        # Mapping from (head entity & tail entity) to relation
-        ee_vocab = defaultdict(list)
-
-        for triple in data:
-            try:
-                h, r, t = triple[0], triple[1], triple[2]
-            except IndexError:
-                print(f'{triple} is not parsed corrected.')
-                continue
-
-            # 1. Integer indexing entities and relations
-            entity_idxs.setdefault(h, len(entity_idxs))
-            entity_idxs.setdefault(t, len(entity_idxs))
-            relation_idxs.setdefault(r, len(relation_idxs))
-
-            # 2. Mappings for filtered evaluation
-            # 2.1. (HEAD,RELATION) => TAIL
-            er_vocab[(entity_idxs[h], relation_idxs[r])].append(entity_idxs[t])
-            # 2.2. (RELATION,TAIL) => HEAD
-            pe_vocab[(relation_idxs[r], entity_idxs[t])].append(entity_idxs[h])
-            # 2.3. (HEAD,TAIL) => RELATION
-            ee_vocab[(entity_idxs[h], entity_idxs[t])].append(relation_idxs[r])
-
-            if add_reciprical:
-                # 1. Create reciprocal triples (t r_reverse h)
-                r_reverse = r + "_reverse"
-                relation_idxs.setdefault(r_reverse, len(relation_idxs))
-
-                er_vocab[(entity_idxs[t], relation_idxs[r_reverse])].append(entity_idxs[h])
-                pe_vocab[(relation_idxs[r_reverse], entity_idxs[h])].append(entity_idxs[t])
-                ee_vocab[(entity_idxs[t], entity_idxs[h])].append(relation_idxs[r_reverse])
-
-        return entity_idxs, relation_idxs, er_vocab, pe_vocab, ee_vocab
-    """
-    """
-    with open(data_path, 'r') as reader:
-        s = next(reader)
-        # Heuristic to infer the format of the input data
-        # ntriples checking: Last two characters must be whitespace + . + \n
-        if s[-3:] == ' .\n':
-            is_nt_format = True
-        else:
-            is_nt_format = False
-    """

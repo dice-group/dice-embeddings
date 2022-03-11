@@ -122,9 +122,6 @@ def preprocesses_input_args(arg):
     if arg.sample_triples_ratio is not None:
         assert 1.0 >= arg.sample_triples_ratio >= 0.0
     sanity_checking_with_arguments(arg)
-    if arg.save_model_at_every_epoch is None:
-        arg.save_model_at_every_epoch = arg.max_epochs
-
     if arg.num_folds_for_cv > 0:
         arg.eval = True
 
@@ -251,23 +248,28 @@ def select_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     return model, form_of_labelling
 
 
-def load_model(path_of_experiment_folder) -> torch.nn.Module:
+def load_model(path_of_experiment_folder) -> Tuple[BaseKGE,pd.DataFrame,pd.DataFrame]:
     """ Load weights and initialize pytorch module from namespace arguments"""
     print('Loading model..')
-    # (1) Load weights from experiment repo
+    # (1) Load weights..
     weights = torch.load(path_of_experiment_folder + '/model.pt', torch.device('cpu'))
+    # (2) Loading input configuration..
     configs = load_json(path_of_experiment_folder + '/configuration.json')
+    # (3) Loading the report of a training process.
     report = load_json(path_of_experiment_folder + '/report.json')
-    configs["num_entities"]=report["num_entities"]
+    configs["num_entities"] = report["num_entities"]
     configs["num_relations"] = report["num_relations"]
+    # (4) Select the model
     model, _ = select_model(configs)
+    # (5) Put (1) into (4)
     model.load_state_dict(weights)
+    # (6) Set it into eval model.
     for parameter in model.parameters():
         parameter.requires_grad = False
     model.eval()
     print('Loading entity and relation indexes..')
-    entity_to_idx = pd.read_parquet(path_of_experiment_folder + '/entity_to_idx.gzip')#.to_dict()['entity']
-    relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')#.to_dict()['relation']
+    entity_to_idx = pd.read_parquet(path_of_experiment_folder + '/entity_to_idx.gzip')
+    relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')
     return model, entity_to_idx, relation_to_idx
 
 

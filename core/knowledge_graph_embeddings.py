@@ -1,65 +1,19 @@
 import os
 from .static_funcs import load_json, load_model
-from typing import List
+from typing import List, Tuple
 import torch
+from torch import optim
+from .abstracts import BaseInteractiveKGE
+
+from .dataset_classes import TriplePredictionDataset
+from torch.utils.data import DataLoader
 
 
-class KGE:
+class KGE(BaseInteractiveKGE):
+    """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
+
     def __init__(self, path_of_pretrained_model_dir):
-        try:
-            assert os.path.isdir(path_of_pretrained_model_dir)
-        except AssertionError:
-            raise AssertionError(f'Could not find a directory {path_of_pretrained_model_dir}')
-        self.path = path_of_pretrained_model_dir
-
-        self.model, self.entity_to_idx, self.relation_to_idx = load_model(self.path + '/')
-
-        self.num_entities = len(self.entity_to_idx)
-        self.num_relations = len(self.relation_to_idx)
-
-    def predict_missing_head_entity(self, relation, tail_entity):
-        """
-
-        :param relation:
-        :param tail_entity:
-        :return:
-        """
-        head_entity = torch.LongTensor(self.entity_to_idx['entity'].values.tolist())
-        relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values.tolist())
-        tail_entity = torch.LongTensor(self.entity_to_idx.loc[tail_entity]['entity'].values.tolist())
-        x = torch.stack((head_entity,
-                         relation.repeat(self.num_entities, ),
-                         tail_entity.repeat(self.num_entities, )), dim=1)
-        scores = self.model.forward_triples(x)
-        entities = self.entity_to_idx.index.values
-        sort_scores, sort_idxs = torch.sort(scores, descending=True)
-        return sort_scores, entities[sort_idxs]
-
-    def predict_missing_relations(self, head_entity, tail_entity):
-        head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values.tolist())
-        relation = torch.LongTensor(self.relation_to_idx['relation'].values.tolist())
-        tail_entity = torch.LongTensor(self.entity_to_idx.loc[tail_entity]['entity'].values.tolist())
-
-        x = torch.stack((head_entity.repeat(self.num_relations, ),
-                         relation,
-                         tail_entity.repeat(self.num_relations, )), dim=1)
-        scores = self.model.forward_triples(x)
-        relations = self.relation_to_idx.index.values
-        sort_scores, sort_idxs = torch.sort(scores, descending=True)
-        return sort_scores, relations[sort_idxs]
-
-    def predict_missing_tail_entity(self, head_entity, relation):
-        head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values.tolist())
-        relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values.tolist())
-        tail_entity = torch.LongTensor(self.entity_to_idx['entity'].values.tolist())
-
-        x = torch.stack((head_entity.repeat(self.num_entities, ),
-                         relation.repeat(self.num_entities, ),
-                         tail_entity), dim=1)
-        scores = self.model.forward_triples(x)
-        entities = self.entity_to_idx.index.values
-        sort_scores, sort_idxs = torch.sort(scores, descending=True)
-        return sort_scores, entities[sort_idxs]
+        super().__init__(path_of_pretrained_model_dir)
 
     def predict(self, *, head_entity: list = None, relation: list = None, tail_entity: list = None, k=10):
         """
@@ -96,22 +50,52 @@ class KGE:
         x = torch.tensor((head, relation, tail)).reshape(len(head), 3)
         return torch.sigmoid(self.model.forward_triples(x))
 
-    @property
-    def name(self):
-        return self.model.name
+    def train(self, kg, lr=.01, epoch=3, batch_size=32):
+        # (1) Create Negative Sampling Setting for training
+        print('Creating Dataset...')
+        train_set = TriplePredictionDataset(kg.train_set,
+                                            num_entities=len(kg.entity_to_idx),
+                                            num_relations=len(kg.relation_to_idx),
+                                            neg_sample_ratio=10)
+        train_dataloader = DataLoader(train_set, batch_size=batch_size,
+                                      shuffle=True, num_workers=1,
+                                      collate_fn=train_set.collate_fn, pin_memory=True)
 
-    def sample_entity(self, n: int) -> List[str]:
-        assert isinstance(n, int)
-        assert n >= 0
-        return self.entity_to_idx.sample(n=n, random_state=1).index.to_list()
-
-    def sample_relation(self, n: int) -> List[str]:
-        assert isinstance(n, int)
-        assert n >= 0
-        return self.relation_to_idx.sample(n=n, random_state=1).index.to_list()
-
-    def is_seen(self, entity: str = None, relation: str = None) -> bool:
-        if entity is not None:
-            return True if entity in self.entity_to_idx.index else False
-        if relation is not None:
-            return True if entity in self.relation_to_idx.index else False
+        print('First Eval..')
+        # (2) Eval model on this triples
+        first_avg_loss_per_triple = 0
+        for x, y in train_dataloader:
+            pred = self.model(x)
+            first_avg_loss_per_triple += self.model.loss(pred, y)
+        first_avg_loss_per_triple /= len(train_set)
+        print(first_avg_loss_per_triple)
+        # (3) Prepare Model for Training
+        for parameter in self.model.parameters():
+            parameter.requires_grad = True
+        self.model.train()
+        # (4) Start Training
+        optimizer = optim.Adam(self.model.parameters(), lr=lr)
+        print('Training Starts...')
+        for epoch in range(epoch):  # loop over the dataset multiple times
+            for x, y in train_dataloader:
+                # zero the parameter gradients
+                optimizer.zero_grad()
+                # forward + backward + optimize
+                outputs = self.model(x)
+                loss = self.model.loss(outputs, y)
+                loss.backward()
+                optimizer.step()
+        # (5) Prepare For Saving
+        for parameter in self.model.parameters():
+            parameter.requires_grad = False
+        self.model.eval()
+        print('Eval starts...')
+        # (6) Eval model on training data to check how much an Improvement we achived
+        last_avg_loss_per_triple = 0
+        for x, y in train_dataloader:
+            pred = self.model(x)
+            last_avg_loss_per_triple += self.model.loss(pred, y)
+        last_avg_loss_per_triple /= len(train_set)
+        print(last_avg_loss_per_triple)
+        print(f'On average Improvement: {first_avg_loss_per_triple-last_avg_loss_per_triple}')
+        torch.save(self.model, 'ContinualTraining_model.pt')

@@ -29,16 +29,16 @@ class PrintCallback(Callback):
 
 
 class KGESaveCallback(Callback):
-    def __init__(self, every_x_epoch: int, path: str):
+    def __init__(self, every_x_epoch, path: str):
         super().__init__()
-        assert isinstance(every_x_epoch, int) and every_x_epoch > 0
         self.every_x_epoch = every_x_epoch
         self.epoch_counter = 0
         self.path = path
 
     def on_epoch_end(self, trainer, model):
-        if self.epoch_counter % self.every_x_epoch == 0 and self.epoch_counter > 0:
-            print('\nStoring model..')
-            # Could throw an error if mode is in GPU
-            store_kge(model, path=self.path + f'/model_at_{str(self.every_x_epoch)}_epoch.pt')
-        self.epoch_counter += 1
+        if self.every_x_epoch:
+            if self.epoch_counter % self.every_x_epoch == 0 and self.epoch_counter > 0:
+                print('\nStoring model..')
+                # Could throw an error if mode is in GPU
+                store_kge(model, path=self.path + f'/model_at_{str(self.every_x_epoch)}_epoch.pt')
+            self.epoch_counter += 1
