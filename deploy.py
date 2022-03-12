@@ -107,26 +107,26 @@ def launch_kge(args, pre_trained_kge: KGE):
             head_entity = pre_trained_kge.sample_entity(1)
             relation = pre_trained_kge.sample_relation(1)
             tail_entity = pre_trained_kge.sample_entity(1)
-            triple_score = pre_trained_kge.predict(head_entity=head_entity,
-                                                   relation=relation,
-                                                   tail_entity=tail_entity)
+            triple_score = pre_trained_kge.predict_topk(head_entity=head_entity,
+                                                        relation=relation,
+                                                        tail_entity=tail_entity)
             return f'( {head_entity[0]},{relation[0]}, {tail_entity[0]} )', pd.DataFrame({'Score': triple_score})
         else:
 
             if pre_trained_kge.is_seen(entity=str_subject) and pre_trained_kge.is_seen(
                     relation=str_predicate) and pre_trained_kge.is_seen(entity=str_object):
                 """ Triple Prediction """
-                triple_score = pre_trained_kge.predict(head_entity=str_subject,
-                                                       relation=str_predicate,
-                                                       tail_entity=str_object)
+                triple_score = pre_trained_kge.predict_topk(head_entity=str_subject,
+                                                            relation=str_predicate,
+                                                            tail_entity=str_object)
                 return f'( {str_subject},{str_predicate}, {str_object} )', pd.DataFrame({'Score': triple_score})
 
             elif pre_trained_kge.is_seen(entity=str_subject) and pre_trained_kge.is_seen(
                     relation=str_predicate):
                 """ Tail Entity Prediction """
 
-                triple_score = pre_trained_kge.predict(head_entity=[str_subject],
-                                                       relation=[str_predicate])
+                triple_score = pre_trained_kge.predict_topk(head_entity=[str_subject],
+                                                            relation=[str_predicate])
 
                 return f'( {str_subject},{str_predicate}, {str_object} )', pd.DataFrame({'Score': triple_score})
 

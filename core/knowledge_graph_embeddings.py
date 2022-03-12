@@ -1,12 +1,12 @@
 import os
-from .static_funcs import load_json, load_model
-from typing import List, Tuple
+from typing import List, Tuple, Generator
 import torch
 from torch import optim
-from .abstracts import BaseInteractiveKGE
-
-from .dataset_classes import TriplePredictionDataset
 from torch.utils.data import DataLoader
+
+from .abstracts import BaseInteractiveKGE
+from .dataset_classes import TriplePredictionDataset, OneVsAllEntityPredictionDataset
+from .static_funcs import load_json, load_model
 
 
 class KGE(BaseInteractiveKGE):
@@ -15,9 +15,10 @@ class KGE(BaseInteractiveKGE):
     def __init__(self, path_of_pretrained_model_dir):
         super().__init__(path_of_pretrained_model_dir)
 
-    def predict(self, *, head_entity: list = None, relation: list = None, tail_entity: list = None, k=10):
+    def predict_topk(self, *, head_entity: list = None, relation: list = None, tail_entity: list = None,
+                     k: int = 10) -> Generator:
         """
-
+        :param k: top k prediction
         :param head_entity:
         :param relation:
         :param tail_entity:
@@ -50,15 +51,22 @@ class KGE(BaseInteractiveKGE):
         x = torch.tensor((head, relation, tail)).reshape(len(head), 3)
         return torch.sigmoid(self.model.forward_triples(x))
 
-    def train(self, kg, lr=.01, epoch=3, batch_size=32):
+    def triple_score(self, *, head_entity: list = None, relation: list = None, tail_entity: list = None) -> torch.tensor:
+        head = self.entity_to_idx.loc[head_entity]['entity'].values.tolist()
+        relation = self.relation_to_idx.loc[relation]['relation'].values.tolist()
+        tail = self.entity_to_idx.loc[tail_entity]['entity'].values.tolist()
+        x = torch.tensor((head, relation, tail)).reshape(len(head), 3)
+        return torch.sigmoid(self.model.forward_triples(x))
+
+    def train(self, kg, lr=.1, epoch=10, batch_size=32, neg_sample_ratio=10, num_workers=1)->None:
         # (1) Create Negative Sampling Setting for training
         print('Creating Dataset...')
         train_set = TriplePredictionDataset(kg.train_set,
                                             num_entities=len(kg.entity_to_idx),
                                             num_relations=len(kg.relation_to_idx),
-                                            neg_sample_ratio=10)
+                                            neg_sample_ratio=neg_sample_ratio)
         train_dataloader = DataLoader(train_set, batch_size=batch_size,
-                                      shuffle=True, num_workers=1,
+                                      shuffle=True, num_workers=num_workers,
                                       collate_fn=train_set.collate_fn, pin_memory=True)
 
         print('First Eval..')
@@ -90,12 +98,12 @@ class KGE(BaseInteractiveKGE):
             parameter.requires_grad = False
         self.model.eval()
         print('Eval starts...')
-        # (6) Eval model on training data to check how much an Improvement we achived
+        # (6) Eval model on training data to check how much an Improvement
         last_avg_loss_per_triple = 0
         for x, y in train_dataloader:
             pred = self.model(x)
             last_avg_loss_per_triple += self.model.loss(pred, y)
         last_avg_loss_per_triple /= len(train_set)
         print(last_avg_loss_per_triple)
-        print(f'On average Improvement: {first_avg_loss_per_triple-last_avg_loss_per_triple}')
-        torch.save(self.model, 'ContinualTraining_model.pt')
+        print(f'On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple}')
+        torch.save(self.model.state_dict(), self.path+'/ContinualTraining_model.pt')

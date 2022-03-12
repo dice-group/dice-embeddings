@@ -10,13 +10,13 @@ from types import SimpleNamespace
 def argparse_default(description=None):
     parser = argparse.ArgumentParser(add_help=False)
     # Dataset and storage related
-    parser.add_argument("--path_experiment_folder", type=str, default="Experiments/dummy",
+    parser.add_argument("--path_experiment_folder", type=str, default="Experiments/2022-03-12 12:55:00.886734",
                         help="The path of a folder containing pretrained model")
     # Training Parameters
     parser.add_argument("--num_epochs", type=int, default=10,
                         help='Number of epochs for training. Overwrite previous ep'
                              'This disables max_epochs and min_epochs of pl.Trainer')
-    parser.add_argument("--lr", type=float, default=0.001)
+    parser.add_argument("--lr", type=float, default=0.1)
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)

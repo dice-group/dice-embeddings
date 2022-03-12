@@ -190,12 +190,15 @@ class KG:
             assert isinstance(self.train_set[0][2], np.int64)
             # 14. Repeat computations carried out from 8-13 on validation dataset.
             if len(self.valid_set) > 0:
-                print('Serializing validation data for Continual Learning...')  # TODO: Do we really need it ?!
-                self.valid_set.to_parquet(path_for_serialization + '/valid_df.gzip', compression='gzip')
+
+                if path_for_serialization is not None:
+                    print('Serializing validation data for Continual Learning...')
+                    self.valid_set.to_parquet(path_for_serialization + '/valid_df.gzip', compression='gzip')
                 self.valid_set['subject'] = self.valid_set['subject'].map(lambda x: self.entity_to_idx[x])
                 self.valid_set['relation'] = self.valid_set['relation'].map(lambda x: self.relation_to_idx[x])
                 self.valid_set['object'] = self.valid_set['object'].map(lambda x: self.entity_to_idx[x])
-                self.valid_set.to_parquet(path_for_serialization + '/idx_valid_df.gzip', compression='gzip')
+                if path_for_serialization is not None:
+                    self.valid_set.to_parquet(path_for_serialization + '/idx_valid_df.gzip', compression='gzip')
                 self.valid_set = self.valid_set.values
                 # Sanity checking
                 assert self.num_entities > max(self.valid_set[0])
@@ -212,12 +215,14 @@ class KG:
                 self.valid_set = self.valid_set.values
             # 15. Repeat computations carried out from 8-13 on test dataset.
             if len(self.test_set) > 0:
-                print('Serializing test data for Continual Learning...')  # TODO: Do we really need it ?!
-                self.test_set.to_parquet(path_for_serialization + '/test_df.gzip', compression='gzip')
+                if path_for_serialization is not None:
+                    print('Serializing test data for Continual Learning...')
+                    self.test_set.to_parquet(path_for_serialization + '/test_df.gzip', compression='gzip')
                 self.test_set['subject'] = self.test_set['subject'].map(lambda x: self.entity_to_idx[x])
                 self.test_set['relation'] = self.test_set['relation'].map(lambda x: self.relation_to_idx[x])
                 self.test_set['object'] = self.test_set['object'].map(lambda x: self.entity_to_idx[x])
-                self.test_set.to_parquet(path_for_serialization + '/idx_test_df.gzip', compression='gzip')
+                if path_for_serialization is not None:
+                    self.test_set.to_parquet(path_for_serialization + '/idx_test_df.gzip', compression='gzip')
                 self.test_set = self.test_set.values
                 # Sanity checking
                 assert self.num_entities > max(self.test_set[0])
@@ -323,9 +328,9 @@ class KG:
             # (1.1) Using the whitespace as a deliminator
             # (1.2) Taking first three columns detected in (1.1.)
             # Task would even allow us to read compressed KGs.
-            df = ddf.read_csv(data_path + '*', delim_whitespace=True, header=None, usecols=[0, 1, 2],
+            df = ddf.read_csv(data_path + '*', delim_whitespace=True,
+                              header=None, usecols=[0, 1, 2],
                               names=['subject', 'relation', 'object'], dtype=str)
-
             if isinstance(read_only_few, int):
                 if read_only_few > 0:
                     df = df.loc[:read_only_few]
@@ -340,14 +345,6 @@ class KG:
             df['relation'] = df['relation'].str.removeprefix("<").str.removesuffix(">")
             df['object'] = df['object'].str.removeprefix("<").str.removesuffix(">")
             print('Dask Scheduler starts computation...')
-            """
-            # Use this at writing as well to disk
-            from distributed import Client
-            
-            with Client(threads_per_worker, n_worker) as client
-            
-            """
-
             if large_kg_parse:
                 df = df.compute(scheduler='processes')
             else:

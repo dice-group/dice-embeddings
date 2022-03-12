@@ -152,7 +152,7 @@ class QMult(BaseKGE):
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
         e2_idx: torch.Tensor
-        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1],x[:, 2]
+        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1], x[:, 2]
         # (1)
         # (1.1) Quaternion embeddings of head entities
         emb_head_real = self.emb_ent_real(e1_idx)
@@ -367,7 +367,7 @@ class ConvQ(BaseKGE):
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
         e2_idx: torch.Tensor
-        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1],x[:, 2]
+        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1], x[:, 2]
         # (1)
         # (1.1) Quaternion embeddings of head entities
         emb_head_real = self.emb_ent_real(e1_idx)

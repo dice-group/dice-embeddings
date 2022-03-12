@@ -54,7 +54,8 @@ Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , i
 - [Mammographic ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/ConEx_Mammographic.zip)
 - For more please look at [Hobbit Data](https://hobbitdata.informatik.uni-leipzig.de/KGE/)
 
-## Link Prediction on DBpedia 
+## Link Prediction on DBpedia
+
 ```python
 from core import KGE
 
@@ -62,29 +63,29 @@ from core import KGE
 # (2) Give the path of serialized (1).
 pre_trained_kge = KGE(path_of_pretrained_model_dir='Experiments/2022-03-11 08:30:52.896174')
 # (3) Head entity prediction : <?,relation,entity>
-pre_trained_kge.predict(relation=['interacts_with'], tail_entity=['eicosanoid'], k=10)
+pre_trained_kge.predict_topk(relation=['interacts_with'], tail_entity=['eicosanoid'], k=10)
 # Returns Generator of ((tensor(0.9806), 'organophosphorus_compound'), (tensor(0.9787), 'chemical_viewed_structurally'),...)
 
 # (4) Tail entity prediction : <entity,relation,?>
-pre_trained_kge.predict(head_entity=['eicosanoid'],
-                                              relation=['interacts_with'], k=10)
+pre_trained_kge.predict_topk(head_entity=['eicosanoid'],
+                             relation=['interacts_with'], k=10)
 # Returns Generator of ((tensor(0.9900), 'immunologic_factor'), (tensor(0.9784), 'eicosanoid'),...)
 
 # (5) Relation prediction : <entity,?relation>
-scores_and_relations = pre_trained_kge.predict(head_entity=['eicosanoid'],
-                                               tail_entity=['eicosanoid'], k=10)
+scores_and_relations = pre_trained_kge.predict_topk(head_entity=['eicosanoid'],
+                                                    tail_entity=['eicosanoid'], k=10)
 # Returns Generator of ((tensor(0.9784), 'interacts_with'), (tensor(0.6074), 'isa'),...)
 
 # (6) Triple score: <entity, relation,entity>
-pre_trained_kge.predict(head_entity=['eicosanoid'],
-                                       relation=['interacts_with'],
-                                       tail_entity=['eicosanoid'])
+pre_trained_kge.predict_topk(head_entity=['eicosanoid'],
+                             relation=['interacts_with'],
+                             tail_entity=['eicosanoid'])
 # tensor([0.9784])
 # (7) Randomly sampled triple score: <entity, relation,entity>
-triple_score = pre_trained_kge.predict(head_entity=pre_trained_kge.sample_entity(1),
-                                       relation=pre_trained_kge.sample_relation(1),
-                                       tail_entity=pre_trained_kge.sample_entity(1))
-#tensor([0.0452])
+triple_score = pre_trained_kge.predict_topk(head_entity=pre_trained_kge.sample_entity(1),
+                                            relation=pre_trained_kge.sample_relation(1),
+                                            tail_entity=pre_trained_kge.sample_entity(1))
+# tensor([0.0452])
 ```
 ### Available KGE Models
 1. Multiplicative based KGE models: [DistMult](https://arxiv.org/pdf/1412.6575.pdf), [ComplEx](https://arxiv.org/pdf/1606.06357.pdf), [QMult](https://proceedings.mlr.press/v157/demir21a.html), and [OMult](https://proceedings.mlr.press/v157/demir21a.html) 

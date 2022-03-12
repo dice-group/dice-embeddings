@@ -25,7 +25,7 @@ def argparse_default(description=None):
     parser.add_argument('--embedding_dim', type=int, default=25,
                         help='Number of dimensions for an embedding vector. ')
     parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. ')
-    parser.add_argument('--batch_size', type=int, default=1_000_000, help='Mini batch size')
+    parser.add_argument('--batch_size', type=int, default=500_000, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.1, help='Learning rate')
     # Hyperparameters for training.
     parser.add_argument('--scoring_technique', default='NegSample', help="1vsAll, KvsAll, NegSample.")
