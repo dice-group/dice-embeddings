@@ -248,9 +248,10 @@ def select_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     return model, form_of_labelling
 
 
-def load_model(path_of_experiment_folder) -> Tuple[BaseKGE,pd.DataFrame,pd.DataFrame]:
+def load_model(path_of_experiment_folder) -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
     """ Load weights and initialize pytorch module from namespace arguments"""
     print('Loading model..')
+    start_time = time.time()
     # (1) Load weights..
     weights = torch.load(path_of_experiment_folder + '/model.pt', torch.device('cpu'))
     # (2) Loading input configuration..
@@ -267,9 +268,12 @@ def load_model(path_of_experiment_folder) -> Tuple[BaseKGE,pd.DataFrame,pd.DataF
     for parameter in model.parameters():
         parameter.requires_grad = False
     model.eval()
+    print(f'Done! It took {time.time() - start_time}')
+    start_time = time.time()
     print('Loading entity and relation indexes..')
     entity_to_idx = pd.read_parquet(path_of_experiment_folder + '/entity_to_idx.gzip')
     relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')
+    print(f'Done! It took {time.time() - start_time}')
     return model, entity_to_idx, relation_to_idx
 
 

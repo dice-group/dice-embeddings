@@ -1,6 +1,7 @@
 import os
 from .static_funcs import load_model
 from typing import List
+import torch
 
 class BaseInteractiveKGE:
     def __init__(self, path_of_pretrained_model_dir):
