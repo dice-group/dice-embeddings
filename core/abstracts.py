@@ -1,5 +1,5 @@
 import os
-from .static_funcs import load_model
+from .static_funcs import load_model,store_kge
 from typing import List
 import torch
 
@@ -66,15 +66,18 @@ class BaseInteractiveKGE:
     def sample_entity(self, n: int) -> List[str]:
         assert isinstance(n, int)
         assert n >= 0
-        return self.entity_to_idx.sample(n=n, random_state=1).index.to_list()
+        return self.entity_to_idx.sample(n=n).index.to_list()
 
     def sample_relation(self, n: int) -> List[str]:
         assert isinstance(n, int)
         assert n >= 0
-        return self.relation_to_idx.sample(n=n, random_state=1).index.to_list()
+        return self.relation_to_idx.sample(n=n).index.to_list()
 
     def is_seen(self, entity: str = None, relation: str = None) -> bool:
         if entity is not None:
             return True if entity in self.entity_to_idx.index else False
         if relation is not None:
-            return True if entity in self.relation_to_idx.index else False
+            return True if relation in self.relation_to_idx.index else False
+
+    def save(self):
+        store_kge(self.model, path=self.path + f'/{self.model.name}_interactive.pt')

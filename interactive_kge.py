@@ -3,7 +3,19 @@ from core.knowledge_graph import KG
 
 # (1) Train a knowledge graph embedding model on a dataset
 # (2) Give the path of serialized (1).
-pre_trained_kge = KGE(path_of_pretrained_model_dir='Experiments/2022-03-12 12:56:18.595221')
+pre_trained_kge = KGE(path_of_pretrained_model_dir='Experiments/2022-03-14 14:38:24.771349')
+
+heads = ['Eduardo_Ferreira']
+relations = ['isAffiliatedTo']
+tails = ['Equatorial_Guinea_national_football_team']
+labels = [1]
+
+pre_trained_kge.train_triples(heads, relations, tails, labels)
+s = pre_trained_kge.triple_score(head_entity=heads,
+                                 relation=relations, tail_entity=tails)
+
+pre_trained_kge.save()
+
 
 def predictions():
     """ Prediction on UMLS dataset"""
@@ -30,6 +42,7 @@ def predictions():
     scores_and_relations = pre_trained_kge.predict_topk(head_entity=['eicosanoid'],
                                                         tail_entity=['eicosanoid'], k=10)
     print([i for i in scores_and_relations])
+
 
 """
 # Selective Continual Training

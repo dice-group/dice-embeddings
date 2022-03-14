@@ -199,6 +199,8 @@ def sanity_checking_with_arguments(args):
 
 
 def select_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
+    print('Select model...', end=' ')
+    start_time = time.time()
     model_name = args['model']
     if model_name == 'KronELinear':
         model = KronELinear(args=args)
@@ -245,12 +247,13 @@ def select_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
         form_of_labelling = 'EntityPrediction'
     else:
         raise ValueError
+    print(f'Done! It took {time.time() - start_time:.3f}')
     return model, form_of_labelling
 
 
 def load_model(path_of_experiment_folder) -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
     """ Load weights and initialize pytorch module from namespace arguments"""
-    print('Loading model..')
+    print('Loading model...', end=' ')
     start_time = time.time()
     # (1) Load weights..
     weights = torch.load(path_of_experiment_folder + '/model.pt', torch.device('cpu'))
@@ -260,6 +263,7 @@ def load_model(path_of_experiment_folder) -> Tuple[BaseKGE, pd.DataFrame, pd.Dat
     report = load_json(path_of_experiment_folder + '/report.json')
     configs["num_entities"] = report["num_entities"]
     configs["num_relations"] = report["num_relations"]
+    print(f'Done! It took {time.time() - start_time:.3f}')
     # (4) Select the model
     model, _ = select_model(configs)
     # (5) Put (1) into (4)
@@ -268,12 +272,11 @@ def load_model(path_of_experiment_folder) -> Tuple[BaseKGE, pd.DataFrame, pd.Dat
     for parameter in model.parameters():
         parameter.requires_grad = False
     model.eval()
-    print(f'Done! It took {time.time() - start_time}')
     start_time = time.time()
-    print('Loading entity and relation indexes..')
+    print('Loading entity and relation indexes...', end=' ')
     entity_to_idx = pd.read_parquet(path_of_experiment_folder + '/entity_to_idx.gzip')
     relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')
-    print(f'Done! It took {time.time() - start_time}')
+    print(f'Done! It took {time.time() - start_time:.4f}')
     return model, entity_to_idx, relation_to_idx
 
 

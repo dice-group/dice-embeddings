@@ -14,6 +14,17 @@ class KGE(BaseInteractiveKGE):
 
     def __init__(self, path_of_pretrained_model_dir):
         super().__init__(path_of_pretrained_model_dir)
+        self.is_model_in_train_mode = False
+
+    def set_model_train_mode(self):
+        for parameter in self.model.parameters():
+            parameter.requires_grad = True
+        self.model.train()
+
+    def set_model_eval_mode(self):
+        for parameter in self.model.parameters():
+            parameter.requires_grad = False
+        self.model.eval()
 
     def predict_topk(self, *, head_entity: list = None, relation: list = None, tail_entity: list = None,
                      k: int = 10) -> Generator:
@@ -29,20 +40,20 @@ class KGE(BaseInteractiveKGE):
             assert tail_entity is not None
             # ? r, t
             scores, entities = self.predict_missing_head_entity(relation, tail_entity)
-            return (x for x in zip(torch.sigmoid(scores[:k]), entities[:k]))
+            return torch.sigmoid(scores[:k]), entities[:k]
 
         elif relation is None:
             assert head_entity is not None
             assert tail_entity is not None
             # h ? t
             scores, relations = self.predict_missing_relations(head_entity, tail_entity)
-            return (x for x in zip(torch.sigmoid(scores[:k]), relations[:k]))
+            return torch.sigmoid(scores[:k]), relations[:k]
         elif tail_entity is None:
             assert head_entity is not None
             assert relation is not None
             # h r ?t
             scores, entities = self.predict_missing_tail_entity(head_entity, relation)
-            return (x for x in zip(torch.sigmoid(scores[:k]), entities[:k]))
+            return torch.sigmoid(scores[:k]), entities[:k]
         else:
             assert len(head_entity) == len(relation) == len(tail_entity)
         head = self.entity_to_idx.loc[head_entity]['entity'].values.tolist()
@@ -51,14 +62,15 @@ class KGE(BaseInteractiveKGE):
         x = torch.tensor((head, relation, tail)).reshape(len(head), 3)
         return torch.sigmoid(self.model.forward_triples(x))
 
-    def triple_score(self, *, head_entity: list = None, relation: list = None, tail_entity: list = None) -> torch.tensor:
+    def triple_score(self, *, head_entity: list = None, relation: list = None,
+                     tail_entity: list = None) -> torch.tensor:
         head = self.entity_to_idx.loc[head_entity]['entity'].values.tolist()
         relation = self.relation_to_idx.loc[relation]['relation'].values.tolist()
         tail = self.entity_to_idx.loc[tail_entity]['entity'].values.tolist()
         x = torch.tensor((head, relation, tail)).reshape(len(head), 3)
         return torch.sigmoid(self.model.forward_triples(x))
 
-    def train(self, kg, lr=.1, epoch=10, batch_size=32, neg_sample_ratio=10, num_workers=1)->None:
+    def train(self, kg, lr=.1, epoch=10, batch_size=32, neg_sample_ratio=10, num_workers=1) -> None:
         # (1) Create Negative Sampling Setting for training
         print('Creating Dataset...')
         train_set = TriplePredictionDataset(kg.train_set,
@@ -78,9 +90,7 @@ class KGE(BaseInteractiveKGE):
         first_avg_loss_per_triple /= len(train_set)
         print(first_avg_loss_per_triple)
         # (3) Prepare Model for Training
-        for parameter in self.model.parameters():
-            parameter.requires_grad = True
-        self.model.train()
+        self.set_model_train_mode()
         # (4) Start Training
         optimizer = optim.Adam(self.model.parameters(), lr=lr)
         print('Training Starts...')
@@ -94,9 +104,8 @@ class KGE(BaseInteractiveKGE):
                 loss.backward()
                 optimizer.step()
         # (5) Prepare For Saving
-        for parameter in self.model.parameters():
-            parameter.requires_grad = False
-        self.model.eval()
+        self.set_model_eval_mode()
+
         print('Eval starts...')
         # (6) Eval model on training data to check how much an Improvement
         last_avg_loss_per_triple = 0
@@ -106,4 +115,31 @@ class KGE(BaseInteractiveKGE):
         last_avg_loss_per_triple /= len(train_set)
         print(last_avg_loss_per_triple)
         print(f'On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple}')
-        torch.save(self.model.state_dict(), self.path+'/ContinualTraining_model.pt')
+        torch.save(self.model.state_dict(), self.path + '/ContinualTraining_model.pt')
+
+    def train_triples(self, head_entity, relation, tail_entity, labels, lr=.1):
+
+        assert len(head_entity) == len(relation) == len(tail_entity) == len(labels)
+        n = len(head_entity)
+        head = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values.tolist())
+        relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values.tolist())
+        tail = torch.LongTensor(self.entity_to_idx.loc[tail_entity]['entity'].values.tolist())
+        x = torch.cat((head, relation, tail), 0).reshape(n, 3)
+        y: object = torch.FloatTensor(labels)
+        score = self.model(x)
+        print(score)
+        x = x.repeat(4, 1)
+        y = y.repeat(4)
+
+        self.set_model_train_mode()
+        optimizer = optim.Adam(self.model.parameters(), lr=lr)
+        for epoch in range(10):  # loop over the dataset multiple times
+            # zero the parameter gradients
+            optimizer.zero_grad()
+            # forward + backward + optimize
+            outputs = self.model(x)
+            loss = self.model.loss(outputs, y)
+            loss.backward()
+            optimizer.step()
+
+        self.set_model_eval_mode()

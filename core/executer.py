@@ -11,10 +11,12 @@ from pytorch_lightning.plugins import DDPPlugin, DeepSpeedPlugin
 from sklearn.model_selection import KFold
 
 from .callbacks import PrintCallback, KGESaveCallback
+from pytorch_lightning.callbacks import ModelSummary
 from .dataset_classes import StandardDataModule
 from .helper_classes import LabelRelaxationLoss
 from .knowledge_graph import KG
 from .static_funcs import *
+
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
@@ -101,7 +103,8 @@ class Execute:
         print('------------------- Train & Eval -------------------')
         callbacks = [PrintCallback(),
                      KGESaveCallback(every_x_epoch=self.args.save_model_at_every_epoch,
-                                     path=self.args.full_storage_path)]
+                                     path=self.args.full_storage_path),ModelSummary(max_depth=-1)]
+
 
         # PL has some problems with DDPPlugin. It will likely to be solved in their next release.
         # (1) Explicitly setting num_process > 1 gives you
