@@ -115,15 +115,18 @@ class KGE(BaseInteractiveKGE):
         last_avg_loss_per_triple /= len(train_set)
         print(last_avg_loss_per_triple)
         print(f'On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple}')
-        torch.save(self.model.state_dict(), self.path + '/ContinualTraining_model.pt')
 
     def train_triples(self, head_entity, relation, tail_entity, labels, lr=.1):
 
         assert len(head_entity) == len(relation) == len(tail_entity) == len(labels)
         n = len(head_entity)
-        head = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values.tolist())
-        relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values.tolist())
-        tail = torch.LongTensor(self.entity_to_idx.loc[tail_entity]['entity'].values.tolist())
+        try:
+            head = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values.tolist())
+            relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values.tolist())
+            tail = torch.LongTensor(self.entity_to_idx.loc[tail_entity]['entity'].values.tolist())
+        except KeyError as e:
+            print(f'Ensure that {head_entity}, {relation}, {tail_entity} can be found in the input KG.')
+            raise e
         x = torch.cat((head, relation, tail), 0).reshape(n, 3)
         y: object = torch.FloatTensor(labels)
         score = self.model(x)
@@ -143,3 +146,5 @@ class KGE(BaseInteractiveKGE):
             optimizer.step()
 
         self.set_model_eval_mode()
+        torch.save(self.model.state_dict(), self.path + '/ContinualTraining_model.pt')
+

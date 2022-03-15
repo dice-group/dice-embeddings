@@ -36,7 +36,7 @@ class KGESaveCallback(Callback):
         self.epoch_counter = 0
         self.path = path
         if self.every_x_epoch is None:
-            self.every_x_epoch = self.max_epochs // 2
+            self.every_x_epoch = max(self.max_epochs // 2, 1)
 
     def on_epoch_end(self, trainer, model):
         if self.epoch_counter % self.every_x_epoch == 0 and self.epoch_counter > 0:
