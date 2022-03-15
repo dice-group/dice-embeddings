@@ -118,7 +118,7 @@ class KG:
                 self.entity_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
                                                   columns=['entity'],
                                                   index=ordered_list)
-                print('Done!\n')
+                print('Done !\n')
 
                 # 5. Create a bijection mapping  from relations to integer indexes.
                 print('[6 / 14] Creating a mapping from relations to integer indexes...')
@@ -126,18 +126,18 @@ class KG:
                 self.relation_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
                                                     columns=['relation'],
                                                     index=ordered_list)
-                print('Done!\n')
+                print('Done !\n')
                 # Free memory
                 del ordered_list, df_str_kg
 
                 ## 6. Serialize indexed entities and relations into disk for further usage.
                 print('[7 / 14] Serializing compressed entity integer mapping...')
                 self.entity_to_idx.to_parquet(path_for_serialization + '/entity_to_idx.gzip', compression='gzip')
-                print('Done!\n')
+                print('Done !\n')
 
                 print('[8 / 14] Serializing compressed relation integer mapping...')
                 self.relation_to_idx.to_parquet(path_for_serialization + '/relation_to_idx.gzip', compression='gzip')
-                print('Done!\n')
+                print('Done !\n')
 
                 # 7. Convert from pandas dataframe to dictionaries for an easy access
                 # We may want to benchmark using python dictionary and pandas frame
@@ -147,7 +147,7 @@ class KG:
                 self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
                 self.num_entities = len(self.entity_to_idx)
                 self.num_relations = len(self.relation_to_idx)
-                print('Done!\n')
+                print('Done !\n')
             else:
                 self.entity_to_idx = entity_to_idx.to_dict()['entity']
                 self.relation_to_idx = relation_to_idx.to_dict()['relation']
@@ -160,27 +160,27 @@ class KG:
                 # it can be reread later faster
                 print('[10 / 14] Serializing training data for Continual Learning...')  # TODO: Do we really need it ?!
                 self.train_set.to_parquet(path_for_serialization + '/train_df.gzip', compression='gzip')
-                print('Done!\n')
+                print('Done !\n')
 
             print('[11 / 14] Mapping training data into integers for training...')
             # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
             self.train_set['subject'] = self.train_set['subject'].map(lambda x: self.entity_to_idx[x])
             self.train_set['relation'] = self.train_set['relation'].map(lambda x: self.relation_to_idx[x])
             self.train_set['object'] = self.train_set['object'].map(lambda x: self.entity_to_idx[x])
-            print('Done!\n')
+            print('Done !\n')
 
             if path_for_serialization is not None:
                 # 10. Serialize (9).
                 print('[12 / 14] Serializing integer mapped data...')  # TODO: Do we really need it ?!
                 self.train_set.to_parquet(path_for_serialization + '/idx_train_df.gzip', compression='gzip')
-                print('Done!\n')
+                print('Done !\n')
 
             # 11. Convert data from pandas dataframe to numpy ndarray.
             print('[13 / 14] Mapping from pandas data frame to numpy ndarray to reduce memory usage...')
             self.train_set = self.train_set.values
-            print('Done!\n')
+            print('Done !\n')
 
-            print('[14 / 14 ] Sanity checking on training dataset...')
+            print('[14 / 14 ] Sanity checking...')
             # 12. Sanity checking: indexed training set can not have an indexed entity assigned with larger indexed than the number of entities.
             assert self.num_entities > max(self.train_set[:, 0]) and self.num_entities > max(self.train_set[:, 2])
             assert self.num_relations > max(self.train_set[:, 1])
@@ -190,9 +190,8 @@ class KG:
             assert isinstance(self.train_set[0][2], np.int64)
             # 14. Repeat computations carried out from 8-13 on validation dataset.
             if len(self.valid_set) > 0:
-
                 if path_for_serialization is not None:
-                    print('Serializing validation data for Continual Learning...')
+                    print('[15 / 14 ] Serializing validation data for Continual Learning...')
                     self.valid_set.to_parquet(path_for_serialization + '/valid_df.gzip', compression='gzip')
                 self.valid_set['subject'] = self.valid_set['subject'].map(lambda x: self.entity_to_idx[x])
                 self.valid_set['relation'] = self.valid_set['relation'].map(lambda x: self.relation_to_idx[x])
@@ -216,7 +215,7 @@ class KG:
             # 15. Repeat computations carried out from 8-13 on test dataset.
             if len(self.test_set) > 0:
                 if path_for_serialization is not None:
-                    print('Serializing test data for Continual Learning...')
+                    print('[16 / 14 ] Serializing test data for Continual Learning...')
                     self.test_set.to_parquet(path_for_serialization + '/test_df.gzip', compression='gzip')
                 self.test_set['subject'] = self.test_set['subject'].map(lambda x: self.entity_to_idx[x])
                 self.test_set['relation'] = self.test_set['relation'].map(lambda x: self.relation_to_idx[x])
@@ -251,6 +250,16 @@ class KG:
 
         else:
             self.deserialize(deserialize_flag)
+            if eval_model:  # and len(self.valid_set) > 0 and len(self.test_set) > 0:
+                if len(self.valid_set) > 0 and len(self.test_set) > 0:
+                    # 16. Create a bijection mapping from subject-relation pairs to tail entities.
+                    data = np.concatenate([self.train_set, self.valid_set, self.test_set])
+                else:
+                    data = self.train_set
+                self.er_vocab = get_er_vocab(data)
+                self.re_vocab = get_re_vocab(data)
+                # 17. Create a bijection mapping from subject-object pairs to relations.
+                self.ee_vocab = get_ee_vocab(data)
 
         # 4. Display info
         self.description_of_input = f'\n------------------- Description of Dataset {data_dir} -------------------'
@@ -262,7 +271,7 @@ class KG:
 
     def deserialize(self, storage_path: str) -> None:
         """ Deserialize data """
-
+        print(f'Deserialization Path Path: {storage_path}\n')
         print('Deserializing compressed entity integer mapping...')
         self.entity_to_idx = ddf.read_parquet(storage_path + '/entity_to_idx.gzip').compute()
         print('Done!\n')
@@ -270,14 +279,12 @@ class KG:
         print('Deserializing compressed relation integer mapping...')
         self.relation_to_idx = ddf.read_parquet(storage_path + '/relation_to_idx.gzip').compute()
         self.num_relations = len(self.relation_to_idx)
-
         print('Done!\n')
         print(
             'Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...')
         self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
         self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
         print('Done!\n')
-
         # 10. Serialize (9).
         print('Deserializing integer mapped data and mapping it to numpy ndarray...')
         self.train_set = ddf.read_parquet(storage_path + '/idx_train_df.gzip').values.compute()
@@ -287,7 +294,7 @@ class KG:
             self.valid_set = ddf.read_parquet(storage_path + '/idx_valid_df.gzip').values.compute()
             print('Done!\n')
         except FileNotFoundError:
-            print('No valid data found')
+            print('No valid data found!\n')
             self.valid_set = pd.DataFrame()
 
         try:
@@ -295,13 +302,12 @@ class KG:
             self.test_set = ddf.read_parquet(storage_path + '/idx_test_df.gzip').values.compute()
             print('Done!\n')
         except FileNotFoundError:
-            print('No test data found')
+            print('No test data found\n')
             self.test_set = pd.DataFrame()
 
-        print(storage_path)
         with open(storage_path + '/configuration.json', 'r') as f:
             args = json.load(f)
-
+        """
         if args['eval']:
             if len(self.valid_set) > 0 and len(self.test_set) > 0:
                 # 16. Create a bijection mapping from subject-relation pairs to tail entities.
@@ -309,7 +315,7 @@ class KG:
             else:
                 data = self.train_set
             self.er_vocab = get_er_vocab(data)
-
+        """
     @staticmethod
     def load_data_parallel(data_path, large_kg_parse=True, read_only_few: int = None,
                            sample_triples_ratio: float = None) -> List:
@@ -378,7 +384,6 @@ class KG:
         :return: list of ordered relations
         """
         return list(self.relation_to_idx.keys())
-
 
     @staticmethod
     def map_str_triples_to_numpy_idx(triples, entity_idx, relation_idx) -> np.array:

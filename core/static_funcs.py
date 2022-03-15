@@ -124,12 +124,8 @@ def preprocesses_input_args(arg):
     sanity_checking_with_arguments(arg)
     if arg.num_folds_for_cv > 0:
         arg.eval = True
-
     if arg.model == 'Shallom':
         arg.scoring_technique = 'KvsAll'
-    # By default PL sets it to 1
-    # if arg.num_processes == 1:
-    #    arg.num_processes = os.cpu_count()
     return arg
 
 

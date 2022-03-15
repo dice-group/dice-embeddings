@@ -17,14 +17,11 @@ from .helper_classes import LabelRelaxationLoss
 from .knowledge_graph import KG
 from .static_funcs import *
 
-
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 
 
-# TODO: Execute can inherit from Trainer and Evaluator Classes
-# By doing so we can increase the modularity of our code.
 class Execute:
     def __init__(self, args, continuous_training=False):
         # (1) Process arguments and sanity checking.
@@ -91,92 +88,7 @@ class Execute:
             json.dump(self.report, file_descriptor, indent=4)
         return self.report
 
-    def train_and_eval(self) -> BaseKGE:
-        """
-        Training and evaluation procedure
-
-        1. Create Pytorch-lightning Trainer object from input configuration
-        2a. Train and Test a model if  test dataset is available
-        2b. Train a model in k-fold cross validation mode if it is requested
-        2c. Train a model
-        """
-        print('------------------- Train & Eval -------------------')
-        callbacks = [PrintCallback(),
-                     KGESaveCallback(every_x_epoch=self.args.save_model_at_every_epoch,
-                                     path=self.args.full_storage_path),ModelSummary(max_depth=-1)]
-
-
-        # PL has some problems with DDPPlugin. It will likely to be solved in their next release.
-        # (1) Explicitly setting num_process > 1 gives you
-        """
-        [W reducer.cpp: 1303] Warning: find_unused_parameters = True
-        was specified in DDP constructor, but did not find any unused parameters in the
-        forward pass.
-        This flag results in an extra traversal of the autograd graph every iteration, which can adversely affect
-        performance. If your model indeed never has any unused parameters in the forward pass, 
-        consider turning this flag off. Note that this warning may be a false positive 
-        if your model has flow        control        causing        later        iterations        to        have        unused
-        parameters.(function        operator())
-        """
-        # (2) Adding plugins=[DDPPlugin(find_unused_parameters=False)] and explicitly using num_process > 1
-        """ pytorch_lightning.utilities.exceptions.DeadlockDetectedException: DeadLock detected from rank: 1  """
-
-        plugins = []
-        self.args.stochastic_weight_avg = True  # => https://pytorch.org/blog/pytorch-1.6-now-includes-stochastic-weight-averaging/
-        # (3) Surprisingly, if you do not ask explicitly num_process > 1, computation runs smoothly while using many CPUs
-        if self.args.gpus:
-            plugins.append(DDPPlugin(find_unused_parameters=False))
-            plugins.append(DeepSpeedPlugin(stage=3))  # experiment with it when we use GPUs
-            self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=plugins,
-                                                         callbacks=callbacks)
-        else:
-            self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=plugins,
-                                                         callbacks=callbacks)
-
-        if self.args.num_folds_for_cv >= 2:
-            trained_model = self.k_fold_cross_validation()
-        else:
-            if self.args.scoring_technique == 'NegSample':
-                trained_model = self.training_negative_sampling()
-            elif self.args.scoring_technique == 'KvsAll':
-                trained_model = self.training_kvsall()
-            elif self.args.scoring_technique == '1vsAll':
-                trained_model = self.training_1vsall()
-            else:
-                raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
-        """
-        # 2. Check whether validation and test datasets are available.
-        if self.dataset.is_valid_test_available():
-            if self.args.scoring_technique == 'NegSample':
-                trained_model = self.training_negative_sampling()
-            elif self.args.scoring_technique == 'KvsAll':
-                trained_model = self.training_kvsall()
-            elif self.args.scoring_technique == '1vsAll':
-                trained_model = self.training_1vsall()
-            else:
-                raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
-        else:
-            # 3. If (2) is FALSE, then check whether cross validation will be applied.
-            print(f'There is no validation and test sets available.')
-            if self.args.num_folds_for_cv < 2:
-                print(
-                    f'No test set is found and k-fold cross-validation is set to less than 2 (***num_folds_for_cv*** => {self.args.num_folds_for_cv}). Hence we do not evaluate the model')
-                # 3.1. NO CROSS VALIDATION => TRAIN WITH 'NegSample' or KvsALL
-                if self.args.scoring_technique == 'NegSample':
-                    trained_model = self.training_negative_sampling()
-                elif self.args.scoring_technique == 'KvsAll':
-                    # KvsAll or negative sampling
-                    trained_model = self.training_kvsall()
-                elif self.args.scoring_technique == '1vsAll':
-                    trained_model = self.training_1vsall()
-                else:
-                    raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
-            else:
-                trained_model = self.k_fold_cross_validation()
-        """
-
-        return trained_model
-
+    # @TODO define  self.store() as static func and move to static_funcs.py
     def store(self, trained_model, model_name='model') -> None:
         """
         Store trained_model model and save embeddings into csv file.
@@ -217,6 +129,92 @@ class Execute:
 
         else:
             print('There is not enough memory to store embeddings separately.')
+
+    # @TODO define  self.select_model() as static func and move to static_funcs.py
+    def select_model(self, args: dict):
+        if self.is_continual_training:
+            print('Loading pre-trained model...')
+            model, _ = select_model(args)
+            try:
+                weights = torch.load(self.storage_path + '/model.pt', torch.device('cpu'))
+                model.load_state_dict(weights)
+            except FileNotFoundError:
+                raise FileNotFoundError(
+                    f"{self.storage_path}/model.pt is not found. The model will be trained with random weights")
+            model.train()
+            return model, _
+        else:
+            return select_model(args)
+
+    # @TODO define  self.model_fitting() as static func and move to static_funcs.py
+    def model_fitting(self, trainer, model, dataset) -> None:
+        train_dataloaders = dataset.train_dataloader()
+        del dataset
+        if self.args.eval is False and self.args.eval_on_train is False:
+            # release some memory
+            del self.dataset
+        print(f'Number of mini-batches to compute for a single epoch: {len(train_dataloaders)}\n')
+        trainer.fit(model, train_dataloaders=train_dataloaders)
+
+    def train_and_eval(self) -> BaseKGE:
+        """
+        Training and evaluation procedure
+
+        1. Create Pytorch-lightning Trainer object from input configuration
+        2a. Train and Test a model if  test dataset is available
+        2b. Train a model in k-fold cross validation mode if it is requested
+        2c. Train a model
+        """
+        print('------------------- Train & Eval -------------------')
+        callbacks = [PrintCallback(),
+                     KGESaveCallback(every_x_epoch=self.args.save_model_at_every_epoch,
+                                     path=self.args.full_storage_path), ModelSummary(max_depth=-1)]
+
+        # PL has some problems with DDPPlugin. It will likely to be solved in their next release.
+        # (1) Explicitly setting num_process > 1 gives you
+        """
+        [W reducer.cpp: 1303] Warning: find_unused_parameters = True
+        was specified in DDP constructor, but did not find any unused parameters in the
+        forward pass.
+        This flag results in an extra traversal of the autograd graph every iteration, which can adversely affect
+        performance. If your model indeed never has any unused parameters in the forward pass, 
+        consider turning this flag off. Note that this warning may be a false positive 
+        if your model has flow        control        causing        later        iterations        to        have        unused
+        parameters.(function        operator())
+        """
+        # (2) Adding plugins=[DDPPlugin(find_unused_parameters=False)] and explicitly using num_process > 1
+        """ pytorch_lightning.utilities.exceptions.DeadlockDetectedException: DeadLock detected from rank: 1  """
+
+        plugins = []
+        self.args.stochastic_weight_avg = True  # => https://pytorch.org/blog/pytorch-1.6-now-includes-stochastic-weight-averaging/
+        # (3) Surprisingly, if you do not ask explicitly num_process > 1, computation runs smoothly while using many CPUs
+        if self.args.gpus:
+            plugins.append(DDPPlugin(find_unused_parameters=False))
+            plugins.append(DeepSpeedPlugin(stage=3))  # experiment with it when we use GPUs
+            self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=plugins,
+                                                         callbacks=callbacks)
+        else:
+            self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=plugins,
+                                                         callbacks=callbacks)
+
+        trained_model, form_of_labelling = self.train()
+        self.eval(trained_model, form_of_labelling)
+        return trained_model
+
+    # @TODO Create TrainClass for different strategies
+    def train(self) -> Tuple[BaseKGE, str]:
+        """ Train selected model via the selected training strategy """
+        if self.args.num_folds_for_cv >= 2:
+            return self.k_fold_cross_validation()
+        else:
+            if self.args.scoring_technique == 'NegSample':
+                return self.training_negative_sampling()
+            elif self.args.scoring_technique == 'KvsAll':
+                return self.training_kvsall()
+            elif self.args.scoring_technique == '1vsAll':
+                return self.training_1vsall()
+            else:
+                raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
 
     def training_kvsall(self) -> BaseKGE:
         """
@@ -259,26 +257,8 @@ class Execute:
         # la.fit(dataset.train_dataloader())
         # la.optimize_prior_precision(method='CV', val_loader=dataset.val_dataloader())
         """
-        # 4. Test model on the training dataset if it is needed.
-        if self.args.eval_on_train:
-            res = self.evaluate_lp_k_vs_all(model, self.dataset.train_set,
-                                            info=f'Evaluate {model.name} on Train set',
-                                            form_of_labelling=form_of_labelling)
-            self.report['Train'] = res
 
-        # 5. Test model on the validation and test dataset if it is needed.
-        if self.args.eval:
-            if len(self.dataset.valid_set) > 0:
-                res = self.evaluate_lp_k_vs_all(model, self.dataset.valid_set,
-                                                f'Evaluate {model.name} on Validation set',
-                                                form_of_labelling=form_of_labelling)
-                self.report['Val'] = res
-            if len(self.dataset.test_set) > 0:
-                res = self.evaluate_lp_k_vs_all(model, self.dataset.test_set, f'Evaluate {model.name} on Test set',
-                                                form_of_labelling=form_of_labelling)
-                self.report['Test'] = res
-
-        return model
+        return model, form_of_labelling
 
     def training_1vsall(self):
         # 1. Select model and labelling : Entity Prediction or Relation Prediction.
@@ -304,47 +284,7 @@ class Execute:
             model.loss = nn.CrossEntropyLoss()
         # 3. Train model
         self.model_fitting(trainer=self.trainer, model=model, dataset=dataset)
-        # 4. Test model on the training dataset if it is needed.
-        if self.args.eval_on_train:
-            res = self.evaluate_lp_k_vs_all(model, self.dataset.train_set,
-                                            f'Evaluate {model.name} on train set', form_of_labelling)
-            self.report['Train'] = res
-
-        # 5. Test model on the validation and test dataset if it is needed.
-        if self.args.eval:
-            if len(self.dataset.valid_set) > 0:
-                res = self.evaluate_lp_k_vs_all(model, self.dataset.valid_set,
-                                                f'Evaluate {model.name} on validation set', form_of_labelling)
-                self.report['Val'] = res
-            if len(self.dataset.test_set) > 0:
-                res = self.evaluate_lp_k_vs_all(model, self.dataset.test_set, f'Evaluate {model.name} on test set',
-                                                form_of_labelling)
-                self.report['Test'] = res
-
-        return model
-
-    def select_model(self, args: dict):
-        if self.is_continual_training:
-            print('Loading pre-trained model...')
-            model, _ = select_model(args)
-            try:
-                weights = torch.load(self.storage_path + '/model.pt', torch.device('cpu'))
-                model.load_state_dict(weights)
-            except FileNotFoundError:
-                raise FileNotFoundError(f"{self.storage_path}/model.pt is not found. The model will be trained with random weights")
-            model.train()
-            return model, _
-        else:
-            return select_model(args)
-
-    def model_fitting(self, trainer, model, dataset) -> None:
-        train_dataloaders = dataset.train_dataloader()
-        del dataset
-        if self.args.eval is False and self.args.eval_on_train is False:
-            # release some memory
-            del self.dataset
-        print(f'Number of mini-batches to compute for a single epoch: {len(train_dataloaders)}')
-        trainer.fit(model, train_dataloaders=train_dataloaders)
+        return model, form_of_labelling
 
     def training_negative_sampling(self) -> pl.LightningModule:
         """
@@ -355,6 +295,7 @@ class Execute:
         form_of_labelling = 'NegativeSampling'
         print(f'Training starts: {model.name}-labeling:{form_of_labelling}')
         print('Creating training data...')
+        start_time = time.time()
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,
                                      test_set_idx=self.dataset.test_set,
@@ -364,21 +305,64 @@ class Execute:
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_processes)
+        print(f'Done ! It took {time.time() - start_time:.3f} seconds\n')
         # 3. Train model
         self.model_fitting(trainer=self.trainer, model=model, dataset=dataset)
+        return model, form_of_labelling
+
+    # @TODO Create Eval Class for different strategies
+    def eval(self, trained_model, form_of_labelling) -> None:
+        """
+        Evaluate model with Standard
+        :param form_of_labelling:
+        :param trained_model:
+        :return:
+        """
+        if self.args.scoring_technique == 'NegSample':
+            self.eval_rank_of_head_and_tail_entity(trained_model)
+        elif self.args.scoring_technique == 'KvsAll':
+            self.eval_with_vs_all(trained_model, form_of_labelling)
+        elif self.args.scoring_technique == '1vsAll':
+            self.eval_with_vs_all(trained_model, form_of_labelling)
+        else:
+            raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
+
+    def eval_rank_of_head_and_tail_entity(self, trained_model):
         # 4. Test model on the training dataset if it is needed.
         if self.args.eval_on_train:
-            res = self.evaluate_lp(model, self.dataset.train_set, f'Evaluate {model.name} on Train set')
+            res = self.evaluate_lp(trained_model, self.dataset.train_set, f'Evaluate {trained_model.name} on Train set')
             self.report['Train'] = res
         # 5. Test model on the validation and test dataset if it is needed.
         if self.args.eval:
             if len(self.dataset.valid_set) > 0:
-                self.report['Val'] = self.evaluate_lp(model, self.dataset.valid_set, 'Evaluation of Validation set')
+                self.report['Val'] = self.evaluate_lp(trained_model, self.dataset.valid_set,
+                                                      f'Evaluate {trained_model.name} of Validation set')
 
             if len(self.dataset.test_set) > 0:
-                self.report['Test'] = self.evaluate_lp(model, self.dataset.test_set, 'Evaluation of Test set')
+                self.report['Test'] = self.evaluate_lp(trained_model, self.dataset.test_set,
+                                                       f'Evaluate {trained_model.name} of Test set')
 
-        return model
+    def eval_with_vs_all(self, trained_model, form_of_labelling) -> None:
+        """ Evaluate model after reciprocal triples are added """
+        # 4. Test model on the training dataset if it is needed.
+        if self.args.eval_on_train:
+            res = self.evaluate_lp_k_vs_all(trained_model, self.dataset.train_set,
+                                            info=f'Evaluate {trained_model.name} on Train set',
+                                            form_of_labelling=form_of_labelling)
+            self.report['Train'] = res
+
+        # 5. Test model on the validation and test dataset if it is needed.
+        if self.args.eval:
+            if len(self.dataset.valid_set) > 0:
+                res = self.evaluate_lp_k_vs_all(trained_model, self.dataset.valid_set,
+                                                f'Evaluate {trained_model.name} on Validation set',
+                                                form_of_labelling=form_of_labelling)
+                self.report['Val'] = res
+            if len(self.dataset.test_set) > 0:
+                res = self.evaluate_lp_k_vs_all(trained_model, self.dataset.test_set,
+                                                f'Evaluate {trained_model.name} on Test set',
+                                                form_of_labelling=form_of_labelling)
+                self.report['Test'] = res
 
     def evaluate_lp_k_vs_all(self, model, triple_idx, info=None, form_of_labelling=None):
         """
