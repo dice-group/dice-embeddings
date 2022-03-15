@@ -1,19 +1,23 @@
 from core import KGE
 from core.knowledge_graph import KG
 
-# (1) Train a knowledge graph embedding model on a dataset
-# (2) Give the path of serialized (1).
-pre_trained_kge = KGE(path_of_pretrained_model_dir='Experiments/2022-03-14 14:38:24.771349')
-
-heads = ['Eduardo_Ferreira']
-relations = ['isAffiliatedTo']
-tails = ['Equatorial_Guinea_national_football_team']
-labels = [1]
-
-pre_trained_kge.train_triples(heads, relations, tails, labels)
+# (1) Load a pre-trained model
+pre_trained_kge = KGE(path_of_pretrained_model_dir='Experiments/2022-03-15 12:46:24.276975')
+# (2) Look at a particular triple's score
+heads = ['Chatou']
+relations = ['isLocatedIn']
+tails = ['France']
 s = pre_trained_kge.triple_score(head_entity=heads,
                                  relation=relations, tail_entity=tails)
-
+print(s)
+# (3) Train Model on KGs/SubYAGO3-10/train.txt contains single triple (Chatou,isLocatedIn,France)
+kg = KG("KGs/SubYAGO3-10", entity_to_idx=pre_trained_kge.entity_to_idx, relation_to_idx=pre_trained_kge.relation_to_idx)
+pre_trained_kge.train(kg, lr=.1, epoch=10, batch_size=32, neg_sample_ratio=10, num_workers=4)
+# (4) Look at the score again
+s = pre_trained_kge.triple_score(head_entity=heads,
+                                 relation=relations, tail_entity=tails)
+print(s)
+# (5) Save this model
 pre_trained_kge.save()
 
 
@@ -55,5 +59,3 @@ os.system('mkdir Dummy')
 with open('Dummy/train', 'w') as w:
     w.writelines(triples)
 """
-kg = KG("KGs/UMLS", entity_to_idx=pre_trained_kge.entity_to_idx, relation_to_idx=pre_trained_kge.relation_to_idx)
-pre_trained_kge.train(kg, lr=.1, epoch=10, batch_size=32, neg_sample_ratio=10, num_workers=4)
