@@ -32,7 +32,7 @@ def argparse_default(description=None):
     parser.add_argument('--neg_ratio', type=int, default=1)
     # Additional training params
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
-                        help='At every X number of epochs model will be saved.')
+                        help='At every X number of epochs model will be saved. If None, we save 4 times.')
     parser.add_argument("--label_smoothing_rate", type=float, default=None, help='None for not using it.')
     parser.add_argument("--label_relaxation_rate", type=float, default=None, help='None for not using it.')
     parser.add_argument("--add_noise_rate", type=float, default=None, help='None for not using it. '
@@ -57,7 +57,7 @@ def argparse_default(description=None):
                         help='The ratio of the size of the affine transformation w.r.t. the size of the embeddings')
 
     # Flags for computation
-    parser.add_argument("--eval", type=int, default=1,
+    parser.add_argument("--eval", type=int, default=0,
                         help='A flag for using evaluation')
     parser.add_argument("--eval_on_train", type=int, default=0,
                         help='A flag for using train data to evaluation ')

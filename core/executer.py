@@ -168,6 +168,7 @@ class Execute:
         print('------------------- Train & Eval -------------------')
         callbacks = [PrintCallback(),
                      KGESaveCallback(every_x_epoch=self.args.save_model_at_every_epoch,
+                                     max_epochs=self.args.max_epochs,
                                      path=self.args.full_storage_path), ModelSummary(max_depth=-1)]
 
         # PL has some problems with DDPPlugin. It will likely to be solved in their next release.
