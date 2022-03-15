@@ -149,6 +149,8 @@ class KG:
                 self.num_relations = len(self.relation_to_idx)
                 print('Done !\n')
             else:
+                print('[4 / 14] Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...')
+                # Time consuming
                 self.entity_to_idx = entity_to_idx.to_dict()['entity']
                 self.relation_to_idx = relation_to_idx.to_dict()['relation']
                 self.num_entities = len(self.entity_to_idx)
@@ -164,11 +166,16 @@ class KG:
 
             print('[11 / 14] Mapping training data into integers for training...')
             # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
-            self.train_set['subject'] = self.train_set['subject'].map(lambda x: self.entity_to_idx[x])
-            self.train_set['relation'] = self.train_set['relation'].map(lambda x: self.relation_to_idx[x])
-            self.train_set['object'] = self.train_set['object'].map(lambda x: self.entity_to_idx[x])
-            print('Done !\n')
+            self.train_set['subject'] = self.train_set['subject'].map(
+                lambda x: self.entity_to_idx[x] if self.entity_to_idx.get(x) else None)
+            self.train_set['relation'] = self.train_set['relation'].map(
+                lambda x: self.relation_to_idx[x] if self.relation_to_idx.get(x) else None)
+            self.train_set['object'] = self.train_set['object'].map(
+                lambda x: self.entity_to_idx[x] if self.entity_to_idx.get(x) else None)
+            self.train_set.dropna(inplace=True)
+            self.train_set = self.train_set.astype(int)
 
+            print('Done !\n')
             if path_for_serialization is not None:
                 # 10. Serialize (9).
                 print('[12 / 14] Serializing integer mapped data...')  # TODO: Do we really need it ?!
