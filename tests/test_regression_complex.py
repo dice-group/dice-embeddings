@@ -23,8 +23,8 @@ class TestRegressionComplEx:
         args.scoring_technique = 'KvsAll'
         result = Execute(args).start()
         assert 0.70 >= result['Train']['H@1'] >= 0.31
-        assert 0.45 >= result['Val']['H@1'] >= 0.31
-        assert 0.45 >= result['Test']['H@1'] >= 0.31
+        assert 0.45 >= result['Val']['H@1'] >= 0.25
+        assert 0.45 >= result['Test']['H@1'] >= 0.25
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
@@ -45,8 +45,8 @@ class TestRegressionComplEx:
         args.scoring_technique = '1vsAll'
         result = Execute(args).start()
         assert 1.0 >= result['Train']['H@1'] >= 0.75
-        assert 0.87 >= result['Val']['H@1'] >= 0.50
-        assert 0.87 >= result['Test']['H@1'] >= 0.50
+        assert 0.87 >= result['Val']['H@1'] >= 0.45
+        assert 0.87 >= result['Test']['H@1'] >= 0.45
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):

@@ -22,7 +22,7 @@ class TestRegressionQmult:
         args.read_only_few = None
         args.sample_triples_ratio = None
         result = Execute(args).start()
-        assert 0.71 >= result['Val']['H@1'] >= 0.20
+        assert 0.71 >= result['Val']['H@1'] >= 0.18
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):

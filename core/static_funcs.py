@@ -13,10 +13,70 @@ import time
 import pandas as pd
 import json
 import glob
+import dask.dataframe as dd
+
+
+def index_triples(train_set, entity_to_idx, relation_to_idx):
+    train_set['subject'] = train_set['subject'].map(
+        lambda x: entity_to_idx[x] if entity_to_idx.get(x) else None)
+    train_set['relation'] = train_set['relation'].map(
+        lambda x: relation_to_idx[x] if relation_to_idx.get(x) else None)
+    train_set['object'] = train_set['object'].map(
+        lambda x: entity_to_idx[x] if entity_to_idx.get(x) else None)
+    train_set = train_set.dropna()
+    train_set = train_set.astype(int)
+
+    return train_set
+
+
+def dataset_sanity_checking(train_set: np.ndarray, num_entities, num_relations):
+    n, d = train_set.shape
+    assert d == 3
+    assert num_entities > max(train_set[:, 0]) and num_entities > max(train_set[:, 2])
+    assert num_relations > max(train_set[:, 1])
+    # 13. Sanity checking: data types
+    assert isinstance(train_set[0], np.ndarray)
+    assert isinstance(train_set[0][0], np.int64) and isinstance(train_set[0][1], np.int64)
+    assert isinstance(train_set[0][2], np.int64)
+    return train_set
+
+
+def add_noisy_triples(train_set, add_noise_rate):
+    # Can not be applied on large
+    train_set = train_set.compute()
+
+    num_triples = len(train_set)
+    num_noisy_triples = int(num_triples * add_noise_rate)
+    print(f'[4 / 14] Generating {num_noisy_triples} noisy triples for training data...')
+
+    list_of_entities = pd.unique(train_set[['subject', 'object']].values.ravel())
+
+    train_set = pd.concat([train_set,
+                           # Noisy triples
+                           pd.DataFrame(
+                               {'subject': np.random.choice(list_of_entities, num_noisy_triples),
+                                'relation': np.random.choice(
+                                    pd.unique(train_set[['relation']].values.ravel()),
+                                    num_noisy_triples),
+                                'object': np.random.choice(list_of_entities, num_noisy_triples)}
+                           )
+                           ], ignore_index=True)
+
+    del list_of_entities
+
+    assert num_triples + num_noisy_triples == len(train_set)
+    return train_set
 
 
 def store_kge(trained_model, path: str):
     torch.save(trained_model.state_dict(), path)
+
+
+def create_recipriocal_triples_from_dask(x):
+    # x dask dataframe
+    return dd.concat([x, x['object'].to_frame(name='subject').join(
+        x['relation'].map(lambda x: x + '_inverse').to_frame(name='relation')).join(
+        x['subject'].to_frame(name='object'))], ignore_index=True)
 
 
 def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:

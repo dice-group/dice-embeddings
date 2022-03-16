@@ -65,6 +65,6 @@ class TestRegressionDistMult:
         args.sample_triples_ratio = None
         args.read_only_few = None
         result = Execute(args).start()
-        assert 0.60 >= result['Train']['H@1'] >= 0.20
-        assert 0.45 >= result['Test']['H@1'] >= 0.20
-        assert 0.45 >= result['Val']['H@1'] >= 0.20
+        assert 0.73 >= result['Train']['H@1'] >= 0.20
+        assert 0.73 >= result['Test']['H@1'] >= 0.17
+        assert 0.73 >= result['Val']['H@1'] >= 0.17

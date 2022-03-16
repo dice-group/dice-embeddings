@@ -62,6 +62,7 @@ class Execute:
             self.args, self.dataset = config_kge_sanity_checking(self.args, self.dataset)
         else:
             self.dataset = reload_input_data(self.storage_path, cls=KG)
+
         self.report['num_entities'] = self.dataset.num_entities
         self.report['num_relations'] = self.dataset.num_relations
 
@@ -141,9 +142,13 @@ class Execute:
             except FileNotFoundError:
                 raise FileNotFoundError(
                     f"{self.storage_path}/model.pt is not found. The model will be trained with random weights")
+            for parameter in model.parameters():
+                parameter.requires_grad=True
             model.train()
+            
             return model, _
         else:
+            print('Simply Select...')
             return select_model(args)
 
     # @TODO define  self.model_fitting() as static func and move to static_funcs.py
