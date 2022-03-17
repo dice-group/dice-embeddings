@@ -26,6 +26,16 @@ class BaseInteractiveKGE:
         self.num_entities = len(self.entity_to_idx)
         self.num_relations = len(self.relation_to_idx)
 
+    def set_model_train_mode(self):
+        self.model.train()
+        for parameter in self.model.parameters():
+            parameter.requires_grad = True
+
+    def set_model_eval_mode(self):
+        self.model.eval()
+        for parameter in self.model.parameters():
+            parameter.requires_grad = False
+
     def predict_missing_head_entity(self, relation, tail_entity):
         """
 

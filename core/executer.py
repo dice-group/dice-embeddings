@@ -65,7 +65,6 @@ class Execute:
 
         self.report['num_entities'] = self.dataset.num_entities
         self.report['num_relations'] = self.dataset.num_relations
-
         # (2) Train and Evaluate
         trained_model = self.train_and_eval()
         # (3) Store trained model
@@ -73,7 +72,6 @@ class Execute:
             self.store(trained_model, model_name='model')
         else:
             self.store(trained_model, model_name='model_' + str(datetime.datetime.now()))
-
         total_runtime = time.time() - start_time
         if 60 * 60 > total_runtime:
             message = f'{total_runtime / 60:.3f} minutes'
@@ -81,7 +79,6 @@ class Execute:
             message = f'{total_runtime / (60 ** 2):.3f} hours'
         self.report['Runtime'] = message
         self.report['path_experiment_folder'] = self.storage_path
-
         print(f'Total computation time: {message}')
         print(f'Number of parameters in {trained_model.name}:', self.report["NumParam"])
         # print(f'Estimated of {trained_model.name}:', self.report["EstimatedSizeMB"])

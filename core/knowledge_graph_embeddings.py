@@ -15,16 +15,8 @@ class KGE(BaseInteractiveKGE):
     def __init__(self, path_of_pretrained_model_dir, construct_ensemble=False, model_path=None):
         super().__init__(path_of_pretrained_model_dir, construct_ensemble=construct_ensemble, model_path=model_path)
         self.is_model_in_train_mode = False
-
-    def set_model_train_mode(self):
-        self.model.train()
-        for parameter in self.model.parameters():
-            parameter.requires_grad = True
-
-    def set_model_eval_mode(self):
-        self.model.eval()
-        for parameter in self.model.parameters():
-            parameter.requires_grad = False
+        # Workaround due to BN output
+        self.model.forward_triples = self.model.forward_triples_multiply
 
     def predict_topk(self, *, head_entity: list = None, relation: list = None, tail_entity: list = None,
                      k: int = 10) -> Generator:
@@ -124,7 +116,7 @@ class KGE(BaseInteractiveKGE):
         last_avg_loss_per_triple /= len(train_set)
         print(f'On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple}:.3f')
 
-    def train_triples(self, head_entity, relation, tail_entity, labels, iteration=100, lr=.1, repeat=10):
+    def train_triples(self, head_entity, relation, tail_entity, labels, iteration=2, lr=.1, repeat=2):
 
         assert len(head_entity) == len(relation) == len(tail_entity) == len(labels)
         n = len(head_entity)
