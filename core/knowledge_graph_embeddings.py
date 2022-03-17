@@ -16,8 +16,6 @@ class KGE(BaseInteractiveKGE):
         super().__init__(path_of_pretrained_model_dir, construct_ensemble=construct_ensemble, model_path=model_path)
         self.is_model_in_train_mode = False
         # Workaround due to BN output
-        self.model.forward_triples = self.model.forward_triples_multiply
-
     def predict_topk(self, *, head_entity: list = None, relation: list = None, tail_entity: list = None,
                      k: int = 10) -> Generator:
         """
@@ -63,7 +61,7 @@ class KGE(BaseInteractiveKGE):
                                                                                                      1)
         x = torch.hstack((head_entity, relation, tail_entity))
         with torch.no_grad():
-            return self.model(x)
+            return self.model.forward_triples_multiply(x)
 
     def indexed_triple_score(self, i):
         i = torch.LongTensor(i).reshape(1, 3)
@@ -136,7 +134,7 @@ class KGE(BaseInteractiveKGE):
         print('Iteration starts.')
         for epoch in range(iteration):
             optimizer.zero_grad()
-            outputs = self.model(x)
+            outputs = self.model.forward_triples_multiply(x)
             loss = self.model.loss(outputs, labels)
             print(f"Iteration:{epoch}\t Loss:{loss.item():.4f}\t Outputs:{outputs.detach()}")
             loss.backward()
@@ -144,7 +142,7 @@ class KGE(BaseInteractiveKGE):
 
         self.set_model_eval_mode()
         with torch.no_grad():
-            outputs = self.model(x)
+            outputs = self.model.forward_triples_multiply(x)
             loss = self.model.loss(outputs, labels)
         print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs.detach()}")
 
