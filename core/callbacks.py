@@ -40,7 +40,7 @@ class KGESaveCallback(Callback):
 
     def on_epoch_end(self, trainer, model):
         if self.epoch_counter % self.every_x_epoch == 0 and self.epoch_counter > 1:
-            print(f'\nStoring model {every_x_epoch}...')
+            print(f'\nStoring model {self.every_x_epoch}...')
             # Could throw an error if mode is in GPU
             store_kge(model, path=self.path + f'/model_at_{str(self.every_x_epoch)}_epoch.pt')
         self.epoch_counter += 1
