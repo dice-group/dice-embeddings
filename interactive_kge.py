@@ -1,16 +1,17 @@
 import torch
-
 from core import KGE
 from core.knowledge_graph import KG
 
 # (1) Load a pre-trained model; Yago3-10
-pre_trained_kge = KGE(path_of_pretrained_model_dir='Experiments/2022-03-17 12:57:41.760268')
+pre_trained_kge = KGE(path_of_pretrained_model_dir='Experiments/2022-03-17 14:10:03.731721', construct_ensemble=True)
 
 # (1) True Triple
 heads, relations, tails = ['Telmo_Zarra', 'Velibor_Vasović'], ['diedIn', 'playsFor'], ['Bilbao', 'AFC_Ajax']
+
 s = pre_trained_kge.triple_score(head_entity=heads, relation=relations, tail_entity=tails)
 print(heads, relations, tails, s)
-#pre_trained_kge.train_triples(head_entity=heads, relation=relations, tail_entity=tails, labels=torch.ones(2))
+pre_trained_kge.train_triples(head_entity=heads, relation=relations, tail_entity=tails, labels=torch.ones(2))
+exit(1)
 s = pre_trained_kge.triple_score(head_entity=heads, relation=relations, tail_entity=tails)
 print(heads, relations, tails, s)
 
@@ -21,7 +22,7 @@ print(heads, relations, tails, s)
 pre_trained_kge.train_triples(head_entity=heads, relation=relations, tail_entity=tails, labels=torch.zeros(1))
 s = pre_trained_kge.triple_score(head_entity=heads, relation=relations, tail_entity=tails)
 print(heads, relations, tails, s)
-#pre_trained_kge.save()
+# pre_trained_kge.save()
 
 exit(1)
 

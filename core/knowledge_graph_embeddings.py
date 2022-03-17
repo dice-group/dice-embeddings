@@ -124,7 +124,7 @@ class KGE(BaseInteractiveKGE):
         last_avg_loss_per_triple /= len(train_set)
         print(f'On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple}:.3f')
 
-    def train_triples(self, head_entity, relation, tail_entity, labels, iteration=100):
+    def train_triples(self, head_entity, relation, tail_entity, labels, iteration=100, lr=.1, repeat=10):
 
         assert len(head_entity) == len(relation) == len(tail_entity) == len(labels)
         n = len(head_entity)
@@ -136,22 +136,26 @@ class KGE(BaseInteractiveKGE):
         x = torch.hstack((head_entity, relation, tail_entity))
         labels: object = torch.FloatTensor(labels)
 
-        if n == 1:
-            x = x.repeat(2, 1)
-            labels = labels.repeat(2)
+        x = x.repeat(repeat, 1)
+        labels = labels.repeat(repeat)
 
         self.set_model_train_mode()
-        optimizer = optim.Adam(self.model.parameters())
+        optimizer = optim.Adam(self.model.parameters(), lr=lr)
 
-        for epoch in range(iteration):  # loop over the dataset multiple times
+        for epoch in range(iteration):
             optimizer.zero_grad()
             outputs = self.model(x)
             loss = self.model.loss(outputs, labels)
+            loss_epoch = loss.item()
             loss.backward()
             optimizer.step()
-
+            if epoch % 10 == 0:
+                print(f"Iteration:{epoch}\t Loss:{loss_epoch:.4f}")
+            if loss_epoch < .00001:
+                print('converged!')
+                print(f"Iteration:{epoch}\t Loss:{loss_epoch:.4f}")
+                break
         self.set_model_eval_mode()
-
 
     def train_triples_lbfgs(self, head_entity, relation, tail_entity, labels, iteration=100):
 
@@ -179,6 +183,7 @@ class KGE(BaseInteractiveKGE):
                 loss = self.model.loss(outputs, labels)
                 loss.backward()
                 return loss
+
             # Take step.
             optimizer.step(closure)
 

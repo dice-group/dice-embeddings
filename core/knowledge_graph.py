@@ -93,6 +93,12 @@ class KG:
 
                 print('[5 / 14] Creating a mapping from entities to integer indexes...')
                 # 4. Create a bijection mapping  from entities to integer indexes.
+                """
+                ent= dask.array.concatenate([df_str_kg['subject'].unique(),df_str_kg['object'].unique()]).to_dask_dataframe(
+                    columns=['entity'])['entity'].unique()
+                ent=ent.compute()
+                """
+
                 self.entity_to_idx = dask.array.concatenate(
                     [df_str_kg['subject'], df_str_kg['object']]).to_dask_dataframe(
                     columns=['entity']).drop_duplicates()
