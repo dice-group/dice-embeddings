@@ -71,7 +71,7 @@ class KGE(BaseInteractiveKGE):
                                                                                                      1)
         x = torch.hstack((head_entity, relation, tail_entity))
         with torch.no_grad():
-            return torch.sigmoid(self.model(x))
+            return self.model(x)
 
     def indexed_triple_score(self, i):
         i = torch.LongTensor(i).reshape(1, 3)
@@ -128,7 +128,7 @@ class KGE(BaseInteractiveKGE):
 
         assert len(head_entity) == len(relation) == len(tail_entity) == len(labels)
         n = len(head_entity)
-
+        print('Index inputs...')
         head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values).reshape(n, 1)
         relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values).reshape(n, 1)
         tail_entity = torch.LongTensor(self.entity_to_idx.loc[tail_entity]['entity'].values).reshape(n, 1)
@@ -141,21 +141,20 @@ class KGE(BaseInteractiveKGE):
 
         self.set_model_train_mode()
         optimizer = optim.Adam(self.model.parameters(), lr=lr)
-
+        print('Iteration starts.')
         for epoch in range(iteration):
             optimizer.zero_grad()
             outputs = self.model(x)
             loss = self.model.loss(outputs, labels)
-            loss_epoch = loss.item()
+            print(f"Iteration:{epoch}\t Loss:{loss.item():.4f}\t Outputs:{outputs.detach()}")
             loss.backward()
             optimizer.step()
-            if epoch % 10 == 0:
-                print(f"Iteration:{epoch}\t Loss:{loss_epoch:.4f}")
-            if loss_epoch < .00001:
-                print('converged!')
-                print(f"Iteration:{epoch}\t Loss:{loss_epoch:.4f}")
-                break
+
         self.set_model_eval_mode()
+        with torch.no_grad():
+            outputs = self.model(x)
+            loss = self.model.loss(outputs, labels)
+        print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs.detach()}")
 
     def train_triples_lbfgs(self, head_entity, relation, tail_entity, labels, iteration=100):
 
