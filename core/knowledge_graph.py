@@ -9,7 +9,8 @@ from dask import dataframe as ddf
 import os
 import pandas as pd
 from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_re_vocab, \
-    create_recipriocal_triples_from_dask, add_noisy_triples, dataset_sanity_checking, index_triples
+    create_recipriocal_triples_from_dask, add_noisy_triples, index_triples
+from .sanity_checkers import dataset_sanity_checking
 import glob
 
 np.random.seed(1)
@@ -75,6 +76,7 @@ class KG:
             if add_noise_rate is not None:
                 # This can be used as a regularization as well as
                 # to measure model's performance under noisy input setting
+                print(f'[4 / 14] Adding noisy triples...')
                 self.train_set = add_noisy_triples(self.train_set, add_noise_rate)
 
             if entity_to_idx is None and relation_to_idx is None:
@@ -150,8 +152,8 @@ class KG:
             print('[11 / 14] Mapping training data into integers for training...')
             # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
             self.train_set = index_triples(self.train_set, self.entity_to_idx, self.relation_to_idx)
-
             print('Done !\n')
+
             if path_for_serialization is not None:
                 # 10. Serialize (9).
                 print('[12 / 14] Serializing integer mapped data...')  # TODO: Do we really need it ?!
@@ -169,7 +171,6 @@ class KG:
             # 12. Sanity checking: indexed training set can not have an indexed entity assigned with larger indexed than the number of entities.
             dataset_sanity_checking(self.train_set, self.num_entities, self.num_relations)
             print('Done !\n')
-
             if self.valid_set is not None:
                 if path_for_serialization is not None:
                     print('[15 / 14 ] Serializing validation data for Continual Learning...')
@@ -186,7 +187,6 @@ class KG:
                 # To numpy
                 self.valid_set = self.valid_set.values.compute(scheduler=scheduler_flag)
                 dataset_sanity_checking(self.valid_set, self.num_entities, self.num_relations)
-
             if self.test_set is not None:
                 if path_for_serialization is not None:
                     print('[18 / 14 ] Serializing test data for Continual Learning...')
@@ -203,7 +203,6 @@ class KG:
                 self.test_set = self.test_set.values.compute(scheduler=scheduler_flag)
                 dataset_sanity_checking(self.test_set, self.num_entities, self.num_relations)
                 print('Done !\n')
-
             if eval_model:  # and len(self.valid_set) > 0 and len(self.test_set) > 0:
                 if self.valid_set is not None and self.test_set is not None:
                     assert isinstance(self.valid_set, np.ndarray) and isinstance(self.test_set, np.ndarray)
@@ -216,7 +215,6 @@ class KG:
                 self.re_vocab = get_re_vocab(data)
                 # 17. Create a bijection mapping from subject-object pairs to relations.
                 self.ee_vocab = get_ee_vocab(data)
-
         else:
             self.deserialize(deserialize_flag)
             if eval_model:  # and len(self.valid_set) > 0 and len(self.test_set) > 0:
@@ -273,20 +271,8 @@ class KG:
             print('Done!\n')
         except FileNotFoundError:
             print('No test data found\n')
-            self.test_set = None#pd.DataFrame()
+            self.test_set = None
 
-        """
-        with open(storage_path + '/configuration.json', 'r') as f:
-            args = json.load(f)
-
-        if args['eval']:
-            if len(self.valid_set) > 0 and len(self.test_set) > 0:
-                # 16. Create a bijection mapping from subject-relation pairs to tail entities.
-                data = np.concatenate([self.train_set, self.valid_set, self.test_set])
-            else:
-                data = self.train_set
-            self.er_vocab = get_er_vocab(data)
-        """
 
     @staticmethod
     def load_data_parallel(data_path, read_only_few: int = None,
@@ -324,17 +310,6 @@ class KG:
             df['subject'] = df['subject'].str.removeprefix("<").str.removesuffix(">")
             df['relation'] = df['relation'].str.removeprefix("<").str.removesuffix(">")
             df['object'] = df['object'].str.removeprefix("<").str.removesuffix(">")
-            """
-
-               print('Dask Scheduler starts computation...')
-               if large_kg_parse:
-                   df = df.compute(scheduler='processes')
-               else:
-                   df = df.compute(scheduler='single-threaded')
-               num_triples, y = df.shape
-               assert y == 3
-               return df
-           """
             return df
         else:
             print(f'{data_path} could not found!')

@@ -1,17 +1,26 @@
 import os
-from .static_funcs import load_model,store_kge
+from .static_funcs import load_model_ensemble, load_model, store_kge
 from typing import List
 import torch
 
+
 class BaseInteractiveKGE:
-    def __init__(self, path_of_pretrained_model_dir):
+    def __init__(self, path_of_pretrained_model_dir, construct_ensemble=False, model_path=None):
         try:
             assert os.path.isdir(path_of_pretrained_model_dir)
         except AssertionError:
             raise AssertionError(f'Could not find a directory {path_of_pretrained_model_dir}')
         self.path = path_of_pretrained_model_dir
         # (1) Load model...
-        self.model, self.entity_to_idx, self.relation_to_idx = load_model(self.path + '/')
+        if construct_ensemble:
+            self.model, self.entity_to_idx, self.relation_to_idx = load_model_ensemble(self.path + '/')
+        else:
+            if model_path:
+                self.model, self.entity_to_idx, self.relation_to_idx = load_model(self.path + '/',
+                                                                                  model_path=model_path)
+            else:
+                self.model, self.entity_to_idx, self.relation_to_idx = load_model(self.path + '/')
+
         self.num_entities = len(self.entity_to_idx)
         self.num_relations = len(self.relation_to_idx)
 

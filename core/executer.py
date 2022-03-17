@@ -111,7 +111,7 @@ class Execute:
             print('Saving embeddings..')
             entity_emb, relation_ebm = trained_model.get_embeddings()
 
-            if len(entity_emb) > 1:
+            if len(entity_emb) > 1000:
                 torch.save(entity_emb, self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings.pt')
             else:
                 save_embeddings(entity_emb.numpy(), indexes=self.dataset.entities_str,
@@ -120,7 +120,7 @@ class Execute:
             del entity_emb
 
             if relation_ebm is not None:
-                if len(relation_ebm) > 1:
+                if len(relation_ebm) > 1000:
                     torch.save(relation_ebm,
                                self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings.pt')
                 else:
@@ -156,8 +156,9 @@ class Execute:
         train_dataloaders = dataset.train_dataloader()
         del dataset
         if self.args.eval is False and self.args.eval_on_train is False:
+            """ Deleting self.dataset does not help too much"""
             # release some memory
-            del self.dataset
+            # del self.dataset
         print(f'Number of mini-batches to compute for a single epoch: {len(train_dataloaders)}\n')
         trainer.fit(model, train_dataloaders=train_dataloaders)
 

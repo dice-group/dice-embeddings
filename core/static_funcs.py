@@ -14,9 +14,16 @@ import pandas as pd
 import json
 import glob
 import dask.dataframe as dd
+from .sanity_checkers import sanity_checking_with_arguments, config_kge_sanity_checking
 
 
-def index_triples(train_set, entity_to_idx, relation_to_idx):
+def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict):
+    """
+    :param train_set: dask dataframe/pandas dataframe
+    :param entity_to_idx:
+    :param relation_to_idx:
+    :return:
+    """
     train_set['subject'] = train_set['subject'].map(
         lambda x: entity_to_idx[x] if entity_to_idx.get(x) else None)
     train_set['relation'] = train_set['relation'].map(
@@ -25,23 +32,16 @@ def index_triples(train_set, entity_to_idx, relation_to_idx):
         lambda x: entity_to_idx[x] if entity_to_idx.get(x) else None)
     train_set = train_set.dropna()
     train_set = train_set.astype(int)
-
     return train_set
 
 
-def dataset_sanity_checking(train_set: np.ndarray, num_entities, num_relations):
-    n, d = train_set.shape
-    assert d == 3
-    assert num_entities > max(train_set[:, 0]) and num_entities > max(train_set[:, 2])
-    assert num_relations > max(train_set[:, 1])
-    # 13. Sanity checking: data types
-    assert isinstance(train_set[0], np.ndarray)
-    assert isinstance(train_set[0][0], np.int64) and isinstance(train_set[0][1], np.int64)
-    assert isinstance(train_set[0][2], np.int64)
-    return train_set
-
-
-def add_noisy_triples(train_set, add_noise_rate):
+def add_noisy_triples(train_set, add_noise_rate: float) -> pd.DataFrame:
+    """
+    Add randomly constructed triples
+    :param train_set:
+    :param add_noise_rate:
+    :return:
+    """
     # Can not be applied on large
     train_set = train_set.compute()
 
@@ -68,11 +68,16 @@ def add_noisy_triples(train_set, add_noise_rate):
     return train_set
 
 
-def store_kge(trained_model, path: str):
+def store_kge(trained_model, path: str) -> None:
     torch.save(trained_model.state_dict(), path)
 
 
 def create_recipriocal_triples_from_dask(x):
+    """
+    Add inverse triples into dask dataframe
+    :param x:
+    :return:
+    """
     # x dask dataframe
     return dd.concat([x, x['object'].to_frame(name='subject').join(
         x['relation'].map(lambda x: x + '_inverse').to_frame(name='relation')).join(
@@ -129,23 +134,6 @@ def reload_input_data(storage_path: str, cls):
     print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
     print(kg.description_of_input)
     return kg
-
-
-def config_kge_sanity_checking(args, dataset):
-    """
-    Sanity checking for input hyperparams.
-    :return:
-    """
-    if args.batch_size > len(dataset.train_set):
-        args.batch_size = len(dataset.train_set)
-    if args.model == 'Shallom' and args.scoring_technique == 'NegSample':
-        print(
-            'Shallom can not be trained with Negative Sampling. Scoring technique is changed to KvsALL')
-        args.scoring_technique = 'KvsAll'
-
-    if args.scoring_technique == 'KvsAll':
-        args.neg_ratio = None
-    return args, dataset
 
 
 def performance_debugger(func_name):
@@ -221,39 +209,6 @@ def create_experiment_folder(folder_name='Experiments'):
     return path_of_folder
 
 
-def sanity_checking_with_arguments(args):
-    try:
-        assert args.embedding_dim > 0
-    except AssertionError:
-        print(f'embedding_dim must be strictly positive. Currently:{args.embedding_dim}')
-        raise
-
-    if not (args.scoring_technique in ['KvsAll', 'NegSample', '1vsAll']):
-        # print(f'Invalid training strategy => {args.scoring_technique}.')
-        raise KeyError(f'Invalid training strategy => {args.scoring_technique}.')
-
-    assert args.learning_rate > 0
-    try:
-        assert args.num_folds_for_cv >= 0
-    except AssertionError:
-        print(f'num_folds_for_cv can not be negative. Currently:{args.num_folds_for_cv}')
-        raise
-
-    try:
-        assert os.path.isdir(args.path_dataset_folder)
-    except AssertionError:
-        raise AssertionError(f'The path does not direct to a file {args.path_dataset_folder}')
-
-    try:
-        assert glob.glob(args.path_dataset_folder + '/train*')
-    except AssertionError:
-        print(f'The directory {args.path_dataset_folder} must contain a train.*  .')
-        raise
-
-    args.eval = bool(args.eval)
-    args.large_kg_parse = bool(args.large_kg_parse)
-
-
 def select_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     print('Select model...', end=' ')
     start_time = time.time()
@@ -307,12 +262,12 @@ def select_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     return model, form_of_labelling
 
 
-def load_model(path_of_experiment_folder) -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
+def load_model(path_of_experiment_folder, model_path='model.pt') -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
     """ Load weights and initialize pytorch module from namespace arguments"""
-    print('Loading model...', end=' ')
+    print(f'Loading model {model_path}...', end=' ')
     start_time = time.time()
     # (1) Load weights..
-    weights = torch.load(path_of_experiment_folder + '/model.pt', torch.device('cpu'))
+    weights = torch.load(path_of_experiment_folder + f'/{model_path}', torch.device('cpu'))
     # (2) Loading input configuration..
     configs = load_json(path_of_experiment_folder + '/configuration.json')
     # (3) Loading the report of a training process.
@@ -336,74 +291,50 @@ def load_model(path_of_experiment_folder) -> Tuple[BaseKGE, pd.DataFrame, pd.Dat
     return model, entity_to_idx, relation_to_idx
 
 
-def compute_mrr_based_on_relation_ranking(trained_model, triples, entity_to_idx, relations):
-    rel = np.array(relations)  # for easy indexing.
-    num_rel = len(rel)
-    ranks = []
+def load_model_ensemble(path_of_experiment_folder) -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
+    """ Construct Ensemble Of weights and initialize pytorch module from namespace arguments"""
+    print('Constructing Ensemble model...', end=' ')
+    start_time = time.time()
+    # (1) Load weights..
+    paths_for_loading = glob.glob(path_of_experiment_folder + '/model*')
+    assert len(paths_for_loading) > 0
+    num_of_models = len(paths_for_loading)
+    weights = None
+    while len(paths_for_loading):
+        p = paths_for_loading.pop()
+        if weights is None:
+            weights = torch.load(p, torch.device('cpu'))
+        else:
+            five_weights = torch.load(p, torch.device('cpu'))
+            for k, _ in weights.items():
+                if 'weight' in k:
+                    weights[k] = (weights[k] + five_weights[k])
+    for k, _ in weights.items():
+        if 'weight' in k:
+            weights[k] /= num_of_models
+    # (2) Loading input configuration..
+    configs = load_json(path_of_experiment_folder + '/configuration.json')
+    # (3) Loading the report of a training process.
+    report = load_json(path_of_experiment_folder + '/report.json')
+    configs["num_entities"] = report["num_entities"]
+    configs["num_relations"] = report["num_relations"]
+    print(f'Done! It took {time.time() - start_time:.3f}')
+    # (4) Select the model
+    model, _ = select_model(configs)
+    # (5) Put (1) into (4)
+    model.load_state_dict(weights)
+    # (6) Set it into eval model.
+    for parameter in model.parameters():
+        parameter.requires_grad = False
+    model.eval()
+    store_kge(model, path=path_of_experiment_folder + f'/ensemble.pt')
 
-    predictions_save = []
-    for triple in triples:
-        s, p, o = triple
-        x = (torch.LongTensor([entity_to_idx[s]]), torch.LongTensor([entity_to_idx[o]]))
-        preds = trained_model.forward(x)
-
-        # Rank predicted scores
-        _, ranked_idx_rels = preds.topk(k=num_rel)
-        # Rank all relations based on predicted scores
-        ranked_relations = rel[ranked_idx_rels][0]
-
-        # Compute and store the rank of the true relation.
-        rank = 1 + np.argwhere(ranked_relations == p)[0][0]
-        ranks.append(rank)
-        # Store prediction.
-        predictions_save.append([s, p, o, ranked_relations[0]])
-
-    raw_mrr = np.mean(1. / np.array(ranks))
-    # print(f'Raw Mean reciprocal rank on test dataset: {raw_mrr}')
-    """
-    for it, t in enumerate(predictions_save):
-        s, p, o, predicted_p = t
-        print(f'{it}. test triples => {s} {p} {o} \t =>{trained_model.name} => {predicted_p}')
-        if it == 10:
-            break
-    """
-    return raw_mrr
-
-
-def compute_mrr_based_on_entity_ranking(trained_model, triples, entity_to_idx, relation_to_idx, entities):
-    #########################################
-    # Evaluation mode. Parallelize below computation.
-    entities = np.array(entities)  # for easy indexing.
-    num_entities = len(entities)
-    ranks = []
-
-    predictions_save = []
-    for triple in triples:
-        s, p, o = triple
-        x = (torch.LongTensor([entity_to_idx[s]]),
-             torch.LongTensor([relation_to_idx[p]]))
-        preds = trained_model.forward(x)
-
-        # Rank predicted scores
-        _, ranked_idx_entity = preds.topk(k=num_entities)
-        # Rank all relations based on predicted scores
-        ranked_entity = entities[ranked_idx_entity][0]
-
-        # Compute and store the rank of the true relation.
-        rank = 1 + np.argwhere(ranked_entity == o)[0][0]
-        ranks.append(rank)
-        # Store prediction.
-        predictions_save.append([s, p, o, ranked_entity[0]])
-
-    raw_mrr = np.mean(1. / np.array(ranks))
-    """
-    for it, t in enumerate(predictions_save):
-        s, p, o, predicted_ent = t
-        print(f'{it}. test triples => {s} {p} {o} \t =>{trained_model.name} => {predicted_ent}')
-        if it == 10:
-            break
-    """
-    return raw_mrr
+    start_time = time.time()
+    print('Loading entity and relation indexes...', end=' ')
+    entity_to_idx = pd.read_parquet(path_of_experiment_folder + '/entity_to_idx.gzip')
+    relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')
+    print(f'Done! It took {time.time() - start_time:.4f}')
+    return model, entity_to_idx, relation_to_idx
 
 
 def extract_model_summary(s):
@@ -439,3 +370,76 @@ def load_json(p: str) -> dict:
     with open(p, 'r') as r:
         args = json.load(r)
     return args
+
+
+def compute_mrr_based_on_relation_ranking(trained_model, triples, entity_to_idx, relations):
+    raise NotImplemented('This function seem to be depricated')
+    rel = np.array(relations)  # for easy indexing.
+
+    num_rel = len(rel)
+    ranks = []
+
+    predictions_save = []
+    for triple in triples:
+        s, p, o = triple
+        x = (torch.LongTensor([entity_to_idx[s]]), torch.LongTensor([entity_to_idx[o]]))
+        preds = trained_model.forward(x)
+
+        # Rank predicted scores
+        _, ranked_idx_rels = preds.topk(k=num_rel)
+        # Rank all relations based on predicted scores
+        ranked_relations = rel[ranked_idx_rels][0]
+
+        # Compute and store the rank of the true relation.
+        rank = 1 + np.argwhere(ranked_relations == p)[0][0]
+        ranks.append(rank)
+        # Store prediction.
+        predictions_save.append([s, p, o, ranked_relations[0]])
+
+    raw_mrr = np.mean(1. / np.array(ranks))
+    # print(f'Raw Mean reciprocal rank on test dataset: {raw_mrr}')
+    """
+    for it, t in enumerate(predictions_save):
+        s, p, o, predicted_p = t
+        print(f'{it}. test triples => {s} {p} {o} \t =>{trained_model.name} => {predicted_p}')
+        if it == 10:
+            break
+    """
+    return raw_mrr
+
+
+def compute_mrr_based_on_entity_ranking(trained_model, triples, entity_to_idx, relation_to_idx, entities):
+    raise NotImplemented('This function seem to be depricated')
+    #########################################
+    # Evaluation mode. Parallelize below computation.
+    entities = np.array(entities)  # for easy indexing.
+    num_entities = len(entities)
+    ranks = []
+
+    predictions_save = []
+    for triple in triples:
+        s, p, o = triple
+        x = (torch.LongTensor([entity_to_idx[s]]),
+             torch.LongTensor([relation_to_idx[p]]))
+        preds = trained_model.forward(x)
+
+        # Rank predicted scores
+        _, ranked_idx_entity = preds.topk(k=num_entities)
+        # Rank all relations based on predicted scores
+        ranked_entity = entities[ranked_idx_entity][0]
+
+        # Compute and store the rank of the true relation.
+        rank = 1 + np.argwhere(ranked_entity == o)[0][0]
+        ranks.append(rank)
+        # Store prediction.
+        predictions_save.append([s, p, o, ranked_entity[0]])
+
+    raw_mrr = np.mean(1. / np.array(ranks))
+    """
+    for it, t in enumerate(predictions_save):
+        s, p, o, predicted_ent = t
+        print(f'{it}. test triples => {s} {p} {o} \t =>{trained_model.name} => {predicted_ent}')
+        if it == 10:
+            break
+    """
+    return raw_mrr

@@ -44,3 +44,11 @@ class KGESaveCallback(Callback):
             # Could throw an error if mode is in GPU
             store_kge(model, path=self.path + f'/model_at_{str(self.every_x_epoch)}_epoch.pt')
         self.epoch_counter += 1
+
+
+class AdaptiveKGECallback(Callback):
+    def __init__(self):
+        super().__init__()
+
+    def on_epoch_end(self, trainer, model):
+        print(trainer.callback_metrics)

@@ -12,8 +12,8 @@ from .static_funcs import load_json, load_model
 class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
 
-    def __init__(self, path_of_pretrained_model_dir):
-        super().__init__(path_of_pretrained_model_dir)
+    def __init__(self, path_of_pretrained_model_dir, construct_ensemble=False, model_path=None):
+        super().__init__(path_of_pretrained_model_dir, construct_ensemble=construct_ensemble, model_path=model_path)
         self.is_model_in_train_mode = False
 
     def set_model_train_mode(self):
@@ -82,6 +82,7 @@ class KGE(BaseInteractiveKGE):
                                       collate_fn=train_set.collate_fn, pin_memory=True)
 
         print('First Eval..')
+        self.set_model_eval_mode()
         # (2) Eval model on this triples
         first_avg_loss_per_triple = 0
         for x, y in train_dataloader:
@@ -113,8 +114,7 @@ class KGE(BaseInteractiveKGE):
             pred = self.model(x)
             last_avg_loss_per_triple += self.model.loss(pred, y)
         last_avg_loss_per_triple /= len(train_set)
-        print(last_avg_loss_per_triple)
-        print(f'On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple}')
+        print(f'On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple}:.3f')
 
     def train_triples(self, head_entity, relation, tail_entity, labels, lr=.1):
 
@@ -129,8 +129,6 @@ class KGE(BaseInteractiveKGE):
             raise e
         x = torch.cat((head, relation, tail), 0).reshape(n, 3)
         y: object = torch.FloatTensor(labels)
-        score = self.model(x)
-        print(score)
         x = x.repeat(4, 1)
         y = y.repeat(4)
 
@@ -146,5 +144,3 @@ class KGE(BaseInteractiveKGE):
             optimizer.step()
 
         self.set_model_eval_mode()
-        torch.save(self.model.state_dict(), self.path + '/ContinualTraining_model.pt')
-
