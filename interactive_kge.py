@@ -1,14 +1,50 @@
+import torch
+
 from core import KGE
 from core.knowledge_graph import KG
 
 # (1) Load a pre-trained model; Yago3-10
-pre_trained_kge = KGE(path_of_pretrained_model_dir='Experiments/2022-03-16 15:24:18.899385')
-# (2) Look at a particular triple's score
-heads, relations, tails = ['Boo_Young-tae'], ['playsFor'], ['Yangju_Citizen_FC']
+pre_trained_kge = KGE(path_of_pretrained_model_dir='Experiments/2022-03-17 12:57:41.760268')
+
+# (1) True Triple
+heads, relations, tails = ['Telmo_Zarra', 'Velibor_Vasović'], ['diedIn', 'playsFor'], ['Bilbao', 'AFC_Ajax']
 s = pre_trained_kge.triple_score(head_entity=heads, relation=relations, tail_entity=tails)
+print(heads, relations, tails, s)
+#pre_trained_kge.train_triples(head_entity=heads, relation=relations, tail_entity=tails, labels=torch.ones(2))
+s = pre_trained_kge.triple_score(head_entity=heads, relation=relations, tail_entity=tails)
+print(heads, relations, tails, s)
+
+# False Triple
+heads, relations, tails = ['Bilbao'], ['diedIn'], ['AFC_Ajax']
+s = pre_trained_kge.triple_score(head_entity=heads, relation=relations, tail_entity=tails)
+print(heads, relations, tails, s)
+pre_trained_kge.train_triples(head_entity=heads, relation=relations, tail_entity=tails, labels=torch.zeros(1))
+s = pre_trained_kge.triple_score(head_entity=heads, relation=relations, tail_entity=tails)
+print(heads, relations, tails, s)
+#pre_trained_kge.save()
+
+exit(1)
+
+heads, relations, tails = ['Stan_Collymore'], ['playsFor'], ['England_national_football_team']
+s = pre_trained_kge.triple_score(head_entity=heads, relation=relations, tail_entity=tails)
+print(s)
+
+exit(1)
+heads, relations, tails = ['England_national_football_team'], ['playsFor'], ['England_national_football_team']
+s = pre_trained_kge.triple_score(head_entity=heads, relation=relations, tail_entity=tails)
+print(s)
+
+exit(1)
+pre_trained_kge.train_triples_lbfgs(head_entity=heads, relation=relations, tail_entity=tails, labels=[1])
+
+s = pre_trained_kge.triple_score(head_entity=heads, relation=relations, tail_entity=tails)
+
+print(s)
+
+exit(1)
 # (3) Train Model on KGs/SubYAGO3-10/train.txt contains single triple (Chatou,isLocatedIn,France)
 kg = KG("KGs/SubYAGO3-10", entity_to_idx=pre_trained_kge.entity_to_idx, relation_to_idx=pre_trained_kge.relation_to_idx)
-pre_trained_kge.train(kg, lr=.1, epoch=50, batch_size=32, neg_sample_ratio=10, num_workers=4)
+pre_trained_kge.train(kg, lr=.1, epoch=1, batch_size=32, neg_sample_ratio=1, num_workers=1)
 # (4) Look at the score again
 m = f'Score({heads[0]},{relations[0]},{tails[0]})={s}'
 print('Before:', m)
@@ -18,6 +54,8 @@ m = f'Score({heads[0]},{relations[0]},{tails[0]})={s}'
 print('After:', m)
 # (5) Save this model
 pre_trained_kge.save()
+
+pre_trained_kge.train_triples_lbfgs(head_entity=heads, relation=relations, tail_entity=tails, labels=[1])
 
 
 def predictions():

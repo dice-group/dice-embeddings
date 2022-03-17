@@ -17,14 +17,14 @@ class KGE(BaseInteractiveKGE):
         self.is_model_in_train_mode = False
 
     def set_model_train_mode(self):
+        self.model.train()
         for parameter in self.model.parameters():
             parameter.requires_grad = True
-        self.model.train()
 
     def set_model_eval_mode(self):
+        self.model.eval()
         for parameter in self.model.parameters():
             parameter.requires_grad = False
-        self.model.eval()
 
     def predict_topk(self, *, head_entity: list = None, relation: list = None, tail_entity: list = None,
                      k: int = 10) -> Generator:
@@ -64,11 +64,19 @@ class KGE(BaseInteractiveKGE):
 
     def triple_score(self, *, head_entity: list = None, relation: list = None,
                      tail_entity: list = None) -> torch.tensor:
-        head = self.entity_to_idx.loc[head_entity]['entity'].values.tolist()
-        relation = self.relation_to_idx.loc[relation]['relation'].values.tolist()
-        tail = self.entity_to_idx.loc[tail_entity]['entity'].values.tolist()
-        x = torch.tensor((head, relation, tail)).reshape(len(head), 3)
-        return torch.sigmoid(self.model.forward_triples(x))
+        head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values).reshape(len(head_entity),
+                                                                                                     1)
+        relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values).reshape(len(relation), 1)
+        tail_entity = torch.LongTensor(self.entity_to_idx.loc[tail_entity]['entity'].values).reshape(len(tail_entity),
+                                                                                                     1)
+        x = torch.hstack((head_entity, relation, tail_entity))
+        with torch.no_grad():
+            return torch.sigmoid(self.model(x))
+
+    def indexed_triple_score(self, i):
+        i = torch.LongTensor(i).reshape(1, 3)
+        with torch.no_grad():
+            return torch.sigmoid(self.model(torch.LongTensor(i)))
 
     def train(self, kg, lr=.1, epoch=10, batch_size=32, neg_sample_ratio=10, num_workers=1) -> None:
         # (1) Create Negative Sampling Setting for training
@@ -116,25 +124,90 @@ class KGE(BaseInteractiveKGE):
         last_avg_loss_per_triple /= len(train_set)
         print(f'On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple}:.3f')
 
-    def train_triples(self, head_entity, relation, tail_entity, labels, lr=.1):
+    def train_triples(self, head_entity, relation, tail_entity, labels, iteration=100):
 
         assert len(head_entity) == len(relation) == len(tail_entity) == len(labels)
         n = len(head_entity)
-        try:
-            head = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values.tolist())
-            relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values.tolist())
-            tail = torch.LongTensor(self.entity_to_idx.loc[tail_entity]['entity'].values.tolist())
-        except KeyError as e:
-            print(f'Ensure that {head_entity}, {relation}, {tail_entity} can be found in the input KG.')
-            raise e
-        x = torch.cat((head, relation, tail), 0).reshape(n, 3)
-        y: object = torch.FloatTensor(labels)
-        x = x.repeat(4, 1)
-        y = y.repeat(4)
+
+        head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values).reshape(n, 1)
+        relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values).reshape(n, 1)
+        tail_entity = torch.LongTensor(self.entity_to_idx.loc[tail_entity]['entity'].values).reshape(n, 1)
+
+        x = torch.hstack((head_entity, relation, tail_entity))
+        labels: object = torch.FloatTensor(labels)
+
+        if n == 1:
+            x = x.repeat(2, 1)
+            labels = labels.repeat(2)
+
+        self.set_model_train_mode()
+        optimizer = optim.Adam(self.model.parameters())
+
+        for epoch in range(iteration):  # loop over the dataset multiple times
+            optimizer.zero_grad()
+            outputs = self.model(x)
+            loss = self.model.loss(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+        self.set_model_eval_mode()
+
+
+    def train_triples_lbfgs(self, head_entity, relation, tail_entity, labels, iteration=100):
+
+        assert len(head_entity) == len(relation) == len(tail_entity) == len(labels)
+        n = len(head_entity)
+
+        head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values).reshape(n, 1)
+        relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values).reshape(n, 1)
+        tail_entity = torch.LongTensor(self.entity_to_idx.loc[tail_entity]['entity'].values).reshape(n, 1)
+
+        x = torch.hstack((head_entity, relation, tail_entity))
+        labels: object = torch.FloatTensor(labels)
+
+        if n == 1:
+            x = x.repeat(2, 1)
+            labels = labels.repeat(2)
+
+        self.set_model_train_mode()
+        optimizer = optim.LBFGS(self.model.parameters())
+
+        for epoch in range(iteration):  # loop over the dataset multiple times
+            def closure():
+                optimizer.zero_grad()
+                outputs = self.model(x)
+                loss = self.model.loss(outputs, labels)
+                loss.backward()
+                return loss
+            # Take step.
+            optimizer.step(closure)
+
+        self.set_model_eval_mode()
+
+    def train_vs_all(self, head_entity, relation, tail_entity, iteration=1, lr=.01):
+        raise NotImplementedError('Undesired')
+        self.set_model_eval_mode()
+        assert len(head_entity) == len(relation) == len(tail_entity)
+        n = len(head_entity)
+
+        head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values).reshape(n, 1)
+        relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values).reshape(n, 1)
+        tail_entity = torch.LongTensor(self.entity_to_idx.loc[tail_entity]['entity'].values).reshape(n, 1)
+
+        x = torch.hstack((head_entity, relation))
+
+        outputs = self.model(x)
+        y = torch.zeros(outputs.shape)
+
+        y[:, tail_entity] = 1
+
+        if n == 1:
+            x = x.repeat(2, 1)
+            y = y.repeat(2, 1)
 
         self.set_model_train_mode()
         optimizer = optim.Adam(self.model.parameters(), lr=lr)
-        for epoch in range(10):  # loop over the dataset multiple times
+        for epoch in range(iteration):  # loop over the dataset multiple times
             # zero the parameter gradients
             optimizer.zero_grad()
             # forward + backward + optimize

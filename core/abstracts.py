@@ -1,4 +1,5 @@
 import os
+import datetime
 from .static_funcs import load_model_ensemble, load_model, store_kge
 from typing import List
 import torch
@@ -12,6 +13,7 @@ class BaseInteractiveKGE:
             raise AssertionError(f'Could not find a directory {path_of_pretrained_model_dir}')
         self.path = path_of_pretrained_model_dir
         # (1) Load model...
+        self.construct_ensemble = construct_ensemble
         if construct_ensemble:
             self.model, self.entity_to_idx, self.relation_to_idx = load_model_ensemble(self.path + '/')
         else:
@@ -89,4 +91,9 @@ class BaseInteractiveKGE:
             return True if relation in self.relation_to_idx.index else False
 
     def save(self):
-        store_kge(self.model, path=self.path + f'/{self.model.name}_interactive.pt')
+        t = str(datetime.datetime.now())
+
+        if self.construct_ensemble:
+            store_kge(self.model, path=self.path + f'/model_ensemble_interactive_{str(t)}.pt')
+        else:
+            store_kge(self.model, path=self.path + f'/model_interactive_{str(t)}.pt')

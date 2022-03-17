@@ -297,6 +297,7 @@ def load_model_ensemble(path_of_experiment_folder) -> Tuple[BaseKGE, pd.DataFram
     start_time = time.time()
     # (1) Load weights..
     paths_for_loading = glob.glob(path_of_experiment_folder + '/model*')
+    print(f'{len(paths_for_loading)} number of model to ensemble')
     assert len(paths_for_loading) > 0
     num_of_models = len(paths_for_loading)
     weights = None
@@ -327,8 +328,6 @@ def load_model_ensemble(path_of_experiment_folder) -> Tuple[BaseKGE, pd.DataFram
     for parameter in model.parameters():
         parameter.requires_grad = False
     model.eval()
-    store_kge(model, path=path_of_experiment_folder + f'/ensemble.pt')
-
     start_time = time.time()
     print('Loading entity and relation indexes...', end=' ')
     entity_to_idx = pd.read_parquet(path_of_experiment_folder + '/entity_to_idx.gzip')
