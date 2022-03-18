@@ -6,9 +6,13 @@ from core.knowledge_graph import KG
 pre_trained_kge = KGE(path_of_pretrained_model_dir='Experiments/2022-03-18 09:54:53.214382', construct_ensemble=False)
 # (2) Compute Triple Score.
 heads, relations, tails = ['Telmo_Zarra'], ['diedIn'], ['Bilbao']
-print(pre_trained_kge.triple_score(head_entity=heads, relation=relations, tail_entity=tails,logits=True))
-pre_trained_kge.train_triples(head_entity=heads, relation=relations, tail_entity=tails, labels=torch.ones(1), repeat=2)
-print(pre_trained_kge.triple_score(head_entity=heads, relation=relations, tail_entity=tails))
+print(pre_trained_kge.triple_score(head_entity=heads, relation=relations, tail_entity=heads, logits=True))
+pre_trained_kge.train_triples_lbfgs_negative(head_entity=heads, relation=relations, tail_entity=heads, repeat=2)
+print(pre_trained_kge.triple_score(head_entity=heads, relation=relations, tail_entity=heads, logits=True))
+print('\n')
+print(pre_trained_kge.triple_score(head_entity=heads, relation=relations, tail_entity=tails, logits=True))
+pre_trained_kge.train_triples_lbfgs_positive(head_entity=heads, relation=relations, tail_entity=tails, repeat=2)
+print(pre_trained_kge.triple_score(head_entity=heads, relation=relations, tail_entity=tails, logits=True))
 exit(1)
 # (3) Compute  ? r t, h r ?, and h ? t scores.
 print(pre_trained_kge.predict_topk(head_entity=heads, relation=relations))

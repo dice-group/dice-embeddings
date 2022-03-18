@@ -13,6 +13,7 @@ class KGE(BaseInteractiveKGE):
     def __init__(self, path_of_pretrained_model_dir, construct_ensemble=False, model_path=None):
         super().__init__(path_of_pretrained_model_dir, construct_ensemble=construct_ensemble, model_path=model_path)
         self.is_model_in_train_mode = False
+        self.model.forward_triples = self.model.forward_triples_base
 
     def train_triples(self, head_entity, relation, tail_entity, labels, iteration=2, lr=.1, repeat=2):
 
@@ -36,14 +37,14 @@ class KGE(BaseInteractiveKGE):
             optimizer.zero_grad()
             outputs = self.model(x)
             loss = self.model.loss(outputs, labels)
-            print(f"Iteration:{epoch}\t Loss:{loss.item():.4f}\t Outputs:{outputs.detach()}")
+            print(f"Iteration:{epoch}\t Loss:{loss.item():.4f}\t Outputs:{outputs.detach().mean()}")
             loss.backward()
             optimizer.step()
         self.set_model_eval_mode()
         with torch.no_grad():
             outputs = self.model.forward_triples_base(x)
             loss = self.model.loss(outputs, labels)
-        print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{torch.sigmoid(outputs).detach()}")
+        print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs.detach()}")
 
     def train(self, kg, lr=.1, epoch=10, batch_size=32, neg_sample_ratio=10, num_workers=1) -> None:
         """ Retrained a pretrain model on an input KG via negative sampling."""
@@ -96,3 +97,49 @@ class KGE(BaseInteractiveKGE):
             last_avg_loss_per_triple += self.model.loss(pred, y)
         last_avg_loss_per_triple /= len(train_set)
         print(f'On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple:.3f}')
+
+    def train_triples_lbfgs_negative(self, head_entity, relation, tail_entity, iteration=1, repeat=2):
+
+        n = len(head_entity)
+        head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values).reshape(n, 1)
+        relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values).reshape(n, 1)
+        tail_entity = torch.LongTensor(self.entity_to_idx.loc[tail_entity]['entity'].values).reshape(n, 1)
+        x = torch.hstack((head_entity, relation, tail_entity))
+        labels: object = torch.zeros(n)
+        x = x.repeat(repeat, 1)
+        labels = labels.repeat(repeat)
+        self.set_model_train_mode()
+        optimizer = optim.LBFGS(self.model.parameters())
+        for epoch in range(iteration):  # loop over the dataset multiple times
+            def closure():
+                optimizer.zero_grad()
+                outputs = self.model(x)
+                loss = self.model.loss(outputs, labels)
+                loss.backward()
+                return loss
+            # Take step.
+            optimizer.step(closure)
+        self.set_model_eval_mode()
+
+    def train_triples_lbfgs_positive(self, head_entity, relation, tail_entity, iteration=1, repeat=2):
+
+        n = len(head_entity)
+        head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values).reshape(n, 1)
+        relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values).reshape(n, 1)
+        tail_entity = torch.LongTensor(self.entity_to_idx.loc[tail_entity]['entity'].values).reshape(n, 1)
+        x = torch.hstack((head_entity, relation, tail_entity))
+        labels: object = torch.ones(n)
+        x = x.repeat(repeat, 1)
+        labels = labels.repeat(repeat)
+        self.set_model_train_mode()
+        optimizer = optim.LBFGS(self.model.parameters())
+        for epoch in range(iteration):  # loop over the dataset multiple times
+            def closure():
+                optimizer.zero_grad()
+                outputs = self.model(x)
+                loss = self.model.loss(outputs, labels)
+                loss.backward()
+                return loss
+            # Take step.
+            optimizer.step(closure)
+        self.set_model_eval_mode()
