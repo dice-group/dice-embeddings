@@ -293,16 +293,17 @@ def load_model(path_of_experiment_folder, model_path='model.pt') -> Tuple[BaseKG
 
 def load_model_ensemble(path_of_experiment_folder) -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
     """ Construct Ensemble Of weights and initialize pytorch module from namespace arguments"""
-    print('Constructing Ensemble model...', end=' ')
+    print('Constructing Ensemble of ', end=' ')
     start_time = time.time()
     # (1) Load weights..
     paths_for_loading = glob.glob(path_of_experiment_folder + '/model*')
-    print(f'{len(paths_for_loading)} number of model to ensemble')
+    print(f'{len(paths_for_loading)} models...')
     assert len(paths_for_loading) > 0
     num_of_models = len(paths_for_loading)
     weights = None
     while len(paths_for_loading):
         p = paths_for_loading.pop()
+        print(f'Model: {p}...')
         if weights is None:
             weights = torch.load(p, torch.device('cpu'))
         else:
@@ -319,12 +320,13 @@ def load_model_ensemble(path_of_experiment_folder) -> Tuple[BaseKGE, pd.DataFram
     report = load_json(path_of_experiment_folder + '/report.json')
     configs["num_entities"] = report["num_entities"]
     configs["num_relations"] = report["num_relations"]
-    print(f'Done! It took {time.time() - start_time:.3f}')
+    print(f'Done! It took {time.time() - start_time:.2f} seconds.')
     # (4) Select the model
     model, _ = select_model(configs)
     # (5) Put (1) into (4)
     model.load_state_dict(weights)
     # (6) Set it into eval model.
+    print('Setting Eval mode & requires_grad params to False')
     for parameter in model.parameters():
         parameter.requires_grad = False
     model.eval()

@@ -93,26 +93,21 @@ class KG:
 
                 print('[5 / 14] Creating a mapping from entities to integer indexes...')
                 # 4. Create a bijection mapping  from entities to integer indexes.
-                """
-                @TODO: We need to make it faster
-                ent= dask.array.concatenate([df_str_kg['subject'].unique(),df_str_kg['object'].unique()]).to_dask_dataframe(
-                    columns=['entity'])['entity'].unique()
-                ent=ent.compute()
-                """
                 self.entity_to_idx = dask.array.concatenate(
                     [df_str_kg['subject'], df_str_kg['object']]).to_dask_dataframe(
                     columns=['entity']).drop_duplicates()
+                # TODO: Takes a lot of time here.
                 # Set URIs as index
                 self.entity_to_idx = self.entity_to_idx.set_index(self.entity_to_idx.entity)
                 # Set values as integers
-                self.entity_to_idx['entity'] = dask.array.arange(0, self.entity_to_idx.size.compute())
+                self.entity_to_idx['entity'] = dask.array.arange(0, self.entity_to_idx.size.compute(scheduler=scheduler_flag))
                 print('Done !\n')
 
                 # 5. Create a bijection mapping  from relations to integer indexes.
                 print('[6 / 14] Creating a mapping from relations to integer indexes...')
                 self.relation_to_idx = df_str_kg['relation'].drop_duplicates().to_frame(name='relation')
                 self.relation_to_idx = self.relation_to_idx.set_index(self.relation_to_idx.relation)
-                self.relation_to_idx['relation'] = dask.array.arange(0, self.relation_to_idx.size.compute())
+                self.relation_to_idx['relation'] = dask.array.arange(0, self.relation_to_idx.size.compute(scheduler=scheduler_flag))
                 print('Done !\n')
 
                 self.entity_to_idx = self.entity_to_idx.compute(scheduler=scheduler_flag)
@@ -188,7 +183,8 @@ class KG:
                 print('Done !\n')
                 if path_for_serialization is not None:
                     print('[17 / 14 ] Serializing indexed validation dataset...')
-                    self.valid_set.compute(scheduler=scheduler_flag).to_parquet(path_for_serialization + '/idx_valid_df.gzip', compression='gzip')
+                    self.valid_set.compute(scheduler=scheduler_flag).to_parquet(
+                        path_for_serialization + '/idx_valid_df.gzip', compression='gzip')
                     print('Done !\n')
                 # To numpy
                 self.valid_set = self.valid_set.values.compute(scheduler=scheduler_flag)
@@ -204,7 +200,8 @@ class KG:
                 print('Done !\n')
                 if path_for_serialization is not None:
                     print('[20 / 14 ] Serializing indexed test dataset...')
-                    self.test_set.compute(scheduler=scheduler_flag).to_parquet(path_for_serialization + '/idx_test_df.gzip', compression='gzip')
+                    self.test_set.compute(scheduler=scheduler_flag).to_parquet(
+                        path_for_serialization + '/idx_test_df.gzip', compression='gzip')
                 # To numpy
                 self.test_set = self.test_set.values.compute(scheduler=scheduler_flag)
                 dataset_sanity_checking(self.test_set, self.num_entities, self.num_relations)
@@ -269,7 +266,7 @@ class KG:
             print('Done!\n')
         except FileNotFoundError:
             print('No valid data found!\n')
-            self.valid_set = None#pd.DataFrame()
+            self.valid_set = None  # pd.DataFrame()
 
         try:
             print('Deserializing integer mapped data and mapping it to numpy ndarray...')
@@ -278,7 +275,6 @@ class KG:
         except FileNotFoundError:
             print('No test data found\n')
             self.test_set = None
-
 
     @staticmethod
     def load_data_parallel(data_path, read_only_few: int = None,

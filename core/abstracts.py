@@ -54,7 +54,7 @@ class BaseInteractiveKGE:
         x = torch.stack((head_entity,
                          relation.repeat(self.num_entities, ),
                          tail_entity.repeat(self.num_entities, )), dim=1)
-        scores = self.model.forward_triples(x)
+        scores = self.model.forward_triples_base(x)
         entities = self.entity_to_idx.index.values
         # sort_scores, sort_idxs = torch.sort(scores, descending=True)
         sort_scores, sort_idxs = torch.topk(scores, k)
@@ -69,7 +69,7 @@ class BaseInteractiveKGE:
         x = torch.stack((head_entity.repeat(self.num_relations, ),
                          relation,
                          tail_entity.repeat(self.num_relations, )), dim=1)
-        scores = self.model.forward_triples(x)
+        scores = self.model.forward_triples_base(x)
         relations = self.relation_to_idx.index.values
         # sort_scores, sort_idxs = torch.sort(scores, descending=True)
         sort_scores, sort_idxs = torch.topk(scores, k)
@@ -84,7 +84,7 @@ class BaseInteractiveKGE:
         x = torch.stack((head_entity.repeat(self.num_entities, ),
                          relation.repeat(self.num_entities, ),
                          tail_entity), dim=1)
-        scores = self.model.forward_triples(x)
+        scores = self.model.forward_triples_base(x)
         entities = self.entity_to_idx.index.values
         # sort_scores, sort_idxs = torch.sort(scores, descending=True)
         sort_scores, sort_idxs = torch.topk(scores, k)
@@ -124,10 +124,10 @@ class BaseInteractiveKGE:
         relation = self.relation_to_idx.loc[relation]['relation'].values.tolist()
         tail = self.entity_to_idx.loc[tail_entity]['entity'].values.tolist()
         x = torch.tensor((head, relation, tail)).reshape(len(head), 3)
-        return torch.sigmoid(self.model.forward_triples(x))
+        return torch.sigmoid(self.model.forward_triples_base(x))
 
     def triple_score(self, *, head_entity: List[str] = None, relation: List[str] = None,
-                     tail_entity: List[str] = None) -> torch.tensor:
+                     tail_entity: List[str] = None, logits=False) -> torch.tensor:
         head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values).reshape(len(head_entity),
                                                                                                      1)
         relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values).reshape(len(relation), 1)
@@ -135,7 +135,10 @@ class BaseInteractiveKGE:
                                                                                                      1)
         x = torch.hstack((head_entity, relation, tail_entity))
         with torch.no_grad():
-            return torch.sigmoid(self.model.forward_triples(x))
+            if logits:
+                return self.model.forward_triples_base(x)
+            else:
+                return torch.sigmoid(self.model.forward_triples_base(x))
 
     @property
     def name(self):

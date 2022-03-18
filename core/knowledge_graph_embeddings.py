@@ -34,15 +34,14 @@ class KGE(BaseInteractiveKGE):
         print('Iteration starts.')
         for epoch in range(iteration):
             optimizer.zero_grad()
-            outputs = self.model.forward_triples(x)
+            outputs = self.model(x)
             loss = self.model.loss(outputs, labels)
             print(f"Iteration:{epoch}\t Loss:{loss.item():.4f}\t Outputs:{outputs.detach()}")
             loss.backward()
             optimizer.step()
-
         self.set_model_eval_mode()
         with torch.no_grad():
-            outputs = self.model.forward_triples(x)
+            outputs = self.model.forward_triples_base(x)
             loss = self.model.loss(outputs, labels)
         print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{torch.sigmoid(outputs).detach()}")
 
@@ -54,7 +53,8 @@ class KGE(BaseInteractiveKGE):
                                             num_entities=len(kg.entity_to_idx),
                                             num_relations=len(kg.relation_to_idx),
                                             neg_sample_ratio=neg_sample_ratio)
-        print('Number of data points: ', len(train_set))
+        num_data_point = len(train_set)
+        print('Number of data points: ', num_data_point)
         train_dataloader = DataLoader(train_set, batch_size=batch_size,
                                       #  shuffle => to have the data reshuffled at every epoc
                                       shuffle=True, num_workers=num_workers,
@@ -66,30 +66,33 @@ class KGE(BaseInteractiveKGE):
         self.set_model_eval_mode()
         first_avg_loss_per_triple = 0
         for x, y in train_dataloader:
-            pred = self.model(x)
+            pred = self.model.forward_triples_base(x)
             first_avg_loss_per_triple += self.model.loss(pred, y)
-        first_avg_loss_per_triple /= len(train_set)
+        first_avg_loss_per_triple /= num_data_point
         print(first_avg_loss_per_triple)
         # (3) Prepare Model for Training
         self.set_model_train_mode()
         optimizer = optim.Adam(self.model.parameters(), lr=lr)
         print('Training Starts...')
         for epoch in range(epoch):  # loop over the dataset multiple times
+            epoch_loss = 0
             for x, y in train_dataloader:
                 # zero the parameter gradients
                 optimizer.zero_grad()
                 # forward + backward + optimize
                 outputs = self.model(x)
                 loss = self.model.loss(outputs, y)
+                epoch_loss += loss.item()
                 loss.backward()
                 optimizer.step()
+            print(f'Epoch={epoch}\t Avg. Loss per epoch: {epoch_loss / num_data_point:.3f}')
         # (5) Prepare For Saving
         self.set_model_eval_mode()
         print('Eval starts...')
         # (6) Eval model on training data to check how much an Improvement
         last_avg_loss_per_triple = 0
         for x, y in train_dataloader:
-            pred = self.model(x)
+            pred = self.model.forward_triples_base(x)
             last_avg_loss_per_triple += self.model.loss(pred, y)
         last_avg_loss_per_triple /= len(train_set)
         print(f'On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple:.3f}')

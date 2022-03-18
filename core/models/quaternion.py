@@ -212,7 +212,8 @@ class QMult(BaseKGE):
 
     def forward_triples_base(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Temporary. f(x,y,z) without dropout and batch norm.
+        h,r,t:=x
+        QMult(h,r,t)-> score computed ithout dropout and batch norm.
         :param x:
         :return:
         """
