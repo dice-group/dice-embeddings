@@ -3,7 +3,6 @@ import logging
 import time
 import warnings
 from types import SimpleNamespace
-
 import numpy as np
 import pandas as pd
 from pytorch_lightning import seed_everything
@@ -140,9 +139,9 @@ class Execute:
                 raise FileNotFoundError(
                     f"{self.storage_path}/model.pt is not found. The model will be trained with random weights")
             for parameter in model.parameters():
-                parameter.requires_grad=True
+                parameter.requires_grad = True
             model.train()
-            
+
             return model, _
         else:
             print('Simply Select...')
@@ -338,11 +337,11 @@ class Execute:
             self.report['Train'] = res
         # 5. Test model on the validation and test dataset if it is needed.
         if self.args.eval:
-            if len(self.dataset.valid_set) > 0:
+            if self.dataset.valid_set is not None:
                 self.report['Val'] = self.evaluate_lp(trained_model, self.dataset.valid_set,
                                                       f'Evaluate {trained_model.name} of Validation set')
 
-            if len(self.dataset.test_set) > 0:
+            if self.dataset.test_set is not None:
                 self.report['Test'] = self.evaluate_lp(trained_model, self.dataset.test_set,
                                                        f'Evaluate {trained_model.name} of Test set')
 
@@ -357,12 +356,12 @@ class Execute:
 
         # 5. Test model on the validation and test dataset if it is needed.
         if self.args.eval:
-            if len(self.dataset.valid_set) > 0:
+            if self.dataset.valid_set is not None:
                 res = self.evaluate_lp_k_vs_all(trained_model, self.dataset.valid_set,
                                                 f'Evaluate {trained_model.name} on Validation set',
                                                 form_of_labelling=form_of_labelling)
                 self.report['Val'] = res
-            if len(self.dataset.test_set) > 0:
+            if self.dataset.test_set is not None:
                 res = self.evaluate_lp_k_vs_all(trained_model, self.dataset.test_set,
                                                 f'Evaluate {trained_model.name} on Test set',
                                                 form_of_labelling=form_of_labelling)
@@ -551,7 +550,7 @@ class Execute:
         print(results)
         return results
 
-    def k_fold_cross_validation(self) -> pl.LightningModule:
+    def k_fold_cross_validation(self) -> Tuple[BaseKGE, str]:
         """
         Perform K-fold Cross-Validation
 
@@ -589,7 +588,7 @@ class Execute:
                                          )
 
             # 3. Train model
-            self.model_fitting(trainer=self.trainer, model=model, dataset=dataset)
+            self.model_fitting(trainer=trainer, model=model, dataset=dataset)
 
             # 6. Test model on validation and test sets if possible.
             res = self.evaluate_lp_k_vs_all(model, test_set_for_i_th_fold, form_of_labelling=form_of_labelling)
@@ -600,9 +599,7 @@ class Execute:
         results = {'H@1': eval_folds['H@1'].mean(), 'H@3': eval_folds['H@3'].mean(), 'H@10': eval_folds['H@10'].mean(),
                    'MRR': eval_folds['MRR'].mean()}
         print(f'Evaluate {model.name} on test set: {results}')
-
-        # Return last model.
-        return model
+        return model, form_of_labelling
 
 
 class ContinuousExecute(Execute):

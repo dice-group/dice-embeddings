@@ -210,7 +210,12 @@ class QMult(BaseKGE):
 
         return real_score + i_score + j_score + k_score
 
-    def forward_triples_multiply(self, x: torch.Tensor) -> torch.Tensor:
+    def forward_triples_base(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Temporary. f(x,y,z) without dropout and batch norm.
+        :param x:
+        :return:
+        """
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
         e2_idx: torch.Tensor
