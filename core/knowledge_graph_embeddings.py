@@ -174,6 +174,8 @@ class KGE(BaseInteractiveKGE):
             print(f"Iteration:{epoch}\t Loss:{loss.item():.4f}\t Outputs:{outputs[0, idx_tails].flatten().detach()}")
             loss.backward()
             optimizer.step()
+            if loss.item() < .1:
+                print(f'loss is {loss.item()}. Converged')
         self.set_model_eval_mode()
         with torch.no_grad():
             outputs = self.model(x)
