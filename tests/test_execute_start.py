@@ -2,6 +2,8 @@ from main import argparse_default
 from core.executer import Execute
 import sys
 import pytest
+
+
 class TestDefaultParams:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_shallom(self):
@@ -19,7 +21,7 @@ class TestDefaultParams:
         args.feature_map_dropout_rate = 0.0
         args.sample_triples_ratio = None
         args.read_only_few = None
-        args.sample_triples_ratio = None
+        args.num_folds_for_cv = None
         Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -38,7 +40,7 @@ class TestDefaultParams:
         args.feature_map_dropout_rate = 0.0
         args.sample_triples_ratio = None
         args.read_only_few = None
-        args.sample_triples_ratio = None
+        args.num_folds_for_cv = None
         Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -76,7 +78,7 @@ class TestDefaultParams:
         args.feature_map_dropout_rate = 0.0
         args.sample_triples_ratio = None
         args.read_only_few = None
-        args.sample_triples_ratio = None
+        args.num_folds_for_cv = None
         Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -95,7 +97,7 @@ class TestDefaultParams:
         args.feature_map_dropout_rate = 0.0
         args.sample_triples_ratio = None
         args.read_only_few = None
-        args.sample_triples_ratio = None
+        args.num_folds_for_cv = None
         Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -132,5 +134,5 @@ class TestDefaultParams:
         args.feature_map_dropout_rate = 0.0
         args.sample_triples_ratio = None
         args.read_only_few = None
-        args.sample_triples_ratio = None
+        args.num_folds_for_cv = None
         Execute(args).start()

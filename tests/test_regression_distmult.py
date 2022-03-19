@@ -40,6 +40,7 @@ class TestRegressionDistMult:
         args.eval_on_train = 1
         args.sample_triples_ratio = None
         args.read_only_few = None
+        args.num_folds_for_cv=None
         args.scoring_technique = '1vsAll'
         result = Execute(args).start()
         assert 0.99 >= result['Train']['H@1'] >= 0.30
@@ -64,6 +65,7 @@ class TestRegressionDistMult:
         args.eval_on_train = 1
         args.sample_triples_ratio = None
         args.read_only_few = None
+        args.num_folds_for_cv=None
         result = Execute(args).start()
         assert 0.73 >= result['Train']['H@1'] >= 0.20
         assert 0.73 >= result['Test']['H@1'] >= 0.17

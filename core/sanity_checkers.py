@@ -2,6 +2,7 @@ import os
 import numpy as np
 import glob
 
+
 def sanity_checking_with_arguments(args):
     try:
         assert args.embedding_dim > 0
@@ -14,6 +15,8 @@ def sanity_checking_with_arguments(args):
         raise KeyError(f'Invalid training strategy => {args.scoring_technique}.')
 
     assert args.learning_rate > 0
+    if args.num_folds_for_cv is None:
+        args.num_folds_for_cv = 0
     try:
         assert args.num_folds_for_cv >= 0
     except AssertionError:
@@ -33,6 +36,7 @@ def sanity_checking_with_arguments(args):
 
     args.eval = bool(args.eval)
     args.large_kg_parse = bool(args.large_kg_parse)
+
 
 def config_kge_sanity_checking(args, dataset):
     """

@@ -3,6 +3,7 @@ from core.executer import Execute
 import sys
 import pytest
 
+
 class TestRegressionConvO:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
@@ -21,7 +22,7 @@ class TestRegressionConvO:
         args.eval_on_train = 1
         args.sample_triples_ratio = None
         args.read_only_few = None
-        args.sample_triples_ratio = None
+        args.num_folds_for_cv = None
         result = Execute(args).start()
         assert 0.61 >= result['Train']['H@1'] >= 0.09
         assert 0.30 >= result['Val']['H@1'] >= 0.09
@@ -43,6 +44,7 @@ class TestRegressionConvO:
         args.eval_on_train = 1
         args.read_only_few = None
         args.sample_triples_ratio = None
+        args.num_folds_for_cv=None
         args.scoring_technique = '1vsAll'
         result = Execute(args).start()
         assert 1.0 >= result['Train']['H@1'] >= 0.1
@@ -66,8 +68,8 @@ class TestRegressionConvO:
         args.neg_ratio = 1
         args.sample_triples_ratio = None
         args.read_only_few = None
+        args.num_folds_for_cv=None
         result = Execute(args).start()
         assert 0.61 >= result['Train']['H@1'] >= 0.05
         assert 0.30 >= result['Val']['H@1'] >= 0.05
         assert 0.30 >= result['Test']['H@1'] >= 0.05
-

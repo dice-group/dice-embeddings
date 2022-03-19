@@ -29,7 +29,8 @@ class KG:
 
     def __init__(self, data_dir: str = None, deserialize_flag: str = None, large_kg_parse=False, add_reciprical=False,
                  eval_model=True, read_only_few: int = None, sample_triples_ratio: float = None,
-                 path_for_serialization: str = None, add_noise_rate: float = None, entity_to_idx=None,
+                 path_for_serialization: str = None, add_noise_rate: float = None,
+                 min_freq_for_vocab: int = None, entity_to_idx=None,
                  relation_to_idx=None):
         """
 
@@ -51,6 +52,7 @@ class KG:
             print(
                 f'[1 / 14] Loading training data: read_only_few: {read_only_few} , sample_triples_ratio: {sample_triples_ratio}...')
             self.train_set = self.load_data_parallel(data_dir + '/train', read_only_few, sample_triples_ratio)
+
             print('Done !\n')
             print(
                 f'[2 / 14] Loading valid data: read_only_few: {read_only_few}, sample_triples_ratio: {sample_triples_ratio}...')
@@ -65,7 +67,6 @@ class KG:
             if add_reciprical and eval_model:
                 print(
                     '[3.1 / 14] Add reciprocal triples to train, validation, and test sets, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}')
-
                 self.train_set = create_recipriocal_triples_from_dask(self.train_set)
                 if self.valid_set is not None:
                     self.valid_set = create_recipriocal_triples_from_dask(self.valid_set)
@@ -90,24 +91,48 @@ class KG:
                 df_str_kg = ddf.concat(x, ignore_index=True)
                 del x
                 print('Done !\n')
+                if min_freq_for_vocab is not None:
+                    assert isinstance(min_freq_for_vocab, int)
+                    assert min_freq_for_vocab > 0
+                    print(f'[5 / 14] Dropping triples having infrequent entities or relations (>{min_freq_for_vocab})...', end=' ')
+                    num_triples = df_str_kg.size.compute()
+                    print('Total num triples:', num_triples, end=' ')
+                    # Compute entity frequency: index is URI, val is number of occurrences.
+                    entity_frequency = dask.dataframe.concat([df_str_kg['subject'], df_str_kg['object']]).value_counts()
+                    relation_frequency = df_str_kg['relation'].value_counts()
+                    # low_frequency_entities index and values are the same URIs: dask.dataframe.core.DataFrame
+                    low_frequency_entities = entity_frequency[entity_frequency <= min_freq_for_vocab].index.values.compute(
+                        scheduler=scheduler_flag)
+                    low_frequency_relation = relation_frequency[relation_frequency <= min_freq_for_vocab].index.values.compute(
+                        scheduler=scheduler_flag)
+                    # If triple contains subject that is in low_freq, set False do not select
+                    df_str_kg = df_str_kg[~df_str_kg['subject'].isin(low_frequency_entities)]
+                    # If triple contains object that is in low_freq, set False do not select
+                    df_str_kg = df_str_kg[~df_str_kg['object'].isin(low_frequency_entities)]
+                    # If triple contains relation that is in low_freq, set False do not select
+                    df_str_kg = df_str_kg[~df_str_kg['relation'].isin(low_frequency_relation)]
+                    print('\t after dropping:', df_str_kg.size.compute(scheduler=scheduler_flag))
+                    del low_frequency_entities
+                    print('Done !\n')
 
+                # TODO: 5 & 6 take the most of the computation
                 print('[5 / 14] Creating a mapping from entities to integer indexes...')
                 # 4. Create a bijection mapping  from entities to integer indexes.
                 self.entity_to_idx = dask.array.concatenate(
                     [df_str_kg['subject'], df_str_kg['object']]).to_dask_dataframe(
                     columns=['entity']).drop_duplicates()
-                # TODO: Takes a lot of time here.
                 # Set URIs as index
                 self.entity_to_idx = self.entity_to_idx.set_index(self.entity_to_idx.entity)
                 # Set values as integers
-                self.entity_to_idx['entity'] = dask.array.arange(0, self.entity_to_idx.size.compute(scheduler=scheduler_flag))
+                self.entity_to_idx['entity'] = dask.array.arange(0, self.entity_to_idx.size.compute(
+                    scheduler=scheduler_flag))
                 print('Done !\n')
-
                 # 5. Create a bijection mapping  from relations to integer indexes.
                 print('[6 / 14] Creating a mapping from relations to integer indexes...')
                 self.relation_to_idx = df_str_kg['relation'].drop_duplicates().to_frame(name='relation')
                 self.relation_to_idx = self.relation_to_idx.set_index(self.relation_to_idx.relation)
-                self.relation_to_idx['relation'] = dask.array.arange(0, self.relation_to_idx.size.compute(scheduler=scheduler_flag))
+                self.relation_to_idx['relation'] = dask.array.arange(0, self.relation_to_idx.size.compute(
+                    scheduler=scheduler_flag))
                 print('Done !\n')
 
                 self.entity_to_idx = self.entity_to_idx.compute(scheduler=scheduler_flag)
@@ -157,7 +182,7 @@ class KG:
 
             if path_for_serialization is not None:
                 # 10. Serialize (9).
-                print('[12 / 14] Serializing integer mapped data...')  # TODO: Do we really need it ?!
+                print('[12 / 14] Serializing integer mapped data...')
                 self.train_set.compute().to_parquet(path_for_serialization + '/idx_train_df.gzip', compression='gzip')
                 print('Done !\n')
 
@@ -226,6 +251,7 @@ class KG:
                     data = np.concatenate([self.train_set, self.valid_set, self.test_set])
                 else:
                     data = self.train_set
+                print('Creating Vocab..')
                 self.er_vocab = get_er_vocab(data)
                 self.re_vocab = get_re_vocab(data)
                 # 17. Create a bijection mapping from subject-object pairs to relations.

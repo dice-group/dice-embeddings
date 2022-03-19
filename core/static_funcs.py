@@ -121,7 +121,9 @@ def read_input_data(args, cls):
              read_only_few=args.read_only_few,
              sample_triples_ratio=args.sample_triples_ratio,
              path_for_serialization=args.full_storage_path,
-             add_noise_rate=args.add_noise_rate)
+             add_noise_rate=args.add_noise_rate,
+             min_freq_for_vocab=args.min_freq_for_vocab
+             )
     print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
     print(kg.description_of_input)
     return kg
@@ -278,7 +280,7 @@ def load_model(path_of_experiment_folder, model_path='model.pt') -> Tuple[BaseKG
     # (4) Select the model
     model, _ = select_model(configs)
     # (5) Put (1) into (4)
-    model.load_state_dict(weights)
+    model.load_state_dict(weights, strict=False)
     # (6) Set it into eval model.
     for parameter in model.parameters():
         parameter.requires_grad = False
@@ -324,7 +326,7 @@ def load_model_ensemble(path_of_experiment_folder) -> Tuple[BaseKGE, pd.DataFram
     # (4) Select the model
     model, _ = select_model(configs)
     # (5) Put (1) into (4)
-    model.load_state_dict(weights)
+    model.load_state_dict(weights,strict=False)
     # (6) Set it into eval model.
     print('Setting Eval mode & requires_grad params to False')
     for parameter in model.parameters():

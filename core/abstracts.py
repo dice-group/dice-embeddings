@@ -4,6 +4,7 @@ from .static_funcs import load_model_ensemble, load_model, store_kge
 from typing import List
 import torch
 from typing import List, Tuple, Generator
+import pandas as pd
 
 
 class BaseInteractiveKGE:
@@ -28,6 +29,8 @@ class BaseInteractiveKGE:
 
         self.num_entities = len(self.entity_to_idx)
         self.num_relations = len(self.relation_to_idx)
+        print('Loading indexed training data')
+        self.train_set = pd.read_parquet(self.path + '/idx_train_df.gzip')
 
     def set_model_train_mode(self):
         self.model.train()
@@ -84,7 +87,7 @@ class BaseInteractiveKGE:
         x = torch.stack((head_entity.repeat(self.num_entities, ),
                          relation.repeat(self.num_entities, ),
                          tail_entity), dim=1)
-        scores = self.model.forward_triples_base(x)
+        scores = self.model(x)
         entities = self.entity_to_idx.index.values
         # sort_scores, sort_idxs = torch.sort(scores, descending=True)
         sort_scores, sort_idxs = torch.topk(scores, k)
@@ -136,9 +139,9 @@ class BaseInteractiveKGE:
         x = torch.hstack((head_entity, relation, tail_entity))
         with torch.no_grad():
             if logits:
-                return self.model.forward_triples_base(x)
+                return self.model(x)
             else:
-                return torch.sigmoid(self.model.forward_triples_base(x))
+                return torch.sigmoid(self.model(x))
 
     @property
     def name(self):
