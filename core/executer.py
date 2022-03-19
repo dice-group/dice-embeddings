@@ -134,7 +134,7 @@ class Execute:
             model, _ = select_model(args)
             try:
                 weights = torch.load(self.storage_path + '/model.pt', torch.device('cpu'))
-                model.load_state_dict(weights)
+                model.load_state_dict(weights, strict=False)
             except FileNotFoundError:
                 raise FileNotFoundError(
                     f"{self.storage_path}/model.pt is not found. The model will be trained with random weights")

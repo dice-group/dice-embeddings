@@ -48,38 +48,8 @@ class KG:
             scheduler_flag = 'single-threaded'
 
         if deserialize_flag is None:
-            # 1. LOAD Data. (First pass on data)
-            print(
-                f'[1 / 14] Loading training data: read_only_few: {read_only_few} , sample_triples_ratio: {sample_triples_ratio}...')
-            self.train_set = self.load_data_parallel(data_dir + '/train', read_only_few, sample_triples_ratio)
-
-            print('Done !\n')
-            print(
-                f'[2 / 14] Loading valid data: read_only_few: {read_only_few}, sample_triples_ratio: {sample_triples_ratio}...')
-            self.valid_set = self.load_data_parallel(data_dir + '/valid', read_only_few, sample_triples_ratio)
-            print('Done !\n')
-            print(
-                f'[3 / 14] Loading test data: read_only_few: {read_only_few}, sample_triples_ratio: {sample_triples_ratio}...')
-            self.test_set = self.load_data_parallel(data_dir + '/test', read_only_few, sample_triples_ratio)
-            print('Done !\n')
-
-            # 2. Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
-            if add_reciprical and eval_model:
-                print(
-                    '[3.1 / 14] Add reciprocal triples to train, validation, and test sets, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}')
-                self.train_set = create_recipriocal_triples_from_dask(self.train_set)
-                if self.valid_set is not None:
-                    self.valid_set = create_recipriocal_triples_from_dask(self.valid_set)
-                if self.test_set is not None:
-                    self.test_set = create_recipriocal_triples_from_dask(self.test_set)
-                print('Done !\n')
-
-            if add_noise_rate is not None:
-                # This can be used as a regularization as well as
-                # to measure model's performance under noisy input setting
-                print(f'[4 / 14] Adding noisy triples...')
-                self.train_set = add_noisy_triples(self.train_set, add_noise_rate)
-
+            self.train_set, self.valid_set, self.test_set = self.read(data_dir, read_only_few, sample_triples_ratio)
+            self.apply_reciprical_or_noise(add_reciprical, eval_model, add_noise_rate)
             if entity_to_idx is None and relation_to_idx is None:
                 # 3. Concatenate dataframes.
                 print(f'[4 / 14] Concatenating data to obtain index...')
@@ -94,16 +64,20 @@ class KG:
                 if min_freq_for_vocab is not None:
                     assert isinstance(min_freq_for_vocab, int)
                     assert min_freq_for_vocab > 0
-                    print(f'[5 / 14] Dropping triples having infrequent entities or relations (>{min_freq_for_vocab})...', end=' ')
+                    print(
+                        f'[5 / 14] Dropping triples having infrequent entities or relations (>{min_freq_for_vocab})...',
+                        end=' ')
                     num_triples = df_str_kg.size.compute()
                     print('Total num triples:', num_triples, end=' ')
                     # Compute entity frequency: index is URI, val is number of occurrences.
                     entity_frequency = dask.dataframe.concat([df_str_kg['subject'], df_str_kg['object']]).value_counts()
                     relation_frequency = df_str_kg['relation'].value_counts()
                     # low_frequency_entities index and values are the same URIs: dask.dataframe.core.DataFrame
-                    low_frequency_entities = entity_frequency[entity_frequency <= min_freq_for_vocab].index.values.compute(
+                    low_frequency_entities = entity_frequency[
+                        entity_frequency <= min_freq_for_vocab].index.values.compute(
                         scheduler=scheduler_flag)
-                    low_frequency_relation = relation_frequency[relation_frequency <= min_freq_for_vocab].index.values.compute(
+                    low_frequency_relation = relation_frequency[
+                        relation_frequency <= min_freq_for_vocab].index.values.compute(
                         scheduler=scheduler_flag)
                     # If triple contains subject that is in low_freq, set False do not select
                     df_str_kg = df_str_kg[~df_str_kg['subject'].isin(low_frequency_entities)]
@@ -265,6 +239,41 @@ class KG:
                                      f'\nNumber of triples on valid set: {len(self.valid_set) if self.valid_set is not None else 0}' \
                                      f'\nNumber of triples on test set: {len(self.test_set) if self.test_set is not None else 0}\n'
 
+    def read(self, data_dir, read_only_few, sample_triples_ratio):
+        # 1. LOAD Data. (First pass on data)
+        print(
+            f'[1 / 14] Loading training data: read_only_few: {read_only_few} , sample_triples_ratio: {sample_triples_ratio}...')
+        self.train_set = self.load_data_parallel(data_dir + '/train', read_only_few, sample_triples_ratio)
+
+        print('Done !\n')
+        print(
+            f'[2 / 14] Loading valid data: read_only_few: {read_only_few}, sample_triples_ratio: {sample_triples_ratio}...')
+        self.valid_set = self.load_data_parallel(data_dir + '/valid', read_only_few, sample_triples_ratio)
+        print('Done !\n')
+        print(
+            f'[3 / 14] Loading test data: read_only_few: {read_only_few}, sample_triples_ratio: {sample_triples_ratio}...')
+        self.test_set = self.load_data_parallel(data_dir + '/test', read_only_few, sample_triples_ratio)
+        print('Done !\n')
+        return self.train_set, self.valid_set, self.test_set
+
+    def apply_reciprical_or_noise(self, add_reciprical, eval_model, add_noise_rate):
+        # 2. Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
+        if add_reciprical and eval_model:
+            print(
+                '[3.1 / 14] Add reciprocal triples to train, validation, and test sets, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}')
+            self.train_set = create_recipriocal_triples_from_dask(self.train_set)
+            if self.valid_set is not None:
+                self.valid_set = create_recipriocal_triples_from_dask(self.valid_set)
+            if self.test_set is not None:
+                self.test_set = create_recipriocal_triples_from_dask(self.test_set)
+            print('Done !\n')
+
+        if add_noise_rate is not None:
+            # This can be used as a regularization as well as
+            # to measure model's performance under noisy input setting
+            print(f'[4 / 14] Adding noisy triples...')
+            self.train_set = add_noisy_triples(self.train_set, add_noise_rate)
+
     def deserialize(self, storage_path: str) -> None:
         """ Deserialize data """
         print(f'Deserialization Path Path: {storage_path}\n')
@@ -343,11 +352,6 @@ class KG:
             print(f'{data_path} could not found!')
             return None  # pd.DataFrame()
 
-    def is_valid_test_available(self):
-        if len(self.valid_set) > 0 and len(self.test_set) > 0:
-            return True
-        return False
-
     @property
     def entities_str(self) -> List:
         """
@@ -369,3 +373,10 @@ class KG:
     @staticmethod
     def map_str_triples_to_numpy_idx(triples, entity_idx, relation_idx) -> np.array:
         return np.array([(entity_idx[s], relation_idx[p], entity_idx[o]) for s, p, o in triples])
+
+    """
+    def is_valid_test_available(self):
+        if len(self.valid_set) > 0 and len(self.test_set) > 0:
+            return True
+        return False
+    """

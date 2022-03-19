@@ -41,7 +41,7 @@ class KGE(BaseInteractiveKGE):
             optimizer.step()
         self.set_model_eval_mode()
         with torch.no_grad():
-            outputs = self.model.forward_triples_base(x)
+            outputs = self.model(x)
             loss = self.model.loss(outputs, labels)
         print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs.detach()}")
 
@@ -66,7 +66,7 @@ class KGE(BaseInteractiveKGE):
         self.set_model_eval_mode()
         first_avg_loss_per_triple = 0
         for x, y in train_dataloader:
-            pred = self.model.forward_triples_base(x)
+            pred = self.model(x)
             first_avg_loss_per_triple += self.model.loss(pred, y)
         first_avg_loss_per_triple /= num_data_point
         print(first_avg_loss_per_triple)
@@ -92,7 +92,7 @@ class KGE(BaseInteractiveKGE):
         # (6) Eval model on training data to check how much an Improvement
         last_avg_loss_per_triple = 0
         for x, y in train_dataloader:
-            pred = self.model.forward_triples_base(x)
+            pred = self.model(x)
             last_avg_loss_per_triple += self.model.loss(pred, y)
         last_avg_loss_per_triple /= len(train_set)
         print(f'On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple:.3f}')

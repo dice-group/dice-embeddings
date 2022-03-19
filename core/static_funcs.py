@@ -116,7 +116,7 @@ def read_input_data(args, cls):
     # 1. Read & Parse input data
     kg = cls(data_dir=args.path_dataset_folder,
              large_kg_parse=args.large_kg_parse,
-             add_reciprical=args.add_reciprical,
+             add_reciprical=args.apply_reciprical_or_noise,
              eval_model=args.eval,
              read_only_few=args.read_only_few,
              sample_triples_ratio=args.sample_triples_ratio,
@@ -168,7 +168,7 @@ def preprocesses_input_args(arg):
     arg.logger = False
     arg.eval = True if arg.eval == 1 else False
     arg.eval_on_train = True if arg.eval_on_train == 1 else False
-    arg.add_reciprical = True if arg.scoring_technique in ['KvsAll', '1vsAll'] else False
+    arg.apply_reciprical_or_noise = True if arg.scoring_technique in ['KvsAll', '1vsAll'] else False
     if arg.sample_triples_ratio is not None:
         assert 1.0 >= arg.sample_triples_ratio >= 0.0
     sanity_checking_with_arguments(arg)

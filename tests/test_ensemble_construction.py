@@ -26,7 +26,7 @@ class TestEnsembleConstruction:
         args.eval_on_train = 1
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.num_folds_for_cv=None
+        args.num_folds_for_cv = None
         args.save_model_at_every_epoch = 3
         result = Execute(args).start()
         assert 0.71 >= result['Train']['H@1'] >= 0.19
