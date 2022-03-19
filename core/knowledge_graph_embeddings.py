@@ -149,35 +149,49 @@ class KGE(BaseInteractiveKGE):
 
     def train_k_vs_all(self, head_entity, relation, iteration=1, repeat=2, lr=.001):
         assert len(head_entity) == len(relation) == 1
-        idx_head_entity = self.entity_to_idx.loc[head_entity]['entity'].values[0]
-        idx_relation = self.relation_to_idx.loc[relation]['relation'].values[0]
-
+        try:
+            idx_head_entity = self.entity_to_idx.loc[head_entity]['entity'].values[0]
+            idx_relation = self.relation_to_idx.loc[relation]['relation'].values[0]
+        except KeyError as e:
+            print(f'Exception:\t {str(e)}')
+            return
+        print('\nKvsAll Training...')
+        print(f'Start:{head_entity}\t {relation}')
         idx_tails: np.array
         idx_tails = self.train_set[
             (self.train_set['subject'] == idx_head_entity) & (self.train_set['relation'] == idx_relation)][
             'object'].values
-        print(self.entity_to_idx.iloc[idx_tails])
+        print('Num. Tails:\t', self.entity_to_idx.iloc[idx_tails].values.size)
         labels = torch.zeros(self.num_entities)
         labels[idx_tails] = 1
-
         x = torch.LongTensor([idx_head_entity, idx_relation])
         x = x.repeat(repeat, 1)
         labels = labels.repeat(repeat, 1)
-
         self.set_model_train_mode()
         optimizer = optim.Adam(self.model.parameters(), lr=lr)
-        print('Iteration starts.')
+        print('\nIteration starts.')
+        converged = False
         for epoch in range(iteration):
             optimizer.zero_grad()
             outputs = self.model(x)
             loss = self.model.loss(outputs, labels)
-            print(f"Iteration:{epoch}\t Loss:{loss.item():.4f}\t Outputs:{outputs[0, idx_tails].flatten().detach()}")
+            if epoch % 10 == 0:
+                if len(idx_tails) > 0:
+                    print(
+                        f"Iteration:{epoch}\t Loss:{loss.item():.4f}\t Avg. Logits for correct tails: {outputs[0, idx_tails].flatten().mean().detach():.4f}")
+                else:
+                    print(
+                        f"Iteration:{epoch}\t Loss:{loss.item():.4f}\t Avg. Logits for all negatives: {outputs[0].flatten().mean().detach():.4f}")
+
             loss.backward()
             optimizer.step()
-            if loss.item() < .1:
-                print(f'loss is {loss.item()}. Converged')
+            if loss.item() < .001:
+                print(f'loss is {loss.item():.3f}. Converged !!!')
+                converged = True
+                break
         self.set_model_eval_mode()
-        with torch.no_grad():
-            outputs = self.model(x)
-            loss = self.model.loss(outputs, labels)
-        print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs[0, idx_tails].flatten().detach()}")
+        if converged is False:
+            with torch.no_grad():
+                outputs = self.model(x)
+                loss = self.model.loss(outputs, labels)
+            print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs[0, idx_tails].flatten().detach()}\n")
