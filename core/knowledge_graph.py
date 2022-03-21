@@ -328,9 +328,12 @@ class KG:
             # (1.1) Using the whitespace as a deliminator
             # (1.2) Taking first three columns detected in (1.1.)
             #  Delayed Read operation
-            df = ddf.read_csv(data_path + '*', delim_whitespace=True,
-                              header=None, usecols=[0, 1, 2],
-                              names=['subject', 'relation', 'object'], dtype=str)
+            df = ddf.read_csv(data_path + '*',
+                              delim_whitespace=True,
+                              header=None,
+                              usecols=[0, 1, 2],
+                              names=['subject', 'relation', 'object'],
+                              dtype=str)
             # (2)a Read only few if it is asked.
             if isinstance(read_only_few, int):
                 if read_only_few > 0:
@@ -340,7 +343,7 @@ class KG:
                 print(f'Subsampling {sample_triples_ratio} of input data...')
                 df = df.sample(frac=sample_triples_ratio)
 
-            # (4) Drop Rows
+            # (4) Drop Rows/triples with double or boolean
             # Drop rows having ^^
             df = df[df["object"].str.contains("<http://www.w3.org/2001/XMLSchema#double>") == False]
             df = df[df["object"].str.contains("<http://www.w3.org/2001/XMLSchema#boolean>") == False]

@@ -169,3 +169,40 @@ class BaseInteractiveKGE:
             store_kge(self.model, path=self.path + f'/model_ensemble_interactive_{str(t)}.pt')
         else:
             store_kge(self.model, path=self.path + f'/model_interactive_{str(t)}.pt')
+
+    def index_triple(self, head_entity: List[str], relation: List[str], tail_entity: List[str]):
+        """
+
+        :param head_entity:
+        :param relation:
+        :param tail_entity:
+        :return:
+        """
+        print('Index inputs...')
+        n = len(head_entity)
+        assert n == len(relation) == len(tail_entity)
+        idx_head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values).reshape(n, 1)
+        idx_relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values).reshape(n, 1)
+        idx_tail_entity = torch.LongTensor(self.entity_to_idx.loc[tail_entity]['entity'].values).reshape(n, 1)
+        return idx_head_entity, idx_relation, idx_tail_entity
+
+    def construct_input_and_output_k_vs_all(self, head_entity, relation):
+        try:
+            idx_head_entity = self.entity_to_idx.loc[head_entity]['entity'].values[0]
+            idx_relation = self.relation_to_idx.loc[relation]['relation'].values[0]
+        except KeyError as e:
+            print(f'Exception:\t {str(e)}')
+            return None
+
+        print('\nKvsAll Training...')
+        print(f'Start:{head_entity}\t {relation}')
+        idx_tails: np.array
+        idx_tails = self.train_set[
+            (self.train_set['subject'] == idx_head_entity) & (self.train_set['relation'] == idx_relation)][
+            'object'].values
+        print('Num. Tails:\t', self.entity_to_idx.iloc[idx_tails].values.size)
+        # Hard Labels
+        labels = torch.zeros(self.num_entities)
+        labels[idx_tails] = 1
+        x = torch.LongTensor([idx_head_entity, idx_relation])
+        return x, labels, idx_tails

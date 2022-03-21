@@ -14,21 +14,37 @@ class KGE(BaseInteractiveKGE):
         super().__init__(path_of_pretrained_model_dir, construct_ensemble=construct_ensemble, model_path=model_path)
         self.is_model_in_train_mode = False
 
-    def train_triples(self, head_entity, relation, tail_entity, labels, iteration=2, lr=.1, repeat=2):
-
-        assert len(head_entity) == len(relation) == len(tail_entity) == len(labels)
-        n = len(head_entity)
-        print('Index inputs...')
-        head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values).reshape(n, 1)
-        relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values).reshape(n, 1)
-        tail_entity = torch.LongTensor(self.entity_to_idx.loc[tail_entity]['entity'].values).reshape(n, 1)
-
-        x = torch.hstack((head_entity, relation, tail_entity))
+    def construct_input_and_output(self, head_entity: List[str], relation: List[str], tail_entity: List[str], labels):
+        """
+        Construct a data point
+        :param head_entity:
+        :param relation:
+        :param tail_entity:
+        :param labels:
+        :return:
+        """
+        idx_head_entity, idx_relation, idx_tail_entity = self.index_triple(head_entity, relation, tail_entity)
+        x = torch.hstack((idx_head_entity, idx_relation, idx_tail_entity))
+        # Hard Labels
         labels: object = torch.FloatTensor(labels)
+        return x, labels
 
-        x = x.repeat(repeat, 1)
-        labels = labels.repeat(repeat)
+    def train_triples(self, head_entity, relation, tail_entity, labels, iteration=2, lr=.1, repeat=2):
+        """
 
+        :param head_entity:
+        :param relation:
+        :param tail_entity:
+        :param labels:
+        :param iteration:
+        :param lr:
+        :param repeat:
+        :return:
+        """
+        assert len(head_entity) == len(relation) == len(tail_entity) == len(labels)
+        x, labels = self.construct_input_and_output_k_vs_all(head_entity, relation, tail_entity, labels)
+        x = x.num_copies_in_batch(repeat, 1)
+        labels = labels.num_copies_in_batch(repeat)
         self.set_model_train_mode()
         optimizer = optim.Adam(self.model.parameters(), lr=lr)
         print('Iteration starts.')
@@ -97,6 +113,105 @@ class KGE(BaseInteractiveKGE):
         last_avg_loss_per_triple /= len(train_set)
         print(f'On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple:.3f}')
 
+    def train_k_vs_all(self, head_entity, relation, iteration=1, num_copies_in_batch=2, lr=.001):
+        assert len(head_entity) == 1
+        out = self.construct_input_and_output_k_vs_all(head_entity, relation)
+        if out is None:
+            return
+        x, labels, idx_tails = out
+        x = x.repeat(num_copies_in_batch, 1)
+        # TODO: Apply Label Smoothing
+        labels = labels.repeat(num_copies_in_batch, 1)
+        self.set_model_train_mode()
+        optimizer = optim.Adam(self.model.parameters(), lr=lr)
+        print('\nIteration starts.')
+        converged = False
+        for epoch in range(iteration):
+            optimizer.zero_grad()
+            outputs = self.model(x)
+            loss = self.model.loss(outputs, labels)
+            if epoch % 10 == 0:
+                if len(idx_tails) > 0:
+                    print(
+                        f"Iteration:{epoch}\t Loss:{loss.item():.4f}\t Avg. Logits for correct tails: {outputs[0, idx_tails].flatten().mean().detach():.4f}")
+                else:
+                    print(
+                        f"Iteration:{epoch}\t Loss:{loss.item():.4f}\t Avg. Logits for all negatives: {outputs[0].flatten().mean().detach():.4f}")
+
+            loss.backward()
+            optimizer.step()
+            if loss.item() < .001:
+                print(f'loss is {loss.item():.3f}. Converged !!!')
+                converged = True
+                break
+        self.set_model_eval_mode()
+        if converged is False:
+            with torch.no_grad():
+                outputs = self.model(x)
+                loss = self.model.loss(outputs, labels)
+            print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs[0, idx_tails].flatten().detach()}\n")
+
+    def train_cbd(self, head_entity, iteration=1, num_copies_in_batch=1, lr=.001, label_smoothing_rate=.1):
+        """
+        Given an head_entity,
+        1) Build {r | (h r x) \in G)
+        2) Build x:=(h,r), y=[0.....,1]
+        3) Construct (2) as a batch
+        4) Train
+        """
+        assert len(head_entity) == 1
+        try:
+            idx_head_entity = self.entity_to_idx.loc[head_entity]['entity'].values[0]
+        except KeyError as e:
+            print(f'Exception:\t {str(e)}')
+            return
+        print('\nKvsAll Training...')
+
+        batch_relations = []
+        # (1)
+        idx_batch_relations = self.train_set[self.train_set['subject'] == idx_head_entity]['relation'].unique()
+        # (2)
+        num_unique_relations = len(idx_batch_relations)
+        batch_labels = torch.zeros(num_unique_relations, self.num_entities)
+        for i, idx_relation in enumerate(idx_batch_relations):
+            # Select tails.
+            idx_tails = self.train_set[
+                (self.train_set['subject'] == idx_head_entity) & (self.train_set['relation'] == idx_relation)][
+                'object'].values
+            batch_labels[i, idx_tails] = 1
+            batch_relations.append(idx_relation)
+        # (3) Construct the batch
+        x = torch.cat([torch.LongTensor([idx_head_entity]).repeat(num_unique_relations, 1),
+                       torch.LongTensor(batch_relations).reshape(len(batch_relations), 1)], dim=1)
+        # Label Smoothing
+        batch_labels = batch_labels * (1 - label_smoothing_rate) + (1 / batch_labels.size(0))
+        # Create a BATCH via repeating.
+        x = x.repeat(num_copies_in_batch, 1)
+        batch_labels = batch_labels.repeat(num_copies_in_batch, 1)
+
+        # (4) Train
+        self.set_model_train_mode()
+        optimizer = optim.Adam(self.model.parameters(), lr=lr)
+        print('\nIteration starts.')
+        converged = False
+        for epoch in range(iteration):
+            optimizer.zero_grad()
+            outputs = self.model(x)
+            loss = self.model.loss(outputs, batch_labels)
+            print(f"Iteration:{epoch}\t Loss:{loss.item():.4f}")
+            loss.backward()
+            optimizer.step()
+            if loss.item() < .001:
+                print(f'loss is {loss.item():.3f}. Converged !!!')
+                converged = True
+                break
+        self.set_model_eval_mode()
+        if converged is False:
+            with torch.no_grad():
+                outputs = self.model(x)
+                loss = self.model.loss(outputs, batch_labels)
+                print(f"Eval Mode:Loss:{loss.item():.4f}")
+
     def train_triples_lbfgs_negative(self, head_entity, relation, tail_entity, iteration=1, repeat=2):
         """ This training regime with LBFGS often takes quite a bit of timeTakes quite some time"""
 
@@ -146,52 +261,3 @@ class KGE(BaseInteractiveKGE):
             # Take step.
             optimizer.step(closure)
         self.set_model_eval_mode()
-
-    def train_k_vs_all(self, head_entity, relation, iteration=1, repeat=2, lr=.001):
-        assert len(head_entity) == len(relation) == 1
-        try:
-            idx_head_entity = self.entity_to_idx.loc[head_entity]['entity'].values[0]
-            idx_relation = self.relation_to_idx.loc[relation]['relation'].values[0]
-        except KeyError as e:
-            print(f'Exception:\t {str(e)}')
-            return
-        print('\nKvsAll Training...')
-        print(f'Start:{head_entity}\t {relation}')
-        idx_tails: np.array
-        idx_tails = self.train_set[
-            (self.train_set['subject'] == idx_head_entity) & (self.train_set['relation'] == idx_relation)][
-            'object'].values
-        print('Num. Tails:\t', self.entity_to_idx.iloc[idx_tails].values.size)
-        labels = torch.zeros(self.num_entities)
-        labels[idx_tails] = 1
-        x = torch.LongTensor([idx_head_entity, idx_relation])
-        x = x.repeat(repeat, 1)
-        labels = labels.repeat(repeat, 1)
-        self.set_model_train_mode()
-        optimizer = optim.Adam(self.model.parameters(), lr=lr)
-        print('\nIteration starts.')
-        converged = False
-        for epoch in range(iteration):
-            optimizer.zero_grad()
-            outputs = self.model(x)
-            loss = self.model.loss(outputs, labels)
-            if epoch % 10 == 0:
-                if len(idx_tails) > 0:
-                    print(
-                        f"Iteration:{epoch}\t Loss:{loss.item():.4f}\t Avg. Logits for correct tails: {outputs[0, idx_tails].flatten().mean().detach():.4f}")
-                else:
-                    print(
-                        f"Iteration:{epoch}\t Loss:{loss.item():.4f}\t Avg. Logits for all negatives: {outputs[0].flatten().mean().detach():.4f}")
-
-            loss.backward()
-            optimizer.step()
-            if loss.item() < .001:
-                print(f'loss is {loss.item():.3f}. Converged !!!')
-                converged = True
-                break
-        self.set_model_eval_mode()
-        if converged is False:
-            with torch.no_grad():
-                outputs = self.model(x)
-                loss = self.model.loss(outputs, labels)
-            print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs[0, idx_tails].flatten().detach()}\n")

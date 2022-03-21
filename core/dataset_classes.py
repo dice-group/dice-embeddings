@@ -266,13 +266,13 @@ class TriplePredictionDataset(Dataset):
         corr = torch.randint(0, self.num_entities, (size_of_batch * self.neg_sample_ratio, 2))
         # 2.1 Head Corrupt:
         h_head_corr = corr[:, 0]
-        r_head_corr = r.repeat(self.neg_sample_ratio, )
-        t_head_corr = t.repeat(self.neg_sample_ratio, )
+        r_head_corr = r.num_copies_in_batch(self.neg_sample_ratio, )
+        t_head_corr = t.num_copies_in_batch(self.neg_sample_ratio, )
         label_head_corr = torch.zeros(len(t_head_corr), )
 
         # 2.2. Tail Corrupt
-        h_tail_corr = h.repeat(self.neg_sample_ratio, )
-        r_tail_corr = r.repeat(self.neg_sample_ratio, )
+        h_tail_corr = h.num_copies_in_batch(self.neg_sample_ratio, )
+        r_tail_corr = r.num_copies_in_batch(self.neg_sample_ratio, )
         t_tail_corr = corr[:, 1]
         label_tail_corr = torch.zeros(len(t_tail_corr), )
 
