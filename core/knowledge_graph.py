@@ -376,10 +376,3 @@ class KG:
     @staticmethod
     def map_str_triples_to_numpy_idx(triples, entity_idx, relation_idx) -> np.array:
         return np.array([(entity_idx[s], relation_idx[p], entity_idx[o]) for s, p, o in triples])
-
-    """
-    def is_valid_test_available(self):
-        if len(self.valid_set) > 0 and len(self.test_set) > 0:
-            return True
-        return False
-    """
