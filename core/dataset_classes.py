@@ -5,6 +5,7 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from typing import List
 
+
 class StandardDataModule(pl.LightningDataModule):
     """
     train, valid and test sets are available.
@@ -39,7 +40,6 @@ class StandardDataModule(pl.LightningDataModule):
         self.neg_sample_ratio = neg_sample_ratio
         self.label_smoothing_rate = label_smoothing_rate
 
-
         if self.form == 'RelationPrediction':
             self.target_dim = len(self.relation_to_idx)
         elif self.form == 'EntityPrediction':
@@ -68,14 +68,16 @@ class StandardDataModule(pl.LightningDataModule):
                               )
         elif self.form == 'EntityPrediction' or self.form == 'RelationPrediction':
             train_set = KvsAll(self.train_set_idx, entity_idxs=self.entity_to_idx,
-                               relation_idxs=self.relation_to_idx, form=self.form, label_smoothing_rate=self.label_smoothing_rate)
+                               relation_idxs=self.relation_to_idx, form=self.form,
+                               label_smoothing_rate=self.label_smoothing_rate)
 
             return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, pin_memory=True,
                               num_workers=self.num_workers)
 
         elif self.form == '1VsAll':
             train_set = OnevsAll(self.train_set_idx, entity_idxs=self.entity_to_idx,
-                               relation_idxs=self.relation_to_idx, form=self.form, label_smoothing_rate=self.label_smoothing_rate)
+                                 relation_idxs=self.relation_to_idx, form=self.form,
+                                 label_smoothing_rate=self.label_smoothing_rate)
 
             return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, pin_memory=True,
                               num_workers=self.num_workers)
@@ -173,9 +175,10 @@ class KvsAll(Dataset):
     """
     For entitiy or relation prediciton
     """
+
     def __init__(self, triples_idx, entity_idxs, relation_idxs, form, store=None, label_smoothing_rate=None):
         super().__init__()
-        assert len(triples_idx)>0
+        assert len(triples_idx) > 0
         self.train_data = None
         self.train_target = None
         self.label_smoothing_rate = label_smoothing_rate
@@ -266,13 +269,13 @@ class TriplePredictionDataset(Dataset):
         corr = torch.randint(0, self.num_entities, (size_of_batch * self.neg_sample_ratio, 2))
         # 2.1 Head Corrupt:
         h_head_corr = corr[:, 0]
-        r_head_corr = r.num_copies_in_batch(self.neg_sample_ratio, )
-        t_head_corr = t.num_copies_in_batch(self.neg_sample_ratio, )
+        r_head_corr = r.repeat(self.neg_sample_ratio, )
+        t_head_corr = t.repeat(self.neg_sample_ratio, )
         label_head_corr = torch.zeros(len(t_head_corr), )
 
         # 2.2. Tail Corrupt
-        h_tail_corr = h.num_copies_in_batch(self.neg_sample_ratio, )
-        r_tail_corr = r.num_copies_in_batch(self.neg_sample_ratio, )
+        h_tail_corr = h.repeat(self.neg_sample_ratio, )
+        r_tail_corr = r.repeat(self.neg_sample_ratio, )
         t_tail_corr = corr[:, 1]
         label_tail_corr = torch.zeros(len(t_tail_corr), )
 
@@ -300,8 +303,6 @@ class OneVsAllEntityPredictionDataset(Dataset):
 
     def __getitem__(self, idx):
         return self.train_data[idx, :2], self.train_data[idx, 2]
-
-
 
 
 class TripleClassificationDataSet(Dataset):

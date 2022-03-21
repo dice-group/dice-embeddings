@@ -184,7 +184,11 @@ class KGE(BaseInteractiveKGE):
         x = torch.cat([torch.LongTensor([idx_head_entity]).repeat(num_unique_relations, 1),
                        torch.LongTensor(batch_relations).reshape(len(batch_relations), 1)], dim=1)
         # Label Smoothing
-        batch_labels = batch_labels * (1 - label_smoothing_rate) + (1 / batch_labels.size(0))
+        try:
+            batch_labels = batch_labels * (1 - label_smoothing_rate) + (1 / batch_labels.size(0))
+        except:
+            print('Empty label batch')
+            return
         # Create a BATCH via repeating.
         x = x.repeat(num_copies_in_batch, 1)
         batch_labels = batch_labels.repeat(num_copies_in_batch, 1)
