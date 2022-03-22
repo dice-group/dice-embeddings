@@ -1,4 +1,5 @@
 # 1. Create Pytorch-lightning Trainer object from input configuration
+import datetime
 import time
 
 from pytorch_lightning.callbacks import Callback
@@ -40,12 +41,12 @@ class KGESaveCallback(Callback):
 
     def on_epoch_end(self, trainer, model):
         if self.epoch_counter % self.every_x_epoch == 0 and self.epoch_counter > 1:
-            print(f'\nStoring model {self.every_x_epoch}...')
-            # Could throw an error if mode is in GPU
-            store_kge(model, path=self.path + f'/model_at_{str(self.every_x_epoch)}_epoch.pt')
+            print(f'\nStoring model {self.epoch_counter}...')
+            store_kge(model, path=self.path + f'/model_at_{str(self.epoch_counter)}_epoch_{str(str(datetime.datetime.now()))}.pt')
         self.epoch_counter += 1
 
-
+# https://pytorch-lightning.readthedocs.io/en/stable/extensions/callbacks.html#persisting-state
+# https://pytorch-lightning.readthedocs.io/en/stable/extensions/callbacks.html#teardown
 class AdaptiveKGECallback(Callback):
     def __init__(self):
         super().__init__()

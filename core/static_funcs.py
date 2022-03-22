@@ -16,20 +16,67 @@ import glob
 import dask.dataframe as dd
 from .sanity_checkers import sanity_checking_with_arguments, config_kge_sanity_checking
 
-
-def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict):
+def index_triples(train_set, entity_to_idx, relation_to_idx: dict):
     """
     :param train_set: dask dataframe/pandas dataframe
     :param entity_to_idx:
     :param relation_to_idx:
     :return:
     """
-    train_set['subject'] = train_set['subject'].map(
-        lambda x: entity_to_idx[x] if entity_to_idx.get(x) else None)
-    train_set['relation'] = train_set['relation'].map(
-        lambda x: relation_to_idx[x] if relation_to_idx.get(x) else None)
-    train_set['object'] = train_set['object'].map(
-        lambda x: entity_to_idx[x] if entity_to_idx.get(x) else None)
+
+    def entity_look_up(x):
+        try:
+            return entity_to_idx[x]
+        except KeyError:
+            return None
+
+    def relation_look_up(x):
+        try:
+            return relation_to_idx[x]
+        except KeyError:
+            return None
+
+    train_set['subject'] = train_set['subject'].apply(lambda x: entity_look_up(x))
+    train_set['relation'] = train_set['relation'].apply(lambda x: relation_look_up(x))
+    train_set['object'] = train_set['object'].apply(lambda x: entity_look_up(x))
+    train_set = train_set.dropna()
+    train_set = train_set.astype(int)
+    return train_set
+
+
+def index_triples_parallel(train_set, entity_to_idx: dict, relation_to_idx: dict):
+    """
+    :param train_set: dask dataframe/pandas dataframe
+    :param entity_to_idx:
+    :param relation_to_idx:
+    :return:
+    """
+
+    raise NotImplementedError()
+    def entity_look_up(x):
+        try:
+            return entity_to_idx[x]
+        except KeyError:
+            return None
+
+    def relation_look_up(x):
+        try:
+            return relation_to_idx[x]
+        except KeyError:
+            return None
+
+    # train_set['subject'] = train_set['subject'].parallel_apply(lambda x: entity_look_up(x))
+    # train_set['relation'] = train_set['relation'].parallel_apply(lambda x: relation_look_up(x))
+    # train_set['object'] = train_set['object'].parallel_apply(lambda x: entity_look_up(x))
+    def func(x):
+
+        x['subject'] = entity_look_up(x['subject'])
+        x['relation'] = relation_look_up(x['relation'])
+        x['object'] = entity_look_up(x['object'])
+        return x
+
+    train_set = train_set.parallel_apply(func, axis=1)
+
     train_set = train_set.dropna()
     train_set = train_set.astype(int)
     return train_set
@@ -326,7 +373,7 @@ def load_model_ensemble(path_of_experiment_folder) -> Tuple[BaseKGE, pd.DataFram
     # (4) Select the model
     model, _ = select_model(configs)
     # (5) Put (1) into (4)
-    model.load_state_dict(weights,strict=False)
+    model.load_state_dict(weights, strict=False)
     # (6) Set it into eval model.
     print('Setting Eval mode & requires_grad params to False')
     for parameter in model.parameters():
