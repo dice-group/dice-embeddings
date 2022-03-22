@@ -50,6 +50,15 @@ class KG:
         if deserialize_flag is None:
             self.train_set, self.valid_set, self.test_set = self.read(data_dir, read_only_few, sample_triples_ratio)
             self.apply_reciprical_or_noise(add_reciprical, eval_model, add_noise_rate)
+            print('Train set compute...')
+            self.train_set = self.train_set.compute(scheduler=scheduler_flag)
+            if self.valid_set is not None:
+                print('Valid set compute...')
+                self.valid_set = self.valid_set.compute(scheduler=scheduler_flag)
+            if self.test_set is not None:
+                print('Test set set compute...')
+                self.test_set = self.test_set.compute(scheduler=scheduler_flag)
+
             if entity_to_idx is None and relation_to_idx is None:
                 # 3. Concatenate dataframes.
                 print(f'[4 / 14] Concatenating data to obtain index...')
@@ -58,7 +67,9 @@ class KG:
                     x.append(self.valid_set)
                 if self.test_set is not None:
                     x.append(self.test_set)
-                df_str_kg = ddf.concat(x, ignore_index=True)
+                #df_str_kg = ddf.concat(x, ignore_index=True)
+                df_str_kg = pd.concat(x, ignore_index=True)
+
                 del x
                 print('Done !\n')
                 if min_freq_for_vocab is not None:
@@ -67,7 +78,7 @@ class KG:
                     print(
                         f'[5 / 14] Dropping triples having infrequent entities or relations (>{min_freq_for_vocab})...',
                         end=' ')
-                    num_triples = df_str_kg.size.compute()
+                    num_triples = df_str_kg.size.compute(scheduler=scheduler_flag)
                     print('Total num triples:', num_triples, end=' ')
                     # Compute entity frequency: index is URI, val is number of occurrences.
                     entity_frequency = dask.dataframe.concat([df_str_kg['subject'], df_str_kg['object']]).value_counts()
@@ -89,28 +100,41 @@ class KG:
                     del low_frequency_entities
                     print('Done !\n')
 
-                # TODO: 5 & 6 take the most of the computation
                 print('[5 / 14] Creating a mapping from entities to integer indexes...')
                 # 4. Create a bijection mapping  from entities to integer indexes.
+                ordered_list = pd.unique(df_str_kg[['subject', 'object']].values.ravel('K'))
+                self.entity_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
+                                                  columns=['entity'],
+                                                  index=ordered_list)
+                """
+                With Dask
                 self.entity_to_idx = dask.array.concatenate(
                     [df_str_kg['subject'], df_str_kg['object']]).to_dask_dataframe(
                     columns=['entity']).drop_duplicates()
-                # Set URIs as index
+                                # Set URIs as index:
                 self.entity_to_idx = self.entity_to_idx.set_index(self.entity_to_idx.entity)
                 # Set values as integers
                 self.entity_to_idx['entity'] = dask.array.arange(0, self.entity_to_idx.size.compute(
                     scheduler=scheduler_flag))
+                """
                 print('Done !\n')
                 # 5. Create a bijection mapping  from relations to integer indexes.
                 print('[6 / 14] Creating a mapping from relations to integer indexes...')
+                ordered_list = pd.unique(df_str_kg['relation'].values.ravel('K'))
+                self.relation_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
+                                                    columns=['relation'],
+                                                    index=ordered_list)
+                """
+                
                 self.relation_to_idx = df_str_kg['relation'].drop_duplicates().to_frame(name='relation')
                 self.relation_to_idx = self.relation_to_idx.set_index(self.relation_to_idx.relation)
                 self.relation_to_idx['relation'] = dask.array.arange(0, self.relation_to_idx.size.compute(
                     scheduler=scheduler_flag))
+                """
                 print('Done !\n')
 
-                self.entity_to_idx = self.entity_to_idx.compute(scheduler=scheduler_flag)
-                self.relation_to_idx = self.relation_to_idx.compute(scheduler=scheduler_flag)
+                #self.entity_to_idx = self.entity_to_idx.compute(scheduler=scheduler_flag)
+                #self.relation_to_idx = self.relation_to_idx.compute(scheduler=scheduler_flag)
                 ## 6. Serialize indexed entities and relations into disk for further usage.
                 print('[7 / 14] Serializing compressed entity integer mapping...')
                 self.entity_to_idx.to_parquet(path_for_serialization + '/entity_to_idx.gzip', compression='gzip')
@@ -146,7 +170,7 @@ class KG:
                 # the training data is stored in more memory efficient manner as well as
                 # it can be reread later faster
                 print('[10 / 14] Serializing training data for Continual Learning...')  # TODO: Do we really need it ?!
-                self.train_set.compute().to_parquet(path_for_serialization + '/train_df.gzip', compression='gzip')
+                self.train_set.to_parquet(path_for_serialization + '/train_df.gzip', compression='gzip')
                 print('Done !\n')
 
             print('[11 / 14] Mapping training data into integers for training...')
@@ -157,16 +181,14 @@ class KG:
             if path_for_serialization is not None:
                 # 10. Serialize (9).
                 print('[12 / 14] Serializing integer mapped data...')
-                self.train_set.compute().to_parquet(path_for_serialization + '/idx_train_df.gzip', compression='gzip')
+                self.train_set.to_parquet(path_for_serialization + '/idx_train_df.gzip', compression='gzip')
                 print('Done !\n')
 
-            assert isinstance(self.train_set, dask.dataframe.DataFrame)
-
+            #assert isinstance(self.train_set, dask.dataframe.DataFrame)
             # 11. Convert data from pandas dataframe to numpy ndarray.
             print('[13 / 14] Mapping from pandas data frame to numpy ndarray to reduce memory usage...')
-            self.train_set = self.train_set.values.compute(scheduler=scheduler_flag)
+            self.train_set = self.train_set.values#.compute(scheduler=scheduler_flag)
             print('Done !\n')
-
             print('[14 / 14 ] Sanity checking...')
             # 12. Sanity checking: indexed training set can not have an indexed entity assigned with larger indexed than the number of entities.
             dataset_sanity_checking(self.train_set, self.num_entities, self.num_relations)
@@ -174,7 +196,7 @@ class KG:
             if self.valid_set is not None:
                 if path_for_serialization is not None:
                     print('[15 / 14 ] Serializing validation data for Continual Learning...')
-                    self.valid_set.compute(scheduler=scheduler_flag).to_parquet(
+                    self.valid_set.to_parquet(
                         path_for_serialization + '/valid_df.gzip', compression='gzip')
                     print('Done !\n')
                 print('[16 / 14 ] Indexing validation dataset...')
@@ -182,16 +204,16 @@ class KG:
                 print('Done !\n')
                 if path_for_serialization is not None:
                     print('[17 / 14 ] Serializing indexed validation dataset...')
-                    self.valid_set.compute(scheduler=scheduler_flag).to_parquet(
+                    self.valid_set.to_parquet(
                         path_for_serialization + '/idx_valid_df.gzip', compression='gzip')
                     print('Done !\n')
                 # To numpy
-                self.valid_set = self.valid_set.values.compute(scheduler=scheduler_flag)
+                self.valid_set = self.valid_set.values#.compute(scheduler=scheduler_flag)
                 dataset_sanity_checking(self.valid_set, self.num_entities, self.num_relations)
             if self.test_set is not None:
                 if path_for_serialization is not None:
                     print('[18 / 14 ] Serializing test data for Continual Learning...')
-                    self.test_set.compute(scheduler=scheduler_flag).to_parquet(
+                    self.test_set.to_parquet(
                         path_for_serialization + '/test_df.gzip', compression='gzip')
                     print('Done !\n')
                 print('[19 / 14 ] Indexing test dataset...')
@@ -199,10 +221,10 @@ class KG:
                 print('Done !\n')
                 if path_for_serialization is not None:
                     print('[20 / 14 ] Serializing indexed test dataset...')
-                    self.test_set.compute(scheduler=scheduler_flag).to_parquet(
+                    self.test_set.to_parquet(
                         path_for_serialization + '/idx_test_df.gzip', compression='gzip')
                 # To numpy
-                self.test_set = self.test_set.values.compute(scheduler=scheduler_flag)
+                self.test_set = self.test_set.values
                 dataset_sanity_checking(self.test_set, self.num_entities, self.num_relations)
                 print('Done !\n')
             if eval_model:  # and len(self.valid_set) > 0 and len(self.test_set) > 0:
@@ -242,16 +264,16 @@ class KG:
     def read(self, data_dir, read_only_few, sample_triples_ratio):
         # 1. LOAD Data. (First pass on data)
         print(
-            f'[1 / 14] Loading training data: read_only_few: {read_only_few} , sample_triples_ratio: {sample_triples_ratio}...')
+            f'[1 / 14] Lazy Loading and Preprocessing training data: read_only_few: {read_only_few} , sample_triples_ratio: {sample_triples_ratio}...')
         self.train_set = self.load_data_parallel(data_dir + '/train', read_only_few, sample_triples_ratio)
 
         print('Done !\n')
         print(
-            f'[2 / 14] Loading valid data: read_only_few: {read_only_few}, sample_triples_ratio: {sample_triples_ratio}...')
+            f'[2 / 14] Lazy Loading and Preprocessing valid data: read_only_few: {read_only_few}, sample_triples_ratio: {sample_triples_ratio}...')
         self.valid_set = self.load_data_parallel(data_dir + '/valid', read_only_few, sample_triples_ratio)
         print('Done !\n')
         print(
-            f'[3 / 14] Loading test data: read_only_few: {read_only_few}, sample_triples_ratio: {sample_triples_ratio}...')
+            f'[3 / 14] Lazy Loading and Preprocessing test data: read_only_few: {read_only_few}, sample_triples_ratio: {sample_triples_ratio}...')
         self.test_set = self.load_data_parallel(data_dir + '/test', read_only_few, sample_triples_ratio)
         print('Done !\n')
         return self.train_set, self.valid_set, self.test_set

@@ -151,7 +151,8 @@ class KGE(BaseInteractiveKGE):
                 loss = self.model.loss(outputs, labels)
             print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs[0, idx_tails].flatten().detach()}\n")
 
-    def train_cbd(self, head_entity, iteration=1, num_copies_in_batch=1, lr=.001, label_smoothing_rate=.1):
+    def train_cbd(self, head_entity, iteration=1, num_copies_in_batch=1, lr=.001,
+                  converge_loss=.0001, label_smoothing_rate=None):
         """
         Given an head_entity,
         1) Build {r | (h r x) \in G)
@@ -183,9 +184,9 @@ class KGE(BaseInteractiveKGE):
         # (3) Construct the batch
         x = torch.cat([torch.LongTensor([idx_head_entity]).repeat(num_unique_relations, 1),
                        torch.LongTensor(batch_relations).reshape(len(batch_relations), 1)], dim=1)
-        # Label Smoothing
         try:
-            batch_labels = batch_labels * (1 - label_smoothing_rate) + (1 / batch_labels.size(0))
+            if label_smoothing_rate:
+                batch_labels = batch_labels * (1 - label_smoothing_rate) + (1 / batch_labels.size(0))
         except:
             print('Empty label batch')
             return
@@ -205,7 +206,7 @@ class KGE(BaseInteractiveKGE):
             print(f"Iteration:{epoch}\t Loss:{loss.item():.4f}")
             loss.backward()
             optimizer.step()
-            if loss.item() < .001:
+            if loss.item() < converge_loss:
                 print(f'loss is {loss.item():.3f}. Converged !!!')
                 converged = True
                 break
