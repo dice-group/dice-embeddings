@@ -14,7 +14,109 @@ import pandas as pd
 import json
 import glob
 import dask.dataframe as dd
+from dask import dataframe as ddf
+import dask
 from .sanity_checkers import sanity_checking_with_arguments, config_kge_sanity_checking
+
+def load_data_parallel(data_path, read_only_few: int = None,
+                       sample_triples_ratio: float = None) -> dask.dataframe.core.DataFrame:
+    """
+    Parse KG via DASK.
+    :param read_only_few:
+    :param data_path:
+    :param sample_triples_ratio:
+    :return:
+    """
+    # (1) Check file exists, .e.g, ../../train.* exists
+    if glob.glob(data_path + '*'):
+        # (1) Read knowledge graph  via
+        # (1.1) Using the whitespace as a deliminator
+        # (1.2) Taking first three columns detected in (1.1.)
+        #  Delayed Read operation
+        df = ddf.read_csv(data_path + '*',
+                          delim_whitespace=True,
+                          header=None,
+                          usecols=[0, 1, 2],
+                          names=['subject', 'relation', 'object'],
+                          dtype=str)
+        # (2)a Read only few if it is asked.
+        if isinstance(read_only_few, int):
+            if read_only_few > 0:
+                df = df.loc[:read_only_few]
+        # (3) Read only sample
+        if sample_triples_ratio:
+            print(f'Subsampling {sample_triples_ratio} of input data...')
+            df = df.sample(frac=sample_triples_ratio)
+
+        # (4) Drop Rows/triples with double or boolean
+        # Drop rows having ^^
+        df = df[df["object"].str.contains("<http://www.w3.org/2001/XMLSchema#double>") == False]
+        df = df[df["object"].str.contains("<http://www.w3.org/2001/XMLSchema#boolean>") == False]
+        df['subject'] = df['subject'].str.removeprefix("<").str.removesuffix(">")
+        df['relation'] = df['relation'].str.removeprefix("<").str.removesuffix(">")
+        df['object'] = df['object'].str.removeprefix("<").str.removesuffix(">")
+        return df
+    else:
+        print(f'{data_path} could not found!')
+        return None  # pd.DataFrame()
+
+
+def store_kge(trained_model, path: str) -> None:
+    """
+    Save parameters of model into path via torch
+    :param trained_model: an instance of BaseKGE(pl.LightningModule) see core.models.base_model .
+    :param path:
+    :return:
+    """
+    try:
+        torch.save(trained_model.state_dict(), path)
+    except ReferenceError as e:
+        print(e)
+        print(trained_model.name)
+        print('Could not save the model correctly')
+
+def store(trained_model, model_name: str = 'model', full_storage_path: str = None,
+          dataset=None) -> None:
+    """
+    Store trained_model model and save embeddings into csv file.
+
+    :param dataset: an instance of KG see core.knowledge_graph.
+    :param full_storage_path: path to save parameters.
+    :param model_name: string representation of the name of the model.
+    :param trained_model: an instance of BaseKGE(pl.LightningModule) see core.models.base_model .
+    :return:
+    """
+    print('------------------- Store -------------------')
+    assert full_storage_path is not None
+    assert dataset is not None
+    assert isinstance(model_name, str)
+    assert len(model_name) > 1
+
+    # (1) Save pytorch model in trained_model .
+    store_kge(trained_model, path=full_storage_path + f'/{model_name}.pt')
+    # (2) See available memory and decide whether embeddings are stored separately or not.
+    available_memory = [i.split() for i in os.popen('free -h').read().splitlines()][1][-1]  # ,e.g., 10Gi
+    available_memory_mb = float(available_memory[:-2]) * 1000
+    # Decision: model size in MB should be at most 1 percent of the available memory.
+    if available_memory_mb * .01 > extract_model_summary(trained_model.summarize())['EstimatedSizeMB']:
+        # (2.1) Get embeddings.
+        entity_emb, relation_ebm = trained_model.get_embeddings()
+        # (2.2) If we have less than 1000 rows total save it as csv.
+        if len(entity_emb) < 1000:
+            save_embeddings(entity_emb.numpy(), indexes=dataset.entities_str,
+                            path=full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
+            del entity_emb
+            if relation_ebm is not None:
+                save_embeddings(relation_ebm.numpy(), indexes=dataset.relations_str,
+                                path=full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
+                del relation_ebm
+        else:
+            torch.save(entity_emb, full_storage_path + '/' + trained_model.name + '_entity_embeddings.pt')
+            if relation_ebm is not None:
+                torch.save(relation_ebm, full_storage_path + '/' + trained_model.name + '_relation_embeddings.pt')
+    else:
+        print('There is not enough memory to store embeddings separately.')
+
 
 def index_triples(train_set, entity_to_idx, relation_to_idx: dict):
     """
@@ -39,44 +141,6 @@ def index_triples(train_set, entity_to_idx, relation_to_idx: dict):
     train_set['subject'] = train_set['subject'].apply(lambda x: entity_look_up(x))
     train_set['relation'] = train_set['relation'].apply(lambda x: relation_look_up(x))
     train_set['object'] = train_set['object'].apply(lambda x: entity_look_up(x))
-    train_set = train_set.dropna()
-    train_set = train_set.astype(int)
-    return train_set
-
-
-def index_triples_parallel(train_set, entity_to_idx: dict, relation_to_idx: dict):
-    """
-    :param train_set: dask dataframe/pandas dataframe
-    :param entity_to_idx:
-    :param relation_to_idx:
-    :return:
-    """
-
-    raise NotImplementedError()
-    def entity_look_up(x):
-        try:
-            return entity_to_idx[x]
-        except KeyError:
-            return None
-
-    def relation_look_up(x):
-        try:
-            return relation_to_idx[x]
-        except KeyError:
-            return None
-
-    # train_set['subject'] = train_set['subject'].parallel_apply(lambda x: entity_look_up(x))
-    # train_set['relation'] = train_set['relation'].parallel_apply(lambda x: relation_look_up(x))
-    # train_set['object'] = train_set['object'].parallel_apply(lambda x: entity_look_up(x))
-    def func(x):
-
-        x['subject'] = entity_look_up(x['subject'])
-        x['relation'] = relation_look_up(x['relation'])
-        x['object'] = entity_look_up(x['object'])
-        return x
-
-    train_set = train_set.parallel_apply(func, axis=1)
-
     train_set = train_set.dropna()
     train_set = train_set.astype(int)
     return train_set
@@ -115,8 +179,6 @@ def add_noisy_triples(train_set, add_noise_rate: float) -> pd.DataFrame:
     return train_set
 
 
-def store_kge(trained_model, path: str) -> None:
-    torch.save(trained_model.state_dict(), path)
 
 
 def create_recipriocal_triples_from_dask(x):
@@ -131,29 +193,6 @@ def create_recipriocal_triples_from_dask(x):
         x['subject'].to_frame(name='object'))], ignore_index=True)
 
 
-def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
-    """
-
-    :param embeddings:
-    :param indexes:
-    :param path:
-    :return:
-    """
-    try:
-        df = pd.DataFrame(embeddings, index=indexes)
-        del embeddings
-        num_mb = df.memory_usage(index=True, deep=True).sum() / (10 ** 6)
-        if num_mb > 10 ** 6:
-            df = dd.from_pandas(df, npartitions=len(df) / 100)
-            # PARQUET wants columns to be stn
-            df.columns = df.columns.astype(str)
-            df.to_parquet(path)
-        else:
-            df.to_csv(path)
-    except KeyError or AttributeError as e:
-        print('Exception occurred at saving entity embeddings. Computation will continue')
-        print(e)
-    del df
 
 
 def read_input_data(args, cls):
@@ -206,6 +245,7 @@ def preprocesses_input_args(arg):
     if arg.add_noise_rate is not None:
         assert 1. >= arg.add_noise_rate > 0.
 
+    assert arg.weight_decay >= 0.0
     arg.learning_rate = arg.lr
     arg.deterministic = True
     # Below part will be investigated
@@ -493,3 +533,28 @@ def compute_mrr_based_on_entity_ranking(trained_model, triples, entity_to_idx, r
             break
     """
     return raw_mrr
+
+
+def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
+    """
+    Save it as CSV if memory allows.
+    :param embeddings:
+    :param indexes:
+    :param path:
+    :return:
+    """
+    try:
+        df = pd.DataFrame(embeddings, index=indexes)
+        del embeddings
+        num_mb = df.memory_usage(index=True, deep=True).sum() / (10 ** 6)
+        if num_mb > 10 ** 6:
+            df = dd.from_pandas(df, npartitions=len(df) / 100)
+            # PARQUET wants columns to be stn
+            df.columns = df.columns.astype(str)
+            df.to_parquet(path)
+        else:
+            df.to_csv(path)
+    except KeyError or AttributeError as e:
+        print('Exception occurred at saving entity embeddings. Computation will continue')
+        print(e)
+    del df

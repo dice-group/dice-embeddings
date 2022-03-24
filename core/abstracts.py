@@ -29,7 +29,7 @@ class BaseInteractiveKGE:
 
         self.num_entities = len(self.entity_to_idx)
         self.num_relations = len(self.relation_to_idx)
-        print('Loading indexed training data')
+        print('Loading indexed training data...')
         self.train_set = pd.read_parquet(self.path + '/idx_train_df.gzip')
 
     def set_model_train_mode(self):

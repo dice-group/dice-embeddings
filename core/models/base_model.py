@@ -23,13 +23,16 @@ class BaseKGE(pl.LightningModule):
         self.feature_map_dropout_rate = None
         self.kernel_size = None
         self.num_of_output_channels = None
+        self.weight_decay = None
         self.loss = torch.nn.BCEWithLogitsLoss()
         self.sanity_checking()
 
     def sanity_checking(self):
         assert self.args['model'] in ['DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO', 'ConEx', 'Shallom']
-
-
+        if self.args.get('weight_decay'):
+            self.weight_decay = self.args['weight_decay']
+        else:
+            self.weight_decay = 0.0
         if self.args.get('embedding_dim'):
             self.embedding_dim = self.args['embedding_dim']
         else:
@@ -80,7 +83,7 @@ class BaseKGE(pl.LightningModule):
                 self.feature_map_dropout_rate = 0.0
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        return torch.optim.Adam(self.parameters(), lr=self.learning_rate,weight_decay=self.weight_decay)
 
     def loss_function(self, yhat_batch, y_batch):
         return self.loss(input=yhat_batch, target=y_batch)

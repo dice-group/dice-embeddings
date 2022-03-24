@@ -8,7 +8,6 @@ import pandas as pd
 from pytorch_lightning import seed_everything
 from pytorch_lightning.plugins import DDPPlugin, DeepSpeedPlugin
 from sklearn.model_selection import KFold
-
 from .callbacks import PrintCallback, KGESaveCallback
 from pytorch_lightning.callbacks import ModelSummary
 from .dataset_classes import StandardDataModule
@@ -19,6 +18,7 @@ from .static_funcs import *
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
+warnings.filterwarnings(action="ignore", category=FutureWarning)
 
 
 class Execute:
@@ -35,7 +35,6 @@ class Execute:
         else:
             self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
             self.storage_path = self.args.full_storage_path
-            print('Saving configuration..')
             with open(self.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
                 temp = vars(self.args)
                 json.dump(temp, file_descriptor, indent=3)
@@ -46,31 +45,30 @@ class Execute:
         # (7) Store few data in memory for numerical results, e.g. runtime, H@1 etc.
         self.report = dict()
 
-    def start(self) -> dict:
-        """
-        1. READ/LOAD input knowledge graph
-        2. Train and Eval a knowledge graph embedding mode
-        3. Store relevant intermediate data including the trained model, embeddings and configuration
-        4. Return brief summary of the computation in dictionary format.
-        """
-        start_time = time.time()
-        # (1) READ/LOAD input knowledge graph
-        if self.is_continual_training is False:
-            self.dataset = read_input_data(self.args, cls=KG)
-            self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
-            self.args, self.dataset = config_kge_sanity_checking(self.args, self.dataset)
-        else:
-            self.dataset = reload_input_data(self.storage_path, cls=KG)
+    def read_preprocess_index_serialize_data(self) -> None:
+        """ Read & Preprocess & Index & Serialize Input Data """
+        self.dataset = read_input_data(self.args, cls=KG)
+        self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
+        self.args, self.dataset = config_kge_sanity_checking(self.args, self.dataset)
 
-        self.report['num_entities'] = self.dataset.num_entities
-        self.report['num_relations'] = self.dataset.num_relations
-        # (2) Train and Evaluate
-        trained_model = self.train_and_eval()
-        # (3) Store trained model
+    def load_indexed_data(self) -> None:
+        """ Load Indexed Data"""
+        self.dataset = reload_input_data(self.storage_path, cls=KG)
+
+    def save_trained_model(self, trained_model: BaseKGE, start_time: float) -> None:
+        """ Save a knowledge graph embedding model (an instance of BaseKGE class) """
+        trained_model.eval()
+        # (1) Store NumParam and EstimatedSizeMB
+        self.report.update(extract_model_summary(trained_model.summarize()))
+        # (2) Store/Serialize Model for further use.
         if self.is_continual_training is False:
-            self.store(trained_model, model_name='model')
+            store(trained_model, model_name='model', full_storage_path=self.storage_path,
+                  dataset=self.dataset)
         else:
-            self.store(trained_model, model_name='model_' + str(datetime.datetime.now()))
+            store(trained_model, model_name='model_' + str(datetime.datetime.now()),
+                  dataset=self.dataset,
+                  full_storage_path=self.storage_path)
+        # (3) Store total runtime.
         total_runtime = time.time() - start_time
         if 60 * 60 > total_runtime:
             message = f'{total_runtime / 60:.3f} minutes'
@@ -80,52 +78,30 @@ class Execute:
         self.report['path_experiment_folder'] = self.storage_path
         print(f'Total computation time: {message}')
         print(f'Number of parameters in {trained_model.name}:', self.report["NumParam"])
-        # print(f'Estimated of {trained_model.name}:', self.report["EstimatedSizeMB"])
+        # (4) Store the report of training.
         with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
             json.dump(self.report, file_descriptor, indent=4)
-        return self.report
 
-    # @TODO define  self.store() as static func and move to static_funcs.py
-    def store(self, trained_model, model_name='model') -> None:
+    def start(self) -> dict:
         """
-        Store trained_model model and save embeddings into csv file.
-        :param model_name:
-        :param trained_model:
-        :return:
+        1. READ/LOAD input knowledge graph
+        2. Train and Eval a knowledge graph embedding mode
+        3. Store relevant intermediate data including the trained model, embeddings and configuration
+        4. Return brief summary of the computation in dictionary format.
         """
-        print('------------------- Store -------------------')
-        # Save Torch model.
-        store_kge(trained_model, path=self.args.full_storage_path + f'/{model_name}.pt')
-
-        # See available memory and decide whether embeddings are stored separately or not.
-        available_memory = [i.split() for i in os.popen('free -h').read().splitlines()][1][-1]  # ,e.g., 10Gi
-        available_memory_mb = float(available_memory[:-2]) * 1000
-        self.report.update(extract_model_summary(trained_model.summarize()))
-
-        if available_memory_mb * .01 > self.report['EstimatedSizeMB']:
-            """ We have enough space for data conversion"""
-            print('Saving embeddings..')
-            entity_emb, relation_ebm = trained_model.get_embeddings()
-
-            if len(entity_emb) > 1000:
-                torch.save(entity_emb, self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings.pt')
-            else:
-                save_embeddings(entity_emb.numpy(), indexes=self.dataset.entities_str,
-                                path=self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
-
-            del entity_emb
-
-            if relation_ebm is not None:
-                if len(relation_ebm) > 1000:
-                    torch.save(relation_ebm,
-                               self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings.pt')
-                else:
-                    save_embeddings(relation_ebm.numpy(), indexes=self.dataset.relations_str,
-                                    path=self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
-            del relation_ebm
-
+        start_time = time.time()
+        # (1) Data Preparation.
+        if self.is_continual_training is False:
+            # (1.1) Read, Preprocess, Index, and Serialize input data.
+            self.read_preprocess_index_serialize_data()
         else:
-            print('There is not enough memory to store embeddings separately.')
+            # (1.2) Load indexed input data.
+            self.load_indexed_data()
+        # (2) Train and Evaluate.
+        trained_model = self.train_and_eval()
+        # (3) Store trained model.
+        self.save_trained_model(trained_model, start_time)
+        return self.report
 
     # @TODO define  self.select_model() as static func and move to static_funcs.py
     def select_model(self, args: dict):
@@ -141,7 +117,6 @@ class Execute:
             for parameter in model.parameters():
                 parameter.requires_grad = True
             model.train()
-
             return model, _
         else:
             print('Simply Select...')
@@ -155,7 +130,9 @@ class Execute:
             """ Deleting self.dataset does not help too much"""
             # release some memory
             # del self.dataset
-        print(f'Number of mini-batches to compute for a single epoch: {len(train_dataloaders)}\n')
+        print(f'Number of epochs:{self.args.num_epochs}')
+        print(f'Number of mini-batches to compute for a single epoch: {len(train_dataloaders)}')
+        print(f'Learning rate:{self.args.learning_rate}')
         trainer.fit(model, train_dataloaders=train_dataloaders)
 
     def train_and_eval(self) -> BaseKGE:
@@ -167,6 +144,8 @@ class Execute:
         2b. Train a model in k-fold cross validation mode if it is requested
         2c. Train a model
         """
+        self.report['num_entities'] = self.dataset.num_entities
+        self.report['num_relations'] = self.dataset.num_relations
         print('------------------- Train & Eval -------------------')
         callbacks = [PrintCallback(),
                      KGESaveCallback(every_x_epoch=self.args.save_model_at_every_epoch,
@@ -297,7 +276,7 @@ class Execute:
         model, _ = self.select_model(vars(self.args))
         form_of_labelling = 'NegativeSampling'
         print(f'Training starts: {model.name}-labeling:{form_of_labelling}')
-        print('Creating training data...')
+        print('Creating training data...', end='\t')
         start_time = time.time()
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,
@@ -607,14 +586,14 @@ class ContinuousExecute(Execute):
         assert os.path.exists(args.path_experiment_folder)
         assert os.path.isfile(args.path_experiment_folder + '/idx_train_df.gzip')
         assert os.path.isfile(args.path_experiment_folder + '/configuration.json')
+        # (1) Load Previous input configuration
         previous_args = load_json(args.path_experiment_folder + '/configuration.json')
+        # (2) Update (1) with new input
         previous_args.update(vars(args))
         report = load_json(args.path_experiment_folder + '/report.json')
         previous_args['num_entities'] = report['num_entities']
         previous_args['num_relations'] = report['num_relations']
         previous_args = SimpleNamespace(**previous_args)
-
         previous_args.full_storage_path = previous_args.path_experiment_folder
-
         print('ContinuousExecute starting...')
         super().__init__(previous_args, continuous_training=True)

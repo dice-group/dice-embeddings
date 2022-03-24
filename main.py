@@ -16,7 +16,8 @@ def argparse_default(description=None):
     parser.add_argument("--read_only_few", type=int, default=None, help='READ only first N triples. If 0, read all.')
     parser.add_argument("--sample_triples_ratio", type=float, default=None, help='Sample input data.')
     parser.add_argument("--seed_for_computation", type=int, default=1, help='Seed for all, see pl seed_everything().')
-    parser.add_argument("--min_freq_for_vocab", type=int, default=None, help='Min number of triples for a vocab term to be considered')
+    parser.add_argument("--min_freq_for_vocab", type=int, default=None,
+                        help='Min number of triples for a vocab term to be considered')
 
     # Model and Training Parameters
     parser.add_argument("--model", type=str,
@@ -25,7 +26,7 @@ def argparse_default(description=None):
                              "Shallom, ConEx, ComplEx, DistMult, KronE, KPDistMult")
     parser.add_argument('--embedding_dim', type=int, default=25,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=3, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=500_000, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.1, help='Learning rate')
     # Hyperparameters for training.
@@ -39,15 +40,8 @@ def argparse_default(description=None):
     parser.add_argument("--add_noise_rate", type=float, default=None, help='None for not using it. '
                                                                            '.1 means extend train data by adding 10% random data')
 
-    # Model Parameters
-    # Hyperparameters
-    parser.add_argument('--entity_embedding_dim', type=int, default=8,
-                        help='Number of dimensions for an entity embedding vector. '
-                             'This parameter is used for those model having flexibility of using different sized entity and relation embeddings.')
-    parser.add_argument('--rel_embedding_dim', type=int, default=8,
-                        help='Number of dimensions for an entity embedding vector. '
-                             'This parameter is used for those model having flexibility of using different sized entity and relation embeddings.')
-    # Model Related
+    # Optimization related hyperparameters
+    parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty')
     parser.add_argument('--input_dropout_rate', type=float, default=0.0)
     parser.add_argument('--hidden_dropout_rate', type=float, default=0.0)
     parser.add_argument("--feature_map_dropout_rate", type=int, default=0.0)

@@ -12,7 +12,6 @@ class KGE(BaseInteractiveKGE):
 
     def __init__(self, path_of_pretrained_model_dir, construct_ensemble=False, model_path=None):
         super().__init__(path_of_pretrained_model_dir, construct_ensemble=construct_ensemble, model_path=model_path)
-        self.is_model_in_train_mode = False
 
     def construct_input_and_output(self, head_entity: List[str], relation: List[str], tail_entity: List[str], labels):
         """
@@ -169,8 +168,12 @@ class KGE(BaseInteractiveKGE):
         print('\nKvsAll Training...')
 
         batch_relations = []
-        # (1)
-        idx_batch_relations = self.train_set[self.train_set['subject'] == idx_head_entity]['relation'].unique()
+        # (1) Select {r | (h,r,x) \in G).
+        idx_batch_relations = self.train_set[self.train_set['subject'] == idx_head_entity]['relation']
+        print(f'Frequency of {head_entity} = {len(idx_batch_relations)}', end='\t')
+        idx_batch_relations = idx_batch_relations.unique()
+        print(f'with {len(idx_batch_relations)} number of unique relations')
+
         # (2)
         num_unique_relations = len(idx_batch_relations)
         batch_labels = torch.zeros(num_unique_relations, self.num_entities)
@@ -184,6 +187,7 @@ class KGE(BaseInteractiveKGE):
         # (3) Construct the batch
         x = torch.cat([torch.LongTensor([idx_head_entity]).repeat(num_unique_relations, 1),
                        torch.LongTensor(batch_relations).reshape(len(batch_relations), 1)], dim=1)
+        # @TODO: We need to normalize it carefully
         try:
             if label_smoothing_rate:
                 batch_labels = batch_labels * (1 - label_smoothing_rate) + (1 / batch_labels.size(0))
