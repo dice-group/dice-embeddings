@@ -25,6 +25,7 @@ class BaseKGE(pl.LightningModule):
         self.num_of_output_channels = None
         self.weight_decay = None
         self.loss = torch.nn.BCEWithLogitsLoss()
+        self.selected_optimizer = None
         self.sanity_checking()
 
     def sanity_checking(self):
@@ -83,7 +84,9 @@ class BaseKGE(pl.LightningModule):
                 self.feature_map_dropout_rate = 0.0
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self.learning_rate,weight_decay=self.weight_decay)
+        self.selected_optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate,
+                                                   weight_decay=self.weight_decay)
+        return self.selected_optimizer
 
     def loss_function(self, yhat_batch, y_batch):
         return self.loss(input=yhat_batch, target=y_batch)
@@ -95,7 +98,11 @@ class BaseKGE(pl.LightningModule):
         raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_all function')
 
     def forward(self, x: torch.Tensor):
+        """
 
+        :param x:
+        :return:
+        """
         batch_size, dim = x.shape
         if dim == 3:
             return self.forward_triples(x)
@@ -110,7 +117,13 @@ class BaseKGE(pl.LightningModule):
         x_batch, y_batch = batch
         yhat_batch = self.forward(x_batch)
         train_loss = self.loss_function(yhat_batch=yhat_batch, y_batch=y_batch)
-        return {'loss': train_loss}
+        return train_loss
+        # return {'loss': train_loss}
+
+    # TODO: adaptive KGE: decisions can be implemented in here by looking at moving average of loss.
+    # def training_epoch_end(self, training_step_outputs):
+    # optim.param_groups[0]['lr'] = 0.001
+    #    pass
 
     def validation_step(self, batch, batch_idx):
         if len(batch) == 4:

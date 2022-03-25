@@ -57,7 +57,7 @@ class BaseInteractiveKGE:
         x = torch.stack((head_entity,
                          relation.repeat(self.num_entities, ),
                          tail_entity.repeat(self.num_entities, )), dim=1)
-        scores = self.model.forward_triples_base(x)
+        scores = self.model(x)
         entities = self.entity_to_idx.index.values
         # sort_scores, sort_idxs = torch.sort(scores, descending=True)
         sort_scores, sort_idxs = torch.topk(scores, k)
@@ -72,7 +72,7 @@ class BaseInteractiveKGE:
         x = torch.stack((head_entity.repeat(self.num_relations, ),
                          relation,
                          tail_entity.repeat(self.num_relations, )), dim=1)
-        scores = self.model.forward_triples_base(x)
+        scores = self.model(x)
         relations = self.relation_to_idx.index.values
         # sort_scores, sort_idxs = torch.sort(scores, descending=True)
         sort_scores, sort_idxs = torch.topk(scores, k)
@@ -127,7 +127,7 @@ class BaseInteractiveKGE:
         relation = self.relation_to_idx.loc[relation]['relation'].values.tolist()
         tail = self.entity_to_idx.loc[tail_entity]['entity'].values.tolist()
         x = torch.tensor((head, relation, tail)).reshape(len(head), 3)
-        return torch.sigmoid(self.model.forward_triples_base(x))
+        return torch.sigmoid(self.model(x))
 
     def triple_score(self, *, head_entity: List[str] = None, relation: List[str] = None,
                      tail_entity: List[str] = None, logits=False) -> torch.tensor:

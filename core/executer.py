@@ -109,25 +109,6 @@ class Execute:
         # (4) Return the report of the training process.
         return self.report
 
-    # @TODO define  self.select_model() as static func and move to static_funcs.py
-    def select_model(self, args: dict):
-        if self.is_continual_training:
-            print('Loading pre-trained model...')
-            model, _ = select_model(args)
-            try:
-                weights = torch.load(self.storage_path + '/model.pt', torch.device('cpu'))
-                model.load_state_dict(weights, strict=False)
-            except FileNotFoundError:
-                raise FileNotFoundError(
-                    f"{self.storage_path}/model.pt is not found. The model will be trained with random weights")
-            for parameter in model.parameters():
-                parameter.requires_grad = True
-            model.train()
-            return model, _
-        else:
-            print('Simply Select...')
-            return select_model(args)
-
     # @TODO define  self.model_fitting() as static func and move to static_funcs.py
     def model_fitting(self, trainer, model, dataset) -> None:
         train_dataloaders = dataset.train_dataloader()
@@ -138,7 +119,7 @@ class Execute:
             # del self.dataset
         print(f'Number of epochs:{self.args.num_epochs}')
         print(f'Number of mini-batches to compute for a single epoch: {len(train_dataloaders)}')
-        print(f'Learning rate:{self.args.learning_rate}')
+        print(f'Learning rate:{self.args.learning_rate}\n')
         trainer.fit(model, train_dataloaders=train_dataloaders)
 
     def train_and_eval(self) -> BaseKGE:
@@ -213,7 +194,7 @@ class Execute:
         :return: trained BASEKGE
         """
         # 1. Select model and labelling : Entity Prediction or Relation Prediction.
-        model, form_of_labelling = self.select_model(vars(self.args))
+        model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         print(f'KvsAll training starts: {model.name}')  # -labeling:{form_of_labelling}')
         # 2. Create training data.)
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
@@ -250,7 +231,7 @@ class Execute:
 
     def training_1vsall(self):
         # 1. Select model and labelling : Entity Prediction or Relation Prediction.
-        model, form_of_labelling = self.select_model(vars(self.args))
+        model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         print(f'1vsAll training starts: {model.name}')
         # 2. Create training data.
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
@@ -279,7 +260,7 @@ class Execute:
         Train models with Negative Sampling
         """
         assert self.args.neg_ratio > 0
-        model, _ = self.select_model(vars(self.args))
+        model, _ = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         form_of_labelling = 'NegativeSampling'
         print(f'Training starts: {model.name}-labeling:{form_of_labelling}')
         print('Creating training data...', end='\t')
@@ -293,7 +274,7 @@ class Execute:
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_processes)
-        print(f'Done ! It took {time.time() - start_time:.3f} seconds\n')
+        print(f'Done ! {time.time() - start_time:.3f} seconds\n')
         # 3. Train model
         self.model_fitting(trainer=self.trainer, model=model, dataset=dataset)
         return model, form_of_labelling
@@ -556,7 +537,7 @@ class Execute:
 
         for (ith, (train_index, test_index)) in enumerate(kf.split(self.dataset.train_set)):
             trainer = pl.Trainer.from_argparse_args(self.args)
-            model, form_of_labelling = self.select_model(vars(self.args))
+            model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
             print(f'{form_of_labelling} training starts: {model.name}')  # -labeling:{form_of_labelling}')
 
             train_set_for_i_th_fold, test_set_for_i_th_fold = self.dataset.train_set[train_index], \

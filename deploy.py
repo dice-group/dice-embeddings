@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 
 import numpy as np
 import pandas as pd
-from core.static_funcs import load_model, select_model
+from core.static_funcs import load_model, intialize_model
 import json
 from collections import namedtuple
 import torch
@@ -101,7 +101,7 @@ def run(args: dict):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--path_of_experiment_folder", type=str, default='Experiments/2022-03-14 15:28:28.917782')
+    parser.add_argument("--path_of_experiment_folder", type=str, default='Experiments/2022-03-25 13:13:04.234928')
     parser.add_argument('--share', default=False, type=eval, choices=[True, False])
     parser.add_argument('--top_k', default=10, type=int)
     run(vars(parser.parse_args()))

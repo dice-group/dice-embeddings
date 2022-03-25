@@ -18,6 +18,28 @@ from dask import dataframe as ddf
 import dask
 from .sanity_checkers import sanity_checking_with_arguments, config_kge_sanity_checking
 
+
+def select_model(args: dict, is_continual_training: bool = None, storage_path: str = None):
+    isinstance(args, dict)
+    assert len(args) > 0
+    assert isinstance(is_continual_training, bool)
+    assert isinstance(storage_path, str)
+    if is_continual_training:
+        print('Loading pre-trained model...')
+        model, _ = intialize_model(args)
+        try:
+            weights = torch.load(storage_path + '/model.pt', torch.device('cpu'))
+            model.load_state_dict(weights, strict=False)
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                f"{storage_path}/model.pt is not found. The model will be trained with random weights")
+        # TODO: Why set it on train mode ?
+        for parameter in model.parameters():
+            parameter.requires_grad = True
+        model.train()
+        return model, _
+    else:
+        return intialize_model(args)
 def load_data_parallel(data_path, read_only_few: int = None,
                        sample_triples_ratio: float = None) -> dask.dataframe.core.DataFrame:
     """
@@ -298,8 +320,8 @@ def create_experiment_folder(folder_name='Experiments'):
     return path_of_folder
 
 
-def select_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
-    print('Select model...', end=' ')
+def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
+    print('Initializing the selected model...', end=' ')
     start_time = time.time()
     model_name = args['model']
     if model_name == 'KronELinear':
@@ -347,7 +369,7 @@ def select_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
         form_of_labelling = 'EntityPrediction'
     else:
         raise ValueError
-    print(f'Done! It took {time.time() - start_time:.3f}')
+    print(f'Done! {time.time() - start_time:.3f}')
     return model, form_of_labelling
 
 
@@ -365,7 +387,7 @@ def load_model(path_of_experiment_folder, model_path='model.pt') -> Tuple[BaseKG
     configs["num_relations"] = report["num_relations"]
     print(f'Done! It took {time.time() - start_time:.3f}')
     # (4) Select the model
-    model, _ = select_model(configs)
+    model, _ = intialize_model(configs)
     # (5) Put (1) into (4)
     model.load_state_dict(weights, strict=False)
     # (6) Set it into eval model.
@@ -411,7 +433,7 @@ def load_model_ensemble(path_of_experiment_folder) -> Tuple[BaseKGE, pd.DataFram
     configs["num_relations"] = report["num_relations"]
     print(f'Done! It took {time.time() - start_time:.2f} seconds.')
     # (4) Select the model
-    model, _ = select_model(configs)
+    model, _ = intialize_model(configs)
     # (5) Put (1) into (4)
     model.load_state_dict(weights, strict=False)
     # (6) Set it into eval model.
