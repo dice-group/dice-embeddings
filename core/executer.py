@@ -47,8 +47,11 @@ class Execute:
 
     def read_preprocess_index_serialize_data(self) -> None:
         """ Read & Preprocess & Index & Serialize Input Data """
-        self.dataset = read_input_data(self.args, cls=KG)
+        # (1) Read & Preprocess & Index & Serialize Input Data.
+        self.dataset = read_preprocess_index_serialize_kg(self.args, cls=KG)
+        # (2) Share some info about data for easy access.
         self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
+        # (3) Sanity checking.
         self.args, self.dataset = config_kge_sanity_checking(self.args, self.dataset)
 
     def load_indexed_data(self) -> None:
@@ -84,10 +87,12 @@ class Execute:
 
     def start(self) -> dict:
         """
-        1. READ/LOAD input knowledge graph
-        2. Train and Eval a knowledge graph embedding mode
-        3. Store relevant intermediate data including the trained model, embeddings and configuration
-        4. Return brief summary of the computation in dictionary format.
+        (1) Data Preparation:
+            (1.1) Read, Preprocess Index, Serialize.
+            (1.2) Load a data that has been in (1.1).
+        (2) Train & Eval
+        (3) Save the model
+        (4) Return a report of the training
         """
         start_time = time.time()
         # (1) Data Preparation.
@@ -101,6 +106,7 @@ class Execute:
         trained_model = self.train_and_eval()
         # (3) Store trained model.
         self.save_trained_model(trained_model, start_time)
+        # (4) Return the report of the training process.
         return self.report
 
     # @TODO define  self.select_model() as static func and move to static_funcs.py

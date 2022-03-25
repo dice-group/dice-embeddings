@@ -195,7 +195,7 @@ def create_recipriocal_triples_from_dask(x):
 
 
 
-def read_input_data(args, cls):
+def read_preprocess_index_serialize_kg(args, cls):
     """ Read & Parse input data for training and testing"""
     print('*** Read, Parse, and Serialize Knowledge Graph  ***')
     start_time = time.time()
