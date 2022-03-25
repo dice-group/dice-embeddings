@@ -6,9 +6,9 @@ from types import SimpleNamespace
 import numpy as np
 import pandas as pd
 from pytorch_lightning import seed_everything
-from pytorch_lightning.plugins import DDPPlugin, DeepSpeedPlugin
 from sklearn.model_selection import KFold
 from .callbacks import PrintCallback, KGESaveCallback
+from pytorch_lightning.plugins import DDPPlugin, DeepSpeedPlugin
 from pytorch_lightning.callbacks import ModelSummary
 from .dataset_classes import StandardDataModule
 from .helper_classes import LabelRelaxationLoss
@@ -109,18 +109,6 @@ class Execute:
         # (4) Return the report of the training process.
         return self.report
 
-    # @TODO define  self.model_fitting() as static func and move to static_funcs.py
-    def model_fitting(self, trainer, model, dataset) -> None:
-        train_dataloaders = dataset.train_dataloader()
-        del dataset
-        if self.args.eval is False and self.args.eval_on_train is False:
-            """ Deleting self.dataset does not help too much"""
-            # release some memory
-            # del self.dataset
-        print(f'Number of epochs:{self.args.num_epochs}')
-        print(f'Number of mini-batches to compute for a single epoch: {len(train_dataloaders)}')
-        print(f'Learning rate:{self.args.learning_rate}\n')
-        trainer.fit(model, train_dataloaders=train_dataloaders)
 
     def train_and_eval(self) -> BaseKGE:
         """
@@ -153,21 +141,14 @@ class Execute:
         """
         # (2) Adding plugins=[DDPPlugin(find_unused_parameters=False)] and explicitly using num_process > 1
         """ pytorch_lightning.utilities.exceptions.DeadlockDetectedException: DeadLock detected from rank: 1  """
-
-        plugins = []
         self.args.stochastic_weight_avg = True  # => https://pytorch.org/blog/pytorch-1.6-now-includes-stochastic-weight-averaging/
         # (3) Surprisingly, if you do not ask explicitly num_process > 1, computation runs smoothly while using many CPUs
-        if self.args.gpus:
-            plugins.append(DDPPlugin(find_unused_parameters=False))
-            plugins.append(DeepSpeedPlugin(stage=3))  # experiment with it when we use GPUs
-            self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=plugins,
-                                                         callbacks=callbacks)
-        else:
-            self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=plugins,
-                                                         callbacks=callbacks)
-
+        self.trainer = initialize_pl_trainer(self.args, callbacks, plugins=[])
+        # (4) Train model.
         trained_model, form_of_labelling = self.train()
+        # (5) Eval model.
         self.eval(trained_model, form_of_labelling)
+        # (6) Return trained model
         return trained_model
 
     # @TODO Create TrainClass for different strategies
@@ -185,6 +166,7 @@ class Execute:
             else:
                 raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
 
+    ####################Tran & Eval Class methods ######################################
     def training_kvsall(self) -> BaseKGE:
         """
         Train models with KvsAll
@@ -208,7 +190,7 @@ class Execute:
                                      num_workers=self.args.num_processes,
                                      label_smoothing_rate=self.args.label_smoothing_rate)
         # 3. Train model.
-        self.model_fitting(trainer=self.trainer, model=model, dataset=dataset)
+        model_fitting(trainer=self.trainer, model=model, dataset=dataset)
         """
         # @TODO
         from laplace import Laplace
@@ -252,7 +234,7 @@ class Execute:
         else:
             model.loss = nn.CrossEntropyLoss()
         # 3. Train model
-        self.model_fitting(trainer=self.trainer, model=model, dataset=dataset)
+        model_fitting(trainer=self.trainer, model=model, dataset=dataset)
         return model, form_of_labelling
 
     def training_negative_sampling(self) -> pl.LightningModule:
@@ -276,10 +258,9 @@ class Execute:
                                      num_workers=self.args.num_processes)
         print(f'Done ! {time.time() - start_time:.3f} seconds\n')
         # 3. Train model
-        self.model_fitting(trainer=self.trainer, model=model, dataset=dataset)
+        model_fitting(trainer=self.trainer, model=model, dataset=dataset)
         return model, form_of_labelling
 
-    # @TODO Create Eval Class for different strategies
     def eval(self, trained_model, form_of_labelling) -> None:
         """
         Evaluate model with Standard
@@ -554,7 +535,7 @@ class Execute:
                                          )
 
             # 3. Train model
-            self.model_fitting(trainer=trainer, model=model, dataset=dataset)
+            model_fitting(trainer=trainer, model=model, dataset=dataset)
 
             # 6. Test model on validation and test sets if possible.
             res = self.evaluate_lp_k_vs_all(model, test_set_for_i_th_fold, form_of_labelling=form_of_labelling)

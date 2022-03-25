@@ -19,6 +19,37 @@ import dask
 from .sanity_checkers import sanity_checking_with_arguments, config_kge_sanity_checking
 
 
+def model_fitting(trainer, model, dataset) -> None:
+    train_dataloaders = dataset.train_dataloader()
+    del dataset
+    assert trainer.max_epochs == trainer.min_epochs
+    # if self.args.eval is False and self.args.eval_on_train is False:
+    #    """ Deleting self.dataset does not help too much"""
+    # release some memory
+    # del self.dataset
+    print(f'Number of epochs:{trainer.max_epochs}')
+    print(f'Number of mini-batches to compute for a single epoch: {len(train_dataloaders)}')
+    print(f'Learning rate:{model.learning_rate}\n')
+    trainer.fit(model, train_dataloaders=train_dataloaders)
+
+def initialize_pl_trainer(args, callbacks: List, plugins: List):
+    """
+    Initialize pl.Traner
+    :param args: Namedtuple
+    :param callbacks:
+    :param plugins:
+    :return:
+    """
+    if args.gpus:
+        plugins.append(DDPPlugin(find_unused_parameters=False))
+        plugins.append(DeepSpeedPlugin(stage=3))  # experiment with it when we use GPUs
+        return pl.Trainer.from_argparse_args(args, plugins=plugins,
+                                             callbacks=callbacks)
+    else:
+        return pl.Trainer.from_argparse_args(args, plugins=plugins,
+                                             callbacks=callbacks)
+
+
 def select_model(args: dict, is_continual_training: bool = None, storage_path: str = None):
     isinstance(args, dict)
     assert len(args) > 0
@@ -40,6 +71,8 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
         return model, _
     else:
         return intialize_model(args)
+
+
 def load_data_parallel(data_path, read_only_few: int = None,
                        sample_triples_ratio: float = None) -> dask.dataframe.core.DataFrame:
     """
@@ -96,6 +129,7 @@ def store_kge(trained_model, path: str) -> None:
         print(e)
         print(trained_model.name)
         print('Could not save the model correctly')
+
 
 def store(trained_model, model_name: str = 'model', full_storage_path: str = None,
           dataset=None) -> None:
@@ -201,8 +235,6 @@ def add_noisy_triples(train_set, add_noise_rate: float) -> pd.DataFrame:
     return train_set
 
 
-
-
 def create_recipriocal_triples_from_dask(x):
     """
     Add inverse triples into dask dataframe
@@ -213,8 +245,6 @@ def create_recipriocal_triples_from_dask(x):
     return dd.concat([x, x['object'].to_frame(name='subject').join(
         x['relation'].map(lambda x: x + '_inverse').to_frame(name='relation')).join(
         x['subject'].to_frame(name='object'))], ignore_index=True)
-
-
 
 
 def read_preprocess_index_serialize_kg(args, cls):
