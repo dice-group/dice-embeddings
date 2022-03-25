@@ -269,7 +269,7 @@ class KG:
             print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
         if self.test_set is not None:
             start_time = time.time()
-            print('Computing test dataset...',end='\t')
+            print('Computing test dataset...', end='\t')
             self.test_set = self.test_set.compute(scheduler=self.scheduler_flag)
             print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
         del self.df_str_kg
@@ -373,20 +373,17 @@ class KG:
         print(
             f'[1 / 14] Lazy Loading and Preprocessing training data: read_only_few: {self.read_only_few} , sample_triples_ratio: {self.sample_triples_ratio}...',
             end='\t')
-        self.train_set = load_data_parallel(self.data_dir + '/train', self.read_only_few,
-                                                 self.sample_triples_ratio)
-
+        self.train_set = load_data_parallel(self.data_dir + '/train', self.read_only_few, self.sample_triples_ratio)
         print('Done !\n')
         print(
-            f'[2 / 14] Lazy Loading and Preprocessing valid data: read_only_few: {self.read_only_few}, sample_triples_ratio: {self.sample_triples_ratio}...',
+            f'[2 / 14] Lazy Loading and Preprocessing valid data...',
             end='\t')
-        self.valid_set = load_data_parallel(self.data_dir + '/valid', self.read_only_few,
-                                                 self.sample_triples_ratio)
+        self.valid_set = load_data_parallel(self.data_dir + '/valid')
         print('Done !\n')
         print(
-            f'[3 / 14] Lazy Loading and Preprocessing test data: read_only_few: {self.read_only_few}, sample_triples_ratio: {self.sample_triples_ratio}...',
+            f'[3 / 14] Lazy Loading and Preprocessing test data...',
             end='\t')
-        self.test_set = load_data_parallel(self.data_dir + '/test', self.read_only_few, self.sample_triples_ratio)
+        self.test_set = load_data_parallel(self.data_dir + '/test')
         print('Done !\n')
         return self.train_set, self.valid_set, self.test_set
 

@@ -101,7 +101,7 @@ def run(args: dict):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--path_of_experiment_folder", type=str, default='Experiments/2022-03-25 13:13:04.234928')
+    parser.add_argument("--path_of_experiment_folder", type=str, default='Merged/2022-03-25 14:12:22.670410')
     parser.add_argument('--share', default=False, type=eval, choices=[True, False])
     parser.add_argument('--top_k', default=10, type=int)
     run(vars(parser.parse_args()))
