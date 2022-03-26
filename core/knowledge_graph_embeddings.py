@@ -1,4 +1,5 @@
 import os
+import time
 from typing import List, Tuple
 import torch
 from torch import optim
@@ -29,7 +30,7 @@ class KGE(BaseInteractiveKGE):
         return x, labels
 
     def train_cbd(self, head_entity, iteration=1, num_copies_in_batch=1, lr=.001,
-                  converge_loss=.0001, label_smoothing_rate=None):
+                  converge_loss=.0001, label_smoothing_rate=.001):
         """
         Train/Retrain model via applying KvsAll training/scoring technique on CBD of an head entity
 
@@ -39,6 +40,7 @@ class KGE(BaseInteractiveKGE):
         3) Construct (2) as a batch
         4) Train
         """
+        start_time=time.time()
         assert len(head_entity) == 1
         try:
             idx_head_entity = self.entity_to_idx.loc[head_entity]['entity'].values[0]
@@ -52,7 +54,6 @@ class KGE(BaseInteractiveKGE):
         print(f'Frequency of {head_entity} = {len(idx_batch_relations)}', end='\t')
         idx_batch_relations = idx_batch_relations.unique()
         print(f'with {len(idx_batch_relations)} number of unique relations', end='\t')
-
         # (2)
         print(f'Constructing triples for training from CBD of {head_entity[0]}...', end='\t')
         num_unique_relations = len(idx_batch_relations)
@@ -100,6 +101,7 @@ class KGE(BaseInteractiveKGE):
                 outputs = self.model(x)
                 loss = self.model.loss(outputs, batch_labels)
                 print(f"Eval Mode:Loss:{loss.item():.4f}")
+        print(f'Online Training took {time.time()-start_time:.4f} seconds.')
 
     def train_triples(self, head_entity, relation, tail_entity, labels, iteration=2, lr=.1, repeat=2):
         """

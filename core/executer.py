@@ -190,7 +190,12 @@ class Execute:
                                      label_smoothing_rate=self.args.label_smoothing_rate)
         # 3. Train model.
         train_dataloaders = dataset.train_dataloader()
+        # Release some memory
         del dataset
+        if self.args.eval is False:
+            self.dataset.train_set = None
+            self.dataset.valid_set = None
+            self.dataset.test_set = None
         model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
         """
         # @TODO
@@ -236,7 +241,12 @@ class Execute:
             model.loss = nn.CrossEntropyLoss()
         # 3. Train model
         train_dataloaders = dataset.train_dataloader()
+        # Release some memory
         del dataset
+        if self.args.eval is False:
+            self.dataset.train_set = None
+            self.dataset.valid_set = None
+            self.dataset.test_set = None
         model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
         return model, form_of_labelling
 
@@ -262,6 +272,7 @@ class Execute:
         print(f'Done ! {time.time() - start_time:.3f} seconds\n')
         # 3. Train model
         train_dataloaders = dataset.train_dataloader()
+        # Release some memory
         del dataset
         if self.args.eval is False:
             self.dataset.train_set = None
@@ -545,7 +556,7 @@ class Execute:
             # 3. Train model
             train_dataloaders = dataset.train_dataloader()
             del dataset
-            model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
+            model_fitting(trainer=trainer, model=model, train_dataloaders=train_dataloaders)
 
             # 6. Test model on validation and test sets if possible.
             res = self.evaluate_lp_k_vs_all(model, test_set_for_i_th_fold, form_of_labelling=form_of_labelling)
