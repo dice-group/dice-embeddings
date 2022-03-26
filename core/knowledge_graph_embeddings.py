@@ -1,6 +1,8 @@
 import os
 import time
 from typing import List, Tuple
+
+import pandas as pd
 import torch
 from torch import optim
 from torch.utils.data import DataLoader
@@ -40,7 +42,7 @@ class KGE(BaseInteractiveKGE):
         3) Construct (2) as a batch
         4) Train
         """
-        start_time=time.time()
+        start_time = time.time()
         assert len(head_entity) == 1
         try:
             idx_head_entity = self.entity_to_idx.loc[head_entity]['entity'].values[0]
@@ -50,24 +52,25 @@ class KGE(BaseInteractiveKGE):
         print(f'Extracting relevant relations for training from CBD of {head_entity[0]}...', end='\t')
         batch_relations = []
         # (1) Select {r | (h,r,x) \in G).
-        idx_batch_relations = self.train_set[self.train_set['subject'] == idx_head_entity]['relation']
-        print(f'Frequency of {head_entity} = {len(idx_batch_relations)}', end='\t')
-        idx_batch_relations = idx_batch_relations.unique()
+        triples: pd.DataFrame
+        triples = self.train_set[self.train_set['subject'] == idx_head_entity]
+        print(f'Frequency of {head_entity} = {len(triples)}', end='\t')
+        idx_batch_relations = triples['relation'].unique()
         print(f'with {len(idx_batch_relations)} number of unique relations', end='\t')
         # (2)
         print(f'Constructing triples for training from CBD of {head_entity[0]}...', end='\t')
         num_unique_relations = len(idx_batch_relations)
         batch_labels = torch.zeros(num_unique_relations, self.num_entities)
         for i, idx_relation in enumerate(idx_batch_relations):
-            # Select tails.
-            idx_tails = self.train_set[
-                (self.train_set['subject'] == idx_head_entity) & (self.train_set['relation'] == idx_relation)][
-                'object'].values
+            idx_tails = triples[triples['relation'] == idx_relation]['object'].values
             batch_labels[i, idx_tails] = 1
             batch_relations.append(idx_relation)
+
+        assert batch_labels.shape[0] == len(batch_relations)
         # (3) Construct the batch
         x = torch.cat([torch.LongTensor([idx_head_entity]).repeat(num_unique_relations, 1),
-                       torch.LongTensor(batch_relations).reshape(len(batch_relations), 1)], dim=1)
+                       torch.LongTensor(batch_relations).reshape(num_unique_relations, 1)], dim=1)
+        del batch_relations
         # Create a BATCH via repeating.
         x = x.repeat(num_copies_in_batch, 1)
         batch_labels = batch_labels.repeat(num_copies_in_batch, 1)
@@ -80,7 +83,7 @@ class KGE(BaseInteractiveKGE):
             optimizer.zero_grad()
             outputs = self.model(x)
             loss = self.model.loss(outputs, batch_labels)
-            print(f"Iteration:{epoch}\t Loss:{loss.item():.4f}")
+            print(f"Iteration:{epoch}\t Loss:{loss.item():.10f}")
             loss.backward()
             optimizer.step()
             if loss.item() < converge_loss:
@@ -93,7 +96,7 @@ class KGE(BaseInteractiveKGE):
                 outputs = self.model(x)
                 loss = self.model.loss(outputs, batch_labels)
                 print(f"Eval Mode:Loss:{loss.item():.4f}")
-        print(f'Online Training took {time.time()-start_time:.4f} seconds.')
+        print(f'Online Training took {time.time() - start_time:.4f} seconds.')
 
     def train_triples(self, head_entity, relation, tail_entity, labels, iteration=2, lr=.1, repeat=2):
         """
