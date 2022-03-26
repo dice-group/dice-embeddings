@@ -80,8 +80,11 @@ class BaseInteractiveKGE:
 
     def predict_missing_tail_entity(self, head_entity: List[str], relation: List[str], k: int) -> Tuple:
         assert k >= 0
+        # Get index of head entity
         head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values.tolist())
+        # Get index of relation
         relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values.tolist())
+        # Get all entity indexes.
         tail_entity = torch.LongTensor(self.entity_to_idx['entity'].values.tolist())
 
         x = torch.stack((head_entity.repeat(self.num_entities, ),
@@ -211,3 +214,16 @@ class BaseInteractiveKGE:
         labels[0, idx_tails] = 1
         x = torch.LongTensor([idx_head_entity, idx_relation]).reshape(1, 2)
         return x, labels, idx_tails
+
+    def get_relations(self, entity: str)->List[str]:
+        """
+        Given an entity return relations that occur with this entity regarless of its positition
+        :param entity:
+        :return:
+        """
+        idx_entity = self.entity_to_idx.loc[entity].values[0]
+        idx_relations = self.train_set[
+            (self.train_set['subject'] == idx_entity) | (self.train_set['object'] == idx_entity)][
+            'relation'].unique()
+        # => relation_to_idx must be a dataframe with monotonically increasing
+        return self.relation_to_idx.iloc[idx_relations].index.values.tolist()
