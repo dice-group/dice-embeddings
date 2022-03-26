@@ -10,7 +10,7 @@ import pandas as pd
 class BaseInteractiveKGE:
     """ Base class for interactive KGE """
 
-    def __init__(self, path_of_pretrained_model_dir, construct_ensemble=False, model_path=None):
+    def __init__(self, path_of_pretrained_model_dir, construct_ensemble=False, model_name=None):
         try:
             assert os.path.isdir(path_of_pretrained_model_dir)
         except AssertionError:
@@ -21,9 +21,9 @@ class BaseInteractiveKGE:
         if construct_ensemble:
             self.model, self.entity_to_idx, self.relation_to_idx = load_model_ensemble(self.path + '/')
         else:
-            if model_path:
+            if model_name:
                 self.model, self.entity_to_idx, self.relation_to_idx = load_model(self.path + '/',
-                                                                                  model_path=model_path)
+                                                                                  model_name=model_name)
             else:
                 self.model, self.entity_to_idx, self.relation_to_idx = load_model(self.path + '/')
 
