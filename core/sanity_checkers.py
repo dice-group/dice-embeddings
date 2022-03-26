@@ -70,16 +70,18 @@ def dataset_sanity_checking(train_set: np.ndarray, num_entities: int, num_relati
     try:
         assert num_entities >= max(train_set[:, 0]) and num_entities >= max(train_set[:, 2])
     except AssertionError:
-        print(f'Entity Indexing Error:\nMax ID of a subject or object entity in train set:{max(train_set[:, 0])} or {max(train_set[:, 2])} is greater than num_entities:{num_entities}')
+        print(
+            f'Entity Indexing Error:\nMax ID of a subject or object entity in train set:{max(train_set[:, 0])} or {max(train_set[:, 2])} is greater than num_entities:{num_entities}')
         print('Exiting...')
         exit(1)
     try:
         assert num_relations >= max(train_set[:, 1])
     except AssertionError:
-        print(f'Relation Indexing Error:\nMax ID of a relation in train set:{max(train_set[:, 1])} is greater than num_entities:{num_relations}')
+        print(
+            f'Relation Indexing Error:\nMax ID of a relation in train set:{max(train_set[:, 1])} is greater than num_entities:{num_relations}')
         print('Exiting...')
         exit(1)
     # 13. Sanity checking: data types
     assert isinstance(train_set[0], np.ndarray)
-    assert isinstance(train_set[0][0], np.int64) and isinstance(train_set[0][1], np.int64)
-    assert isinstance(train_set[0][2], np.int64)
+    # assert isinstance(train_set[0][0], np.int64) and isinstance(train_set[0][1], np.int64)
+    # assert isinstance(train_set[0][2], np.int64)

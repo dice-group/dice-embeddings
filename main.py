@@ -18,7 +18,6 @@ def argparse_default(description=None):
     parser.add_argument("--seed_for_computation", type=int, default=1, help='Seed for all, see pl seed_everything().')
     parser.add_argument("--min_freq_for_vocab", type=int, default=None,
                         help='Min number of triples for a vocab term to be considered')
-
     # Model and Training Parameters
     parser.add_argument("--model", type=str,
                         default='QMult',
@@ -41,7 +40,7 @@ def argparse_default(description=None):
                                                                            '.1 means extend train data by adding 10% random data')
 
     # Optimization related hyperparameters
-    parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty')
+    parser.add_argument('--weight_decay', type=float, default=0.00001, help='L2 penalty')
     parser.add_argument('--input_dropout_rate', type=float, default=0.0)
     parser.add_argument('--hidden_dropout_rate', type=float, default=0.0)
     parser.add_argument("--feature_map_dropout_rate", type=int, default=0.0)
@@ -61,7 +60,5 @@ def argparse_default(description=None):
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)
-
-
 if __name__ == '__main__':
     Execute(argparse_default()).start()

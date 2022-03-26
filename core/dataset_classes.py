@@ -1,3 +1,5 @@
+import time
+
 from torch.utils.data import Dataset
 import numpy as np
 import torch
@@ -9,6 +11,7 @@ from typing import List
 class StandardDataModule(pl.LightningDataModule):
     """
     train, valid and test sets are available.
+    @TODO : Efficient Data types for train loaders is needed.
     """
 
     def __init__(self, train_set_idx, entity_to_idx, relation_to_idx, batch_size, form,
@@ -37,6 +40,8 @@ class StandardDataModule(pl.LightningDataModule):
         self.form = form
         self.batch_size = batch_size
         self.num_workers = num_workers
+
+        print('Number of works will be used at batching:', self.num_workers)
         self.neg_sample_ratio = neg_sample_ratio
         self.label_smoothing_rate = label_smoothing_rate
 
@@ -64,8 +69,7 @@ class StandardDataModule(pl.LightningDataModule):
             return DataLoader(train_set, batch_size=self.batch_size,
                               shuffle=True,
                               num_workers=self.num_workers,
-                              collate_fn=train_set.collate_fn, pin_memory=True
-                              )
+                              collate_fn=train_set.collate_fn, pin_memory=True)
         elif self.form == 'EntityPrediction' or self.form == 'RelationPrediction':
             train_set = KvsAll(self.train_set_idx, entity_idxs=self.entity_to_idx,
                                relation_idxs=self.relation_to_idx, form=self.form,
@@ -234,21 +238,23 @@ class KvsAll(Dataset):
 
 
 class TriplePredictionDataset(Dataset):
+    """ Negative Sampling Class """
 
-    def __init__(self, triples_idx, num_entities, num_relations, neg_sample_ratio=0):
-        self.neg_sample_ratio = neg_sample_ratio  # 0 Implies that we do not add negative samples. This is needed during testing and validation
+    def __init__(self, triples_idx, num_entities, num_relations, neg_sample_ratio=1):
+        start_time = time.time()
+        print('Initializing negative sampling dataset batching...', end='\t')
         triples_idx = torch.LongTensor(triples_idx)
+        self.neg_sample_ratio = neg_sample_ratio  # 0 Implies that we do not add negative samples. This is needed during testing and validation
         self.head_idx = triples_idx[:, 0]
         self.rel_idx = triples_idx[:, 1]
         self.tail_idx = triples_idx[:, 2]
         assert self.head_idx.shape == self.rel_idx.shape == self.tail_idx.shape
         assert num_entities > max(self.head_idx) and num_entities > max(self.tail_idx)
         assert num_relations > max(self.rel_idx)
-
         self.length = len(triples_idx)
-
         self.num_entities = num_entities
         self.num_relations = num_relations
+        print(f'Done ! {time.time() - start_time:.3f} seconds\n')
 
     def __len__(self):
         return self.length
@@ -257,6 +263,8 @@ class TriplePredictionDataset(Dataset):
         h = self.head_idx[idx]
         r = self.rel_idx[idx]
         t = self.tail_idx[idx]
+        # setting tyoe as long allow as to batch = torch.LongTensor(batch)
+        # Find a way to use int32 as head_idx.
         return h, r, t, torch.ones(1, dtype=torch.long)
 
     def collate_fn(self, batch):
@@ -295,7 +303,6 @@ class OneVsAllEntityPredictionDataset(Dataset):
     def __init__(self, idx_triples):
         super().__init__()
         assert len(idx_triples) > 0
-
         self.train_data = torch.torch.LongTensor(idx_triples)
 
     def __len__(self):

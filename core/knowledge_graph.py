@@ -9,7 +9,7 @@ from dask import dataframe as ddf
 import os
 import pandas as pd
 from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_re_vocab, \
-    create_recipriocal_triples_from_dask, add_noisy_triples, index_triples, load_data_parallel
+    create_recipriocal_triples_from_dask, add_noisy_triples, index_triples, load_data_parallel, numpy_data_type_changer
 from .sanity_checkers import dataset_sanity_checking
 import glob
 
@@ -81,8 +81,8 @@ class KG:
             self.apply_reciprical_or_noise()
             # (1.3) Construct integer indexing for entities and relations
             if entity_to_idx is None and relation_to_idx is None:
-                self.parallel_vocabulary_construction()  # via DASK
-                # self.sequential_vocabulary_construction() via Pandas
+                # self.parallel_vocabulary_construction()  # via DASK
+                self.sequential_vocabulary_construction()  # via Pandas
                 print(
                     '[9 / 14] Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...',
                     end='\t')
@@ -92,9 +92,14 @@ class KG:
                 self.num_relations = len(self.relation_to_idx)
                 print('Done !\n')
                 print('[10 / 14] Mapping training data into integers for training...', end='\t')
+                start_time = time.time()
                 # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
-                self.train_set = index_triples(self.train_set, self.entity_to_idx, self.relation_to_idx)
-                print('Done !\n')
+                # @TODO: Benchmark pandasswifter vs Panddas vs DASK on large dataset.
+                self.train_set = index_triples(self.train_set,
+                                               self.entity_to_idx,
+                                               self.relation_to_idx,
+                                               multi_processing=False)
+                print(f'Done ! {time.time() - start_time:.3f} seconds\n')
                 if path_for_serialization is not None:
                     # 10. Serialize (9).
                     print('[11 / 14] Serializing integer mapped data...', end='\t')
@@ -134,6 +139,8 @@ class KG:
                 print('[12 / 14] Mapping from pandas data frame to numpy ndarray to reduce memory usage...', end='\t')
                 self.train_set = self.train_set.values
 
+            self.train_set = numpy_data_type_changer(self.train_set, num=max(self.num_entities, self.num_relations))
+
             print('[13 / 14 ] Sanity checking...', end='\t')
             # 12. Sanity checking: indexed training set can not have an indexed entity assigned with larger indexed than the number of entities.
             dataset_sanity_checking(self.train_set, self.num_entities, self.num_relations)
@@ -155,6 +162,7 @@ class KG:
                 # To numpy
                 self.valid_set = self.valid_set.values  # .compute(scheduler=scheduler_flag)
                 dataset_sanity_checking(self.valid_set, self.num_entities, self.num_relations)
+                self.valid_set = numpy_data_type_changer(self.valid_set, num=max(self.num_entities, self.num_relations))
             if self.test_set is not None:
                 if path_for_serialization is not None:
                     print('[16 / 14 ] Serializing test data for Continual Learning...', end='\t')
@@ -171,6 +179,7 @@ class KG:
                 # To numpy
                 self.test_set = self.test_set.values
                 dataset_sanity_checking(self.test_set, self.num_entities, self.num_relations)
+                self.test_set = numpy_data_type_changer(self.test_set, num=max(self.num_entities, self.num_relations))
                 print('Done !\n')
             if eval_model:  # and len(self.valid_set) > 0 and len(self.test_set) > 0:
                 if self.valid_set is not None and self.test_set is not None:
@@ -276,14 +285,13 @@ class KG:
 
     def sequential_vocabulary_construction(self):
         print('Train set compute...')
-        self.train_set = self.train_set.compute()
+        self.train_set = self.train_set.compute(scheduler=self.scheduler_flag)
         if self.valid_set is not None:
             print('Valid set compute...')
-            self.valid_set = self.valid_set.compute()
+            self.valid_set = self.valid_set.compute(scheduler=self.scheduler_flag)
         if self.test_set is not None:
             print('Test set set compute...')
-            self.test_set = self.test_set.compute()
-
+            self.test_set = self.test_set.compute(scheduler=self.scheduler_flag)
         # 1. Concatenate dataframes.
         print('\n[4 / 14] Concatenating data to obtain index...')
         x = [self.train_set]
@@ -299,28 +307,12 @@ class KG:
         self.remove_triples_with_condition()
         print('[5 / 14] Creating a mapping from entities to integer indexes...')
         # (3) Create a bijection mapping from entities of (2) to integer indexes.
-        # self.entity_to_idx = dask.array.concatenate(
-        #    [self.df_str_kg['subject'], self.df_str_kg['object']]).to_dask_dataframe(
-        #    columns=['entity']).drop_duplicates()
-        # Via Pandas
         ordered_list = pd.unique(self.df_str_kg[['subject', 'object']].values.ravel('K'))
         self.entity_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)), columns=['entity'], index=ordered_list)
         print('Done !\n')
         print('[6 / 14] Serializing compressed entity integer mapping...')
         self.entity_to_idx.to_parquet(self.path_for_serialization + '/entity_to_idx.gzip', compression='gzip')
         print('Done !\n')
-
-        """
-        With Dask
-        self.entity_to_idx = dask.array.concatenate(
-            [df_str_kg['subject'], df_str_kg['object']]).to_dask_dataframe(
-            columns=['entity']).drop_duplicates()
-                        # Set URIs as index:
-        self.entity_to_idx = self.entity_to_idx.set_index(self.entity_to_idx.entity)
-        # Set values as integers
-        self.entity_to_idx['entity'] = dask.array.arange(0, self.entity_to_idx.size.compute(
-            scheduler=scheduler_flag))
-        """
         # 5. Create a bijection mapping  from relations to integer indexes.
         print('[7 / 14] Creating a mapping from relations to integer indexes...')
         ordered_list = pd.unique(self.df_str_kg['relation'].values.ravel('K'))
@@ -332,8 +324,6 @@ class KG:
         self.relation_to_idx.to_parquet(self.path_for_serialization + '/relation_to_idx.gzip', compression='gzip')
         print('Done !\n')
         del ordered_list
-        # 7. Convert from pandas dataframe to dictionaries for an easy access
-        # We may want to benchmark using python dictionary and pandas frame
 
     def remove_triples_with_condition(self):
         if self.min_freq_for_vocab is not None:

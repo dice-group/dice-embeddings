@@ -25,6 +25,8 @@ or manually
 ```
 conda create -n daikiri python=3.9
 conda activate daikiri
+pip install pandas==1.4.1
+pip install swifter==1.1.2
 pip install torch==1.10.1+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
 pip install pytorch-lightning==1.5.9
 pip install "dask[complete]"==2022.1.0

@@ -17,11 +17,27 @@ import dask.dataframe as dd
 from dask import dataframe as ddf
 import dask
 from .sanity_checkers import sanity_checking_with_arguments, config_kge_sanity_checking
+import swifter
 
 
-def model_fitting(trainer, model, dataset) -> None:
-    train_dataloaders = dataset.train_dataloader()
-    del dataset
+def numpy_data_type_changer(train_set, num):
+    train_set = train_set.astype(np.int32)
+    return train_set
+    if np.iinfo(np.int8).max > num:
+        print(f'Setting int8,\t {np.iinfo(np.int8).max}')
+        train_set = train_set.astype(np.int8)
+    elif np.iinfo(np.int16).max > num:
+        print(f'Setting int16,\t {np.iinfo(np.int16).max}')
+        train_set = train_set.astype(np.int16)
+    elif np.iinfo(np.int32).max > num:
+        print(f'Setting int32,\t {np.iinfo(np.int32).max}')
+        train_set = train_set.astype(np.int32)
+    else:
+        pass
+    return train_set
+
+
+def model_fitting(trainer, model, train_dataloaders) -> None:
     assert trainer.max_epochs == trainer.min_epochs
     # if self.args.eval is False and self.args.eval_on_train is False:
     #    """ Deleting self.dataset does not help too much"""
@@ -31,6 +47,7 @@ def model_fitting(trainer, model, dataset) -> None:
     print(f'Number of mini-batches to compute for a single epoch: {len(train_dataloaders)}')
     print(f'Learning rate:{model.learning_rate}\n')
     trainer.fit(model, train_dataloaders=train_dataloaders)
+
 
 def initialize_pl_trainer(args, callbacks: List, plugins: List):
     """
@@ -174,13 +191,15 @@ def store(trained_model, model_name: str = 'model', full_storage_path: str = Non
         print('There is not enough memory to store embeddings separately.')
 
 
-def index_triples(train_set, entity_to_idx, relation_to_idx: dict):
+def index_triples(train_set, entity_to_idx:dict, relation_to_idx: dict, multi_processing=False):
     """
-    :param train_set: dask dataframe/pandas dataframe
+    :param multi_processing:
+    :param train_set: pandas dataframe or dask dataframe
     :param entity_to_idx:
     :param relation_to_idx:
     :return:
     """
+
 
     def entity_look_up(x):
         try:
@@ -194,11 +213,17 @@ def index_triples(train_set, entity_to_idx, relation_to_idx: dict):
         except KeyError:
             return None
 
-    train_set['subject'] = train_set['subject'].apply(lambda x: entity_look_up(x))
-    train_set['relation'] = train_set['relation'].apply(lambda x: relation_look_up(x))
-    train_set['object'] = train_set['object'].apply(lambda x: entity_look_up(x))
+    if multi_processing:
+        assert isinstance(train_set, pd.core.frame.DataFrame)
+        train_set['subject'] = train_set['subject'].swifter.apply(lambda x: entity_look_up(x))
+        train_set['relation'] = train_set['relation'].swifter.apply(lambda x: relation_look_up(x))
+        train_set['object'] = train_set['object'].swifter.apply(lambda x: entity_look_up(x))
+    else:
+        train_set['subject'] = train_set['subject'].apply(lambda x: entity_look_up(x))
+        train_set['relation'] = train_set['relation'].apply(lambda x: relation_look_up(x))
+        train_set['object'] = train_set['object'].apply(lambda x: entity_look_up(x))
+
     train_set = train_set.dropna()
-    train_set = train_set.astype(int)
     return train_set
 
 
