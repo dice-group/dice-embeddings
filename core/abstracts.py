@@ -207,7 +207,7 @@ class BaseInteractiveKGE:
             'object'].values
         print('Num. Tails:\t', self.entity_to_idx.iloc[idx_tails].values.size)
         # Hard Labels
-        labels = torch.zeros(self.num_entities)
-        labels[idx_tails] = 1
-        x = torch.LongTensor([idx_head_entity, idx_relation])
+        labels = torch.zeros(1, self.num_entities)
+        labels[0, idx_tails] = 1
+        x = torch.LongTensor([idx_head_entity, idx_relation]).reshape(1, 2)
         return x, labels, idx_tails

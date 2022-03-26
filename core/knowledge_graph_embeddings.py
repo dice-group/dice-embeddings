@@ -98,7 +98,9 @@ class KGE(BaseInteractiveKGE):
                 print(f"Eval Mode:Loss:{loss.item():.4f}")
         print(f'Online Training took {time.time() - start_time:.4f} seconds.')
 
-    def train_triples(self, head_entity, relation, tail_entity, labels, iteration=2, lr=.1, repeat=2):
+    def train_triples(self, head_entity: List[str], relation: List[str], tail_entity: List[str], labels: List[float],
+                      iteration=2,
+                      lr=.1):
         """
 
         :param head_entity:
@@ -107,28 +109,78 @@ class KGE(BaseInteractiveKGE):
         :param labels:
         :param iteration:
         :param lr:
-        :param repeat:
         :return:
         """
         assert len(head_entity) == len(relation) == len(tail_entity) == len(labels)
-        x, labels = self.construct_input_and_output_k_vs_all(head_entity, relation, tail_entity, labels)
-        x = x.num_copies_in_batch(repeat, 1)
-        labels = labels.num_copies_in_batch(repeat)
+        # (1) From List of strings to TorchLongTensor.
+        x = torch.LongTensor(self.index_triple(head_entity, relation, tail_entity)).reshape(1, 3)
+        # (2) From List of float to Torch Tensor.
+        labels = torch.FloatTensor(labels)
+        # (3) Train mode.
         self.set_model_train_mode()
         optimizer = optim.Adam(self.model.parameters(), lr=lr)
-        print('Iteration starts.')
+        print(f'Iteration starts...')
+        # (4) Train.
         for epoch in range(iteration):
             optimizer.zero_grad()
             outputs = self.model(x)
             loss = self.model.loss(outputs, labels)
-            print(f"Iteration:{epoch}\t Loss:{loss.item():.4f}\t Outputs:{outputs.detach().mean()}")
+            print(f"Iteration:{epoch}\t Loss:{loss.item()}\t Outputs:{outputs.detach().mean()}")
             loss.backward()
             optimizer.step()
+        # (5) Eval
         self.set_model_eval_mode()
         with torch.no_grad():
             outputs = self.model(x)
             loss = self.model.loss(outputs, labels)
-        print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs.detach()}")
+            print(f"Eval Mode:\tLoss:{loss.item()}\t Outputs:{outputs.detach().mean()}")
+
+    def train_k_vs_all(self, head_entity, relation, iteration=1, lr=.001):
+        """
+        Train k vs all
+        :param head_entity:
+        :param relation:
+        :param iteration:
+        :param lr:
+        :return:
+        """
+        assert len(head_entity) == 1
+        # (1) Construct input and output
+        out = self.construct_input_and_output_k_vs_all(head_entity, relation)
+        if out is None:
+            return
+
+        x, labels, idx_tails = out
+        # (2) Train mode
+        self.set_model_train_mode()
+        optimizer = optim.Adam(self.model.parameters(), lr=lr)
+        print('\nIteration starts.')
+        # (3) Iterative training.
+        converged = False
+        for epoch in range(iteration):
+            optimizer.zero_grad()
+            outputs = self.model(x)
+            loss = self.model.loss(outputs, labels)
+            if len(idx_tails) > 0:
+                print(
+                    f"Iteration:{epoch}\t Loss:{loss.item():.4f}\t Avg. Logits for correct tails: {outputs[0, idx_tails].flatten().mean().detach():.4f}")
+            else:
+                print(
+                    f"Iteration:{epoch}\t Loss:{loss.item():.4f}\t Avg. Logits for all negatives: {outputs[0].flatten().mean().detach():.4f}")
+
+            loss.backward()
+            optimizer.step()
+            if loss.item() < .00001:
+                print(f'loss is {loss.item():.3f}. Converged !!!')
+                converged = True
+                break
+        # (4) Eval mode
+        self.set_model_eval_mode()
+        if converged is False:
+            with torch.no_grad():
+                outputs = self.model(x)
+                loss = self.model.loss(outputs, labels)
+            print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs[0, idx_tails].flatten().detach()}\n")
 
     def train(self, kg, lr=.1, epoch=10, batch_size=32, neg_sample_ratio=10, num_workers=1) -> None:
         """ Retrained a pretrain model on an input KG via negative sampling."""
@@ -181,53 +233,6 @@ class KGE(BaseInteractiveKGE):
             last_avg_loss_per_triple += self.model.loss(pred, y)
         last_avg_loss_per_triple /= len(train_set)
         print(f'On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple:.3f}')
-
-    def train_k_vs_all(self, head_entity, relation, iteration=1, num_copies_in_batch=2, lr=.001):
-        """
-        Train k vs all
-        :param head_entity:
-        :param relation:
-        :param iteration:
-        :param num_copies_in_batch:
-        :param lr:
-        :return:
-        """
-        assert len(head_entity) == 1
-        out = self.construct_input_and_output_k_vs_all(head_entity, relation)
-        if out is None:
-            return
-        x, labels, idx_tails = out
-        x = x.repeat(num_copies_in_batch, 1)
-        # TODO: Apply Label Smoothing
-        labels = labels.repeat(num_copies_in_batch, 1)
-        self.set_model_train_mode()
-        optimizer = optim.Adam(self.model.parameters(), lr=lr)
-        print('\nIteration starts.')
-        converged = False
-        for epoch in range(iteration):
-            optimizer.zero_grad()
-            outputs = self.model(x)
-            loss = self.model.loss(outputs, labels)
-            if epoch % 10 == 0:
-                if len(idx_tails) > 0:
-                    print(
-                        f"Iteration:{epoch}\t Loss:{loss.item():.4f}\t Avg. Logits for correct tails: {outputs[0, idx_tails].flatten().mean().detach():.4f}")
-                else:
-                    print(
-                        f"Iteration:{epoch}\t Loss:{loss.item():.4f}\t Avg. Logits for all negatives: {outputs[0].flatten().mean().detach():.4f}")
-
-            loss.backward()
-            optimizer.step()
-            if loss.item() < .001:
-                print(f'loss is {loss.item():.3f}. Converged !!!')
-                converged = True
-                break
-        self.set_model_eval_mode()
-        if converged is False:
-            with torch.no_grad():
-                outputs = self.model(x)
-                loss = self.model.loss(outputs, labels)
-            print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs[0, idx_tails].flatten().detach()}\n")
 
     def train_triples_lbfgs_negative(self, head_entity, relation, tail_entity, iteration=1, repeat=2):
         """ This training regime with LBFGS often takes quite a bit of timeTakes quite some time"""
