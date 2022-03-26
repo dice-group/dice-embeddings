@@ -20,6 +20,106 @@ from .sanity_checkers import sanity_checking_with_arguments, config_kge_sanity_c
 import swifter
 
 
+# @TODO: Could these funcs can be merged?
+def select_model(args: dict, is_continual_training: bool = None, storage_path: str = None):
+    isinstance(args, dict)
+    assert len(args) > 0
+    assert isinstance(is_continual_training, bool)
+    assert isinstance(storage_path, str)
+    if is_continual_training:
+        print('Loading pre-trained model...')
+        model, _ = intialize_model(args)
+        try:
+            weights = torch.load(storage_path + '/model.pt', torch.device('cpu'))
+            model.load_state_dict(weights)
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                f"{storage_path}/model.pt is not found. The model will be trained with random weights")
+        # TODO: Why set it on train mode ?
+        for parameter in model.parameters():
+            parameter.requires_grad = True
+        model.train()
+        return model, _
+    else:
+        return intialize_model(args)
+
+
+def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
+    """ Load weights and initialize pytorch module from namespace arguments"""
+    print(f'Loading model {model_name}...', end=' ')
+    start_time = time.time()
+    # (1) Load weights..
+    weights = torch.load(path_of_experiment_folder + f'/{model_name}', torch.device('cpu'))
+    # (2) Loading input configuration..
+    configs = load_json(path_of_experiment_folder + '/configuration.json')
+    # (3) Loading the report of a training process.
+    report = load_json(path_of_experiment_folder + '/report.json')
+    configs["num_entities"] = report["num_entities"]
+    configs["num_relations"] = report["num_relations"]
+    print(f'Done! It took {time.time() - start_time:.3f}')
+    # (4) Select the model
+    model, _ = intialize_model(configs)
+    # (5) Put (1) into (4)
+    model.load_state_dict(weights)
+    # (6) Set it into eval model.
+    for parameter in model.parameters():
+        parameter.requires_grad = False
+    model.eval()
+    start_time = time.time()
+    print('Loading entity and relation indexes...', end=' ')
+    entity_to_idx = pd.read_parquet(path_of_experiment_folder + '/entity_to_idx.gzip')
+    relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')
+    print(f'Done! It took {time.time() - start_time:.4f}')
+    return model, entity_to_idx, relation_to_idx
+
+
+def load_model_ensemble(path_of_experiment_folder) -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
+    """ Construct Ensemble Of weights and initialize pytorch module from namespace arguments"""
+    print('Constructing Ensemble of ', end=' ')
+    start_time = time.time()
+    # (1) Load weights..
+    paths_for_loading = glob.glob(path_of_experiment_folder + '/model*')
+    print(f'{len(paths_for_loading)} models...')
+    assert len(paths_for_loading) > 0
+    num_of_models = len(paths_for_loading)
+    weights = None
+    while len(paths_for_loading):
+        p = paths_for_loading.pop()
+        print(f'Model: {p}...')
+        if weights is None:
+            weights = torch.load(p, torch.device('cpu'))
+        else:
+            five_weights = torch.load(p, torch.device('cpu'))
+            for k, _ in weights.items():
+                if 'weight' in k:
+                    weights[k] = (weights[k] + five_weights[k])
+    for k, _ in weights.items():
+        if 'weight' in k:
+            weights[k] /= num_of_models
+    # (2) Loading input configuration..
+    configs = load_json(path_of_experiment_folder + '/configuration.json')
+    # (3) Loading the report of a training process.
+    report = load_json(path_of_experiment_folder + '/report.json')
+    configs["num_entities"] = report["num_entities"]
+    configs["num_relations"] = report["num_relations"]
+    print(f'Done! It took {time.time() - start_time:.2f} seconds.')
+    # (4) Select the model
+    model, _ = intialize_model(configs)
+    # (5) Put (1) into (4)
+    model.load_state_dict(weights)
+    # (6) Set it into eval model.
+    print('Setting Eval mode & requires_grad params to False')
+    for parameter in model.parameters():
+        parameter.requires_grad = False
+    model.eval()
+    start_time = time.time()
+    print('Loading entity and relation indexes...', end=' ')
+    entity_to_idx = pd.read_parquet(path_of_experiment_folder + '/entity_to_idx.gzip')
+    relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')
+    print(f'Done! It took {time.time() - start_time:.4f}')
+    return model, entity_to_idx, relation_to_idx
+
+
 def numpy_data_type_changer(train_set, num):
     train_set = train_set.astype(np.int32)
     return train_set
@@ -39,10 +139,6 @@ def numpy_data_type_changer(train_set, num):
 
 def model_fitting(trainer, model, train_dataloaders) -> None:
     assert trainer.max_epochs == trainer.min_epochs
-    # if self.args.eval is False and self.args.eval_on_train is False:
-    #    """ Deleting self.dataset does not help too much"""
-    # release some memory
-    # del self.dataset
     print(f'Number of epochs:{trainer.max_epochs}')
     print(f'Number of mini-batches to compute for a single epoch: {len(train_dataloaders)}')
     print(f'Learning rate:{model.learning_rate}\n')
@@ -65,29 +161,6 @@ def initialize_pl_trainer(args, callbacks: List, plugins: List):
     else:
         return pl.Trainer.from_argparse_args(args, plugins=plugins,
                                              callbacks=callbacks)
-
-
-def select_model(args: dict, is_continual_training: bool = None, storage_path: str = None):
-    isinstance(args, dict)
-    assert len(args) > 0
-    assert isinstance(is_continual_training, bool)
-    assert isinstance(storage_path, str)
-    if is_continual_training:
-        print('Loading pre-trained model...')
-        model, _ = intialize_model(args)
-        try:
-            weights = torch.load(storage_path + '/model.pt', torch.device('cpu'))
-            model.load_state_dict(weights, strict=False)
-        except FileNotFoundError:
-            raise FileNotFoundError(
-                f"{storage_path}/model.pt is not found. The model will be trained with random weights")
-        # TODO: Why set it on train mode ?
-        for parameter in model.parameters():
-            parameter.requires_grad = True
-        model.train()
-        return model, _
-    else:
-        return intialize_model(args)
 
 
 def load_data_parallel(data_path, read_only_few: int = None,
@@ -191,7 +264,7 @@ def store(trained_model, model_name: str = 'model', full_storage_path: str = Non
         print('There is not enough memory to store embeddings separately.')
 
 
-def index_triples(train_set, entity_to_idx:dict, relation_to_idx: dict, multi_processing=False):
+def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, multi_processing=False):
     """
     :param multi_processing:
     :param train_set: pandas dataframe or dask dataframe
@@ -199,7 +272,6 @@ def index_triples(train_set, entity_to_idx:dict, relation_to_idx: dict, multi_pr
     :param relation_to_idx:
     :return:
     """
-
 
     def entity_look_up(x):
         try:
@@ -428,82 +500,6 @@ def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     return model, form_of_labelling
 
 
-def load_model(path_of_experiment_folder, model_path='model.pt') -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
-    """ Load weights and initialize pytorch module from namespace arguments"""
-    print(f'Loading model {model_path}...', end=' ')
-    start_time = time.time()
-    # (1) Load weights..
-    weights = torch.load(path_of_experiment_folder + f'/{model_path}', torch.device('cpu'))
-    # (2) Loading input configuration..
-    configs = load_json(path_of_experiment_folder + '/configuration.json')
-    # (3) Loading the report of a training process.
-    report = load_json(path_of_experiment_folder + '/report.json')
-    configs["num_entities"] = report["num_entities"]
-    configs["num_relations"] = report["num_relations"]
-    print(f'Done! It took {time.time() - start_time:.3f}')
-    # (4) Select the model
-    model, _ = intialize_model(configs)
-    # (5) Put (1) into (4)
-    model.load_state_dict(weights, strict=False)
-    # (6) Set it into eval model.
-    for parameter in model.parameters():
-        parameter.requires_grad = False
-    model.eval()
-    start_time = time.time()
-    print('Loading entity and relation indexes...', end=' ')
-    entity_to_idx = pd.read_parquet(path_of_experiment_folder + '/entity_to_idx.gzip')
-    relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')
-    print(f'Done! It took {time.time() - start_time:.4f}')
-    return model, entity_to_idx, relation_to_idx
-
-
-def load_model_ensemble(path_of_experiment_folder) -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
-    """ Construct Ensemble Of weights and initialize pytorch module from namespace arguments"""
-    print('Constructing Ensemble of ', end=' ')
-    start_time = time.time()
-    # (1) Load weights..
-    paths_for_loading = glob.glob(path_of_experiment_folder + '/model*')
-    print(f'{len(paths_for_loading)} models...')
-    assert len(paths_for_loading) > 0
-    num_of_models = len(paths_for_loading)
-    weights = None
-    while len(paths_for_loading):
-        p = paths_for_loading.pop()
-        print(f'Model: {p}...')
-        if weights is None:
-            weights = torch.load(p, torch.device('cpu'))
-        else:
-            five_weights = torch.load(p, torch.device('cpu'))
-            for k, _ in weights.items():
-                if 'weight' in k:
-                    weights[k] = (weights[k] + five_weights[k])
-    for k, _ in weights.items():
-        if 'weight' in k:
-            weights[k] /= num_of_models
-    # (2) Loading input configuration..
-    configs = load_json(path_of_experiment_folder + '/configuration.json')
-    # (3) Loading the report of a training process.
-    report = load_json(path_of_experiment_folder + '/report.json')
-    configs["num_entities"] = report["num_entities"]
-    configs["num_relations"] = report["num_relations"]
-    print(f'Done! It took {time.time() - start_time:.2f} seconds.')
-    # (4) Select the model
-    model, _ = intialize_model(configs)
-    # (5) Put (1) into (4)
-    model.load_state_dict(weights, strict=False)
-    # (6) Set it into eval model.
-    print('Setting Eval mode & requires_grad params to False')
-    for parameter in model.parameters():
-        parameter.requires_grad = False
-    model.eval()
-    start_time = time.time()
-    print('Loading entity and relation indexes...', end=' ')
-    entity_to_idx = pd.read_parquet(path_of_experiment_folder + '/entity_to_idx.gzip')
-    relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')
-    print(f'Done! It took {time.time() - start_time:.4f}')
-    return model, entity_to_idx, relation_to_idx
-
-
 def extract_model_summary(s):
     return {'NumParam': s.total_parameters, 'EstimatedSizeMB': s.model_size}
 
@@ -537,80 +533,6 @@ def load_json(p: str) -> dict:
     with open(p, 'r') as r:
         args = json.load(r)
     return args
-
-
-def compute_mrr_based_on_relation_ranking(trained_model, triples, entity_to_idx, relations):
-    raise NotImplemented('This function seem to be depricated')
-    rel = np.array(relations)  # for easy indexing.
-
-    num_rel = len(rel)
-    ranks = []
-
-    predictions_save = []
-    for triple in triples:
-        s, p, o = triple
-        x = (torch.LongTensor([entity_to_idx[s]]), torch.LongTensor([entity_to_idx[o]]))
-        preds = trained_model.forward(x)
-
-        # Rank predicted scores
-        _, ranked_idx_rels = preds.topk(k=num_rel)
-        # Rank all relations based on predicted scores
-        ranked_relations = rel[ranked_idx_rels][0]
-
-        # Compute and store the rank of the true relation.
-        rank = 1 + np.argwhere(ranked_relations == p)[0][0]
-        ranks.append(rank)
-        # Store prediction.
-        predictions_save.append([s, p, o, ranked_relations[0]])
-
-    raw_mrr = np.mean(1. / np.array(ranks))
-    # print(f'Raw Mean reciprocal rank on test dataset: {raw_mrr}')
-    """
-    for it, t in enumerate(predictions_save):
-        s, p, o, predicted_p = t
-        print(f'{it}. test triples => {s} {p} {o} \t =>{trained_model.name} => {predicted_p}')
-        if it == 10:
-            break
-    """
-    return raw_mrr
-
-
-def compute_mrr_based_on_entity_ranking(trained_model, triples, entity_to_idx, relation_to_idx, entities):
-    raise NotImplemented('This function seem to be depricated')
-    #########################################
-    # Evaluation mode. Parallelize below computation.
-    entities = np.array(entities)  # for easy indexing.
-    num_entities = len(entities)
-    ranks = []
-
-    predictions_save = []
-    for triple in triples:
-        s, p, o = triple
-        x = (torch.LongTensor([entity_to_idx[s]]),
-             torch.LongTensor([relation_to_idx[p]]))
-        preds = trained_model.forward(x)
-
-        # Rank predicted scores
-        _, ranked_idx_entity = preds.topk(k=num_entities)
-        # Rank all relations based on predicted scores
-        ranked_entity = entities[ranked_idx_entity][0]
-
-        # Compute and store the rank of the true relation.
-        rank = 1 + np.argwhere(ranked_entity == o)[0][0]
-        ranks.append(rank)
-        # Store prediction.
-        predictions_save.append([s, p, o, ranked_entity[0]])
-
-    raw_mrr = np.mean(1. / np.array(ranks))
-    """
-    for it, t in enumerate(predictions_save):
-        s, p, o, predicted_ent = t
-        print(f'{it}. test triples => {s} {p} {o} \t =>{trained_model.name} => {predicted_ent}')
-        if it == 10:
-            break
-    """
-    return raw_mrr
-
 
 def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
     """
