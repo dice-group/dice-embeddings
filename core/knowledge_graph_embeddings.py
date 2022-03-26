@@ -153,7 +153,7 @@ class KGE(BaseInteractiveKGE):
         x, labels, idx_tails = out
         # (2) Train mode
         self.set_model_train_mode()
-        optimizer = optim.Adam(self.model.parameters(), lr=lr)
+        optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=.00001)
         print('\nIteration starts.')
         # (3) Iterative training.
         converged = False
