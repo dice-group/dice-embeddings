@@ -130,7 +130,7 @@ class BaseInteractiveKGE:
         return torch.sigmoid(self.model(x))
 
     def triple_score(self, *, head_entity: List[str] = None, relation: List[str] = None,
-                     tail_entity: List[str] = None, logits=False) -> torch.tensor:
+                     tail_entity: List[str] = None, logits=False, without_norm=False) -> torch.tensor:
         head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values).reshape(len(head_entity),
                                                                                                      1)
         relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values).reshape(len(relation), 1)
@@ -138,10 +138,15 @@ class BaseInteractiveKGE:
                                                                                                      1)
         x = torch.hstack((head_entity, relation, tail_entity))
         with torch.no_grad():
-            if logits:
-                return self.model(x)
+            if without_norm:
+                out = self.model.forward_without_norm(x)
             else:
-                return torch.sigmoid(self.model(x))
+                out = self.model(x)
+
+            if logits:
+                return out
+            else:
+                return torch.sigmoid(out)
 
     @property
     def name(self):

@@ -30,7 +30,7 @@ class KGE(BaseInteractiveKGE):
         return x, labels
 
     def train_cbd(self, head_entity, iteration=1, num_copies_in_batch=1, lr=.001,
-                  converge_loss=.0001, label_smoothing_rate=.001):
+                  converge_loss=.0001):
         """
         Train/Retrain model via applying KvsAll training/scoring technique on CBD of an head entity
 
@@ -68,17 +68,9 @@ class KGE(BaseInteractiveKGE):
         # (3) Construct the batch
         x = torch.cat([torch.LongTensor([idx_head_entity]).repeat(num_unique_relations, 1),
                        torch.LongTensor(batch_relations).reshape(len(batch_relations), 1)], dim=1)
-        # @TODO: We need to normalize it carefully
-        try:
-            if label_smoothing_rate:
-                batch_labels = batch_labels * (1 - label_smoothing_rate) + (1 / batch_labels.size(0))
-        except:
-            print('Empty label batch')
-            return
         # Create a BATCH via repeating.
         x = x.repeat(num_copies_in_batch, 1)
         batch_labels = batch_labels.repeat(num_copies_in_batch, 1)
-
         # (4) Train
         self.set_model_train_mode()
         optimizer = optim.Adam(self.model.parameters(), lr=lr)
