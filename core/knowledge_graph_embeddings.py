@@ -133,7 +133,7 @@ class KGE(BaseInteractiveKGE):
         with torch.no_grad():
             outputs = self.model(x)
             loss = self.model.loss(outputs, labels)
-            print(f"Eval Mode:\tLoss:{loss.item()}\t Outputs:{outputs.detach().mean()}")
+            print(f"Eval Mode:\tLoss:{loss.item()}")
 
     def train_k_vs_all(self, head_entity, relation, iteration=1, lr=.001):
         """
@@ -181,6 +181,53 @@ class KGE(BaseInteractiveKGE):
                 outputs = self.model(x)
                 loss = self.model.loss(outputs, labels)
             print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs[0, idx_tails].flatten().detach()}\n")
+
+    def train_k_vs_all_lbfgs(self, head_entity, relation, iteration=1, convergence=.001):
+        """
+        Train k vs all
+        :param convergence:
+        :param head_entity:
+        :param relation:
+        :param iteration:
+        :return:
+        """
+        start_time = time.time()
+        assert len(head_entity) == 1
+        # (1) Construct input and output
+        out = self.construct_input_and_output_k_vs_all(head_entity, relation)
+        if out is None:
+            return
+        x, labels, idx_tails = out
+        # (2) Train mode
+        self.set_model_train_mode()
+        optimizer = optim.LBFGS(self.model.parameters())
+        # (3) Iterative training.
+        for epoch in range(iteration):
+            losses = []
+
+            def closure():
+                optimizer.zero_grad()
+                iter_loss = self.model.loss(self.model(x), labels)
+                losses.append(iter_loss.item())
+                iter_loss.backward()
+                return iter_loss
+
+            # Take step.
+            optimizer.step(closure)
+            print(f'Epoch:{epoch}\tLoss:{losses[-1]}')
+            if losses[-1] < convergence:
+                print(f'loss is {losses[-1]}. Converged !!!')
+                break
+        # (4) Eval mode
+        self.set_model_eval_mode()
+        with torch.no_grad():
+            outputs = self.model(x)
+            loss = self.model.loss(outputs, labels)
+            if len(idx_tails) > 0:
+                print(f"Eval Mode:Loss:{loss.item()}\t Outputs:{outputs[0, idx_tails].flatten().detach()}\n")
+            else:
+                print(f"Eval Mode:Loss:{loss.item()}\t Outputs:{outputs.flatten().detach()}\n")
+        print(f'It took {time.time() - start_time}')
 
     def train(self, kg, lr=.1, epoch=10, batch_size=32, neg_sample_ratio=10, num_workers=1) -> None:
         """ Retrained a pretrain model on an input KG via negative sampling."""
