@@ -10,8 +10,8 @@ from .dataset_classes import TriplePredictionDataset
 class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
 
-    def __init__(self, path_of_pretrained_model_dir, construct_ensemble=False, model_path=None):
-        super().__init__(path_of_pretrained_model_dir, construct_ensemble=construct_ensemble, model_path=model_path)
+    def __init__(self, path_of_pretrained_model_dir, construct_ensemble=False, model_name=None):
+        super().__init__(path_of_pretrained_model_dir, construct_ensemble=construct_ensemble, model_name=model_name)
 
     def construct_input_and_output(self, head_entity: List[str], relation: List[str], tail_entity: List[str], labels):
         """
@@ -27,6 +27,79 @@ class KGE(BaseInteractiveKGE):
         # Hard Labels
         labels: object = torch.FloatTensor(labels)
         return x, labels
+
+    def train_cbd(self, head_entity, iteration=1, num_copies_in_batch=1, lr=.001,
+                  converge_loss=.0001, label_smoothing_rate=None):
+        """
+        Train/Retrain model via applying KvsAll training/scoring technique on CBD of an head entity
+
+        Given a head_entity,
+        1) Build {r | (h r x) \in G)
+        2) Build x:=(h,r), y=[0.....,1]
+        3) Construct (2) as a batch
+        4) Train
+        """
+        assert len(head_entity) == 1
+        try:
+            idx_head_entity = self.entity_to_idx.loc[head_entity]['entity'].values[0]
+        except KeyError as e:
+            print(f'Exception:\t {str(e)}')
+            return
+        print(f'Extracting relevant relations for training from CBD of {head_entity[0]}...', end='\t')
+        batch_relations = []
+        # (1) Select {r | (h,r,x) \in G).
+        idx_batch_relations = self.train_set[self.train_set['subject'] == idx_head_entity]['relation']
+        print(f'Frequency of {head_entity} = {len(idx_batch_relations)}', end='\t')
+        idx_batch_relations = idx_batch_relations.unique()
+        print(f'with {len(idx_batch_relations)} number of unique relations', end='\t')
+
+        # (2)
+        print(f'Constructing triples for training from CBD of {head_entity[0]}...', end='\t')
+        num_unique_relations = len(idx_batch_relations)
+        batch_labels = torch.zeros(num_unique_relations, self.num_entities)
+        for i, idx_relation in enumerate(idx_batch_relations):
+            # Select tails.
+            idx_tails = self.train_set[
+                (self.train_set['subject'] == idx_head_entity) & (self.train_set['relation'] == idx_relation)][
+                'object'].values
+            batch_labels[i, idx_tails] = 1
+            batch_relations.append(idx_relation)
+        # (3) Construct the batch
+        x = torch.cat([torch.LongTensor([idx_head_entity]).repeat(num_unique_relations, 1),
+                       torch.LongTensor(batch_relations).reshape(len(batch_relations), 1)], dim=1)
+        # @TODO: We need to normalize it carefully
+        try:
+            if label_smoothing_rate:
+                batch_labels = batch_labels * (1 - label_smoothing_rate) + (1 / batch_labels.size(0))
+        except:
+            print('Empty label batch')
+            return
+        # Create a BATCH via repeating.
+        x = x.repeat(num_copies_in_batch, 1)
+        batch_labels = batch_labels.repeat(num_copies_in_batch, 1)
+
+        # (4) Train
+        self.set_model_train_mode()
+        optimizer = optim.Adam(self.model.parameters(), lr=lr)
+        print('\nIteration starts.')
+        converged = False
+        for epoch in range(iteration):
+            optimizer.zero_grad()
+            outputs = self.model(x)
+            loss = self.model.loss(outputs, batch_labels)
+            print(f"Iteration:{epoch}\t Loss:{loss.item():.4f}")
+            loss.backward()
+            optimizer.step()
+            if loss.item() < converge_loss:
+                print(f'loss is {loss.item():.3f}. Converged !!!')
+                converged = True
+                break
+        self.set_model_eval_mode()
+        if converged is False:
+            with torch.no_grad():
+                outputs = self.model(x)
+                loss = self.model.loss(outputs, batch_labels)
+                print(f"Eval Mode:Loss:{loss.item():.4f}")
 
     def train_triples(self, head_entity, relation, tail_entity, labels, iteration=2, lr=.1, repeat=2):
         """
@@ -113,6 +186,15 @@ class KGE(BaseInteractiveKGE):
         print(f'On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple:.3f}')
 
     def train_k_vs_all(self, head_entity, relation, iteration=1, num_copies_in_batch=2, lr=.001):
+        """
+        Train k vs all
+        :param head_entity:
+        :param relation:
+        :param iteration:
+        :param num_copies_in_batch:
+        :param lr:
+        :return:
+        """
         assert len(head_entity) == 1
         out = self.construct_input_and_output_k_vs_all(head_entity, relation)
         if out is None:
@@ -149,77 +231,6 @@ class KGE(BaseInteractiveKGE):
                 outputs = self.model(x)
                 loss = self.model.loss(outputs, labels)
             print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs[0, idx_tails].flatten().detach()}\n")
-
-    def train_cbd(self, head_entity, iteration=1, num_copies_in_batch=1, lr=.001,
-                  converge_loss=.0001, label_smoothing_rate=None):
-        """
-        Given an head_entity,
-        1) Build {r | (h r x) \in G)
-        2) Build x:=(h,r), y=[0.....,1]
-        3) Construct (2) as a batch
-        4) Train
-        """
-        assert len(head_entity) == 1
-        try:
-            idx_head_entity = self.entity_to_idx.loc[head_entity]['entity'].values[0]
-        except KeyError as e:
-            print(f'Exception:\t {str(e)}')
-            return
-        print('\nKvsAll Training...')
-
-        batch_relations = []
-        # (1) Select {r | (h,r,x) \in G).
-        idx_batch_relations = self.train_set[self.train_set['subject'] == idx_head_entity]['relation']
-        print(f'Frequency of {head_entity} = {len(idx_batch_relations)}', end='\t')
-        idx_batch_relations = idx_batch_relations.unique()
-        print(f'with {len(idx_batch_relations)} number of unique relations')
-
-        # (2)
-        num_unique_relations = len(idx_batch_relations)
-        batch_labels = torch.zeros(num_unique_relations, self.num_entities)
-        for i, idx_relation in enumerate(idx_batch_relations):
-            # Select tails.
-            idx_tails = self.train_set[
-                (self.train_set['subject'] == idx_head_entity) & (self.train_set['relation'] == idx_relation)][
-                'object'].values
-            batch_labels[i, idx_tails] = 1
-            batch_relations.append(idx_relation)
-        # (3) Construct the batch
-        x = torch.cat([torch.LongTensor([idx_head_entity]).repeat(num_unique_relations, 1),
-                       torch.LongTensor(batch_relations).reshape(len(batch_relations), 1)], dim=1)
-        # @TODO: We need to normalize it carefully
-        try:
-            if label_smoothing_rate:
-                batch_labels = batch_labels * (1 - label_smoothing_rate) + (1 / batch_labels.size(0))
-        except:
-            print('Empty label batch')
-            return
-        # Create a BATCH via repeating.
-        x = x.repeat(num_copies_in_batch, 1)
-        batch_labels = batch_labels.repeat(num_copies_in_batch, 1)
-
-        # (4) Train
-        self.set_model_train_mode()
-        optimizer = optim.Adam(self.model.parameters(), lr=lr)
-        print('\nIteration starts.')
-        converged = False
-        for epoch in range(iteration):
-            optimizer.zero_grad()
-            outputs = self.model(x)
-            loss = self.model.loss(outputs, batch_labels)
-            print(f"Iteration:{epoch}\t Loss:{loss.item():.4f}")
-            loss.backward()
-            optimizer.step()
-            if loss.item() < converge_loss:
-                print(f'loss is {loss.item():.3f}. Converged !!!')
-                converged = True
-                break
-        self.set_model_eval_mode()
-        if converged is False:
-            with torch.no_grad():
-                outputs = self.model(x)
-                loss = self.model.loss(outputs, batch_labels)
-                print(f"Eval Mode:Loss:{loss.item():.4f}")
 
     def train_triples_lbfgs_negative(self, head_entity, relation, tail_entity, iteration=1, repeat=2):
         """ This training regime with LBFGS often takes quite a bit of timeTakes quite some time"""
