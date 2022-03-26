@@ -1,13 +1,16 @@
 import time
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from collections import defaultdict
 import numpy as np
 import pickle
 import json
+import dask
 from dask import dataframe as ddf
 import os
 import pandas as pd
-from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_re_vocab
+from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_re_vocab, \
+    create_recipriocal_triples_from_dask, add_noisy_triples, index_triples, load_data_parallel, numpy_data_type_changer
+from .sanity_checkers import dataset_sanity_checking
 import glob
 
 np.random.seed(1)
@@ -26,7 +29,9 @@ class KG:
 
     def __init__(self, data_dir: str = None, deserialize_flag: str = None, large_kg_parse=False, add_reciprical=False,
                  eval_model=True, read_only_few: int = None, sample_triples_ratio: float = None,
-                 path_for_serialization: str = None, add_noise_rate: float = None):
+                 path_for_serialization: str = None, add_noise_rate: float = None,
+                 min_freq_for_vocab: int = None, entity_to_idx=None,
+                 relation_to_idx=None):
         """
 
         :param data_dir: A path of a folder containing the input knowledge graph
@@ -37,230 +42,377 @@ class KG:
         :param add_noise_rate: Add say 10% noise in the input data
         sample_triples_ratio
         """
+        self.num_entities = None
+        self.num_relations = None
+        self.df_str_kg = None
+        self.data_dir = data_dir
+        self.deserialize_flag = deserialize_flag
+        self.large_kg_parse = large_kg_parse
+        self.add_reciprical = add_reciprical
+        self.eval_model = eval_model
 
+        self.read_only_few = read_only_few
+        self.sample_triples_ratio = sample_triples_ratio
+        self.large_kg_parse = large_kg_parse
+        self.path_for_serialization = path_for_serialization
+        self.add_noise_rate = add_noise_rate
+
+        self.min_freq_for_vocab = min_freq_for_vocab
+        self.entity_to_idx = entity_to_idx
+        self.relation_to_idx = relation_to_idx
+        if large_kg_parse:
+            self.scheduler_flag = 'processes'
+        else:
+            self.scheduler_flag = 'single-threaded'
+
+        """
+        # @ TODO Integrate LocalCluster facility to analyse the utilization of the hardware via the dashboard
+        from dask.distributed import Client, LocalCluster
+        cluster = LocalCluster()
+        client = Client(cluster)
+        print(client)
+        print(client.dashboard_link)
+        """
+        # (1) Load + Preprocess input data
         if deserialize_flag is None:
-            # 1. LOAD Data. (First pass on data)
-            print(
-                f'[1 / 14] Loading training data: large_kg_parse: {large_kg_parse}, read_only_few: {read_only_few} , sample_triples_ratio: {sample_triples_ratio}...')
-            self.train_set = self.load_data_parallel(data_dir + '/train', large_kg_parse, read_only_few,
-                                                     sample_triples_ratio)
-            print('Done !\n')
-            print(
-                f'[2 / 14] Loading valid data: large_kg_parse: {large_kg_parse}, read_only_few: {read_only_few}, sample_triples_ratio: {sample_triples_ratio}...')
-
-            self.valid_set = self.load_data_parallel(data_dir + '/valid', large_kg_parse, read_only_few,
-                                                     sample_triples_ratio)
-            print('Done !\n')
-            print(
-                f'[3 / 14] Loading test data: large_kg_parse: {large_kg_parse}, read_only_few: {read_only_few}, sample_triples_ratio: {sample_triples_ratio}...')
-
-            self.test_set = self.load_data_parallel(data_dir + '/test', large_kg_parse, read_only_few,
-                                                    sample_triples_ratio)
-            print('Done !\n')
-
-            # 2. Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
-            if add_reciprical and eval_model:
+            # (1.1) Load and Preprocess the data.
+            self.train_set, self.valid_set, self.test_set = self.load_read_process()
+            # (1.2) Update (1.1).
+            self.apply_reciprical_or_noise()
+            # (1.3) Construct integer indexing for entities and relations
+            if entity_to_idx is None and relation_to_idx is None:
+                # self.parallel_vocabulary_construction()  # via DASK
+                self.sequential_vocabulary_construction()  # via Pandas
                 print(
-                    '[3.1 / 14] Add reciprocal triples to train, validation, and test sets, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}')
-
-                self.train_set = pd.concat([self.train_set,
-                                            pd.DataFrame({'subject': self.train_set['object'],
-                                                          'relation': self.train_set['relation'].map(
-                                                              lambda x: x + '_inverse'),
-                                                          'object': self.train_set['subject']})], ignore_index=True)
-                if len(self.valid_set) > 0:
-                    self.valid_set = pd.concat([self.valid_set,
-                                                pd.DataFrame({'subject': self.valid_set['object'],
-                                                              'relation': self.valid_set['relation'].map(
-                                                                  lambda x: x + '_inverse'),
-                                                              'object': self.valid_set['subject']})], ignore_index=True)
-                if len(self.test_set) > 0:
-                    self.test_set = pd.concat([self.test_set,
-                                               pd.DataFrame({'subject': self.test_set['object'],
-                                                             'relation': self.test_set['relation'].map(
-                                                                 lambda x: x + '_inverse'),
-                                                             'object': self.test_set['subject']})], ignore_index=True)
+                    '[9 / 14] Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...',
+                    end='\t')
+                self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
+                self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
+                self.num_entities = len(self.entity_to_idx)
+                self.num_relations = len(self.relation_to_idx)
                 print('Done !\n')
+                print('[10 / 14] Mapping training data into integers for training...', end='\t')
+                start_time = time.time()
+                # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
+                # @TODO: Benchmark pandasswifter vs Panddas vs DASK on large dataset.
+                self.train_set = index_triples(self.train_set,
+                                               self.entity_to_idx,
+                                               self.relation_to_idx,
+                                               multi_processing=False)
+                print(f'Done ! {time.time() - start_time:.3f} seconds\n')
+                if path_for_serialization is not None:
+                    # 10. Serialize (9).
+                    print('[11 / 14] Serializing integer mapped data...', end='\t')
+                    self.train_set.to_parquet(path_for_serialization + '/idx_train_df.gzip', compression='gzip')
+                    print('Done !\n')
+                assert isinstance(self.train_set, pd.core.frame.DataFrame)
+                # 11. Convert data from pandas dataframe to numpy ndarray.
+                print('[12 / 14] Mapping from pandas data frame to numpy ndarray to reduce memory usage...', end='\t')
+                self.train_set = self.train_set.values
+                print('Done !\n')
+            else:
+                # self.parallel_vocabulary_construction()
+                # self.sequential_vocabulary_construction()
 
-            if add_noise_rate is not None:
-                num_noisy_triples = int(len(self.train_set) * add_noise_rate)
-                print(f'[4 / 14] Generating {num_noisy_triples} noisy triples for training data...')
-                s = len(self.train_set)
-                list_of_entities = pd.unique(self.train_set[['subject', 'object']].values.ravel('K'))
+                print(
+                    '[4 / 14] Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...',
+                    end='\t')
+                self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
+                self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
+                self.num_entities = len(self.entity_to_idx)
+                self.num_relations = len(self.relation_to_idx)
+                print('Done !\n')
+                print('[10 / 14] Mapping training data into integers for training...', end='\t')
+                # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
+                self.train_set = index_triples(self.train_set, self.entity_to_idx, self.relation_to_idx)
+                print('Done !\n')
+                print('Train set compute...', end='\t')
+                self.train_set = self.train_set.compute()
+                if self.valid_set is not None:
+                    print('Valid set compute...', end='\t')
+                    self.valid_set = self.valid_set.compute()
+                if self.test_set is not None:
+                    print('Test set set compute...', end='\t')
+                    self.test_set = self.test_set.compute()
+                assert isinstance(self.train_set, pd.core.frame.DataFrame)
+                # 11. Convert data from pandas dataframe to numpy ndarray.
+                print('[12 / 14] Mapping from pandas data frame to numpy ndarray to reduce memory usage...', end='\t')
+                self.train_set = self.train_set.values
 
-                self.train_set = pd.concat([self.train_set,
-                                            # Noisy triples
-                                            pd.DataFrame(
-                                                {'subject': np.random.choice(list_of_entities, num_noisy_triples),
-                                                 'relation': np.random.choice(
-                                                     pd.unique(self.train_set[['relation']].values.ravel('K')),
-                                                     num_noisy_triples),
-                                                 'object': np.random.choice(list_of_entities, num_noisy_triples)}
-                                            )
-                                            ], ignore_index=True)
+            self.train_set = numpy_data_type_changer(self.train_set, num=max(self.num_entities, self.num_relations))
 
-                del list_of_entities
-
-                assert s + num_noisy_triples == len(self.train_set)
-
-            # 3. Concatenate dataframes.
-            print(f'[4 / 14] Concatenating data to obtain index...')
-            df_str_kg = pd.concat([self.train_set, self.valid_set, self.test_set], ignore_index=True)
-            print('Done !\n')
-            # 4. Create a bijection mapping  from entities to integer indexes.
-            print('[5 / 14] Creating a mapping from entities to integer indexes...')
-            ordered_list = pd.unique(df_str_kg[['subject', 'object']].values.ravel('K'))
-            self.entity_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
-                                              columns=['entity'],
-                                              index=ordered_list)
-            print('Done!\n')
-
-            # 5. Create a bijection mapping  from relations to integer indexes.
-            print('[6 / 14] Creating a mapping from relations to integer indexes...')
-            ordered_list = pd.unique(df_str_kg['relation'].values.ravel('K'))
-            self.relation_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
-                                                columns=['relation'],
-                                                index=ordered_list)
-            print('Done!\n')
-            # Free memory
-            del ordered_list, df_str_kg
-
-            ## 6. Serialize indexed entities and relations into disk for further usage.
-            print('[7 / 14] Serializing compressed entity integer mapping...')
-            self.entity_to_idx.to_parquet(path_for_serialization + '/entity_to_idx.gzip', compression='gzip')
-            print('Done!\n')
-
-            print('[8 / 14] Serializing compressed relation integer mapping...')
-            self.relation_to_idx.to_parquet(path_for_serialization + '/relation_to_idx.gzip', compression='gzip')
-            print('Done!\n')
-
-            # 7. Convert from pandas dataframe to dictionaries for an easy access
-            # We may want to benchmark using python dictionary and pandas frame
-            print(
-                '[9 / 14] Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...')
-            self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
-            self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
-            self.num_entities = len(self.entity_to_idx)
-            self.num_relations = len(self.relation_to_idx)
-            print('Done!\n')
-
-            # 8. Serialize already read training data in parquet format so that
-            # the training data is stored in more memory efficient manner as well as
-            # it can be reread later faster
-            print('[10 / 14] Serializing training data for Continual Learning...')  # TODO: Do we really need it ?!
-            self.train_set.to_parquet(path_for_serialization + '/train_df.gzip', compression='gzip')
-            print('Done!\n')
-
-            print('[11 / 14] Mapping training data into integers for training...')
-            # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
-            self.train_set['subject'] = self.train_set['subject'].map(lambda x: self.entity_to_idx[x])
-            self.train_set['relation'] = self.train_set['relation'].map(lambda x: self.relation_to_idx[x])
-            self.train_set['object'] = self.train_set['object'].map(lambda x: self.entity_to_idx[x])
-            print('Done!\n')
-
-            # 10. Serialize (9).
-            print('[12 / 14] Serializing integer mapped data...')  # TODO: Do we really need it ?!
-            self.train_set.to_parquet(path_for_serialization + '/idx_train_df.gzip', compression='gzip')
-            print('Done!\n')
-
-            # 11. Convert data from pandas dataframe to numpy ndarray.
-            print('[13 / 14] Mapping from pandas data frame to numpy ndarray to reduce memory usage...')
-            self.train_set = self.train_set.values
-            print('Done!\n')
-
-            print('[14 / 14 ] Sanity checking on training dataset...')
+            print('[13 / 14 ] Sanity checking...', end='\t')
             # 12. Sanity checking: indexed training set can not have an indexed entity assigned with larger indexed than the number of entities.
-            assert self.num_entities > max(self.train_set[:, 0]) and self.num_entities > max(self.train_set[:, 2])
-            assert self.num_relations > max(self.train_set[:, 1])
-            # 13. Sanity checking: data types
-            assert isinstance(self.train_set[0], np.ndarray)
-            assert isinstance(self.train_set[0][0], np.int64) and isinstance(self.train_set[0][1], np.int64)
-            assert isinstance(self.train_set[0][2], np.int64)
-            # 14. Repeat computations carried out from 8-13 on validation dataset.
-            if len(self.valid_set) > 0:
-                print('Serializing validation data for Continual Learning...')  # TODO: Do we really need it ?!
-                self.valid_set.to_parquet(path_for_serialization + '/valid_df.gzip', compression='gzip')
-                self.valid_set['subject'] = self.valid_set['subject'].map(lambda x: self.entity_to_idx[x])
-                self.valid_set['relation'] = self.valid_set['relation'].map(lambda x: self.relation_to_idx[x])
-                self.valid_set['object'] = self.valid_set['object'].map(lambda x: self.entity_to_idx[x])
-                self.valid_set.to_parquet(path_for_serialization + '/idx_valid_df.gzip', compression='gzip')
-                self.valid_set = self.valid_set.values
-                # Sanity checking
-                assert self.num_entities > max(self.valid_set[0])
-                assert self.num_entities > max(self.valid_set[0])
-                assert self.num_entities > max(self.valid_set[2])
-                assert self.num_entities > max(self.valid_set[2])
-
-                assert isinstance(self.valid_set[0], np.ndarray)
-                assert isinstance(self.valid_set[0][0], np.int64)
-                assert isinstance(self.valid_set[0][1], np.int64)
-                assert isinstance(self.valid_set[0][2], np.int64)
+            dataset_sanity_checking(self.train_set, self.num_entities, self.num_relations)
+            print('Done !\n')
+            if self.valid_set is not None:
+                if path_for_serialization is not None:
+                    print('[14 / 14 ] Serializing validation data for Continual Learning...', end='\t')
+                    self.valid_set.to_parquet(
+                        path_for_serialization + '/valid_df.gzip', compression='gzip')
+                    print('Done !\n')
+                print('[14 / 14 ] Indexing validation dataset...', end='\t')
+                self.valid_set = index_triples(self.valid_set, self.entity_to_idx, self.relation_to_idx)
                 print('Done !\n')
-            else:
-                self.valid_set = self.valid_set.values
-            # 15. Repeat computations carried out from 8-13 on test dataset.
-            if len(self.test_set) > 0:
-                print('Serializing test data for Continual Learning...')  # TODO: Do we really need it ?!
-                self.test_set.to_parquet(path_for_serialization + '/test_df.gzip', compression='gzip')
-                self.test_set['subject'] = self.test_set['subject'].map(lambda x: self.entity_to_idx[x])
-                self.test_set['relation'] = self.test_set['relation'].map(lambda x: self.relation_to_idx[x])
-                self.test_set['object'] = self.test_set['object'].map(lambda x: self.entity_to_idx[x])
-                self.test_set.to_parquet(path_for_serialization + '/idx_test_df.gzip', compression='gzip')
-                self.test_set = self.test_set.values
-                # Sanity checking
-                assert self.num_entities > max(self.test_set[0])
-                assert self.num_entities > max(self.test_set[0])
-                assert self.num_entities > max(self.test_set[2])
-                assert self.num_entities > max(self.test_set[2])
-
-                assert isinstance(self.test_set[0], np.ndarray)
-                assert isinstance(self.test_set[0][0], np.int64)
-                assert isinstance(self.test_set[0][1], np.int64)
-                assert isinstance(self.test_set[0][2], np.int64)
+                if path_for_serialization is not None:
+                    print('[15 / 14 ] Serializing indexed validation dataset...', end='\t')
+                    self.valid_set.to_parquet(
+                        path_for_serialization + '/idx_valid_df.gzip', compression='gzip')
+                    print('Done !\n')
+                # To numpy
+                self.valid_set = self.valid_set.values  # .compute(scheduler=scheduler_flag)
+                dataset_sanity_checking(self.valid_set, self.num_entities, self.num_relations)
+                self.valid_set = numpy_data_type_changer(self.valid_set, num=max(self.num_entities, self.num_relations))
+            if self.test_set is not None:
+                if path_for_serialization is not None:
+                    print('[16 / 14 ] Serializing test data for Continual Learning...', end='\t')
+                    self.test_set.to_parquet(
+                        path_for_serialization + '/test_df.gzip', compression='gzip')
+                    print('Done !\n')
+                print('[17 / 14 ] Indexing test dataset...', end='\t')
+                self.test_set = index_triples(self.test_set, self.entity_to_idx, self.relation_to_idx)
                 print('Done !\n')
-            else:
+                if path_for_serialization is not None:
+                    print('[18 / 14 ] Serializing indexed test dataset...', end='\t')
+                    self.test_set.to_parquet(
+                        path_for_serialization + '/idx_test_df.gzip', compression='gzip')
+                # To numpy
                 self.test_set = self.test_set.values
-
+                dataset_sanity_checking(self.test_set, self.num_entities, self.num_relations)
+                self.test_set = numpy_data_type_changer(self.test_set, num=max(self.num_entities, self.num_relations))
+                print('Done !\n')
             if eval_model:  # and len(self.valid_set) > 0 and len(self.test_set) > 0:
-                if len(self.valid_set) > 0 and len(self.test_set) > 0:
+                if self.valid_set is not None and self.test_set is not None:
+                    assert isinstance(self.valid_set, np.ndarray) and isinstance(self.test_set, np.ndarray)
                     # 16. Create a bijection mapping from subject-relation pairs to tail entities.
                     data = np.concatenate([self.train_set, self.valid_set, self.test_set])
                 else:
                     data = self.train_set
+                # TODO do it via dask: No need to wait here.
+                print('Creating Vocab...', end='\t')
                 self.er_vocab = get_er_vocab(data)
                 self.re_vocab = get_re_vocab(data)
                 # 17. Create a bijection mapping from subject-object pairs to relations.
                 self.ee_vocab = get_ee_vocab(data)
-
         else:
             self.deserialize(deserialize_flag)
+            if eval_model:  # and len(self.valid_set) > 0 and len(self.test_set) > 0:
+                if self.valid_set is not None and self.test_set is not None:
+                    # 16. Create a bijection mapping from subject-relation pairs to tail entities.
+                    data = np.concatenate([self.train_set, self.valid_set, self.test_set])
+                else:
+                    data = self.train_set
+                print('Creating Vocab...', end='\t')
+                self.er_vocab = get_er_vocab(data)
+                self.re_vocab = get_re_vocab(data)
+                # 17. Create a bijection mapping from subject-object pairs to relations.
+                self.ee_vocab = get_ee_vocab(data)
 
         # 4. Display info
         self.description_of_input = f'\n------------------- Description of Dataset {data_dir} -------------------'
         self.description_of_input += f'\nNumber of entities: {self.num_entities}' \
                                      f'\nNumber of relations: {self.num_relations}' \
                                      f'\nNumber of triples on train set: {len(self.train_set)}' \
-                                     f'\nNumber of triples on valid set: {len(self.valid_set)}' \
-                                     f'\nNumber of triples on test set: {len(self.test_set)}\n'
+                                     f'\nNumber of triples on valid set: {len(self.valid_set) if self.valid_set is not None else 0}' \
+                                     f'\nNumber of triples on test set: {len(self.test_set) if self.test_set is not None else 0}\n'
+
+    def parallel_vocabulary_construction(self):
+        """
+        (1) Concatenate dataframes/ train valid test sets
+
+        (2) Remove triples with specified conditions if such conditions are given.
+
+        (3) Create a bijection mapping from entities to integer indexes.
+        """
+        # 1. Concatenate dataframes.
+        print('[4 / 14] Lazy Concatenating data to obtain index...', end='\t')
+        x = [self.train_set]
+        if self.valid_set is not None:
+            x.append(self.valid_set)
+        if self.test_set is not None:
+            x.append(self.test_set)
+        self.df_str_kg = ddf.concat(x, ignore_index=True)
+        del x
+        print('Done !\n')
+        # (2) Remove triples from (1).
+        self.remove_triples_with_condition()
+        print('[5 / 14] Lazy Creating a mapping from entities to integer indexes...', end='\t')
+        # (3) Create a bijection mapping from entities of (2) to integer indexes.
+        self.entity_to_idx = dask.array.concatenate(
+            [self.df_str_kg['subject'], self.df_str_kg['object']]).to_dask_dataframe(
+            columns=['entity']).drop_duplicates()
+        print('Computing entity indexes...', end='\t')
+        start_time = time.time()
+        # Takes time even in the lazy mode.
+        self.entity_to_idx = self.entity_to_idx.set_index(self.entity_to_idx.entity)
+        self.entity_to_idx['entity'] = dask.array.arange(0,
+                                                         self.entity_to_idx.size.compute(scheduler=self.scheduler_flag))
+        self.entity_to_idx = self.entity_to_idx.compute(scheduler=self.scheduler_flag)
+        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+        start_time = time.time()
+        print('[6 / 14] Serializing compressed entity integer mapping...', end='\t')
+        self.entity_to_idx.to_parquet(self.path_for_serialization + '/entity_to_idx.gzip', compression='gzip')
+        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+
+        # 5. Create a bijection mapping  from relations to integer indexes.
+        print('[7 / 14] Lazy Creating a mapping from relations to integer indexes...', end='\t')
+        self.relation_to_idx = self.df_str_kg['relation'].to_frame().drop_duplicates()
+        print('Computing relation indexes...', end='\t')
+        start_time = time.time()
+        self.relation_to_idx = self.relation_to_idx.set_index(self.relation_to_idx.relation)
+        self.relation_to_idx['relation'] = dask.array.arange(0, self.relation_to_idx.size.compute())
+        self.relation_to_idx = self.relation_to_idx.compute(scheduler=self.scheduler_flag)
+        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+        print('[8 / 14] Serializing compressed relation integer mapping...', end='\t')
+        start_time = time.time()
+        self.relation_to_idx.to_parquet(self.path_for_serialization + '/relation_to_idx.gzip', compression='gzip')
+        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+        start_time = time.time()
+        print('Computing train dataset...', end='\t')
+        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+        self.train_set = self.train_set.compute(scheduler=self.scheduler_flag)
+        if self.valid_set is not None:
+            start_time = time.time()
+            print('Computing validation dataset...', end='\t')
+            self.valid_set = self.valid_set.compute(scheduler=self.scheduler_flag)
+            print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+        if self.test_set is not None:
+            start_time = time.time()
+            print('Computing test dataset...', end='\t')
+            self.test_set = self.test_set.compute(scheduler=self.scheduler_flag)
+            print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+        del self.df_str_kg
+
+    def sequential_vocabulary_construction(self):
+        print('Train set compute...')
+        self.train_set = self.train_set.compute(scheduler=self.scheduler_flag)
+        if self.valid_set is not None:
+            print('Valid set compute...')
+            self.valid_set = self.valid_set.compute(scheduler=self.scheduler_flag)
+        if self.test_set is not None:
+            print('Test set set compute...')
+            self.test_set = self.test_set.compute(scheduler=self.scheduler_flag)
+        # 1. Concatenate dataframes.
+        print('\n[4 / 14] Concatenating data to obtain index...')
+        x = [self.train_set]
+        if self.valid_set is not None:
+            x.append(self.valid_set)
+        if self.test_set is not None:
+            x.append(self.test_set)
+        # self.df_str_kg = ddf.concat(x, ignore_index=True)
+        self.df_str_kg = pd.concat(x, ignore_index=True)
+        del x
+        print('Done !\n')
+        # (2) Remove triples from (1).
+        self.remove_triples_with_condition()
+        print('[5 / 14] Creating a mapping from entities to integer indexes...')
+        # (3) Create a bijection mapping from entities of (2) to integer indexes.
+        ordered_list = pd.unique(self.df_str_kg[['subject', 'object']].values.ravel('K'))
+        self.entity_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)), columns=['entity'], index=ordered_list)
+        print('Done !\n')
+        print('[6 / 14] Serializing compressed entity integer mapping...')
+        self.entity_to_idx.to_parquet(self.path_for_serialization + '/entity_to_idx.gzip', compression='gzip')
+        print('Done !\n')
+        # 5. Create a bijection mapping  from relations to integer indexes.
+        print('[7 / 14] Creating a mapping from relations to integer indexes...')
+        ordered_list = pd.unique(self.df_str_kg['relation'].values.ravel('K'))
+        self.relation_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
+                                            columns=['relation'],
+                                            index=ordered_list)
+        print('Done !\n')
+        print('[8 / 14] Serializing compressed relation integer mapping...')
+        self.relation_to_idx.to_parquet(self.path_for_serialization + '/relation_to_idx.gzip', compression='gzip')
+        print('Done !\n')
+        del ordered_list
+
+    def remove_triples_with_condition(self):
+        if self.min_freq_for_vocab is not None:
+            assert isinstance(self.min_freq_for_vocab, int)
+            assert self.min_freq_for_vocab > 0
+            print(
+                f'[5 / 14] Dropping triples having infrequent entities or relations (>{self.min_freq_for_vocab})...',
+                end=' ')
+            # num_triples = df_str_kg.size.compute(scheduler=scheduler_flag)
+            num_triples = self.df_str_kg.size  # .compute(scheduler=scheduler_flag)
+            print('Total num triples:', num_triples, end=' ')
+            # Compute entity frequency: index is URI, val is number of occurrences.
+            # entity_frequency = dask.dataframe.concat([df_str_kg['subject'], df_str_kg['object']]).value_counts()
+            entity_frequency = pd.concat([self.df_str_kg['subject'], self.df_str_kg['object']]).value_counts()
+
+            relation_frequency = self.df_str_kg['relation'].value_counts()
+            # low_frequency_entities index and values are the same URIs: dask.dataframe.core.DataFrame
+            low_frequency_entities = entity_frequency[
+                entity_frequency <= min_freq_for_vocab].index.values  # .compute(scheduler=scheduler_flag)
+            low_frequency_relation = relation_frequency[
+                relation_frequency <= min_freq_for_vocab].index.values  # .compute(scheduler=scheduler_flag)
+            # If triple contains subject that is in low_freq, set False do not select
+            self.df_str_kg = self.df_str_kg[~self.df_str_kg['subject'].isin(low_frequency_entities)]
+            # If triple contains object that is in low_freq, set False do not select
+            self.df_str_kg = self.df_str_kg[~self.df_str_kg['object'].isin(low_frequency_entities)]
+            # If triple contains relation that is in low_freq, set False do not select
+            self.df_str_kg = self.df_str_kg[~self.df_str_kg['relation'].isin(low_frequency_relation)]
+            # print('\t after dropping:', df_str_kg.size.compute(scheduler=scheduler_flag))
+            print('\t after dropping:', df_str_kg.size)  # .compute(scheduler=scheduler_flag))
+            del low_frequency_entities
+            print('Done !\n')
+
+    def load_read_process(self) -> Tuple[dask.dataframe.DataFrame, dask.dataframe.DataFrame, dask.dataframe.DataFrame]:
+        """ Load train valid (if exists), and test (if exists) into memory """
+
+        # 1. LOAD Data. (First pass on data)
+        print(
+            f'[1 / 14] Lazy Loading and Preprocessing training data: read_only_few: {self.read_only_few} , sample_triples_ratio: {self.sample_triples_ratio}...',
+            end='\t')
+        self.train_set = load_data_parallel(self.data_dir + '/train', self.read_only_few, self.sample_triples_ratio)
+        print('Done !\n')
+        print(
+            f'[2 / 14] Lazy Loading and Preprocessing valid data...',
+            end='\t')
+        self.valid_set = load_data_parallel(self.data_dir + '/valid')
+        print('Done !\n')
+        print(
+            f'[3 / 14] Lazy Loading and Preprocessing test data...',
+            end='\t')
+        self.test_set = load_data_parallel(self.data_dir + '/test')
+        print('Done !\n')
+        return self.train_set, self.valid_set, self.test_set
+
+    def apply_reciprical_or_noise(self) -> None:
+        """ (1) Add reciprocal triples (2) Add noisy triples """
+        # (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
+        if self.add_reciprical and self.eval_model:
+            print(
+                '[3.1 / 14] Add reciprocal triples to train, validation, and test sets, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}',
+                end='\t')
+            self.train_set = create_recipriocal_triples_from_dask(self.train_set)
+            if self.valid_set is not None:
+                self.valid_set = create_recipriocal_triples_from_dask(self.valid_set)
+            if self.test_set is not None:
+                self.test_set = create_recipriocal_triples_from_dask(self.test_set)
+            print('Done !\n')
+        # (2) Extend KG with triples where entities and relations are randomly sampled.
+        if self.add_noise_rate is not None:
+            print(f'[4 / 14] Adding noisy triples...', end='\t')
+            self.train_set = add_noisy_triples(self.train_set, self.add_noise_rate)
+            print('Done!\n')
 
     def deserialize(self, storage_path: str) -> None:
         """ Deserialize data """
-
+        print(f'Deserialization Path Path: {storage_path}\n')
         print('Deserializing compressed entity integer mapping...')
-        self.entity_to_idx = ddf.read_parquet(storage_path + '/entity_to_idx.gzip').compute()
+        self.entity_to_idx = pd.read_parquet(storage_path + '/entity_to_idx.gzip')  # .compute()
         print('Done!\n')
         self.num_entities = len(self.entity_to_idx)
         print('Deserializing compressed relation integer mapping...')
-        self.relation_to_idx = ddf.read_parquet(storage_path + '/relation_to_idx.gzip').compute()
+        self.relation_to_idx = pd.read_parquet(storage_path + '/relation_to_idx.gzip')  # .compute()
         self.num_relations = len(self.relation_to_idx)
-
         print('Done!\n')
         print(
             'Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...')
+
         self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
         self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
         print('Done!\n')
-
         # 10. Serialize (9).
         print('Deserializing integer mapped data and mapping it to numpy ndarray...')
         self.train_set = ddf.read_parquet(storage_path + '/idx_train_df.gzip').values.compute()
@@ -270,322 +422,27 @@ class KG:
             self.valid_set = ddf.read_parquet(storage_path + '/idx_valid_df.gzip').values.compute()
             print('Done!\n')
         except FileNotFoundError:
-            print('No valid data found')
-            self.valid_set = pd.DataFrame()
+            print('No valid data found!\n')
+            self.valid_set = None  # pd.DataFrame()
 
         try:
             print('Deserializing integer mapped data and mapping it to numpy ndarray...')
             self.test_set = ddf.read_parquet(storage_path + '/idx_test_df.gzip').values.compute()
             print('Done!\n')
         except FileNotFoundError:
-            print('No test data found')
-            self.test_set = pd.DataFrame()
-
-        print(storage_path)
-        with open(storage_path + '/configuration.json', 'r') as f:
-            args = json.load(f)
-
-        if args['eval']:
-            if len(self.valid_set) > 0 and len(self.test_set) > 0:
-                # 16. Create a bijection mapping from subject-relation pairs to tail entities.
-                data = np.concatenate([self.train_set, self.valid_set, self.test_set])
-            else:
-                data = self.train_set
-            self.er_vocab = get_er_vocab(data)
-
-    @staticmethod
-    def load_data_parallel(data_path, large_kg_parse=True, read_only_few: int = None,
-                           sample_triples_ratio: float = None) -> List:
-        """
-        Parse KG via DASK.
-        :param read_only_few:
-        :param data_path:
-        :param large_kg_parse:
-        :param sample_triples_ratio:
-        :return:
-        """
-        # (1) Check file exists, .e.g, ../../train.* exists
-
-        if glob.glob(data_path + '.*'):
-            # (1) Read knowledge graph  via
-            # (1.1) Using the whitespace as a deliminator
-            # (1.2) Taking first three columns detected in (1.1.)
-            # Task would even allow us to read compressed KGs.
-            df = ddf.read_csv(data_path + '.*', delim_whitespace=True, header=None, usecols=[0, 1, 2],
-                              names=['subject', 'relation', 'object'], dtype=str)
-
-            if isinstance(read_only_few, int):
-                if read_only_few > 0:
-                    df = df.loc[:read_only_few]
-            if sample_triples_ratio:
-                print(f'Subsampling {sample_triples_ratio} of input data...')
-                df = df.sample(frac=sample_triples_ratio)
-
-            # Drop rows having ^^
-            df = df[df["object"].str.contains("<http://www.w3.org/2001/XMLSchema#double>") == False]
-            df = df[df["object"].str.contains("<http://www.w3.org/2001/XMLSchema#boolean>") == False]
-            df['subject'] = df['subject'].str.removeprefix("<").str.removesuffix(">")
-            df['relation'] = df['relation'].str.removeprefix("<").str.removesuffix(">")
-            df['object'] = df['object'].str.removeprefix("<").str.removesuffix(">")
-            print('Dask Scheduler starts computation...')
-            if large_kg_parse:
-                df = df.compute(scheduler='processes')
-            else:
-                df = df.compute(scheduler='single-threaded')
-            num_triples, y = df.shape
-            assert y == 3
-            return df
-        else:
-            print(f'{data_path} could not found!\n')
-            return pd.DataFrame()
-
-    @staticmethod
-    def get_entities_and_relations(data):
-        entities = set()
-        relations = set()
-
-        for triple in data:
-            h, r, t = triple[0], triple[1], triple[2]
-            entities.add(h)
-            entities.add(t)
-            relations.add(r)
-        return sorted(list(entities)), sorted(list(relations))
-
-    def is_valid_test_available(self):
-        if len(self.valid_set) > 0 and len(self.test_set) > 0:
-            return True
-        return False
+            print('No test data found\n')
+            self.test_set = None
 
     @property
     def entities_str(self) -> List:
-        """
-        entity_idx is a dictionary where keys are string representation of entities and
-        values are integer indexes
-        :return: list of ordered entities
-        """
         return list(self.entity_to_idx.keys())
 
     @property
     def relations_str(self) -> List:
-        """
-        relation_idx is a dictionary where keys are string representation of relations and
-        values are integer indexes
-        :return: list of ordered relations
-        """
         return list(self.relation_to_idx.keys())
 
-    @performance_debugger('Pickle Dump of')
-    def __pickle_dump_obj(self, obj, path, info) -> None:
-        print(info, end='')
-        with open(path, 'wb') as handle:
-            pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL)
-
-    @performance_debugger('JSON Dump of')
-    def __json_dump_obj(self, obj, path, info) -> None:
-        print(info, end='')
-        with open(path, 'w') as handle:
-            json.dump(obj, handle)
-
-    @performance_debugger('Numpy Save')
-    def __np_save_as_compressed(self, train, valid, test, path, info) -> None:
-        print(info, end='')
-        np.savez_compressed(path, train=train, valid=valid, test=test)
-
+    """
     @staticmethod
     def map_str_triples_to_numpy_idx(triples, entity_idx, relation_idx) -> np.array:
         return np.array([(entity_idx[s], relation_idx[p], entity_idx[o]) for s, p, o in triples])
-
-    """
-    def index_parallel(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):
-        print(f'Indexing {len(data)} triples. Data augmentation flag => {add_reciprical}')
-        # Entity to integer indexing
-        entity_idxs = {}
-        # Relation to integer indexing
-        relation_idxs = {}
-
-        # Mapping from (head entity & relation) to tail entity
-        er_vocab = defaultdict(list)
-        # Mapping from (relation & tail entity) to head entity
-        pe_vocab = defaultdict(list)
-        # Mapping from (head entity & tail entity) to relation
-        ee_vocab = defaultdict(list)
-
-        for triple in data:
-            try:
-                h, r, t = triple[0], triple[1], triple[2]
-            except IndexError:
-                print(f'{triple} is not parsed corrected.')
-                continue
-
-            # 1. Integer indexing entities and relations
-            entity_idxs.setdefault(h, len(entity_idxs))
-            entity_idxs.setdefault(t, len(entity_idxs))
-            relation_idxs.setdefault(r, len(relation_idxs))
-
-            # 2. Mappings for filtered evaluation
-            # 2.1. (HEAD,RELATION) => TAIL
-            er_vocab[(entity_idxs[h], relation_idxs[r])].append(entity_idxs[t])
-            # 2.2. (RELATION,TAIL) => HEAD
-            pe_vocab[(relation_idxs[r], entity_idxs[t])].append(entity_idxs[h])
-            # 2.3. (HEAD,TAIL) => RELATION
-            ee_vocab[(entity_idxs[h], entity_idxs[t])].append(relation_idxs[r])
-
-            if add_reciprical:
-                # 1. Create reciprocal triples (t r_reverse h)
-                r_reverse = r + "_reverse"
-                relation_idxs.setdefault(r_reverse, len(relation_idxs))
-
-                er_vocab[(entity_idxs[t], relation_idxs[r_reverse])].append(entity_idxs[h])
-                pe_vocab[(relation_idxs[r_reverse], entity_idxs[h])].append(entity_idxs[t])
-                ee_vocab[(entity_idxs[t], entity_idxs[h])].append(relation_idxs[r_reverse])
-
-        return entity_idxs, relation_idxs, er_vocab, pe_vocab, ee_vocab
-    """
-    """
-    def ntriple_parser(l: List) -> List:
-        raise NotImplementedError()
-        assert l[3] == '.'
-        try:
-            s, p, o, _ = l[0], l[1], l[2], l[3]
-            # ...=<...>
-            assert p[0] == '<' and p[-1] == '>'
-            p = p[1:-1]
-            if s[0] == '<':
-                assert s[-1] == '>'
-                s = s[1:-1]
-            if o[0] == '<':
-                assert o[-1] == '>'
-                o = o[1:-1]
-        except AssertionError:
-            print('Parsing error')
-            print(l)
-            exit(1)
-        return [s, p, o]
-    """
-    """
-    
-    def index(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):
-        print(f'Indexing {len(data)} triples. Data augmentation flag => {add_reciprical}')
-        # Entity to integer indexing
-        entity_idxs = {}
-        # Relation to integer indexing
-        relation_idxs = {}
-
-        # Mapping from (head entity & relation) to tail entity
-        er_vocab = defaultdict(list)
-        # Mapping from (relation & tail entity) to head entity
-        pe_vocab = defaultdict(list)
-        # Mapping from (head entity & tail entity) to relation
-        ee_vocab = defaultdict(list)
-
-        for triple in data:
-            try:
-                h, r, t = triple[0], triple[1], triple[2]
-            except IndexError:
-                print(f'{triple} is not parsed corrected.')
-                continue
-
-            # 1. Integer indexing entities and relations
-            entity_idxs.setdefault(h, len(entity_idxs))
-            entity_idxs.setdefault(t, len(entity_idxs))
-            relation_idxs.setdefault(r, len(relation_idxs))
-
-            # 2. Mappings for filtered evaluation
-            # 2.1. (HEAD,RELATION) => TAIL
-            er_vocab[(entity_idxs[h], relation_idxs[r])].append(entity_idxs[t])
-            # 2.2. (RELATION,TAIL) => HEAD
-            pe_vocab[(relation_idxs[r], entity_idxs[t])].append(entity_idxs[h])
-            # 2.3. (HEAD,TAIL) => RELATION
-            ee_vocab[(entity_idxs[h], entity_idxs[t])].append(relation_idxs[r])
-
-            if add_reciprical:
-                # 1. Create reciprocal triples (t r_reverse h)
-                r_reverse = r + "_reverse"
-                relation_idxs.setdefault(r_reverse, len(relation_idxs))
-
-                er_vocab[(entity_idxs[t], relation_idxs[r_reverse])].append(entity_idxs[h])
-                pe_vocab[(relation_idxs[r_reverse], entity_idxs[h])].append(entity_idxs[t])
-                ee_vocab[(entity_idxs[t], entity_idxs[h])].append(relation_idxs[r_reverse])
-
-        return entity_idxs, relation_idxs, er_vocab, pe_vocab, ee_vocab
-        def triple_indexing(self, large_kg_parse) -> None:
-        # This part takes the most of the time.
-        print('Triple indexing')
-        if large_kg_parse:
-            print('No Parallelism implemented yet')
-            # If LARGE WE ASSUME THAT there is no val and test
-            self.train = self.map_str_triples_to_numpy_idx(triples=self.train, entity_idx=self.entity_idx,
-                                                           relation_idx=self.relation_idx)
-            self.valid = np.array([])
-            self.test = np.array([])
-        else:
-            self.train = self.map_str_triples_to_numpy_idx(triples=self.train, entity_idx=self.entity_idx,
-                                                           relation_idx=self.relation_idx)
-            if self.is_valid_test_available():
-                self.valid = self.map_str_triples_to_numpy_idx(triples=self.valid, entity_idx=self.entity_idx,
-                                                               relation_idx=self.relation_idx)
-
-                self.test = self.map_str_triples_to_numpy_idx(triples=self.test, entity_idx=self.entity_idx,
-                                                              relation_idx=self.relation_idx)
-            else:
-                self.valid = np.array([])
-                self.test = np.array([])
-
-    """
-    """
-    
-    def index(data: List[List], add_reciprical=False) -> (Dict, Dict, Dict, Dict, Dict):
-        print(f'Indexing {len(data)} triples. Data augmentation flag => {add_reciprical}')
-        # Entity to integer indexing
-        entity_idxs = {}
-        # Relation to integer indexing
-        relation_idxs = {}
-
-        # Mapping from (head entity & relation) to tail entity
-        er_vocab = defaultdict(list)
-        # Mapping from (relation & tail entity) to head entity
-        pe_vocab = defaultdict(list)
-        # Mapping from (head entity & tail entity) to relation
-        ee_vocab = defaultdict(list)
-
-        for triple in data:
-            try:
-                h, r, t = triple[0], triple[1], triple[2]
-            except IndexError:
-                print(f'{triple} is not parsed corrected.')
-                continue
-
-            # 1. Integer indexing entities and relations
-            entity_idxs.setdefault(h, len(entity_idxs))
-            entity_idxs.setdefault(t, len(entity_idxs))
-            relation_idxs.setdefault(r, len(relation_idxs))
-
-            # 2. Mappings for filtered evaluation
-            # 2.1. (HEAD,RELATION) => TAIL
-            er_vocab[(entity_idxs[h], relation_idxs[r])].append(entity_idxs[t])
-            # 2.2. (RELATION,TAIL) => HEAD
-            pe_vocab[(relation_idxs[r], entity_idxs[t])].append(entity_idxs[h])
-            # 2.3. (HEAD,TAIL) => RELATION
-            ee_vocab[(entity_idxs[h], entity_idxs[t])].append(relation_idxs[r])
-
-            if add_reciprical:
-                # 1. Create reciprocal triples (t r_reverse h)
-                r_reverse = r + "_reverse"
-                relation_idxs.setdefault(r_reverse, len(relation_idxs))
-
-                er_vocab[(entity_idxs[t], relation_idxs[r_reverse])].append(entity_idxs[h])
-                pe_vocab[(relation_idxs[r_reverse], entity_idxs[h])].append(entity_idxs[t])
-                ee_vocab[(entity_idxs[t], entity_idxs[h])].append(relation_idxs[r_reverse])
-
-        return entity_idxs, relation_idxs, er_vocab, pe_vocab, ee_vocab
-    """
-    """
-    with open(data_path, 'r') as reader:
-        s = next(reader)
-        # Heuristic to infer the format of the input data
-        # ntriples checking: Last two characters must be whitespace + . + \n
-        if s[-3:] == ' .\n':
-            is_nt_format = True
-        else:
-            is_nt_format = False
     """

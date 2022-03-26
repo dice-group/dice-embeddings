@@ -3,6 +3,7 @@ from core.executer import Execute
 import sys
 import pytest
 
+
 class TestRegressionConEx:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
@@ -21,8 +22,13 @@ class TestRegressionConEx:
         args.eval_on_train = 1
         args.read_only_few = None
         args.sample_triples_ratio = None
+        args.num_folds_for_cv = None
+        args.num_folds_for_cv = None
+
         result = Execute(args).start()
-        assert 0.13 >= result['Val']['H@1'] >= 0.09
+        assert 0.25 >= result['Train']['H@1'] >= 0.09
+        assert 0.25 >= result['Val']['H@1'] >= 0.09
+        assert 0.25 >= result['Test']['H@1'] >= 0.09
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
@@ -40,9 +46,12 @@ class TestRegressionConEx:
         args.eval_on_train = 1
         args.sample_triples_ratio = None
         args.read_only_few = None
+        args.num_folds_for_cv = None
         args.scoring_technique = '1vsAll'
         result = Execute(args).start()
-        assert 0.50 >= result['Test']['H@1'] >= 0.35
+        assert 0.75 >= result['Train']['H@1'] > 0.35
+        assert 0.75 >= result['Val']['H@1'] >= 0.35
+        assert 0.75 >= result['Test']['H@1'] >= 0.35
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):
@@ -60,7 +69,8 @@ class TestRegressionConEx:
         args.eval = 1
         args.eval_on_train = 1
         args.sample_triples_ratio = None
+        args.num_folds_for_cv = None
         args.read_only_few = None
         args.neg_ratio = 1
         result = Execute(args).start()
-        assert 0.48 >= result['Test']['H@1'] >= .40
+        assert 0.48 >= result['Test']['H@1'] >= .35

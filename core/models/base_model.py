@@ -23,25 +23,37 @@ class BaseKGE(pl.LightningModule):
         self.feature_map_dropout_rate = None
         self.kernel_size = None
         self.num_of_output_channels = None
+        self.weight_decay = None
         self.loss = torch.nn.BCEWithLogitsLoss()
+        self.selected_optimizer = None
         self.sanity_checking()
 
     def sanity_checking(self):
+        assert self.args['model'] in ['DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO', 'ConEx', 'Shallom']
+        if self.args.get('weight_decay'):
+            self.weight_decay = self.args['weight_decay']
+        else:
+            self.weight_decay = 0.0
+        if self.args.get('embedding_dim'):
+            self.embedding_dim = self.args['embedding_dim']
+        else:
+            self.embedding_dim = 1
 
-        assert self.args['model'] in ['DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO', 'ConEx','Shallom']
+        if self.args.get('num_entities'):
+            self.num_entities = self.args['num_entities']
+        else:
+            self.num_entities = 1
 
-        assert self.args['embedding_dim'] > 0
-        assert self.args['num_entities'] > 0
-        assert self.args['num_relations'] > 0
-
-        self.embedding_dim = self.args['embedding_dim']
-        self.num_entities = self.args['num_entities']
-        self.num_relations = self.args['num_relations']
+        if self.args.get('num_relations'):
+            self.num_relations = self.args['num_relations']
+        else:
+            self.num_relations = 1
 
         if self.args.get('learning_rate'):
             self.learning_rate = self.args['learning_rate']
         else:
             self.learning_rate = .1
+
         if self.args.get("input_dropout_rate"):
             self.input_dropout_rate = self.args['input_dropout_rate']
         else:
@@ -57,7 +69,7 @@ class BaseKGE(pl.LightningModule):
             else:
                 self.apply_unit_norm = False
 
-        if self.args['model'] in ['ConvQ', 'ConvO','ConEx']:
+        if self.args['model'] in ['ConvQ', 'ConvO', 'ConEx']:
             if self.args.get("kernel_size"):
                 self.kernel_size = self.args['kernel_size']
             else:
@@ -72,7 +84,9 @@ class BaseKGE(pl.LightningModule):
                 self.feature_map_dropout_rate = 0.0
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        self.selected_optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate,
+                                                   weight_decay=self.weight_decay)
+        return self.selected_optimizer
 
     def loss_function(self, yhat_batch, y_batch):
         return self.loss(input=yhat_batch, target=y_batch)
@@ -84,7 +98,11 @@ class BaseKGE(pl.LightningModule):
         raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_all function')
 
     def forward(self, x: torch.Tensor):
+        """
 
+        :param x:
+        :return:
+        """
         batch_size, dim = x.shape
         if dim == 3:
             return self.forward_triples(x)
@@ -99,7 +117,13 @@ class BaseKGE(pl.LightningModule):
         x_batch, y_batch = batch
         yhat_batch = self.forward(x_batch)
         train_loss = self.loss_function(yhat_batch=yhat_batch, y_batch=y_batch)
-        return {'loss': train_loss}
+        return train_loss
+        # return {'loss': train_loss}
+
+    # TODO: adaptive KGE: decisions can be implemented in here by looking at moving average of loss.
+    # def training_epoch_end(self, training_step_outputs):
+    # optim.param_groups[0]['lr'] = 0.001
+    #    pass
 
     def validation_step(self, batch, batch_idx):
         if len(batch) == 4:

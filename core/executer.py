@@ -1,33 +1,26 @@
-import os
-from .models import *
-from .helper_classes import LabelRelaxationLoss, LabelSmoothingLossCanonical
-from .dataset_classes import StandardDataModule, KvsAll, CVDataModule
-from .knowledge_graph import KG
-from .callbacks import PrintCallback, KGESaveCallback
-import torch
-from torch import nn
-from torch.nn import functional as F
-from torch.utils.data import DataLoader, Dataset
-from sklearn.model_selection import KFold
-from .static_funcs import *
-import numpy as np
-from pytorch_lightning import loggers as pl_loggers
-import pandas as pd
 import json
+import logging
 import time
-from pytorch_lightning.plugins import DDPPlugin
-from pytorch_lightning import Trainer, seed_everything
-import logging, warnings
-
+import warnings
 from types import SimpleNamespace
+import numpy as np
+import pandas as pd
+from pytorch_lightning import seed_everything
+from sklearn.model_selection import KFold
+from .callbacks import PrintCallback, KGESaveCallback
+from pytorch_lightning.plugins import DDPPlugin, DeepSpeedPlugin
+from pytorch_lightning.callbacks import ModelSummary
+from .dataset_classes import StandardDataModule
+from .helper_classes import LabelRelaxationLoss
+from .knowledge_graph import KG
+from .static_funcs import *
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
+warnings.filterwarnings(action="ignore", category=FutureWarning)
 
 
-# TODO: Execute can inherit from Trainer and Evaluator Classes
-# By doing so we can increase the modularity of our code.
 class Execute:
     def __init__(self, args, continuous_training=False):
         # (1) Process arguments and sanity checking.
@@ -42,7 +35,6 @@ class Execute:
         else:
             self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
             self.storage_path = self.args.full_storage_path
-            print('Saving configuration..')
             with open(self.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
                 temp = vars(self.args)
                 json.dump(temp, file_descriptor, indent=3)
@@ -53,46 +45,68 @@ class Execute:
         # (7) Store few data in memory for numerical results, e.g. runtime, H@1 etc.
         self.report = dict()
 
-    def start(self) -> dict:
-        """
-        1. READ/LOAD input knowledge graph
-        2. Train and Eval a knowledge graph embedding mode
-        3. Store relevant intermediate data including the trained model, embeddings and configuration
-        4. Return brief summary of the computation in dictionary format.
-        """
-        start_time = time.time()
-        # (1) READ/LOAD input knowledge graph
+    def read_preprocess_index_serialize_data(self) -> None:
+        """ Read & Preprocess & Index & Serialize Input Data """
+        # (1) Read & Preprocess & Index & Serialize Input Data.
+        self.dataset = read_preprocess_index_serialize_kg(self.args, cls=KG)
+        # (2) Share some info about data for easy access.
+        self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
+        # (3) Sanity checking.
+        self.args, self.dataset = config_kge_sanity_checking(self.args, self.dataset)
+
+    def load_indexed_data(self) -> None:
+        """ Load Indexed Data"""
+        self.dataset = reload_input_data(self.storage_path, cls=KG)
+
+    def save_trained_model(self, trained_model: BaseKGE, start_time: float) -> None:
+        """ Save a knowledge graph embedding model (an instance of BaseKGE class) """
+        trained_model.eval()
+        # (1) Store NumParam and EstimatedSizeMB
+        self.report.update(extract_model_summary(trained_model.summarize()))
+        # (2) Store/Serialize Model for further use.
         if self.is_continual_training is False:
-            self.dataset = read_input_data(self.args, cls=KG)
-            self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
-            self.args, self.dataset = config_kge_sanity_checking(self.args, self.dataset)
+            store(trained_model, model_name='model', full_storage_path=self.storage_path,
+                  dataset=self.dataset)
         else:
-            self.dataset = reload_input_data(self.storage_path, cls=KG)
-
-        self.report['num_entities'] = self.dataset.num_entities
-        self.report['num_relations'] = self.dataset.num_relations
-
-        # (2) Train and Evaluate
-        trained_model = self.train_and_eval()
-        # (3) Store trained model
-        if self.is_continual_training is False:
-            self.store(trained_model, model_name='model')
-        else:
-            self.store(trained_model, model_name='model_'+str(datetime.datetime.now()))
-
+            store(trained_model, model_name='model_' + str(datetime.datetime.now()),
+                  dataset=self.dataset,
+                  full_storage_path=self.storage_path)
+        # (3) Store total runtime.
         total_runtime = time.time() - start_time
         if 60 * 60 > total_runtime:
             message = f'{total_runtime / 60:.3f} minutes'
         else:
             message = f'{total_runtime / (60 ** 2):.3f} hours'
         self.report['Runtime'] = message
-        self.report['path_experiment_folder']=self.storage_path
-
+        self.report['path_experiment_folder'] = self.storage_path
         print(f'Total computation time: {message}')
         print(f'Number of parameters in {trained_model.name}:', self.report["NumParam"])
-        # print(f'Estimated of {trained_model.name}:', self.report["EstimatedSizeMB"])
+        # (4) Store the report of training.
         with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
-            json.dump(self.report, file_descriptor,indent=4)
+            json.dump(self.report, file_descriptor, indent=4)
+
+    def start(self) -> dict:
+        """
+        (1) Data Preparation:
+            (1.1) Read, Preprocess Index, Serialize.
+            (1.2) Load a data that has been in (1.1).
+        (2) Train & Eval
+        (3) Save the model
+        (4) Return a report of the training
+        """
+        start_time = time.time()
+        # (1) Data Preparation.
+        if self.is_continual_training is False:
+            # (1.1) Read, Preprocess, Index, and Serialize input data.
+            self.read_preprocess_index_serialize_data()
+        else:
+            # (1.2) Load indexed input data.
+            self.load_indexed_data()
+        # (2) Train and Evaluate.
+        trained_model = self.train_and_eval()
+        # (3) Store trained model.
+        self.save_trained_model(trained_model, start_time)
+        # (4) Return the report of the training process.
         return self.report
 
     def train_and_eval(self) -> BaseKGE:
@@ -104,9 +118,13 @@ class Execute:
         2b. Train a model in k-fold cross validation mode if it is requested
         2c. Train a model
         """
+        self.report['num_entities'] = self.dataset.num_entities
+        self.report['num_relations'] = self.dataset.num_relations
         print('------------------- Train & Eval -------------------')
         callbacks = [PrintCallback(),
-                     KGESaveCallback(every_x_epoch=self.args.num_epochs, path=self.args.full_storage_path)]
+                     KGESaveCallback(every_x_epoch=self.args.save_model_at_every_epoch,
+                                     max_epochs=self.args.max_epochs,
+                                     path=self.args.full_storage_path), ModelSummary(max_depth=-1)]
 
         # PL has some problems with DDPPlugin. It will likely to be solved in their next release.
         # (1) Explicitly setting num_process > 1 gives you
@@ -122,101 +140,32 @@ class Execute:
         """
         # (2) Adding plugins=[DDPPlugin(find_unused_parameters=False)] and explicitly using num_process > 1
         """ pytorch_lightning.utilities.exceptions.DeadlockDetectedException: DeadLock detected from rank: 1  """
-
+        self.args.stochastic_weight_avg = True  # => https://pytorch.org/blog/pytorch-1.6-now-includes-stochastic-weight-averaging/
         # (3) Surprisingly, if you do not ask explicitly num_process > 1, computation runs smoothly while using many CPUs
-        if self.args.gpus:
-            self.trainer = pl.Trainer.from_argparse_args(self.args, plugins=[DDPPlugin(find_unused_parameters=False)],
-                                                         callbacks=callbacks)
-        else:
-            self.trainer = pl.Trainer.from_argparse_args(self.args,
-                                                         callbacks=callbacks)
-
-        if self.args.num_folds_for_cv >= 2:
-            trained_model = self.k_fold_cross_validation()
-        else:
-            if self.args.scoring_technique == 'NegSample':
-                trained_model = self.training_negative_sampling()
-            elif self.args.scoring_technique == 'KvsAll':
-                trained_model = self.training_kvsall()
-            elif self.args.scoring_technique == '1vsAll':
-                trained_model = self.training_1vsall()
-            else:
-                raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
-        """
-        # 2. Check whether validation and test datasets are available.
-        if self.dataset.is_valid_test_available():
-            if self.args.scoring_technique == 'NegSample':
-                trained_model = self.training_negative_sampling()
-            elif self.args.scoring_technique == 'KvsAll':
-                trained_model = self.training_kvsall()
-            elif self.args.scoring_technique == '1vsAll':
-                trained_model = self.training_1vsall()
-            else:
-                raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
-        else:
-            # 3. If (2) is FALSE, then check whether cross validation will be applied.
-            print(f'There is no validation and test sets available.')
-            if self.args.num_folds_for_cv < 2:
-                print(
-                    f'No test set is found and k-fold cross-validation is set to less than 2 (***num_folds_for_cv*** => {self.args.num_folds_for_cv}). Hence we do not evaluate the model')
-                # 3.1. NO CROSS VALIDATION => TRAIN WITH 'NegSample' or KvsALL
-                if self.args.scoring_technique == 'NegSample':
-                    trained_model = self.training_negative_sampling()
-                elif self.args.scoring_technique == 'KvsAll':
-                    # KvsAll or negative sampling
-                    trained_model = self.training_kvsall()
-                elif self.args.scoring_technique == '1vsAll':
-                    trained_model = self.training_1vsall()
-                else:
-                    raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
-            else:
-                trained_model = self.k_fold_cross_validation()
-        """
-
+        self.trainer = initialize_pl_trainer(self.args, callbacks, plugins=[])
+        # (4) Train model.
+        trained_model, form_of_labelling = self.train()
+        # (5) Eval model.
+        self.eval(trained_model, form_of_labelling)
+        # (6) Return trained model
         return trained_model
 
-    def store(self, trained_model, model_name='model') -> None:
-        """
-        Store trained_model model and save embeddings into csv file.
-        :param model_name:
-        :param trained_model:
-        :return:
-        """
-        print('------------------- Store -------------------')
-        # Save Torch model.
-        store_kge(trained_model, path=self.args.full_storage_path + f'/{model_name}.pt')
-
-        # See available memory and decide whether embeddings are stored separately or not.
-        available_memory = [i.split() for i in os.popen('free -h').read().splitlines()][1][-1]  # ,e.g., 10Gi
-        available_memory_mb = float(available_memory[:-2]) * 1000
-        self.report.update(extract_model_summary(trained_model.summarize()))
-
-        if available_memory_mb * .01 > self.report['EstimatedSizeMB']:
-            """ We have enough space for data conversion"""
-            print('Saving embeddings..')
-            entity_emb, relation_ebm = trained_model.get_embeddings()
-
-            if len(entity_emb) > 10:
-                np.savez_compressed(self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings',
-                                    entity_emb=entity_emb)
-            else:
-                save_embeddings(entity_emb, indexes=self.dataset.entities_str,
-                                path=self.args.full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
-
-            del entity_emb
-
-            if relation_ebm is not None:
-                if len(relation_ebm) > 10:
-                    np.savez_compressed(self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings',
-                                        relation_ebm=relation_ebm)
-                else:
-                    save_embeddings(relation_ebm, indexes=self.dataset.relations_str,
-                                    path=self.args.full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
-            del relation_ebm
-
+    # @TODO Create TrainClass for different strategies
+    def train(self) -> Tuple[BaseKGE, str]:
+        """ Train selected model via the selected training strategy """
+        if self.args.num_folds_for_cv >= 2:
+            return self.k_fold_cross_validation()
         else:
-            print('There is not enough memory to store embeddings separately.')
+            if self.args.scoring_technique == 'NegSample':
+                return self.training_negative_sampling()
+            elif self.args.scoring_technique == 'KvsAll':
+                return self.training_kvsall()
+            elif self.args.scoring_technique == '1vsAll':
+                return self.training_1vsall()
+            else:
+                raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
 
+    ####################Tran & Eval Class methods ######################################
     def training_kvsall(self) -> BaseKGE:
         """
         Train models with KvsAll
@@ -226,7 +175,7 @@ class Execute:
         :return: trained BASEKGE
         """
         # 1. Select model and labelling : Entity Prediction or Relation Prediction.
-        model, form_of_labelling = self.select_model(vars(self.args))
+        model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         print(f'KvsAll training starts: {model.name}')  # -labeling:{form_of_labelling}')
         # 2. Create training data.)
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
@@ -240,7 +189,9 @@ class Execute:
                                      num_workers=self.args.num_processes,
                                      label_smoothing_rate=self.args.label_smoothing_rate)
         # 3. Train model.
-        model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
+        train_dataloaders = dataset.train_dataloader()
+        del dataset
+        model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
         """
         # @TODO
         from laplace import Laplace
@@ -258,30 +209,12 @@ class Execute:
         # la.fit(dataset.train_dataloader())
         # la.optimize_prior_precision(method='CV', val_loader=dataset.val_dataloader())
         """
-        # 4. Test model on the training dataset if it is needed.
-        if self.args.eval_on_train:
-            res = self.evaluate_lp_k_vs_all(model, self.dataset.train_set,
-                                            info=f'Evaluate {model.name} on Train set',
-                                            form_of_labelling=form_of_labelling)
-            self.report['Train'] = res
 
-        # 5. Test model on the validation and test dataset if it is needed.
-        if self.args.eval:
-            if len(self.dataset.valid_set) > 0:
-                res = self.evaluate_lp_k_vs_all(model, self.dataset.valid_set,
-                                                f'Evaluate {model.name} on Validation set',
-                                                form_of_labelling=form_of_labelling)
-                self.report['Val'] = res
-            if len(self.dataset.test_set) > 0:
-                res = self.evaluate_lp_k_vs_all(model, self.dataset.test_set, f'Evaluate {model.name} on Test set',
-                                                form_of_labelling=form_of_labelling)
-                self.report['Test'] = res
-
-        return model
+        return model, form_of_labelling
 
     def training_1vsall(self):
         # 1. Select model and labelling : Entity Prediction or Relation Prediction.
-        model, form_of_labelling = self.select_model(vars(self.args))
+        model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         print(f'1vsAll training starts: {model.name}')
         # 2. Create training data.
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
@@ -302,49 +235,21 @@ class Execute:
         else:
             model.loss = nn.CrossEntropyLoss()
         # 3. Train model
-        model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
-        # 4. Test model on the training dataset if it is needed.
-        if self.args.eval_on_train:
-            res = self.evaluate_lp_k_vs_all(model, self.dataset.train_set,
-                                            f'Evaluate {model.name} on train set', form_of_labelling)
-            self.report['Train'] = res
-
-        # 5. Test model on the validation and test dataset if it is needed.
-        if self.args.eval:
-            if len(self.dataset.valid_set) > 0:
-                res = self.evaluate_lp_k_vs_all(model, self.dataset.valid_set,
-                                                f'Evaluate {model.name} on validation set', form_of_labelling)
-                self.report['Val'] = res
-            if len(self.dataset.test_set) > 0:
-                res = self.evaluate_lp_k_vs_all(model, self.dataset.test_set, f'Evaluate {model.name} on test set',
-                                                form_of_labelling)
-                self.report['Test'] = res
-
-        return model
-
-    def select_model(self, args: dict):
-        if self.is_continual_training:
-            print('Loading pre-trained model...')
-            model, _ = select_model(args)
-            try:
-                weights = torch.load(self.storage_path + '/model.pt', torch.device('cpu'))
-                model.load_state_dict(weights)
-            except FileNotFoundError:
-                print(f"{self.storage_path}/model.pt is not found. The model will be trained with random weights")
-            model.train()
-            return model, _
-        else:
-            return select_model(args)
+        train_dataloaders = dataset.train_dataloader()
+        del dataset
+        model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
+        return model, form_of_labelling
 
     def training_negative_sampling(self) -> pl.LightningModule:
         """
         Train models with Negative Sampling
         """
         assert self.args.neg_ratio > 0
-        model, _ = self.select_model(vars(self.args))
+        model, _ = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         form_of_labelling = 'NegativeSampling'
         print(f'Training starts: {model.name}-labeling:{form_of_labelling}')
-        print('Creating training data...')
+        print('Creating training data...', end='\t')
+        start_time = time.time()
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,
                                      test_set_idx=self.dataset.test_set,
@@ -353,22 +258,70 @@ class Execute:
                                      form=form_of_labelling,
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_processes)
+                                     num_workers=os.cpu_count() - 1)
+        print(f'Done ! {time.time() - start_time:.3f} seconds\n')
         # 3. Train model
-        model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
+        train_dataloaders = dataset.train_dataloader()
+        del dataset
+        if self.args.eval is False:
+            self.dataset.train_set = None
+            self.dataset.valid_set = None
+            self.dataset.test_set = None
+        model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
+        return model, form_of_labelling
+
+    def eval(self, trained_model, form_of_labelling) -> None:
+        """
+        Evaluate model with Standard
+        :param form_of_labelling:
+        :param trained_model:
+        :return:
+        """
+        if self.args.scoring_technique == 'NegSample':
+            self.eval_rank_of_head_and_tail_entity(trained_model)
+        elif self.args.scoring_technique == 'KvsAll':
+            self.eval_with_vs_all(trained_model, form_of_labelling)
+        elif self.args.scoring_technique == '1vsAll':
+            self.eval_with_vs_all(trained_model, form_of_labelling)
+        else:
+            raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
+
+    def eval_rank_of_head_and_tail_entity(self, trained_model):
         # 4. Test model on the training dataset if it is needed.
         if self.args.eval_on_train:
-            res = self.evaluate_lp(model, self.dataset.train_set, f'Evaluate {model.name} on Train set')
+            res = self.evaluate_lp(trained_model, self.dataset.train_set, f'Evaluate {trained_model.name} on Train set')
             self.report['Train'] = res
         # 5. Test model on the validation and test dataset if it is needed.
         if self.args.eval:
-            if len(self.dataset.valid_set) > 0:
-                self.report['Val'] = self.evaluate_lp(model, self.dataset.valid_set, 'Evaluation of Validation set')
+            if self.dataset.valid_set is not None:
+                self.report['Val'] = self.evaluate_lp(trained_model, self.dataset.valid_set,
+                                                      f'Evaluate {trained_model.name} of Validation set')
 
-            if len(self.dataset.test_set) > 0:
-                self.report['Test'] = self.evaluate_lp(model, self.dataset.test_set, 'Evaluation of Test set')
+            if self.dataset.test_set is not None:
+                self.report['Test'] = self.evaluate_lp(trained_model, self.dataset.test_set,
+                                                       f'Evaluate {trained_model.name} of Test set')
 
-        return model
+    def eval_with_vs_all(self, trained_model, form_of_labelling) -> None:
+        """ Evaluate model after reciprocal triples are added """
+        # 4. Test model on the training dataset if it is needed.
+        if self.args.eval_on_train:
+            res = self.evaluate_lp_k_vs_all(trained_model, self.dataset.train_set,
+                                            info=f'Evaluate {trained_model.name} on Train set',
+                                            form_of_labelling=form_of_labelling)
+            self.report['Train'] = res
+
+        # 5. Test model on the validation and test dataset if it is needed.
+        if self.args.eval:
+            if self.dataset.valid_set is not None:
+                res = self.evaluate_lp_k_vs_all(trained_model, self.dataset.valid_set,
+                                                f'Evaluate {trained_model.name} on Validation set',
+                                                form_of_labelling=form_of_labelling)
+                self.report['Val'] = res
+            if self.dataset.test_set is not None:
+                res = self.evaluate_lp_k_vs_all(trained_model, self.dataset.test_set,
+                                                f'Evaluate {trained_model.name} on Test set',
+                                                form_of_labelling=form_of_labelling)
+                self.report['Test'] = res
 
     def evaluate_lp_k_vs_all(self, model, triple_idx, info=None, form_of_labelling=None):
         """
@@ -553,7 +506,7 @@ class Execute:
         print(results)
         return results
 
-    def k_fold_cross_validation(self) -> pl.LightningModule:
+    def k_fold_cross_validation(self) -> Tuple[BaseKGE, str]:
         """
         Perform K-fold Cross-Validation
 
@@ -574,7 +527,7 @@ class Execute:
 
         for (ith, (train_index, test_index)) in enumerate(kf.split(self.dataset.train_set)):
             trainer = pl.Trainer.from_argparse_args(self.args)
-            model, form_of_labelling = self.select_model(vars(self.args))
+            model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
             print(f'{form_of_labelling} training starts: {model.name}')  # -labeling:{form_of_labelling}')
 
             train_set_for_i_th_fold, test_set_for_i_th_fold = self.dataset.train_set[train_index], \
@@ -587,10 +540,12 @@ class Execute:
                                          form=form_of_labelling,
                                          neg_sample_ratio=self.args.neg_ratio,
                                          batch_size=self.args.batch_size,
-                                         num_workers=self.args.num_processes
-                                         )
+                                         num_workers=self.args.num_processes)
+            print(self.args.num_processes)
             # 3. Train model
-            model_fitting(trainer=trainer, model=model, train_dataloaders=dataset.train_dataloader())
+            train_dataloaders = dataset.train_dataloader()
+            del dataset
+            model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
 
             # 6. Test model on validation and test sets if possible.
             res = self.evaluate_lp_k_vs_all(model, test_set_for_i_th_fold, form_of_labelling=form_of_labelling)
@@ -601,36 +556,22 @@ class Execute:
         results = {'H@1': eval_folds['H@1'].mean(), 'H@3': eval_folds['H@3'].mean(), 'H@10': eval_folds['H@10'].mean(),
                    'MRR': eval_folds['MRR'].mean()}
         print(f'Evaluate {model.name} on test set: {results}')
+        return model, form_of_labelling
 
-        # Return last model.
-        return model
-
-    """
-    def deserialize_index_data(self):
-        m = []
-        if os.path.isfile(self.storage_path + '/idx_train_df.gzip'):
-            m.append(pd.read_parquet(self.storage_path + '/idx_train_df.gzip'))
-        if os.path.isfile(self.storage_path + '/idx_valid_df.gzip'):
-            m.append(pd.read_parquet(self.storage_path + '/idx_valid_df.gzip'))
-        if os.path.isfile(self.storage_path + '/idx_test_df.gzip'):
-            m.append(pd.read_parquet(self.storage_path + '/idx_test_df.gzip'))
-        try:
-            assert len(m) > 1
-        except AssertionError as e:
-            print(f'Could not find indexed find under idx_*_df files {self.storage_path}')
-            raise e
-        return pd.concat(m, ignore_index=True)
-    """
 
 class ContinuousExecute(Execute):
     def __init__(self, args):
         assert os.path.exists(args.path_experiment_folder)
         assert os.path.isfile(args.path_experiment_folder + '/idx_train_df.gzip')
         assert os.path.isfile(args.path_experiment_folder + '/configuration.json')
+        # (1) Load Previous input configuration
         previous_args = load_json(args.path_experiment_folder + '/configuration.json')
+        # (2) Update (1) with new input
         previous_args.update(vars(args))
         report = load_json(args.path_experiment_folder + '/report.json')
         previous_args['num_entities'] = report['num_entities']
         previous_args['num_relations'] = report['num_relations']
         previous_args = SimpleNamespace(**previous_args)
+        previous_args.full_storage_path = previous_args.path_experiment_folder
+        print('ContinuousExecute starting...')
         super().__init__(previous_args, continuous_training=True)

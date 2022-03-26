@@ -25,13 +25,12 @@ class DistMult(BaseKGE):
         self.bn_ent_real = torch.nn.BatchNorm1d(self.embedding_dim)
         self.bn_rel_real = torch.nn.BatchNorm1d(self.embedding_dim)
         self.bn_hidden_real = torch.nn.BatchNorm1d(self.embedding_dim)
-
         self.hidden_dropout = torch.nn.Dropout(self.hidden_dropout_rate)
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
-        return self.emb_ent_real.weight.data.data.detach().numpy(), self.emb_rel_real.weight.data.detach().numpy()
+        return self.emb_ent_real.weight.data.data.detach(), self.emb_rel_real.weight.data.detach()
 
-    def forward_k_vs_all(self, x:torch.Tensor):
+    def forward_k_vs_all(self, x: torch.Tensor):
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
         e1_idx, rel_idx = x[:, 0], x[:, 1]
@@ -47,7 +46,7 @@ class DistMult(BaseKGE):
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
         e2_idx: torch.Tensor
-        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1],x[:, 2]
+        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1], x[:, 2]
         # (1)
         # (1.1) Complex embeddings of head entities and apply batch norm.
         emb_head_real = self.input_dp_ent_real(self.bn_ent_real(self.emb_ent_real(e1_idx)))
@@ -77,7 +76,7 @@ class Shallom(BaseKGE):
                                      torch.nn.Linear(shallom_width, self.num_relations))
 
     def get_embeddings(self) -> Tuple[np.ndarray, None]:
-        return self.entity_embeddings.weight.data.detach().numpy(), None
+        return self.entity_embeddings.weight.data.detach(), None
 
     def forward_k_vs_all(self, x):
         e1_idx: torch.Tensor
@@ -116,7 +115,7 @@ class KPDistMult(BaseKGE):
         self.bn_hidden_real = torch.nn.BatchNorm1d(args.embedding_dim)
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
-        return self.emb_ent_real.weight.data.data.detach().numpy(), self.emb_rel_real.weight.data.detach().numpy()
+        return self.emb_ent_real.weight.data.data.detach(), self.emb_rel_real.weight.data.detach()
 
     def forward_k_vs_all(self, x):
         e1_idx: torch.Tensor
@@ -170,7 +169,7 @@ class KronE(BaseKGE):
         self.bn_rel_real = torch.nn.BatchNorm1d(self.embedding_dim_rel)
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
-        return self.emb_ent_real.weight.data.data.detach().numpy(), self.emb_rel_real.weight.data.detach().numpy()
+        return self.emb_ent_real.weight.data.data.detach(), self.emb_rel_real.weight.data.detach()
 
     def construct_entity_embeddings(self, e1_idx: torch.Tensor):
         emb_head = self.bn_ent_real(self.emb_ent_real(e1_idx)).unsqueeze(1)
@@ -247,7 +246,7 @@ class KronELinear(BaseKGE):
         self.bn_rel_real = torch.nn.BatchNorm1d(self.rel_embedding_dim)
 
     def get_embeddings(self):
-        return self.emb_ent_real.weight.data.data.detach().numpy(), self.emb_rel_real.weight.data.detach().numpy()
+        return self.emb_ent_real.weight.data.data.detach(), self.emb_rel_real.weight.data.detach()
 
     def construct_entity_embeddings(self, e1_idx: torch.Tensor):
         emb_head = self.bn_ent_real(self.emb_ent_real(e1_idx)).unsqueeze(1)

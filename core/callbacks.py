@@ -1,4 +1,5 @@
 # 1. Create Pytorch-lightning Trainer object from input configuration
+import datetime
 import time
 
 from pytorch_lightning.callbacks import Callback
@@ -29,16 +30,26 @@ class PrintCallback(Callback):
 
 
 class KGESaveCallback(Callback):
-    def __init__(self, every_x_epoch: int, path: str):
+    def __init__(self, every_x_epoch: int, max_epochs: int, path: str):
         super().__init__()
-        assert isinstance(every_x_epoch, int) and every_x_epoch > 0
         self.every_x_epoch = every_x_epoch
+        self.max_epochs = max_epochs
         self.epoch_counter = 0
         self.path = path
+        if self.every_x_epoch is None:
+            self.every_x_epoch = max(self.max_epochs // 2, 1)
 
     def on_epoch_end(self, trainer, model):
-        if self.epoch_counter % self.every_x_epoch == 0 and self.epoch_counter > 0:
-            print('\nStoring model..')
-            # Could throw an error if mode is in GPU
-            store_kge(model, path=self.path + f'/model_at_{str(self.every_x_epoch)}_epoch.pt')
+        if self.epoch_counter % self.every_x_epoch == 0 and self.epoch_counter > 1:
+            print(f'\nStoring model {self.epoch_counter}...')
+            store_kge(model, path=self.path + f'/model_at_{str(self.epoch_counter)}_epoch_{str(str(datetime.datetime.now()))}.pt')
         self.epoch_counter += 1
+
+# https://pytorch-lightning.readthedocs.io/en/stable/extensions/callbacks.html#persisting-state
+# https://pytorch-lightning.readthedocs.io/en/stable/extensions/callbacks.html#teardown
+class AdaptiveKGECallback(Callback):
+    def __init__(self):
+        super().__init__()
+
+    def on_epoch_end(self, trainer, model):
+        print(trainer.callback_metrics)
