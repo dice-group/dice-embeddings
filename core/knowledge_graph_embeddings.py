@@ -31,7 +31,7 @@ class KGE(BaseInteractiveKGE):
         labels: object = torch.FloatTensor(labels)
         return x, labels
 
-    def train_cbd(self, head_entity, iteration=1, num_copies_in_batch=1, lr=.001,
+    def train_cbd(self, head_entity, iteration=1, lr=.01,
                   converge_loss=.0001):
         """
         Train/Retrain model via applying KvsAll training/scoring technique on CBD of an head entity
@@ -71,12 +71,12 @@ class KGE(BaseInteractiveKGE):
         x = torch.cat([torch.LongTensor([idx_head_entity]).repeat(num_unique_relations, 1),
                        torch.LongTensor(batch_relations).reshape(num_unique_relations, 1)], dim=1)
         del batch_relations
-        # Create a BATCH via repeating.
-        x = x.repeat(num_copies_in_batch, 1)
-        batch_labels = batch_labels.repeat(num_copies_in_batch, 1)
+        # Create a BATCH via repeating or reshaping
+        x = x.repeat(1, 1)
+        batch_labels = batch_labels.repeat(1, 1)
         # (4) Train
         self.set_model_train_mode()
-        optimizer = optim.Adam(self.model.parameters(), lr=lr)
+        optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=.00001)
         print('\nIteration starts.')
         converged = False
         for epoch in range(iteration):
@@ -149,14 +149,14 @@ class KGE(BaseInteractiveKGE):
         out = self.construct_input_and_output_k_vs_all(head_entity, relation)
         if out is None:
             return
-
         x, labels, idx_tails = out
         # (2) Train mode
         self.set_model_train_mode()
+        # (3) Initialize optimizer # SGD considerably faster than ADAM.
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=.00001)
+
         print('\nIteration starts.')
         # (3) Iterative training.
-        converged = False
         for epoch in range(iteration):
             optimizer.zero_grad()
             outputs = self.model(x)
@@ -172,15 +172,13 @@ class KGE(BaseInteractiveKGE):
             optimizer.step()
             if loss.item() < .00001:
                 print(f'loss is {loss.item():.3f}. Converged !!!')
-                converged = True
                 break
         # (4) Eval mode
         self.set_model_eval_mode()
-        if converged is False:
-            with torch.no_grad():
-                outputs = self.model(x)
-                loss = self.model.loss(outputs, labels)
-            print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs[0, idx_tails].flatten().detach()}\n")
+        with torch.no_grad():
+            outputs = self.model(x)
+            loss = self.model.loss(outputs, labels)
+        print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs[0, idx_tails].flatten().detach()}\n")
 
     def train_k_vs_all_lbfgs(self, head_entity, relation, iteration=1, convergence=.001):
         """
