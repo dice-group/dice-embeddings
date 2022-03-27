@@ -32,7 +32,7 @@ class KGE(BaseInteractiveKGE):
         return x, labels
 
     def train_cbd(self, head_entity, iteration=1, lr=.01,
-                  converge_loss=.0001):
+                  converge_loss=.0000001):
         """
         Train/Retrain model via applying KvsAll training/scoring technique on CBD of an head entity
 
@@ -44,36 +44,41 @@ class KGE(BaseInteractiveKGE):
         """
         start_time = time.time()
         assert len(head_entity) == 1
+        # (1) Get integer index of head entity.
         try:
             idx_head_entity = self.entity_to_idx.loc[head_entity]['entity'].values[0]
         except KeyError as e:
             print(f'Exception:\t {str(e)}')
             return
-        print(f'Extracting relevant relations for training from CBD of {head_entity[0]}...', end='\t')
-        batch_relations = []
-        # (1) Select {r | (h,r,x) \in G).
+
+        print(f'\nExtracting relevant relations for training from CBD of {head_entity[0]}...')
+        relations = []
+        # (2) Select triples that (1) occur in.
         triples: pd.DataFrame
         triples = self.train_set[self.train_set['subject'] == idx_head_entity]
         print(f'Frequency of {head_entity} = {len(triples)}', end='\t')
+        # (3) Select unique relations in (2). The mini batch size will be  len(idx_batch_relations)
         idx_batch_relations = triples['relation'].unique()
         print(f'with {len(idx_batch_relations)} number of unique relations', end='\t')
-        # (2)
-        print(f'Constructing triples for training from CBD of {head_entity[0]}...', end='\t')
-        num_unique_relations = len(idx_batch_relations)
-        batch_labels = torch.zeros(num_unique_relations, self.num_entities)
+        # (4) Construct training data.
+        print(f'Constructing batch of examples for training from CBD of {head_entity[0]}...')
+        targets = torch.zeros(len(idx_batch_relations), self.num_entities) + .001
+        targets_idx_tails = []
         for i, idx_relation in enumerate(idx_batch_relations):
+            # Given tail | (h,r,tail) \in G. numpy array of indexes
             idx_tails = triples[triples['relation'] == idx_relation]['object'].values
-            batch_labels[i, idx_tails] = 1
-            batch_relations.append(idx_relation)
-
-        assert batch_labels.shape[0] == len(batch_relations)
-        # (3) Construct the batch
-        x = torch.cat([torch.LongTensor([idx_head_entity]).repeat(num_unique_relations, 1),
-                       torch.LongTensor(batch_relations).reshape(num_unique_relations, 1)], dim=1)
-        del batch_relations
-        # Create a BATCH via repeating or reshaping
-        x = x.repeat(1, 1)
-        batch_labels = batch_labels.repeat(1, 1)
+            # Soft Targets
+            targets[i, idx_tails] = .99
+            # Store relations
+            relations.append(idx_relation)
+            targets_idx_tails.append(idx_tails)
+        assert targets.shape[0] == len(relations)
+        # Sanity checking
+        assert idx_batch_relations.tolist() == relations
+        x = torch.cat([torch.LongTensor([idx_head_entity]).repeat(len(idx_batch_relations), 1),
+                       torch.LongTensor(idx_batch_relations).reshape(len(idx_batch_relations), 1)], dim=1)
+        del relations
+        del triples
         # (4) Train
         self.set_model_train_mode()
         optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=.00001)
@@ -82,7 +87,7 @@ class KGE(BaseInteractiveKGE):
         for epoch in range(iteration):
             optimizer.zero_grad()
             outputs = self.model(x)
-            loss = self.model.loss(outputs, batch_labels)
+            loss = self.model.loss(outputs, targets)
             print(f"Iteration:{epoch}\t Loss:{loss.item():.10f}")
             loss.backward()
             optimizer.step()
@@ -94,7 +99,7 @@ class KGE(BaseInteractiveKGE):
         if converged is False:
             with torch.no_grad():
                 outputs = self.model(x)
-                loss = self.model.loss(outputs, batch_labels)
+                loss = self.model.loss(outputs, targets)
                 print(f"Eval Mode:Loss:{loss.item():.4f}")
         print(f'Online Training took {time.time() - start_time:.4f} seconds.')
 
