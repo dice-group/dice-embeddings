@@ -104,8 +104,7 @@ class KGE(BaseInteractiveKGE):
         print(f'Online Training took {time.time() - start_time:.4f} seconds.')
 
     def train_triples(self, head_entity: List[str], relation: List[str], tail_entity: List[str], labels: List[float],
-                      iteration=2,
-                      lr=.1):
+                      iteration=2, lr=.1):
         """
 
         :param head_entity:
@@ -123,7 +122,7 @@ class KGE(BaseInteractiveKGE):
         labels = torch.FloatTensor(labels)
         # (3) Train mode.
         self.set_model_train_mode()
-        optimizer = optim.Adam(self.model.parameters(), lr=lr)
+        optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=.00001)
         print(f'Iteration starts...')
         # (4) Train.
         for epoch in range(iteration):
