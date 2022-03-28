@@ -89,6 +89,213 @@ class Shallom(BaseKGE):
 """ On going works"""
 
 
+class AdaptiveDistMult(BaseKGE):
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = 'AdaptiveDistMult'
+        # Init Embeddings
+
+        self.emb_ent_real = nn.Embedding(self.num_entities, self.embedding_dim)
+        self.emb_rel_real = nn.Embedding(self.num_relations, self.embedding_dim)
+        xavier_normal_(self.emb_ent_real.weight.data), xavier_normal_(self.emb_rel_real.weight.data)
+        self.bn_ent_real = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_real = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_hidden_real = torch.nn.BatchNorm1d(self.embedding_dim)
+
+        self.bn_hidden_a = torch.nn.BatchNorm1d(self.embedding_dim // 2)
+        self.bn_hidden_b = torch.nn.BatchNorm1d(self.embedding_dim // 2)
+        self.bn_hidden_c = torch.nn.BatchNorm1d(self.embedding_dim // 2)
+        self.bn_hidden_d = torch.nn.BatchNorm1d(self.embedding_dim // 2)
+
+        self.losses = []
+        self.moving_average = 0
+        self.moving_average_interval = 10
+        self.mode = 0
+
+    def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
+        return self.emb_ent_real.weight.data.data.detach(), self.emb_rel_real.weight.data.detach()
+
+    def forward_k_vs_all(self, x: torch.Tensor):
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e1_idx, rel_idx = x[:, 0], x[:, 1]
+        emb_head_real = self.bn_ent_real(self.emb_ent_real(e1_idx))
+        emb_rel_real = self.bn_rel_real(self.emb_rel_real(rel_idx))
+        if self.mode == 0:
+            return torch.mm(self.bn_hidden_real(emb_head_real * emb_rel_real), self.emb_ent_real.weight.transpose(1, 0))
+        elif self.mode == 1:
+            emb_head_real, emb_head_imag = torch.hsplit(emb_head_real, 2)
+            emb_rel_real, emb_rel_imag = torch.hsplit(emb_rel_real, 2)
+
+            all_entity_emb_real, all_entity_emb_imag = torch.hsplit(self.emb_ent_real.weight, 2)
+
+            real_real_real = torch.mm(self.bn_hidden_a(emb_head_real * emb_rel_real),
+                                      all_entity_emb_real.transpose(1, 0))
+            real_imag_imag = torch.mm(self.bn_hidden_b(emb_head_real * emb_rel_imag),
+                                      all_entity_emb_imag.transpose(1, 0))
+            imag_real_imag = torch.mm(self.bn_hidden_c(emb_head_imag * emb_rel_real),
+                                      all_entity_emb_imag.transpose(1, 0))
+            imag_imag_real = torch.mm(self.bn_hidden_d(emb_head_imag * emb_rel_imag),
+                                      all_entity_emb_real.transpose(1, 0))
+            return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
+        else:
+            emb_head_real, emb_head_imag = torch.hsplit(emb_head_real, 2)
+            emb_rel_real, emb_rel_imag = torch.hsplit(emb_rel_real, 2)
+
+            all_entity_emb_real, all_entity_emb_imag = torch.hsplit(self.emb_ent_real.weight, 2)
+
+            real_real_real = torch.mm(self.bn_hidden_a(emb_head_real * emb_rel_real),
+                                      all_entity_emb_real.transpose(1, 0))
+            real_imag_imag = torch.mm(self.bn_hidden_b(emb_head_real * emb_rel_imag),
+                                      all_entity_emb_imag.transpose(1, 0))
+            imag_real_imag = torch.mm(self.bn_hidden_c(emb_head_imag * emb_rel_real),
+                                      all_entity_emb_imag.transpose(1, 0))
+            imag_imag_real = torch.mm(self.bn_hidden_d(emb_head_imag * emb_rel_imag),
+                                      all_entity_emb_real.transpose(1, 0))
+            return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
+
+    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e2_idx: torch.Tensor
+        raise NotImplemented()
+        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1], x[:, 2]
+        emb_head_real = self.emb_ent_real(e1_idx)
+        emb_rel_real = self.emb_rel_real(rel_idx)
+        emb_tail_real = self.emb_ent_real(e2_idx)
+
+        return (emb_head_real * emb_rel_real * emb_tail_real).sum(dim=1)
+
+    def training_epoch_end(self, training_step_outputs):
+        epoch_loss = float(training_step_outputs[0]['loss'].detach())
+        self.losses.append(epoch_loss)
+        if len(self.losses) % self.moving_average_interval == 0:
+            self.losses = np.array(self.losses)
+            avg_loss_in_last_epochs = self.losses.mean()
+            tendency_of_decreasing_loss = (avg_loss_in_last_epochs > epoch_loss).mean()
+
+            self.losses = []
+            if tendency_of_decreasing_loss > .6:
+                # current loss is lower than 60% of the previous few epochs:
+                pass
+            else:
+                if self.mode == 0:
+                    print('####')
+                    print('\nincrease the mode')
+                    self.mode += 1
+                    del self.bn_hidden_real
+                    print('####')
+        """
+        if self.current_embedding_dim + self.add_dim_size < self.embedding_dim:
+            epoch_loss = float(training_step_outputs[0]['loss'].detach())
+            self.losses.append(epoch_loss)
+            if len(self.losses) % self.moving_average_interval == 0:
+                moving_average = sum(self.losses) / len(self.losses)
+                self.losses.clear()
+                diff = abs(moving_average - epoch_loss)
+
+                if diff > epoch_loss * .1:
+                    # do nothing
+                    pass
+                else:
+        """
+        """
+
+                    # Either increase the embedding size or the multiplication
+                    print('\nDouble the embedding size') 
+                    # Leads to inferious results
+                    x = nn.Embedding(self.num_entities, self.add_dim_size)
+                    xavier_normal_(x.weight.data)
+                    self.emb_ent_real.weight = nn.Parameter(
+                        torch.cat((self.emb_ent_real.weight.detach(), x.weight.detach()), dim=1).data,
+                        requires_grad=True)
+                    x = nn.Embedding(self.num_relations, self.add_dim_size)
+                    xavier_normal_(x.weight.data)
+                    self.emb_rel_real.weight = nn.Parameter(
+                        torch.cat((self.emb_rel_real.weight.detach(), x.weight.detach()), dim=1).data,
+                        requires_grad=True)
+                    del x
+                    self.current_embedding_dim += self.add_dim_size
+                    """
+
+
+class DimAdaptiveDistMult(BaseKGE):
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = 'AdaptiveDistMult'
+        # Init Embeddings
+        self.current_embedding_dim = 1
+        self.emb_ent_real = nn.Embedding(self.num_entities, self.current_embedding_dim)
+        self.emb_rel_real = nn.Embedding(self.num_relations, self.current_embedding_dim)
+        xavier_normal_(self.emb_ent_real.weight.data), xavier_normal_(self.emb_rel_real.weight.data)
+
+        self.losses = []
+        self.moving_average = 0
+        self.moving_average_interval = 10
+        self.add_dim_size = 1
+
+    def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
+        return self.emb_ent_real.weight.data.data.detach(), self.emb_rel_real.weight.data.detach()
+
+    def forward_k_vs_all(self, x: torch.Tensor):
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e1_idx, rel_idx = x[:, 0], x[:, 1]
+        # (1)
+        # (1.1) Real embeddings of head entities
+        emb_head_real = self.emb_ent_real(e1_idx)
+        # (1.2) Real embeddings of relations
+        emb_rel_real = self.emb_rel_real(rel_idx)
+        return torch.mm(emb_head_real * emb_rel_real, self.emb_ent_real.weight.transpose(1, 0))
+
+    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e2_idx: torch.Tensor
+        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1], x[:, 2]
+        # (1)
+        emb_head_real = self.emb_ent_real(e1_idx)
+        emb_rel_real = self.emb_rel_real(rel_idx)
+        emb_tail_real = self.emb_ent_real(e2_idx)
+        return (emb_head_real * emb_rel_real * emb_tail_real).sum(dim=1)
+
+    def training_epoch_end(self, training_step_outputs):
+
+        if self.current_embedding_dim + self.add_dim_size < self.embedding_dim:
+            epoch_loss = float(training_step_outputs[0]['loss'].detach())
+            self.losses.append(epoch_loss)
+            if len(self.losses) % self.moving_average_interval == 0:
+                moving_average = sum(self.losses) / len(self.losses)
+                self.losses.clear()
+                diff = abs(moving_average - epoch_loss)
+
+                if diff > epoch_loss * .1:
+                    # do nothing
+                    pass
+                else:
+
+                    """
+
+                    # Either increase the embedding size or the multiplication
+                    print('\nDouble the embedding size') 
+                    # Leads to inferious results
+                    x = nn.Embedding(self.num_entities, self.add_dim_size)
+                    xavier_normal_(x.weight.data)
+                    self.emb_ent_real.weight = nn.Parameter(
+                        torch.cat((self.emb_ent_real.weight.detach(), x.weight.detach()), dim=1).data,
+                        requires_grad=True)
+                    x = nn.Embedding(self.num_relations, self.add_dim_size)
+                    xavier_normal_(x.weight.data)
+                    self.emb_rel_real.weight = nn.Parameter(
+                        torch.cat((self.emb_rel_real.weight.detach(), x.weight.detach()), dim=1).data,
+                        requires_grad=True)
+                    del x
+                    self.current_embedding_dim += self.add_dim_size
+                    """
+
+
 class KPDistMult(BaseKGE):
     """
     Named as KD-Rel-DistMult  in our paper

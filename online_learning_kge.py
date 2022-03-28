@@ -34,8 +34,17 @@ import random
 import time
 
 # (1) Load a pretrained model (say we ran it only for a single epoch). YAGO
-pre_trained_kge = KGE(path_of_pretrained_model_dir='Experiments/2022-03-26 15:54:06.034352', construct_ensemble=False)
+pre_trained_kge = KGE(path_of_pretrained_model_dir='Experiments/2022-03-27 17:20:56.464783', construct_ensemble=False)
 
+def select_most_freq_heads(n=10):
+    id_heads = pre_trained_kge.train_set['subject'].value_counts().nlargest(n)
+    entities = {pre_trained_kge.entity_to_idx.iloc[i].name for i in id_heads.to_list()}
+    start_time = time.time()
+    for ith, entity in enumerate(entities):
+        print(f"{ith} Example: {entity}")
+        pre_trained_kge.train_cbd(head_entity=[entity], iteration=100, lr=.01)
+    print(f'Online KGE training took {time.time() - start_time}')
+    pre_trained_kge.save()
 
 def select_cbd_entities_given_rel_and_obj():
     relation = "wasBornIn"
@@ -55,7 +64,6 @@ def select_cbd_entities_given_rel_and_obj():
             break
     print(f'Online KGE training took {time.time() - start_time}')
 
-
 def select_entities_given_rel():
     relation = 'wasBornIn'
     # Select x:= {x | (x,wasBornIn,y} or (y,wasBornIn,x}
@@ -70,9 +78,6 @@ def select_entities_given_rel():
         if ith == 1:
             break
     print(f'Online KGE training took {time.time() - start_time}')
-
-
-# (2) Sample random entities
 def train_on_randomly_sampled_entities():
     start_time = time.time()
     for ith, entity in enumerate(
@@ -89,7 +94,6 @@ def train_on_randomly_sampled_entities():
     # Save model
     # pre_trained_kge.save()
 
-
 def triple_score_update():
     # Wrong triple
     s = pre_trained_kge.triple_score(head_entity=["female"], relation=['hasGender'], tail_entity=["Marie_of_Romania"])
@@ -104,16 +108,14 @@ def triple_score_update():
 
     assert s > y
 
-
 def selected_cbd_learning():
     pre_trained_kge.train_cbd(head_entity=["Marie_of_Romania"], iteration=1, lr=.001)
 
-
+select_most_freq_heads()
+select_cbd_entities_given_rel_and_obj()
 select_entities_given_rel()
 train_on_randomly_sampled_entities()
 selected_cbd_learning()
 triple_score_update()
-triple_score_update()
 selected_cbd_learning()
 triple_score_update()
-select_cbd_entities_given_rel_and_obj()

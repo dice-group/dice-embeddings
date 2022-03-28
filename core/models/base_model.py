@@ -29,7 +29,8 @@ class BaseKGE(pl.LightningModule):
         self.sanity_checking()
 
     def sanity_checking(self):
-        assert self.args['model'] in ['DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO', 'ConEx', 'Shallom']
+        assert self.args['model'] in ['AdaptiveDistMult', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO',
+                                      'ConEx', 'Shallom']
         if self.args.get('weight_decay'):
             self.weight_decay = self.args['weight_decay']
         else:
@@ -118,12 +119,7 @@ class BaseKGE(pl.LightningModule):
         yhat_batch = self.forward(x_batch)
         train_loss = self.loss_function(yhat_batch=yhat_batch, y_batch=y_batch)
         return train_loss
-        # return {'loss': train_loss}
 
-    # TODO: adaptive KGE: decisions can be implemented in here by looking at moving average of loss.
-    # def training_epoch_end(self, training_step_outputs):
-    # optim.param_groups[0]['lr'] = 0.001
-    #    pass
 
     def validation_step(self, batch, batch_idx):
         if len(batch) == 4:

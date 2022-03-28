@@ -10,6 +10,7 @@ def select_cbd_entities_given_rel_and_obj(args):
     id_heads = pre_trained_kge.train_set[
         (pre_trained_kge.train_set['relation'] == id_rel) & (pre_trained_kge.train_set['object'] == id_tail)]['subject']
     entities = {pre_trained_kge.entity_to_idx.iloc[i].name for i in id_heads.to_list()}
+    del id_heads, id_rel, id_tail
     print('Num of selected entities: ', len(entities))
     for ith, entity in enumerate(entities):
         print('#' * 10)

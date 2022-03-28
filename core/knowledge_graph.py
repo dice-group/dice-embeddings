@@ -132,7 +132,7 @@ class KG:
                     print('Valid set compute...', end='\t')
                     self.valid_set = self.valid_set.compute()
                 if self.test_set is not None:
-                    print('Test set set compute...', end='\t')
+                    print('Test set compute...', end='\t')
                     self.test_set = self.test_set.compute()
                 assert isinstance(self.train_set, pd.core.frame.DataFrame)
                 # 11. Convert data from pandas dataframe to numpy ndarray.
@@ -290,7 +290,7 @@ class KG:
             print('Valid set compute...')
             self.valid_set = self.valid_set.compute(scheduler=self.scheduler_flag)
         if self.test_set is not None:
-            print('Test set set compute...')
+            print('Test set compute...')
             self.test_set = self.test_set.compute(scheduler=self.scheduler_flag)
         # 1. Concatenate dataframes.
         print('\n[4 / 14] Concatenating data to obtain index...')
@@ -441,8 +441,3 @@ class KG:
     def relations_str(self) -> List:
         return list(self.relation_to_idx.keys())
 
-    """
-    @staticmethod
-    def map_str_triples_to_numpy_idx(triples, entity_idx, relation_idx) -> np.array:
-        return np.array([(entity_idx[s], relation_idx[p], entity_idx[o]) for s, p, o in triples])
-    """

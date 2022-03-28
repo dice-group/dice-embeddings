@@ -140,7 +140,9 @@ class Execute:
         """
         # (2) Adding plugins=[DDPPlugin(find_unused_parameters=False)] and explicitly using num_process > 1
         """ pytorch_lightning.utilities.exceptions.DeadlockDetectedException: DeadLock detected from rank: 1  """
-        self.args.stochastic_weight_avg = True  # => https://pytorch.org/blog/pytorch-1.6-now-includes-stochastic-weight-averaging/
+        if not ('Adaptive' in self.args.model):
+            self.args.stochastic_weight_avg = True  # => https://pytorch.org/blog/pytorch-1.6-now-includes-stochastic-weight-averaging/
+
         # (3) Surprisingly, if you do not ask explicitly num_process > 1, computation runs smoothly while using many CPUs
         self.trainer = initialize_pl_trainer(self.args, callbacks, plugins=[])
         # (4) Train model.
@@ -382,7 +384,7 @@ class Execute:
             for i in range(0, len(triple_idx), self.args.batch_size):
                 data_batch = triple_idx[i:i + self.args.batch_size]
                 e1_idx_r_idx, e2_idx = torch.tensor(data_batch[:, [0, 1]]), torch.tensor(data_batch[:, 2])
-                predictions = model.forward_k_vs_all(e1_idx_r_idx)
+                predictions = model(e1_idx_r_idx)
                 # Filter entities except the target entity
                 for j in range(data_batch.shape[0]):
                     filt = self.dataset.er_vocab[(data_batch[j][0], data_batch[j][1])]
