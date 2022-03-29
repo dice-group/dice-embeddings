@@ -9,10 +9,7 @@ from typing import List
 
 
 class StandardDataModule(pl.LightningDataModule):
-    """
-    train, valid and test sets are available.
-    @TODO : Efficient Data types for train loaders is needed.
-    """
+    """ Data Class for creating train/val/test datasets depending on the training stragey chosen """
 
     def __init__(self, train_set_idx, entity_to_idx, relation_to_idx, batch_size, form,
                  num_workers=32, valid_set_idx=None, test_set_idx=None, neg_sample_ratio=None,
@@ -243,7 +240,9 @@ class TriplePredictionDataset(Dataset):
     def __init__(self, triples_idx, num_entities, num_relations, neg_sample_ratio=1):
         start_time = time.time()
         print('Initializing negative sampling dataset batching...', end='\t')
-        triples_idx = torch.LongTensor(triples_idx)
+        # triples_idx = torch.LongTensor(triples_idx) to decrease possible memory usage
+        triples_idx = torch.from_numpy(triples_idx)
+
         self.neg_sample_ratio = neg_sample_ratio  # 0 Implies that we do not add negative samples. This is needed during testing and validation
         self.head_idx = triples_idx[:, 0]
         self.rel_idx = triples_idx[:, 1]
@@ -263,29 +262,27 @@ class TriplePredictionDataset(Dataset):
         h = self.head_idx[idx]
         r = self.rel_idx[idx]
         t = self.tail_idx[idx]
-        # setting tyoe as long allow as to batch = torch.LongTensor(batch)
-        # Find a way to use int32 as head_idx.
-        return h, r, t, torch.ones(1, dtype=torch.long)
+        return h, r, t
 
     def collate_fn(self, batch):
         batch = torch.LongTensor(batch)
-        h, r, t, label = batch[:, 0], batch[:, 1], batch[:, 2], batch[:, 3]
+        h, r, t = batch[:, 0], batch[:, 1], batch[:, 2]
         size_of_batch, _ = batch.shape
         assert size_of_batch > 0
-        label = torch.ones((size_of_batch,))
+        label = torch.ones((size_of_batch,), dtype=torch.float16)
         # Generate Negative Triples
         corr = torch.randint(0, self.num_entities, (size_of_batch * self.neg_sample_ratio, 2))
         # 2.1 Head Corrupt:
         h_head_corr = corr[:, 0]
         r_head_corr = r.repeat(self.neg_sample_ratio, )
         t_head_corr = t.repeat(self.neg_sample_ratio, )
-        label_head_corr = torch.zeros(len(t_head_corr), )
+        label_head_corr = torch.zeros(len(t_head_corr), dtype=torch.float16)
 
         # 2.2. Tail Corrupt
         h_tail_corr = h.repeat(self.neg_sample_ratio, )
         r_tail_corr = r.repeat(self.neg_sample_ratio, )
         t_tail_corr = corr[:, 1]
-        label_tail_corr = torch.zeros(len(t_tail_corr), )
+        label_tail_corr = torch.zeros(len(t_tail_corr), dtype=torch.float16)
 
         # 3. Stack True and Corrupted Triples
         h = torch.cat((h, h_head_corr, h_tail_corr), 0)
