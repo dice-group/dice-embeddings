@@ -4,6 +4,8 @@ from .base_model import *
 import numpy as np
 from math import sqrt
 
+from .static_funcs import quaternion_mul
+
 
 class DistMult(BaseKGE):
     """
@@ -98,18 +100,18 @@ class AdaptiveQMult(BaseKGE):
         self.emb_ent_real = nn.Embedding(self.num_entities, self.embedding_dim)
         self.emb_rel_real = nn.Embedding(self.num_relations, self.embedding_dim)
         xavier_normal_(self.emb_ent_real.weight.data), xavier_normal_(self.emb_rel_real.weight.data)
-        self.bn_ent_real = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_real = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_hidden_real = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_real = torch.nn.LayerNorm(self.embedding_dim)
+        self.bn_rel_real = torch.nn.LayerNorm(self.embedding_dim)
+        self.bn_hidden_real = torch.nn.LayerNorm(self.embedding_dim)
 
-        self.bn_hidden_a = torch.nn.BatchNorm1d(self.embedding_dim // 2)
-        self.bn_hidden_b = torch.nn.BatchNorm1d(self.embedding_dim // 2)
-        self.bn_hidden_c = torch.nn.BatchNorm1d(self.embedding_dim // 2)
-        self.bn_hidden_d = torch.nn.BatchNorm1d(self.embedding_dim // 2)
+        self.bn_hidden_a = None
+        self.bn_hidden_b = None
+        self.bn_hidden_c = None
+        self.bn_hidden_d = None
 
         self.losses = []
         self.moving_average = 0
-        self.moving_average_interval = 10
+        self.moving_average_interval = 3
         self.mode = 0
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -125,10 +127,14 @@ class AdaptiveQMult(BaseKGE):
             # (1) Triple product / three linear product
             return torch.mm(self.bn_hidden_real(emb_head_real * emb_rel_real), self.emb_ent_real.weight.transpose(1, 0))
         elif self.mode == 1:
+
+            distmult_score = torch.mm(self.bn_hidden_real(emb_head_real * emb_rel_real),
+                                      self.emb_ent_real.weight.transpose(1, 0))
             # (2) Hermitian product
             emb_head_real, emb_head_imag = torch.hsplit(emb_head_real, 2)
             emb_rel_real, emb_rel_imag = torch.hsplit(emb_rel_real, 2)
             all_entity_emb_real, all_entity_emb_imag = torch.hsplit(self.emb_ent_real.weight, 2)
+
             real_real_real = torch.mm(self.bn_hidden_a(emb_head_real * emb_rel_real),
                                       all_entity_emb_real.transpose(1, 0))
             real_imag_imag = torch.mm(self.bn_hidden_b(emb_head_real * emb_rel_imag),
@@ -137,35 +143,46 @@ class AdaptiveQMult(BaseKGE):
                                       all_entity_emb_imag.transpose(1, 0))
             imag_imag_real = torch.mm(self.bn_hidden_d(emb_head_imag * emb_rel_imag),
                                       all_entity_emb_real.transpose(1, 0))
-            return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
+
+            complex_score = real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
+
+            return distmult_score + complex_score
         else:
-            # (3) TODO:Quaternion Product
-            emb_head_real, emb_head_imag = torch.hsplit(emb_head_real, 2)
-            emb_rel_real, emb_rel_imag = torch.hsplit(emb_rel_real, 2)
+            # (1) Real triple score
+            distmult_score = torch.mm(self.bn_hidden_real(emb_head_real * emb_rel_real),
+                                      self.emb_ent_real.weight.transpose(1, 0))
+            # (2) Complex triple score
+            emb_head_complex_real, emb_head_complex_imag = torch.hsplit(emb_head_real, 2)
+            emb_rel_complex_real, emb_rel_complex_imag = torch.hsplit(emb_rel_real, 2)
 
             all_entity_emb_real, all_entity_emb_imag = torch.hsplit(self.emb_ent_real.weight, 2)
 
-            real_real_real = torch.mm(self.bn_hidden_a(emb_head_real * emb_rel_real),
+            real_real_real = torch.mm(self.bn_hidden_a(emb_head_complex_real * emb_rel_complex_real),
                                       all_entity_emb_real.transpose(1, 0))
-            real_imag_imag = torch.mm(self.bn_hidden_b(emb_head_real * emb_rel_imag),
+            real_imag_imag = torch.mm(self.bn_hidden_b(emb_head_complex_real * emb_rel_complex_imag),
                                       all_entity_emb_imag.transpose(1, 0))
-            imag_real_imag = torch.mm(self.bn_hidden_c(emb_head_imag * emb_rel_real),
+            imag_real_imag = torch.mm(self.bn_hidden_c(emb_head_complex_imag * emb_rel_complex_real),
                                       all_entity_emb_imag.transpose(1, 0))
-            imag_imag_real = torch.mm(self.bn_hidden_d(emb_head_imag * emb_rel_imag),
+            imag_imag_real = torch.mm(self.bn_hidden_d(emb_head_complex_imag * emb_rel_complex_imag),
                                       all_entity_emb_real.transpose(1, 0))
-            return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
+            complex_score = real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
 
-    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
-        e1_idx: torch.Tensor
-        rel_idx: torch.Tensor
-        e2_idx: torch.Tensor
-        raise NotImplemented()
-        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1], x[:, 2]
-        emb_head_real = self.emb_ent_real(e1_idx)
-        emb_rel_real = self.emb_rel_real(rel_idx)
-        emb_tail_real = self.emb_ent_real(e2_idx)
+            # (3) Quaternion multiplication
+            emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(emb_head_real, 4)
+            emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k = torch.hsplit(emb_rel_real, 4)
 
-        return (emb_head_real * emb_rel_real * emb_tail_real).sum(dim=1)
+            r_val, i_val, j_val, k_val = quaternion_mul(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
+                                                        Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
+            all_entity_emb_real, all_entity_emb_i, all_entity_emb_j, all_entity_emb_k = torch.hsplit(
+                self.emb_ent_real.weight, 4)
+
+            real_score = torch.mm(self.bn_hidden_aa(r_val), all_entity_emb_real.transpose(1, 0))
+            i_score = torch.mm(self.bn_hidden_bb(i_val), all_entity_emb_i.transpose(1, 0))
+            j_score = torch.mm(self.bn_hidden_cc(j_val), all_entity_emb_j.transpose(1, 0))
+            k_score = torch.mm(self.bn_hidden_dd(k_val), all_entity_emb_k.transpose(1, 0))
+            qmult_score = real_score + i_score + j_score + k_score
+
+            return distmult_score + complex_score + qmult_score
 
     def training_epoch_end(self, training_step_outputs):
         epoch_loss = float(training_step_outputs[0]['loss'].detach())
@@ -181,11 +198,27 @@ class AdaptiveQMult(BaseKGE):
                 pass
             else:
                 if self.mode == 0:
-                    print('####')
-                    print('\nincrease the mode')
+                    print('\nincrease the mode to complex numbers')
                     self.mode += 1
-                    del self.bn_hidden_real
+                    self.bn_hidden_a = torch.nn.LayerNorm(self.embedding_dim // 2)
+                    self.bn_hidden_b = torch.nn.LayerNorm(self.embedding_dim // 2)
+                    self.bn_hidden_c = torch.nn.LayerNorm(self.embedding_dim // 2)
+                    self.bn_hidden_d = torch.nn.LayerNorm(self.embedding_dim // 2)
+
                     print('####')
+                elif self.mode == 1:
+                    print('\nincrease the mode to quaternions numbers')
+                    self.mode += 1
+                    self.bn_hidden_aa = torch.nn.LayerNorm(self.embedding_dim // 4)
+                    self.bn_hidden_bb = torch.nn.LayerNorm(self.embedding_dim // 4)
+                    self.bn_hidden_cc = torch.nn.LayerNorm(self.embedding_dim // 4)
+                    self.bn_hidden_dd = torch.nn.LayerNorm(self.embedding_dim // 4)
+
+                    print('####')
+
+                else:
+                    pass
+
         """
         if self.current_embedding_dim + self.add_dim_size < self.embedding_dim:
             epoch_loss = float(training_step_outputs[0]['loss'].detach())

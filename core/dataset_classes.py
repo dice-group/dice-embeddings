@@ -241,7 +241,7 @@ class TriplePredictionDataset(Dataset):
         start_time = time.time()
         print('Initializing negative sampling dataset batching...', end='\t')
         # triples_idx = torch.LongTensor(triples_idx) to decrease possible memory usage
-        triples_idx = torch.from_numpy(triples_idx)
+        # triples_idx = torch.from_numpy(triples_idx)
 
         self.neg_sample_ratio = neg_sample_ratio  # 0 Implies that we do not add negative samples. This is needed during testing and validation
         self.head_idx = triples_idx[:, 0]

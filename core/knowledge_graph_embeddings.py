@@ -31,7 +31,7 @@ class KGE(BaseInteractiveKGE):
         return x, labels
 
     def train_cbd(self, head_entity, iteration=1, lr=.01, batch_size: int = None, neg_sample_ratio: int = 1,
-                  num_workers=None):
+                  num_workers: int = os.cpu_count()):
         """
         Train/Retrain model via applying KvsAll training/scoring technique on CBD of an head entity
 
@@ -63,14 +63,11 @@ class KGE(BaseInteractiveKGE):
         train_set = TriplePredictionDataset(triples,
                                             num_entities=self.num_entities,
                                             num_relations=self.num_relations, neg_sample_ratio=neg_sample_ratio)
-
-        if num_workers is None:
-            num_workers = os.cpu_count()
+        del triples
         data_loader = DataLoader(train_set,
                                  batch_size=batch_size,
                                  num_workers=num_workers,
                                  collate_fn=train_set.collate_fn)
-        del triples
 
         # (4) Train
         self.set_model_train_mode()

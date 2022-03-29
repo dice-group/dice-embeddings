@@ -27,11 +27,12 @@ class KG:
         3- Serializing and Deserializing in parquet format
     """
 
-    def __init__(self, data_dir: str = None, deserialize_flag: str = None, large_kg_parse=False, add_reciprical=False,
-                 eval_model=True, read_only_few: int = None, sample_triples_ratio: float = None,
+    def __init__(self, data_dir: str = None, deserialize_flag: str = None,
+                 large_kg_parse: bool = None, add_reciprical: bool = None, eval_model: bool = None,
+                 read_only_few: int = None, sample_triples_ratio: float = None,
                  path_for_serialization: str = None, add_noise_rate: float = None,
-                 min_freq_for_vocab: int = None, entity_to_idx=None,
-                 relation_to_idx=None):
+                 min_freq_for_vocab: int = None,
+                 entity_to_idx=None, relation_to_idx=None):
         """
 
         :param data_dir: A path of a folder containing the input knowledge graph
@@ -196,17 +197,20 @@ class KG:
                 self.ee_vocab = get_ee_vocab(data)
         else:
             self.deserialize(deserialize_flag)
-            if eval_model:  # and len(self.valid_set) > 0 and len(self.test_set) > 0:
+
+            if eval_model:
                 if self.valid_set is not None and self.test_set is not None:
                     # 16. Create a bijection mapping from subject-relation pairs to tail entities.
                     data = np.concatenate([self.train_set, self.valid_set, self.test_set])
                 else:
                     data = self.train_set
-                print('Creating Vocab...', end='\t')
+                print('[7 / 4] Creating er,re, and ee type vocabulary for evaluation...', end='\t')
+                start_time = time.time()
                 self.er_vocab = get_er_vocab(data)
                 self.re_vocab = get_re_vocab(data)
                 # 17. Create a bijection mapping from subject-object pairs to relations.
                 self.ee_vocab = get_ee_vocab(data)
+                print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
 
         # 4. Display info
         self.description_of_input = f'\n------------------- Description of Dataset {data_dir} -------------------'
@@ -399,26 +403,32 @@ class KG:
     def deserialize(self, storage_path: str) -> None:
         """ Deserialize data """
         print(f'Deserialization Path Path: {storage_path}\n')
-        print('Deserializing compressed entity integer mapping...')
+        start_time = time.time()
+        print('[1 / 4] Deserializing compressed entity integer mapping...', end='\t')
         self.entity_to_idx = pd.read_parquet(storage_path + '/entity_to_idx.gzip')  # .compute()
-        print('Done!\n')
+        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
         self.num_entities = len(self.entity_to_idx)
-        print('Deserializing compressed relation integer mapping...')
-        self.relation_to_idx = pd.read_parquet(storage_path + '/relation_to_idx.gzip')  # .compute()
-        self.num_relations = len(self.relation_to_idx)
-        print('Done!\n')
-        print(
-            'Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...')
 
+        print('[2 / ] Deserializing compressed relation integer mapping...', end='\t')
+        start_time = time.time()
+        self.relation_to_idx = pd.read_parquet(storage_path + '/relation_to_idx.gzip')
+        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+
+        self.num_relations = len(self.relation_to_idx)
+        print(
+            '[3 / 4] Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...',
+            end='\t')
+        start_time = time.time()
         self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
         self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
-        print('Done!\n')
+        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
         # 10. Serialize (9).
-        print('Deserializing integer mapped data and mapping it to numpy ndarray...')
+        print('[4 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...', end='\t')
+        start_time = time.time()
         self.train_set = ddf.read_parquet(storage_path + '/idx_train_df.gzip').values.compute()
-        print('Done!\n')
+        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
         try:
-            print('Deserializing integer mapped data and mapping it to numpy ndarray...')
+            print('[5 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...', end='\t')
             self.valid_set = ddf.read_parquet(storage_path + '/idx_valid_df.gzip').values.compute()
             print('Done!\n')
         except FileNotFoundError:
@@ -426,7 +436,7 @@ class KG:
             self.valid_set = None  # pd.DataFrame()
 
         try:
-            print('Deserializing integer mapped data and mapping it to numpy ndarray...')
+            print('[6 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...', end='\t')
             self.test_set = ddf.read_parquet(storage_path + '/idx_test_df.gzip').values.compute()
             print('Done!\n')
         except FileNotFoundError:
@@ -440,4 +450,3 @@ class KG:
     @property
     def relations_str(self) -> List:
         return list(self.relation_to_idx.keys())
-

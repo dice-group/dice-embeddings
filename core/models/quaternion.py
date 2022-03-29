@@ -1,5 +1,5 @@
 from .base_model import *
-
+from .static_funcs import quaternion_mul
 
 def quaternion_mul_with_unit_norm(*, Q_1, Q_2):
     a_h, b_h, c_h, d_h = Q_1  # = {a_h + b_h i + c_h j + d_h k : a_r, b_r, c_r, d_r \in R^k}
@@ -16,16 +16,6 @@ def quaternion_mul_with_unit_norm(*, Q_1, Q_2):
     i_val = a_h * q + b_h * p + c_h * v - d_h * u
     j_val = a_h * u - b_h * v + c_h * p + d_h * q
     k_val = a_h * v + b_h * u - c_h * q + d_h * p
-    return r_val, i_val, j_val, k_val
-
-
-def quaternion_mul(*, Q_1, Q_2):
-    a_h, b_h, c_h, d_h = Q_1  # = {a_h + b_h i + c_h j + d_h k : a_r, b_r, c_r, d_r \in R^k}
-    a_r, b_r, c_r, d_r = Q_2  # = {a_r + b_r i + c_r j + d_r k : a_r, b_r, c_r, d_r \in R^k}
-    r_val = a_h * a_r - b_h * b_r - c_h * c_r - d_h * d_r
-    i_val = a_h * b_r + b_h * a_r + c_h * d_r - d_h * c_r
-    j_val = a_h * c_r - b_h * d_r + c_h * a_r + d_h * b_r
-    k_val = a_h * d_r + b_h * c_r - c_h * b_r + d_h * a_r
     return r_val, i_val, j_val, k_val
 
 
@@ -292,6 +282,7 @@ class oldQMult(BaseKGE):
 
         return real_score + i_score + j_score + k_score
 
+
 class QMult(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
@@ -515,8 +506,10 @@ class QMult(BaseKGE):
 
         return real_score + i_score + j_score + k_score
 
+
 class QMultwoBNDP(BaseKGE):
     """ QMult without normalization and dropout. """
+
     def __init__(self, args):
         super().__init__(args)
         self.name = 'QMult'
@@ -625,6 +618,7 @@ class QMultwoBNDP(BaseKGE):
         k_score = torch.mm(k_val, self.emb_ent_k.weight.transpose(1, 0))
 
         return real_score + i_score + j_score + k_score
+
 
 class ConvQ(BaseKGE):
     """ Convolutional Quaternion Knowledge Graph Embeddings"""
