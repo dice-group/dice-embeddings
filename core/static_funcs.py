@@ -494,8 +494,8 @@ def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     elif model_name == 'DistMult':
         model = DistMult(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif model_name == 'AdaptiveQMult':
-        model = AdaptiveQMult(args=args)
+    elif model_name == 'AdaptE':
+        model = AdaptE(args=args)
         form_of_labelling = 'EntityPrediction'
     else:
         raise ValueError

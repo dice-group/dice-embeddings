@@ -22,7 +22,7 @@ def argparse_default(description=None):
     parser.add_argument("--model", type=str,
                         default='QMult',
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, "
-                             "Shallom, ConEx, ComplEx, DistMult, KronE, KPDistMult, AdaptiveDistMult")
+                             "Shallom, ConEx, ComplEx, DistMult, AdaptE")
     parser.add_argument('--embedding_dim', type=int, default=25,
                         help='Number of dimensions for an embedding vector. ')
     parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. ')
