@@ -193,7 +193,7 @@ def load_data_parallel(data_path, read_only_few: int = None,
             print(f'Subsampling {sample_triples_ratio} of input data...')
             df = df.sample(frac=sample_triples_ratio)
 
-        # (4) Drop Rows/triples with double or boolean
+        # (4) Drop Rows/triples with double or boolean: Example preprocessing
         # Drop rows having ^^
         df = df[df["object"].str.contains("<http://www.w3.org/2001/XMLSchema#double>") == False]
         df = df[df["object"].str.contains("<http://www.w3.org/2001/XMLSchema#boolean>") == False]
@@ -203,7 +203,7 @@ def load_data_parallel(data_path, read_only_few: int = None,
         return df
     else:
         print(f'{data_path} could not found!')
-        return None  # pd.DataFrame()
+        return None
 
 
 def store_kge(trained_model, path: str) -> None:
@@ -350,7 +350,7 @@ def read_preprocess_index_serialize_kg(args, cls):
     start_time = time.time()
     # 1. Read & Parse input data
     kg = cls(data_dir=args.path_dataset_folder,
-             large_kg_parse=args.large_kg_parse,
+             multi_cores_at_preprocessing=args.multi_cores_at_preprocessing,
              add_reciprical=args.apply_reciprical_or_noise,
              eval_model=args.eval,
              read_only_few=args.read_only_few,

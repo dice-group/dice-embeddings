@@ -28,7 +28,7 @@ class KG:
     """
 
     def __init__(self, data_dir: str = None, deserialize_flag: str = None,
-                 large_kg_parse: bool = None, add_reciprical: bool = None, eval_model: bool = None,
+                 multi_cores_at_preprocessing: bool = None, add_reciprical: bool = None, eval_model: bool = None,
                  read_only_few: int = None, sample_triples_ratio: float = None,
                  path_for_serialization: str = None, add_noise_rate: float = None,
                  min_freq_for_vocab: int = None,
@@ -48,20 +48,19 @@ class KG:
         self.df_str_kg = None
         self.data_dir = data_dir
         self.deserialize_flag = deserialize_flag
-        self.large_kg_parse = large_kg_parse
+        self.multi_cores_at_preprocessing = multi_cores_at_preprocessing
         self.add_reciprical = add_reciprical
         self.eval_model = eval_model
 
         self.read_only_few = read_only_few
         self.sample_triples_ratio = sample_triples_ratio
-        self.large_kg_parse = large_kg_parse
         self.path_for_serialization = path_for_serialization
         self.add_noise_rate = add_noise_rate
 
         self.min_freq_for_vocab = min_freq_for_vocab
         self.entity_to_idx = entity_to_idx
         self.relation_to_idx = relation_to_idx
-        if large_kg_parse:
+        if self.multi_cores_at_preprocessing:
             self.scheduler_flag = 'processes'
         else:
             self.scheduler_flag = 'single-threaded'
@@ -82,7 +81,6 @@ class KG:
             self.apply_reciprical_or_noise()
             # (1.3) Construct integer indexing for entities and relations
             if entity_to_idx is None and relation_to_idx is None:
-                # self.parallel_vocabulary_construction()  # via DASK
                 self.sequential_vocabulary_construction()  # via Pandas
                 print(
                     '[9 / 14] Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...',
@@ -99,7 +97,7 @@ class KG:
                 self.train_set = index_triples(self.train_set,
                                                self.entity_to_idx,
                                                self.relation_to_idx,
-                                               multi_processing=False)
+                                               multi_processing=self.multi_cores_at_preprocessing)
                 print(f'Done ! {time.time() - start_time:.3f} seconds\n')
                 if path_for_serialization is not None:
                     # 10. Serialize (9).
@@ -220,72 +218,6 @@ class KG:
                                      f'\nNumber of triples on valid set: {len(self.valid_set) if self.valid_set is not None else 0}' \
                                      f'\nNumber of triples on test set: {len(self.test_set) if self.test_set is not None else 0}\n'
 
-    def parallel_vocabulary_construction(self):
-        """
-        (1) Concatenate dataframes/ train valid test sets
-
-        (2) Remove triples with specified conditions if such conditions are given.
-
-        (3) Create a bijection mapping from entities to integer indexes.
-        """
-        # 1. Concatenate dataframes.
-        print('[4 / 14] Lazy Concatenating data to obtain index...', end='\t')
-        x = [self.train_set]
-        if self.valid_set is not None:
-            x.append(self.valid_set)
-        if self.test_set is not None:
-            x.append(self.test_set)
-        self.df_str_kg = ddf.concat(x, ignore_index=True)
-        del x
-        print('Done !\n')
-        # (2) Remove triples from (1).
-        self.remove_triples_with_condition()
-        print('[5 / 14] Lazy Creating a mapping from entities to integer indexes...', end='\t')
-        # (3) Create a bijection mapping from entities of (2) to integer indexes.
-        self.entity_to_idx = dask.array.concatenate(
-            [self.df_str_kg['subject'], self.df_str_kg['object']]).to_dask_dataframe(
-            columns=['entity']).drop_duplicates()
-        print('Computing entity indexes...', end='\t')
-        start_time = time.time()
-        # Takes time even in the lazy mode.
-        self.entity_to_idx = self.entity_to_idx.set_index(self.entity_to_idx.entity)
-        self.entity_to_idx['entity'] = dask.array.arange(0,
-                                                         self.entity_to_idx.size.compute(scheduler=self.scheduler_flag))
-        self.entity_to_idx = self.entity_to_idx.compute(scheduler=self.scheduler_flag)
-        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
-        start_time = time.time()
-        print('[6 / 14] Serializing compressed entity integer mapping...', end='\t')
-        self.entity_to_idx.to_parquet(self.path_for_serialization + '/entity_to_idx.gzip', compression='gzip')
-        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
-
-        # 5. Create a bijection mapping  from relations to integer indexes.
-        print('[7 / 14] Lazy Creating a mapping from relations to integer indexes...', end='\t')
-        self.relation_to_idx = self.df_str_kg['relation'].to_frame().drop_duplicates()
-        print('Computing relation indexes...', end='\t')
-        start_time = time.time()
-        self.relation_to_idx = self.relation_to_idx.set_index(self.relation_to_idx.relation)
-        self.relation_to_idx['relation'] = dask.array.arange(0, self.relation_to_idx.size.compute())
-        self.relation_to_idx = self.relation_to_idx.compute(scheduler=self.scheduler_flag)
-        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
-        print('[8 / 14] Serializing compressed relation integer mapping...', end='\t')
-        start_time = time.time()
-        self.relation_to_idx.to_parquet(self.path_for_serialization + '/relation_to_idx.gzip', compression='gzip')
-        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
-        start_time = time.time()
-        print('Computing train dataset...', end='\t')
-        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
-        self.train_set = self.train_set.compute(scheduler=self.scheduler_flag)
-        if self.valid_set is not None:
-            start_time = time.time()
-            print('Computing validation dataset...', end='\t')
-            self.valid_set = self.valid_set.compute(scheduler=self.scheduler_flag)
-            print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
-        if self.test_set is not None:
-            start_time = time.time()
-            print('Computing test dataset...', end='\t')
-            self.test_set = self.test_set.compute(scheduler=self.scheduler_flag)
-            print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
-        del self.df_str_kg
 
     def sequential_vocabulary_construction(self):
         print('Train set compute...')
@@ -296,8 +228,12 @@ class KG:
         if self.test_set is not None:
             print('Test set compute...')
             self.test_set = self.test_set.compute(scheduler=self.scheduler_flag)
+
+        # (2) Remove triples from (1).
+        self.remove_triples_from_train_with_condition()
+
         # 1. Concatenate dataframes.
-        print('\n[4 / 14] Concatenating data to obtain index...')
+        print('\n[4 / 14] Concatenating data to obtain index...', end='\t')
         x = [self.train_set]
         if self.valid_set is not None:
             x.append(self.valid_set)
@@ -307,56 +243,53 @@ class KG:
         self.df_str_kg = pd.concat(x, ignore_index=True)
         del x
         print('Done !\n')
-        # (2) Remove triples from (1).
-        self.remove_triples_with_condition()
-        print('[5 / 14] Creating a mapping from entities to integer indexes...')
+
+        print('[5 / 14] Creating a mapping from entities to integer indexes...', end='\t')
         # (3) Create a bijection mapping from entities of (2) to integer indexes.
         ordered_list = pd.unique(self.df_str_kg[['subject', 'object']].values.ravel('K'))
         self.entity_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)), columns=['entity'], index=ordered_list)
         print('Done !\n')
-        print('[6 / 14] Serializing compressed entity integer mapping...')
+        print('[6 / 14] Serializing compressed entity integer mapping...', end='\t')
         self.entity_to_idx.to_parquet(self.path_for_serialization + '/entity_to_idx.gzip', compression='gzip')
         print('Done !\n')
         # 5. Create a bijection mapping  from relations to integer indexes.
-        print('[7 / 14] Creating a mapping from relations to integer indexes...')
+        print('[7 / 14] Creating a mapping from relations to integer indexes...', end='\t')
         ordered_list = pd.unique(self.df_str_kg['relation'].values.ravel('K'))
         self.relation_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
                                             columns=['relation'],
                                             index=ordered_list)
         print('Done !\n')
-        print('[8 / 14] Serializing compressed relation integer mapping...')
+        print('[8 / 14] Serializing compressed relation integer mapping...', end='\t')
         self.relation_to_idx.to_parquet(self.path_for_serialization + '/relation_to_idx.gzip', compression='gzip')
         print('Done !\n')
         del ordered_list
 
-    def remove_triples_with_condition(self):
+    def remove_triples_from_train_with_condition(self):
         if self.min_freq_for_vocab is not None:
             assert isinstance(self.min_freq_for_vocab, int)
             assert self.min_freq_for_vocab > 0
             print(
                 f'[5 / 14] Dropping triples having infrequent entities or relations (>{self.min_freq_for_vocab})...',
                 end=' ')
-            # num_triples = df_str_kg.size.compute(scheduler=scheduler_flag)
-            num_triples = self.df_str_kg.size  # .compute(scheduler=scheduler_flag)
+            num_triples = self.train_set.size
             print('Total num triples:', num_triples, end=' ')
             # Compute entity frequency: index is URI, val is number of occurrences.
-            # entity_frequency = dask.dataframe.concat([df_str_kg['subject'], df_str_kg['object']]).value_counts()
-            entity_frequency = pd.concat([self.df_str_kg['subject'], self.df_str_kg['object']]).value_counts()
+            entity_frequency = pd.concat([self.train_set['subject'], self.train_set['object']]).value_counts()
+            relation_frequency = self.train_set['relation'].value_counts()
 
-            relation_frequency = self.df_str_kg['relation'].value_counts()
             # low_frequency_entities index and values are the same URIs: dask.dataframe.core.DataFrame
             low_frequency_entities = entity_frequency[
-                entity_frequency <= min_freq_for_vocab].index.values  # .compute(scheduler=scheduler_flag)
+                entity_frequency <= self.min_freq_for_vocab].index.values
             low_frequency_relation = relation_frequency[
-                relation_frequency <= min_freq_for_vocab].index.values  # .compute(scheduler=scheduler_flag)
+                relation_frequency <= self.min_freq_for_vocab].index.values
             # If triple contains subject that is in low_freq, set False do not select
-            self.df_str_kg = self.df_str_kg[~self.df_str_kg['subject'].isin(low_frequency_entities)]
+            self.train_set = self.train_set[~self.train_set['subject'].isin(low_frequency_entities)]
             # If triple contains object that is in low_freq, set False do not select
-            self.df_str_kg = self.df_str_kg[~self.df_str_kg['object'].isin(low_frequency_entities)]
+            self.train_set = self.train_set[~self.train_set['object'].isin(low_frequency_entities)]
             # If triple contains relation that is in low_freq, set False do not select
-            self.df_str_kg = self.df_str_kg[~self.df_str_kg['relation'].isin(low_frequency_relation)]
+            self.train_set = self.train_set[~self.train_set['relation'].isin(low_frequency_relation)]
             # print('\t after dropping:', df_str_kg.size.compute(scheduler=scheduler_flag))
-            print('\t after dropping:', df_str_kg.size)  # .compute(scheduler=scheduler_flag))
+            print('\t after dropping:', self.train_set.size)  # .compute(scheduler=scheduler_flag))
             del low_frequency_entities
             print('Done !\n')
 
