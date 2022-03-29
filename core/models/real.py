@@ -89,12 +89,11 @@ class Shallom(BaseKGE):
 """ On going works"""
 
 
-class AdaptiveDistMult(BaseKGE):
+class AdaptiveQMult(BaseKGE):
 
     def __init__(self, args):
         super().__init__(args)
-        self.name = 'AdaptiveDistMult'
-        # Init Embeddings
+        self.name = 'AdaptiveQMult'
 
         self.emb_ent_real = nn.Embedding(self.num_entities, self.embedding_dim)
         self.emb_rel_real = nn.Embedding(self.num_relations, self.embedding_dim)
@@ -123,13 +122,13 @@ class AdaptiveDistMult(BaseKGE):
         emb_head_real = self.bn_ent_real(self.emb_ent_real(e1_idx))
         emb_rel_real = self.bn_rel_real(self.emb_rel_real(rel_idx))
         if self.mode == 0:
+            # (1) Triple product / three linear product
             return torch.mm(self.bn_hidden_real(emb_head_real * emb_rel_real), self.emb_ent_real.weight.transpose(1, 0))
         elif self.mode == 1:
+            # (2) Hermitian product
             emb_head_real, emb_head_imag = torch.hsplit(emb_head_real, 2)
             emb_rel_real, emb_rel_imag = torch.hsplit(emb_rel_real, 2)
-
             all_entity_emb_real, all_entity_emb_imag = torch.hsplit(self.emb_ent_real.weight, 2)
-
             real_real_real = torch.mm(self.bn_hidden_a(emb_head_real * emb_rel_real),
                                       all_entity_emb_real.transpose(1, 0))
             real_imag_imag = torch.mm(self.bn_hidden_b(emb_head_real * emb_rel_imag),
@@ -140,6 +139,7 @@ class AdaptiveDistMult(BaseKGE):
                                       all_entity_emb_real.transpose(1, 0))
             return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
         else:
+            # (3) TODO:Quaternion Product
             emb_head_real, emb_head_imag = torch.hsplit(emb_head_real, 2)
             emb_rel_real, emb_rel_imag = torch.hsplit(emb_rel_real, 2)
 

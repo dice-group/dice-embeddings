@@ -1,7 +1,6 @@
 import os
 import time
 from typing import List, Tuple
-
 import pandas as pd
 import torch
 from torch import optim
@@ -31,8 +30,68 @@ class KGE(BaseInteractiveKGE):
         labels: object = torch.FloatTensor(labels)
         return x, labels
 
-    def train_cbd(self, head_entity, iteration=1, lr=.01,
-                  converge_loss=.0000001):
+    def train_cbd(self, head_entity, iteration=1, lr=.01, batch_size: int = None, neg_sample_ratio: int = 1,
+                  num_workers=None):
+        """
+        Train/Retrain model via applying KvsAll training/scoring technique on CBD of an head entity
+
+        Given a head_entity,
+        1) Build {r | (h r x) \in G)
+        2) Build x:=(h,r), y=[0.....,1]
+        3) Construct (2) as a batch
+        4) Train
+        """
+        start_time = time.time()
+        assert len(head_entity) == 1
+        # (1) Get integer index of head entity.
+        try:
+            idx_head_entity = self.entity_to_idx.loc[head_entity]['entity'].values[0]
+        except KeyError as e:
+            print(f'Exception:\t {str(e)}')
+            return
+
+        print(f'\nExtracting relevant relations for training from CBD of {head_entity[0]}...')
+        # (2) Select triples that (1) occur in.
+        triples: pd.DataFrame
+        triples = self.train_set[self.train_set['subject'] == idx_head_entity].values
+        print(f'Frequency of {head_entity} = {len(triples)}', end='\t')
+
+        # (3) create labels
+        if batch_size is None:
+            batch_size = max(len(triples) // 10, 1)
+
+        train_set = TriplePredictionDataset(triples,
+                                            num_entities=self.num_entities,
+                                            num_relations=self.num_relations, neg_sample_ratio=neg_sample_ratio)
+
+        if num_workers is None:
+            num_workers = os.cpu_count()
+        data_loader = DataLoader(train_set,
+                                 batch_size=batch_size,
+                                 num_workers=num_workers,
+                                 collate_fn=train_set.collate_fn)
+        del triples
+
+        # (4) Train
+        self.set_model_train_mode()
+        optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=.00001)
+        print('\nIteration starts.')
+
+        for epoch in range(iteration):
+            epoch_loss = 0
+            for x, y in data_loader:
+                optimizer.zero_grad()
+                outputs = self.model(x)
+                loss = self.model.loss(outputs, y)
+                epoch_loss += loss.item()
+                loss.backward()
+                optimizer.step()
+            print(f"Iteration:{epoch}\t Loss:{epoch_loss:.10f}")
+        self.set_model_eval_mode()
+        print(f'Online Training took {time.time() - start_time:.4f} seconds.')
+
+    def old_train_cbd(self, head_entity, iteration=1, lr=.01,
+                      converge_loss=.0000001):
         """
         Train/Retrain model via applying KvsAll training/scoring technique on CBD of an head entity
 

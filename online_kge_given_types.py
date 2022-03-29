@@ -4,7 +4,8 @@ from core.knowledge_graph import KG
 
 
 def select_cbd_entities_given_rel_and_obj(args):
-    pre_trained_kge = KGE(path_of_pretrained_model_dir=args.path_of_pretrained_model_dir, construct_ensemble=True)
+    # (1) Load pretrained model in ensemble model
+    pre_trained_kge = KGE(path_of_pretrained_model_dir=args.path_of_pretrained_model_dir, construct_ensemble=args.construct_ensemble)
     id_rel = pre_trained_kge.relation_to_idx.loc[args.relation].values[0]
     id_tail = pre_trained_kge.entity_to_idx.loc[args.object].values[0]
     id_heads = pre_trained_kge.train_set[
@@ -15,7 +16,8 @@ def select_cbd_entities_given_rel_and_obj(args):
     for ith, entity in enumerate(entities):
         print('#' * 10)
         print(f"{ith}.th example {entity}", end="\t")
-        pre_trained_kge.train_cbd(head_entity=[entity], iteration=args.iteration, lr=args.lr)
+        pre_trained_kge.train_cbd(head_entity=[entity], iteration=args.iteration, lr=args.lr,
+                                  neg_sample_ratio=args.neg_sample_ratio)
         if ith == args.num_example:
             break
 
@@ -27,7 +29,9 @@ if __name__ == '__main__':
     parser.add_argument('--path_of_pretrained_model_dir', type=str, default="OnlineDBQMult")
     parser.add_argument("--relation", default="http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
     parser.add_argument("--object", type=str, default="http://dbpedia.org/ontology/Scientist")
-    parser.add_argument("--num_example", type=int, default=0)
-    parser.add_argument("--iteration", type=int, default=0)
-    parser.add_argument("--lr", type=float, default=.01)
+    parser.add_argument("--num_example", type=int, default=10)
+    parser.add_argument("--iteration", type=int, default=10)
+    parser.add_argument("--lr", type=float, default=.001)
+    parser.add_argument("--neg_sample_ratio", type=int, default=1)
+    parser.add_argument("--construct_ensemble", type=bool, default=True)
     select_cbd_entities_given_rel_and_obj(parser.parse_args())
