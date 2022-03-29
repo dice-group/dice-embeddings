@@ -269,20 +269,20 @@ class TriplePredictionDataset(Dataset):
         h, r, t = batch[:, 0], batch[:, 1], batch[:, 2]
         size_of_batch, _ = batch.shape
         assert size_of_batch > 0
-        label = torch.ones((size_of_batch,), dtype=torch.float16)
+        label = torch.ones((size_of_batch,), )
         # Generate Negative Triples
         corr = torch.randint(0, self.num_entities, (size_of_batch * self.neg_sample_ratio, 2))
         # 2.1 Head Corrupt:
         h_head_corr = corr[:, 0]
         r_head_corr = r.repeat(self.neg_sample_ratio, )
         t_head_corr = t.repeat(self.neg_sample_ratio, )
-        label_head_corr = torch.zeros(len(t_head_corr), dtype=torch.float16)
+        label_head_corr = torch.zeros(len(t_head_corr), )
 
         # 2.2. Tail Corrupt
         h_tail_corr = h.repeat(self.neg_sample_ratio, )
         r_tail_corr = r.repeat(self.neg_sample_ratio, )
         t_tail_corr = corr[:, 1]
-        label_tail_corr = torch.zeros(len(t_tail_corr), dtype=torch.float16)
+        label_tail_corr = torch.zeros(len(t_tail_corr), )
 
         # 3. Stack True and Corrupted Triples
         h = torch.cat((h, h_head_corr, h_tail_corr), 0)
