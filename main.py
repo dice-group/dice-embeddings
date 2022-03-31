@@ -20,10 +20,10 @@ def argparse_default(description=None):
                         help='Min number of triples for a vocab term to be considered')
     # Model and Training Parameters
     parser.add_argument("--model", type=str,
-                        default='QMult',
+                        default="QMult",
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, "
                              "Shallom, ConEx, ComplEx, DistMult, AdaptE")
-    parser.add_argument('--embedding_dim', type=int, default=25,
+    parser.add_argument('--embedding_dim', type=int, default=16,
                         help='Number of dimensions for an embedding vector. ')
     parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=500_000, help='Mini batch size')
@@ -51,7 +51,7 @@ def argparse_default(description=None):
                         help='The ratio of the size of the affine transformation w.r.t. the size of the embeddings')
 
     # Flags for computation
-    parser.add_argument("--eval", type=bool, default=False,
+    parser.add_argument("--eval", type=bool, default=True,
                         help='A flag for using evaluation')
     parser.add_argument("--eval_on_train", type=bool, default=False,
                         help='A flag for using train data to evaluation ')

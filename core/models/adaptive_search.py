@@ -6,10 +6,14 @@ from .static_funcs import quaternion_mul
 
 class AdaptE(BaseKGE):
     """ AdaptE: A linear combination of DistMult, ComplEx and QMult """
+
     def __init__(self, args):
         super().__init__(args)
         self.name = 'AdaptE'
-
+        try:
+            assert self.embedding_dim % 4 == 0
+        except AssertionError:
+            print('AdaptE embedding size must be dividable by 4')
         self.emb_ent_real = nn.Embedding(self.num_entities, self.embedding_dim)
         self.emb_rel_real = nn.Embedding(self.num_relations, self.embedding_dim)
         xavier_normal_(self.emb_ent_real.weight.data), xavier_normal_(self.emb_rel_real.weight.data)
@@ -101,7 +105,7 @@ class AdaptE(BaseKGE):
         self.losses.append(epoch_loss)
         if len(self.losses) % self.moving_average_interval == 0:
             # (1) Compute the average loss of previous epochs
-            avg_loss_in_last_epochs = sum(self.losses)/len(self.losses)
+            avg_loss_in_last_epochs = sum(self.losses) / len(self.losses)
             # (2) Is the current loss less than the average losses
             tendency_of_decreasing_loss = avg_loss_in_last_epochs > epoch_loss
             # Remove the oldest epoch loss saved.
@@ -137,7 +141,6 @@ class AdaptE(BaseKGE):
                     del x
                     self.current_embedding_dim += self.add_dim_size
                     """
-
 
     @staticmethod
     def compute_real_score(head, relation, tail):

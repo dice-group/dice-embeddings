@@ -237,12 +237,21 @@ class KvsAll(Dataset):
 class TriplePredictionDataset(Dataset):
     """ Negative Sampling Class """
 
-    def __init__(self, triples_idx, num_entities, num_relations, neg_sample_ratio=1):
+    def __init__(self, triples_idx, num_entities: int, num_relations: int, neg_sample_ratio: int = 1,
+                 soft_confidence_rate: float = 0.001):
+        """
+
+        :param triples_idx:
+        :param num_entities:
+        :param num_relations:
+        :param neg_sample_ratio:
+        :param soft_confidence_rate:  Target/Label should be little but larger than 0 and lower than 1
+        """
         start_time = time.time()
         print('Initializing negative sampling dataset batching...', end='\t')
         # triples_idx = torch.LongTensor(triples_idx) to decrease possible memory usage
         # triples_idx = torch.from_numpy(triples_idx)
-
+        self.soft_confidence_rate = soft_confidence_rate
         self.neg_sample_ratio = neg_sample_ratio  # 0 Implies that we do not add negative samples. This is needed during testing and validation
         self.head_idx = triples_idx[:, 0]
         self.rel_idx = triples_idx[:, 1]
@@ -269,20 +278,20 @@ class TriplePredictionDataset(Dataset):
         h, r, t = batch[:, 0], batch[:, 1], batch[:, 2]
         size_of_batch, _ = batch.shape
         assert size_of_batch > 0
-        label = torch.ones((size_of_batch,), )
+        label = torch.ones((size_of_batch,), ) - self.soft_confidence_rate
         # Generate Negative Triples
         corr = torch.randint(0, self.num_entities, (size_of_batch * self.neg_sample_ratio, 2))
         # 2.1 Head Corrupt:
         h_head_corr = corr[:, 0]
         r_head_corr = r.repeat(self.neg_sample_ratio, )
         t_head_corr = t.repeat(self.neg_sample_ratio, )
-        label_head_corr = torch.zeros(len(t_head_corr), )
+        label_head_corr = torch.zeros(len(t_head_corr), ) + self.soft_confidence_rate
 
         # 2.2. Tail Corrupt
         h_tail_corr = h.repeat(self.neg_sample_ratio, )
         r_tail_corr = r.repeat(self.neg_sample_ratio, )
         t_tail_corr = corr[:, 1]
-        label_tail_corr = torch.zeros(len(t_tail_corr), )
+        label_tail_corr = torch.zeros(len(t_tail_corr), ) + self.soft_confidence_rate
 
         # 3. Stack True and Corrupted Triples
         h = torch.cat((h, h_head_corr, h_tail_corr), 0)
