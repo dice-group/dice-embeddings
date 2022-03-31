@@ -16,8 +16,6 @@ def argparse_default(description=None):
     parser.add_argument("--num_epochs", type=int, default=1,
                         help='Number of epochs for training. Overwrite previous ep'
                              'This disables max_epochs and min_epochs of pl.Trainer')
-    # @TODO: Instead of epochs, iterate only few batches.
-    # parser.add_argument("--num_batches", type=int, default=10, help='Iterate only few batches')
     parser.add_argument("--lr", type=float, default=0.01)
     if description is None:
         return parser.parse_args()

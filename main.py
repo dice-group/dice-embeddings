@@ -51,9 +51,9 @@ def argparse_default(description=None):
                         help='The ratio of the size of the affine transformation w.r.t. the size of the embeddings')
 
     # Flags for computation
-    parser.add_argument("--eval", type=int, default=0,
+    parser.add_argument("--eval", type=bool, default=False,
                         help='A flag for using evaluation')
-    parser.add_argument("--eval_on_train", type=int, default=0,
+    parser.add_argument("--eval_on_train", type=bool, default=False,
                         help='A flag for using train data to evaluation ')
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
                                                                         'If >2 ,no evaluation scenario is applied implies no evaluation.')

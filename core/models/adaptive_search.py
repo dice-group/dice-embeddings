@@ -1,14 +1,11 @@
+import torch
 from .base_model import *
 import numpy as np
+from .static_funcs import quaternion_mul
 
 
 class AdaptE(BaseKGE):
-    """
-    Adaptive KGE
-    from real to quaternions/octonions
-    from real to multi-vectors
-    """
-
+    """ AdaptE: A linear combination of DistMult, ComplEx and QMult """
     def __init__(self, args):
         super().__init__(args)
         self.name = 'AdaptE'
@@ -17,19 +14,15 @@ class AdaptE(BaseKGE):
         self.emb_rel_real = nn.Embedding(self.num_relations, self.embedding_dim)
         xavier_normal_(self.emb_ent_real.weight.data), xavier_normal_(self.emb_rel_real.weight.data)
 
-        self.bn_ent_real = torch.nn.LayerNorm(self.embedding_dim)
-        self.bn_rel_real = torch.nn.LayerNorm(self.embedding_dim)
-
-        self.bn_hidden_real = torch.nn.LayerNorm(self.embedding_dim)
-
-        self.bn_hidden_a, self.bn_hidden_b, self.bn_hidden_c, self.bn_hidden_d = None, None, None, None
-        self.bn_hidden_aa, self.bn_hidden_bb, self.bn_hidden_cc, self.bn_hidden_dd = None, None, None, None
+        self.norm_ent = torch.nn.LayerNorm(self.embedding_dim)
+        self.norm_rel = torch.nn.LayerNorm(self.embedding_dim)
+        self.norm_tail = torch.nn.LayerNorm(self.embedding_dim)
 
         self.losses = []
         # If the current loss is not better than 60% of the previous interval loss
         # Upgrade.
-        self.moving_average_interval = 3
-        self.decision_criterion = .6
+        self.moving_average_interval = 10
+        self.decision_criterion = .8
         self.mode = 0
         self.moving_average = 0
 
@@ -76,54 +69,56 @@ class AdaptE(BaseKGE):
 
         return score
 
+    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e2_idx: torch.Tensor
+        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1], x[:, 2]
+        head_ent_emb = self.norm_ent(self.emb_ent_real(e1_idx))
+        rel_ent_emb = self.norm_rel(self.emb_rel_real(rel_idx))
+        tail_ent_emb = self.norm_tail(self.emb_ent_real(e2_idx))
+        # (1) real value.
+        score = self.compute_real_score(head_ent_emb, rel_ent_emb, tail_ent_emb)
+
+        if self.mode >= 1:
+            # (2) Split (1) into real and imaginary parts.
+            score += self.compute_complex_score(head_ent_emb, rel_ent_emb, tail_ent_emb)
+        if self.mode >= 2:
+            score += self.compute_quaternion_score(head_ent_emb, rel_ent_emb, tail_ent_emb)
+
+        # Averaging helped on UMLS
+        if self.mode == 0:
+            return score
+        elif self.mode == 1:
+            return score / 2
+        elif self.mode == 2:
+            return score / 3
+        else:
+            raise KeyError
+
     def training_epoch_end(self, training_step_outputs):
         epoch_loss = float(training_step_outputs[0]['loss'].detach())
         self.losses.append(epoch_loss)
         if len(self.losses) % self.moving_average_interval == 0:
-            self.losses = np.array(self.losses)
-            avg_loss_in_last_epochs = self.losses.mean()
-            tendency_of_decreasing_loss = (avg_loss_in_last_epochs > epoch_loss).mean()
-
-            self.losses = []
-            if tendency_of_decreasing_loss > self.decision_criterion:
-                # current loss is lower than 60% of the previous few epochs:
-                pass
+            # (1) Compute the average loss of previous epochs
+            avg_loss_in_last_epochs = sum(self.losses)/len(self.losses)
+            # (2) Is the current loss less than the average losses
+            tendency_of_decreasing_loss = avg_loss_in_last_epochs > epoch_loss
+            # Remove the oldest epoch loss saved.
+            self.losses.pop(0)
+            if tendency_of_decreasing_loss:
+                """ The loss is decreasing """
             else:
+                self.losses.clear()
                 if self.mode == 0:
-                    print('\nincrease the mode to complex numbers')
+                    print('\nIncrease the mode to complex numbers')
                     self.mode += 1
-                    self.bn_hidden_a = torch.nn.LayerNorm(self.embedding_dim // 2)
-                    self.bn_hidden_b = torch.nn.LayerNorm(self.embedding_dim // 2)
-                    self.bn_hidden_c = torch.nn.LayerNorm(self.embedding_dim // 2)
-                    self.bn_hidden_d = torch.nn.LayerNorm(self.embedding_dim // 2)
-                    print('####')
                 elif self.mode == 1:
                     print('\nincrease the mode to quaternions numbers')
                     self.mode += 1
-                    self.bn_hidden_aa = torch.nn.LayerNorm(self.embedding_dim // 4)
-                    self.bn_hidden_bb = torch.nn.LayerNorm(self.embedding_dim // 4)
-                    self.bn_hidden_cc = torch.nn.LayerNorm(self.embedding_dim // 4)
-                    self.bn_hidden_dd = torch.nn.LayerNorm(self.embedding_dim // 4)
-
-                    print('####')
-
                 else:
                     pass
 
-        """
-        if self.current_embedding_dim + self.add_dim_size < self.embedding_dim:
-            epoch_loss = float(training_step_outputs[0]['loss'].detach())
-            self.losses.append(epoch_loss)
-            if len(self.losses) % self.moving_average_interval == 0:
-                moving_average = sum(self.losses) / len(self.losses)
-                self.losses.clear()
-                diff = abs(moving_average - epoch_loss)
-
-                if diff > epoch_loss * .1:
-                    # do nothing
-                    pass
-                else:
-        """
         """
 
                     # Either increase the embedding size or the multiplication
@@ -142,3 +137,32 @@ class AdaptE(BaseKGE):
                     del x
                     self.current_embedding_dim += self.add_dim_size
                     """
+
+
+    @staticmethod
+    def compute_real_score(head, relation, tail):
+        return (head * relation * tail).sum(dim=1)
+
+    @staticmethod
+    def compute_complex_score(head, relation, tail):
+        emb_head_real, emb_head_imag = torch.hsplit(head, 2)
+        emb_rel_real, emb_rel_imag = torch.hsplit(relation, 2)
+        emb_tail_real, emb_tail_imag = torch.hsplit(tail, 2)
+
+        # (3) Compute hermitian inner product.
+        real_real_real = (emb_head_real * emb_rel_real * emb_tail_real).sum(dim=1)
+        real_imag_imag = (emb_head_real * emb_rel_imag * emb_tail_imag).sum(dim=1)
+        imag_real_imag = (emb_head_imag * emb_rel_real * emb_tail_imag).sum(dim=1)
+        imag_imag_real = (emb_head_imag * emb_rel_imag * emb_tail_real).sum(dim=1)
+        return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
+
+    def compute_quaternion_score(self, head, relation, tail):
+        # (5) Split (1) into real and 3 imaginary parts.
+        r_val, i_val, j_val, k_val = quaternion_mul(Q_1=torch.hsplit(head, 4),
+                                                    Q_2=torch.hsplit(relation, 4))
+        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(tail, 4)
+        real_score = (r_val * emb_tail_real).sum(dim=1)
+        i_score = (i_val * emb_tail_i).sum(dim=1)
+        j_score = (j_val * emb_tail_j).sum(dim=1)
+        k_score = (k_val * emb_tail_k).sum(dim=1)
+        return real_score + i_score + j_score + k_score
