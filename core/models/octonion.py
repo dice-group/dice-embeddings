@@ -146,7 +146,7 @@ class OMult(BaseKGE):
             self.emb_rel_e4.weight.data, self.emb_rel_e5.weight.data,
             self.emb_rel_e6.weight.data, self.emb_rel_e7.weight.data), 1)
 
-        return entity_emb.data.detach().numpy(), rel_emb.data.detach().numpy()
+        return entity_emb.data.detach(), rel_emb.data.detach()
 
     def forward_k_vs_all(self, x):
         """
@@ -424,7 +424,7 @@ class ConvO(BaseKGE):
             self.emb_rel_e2.weight.data, self.emb_rel_e3.weight.data,
             self.emb_rel_e4.weight.data, self.emb_rel_e5.weight.data,
             self.emb_rel_e6.weight.data, self.emb_rel_e7.weight.data), 1)
-        return entity_emb.data.detach().numpy(), rel_emb.data.detach().numpy()
+        return entity_emb.data.detach(), rel_emb.data.detach()
 
     def residual_convolution(self, O_1, O_2):
         emb_ent_e0, emb_ent_e1, emb_ent_e2, emb_ent_e3, emb_ent_e4, emb_ent_e5, emb_ent_e6, emb_ent_e7 = O_1

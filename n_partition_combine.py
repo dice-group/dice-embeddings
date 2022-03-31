@@ -1,10 +1,20 @@
+"""
+For x in Configuration:
+    dataset
+    select model
+    train
+    save
+
+Merge = ensemble all model
+"""
+
 import itertools
 from argparse import ArgumentParser
 from glob import glob
 import torch
 from core.executer import Execute
 from core import load_json
-from core.static_funcs import load_model, select_model, create_experiment_folder, store_kge
+from core.static_funcs import load_model, intialize_model, create_experiment_folder, store_kge
 import pandas as pd
 import numpy as np
 import os
@@ -17,7 +27,6 @@ class Merger:
         self.args = args
         # 2 Create a folder to serialize data and replace the previous path info
         self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
-
         self.configuration = None
         self.model_name = None
 
@@ -26,7 +35,7 @@ class Merger:
         self.embedding_dim = None
         self.merged_pre_trained_model = None
 
-    def model_type_sanity_checking(self, name,previous_args):
+    def model_type_sanity_checking(self, name, previous_args):
         if self.model_name is None:
             self.model_name = name
         else:
@@ -39,13 +48,19 @@ class Merger:
 
     def load_entity_embeddings(self, previous_args):
 
-        path_entity_emb=previous_args['full_storage_path'] + f'/{self.model_name}_entity_embeddings'
+        path_entity_emb = previous_args['full_storage_path'] + f'/{self.model_name}_entity_embeddings'
 
         if os.path.isfile(path_entity_emb + '.csv'):
             df_entities = pd.read_csv(path_entity_emb + '.csv', index_col=0)
         elif os.path.isfile(path_entity_emb + '.npz'):
 
             df_entities = pd.DataFrame(data=np.load(path_entity_emb + '.npz')['entity_emb'],
+                                       index=pd.read_parquet(
+                                           path=previous_args[
+                                                    'full_storage_path'] + f'/entity_to_idx.gzip').index)
+
+        elif os.path.isfile(path_entity_emb + '.pt'):
+            df_entities = pd.DataFrame(data=torch.load(path_entity_emb + '.pt', torch.device('cpu')).numpy(),
                                        index=pd.read_parquet(
                                            path=previous_args[
                                                     'full_storage_path'] + f'/entity_to_idx.gzip').index)
@@ -56,12 +71,17 @@ class Merger:
 
     def load_relation_embeddings(self, previous_args):
 
-        path_relations_emb=previous_args['full_storage_path'] + f'/{self.model_name}_relation_embeddings'
+        path_relations_emb = previous_args['full_storage_path'] + f'/{self.model_name}_relation_embeddings'
 
         if os.path.isfile(path_relations_emb + '.csv'):
             df_relations = pd.read_csv(path_relations_emb + '.csv', index_col=0)
         elif os.path.isfile(path_relations_emb + '.npz'):
             df_relations = pd.DataFrame(data=np.load(path_relations_emb + '.npz')['relation_ebm'],
+                                        index=pd.read_parquet(
+                                            path=previous_args[
+                                                     'full_storage_path'] + f'/relation_to_idx.gzip').index)
+        elif os.path.isfile(path_relations_emb + '.pt'):
+            df_relations = pd.DataFrame(data=torch.load(path_relations_emb + '.pt', torch.device('cpu')).numpy(),
                                         index=pd.read_parquet(
                                             path=previous_args[
                                                      'full_storage_path'] + f'/relation_to_idx.gzip').index)
@@ -71,10 +91,7 @@ class Merger:
         return df_relations
 
     def load_embedding_matrices(self):
-        """
-
-        :return:
-        """
+        """ Accumulate embedding matrices """
         # (1) Temporarily initialize embeddings as an empty list
         self.entity_embeddings = []
         self.relation_embeddings = []
@@ -85,7 +102,7 @@ class Merger:
         for path_experiment_folder in self.args.trained_model_paths:
             previous_args = load_json(path_experiment_folder + '/configuration.json')
 
-            self.model_type_sanity_checking(previous_args['model'],previous_args)
+            self.model_type_sanity_checking(previous_args['model'], previous_args)
 
             df_entities = self.load_entity_embeddings(previous_args)
             df_relations = self.load_relation_embeddings(previous_args)
@@ -129,8 +146,6 @@ class Merger:
         print('Averaging weights..')
         # (1) Average embeddings of entities sharing same index.
 
-
-
         # (2) Average non embedding weights
         non_embedding_weights_state_dict = None
         num_models = 0
@@ -150,7 +165,9 @@ class Merger:
 
             previous_args['num_entities'] = previous_report['num_entities']
             previous_args['num_relations'] = previous_report['num_relations']
-            i_th_pretrained, _, __ = load_model(previous_args)
+
+
+            i_th_pretrained, _, __ = load_model(path_of_experiment_folder=previous_args['path_of_experiment_folder'])
             i_th_state_dict = i_th_pretrained.state_dict()
 
             if non_embedding_weights_state_dict is None:
@@ -196,7 +213,7 @@ class Merger:
         self.args.num_relations = self.relation_embeddings.shape[0]
         self.args.num_entities = self.entity_embeddings.shape[0]
 
-        final_model, _ = select_model(self.configuration)
+        final_model, _ = intialize_model(self.configuration)
         final_model.load_state_dict(non_embedding_weights_state_dict)
         final_model.eval()
 
@@ -204,6 +221,10 @@ class Merger:
         store_kge(final_model, path=self.args.full_storage_path + f'/model.pt')
 
         with open(self.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
+            temp = vars(self.args)
+            json.dump(temp, file_descriptor)
+
+        with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
             temp = vars(self.args)
             json.dump(temp, file_descriptor)
 
@@ -225,7 +246,7 @@ class Merger:
             assert os.path.isfile(path_experiment_folder + '/idx_train_df.gzip')
             assert os.path.isfile(path_experiment_folder + '/configuration.json')
         else:
-            args.trained_model_paths = [i for i in glob("DAIKIRI_Storage/*", recursive=False)]
+            args.trained_model_paths = [i for i in glob("Experiments/*", recursive=False)]
 
 
 if __name__ == '__main__':

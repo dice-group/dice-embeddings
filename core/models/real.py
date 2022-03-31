@@ -4,6 +4,8 @@ from .base_model import *
 import numpy as np
 from math import sqrt
 
+from .static_funcs import quaternion_mul
+
 
 class DistMult(BaseKGE):
     """
@@ -25,13 +27,12 @@ class DistMult(BaseKGE):
         self.bn_ent_real = torch.nn.BatchNorm1d(self.embedding_dim)
         self.bn_rel_real = torch.nn.BatchNorm1d(self.embedding_dim)
         self.bn_hidden_real = torch.nn.BatchNorm1d(self.embedding_dim)
-
         self.hidden_dropout = torch.nn.Dropout(self.hidden_dropout_rate)
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
-        return self.emb_ent_real.weight.data.data.detach().numpy(), self.emb_rel_real.weight.data.detach().numpy()
+        return self.emb_ent_real.weight.data.data.detach(), self.emb_rel_real.weight.data.detach()
 
-    def forward_k_vs_all(self, x:torch.Tensor):
+    def forward_k_vs_all(self, x: torch.Tensor):
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
         e1_idx, rel_idx = x[:, 0], x[:, 1]
@@ -47,7 +48,7 @@ class DistMult(BaseKGE):
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
         e2_idx: torch.Tensor
-        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1],x[:, 2]
+        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1], x[:, 2]
         # (1)
         # (1.1) Complex embeddings of head entities and apply batch norm.
         emb_head_real = self.input_dp_ent_real(self.bn_ent_real(self.emb_ent_real(e1_idx)))
@@ -77,7 +78,7 @@ class Shallom(BaseKGE):
                                      torch.nn.Linear(shallom_width, self.num_relations))
 
     def get_embeddings(self) -> Tuple[np.ndarray, None]:
-        return self.entity_embeddings.weight.data.detach().numpy(), None
+        return self.entity_embeddings.weight.data.detach(), None
 
     def forward_k_vs_all(self, x):
         e1_idx: torch.Tensor
@@ -88,6 +89,82 @@ class Shallom(BaseKGE):
 
 
 """ On going works"""
+
+
+class DimAdaptiveDistMult(BaseKGE):
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = 'AdaptiveDistMult'
+        # Init Embeddings
+        self.current_embedding_dim = 1
+        self.emb_ent_real = nn.Embedding(self.num_entities, self.current_embedding_dim)
+        self.emb_rel_real = nn.Embedding(self.num_relations, self.current_embedding_dim)
+        xavier_normal_(self.emb_ent_real.weight.data), xavier_normal_(self.emb_rel_real.weight.data)
+
+        self.losses = []
+        self.moving_average = 0
+        self.moving_average_interval = 10
+        self.add_dim_size = 1
+
+    def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
+        return self.emb_ent_real.weight.data.data.detach(), self.emb_rel_real.weight.data.detach()
+
+    def forward_k_vs_all(self, x: torch.Tensor):
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e1_idx, rel_idx = x[:, 0], x[:, 1]
+        # (1)
+        # (1.1) Real embeddings of head entities
+        emb_head_real = self.emb_ent_real(e1_idx)
+        # (1.2) Real embeddings of relations
+        emb_rel_real = self.emb_rel_real(rel_idx)
+        return torch.mm(emb_head_real * emb_rel_real, self.emb_ent_real.weight.transpose(1, 0))
+
+    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e2_idx: torch.Tensor
+        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1], x[:, 2]
+        # (1)
+        emb_head_real = self.emb_ent_real(e1_idx)
+        emb_rel_real = self.emb_rel_real(rel_idx)
+        emb_tail_real = self.emb_ent_real(e2_idx)
+        return (emb_head_real * emb_rel_real * emb_tail_real).sum(dim=1)
+
+    def training_epoch_end(self, training_step_outputs):
+
+        if self.current_embedding_dim + self.add_dim_size < self.embedding_dim:
+            epoch_loss = float(training_step_outputs[0]['loss'].detach())
+            self.losses.append(epoch_loss)
+            if len(self.losses) % self.moving_average_interval == 0:
+                moving_average = sum(self.losses) / len(self.losses)
+                self.losses.clear()
+                diff = abs(moving_average - epoch_loss)
+
+                if diff > epoch_loss * .1:
+                    # do nothing
+                    pass
+                else:
+
+                    """
+
+                    # Either increase the embedding size or the multiplication
+                    print('\nDouble the embedding size') 
+                    # Leads to inferious results
+                    x = nn.Embedding(self.num_entities, self.add_dim_size)
+                    xavier_normal_(x.weight.data)
+                    self.emb_ent_real.weight = nn.Parameter(
+                        torch.cat((self.emb_ent_real.weight.detach(), x.weight.detach()), dim=1).data,
+                        requires_grad=True)
+                    x = nn.Embedding(self.num_relations, self.add_dim_size)
+                    xavier_normal_(x.weight.data)
+                    self.emb_rel_real.weight = nn.Parameter(
+                        torch.cat((self.emb_rel_real.weight.detach(), x.weight.detach()), dim=1).data,
+                        requires_grad=True)
+                    del x
+                    self.current_embedding_dim += self.add_dim_size
+                    """
 
 
 class KPDistMult(BaseKGE):
@@ -116,7 +193,7 @@ class KPDistMult(BaseKGE):
         self.bn_hidden_real = torch.nn.BatchNorm1d(args.embedding_dim)
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
-        return self.emb_ent_real.weight.data.data.detach().numpy(), self.emb_rel_real.weight.data.detach().numpy()
+        return self.emb_ent_real.weight.data.data.detach(), self.emb_rel_real.weight.data.detach()
 
     def forward_k_vs_all(self, x):
         e1_idx: torch.Tensor
@@ -170,7 +247,7 @@ class KronE(BaseKGE):
         self.bn_rel_real = torch.nn.BatchNorm1d(self.embedding_dim_rel)
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
-        return self.emb_ent_real.weight.data.data.detach().numpy(), self.emb_rel_real.weight.data.detach().numpy()
+        return self.emb_ent_real.weight.data.data.detach(), self.emb_rel_real.weight.data.detach()
 
     def construct_entity_embeddings(self, e1_idx: torch.Tensor):
         emb_head = self.bn_ent_real(self.emb_ent_real(e1_idx)).unsqueeze(1)
@@ -247,7 +324,7 @@ class KronELinear(BaseKGE):
         self.bn_rel_real = torch.nn.BatchNorm1d(self.rel_embedding_dim)
 
     def get_embeddings(self):
-        return self.emb_ent_real.weight.data.data.detach().numpy(), self.emb_rel_real.weight.data.detach().numpy()
+        return self.emb_ent_real.weight.data.data.detach(), self.emb_rel_real.weight.data.detach()
 
     def construct_entity_embeddings(self, e1_idx: torch.Tensor):
         emb_head = self.bn_ent_real(self.emb_ent_real(e1_idx)).unsqueeze(1)

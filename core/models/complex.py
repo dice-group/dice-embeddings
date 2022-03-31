@@ -47,7 +47,7 @@ class ConEx(BaseKGE):
         # Combine real and complex parts
         entity_emb = torch.cat((self.emb_ent_real.weight.data, self.emb_ent_i.weight.data), 1)
         rel_emb = torch.cat((self.emb_rel_real.weight.data, self.emb_rel_i.weight.data), 1)
-        return entity_emb.data.detach().numpy(), rel_emb.data.detach().numpy()
+        return entity_emb.data.detach(), rel_emb.data.detach()
 
     def residual_convolution(self, C_1: Tuple[torch.Tensor, torch.Tensor],
                              C_2: Tuple[torch.Tensor, torch.Tensor]) -> torch.Tensor:
@@ -181,7 +181,7 @@ class ComplEx(BaseKGE):
     def get_embeddings(self):
         entity_emb = torch.cat((self.emb_ent_real.weight.data, self.emb_ent_i.weight.data), 1)
         rel_emb = torch.cat((self.emb_rel_real.weight.data, self.emb_rel_i.weight.data), 1)
-        return entity_emb.data.detach().numpy(), rel_emb.data.detach().numpy()
+        return entity_emb.data.detach(), rel_emb.data.detach()
 
     def forward_k_vs_all(self, x):
         e1_idx: torch.Tensor
@@ -266,7 +266,7 @@ class KDComplEx(BaseKGE):
     def get_embeddings(self):
         entity_emb = torch.cat((self.emb_ent_real.weight.data, self.emb_ent_i.weight.data), 1)
         rel_emb = torch.cat((self.emb_rel_real.weight.data, self.emb_rel_i.weight.data), 1)
-        return entity_emb.data.detach().numpy(), rel_emb.data.detach().numpy()
+        return entity_emb.data.detach(), rel_emb.data.detach()
 
     def forward_k_vs_all(self, x):
         e1_idx: torch.Tensor

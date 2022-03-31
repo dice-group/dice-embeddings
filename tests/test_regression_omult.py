@@ -21,6 +21,7 @@ class TestRegressionOmult:
         args.eval_on_train = 1
         args.read_only_few = None
         args.sample_triples_ratio = None
+        args.num_folds_for_cv=None
         result = Execute(args).start()
         assert 0.71 >= result['Val']['H@1'] >= 0.24
 
@@ -42,6 +43,7 @@ class TestRegressionOmult:
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.sample_triples_ratio = None
+        args.num_folds_for_cv=None
         result = Execute(args).start()
         assert 0.72 >= result['Test']['H@1'] >= 0.20
 
@@ -64,5 +66,6 @@ class TestRegressionOmult:
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.sample_triples_ratio = None
+        args.num_folds_for_cv=None
         result = Execute(args).start()
         assert 0.1 >= result['Test']['H@1'] >= .0001
