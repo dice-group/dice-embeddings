@@ -249,17 +249,19 @@ class TriplePredictionDataset(Dataset):
         """
         start_time = time.time()
         print('Initializing negative sampling dataset batching...', end='\t')
-        # triples_idx = torch.LongTensor(triples_idx) to decrease possible memory usage
-        # triples_idx = torch.from_numpy(triples_idx)
         self.soft_confidence_rate = soft_confidence_rate
         self.neg_sample_ratio = neg_sample_ratio  # 0 Implies that we do not add negative samples. This is needed during testing and validation
-        self.head_idx = triples_idx[:, 0]
-        self.rel_idx = triples_idx[:, 1]
-        self.tail_idx = triples_idx[:, 2]
-        assert self.head_idx.shape == self.rel_idx.shape == self.tail_idx.shape
-        assert num_entities > max(self.head_idx) and num_entities > max(self.tail_idx)
-        assert num_relations > max(self.rel_idx)
-        self.length = len(triples_idx)
+        self.triples_idx = triples_idx
+
+        # self.head_idx = triples_idx[:, 0]
+        # self.rel_idx = triples_idx[:, 1]
+        # self.tail_idx = triples_idx[:, 2]
+        # assert self.head_idx.shape == self.rel_idx.shape == self.tail_idx.shape
+        # assert num_entities > max(self.head_idx) and num_entities > max(self.tail_idx)
+        # assert num_relations > max(self.rel_idx)
+        assert num_entities >= max(triples_idx[:, 0]) and num_entities >= max(triples_idx[:, 2])
+        # assert num_relations > max(self.rel_idx)
+        self.length = len(self.triples_idx)
         self.num_entities = num_entities
         self.num_relations = num_relations
         print(f'Done ! {time.time() - start_time:.3f} seconds\n')
@@ -268,10 +270,7 @@ class TriplePredictionDataset(Dataset):
         return self.length
 
     def __getitem__(self, idx):
-        h = self.head_idx[idx]
-        r = self.rel_idx[idx]
-        t = self.tail_idx[idx]
-        return h, r, t
+        return self.triples_idx[idx]
 
     def collate_fn(self, batch):
         batch = torch.LongTensor(batch)
@@ -297,11 +296,8 @@ class TriplePredictionDataset(Dataset):
         h = torch.cat((h, h_head_corr, h_tail_corr), 0)
         r = torch.cat((r, r_head_corr, r_tail_corr), 0)
         t = torch.cat((t, t_head_corr, t_tail_corr), 0)
-
         x = torch.stack((h, r, t), dim=1)
-
         label = torch.cat((label, label_head_corr, label_tail_corr), 0)
-
         return x, label
 
 

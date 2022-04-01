@@ -10,7 +10,8 @@ def argparse_default(description=None):
     # Dataset and storage related
     parser.add_argument("--path_dataset_folder", type=str, default='KGs/YAGO3-10',
                         help="The path of a folder containing input data")
-    parser.add_argument("--multi_cores_at_preprocessing", type=bool, default=True, help='A flag for using all cores at parsing.')
+    parser.add_argument("--multi_cores_at_preprocessing", type=bool, default=True,
+                        help='A flag for using all cores at parsing.')
     parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="Embeddings, model, and any other related data will be stored therein.")
     parser.add_argument("--read_only_few", type=int, default=None, help='READ only first N triples. If 0, read all.')
@@ -26,7 +27,7 @@ def argparse_default(description=None):
     parser.add_argument('--embedding_dim', type=int, default=16,
                         help='Number of dimensions for an embedding vector. ')
     parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. ')
-    parser.add_argument('--batch_size', type=int, default=500_000, help='Mini batch size')
+    parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.1, help='Learning rate')
     # Hyperparameters for training.
     parser.add_argument('--scoring_technique', default='NegSample', help="1vsAll, KvsAll, NegSample.")
@@ -49,9 +50,10 @@ def argparse_default(description=None):
     parser.add_argument("--num_of_output_channels", type=int, default=3, help="# of output channels in convolution")
     parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.5,
                         help='The ratio of the size of the affine transformation w.r.t. the size of the embeddings')
+    parser.add_argument("--normalization", type=str, default='LayerNorm')
 
     # Flags for computation
-    parser.add_argument("--eval", type=bool, default=True,
+    parser.add_argument("--eval", type=bool, default=False,
                         help='A flag for using evaluation')
     parser.add_argument("--eval_on_train", type=bool, default=False,
                         help='A flag for using train data to evaluation ')
@@ -60,5 +62,7 @@ def argparse_default(description=None):
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)
+
+
 if __name__ == '__main__':
     Execute(argparse_default()).start()

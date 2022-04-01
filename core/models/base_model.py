@@ -26,6 +26,7 @@ class BaseKGE(pl.LightningModule):
         self.weight_decay = None
         self.loss = torch.nn.BCEWithLogitsLoss()
         self.selected_optimizer = None
+        self.normalizer_class = torch.nn.LayerNorm
         self.sanity_checking()
 
     def sanity_checking(self):
@@ -84,6 +85,11 @@ class BaseKGE(pl.LightningModule):
             else:
                 self.feature_map_dropout_rate = 0.0
 
+        if self.args.get("normalization") == 'LayerNorm':
+            self.normalizer_class = torch.nn.LayerNorm
+        else:
+            raise NotImplementedError()
+
     def configure_optimizers(self):
         self.selected_optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate,
                                                    weight_decay=self.weight_decay)
@@ -119,7 +125,6 @@ class BaseKGE(pl.LightningModule):
         yhat_batch = self.forward(x_batch)
         train_loss = self.loss_function(yhat_batch=yhat_batch, y_batch=y_batch)
         return train_loss
-
 
     def validation_step(self, batch, batch_idx):
         if len(batch) == 4:
