@@ -73,4 +73,4 @@ class TestRegressionConEx:
         args.read_only_few = None
         args.neg_ratio = 1
         result = Execute(args).start()
-        assert 0.48 >= result['Test']['H@1'] >= .35
+        assert 0.48 >= result['Test']['H@1'] >= .31

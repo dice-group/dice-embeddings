@@ -65,4 +65,4 @@ class TestRegressionQmult:
         args.read_only_few = None
         args.sample_triples_ratio = None
         result = Execute(args).start()
-        assert 0.39 >= result['Test']['H@1'] >= .30
+        assert 0.44 >= result['Test']['H@1'] >= .30
