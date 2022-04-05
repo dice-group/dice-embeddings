@@ -24,9 +24,9 @@ class DistMult(BaseKGE):
         self.input_dp_ent_real = torch.nn.Dropout(self.input_dropout_rate)
         self.input_dp_rel_real = torch.nn.Dropout(self.input_dropout_rate)
         # Batch Normalization
-        self.bn_ent_real = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_real = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_hidden_real = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_real = self.normalizer_class(self.embedding_dim)
+        self.bn_rel_real = self.normalizer_class(self.embedding_dim)
+        self.bn_hidden_real = self.normalizer_class(self.embedding_dim)
         self.hidden_dropout = torch.nn.Dropout(self.hidden_dropout_rate)
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -72,7 +72,7 @@ class Shallom(BaseKGE):
         xavier_normal_(self.entity_embeddings.weight.data)
         self.shallom = nn.Sequential(nn.Dropout(self.input_dropout_rate),
                                      torch.nn.Linear(self.embedding_dim * 2, shallom_width),
-                                     nn.BatchNorm1d(shallom_width),
+                                     self.normalizer_class(shallom_width),
                                      nn.ReLU(),
                                      nn.Dropout(self.hidden_dropout_rate),
                                      torch.nn.Linear(shallom_width, self.num_relations))

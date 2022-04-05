@@ -45,7 +45,6 @@ class AdaptE(BaseKGE):
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
         return self.emb_ent_real.weight.data.data.detach(), self.emb_rel_real.weight.data.detach()
 
-
     def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
         e1_idx: torch.Tensor
         rel_idx: torch.Tensor
@@ -56,7 +55,6 @@ class AdaptE(BaseKGE):
         tail_ent_emb = self.norm_tail(self.emb_ent_real(e2_idx))
         # (1) real value.
         score = self.compute_real_score(head_ent_emb, rel_ent_emb, tail_ent_emb)
-
         if self.mode >= 1:
             # (2) Split (1) into real and imaginary parts.
             score += self.compute_complex_score(head_ent_emb, rel_ent_emb, tail_ent_emb)
@@ -72,6 +70,30 @@ class AdaptE(BaseKGE):
             return score / 3
         else:
             raise KeyError
+
+    def forward_k_vs_all(self, x: torch.Tensor) -> torch.Tensor:
+        e1_idx: torch.Tensor
+        rel_idx: torch.Tensor
+        e2_idx: torch.Tensor
+        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1], x[:, 2]
+        head_ent_emb = self.norm_ent(self.emb_ent_real(e1_idx))
+        rel_ent_emb = self.norm_rel(self.emb_rel_real(rel_idx))
+        # (1) real value.
+        score = torch.mm(head_ent_emb * rel_ent_emb, self.emb_ent_real.weight.transpose(1, 0))
+        #if self.mode >= 1:
+        emb_head_real, emb_head_imag = torch.hsplit(head_ent_emb, 2)
+        emb_rel_real, emb_rel_imag = torch.hsplit(rel_ent_emb, 2)
+        emb_all_entity_real, emb_all_entity_imag = torch.hsplit(self.emb_ent_real.weight, 2)
+
+        real_real_real = torch.mm(emb_head_real * emb_rel_realemb_all_entity_real.transpose(1, 0))
+        real_imag_imag = torch.mm(emb_head_real * emb_rel_i, emb_all_entity_imag.transpose(1, 0))
+        imag_real_imag = torch.mm(emb_head_i * emb_rel_real, emb_all_entity_imag.transpose(1, 0))
+        imag_imag_real = torch.mm(emb_head_i * emb_rel_i, emb_all_entity_real.transpose(1, 0))
+
+        score += real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
+
+        raise NotImplementedError()
+        return score / 3
 
     def training_epoch_end(self, training_step_outputs):
         epoch_loss = float(training_step_outputs[0]['loss'].detach())

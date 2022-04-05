@@ -412,7 +412,7 @@ def preprocesses_input_args(arg):
         arg.eval = True
     if arg.model == 'Shallom':
         arg.scoring_technique = 'KvsAll'
-    assert arg.normalization in ['LayerNorm']
+    assert arg.normalization in ['LayerNorm','BatchNorm1d']
     return arg
 
 

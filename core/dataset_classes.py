@@ -235,10 +235,15 @@ class KvsAll(Dataset):
 
 
 class TriplePredictionDataset(Dataset):
-    """ Negative Sampling Class """
+    """ Negative Sampling Class
+    (1) \forall (h,r,t) \in G obtain,
+    create negative triples{(h,r,x),(,r,t),(h,m,t)}
+
+    (2) Targets
+    Using hard targets (0,1) drives weights to infinity. An outlier produces enormous gradients. """
 
     def __init__(self, triples_idx, num_entities: int, num_relations: int, neg_sample_ratio: int = 1,
-                 soft_confidence_rate: float = 0.001):
+                 soft_confidence_rate: float = 0.01):
         """
 
         :param triples_idx:

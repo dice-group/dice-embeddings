@@ -30,13 +30,13 @@ class ConEx(BaseKGE):
         self.input_dp_rel_real = torch.nn.Dropout(self.input_dropout_rate)
         self.input_dp_rel_i = torch.nn.Dropout(self.input_dropout_rate)
         # Batch Normalization
-        self.bn_ent_real = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_ent_i = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_real = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_i = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_real = self.normalizer_class(self.embedding_dim)
+        self.bn_ent_i = self.normalizer_class(self.embedding_dim)
+        self.bn_rel_real = self.normalizer_class(self.embedding_dim)
+        self.bn_rel_i = self.normalizer_class(self.embedding_dim)
 
         self.bn_conv1 = torch.nn.BatchNorm2d(self.num_of_output_channels)
-        self.bn_conv2 = torch.nn.BatchNorm1d(self.embedding_dim * 2)
+        self.bn_conv2 = self.normalizer_class(self.embedding_dim * 2)
         self.feature_map_dropout = torch.nn.Dropout2d(self.feature_map_dropout_rate)
 
     def get_embeddings(self) -> Tuple[np.array, np.array]:
@@ -173,10 +173,10 @@ class ComplEx(BaseKGE):
         self.hidden_dp_d = torch.nn.Dropout(self.hidden_dropout_rate)
 
         # Batch Normalization
-        self.bn_ent_real = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_ent_i = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_real = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_i = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_real = self.normalizer_class(self.embedding_dim)
+        self.bn_ent_i = self.normalizer_class(self.embedding_dim)
+        self.bn_rel_real = self.normalizer_class(self.embedding_dim)
+        self.bn_rel_i = self.normalizer_class(self.embedding_dim)
 
     def get_embeddings(self):
         entity_emb = torch.cat((self.emb_ent_real.weight.data, self.emb_ent_i.weight.data), 1)

@@ -46,7 +46,9 @@ def octonion_mul_norm(*, O_1, O_2):
 
 
 class OMult(BaseKGE):
-
+    # @TODO: Refactor for the sake of the brerivty
+    # Only Two Embedding matrices and split real values to octonions
+    # This would decrease the runtimes.
     def __init__(self, args):
         super().__init__(args)
         self.name='QMult'
@@ -106,33 +108,33 @@ class OMult(BaseKGE):
         self.hidden_dp_e6 = torch.nn.Dropout(self.hidden_dropout_rate)
         self.hidden_dp_e7 = torch.nn.Dropout(self.hidden_dropout_rate)
         # Batch normalization for octonion embeddings of subject entities.
-        self.bn_ent_e0 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_ent_e1 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_ent_e2 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_ent_e3 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_ent_e4 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_ent_e5 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_ent_e6 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_ent_e7 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_e0 = self.normalizer_class(self.embedding_dim)
+        self.bn_ent_e1 = self.normalizer_class(self.embedding_dim)
+        self.bn_ent_e2 = self.normalizer_class(self.embedding_dim)
+        self.bn_ent_e3 = self.normalizer_class(self.embedding_dim)
+        self.bn_ent_e4 = self.normalizer_class(self.embedding_dim)
+        self.bn_ent_e5 = self.normalizer_class(self.embedding_dim)
+        self.bn_ent_e6 = self.normalizer_class(self.embedding_dim)
+        self.bn_ent_e7 = self.normalizer_class(self.embedding_dim)
         # Batch normalization for octonion embeddings of relations.
-        self.bn_rel_e0 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_e1 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_e2 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_e3 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_e4 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_e5 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_e6 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_e7 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_e0 = self.normalizer_class(self.embedding_dim)
+        self.bn_rel_e1 = self.normalizer_class(self.embedding_dim)
+        self.bn_rel_e2 = self.normalizer_class(self.embedding_dim)
+        self.bn_rel_e3 = self.normalizer_class(self.embedding_dim)
+        self.bn_rel_e4 = self.normalizer_class(self.embedding_dim)
+        self.bn_rel_e5 = self.normalizer_class(self.embedding_dim)
+        self.bn_rel_e6 = self.normalizer_class(self.embedding_dim)
+        self.bn_rel_e7 = self.normalizer_class(self.embedding_dim)
 
         # Batch normalization for octonion embeddings of relations.
-        self.bn_hidden_e0 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_hidden_e1 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_hidden_e2 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_hidden_e3 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_hidden_e4 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_hidden_e5 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_hidden_e6 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_hidden_e7 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_hidden_e0 = self.normalizer_class(self.embedding_dim)
+        self.bn_hidden_e1 = self.normalizer_class(self.embedding_dim)
+        self.bn_hidden_e2 = self.normalizer_class(self.embedding_dim)
+        self.bn_hidden_e3 = self.normalizer_class(self.embedding_dim)
+        self.bn_hidden_e4 = self.normalizer_class(self.embedding_dim)
+        self.bn_hidden_e5 = self.normalizer_class(self.embedding_dim)
+        self.bn_hidden_e6 = self.normalizer_class(self.embedding_dim)
+        self.bn_hidden_e7 = self.normalizer_class(self.embedding_dim)
 
     def get_embeddings(self):
         entity_emb = torch.cat((
@@ -383,23 +385,23 @@ class ConvO(BaseKGE):
         self.hidden_dp_e7 = torch.nn.Dropout(self.hidden_dropout_rate)
 
         # Batch normalization for octonion embeddings of ALL entities.
-        self.bn_ent_e0 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_ent_e1 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_ent_e2 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_ent_e3 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_ent_e4 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_ent_e5 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_ent_e6 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_ent_e7 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_ent_e0 = self.normalizer_class(self.embedding_dim)
+        self.bn_ent_e1 = self.normalizer_class(self.embedding_dim)
+        self.bn_ent_e2 = self.normalizer_class(self.embedding_dim)
+        self.bn_ent_e3 = self.normalizer_class(self.embedding_dim)
+        self.bn_ent_e4 = self.normalizer_class(self.embedding_dim)
+        self.bn_ent_e5 = self.normalizer_class(self.embedding_dim)
+        self.bn_ent_e6 = self.normalizer_class(self.embedding_dim)
+        self.bn_ent_e7 = self.normalizer_class(self.embedding_dim)
         # Batch normalization for octonion embeddings of relations.
-        self.bn_rel_e0 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_e1 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_e2 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_e3 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_e4 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_e5 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_e6 = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_e7 = torch.nn.BatchNorm1d(self.embedding_dim)
+        self.bn_rel_e0 = self.normalizer_class(self.embedding_dim)
+        self.bn_rel_e1 = self.normalizer_class(self.embedding_dim)
+        self.bn_rel_e2 = self.normalizer_class(self.embedding_dim)
+        self.bn_rel_e3 = self.normalizer_class(self.embedding_dim)
+        self.bn_rel_e4 = self.normalizer_class(self.embedding_dim)
+        self.bn_rel_e5 = self.normalizer_class(self.embedding_dim)
+        self.bn_rel_e6 = self.normalizer_class(self.embedding_dim)
+        self.bn_rel_e7 = self.normalizer_class(self.embedding_dim)
 
         # Convolution
         self.conv1 = torch.nn.Conv1d(in_channels=1, out_channels=self.num_of_output_channels,
@@ -408,7 +410,7 @@ class ConvO(BaseKGE):
         self.fc_num_input = self.embedding_dim * 16 * self.num_of_output_channels  # 8 because of 8 real values in 2 quaternions
         self.fc1 = torch.nn.Linear(self.fc_num_input, self.embedding_dim * 8)  # Hard compression.
         self.bn_conv1 = torch.nn.BatchNorm2d(self.num_of_output_channels)
-        self.bn_conv2 = torch.nn.BatchNorm1d(self.embedding_dim * 8)
+        self.bn_conv2 = self.normalizer_class(self.embedding_dim * 8)
 
         # Convolution Dropout
         self.feature_map_dropout = torch.nn.Dropout2d(self.feature_map_dropout_rate)

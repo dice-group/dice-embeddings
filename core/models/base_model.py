@@ -20,6 +20,7 @@ class BaseKGE(pl.LightningModule):
         self.apply_unit_norm = None
         self.input_dropout_rate = None
         self.hidden_dropout_rate = None
+        self.optimizer_name = None
         self.feature_map_dropout_rate = None
         self.kernel_size = None
         self.num_of_output_channels = None
@@ -87,12 +88,31 @@ class BaseKGE(pl.LightningModule):
 
         if self.args.get("normalization") == 'LayerNorm':
             self.normalizer_class = torch.nn.LayerNorm
+        elif self.args.get("normalization") == 'BatchNorm1d':
+            self.normalizer_class = torch.nn.BatchNorm1d
         else:
             raise NotImplementedError()
 
+        if self.args.get("optim") in ['NAdam','Adam', 'SGD']:
+            self.optimizer_name = self.args['optim']
+        else:
+            print(self.args)
+            raise NotImplementedError()
+
     def configure_optimizers(self):
-        self.selected_optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate,
-                                                   weight_decay=self.weight_decay)
+
+        if self.optimizer_name == 'SGD':
+            self.selected_optimizer = torch.optim.SGD(params=self.parameters(), lr=self.learning_rate,
+                                                      momentum=0, dampening=0, weight_decay=self.weight_decay,
+                                                      nesterov=False)
+        elif self.optimizer_name == 'Adam':
+            self.selected_optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate,
+                                                       weight_decay=self.weight_decay)
+
+        elif self.optimizer_name == 'NAdam':
+            self.selected_optimizer = torch.optim.NAdam(self.parameters(), lr=self.learning_rate, betas=(0.9, 0.999), eps=1e-08, weight_decay=self.weight_decay, momentum_decay=0.004)
+        else:
+            raise KeyError()
         return self.selected_optimizer
 
     def loss_function(self, yhat_batch, y_batch):
