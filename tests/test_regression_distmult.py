@@ -12,7 +12,7 @@ class TestRegressionDistMult:
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 200
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -22,7 +22,7 @@ class TestRegressionDistMult:
         args.sample_triples_ratio = None
         args.scoring_technique = 'KvsAll'
         result = Execute(args).start()
-        assert 0.58 >= result['Val']['H@1'] >= 0.10
+        assert 0.58 >= result['Val']['H@1'] >= 0.01
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
@@ -32,7 +32,7 @@ class TestRegressionDistMult:
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 200
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -55,7 +55,7 @@ class TestRegressionDistMult:
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 200
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -67,6 +67,6 @@ class TestRegressionDistMult:
         args.read_only_few = None
         args.num_folds_for_cv=None
         result = Execute(args).start()
-        assert 0.73 >= result['Train']['H@1'] >= 0.20
-        assert 0.73 >= result['Test']['H@1'] >= 0.17
-        assert 0.73 >= result['Val']['H@1'] >= 0.17
+        assert 0.73 >= result['Train']['H@1'] >= 0.01
+        assert 0.73 >= result['Test']['H@1'] >= 0.01
+        assert 0.73 >= result['Val']['H@1'] >= 0.01

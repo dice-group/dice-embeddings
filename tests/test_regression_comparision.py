@@ -29,7 +29,7 @@ class TestRegressionAdaptE:
         args = argparse_default([])
         args.model = 'AdaptE'
         args.path_dataset_folder = 'KGs/UMLS'
-        args.num_epochs = 100
+        args.num_epochs = 300
         args.batch_size = 1024
         args.lr = 0.1
         args.embedding_dim = 32
@@ -46,6 +46,6 @@ class TestRegressionAdaptE:
         result_adapte = Execute(args).start()
 
         assert result_adapte['Train']['H@1'] >= result_distMult['Train']['H@1']
-        assert result_adapte['Test']['H@1'] >= result_distMult['Train']['H@1']
-        assert result_adapte['Val']['H@1'] >= result_distMult['Train']['H@1']
+        assert result_adapte['Test']['H@1'] >= result_distMult['Test']['H@1']
+        assert result_adapte['Val']['H@1'] >= result_distMult['Val']['H@1']
 

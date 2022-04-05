@@ -432,6 +432,7 @@ class Execute:
         # Iterate over test triples
         all_entities = torch.arange(0, self.dataset.num_entities).long()
         all_entities = all_entities.reshape(len(all_entities), )
+        # Iteratving one by one is not good when you are using batch norm
         for i in range(0, len(triple_idx)):
             # 1. Get a triple
             data_point = triple_idx[i]

@@ -283,6 +283,9 @@ class TriplePredictionDataset(Dataset):
         size_of_batch, _ = batch.shape
         assert size_of_batch > 0
         label = torch.ones((size_of_batch,), ) - self.soft_confidence_rate
+
+        # corrupt head, tail or rel ?!
+
         # (1) Corrupted Entities:
         corr = torch.randint(0, self.num_entities, (size_of_batch * self.neg_sample_ratio, 2))
         # (2) Head Corrupt:
