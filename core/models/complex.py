@@ -3,7 +3,7 @@ import torch
 from typing import Tuple
 from .base_model import *
 
-class ConEx(BaseKGE):
+class SumConEx(BaseKGE):
     """
     Output of Residual connection is distributed over hermitian product
     Differs from original Conex.
@@ -12,7 +12,7 @@ class ConEx(BaseKGE):
 
     def __init__(self, args):
         super().__init__(args)
-        self.name = 'ConEx'
+        self.name = 'SumConEx'
         # Convolution
         self.conv2d = torch.nn.Conv2d(in_channels=1, out_channels=self.num_of_output_channels,
                                       kernel_size=(self.kernel_size, self.kernel_size), stride=1, padding=1, bias=True)
@@ -85,12 +85,7 @@ class ConEx(BaseKGE):
 
         return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
 
-class OriginalConEx(BaseKGE):
-    """
-
-
-
-    """
+class ConEx(BaseKGE):
 
     def __init__(self, args):
         super().__init__(args)
