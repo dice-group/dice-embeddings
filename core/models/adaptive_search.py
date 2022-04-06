@@ -33,27 +33,18 @@ class AdaptE(BaseKGE):
         self.mode = 0
         self.moving_average = 0
 
-    def forward_triples(self, indexed_triple: torch.Tensor) -> torch.Tensor:
-        """
+    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
 
-        e1_idx: torch.Tensor
-        rel_idx: torch.Tensor
-        e2_idx: torch.Tensor
-        :return:
-        """
         # (1) Retrieve embeddings & Apply Dropout & Normalization
-        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(indexed_triple)
+        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
         # (2) Compute DistMult score on (1)
         score = self.compute_real_score(head_ent_emb, rel_ent_emb, tail_ent_emb)
         if self.mode >= 1:
-            # (3) Compute ComplEx score on (1).
-            # (3.1) Add (3) to (2)
+            # (3) Compute ComplEx score on (1) and add it to (2)
             score += self.compute_complex_score(head_ent_emb, rel_ent_emb, tail_ent_emb)
         if self.mode >= 2:
-            # (4) Compute QMult score on (1)
-            # (4.1) Add (4) to (2)
+            # (4) Compute QMult score on (1) and add it to (2)
             score += self.compute_quaternion_score(head_ent_emb, rel_ent_emb, tail_ent_emb)
-
         # (5) Average (2)
         if self.mode == 0:
             return score
@@ -65,27 +56,52 @@ class AdaptE(BaseKGE):
             raise KeyError
 
     def forward_k_vs_all(self, x: torch.Tensor) -> torch.Tensor:
-        e1_idx: torch.Tensor
-        rel_idx: torch.Tensor
-        e2_idx: torch.Tensor
-        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1], x[:, 2]
-        raise NotImplementedError()
-        head_ent_emb = self.norm_ent(self.emb_ent_real(e1_idx))
-        rel_ent_emb = self.norm_rel(self.emb_rel_real(rel_idx))
-        # (1) real value.
-        score = torch.mm(head_ent_emb * rel_ent_emb, self.emb_ent_real.weight.transpose(1, 0))
-        # if self.mode >= 1:
-        emb_head_real, emb_head_imag = torch.hsplit(head_ent_emb, 2)
-        emb_rel_real, emb_rel_imag = torch.hsplit(rel_ent_emb, 2)
-        emb_all_entity_real, emb_all_entity_imag = torch.hsplit(self.emb_ent_real.weight, 2)
+        emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
+        score = torch.mm(self.hidden_dropout(self.hidden_normalizer(emb_head_real * emb_rel_real)),
+                         self.entity_embeddings.weight.transpose(1, 0))
+        if self.mode >= 1:
+            # (2) Split (1) into real and imaginary parts.
+            emb_head_real, emb_head_imag = torch.hsplit(emb_head_real, 2)
+            emb_rel_real, emb_rel_imag = torch.hsplit(emb_rel_real, 2)
+            # (3) Transpose Entity embedding matrix to perform matrix multiplications in Hermitian Product.
+            emb_tail_real, emb_tail_imag = torch.hsplit(self.entity_embeddings.weight, 2)
+            emb_tail_real, emb_tail_imag = emb_tail_real.transpose(1, 0), emb_tail_imag.transpose(1, 0)
+            # (4) Compute hermitian inner product on embedding vectors.
+            real_real_real = torch.mm(emb_head_real * emb_rel_real, emb_tail_real)
+            real_imag_imag = torch.mm(emb_head_real * emb_rel_imag, emb_tail_imag)
+            imag_real_imag = torch.mm(emb_head_imag * emb_rel_real, emb_tail_imag)
+            imag_imag_real = torch.mm(emb_head_imag * emb_rel_imag, emb_tail_real)
+            score += real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
+        if self.mode >= 2:
+            # (2) Split (1) into real and imaginary parts.
+            emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(emb_head_real, 4)
+            emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k = torch.hsplit(emb_rel_real, 4)
+            r_val, i_val, j_val, k_val = quaternion_mul(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
+                                                        Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
 
-        real_real_real = torch.mm(emb_head_real * emb_rel_realemb_all_entity_real.transpose(1, 0))
-        real_imag_imag = torch.mm(emb_head_real * emb_rel_i, emb_all_entity_imag.transpose(1, 0))
-        imag_real_imag = torch.mm(emb_head_i * emb_rel_real, emb_all_entity_imag.transpose(1, 0))
-        imag_imag_real = torch.mm(emb_head_i * emb_rel_i, emb_all_entity_real.transpose(1, 0))
+            emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(self.entity_embeddings.weight, 4)
+            emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = emb_tail_real.transpose(1, 0), emb_tail_i.transpose(1,
+                                                                                                                    0), emb_tail_j.transpose(
+                1, 0), emb_tail_k.transpose(1, 0)
 
-        score += real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
-        return score / 3
+            # (3)
+            # (3.1) Dropout on (2)-result of quaternion multiplication.
+            # (3.2) Inner product
+            real_score = torch.mm(r_val, emb_tail_real)
+            i_score = torch.mm(i_val, emb_tail_i)
+            j_score = torch.mm(j_val, emb_tail_j)
+            k_score = torch.mm(k_val, emb_tail_k)
+
+            score += real_score + i_score + j_score + k_score
+        # (5) Average (2)
+        if self.mode == 0:
+            return score
+        elif self.mode == 1:
+            return score / 2
+        elif self.mode == 2:
+            return score / 3
+        else:
+            raise KeyError
 
     def training_epoch_end(self, training_step_outputs):
         # (1) Store Epoch Loss.
@@ -101,7 +117,8 @@ class AdaptE(BaseKGE):
             self.losses.pop(0)
             # (2.4) Check whether the moving average of epoch losses tends to decrease
             if tendency_of_decreasing_loss:
-                """ The loss is decreasing """
+                # The loss is decreasing
+                pass
             else:
                 # (2.5) Stagnation detected.
                 self.losses.clear()
@@ -112,7 +129,8 @@ class AdaptE(BaseKGE):
                     print('\nincrease the mode to quaternions numbers')
                     self.mode += 1
                 else:
-                    """ We may consider increasing the number of params"""
+                    # We may consider increasing the number of params
+                    pass
 
     @staticmethod
     def compute_real_score(head, relation, tail):
