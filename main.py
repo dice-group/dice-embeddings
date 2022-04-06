@@ -22,18 +22,18 @@ def argparse_default(description=None):
 
     # Model and Training Parameters
     parser.add_argument("--model", type=str,
-                        default="AdaptE",
+                        default="QMult",
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, "
                              "Shallom, ConEx, ComplEx, DistMult, AdaptE")
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[NAdam, Adam, SGD]')
     parser.add_argument('--embedding_dim', type=int, default=16,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=512, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.1, help='Learning rate')
     # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='NegSample', help="1vsAll, KvsAll, NegSample.")
+    parser.add_argument('--scoring_technique', default='NegSample', help="1vsAll, KvsAll, NegSample")
     parser.add_argument('--neg_ratio', type=int, default=1)
     # Additional training params
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
@@ -42,7 +42,6 @@ def argparse_default(description=None):
     parser.add_argument("--label_relaxation_rate", type=float, default=None, help='None for not using it.')
     parser.add_argument("--add_noise_rate", type=float, default=None, help='None for not using it. '
                                                                            '.1 means extend train data by adding 10% random data')
-
     # Optimization related hyperparameters
     parser.add_argument('--weight_decay', type=float, default=0.00001, help='L2 penalty')
     parser.add_argument('--input_dropout_rate', type=float, default=0.0)
@@ -53,13 +52,14 @@ def argparse_default(description=None):
     parser.add_argument("--num_of_output_channels", type=int, default=3, help="# of output channels in convolution")
     parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.5,
                         help='The ratio of the size of the affine transformation w.r.t. the size of the embeddings')
-    parser.add_argument("--normalization", type=str, default="BatchNorm1d", help="LayerNorm, BatchNorm1d")
+    parser.add_argument("--normalization", type=str, default="LayerNorm", help="LayerNorm, BatchNorm1d")
 
     # Flags for computation
-    parser.add_argument("--eval", type=bool, default=True,
+    parser.add_argument("--eval", type=bool, default=False,
                         help='A flag for using evaluation')
-    parser.add_argument("--eval_on_train", type=bool, default=True,
+    parser.add_argument("--eval_on_train", type=bool, default=False,
                         help='A flag for using train data to evaluation ')
+    parser.add_argument("--eval_with_constraint", type=bool, default=False, help='Filter entities not belonging to the range or domain of a relation.')
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
                                                                         'If >2 ,no evaluation scenario is applied implies no evaluation.')
     if description is None:
