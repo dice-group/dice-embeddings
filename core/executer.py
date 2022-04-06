@@ -5,6 +5,7 @@ import warnings
 from types import SimpleNamespace
 import numpy as np
 import pandas as pd
+import torch
 from pytorch_lightning import seed_everything
 from sklearn.model_selection import KFold
 from .callbacks import PrintCallback, KGESaveCallback
@@ -359,7 +360,7 @@ class Execute:
             # Iterate over integer indexed triples in mini batch fashion
             for i in range(0, len(triple_idx), self.args.batch_size):
                 data_batch = triple_idx[i:i + self.args.batch_size]
-                e1_idx_e2_idx, r_idx = torch.tensor(data_batch[:, [0, 2]]), torch.tensor(data_batch[:, 1])
+                e1_idx_e2_idx, r_idx = torch.LongTensor(data_batch[:, [0, 2]]), torch.LongTensor(data_batch[:, 1])
                 # Generate predictions
                 predictions = model.forward_k_vs_all(x=e1_idx_e2_idx)
                 # Filter entities except the target entity
@@ -383,13 +384,17 @@ class Execute:
             # Iterate over integer indexed triples in mini batch fashion
             for i in range(0, len(triple_idx), self.args.batch_size):
                 data_batch = triple_idx[i:i + self.args.batch_size]
-                e1_idx_r_idx, e2_idx = torch.tensor(data_batch[:, [0, 1]]), torch.tensor(data_batch[:, 2])
+                e1_idx_r_idx, e2_idx = torch.LongTensor(data_batch[:, [0, 1]]), torch.tensor(data_batch[:, 2])
+
                 predictions = model(e1_idx_r_idx)
                 # Filter entities except the target entity
                 for j in range(data_batch.shape[0]):
                     filt = self.dataset.er_vocab[(data_batch[j][0], data_batch[j][1])]
                     target_value = predictions[j, e2_idx[j]].item()
                     predictions[j, filt] = -np.Inf
+                    # 3.3.1 Filter entities outside of the range
+                    if self.args.eval_with_constraint:
+                        predictions[j, self.dataset.range_constraints_per_rel[data_batch[j, 1]]] = -np.Inf
                     predictions[j, e2_idx[j]] = target_value
                 # Sort predictions.
                 sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
@@ -432,7 +437,7 @@ class Execute:
         # Iterate over test triples
         all_entities = torch.arange(0, self.dataset.num_entities).long()
         all_entities = all_entities.reshape(len(all_entities), )
-        # Iteratving one by one is not good when you are using batch norm
+        # Iterating one by one is not good when you are using batch norm
         for i in range(0, len(triple_idx)):
             # 1. Get a triple
             data_point = triple_idx[i]
@@ -455,27 +460,32 @@ class Execute:
             # 3. Computed filtered ranks for missing tail entities.
             # 3.1. Compute filtered tail entity rankings
             filt_tails = self.dataset.er_vocab[(s, p)]
-            # filt_tails = data[(data['subject'] == s) & (data['relation'] == p)]['object'].values
             # 3.2 Get the predicted target's score
             target_value = predictions_tails[o].item()
             # 3.3 Filter scores of all triples containing filtered tail entities
             predictions_tails[filt_tails] = -np.Inf
+            # 3.3.1 Filter entities outside of the range
+            if self.args.eval_with_constraint:
+                predictions_tails[self.dataset.range_constraints_per_rel[p]] = -np.Inf
             # 3.4 Reset the target's score
             predictions_tails[o] = target_value
-            # 3.5. Sotrt the score
+            # 3.5. Sort the score
             _, sort_idxs = torch.sort(predictions_tails, descending=True)
             # sort_idxs = sort_idxs.cpu().numpy()
             sort_idxs = sort_idxs.detach()  # cpu().numpy()
             filt_tail_entity_rank = np.where(sort_idxs == o)[0][0]
 
             # 4. Computed filtered ranks for missing head entities.
-            # 4.1. Retrieve head entities to be filterred
+            # 4.1. Retrieve head entities to be filtered
             filt_heads = self.dataset.re_vocab[(p, o)]
             # filt_heads = data[(data['relation'] == p) & (data['object'] == o)]['subject'].values
             # 4.2 Get the predicted target's score
             target_value = predictions_heads[s].item()
             # 4.3 Filter scores of all triples containing filtered head entities.
             predictions_heads[filt_heads] = -np.Inf
+            if self.args.eval_with_constraint:
+                # 4.3.1 Filter entities that are outside the domain
+                predictions_heads[self.dataset.domain_constraints_per_rel[p]] = -np.Inf
             predictions_heads[s] = target_value
             _, sort_idxs = torch.sort(predictions_heads, descending=True)
             # sort_idxs = sort_idxs.cpu().numpy()
