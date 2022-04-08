@@ -403,7 +403,7 @@ def preprocesses_input_args(arg):
     arg.logger = False
     arg.eval = True if arg.eval == 1 else False
     arg.eval_on_train = True if arg.eval_on_train == 1 else False
-    arg.apply_reciprical_or_noise = True if arg.scoring_technique in ['KvsAll', '1vsAll'] else False
+    arg.apply_reciprical_or_noise = True if arg.scoring_technique in ['KvsAll', '1vsAll','RelaxedKvsAll'] else False
     if arg.sample_triples_ratio is not None:
         assert 1.0 >= arg.sample_triples_ratio >= 0.0
     sanity_checking_with_arguments(arg)
@@ -518,9 +518,6 @@ def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'DistMult':
         model = DistMult(args=args)
-        form_of_labelling = 'EntityPrediction'
-    elif model_name == 'AdaptE':
-        model = AdaptE(args=args)
         form_of_labelling = 'EntityPrediction'
     else:
         raise ValueError

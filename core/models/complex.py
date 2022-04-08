@@ -3,6 +3,7 @@ import torch
 from typing import Tuple
 from .base_model import *
 
+
 class SumConEx(BaseKGE):
     """
     Output of Residual connection is distributed over hermitian product
@@ -17,8 +18,8 @@ class SumConEx(BaseKGE):
         self.conv2d = torch.nn.Conv2d(in_channels=1, out_channels=self.num_of_output_channels,
                                       kernel_size=(self.kernel_size, self.kernel_size), stride=1, padding=1, bias=True)
         self.fc_num_input = self.embedding_dim * 2 * self.num_of_output_channels
-        self.fc1 = torch.nn.Linear(self.fc_num_input, self.embedding_dim*2)
-        self.norm_fc1 = self.normalizer_class(self.embedding_dim*2)
+        self.fc1 = torch.nn.Linear(self.fc_num_input, self.embedding_dim * 2)
+        self.norm_fc1 = self.normalizer_class(self.embedding_dim * 2)
         self.feature_map_dropout = torch.nn.Dropout2d(self.feature_map_dropout_rate)
 
     def residual_convolution(self, C_1: Tuple[torch.Tensor, torch.Tensor],
@@ -84,6 +85,7 @@ class SumConEx(BaseKGE):
         imag_imag_real = (d + emb_head_imag * emb_rel_imag * emb_tail_real).sum(dim=1)
 
         return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
+
 
 class ConEx(BaseKGE):
 
@@ -166,12 +168,10 @@ class ConEx(BaseKGE):
         return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
 
 
-
 class ComplEx(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'ComplEx'
-
     def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)

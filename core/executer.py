@@ -12,7 +12,7 @@ from .callbacks import PrintCallback, KGESaveCallback
 from pytorch_lightning.plugins import DDPPlugin, DeepSpeedPlugin
 from pytorch_lightning.callbacks import ModelSummary
 from .dataset_classes import StandardDataModule
-from .helper_classes import LabelRelaxationLoss
+from .helper_classes import LabelRelaxationLoss,RelaxedKvsAllLoss
 from .knowledge_graph import KG
 from .static_funcs import *
 
@@ -165,6 +165,8 @@ class Execute:
                 return self.training_kvsall()
             elif self.args.scoring_technique == '1vsAll':
                 return self.training_1vsall()
+            elif self.args.scoring_technique == "RelaxedKvsAll":
+                return self.train_relaxed_k_vs_all()
             else:
                 raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
 
@@ -284,6 +286,33 @@ class Execute:
         model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
         return model, form_of_labelling
 
+    def train_relaxed_k_vs_all(self) -> pl.LightningModule:
+        model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
+        print(f'KvsAll training starts: {model.name}')  # -labeling:{form_of_labelling}')
+        # 2. Create training data.)
+        dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
+                                     valid_set_idx=self.dataset.valid_set,
+                                     test_set_idx=self.dataset.test_set,
+                                     entity_to_idx=self.dataset.entity_to_idx,
+                                     relation_to_idx=self.dataset.relation_to_idx,
+                                     form=form_of_labelling,
+                                     neg_sample_ratio=self.args.neg_ratio,
+                                     batch_size=self.args.batch_size,
+                                     num_workers=self.args.num_processes,
+                                     label_smoothing_rate=self.args.label_smoothing_rate)
+        # 3. Train model.
+        train_dataloaders = dataset.train_dataloader()
+        # Release some memory
+        del dataset
+        if self.args.eval is False:
+            self.dataset.train_set = None
+            self.dataset.valid_set = None
+            self.dataset.test_set = None
+
+        model.loss =RelaxedKvsAllLoss()
+        model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
+        return model, form_of_labelling
+
     def eval(self, trained_model, form_of_labelling) -> None:
         """
         Evaluate model with Standard
@@ -297,8 +326,37 @@ class Execute:
             self.eval_with_vs_all(trained_model, form_of_labelling)
         elif self.args.scoring_technique == '1vsAll':
             self.eval_with_vs_all(trained_model, form_of_labelling)
+        elif self.args.scoring_technique == 'RelaxedKvsAll':
+            self.eval_with_vs_all(trained_model, form_of_labelling)
         else:
             raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
+
+    def eval_with_path_vs_all(self, trained_model, form_of_labelling) -> None:
+        # 4. Test model on the training dataset if it is needed.
+        if self.args.eval_on_train:
+            res = self.evaluate_pathvsall(trained_model, self.dataset.train_set,
+                                          entity_to_idx=self.dataset.entity_to_idx,
+                                          relation_to_idx=self.dataset.relation_to_idx,
+                                          info=f'Evaluate {trained_model.name} on Train set',
+                                          form_of_labelling=form_of_labelling)
+            self.report['Train'] = res
+
+        # 5. Test model on the validation and test dataset if it is needed.
+        if self.args.eval:
+            if self.dataset.valid_set is not None:
+                res = self.evaluate_pathvsall(trained_model, self.dataset.valid_set,
+                                              entity_to_idx=self.dataset.entity_to_idx,
+                                              relation_to_idx=self.dataset.relation_to_idx,
+                                              info=f'Evaluate {trained_model.name} on Validation set',
+                                              form_of_labelling=form_of_labelling)
+                self.report['Val'] = res
+            if self.dataset.test_set is not None:
+                res = self.evaluate_pathvsall(trained_model, self.dataset.test_set,
+                                              entity_to_idx=self.dataset.entity_to_idx,
+                                              relation_to_idx=self.dataset.relation_to_idx,
+                                              info=f'Evaluate {trained_model.name} on Test set',
+                                              form_of_labelling=form_of_labelling)
+                self.report['Test'] = res
 
     def eval_rank_of_head_and_tail_entity(self, trained_model):
         # 4. Test model on the training dataset if it is needed.
@@ -385,8 +443,8 @@ class Execute:
             for i in range(0, len(triple_idx), self.args.batch_size):
                 data_batch = triple_idx[i:i + self.args.batch_size]
                 e1_idx_r_idx, e2_idx = torch.LongTensor(data_batch[:, [0, 1]]), torch.tensor(data_batch[:, 2])
-
-                predictions = model(e1_idx_r_idx)
+                with torch.no_grad():
+                    predictions = model(e1_idx_r_idx)
                 # Filter entities except the target entity
                 for j in range(data_batch.shape[0]):
                     filt = self.dataset.er_vocab[(data_batch[j][0], data_batch[j][1])]
@@ -406,6 +464,107 @@ class Execute:
                     for hits_level in range(10):
                         if rank <= hits_level:
                             hits[hits_level].append(1.0)
+        hit_1 = sum(hits[0]) / (float(len(triple_idx)))
+        hit_3 = sum(hits[2]) / (float(len(triple_idx)))
+        hit_10 = sum(hits[9]) / (float(len(triple_idx)))
+        mean_reciprocal_rank = np.mean(1. / np.array(ranks))
+
+        results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10, 'MRR': mean_reciprocal_rank}
+        if info:
+            print(results)
+        return results
+
+    def evaluate_pathvsall(self, model, triple_idx, entity_to_idx=None, relation_to_idx=None, info=None,
+                           form_of_labelling=None):
+        """
+        Filtered link prediction evaluation.
+        :param model:
+        :param triple_idx: test triples
+        :param info:
+        :param form_of_labelling:
+        :return:
+        """
+        # (1) set model to eval model
+        model.eval()
+        hits = []
+        ranks = []
+        if info:
+            print(info + ':', end=' ')
+        if entity_to_idx:
+            idx_to_entity = dict(zip(entity_to_idx.values(), entity_to_idx.keys()))
+            idx_to_relations = dict(zip(relation_to_idx.values(), relation_to_idx.keys()))
+        else:
+            idx_to_entity = None
+            idx_to_relations = None
+
+        counter = 100
+        for i in range(10):
+            hits.append([])
+        # (2) Evaluation mode
+        # Iterate over integer indexed triples in mini batch fashion
+        for i in triple_idx:
+            s, p, o = i
+            with torch.no_grad():
+                predictions = model(torch.LongTensor(
+                    [self.dataset.entity_to_idx['dummy_entity'], self.dataset.relation_to_idx['dummy_relation'], s,
+                     p]).resize(1, 4)).flatten()
+
+                # predictions = model(torch.LongTensor([s, p]).resize(1, 2)).flatten()
+                """
+                # If we have seen
+                if s not in self.reverse_connection:
+                    predictions = model(
+                        torch.LongTensor(
+                            [self.dataset.entity_to_idx['dummy_entity'], self.dataset.relation_to_idx['dummy_relation'],
+                             s,
+                             p]).resize(1, 4)).flatten()
+                else:
+                    predictions = model(
+                        torch.LongTensor(
+                            [self.dataset.entity_to_idx['dummy_entity'], self.dataset.relation_to_idx['dummy_relation'],
+                             s,
+                             p]).resize(1, 4)).flatten()
+
+                    #input_batch = [i + [s, p] for i in self.reverse_connection[s]]
+                    #predictions = model(torch.LongTensor(input_batch)).sum(dim=0)
+                """
+            filt = self.dataset.er_vocab[(s, p)]
+            target_value = predictions[o].item()
+            predictions[filt] = -np.Inf
+            predictions[o] = target_value
+
+            if self.args.eval_with_constraint:
+                predictions[self.dataset.range_constraints_per_rel[p]] = -np.Inf
+            # Sort predictions.
+            sort_values, sort_idxs = torch.sort(predictions, descending=True)
+            rank = torch.where(sort_idxs == o)[0].item()
+            ranks.append(rank + 1)
+
+            for hits_level in range(10):
+                if rank <= hits_level:
+                    hits[hits_level].append(1.0)
+
+            if rank == 0 and counter < 15:
+                # Explain it
+                if idx_to_entity:
+                    if s in self.reverse_connection:
+                        input_batch = [_ + [s, p] for _ in self.reverse_connection[s]]
+                        with torch.no_grad():
+                            predictions = F.sigmoid(model(torch.LongTensor(input_batch)))
+                            triples_with_scores = []
+                            predicted_tail = idx_to_entity[sort_idxs[0].item()]
+                            for i, x in enumerate(input_batch):
+                                x_str = f'{idx_to_entity[x[0]]},{idx_to_relations[x[1]]},{idx_to_entity[x[2]]},{idx_to_relations[x[3]]},{predicted_tail}'
+                                triples_with_scores.append((predictions[i, o].item(), x_str))
+                            triples_with_scores.sort(reverse=True)
+                            if len(triples_with_scores) > 1:
+                                if triples_with_scores[0][0] > .95:
+                                    print(
+                                        f'Given ({idx_to_entity[s]},{idx_to_relations[p]},{idx_to_entity[o]}), top prediction: **{predicted_tail}**,')
+                                    print(triples_with_scores[0])
+                                    print(triples_with_scores[1])
+                                    counter += 1
+
         hit_1 = sum(hits[0]) / (float(len(triple_idx)))
         hit_3 = sum(hits[2]) / (float(len(triple_idx)))
         hit_10 = sum(hits[9]) / (float(len(triple_idx)))

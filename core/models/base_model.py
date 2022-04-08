@@ -44,8 +44,8 @@ class BaseKGE(pl.LightningModule):
         self.hidden_dropout = torch.nn.Dropout(self.input_dropout_rate)
 
     def sanity_checking(self):
-        assert self.args['model'] in ['AdaptE', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO',
-                                      'ConEx', 'Shallom']
+        assert self.args['model'] in ['PComplEx', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO',
+                                      'ConEx', 'Shallom', 'AdaptE']
         if self.args.get('weight_decay'):
             self.weight_decay = self.args['weight_decay']
         else:

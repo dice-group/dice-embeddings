@@ -82,3 +82,18 @@ class LabelRelaxationLoss(nn.Module):
 
         result = torch.where(torch.gt(pred, 1. - self.alpha), torch.zeros_like(divergence), divergence)
         return torch.mean(result)
+
+
+class RelaxedKvsAllLoss(nn.Module):
+    def __init__(self,probability_threshold=0.1):
+        super(RelaxedKvsAllLoss, self).__init__()
+        self.probability_threshold = probability_threshold
+        self.loss = torch.nn.BCEWithLogitsLoss()
+
+    def forward(self, input, target):
+        x = torch.abs(torch.sigmoid(input) - target)
+        # If probability diff less than threshold ignore it
+        indexes = x < self.probability_threshold
+        input[indexes] = target[indexes]
+
+        return self.loss(input=input, target=target)
