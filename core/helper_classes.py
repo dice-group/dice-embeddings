@@ -82,3 +82,16 @@ class LabelRelaxationLoss(nn.Module):
 
         result = torch.where(torch.gt(pred, 1. - self.alpha), torch.zeros_like(divergence), divergence)
         return torch.mean(result)
+
+
+class RelaxedKvsAllLoss(nn.Module):
+    def __init__(self):
+        super(RelaxedKvsAllLoss, self).__init__()
+        self.loss = torch.nn.BCEWithLogitsLoss()
+
+    def forward(self, input, target):
+        # Degenerate hard 1 labels w.r.t the batch mean of each class label
+        target = target * (1 - target.mean(dim=0))
+        # Add a smoothing probability for hard 0 labels disproportionate to the size of the batch.
+        target[target == 0] += (1 / target.size(0))
+        return self.loss(input=input, target=target)

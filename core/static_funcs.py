@@ -121,8 +121,7 @@ def load_model_ensemble(path_of_experiment_folder) -> Tuple[BaseKGE, pd.DataFram
 
 
 def numpy_data_type_changer(train_set, num):
-    train_set = train_set.astype(np.int32)
-    return train_set
+    # train_set = train_set.astype(np.int32)
     if np.iinfo(np.int8).max > num:
         print(f'Setting int8,\t {np.iinfo(np.int8).max}')
         train_set = train_set.astype(np.int8)
@@ -404,7 +403,7 @@ def preprocesses_input_args(arg):
     arg.logger = False
     arg.eval = True if arg.eval == 1 else False
     arg.eval_on_train = True if arg.eval_on_train == 1 else False
-    arg.apply_reciprical_or_noise = True if arg.scoring_technique in ['KvsAll', '1vsAll'] else False
+    arg.apply_reciprical_or_noise = True if arg.scoring_technique in ['KvsAll', '1vsAll','RelaxedKvsAll'] else False
     if arg.sample_triples_ratio is not None:
         assert 1.0 >= arg.sample_triples_ratio >= 0.0
     sanity_checking_with_arguments(arg)
@@ -412,7 +411,33 @@ def preprocesses_input_args(arg):
         arg.eval = True
     if arg.model == 'Shallom':
         arg.scoring_technique = 'KvsAll'
+    assert arg.normalization in ['LayerNorm', 'BatchNorm1d']
     return arg
+
+
+def create_constraints(triples):
+    """
+    Crete constrainted entities based on the range of relations
+    :param triples:
+    :return:
+    """
+    # (1) Compute the range and domain of each relation
+    range_constraints_per_rel = dict()
+    domain_constraints_per_rel = dict()
+    set_of_entities = set()
+    set_of_relations=set()
+    for (e1, p, e2) in triples:
+        range_constraints_per_rel.setdefault(p, set()).add(e2)
+        domain_constraints_per_rel.setdefault(p, set()).add(e1)
+        set_of_entities.add(e1)
+        set_of_relations.add(p)
+        set_of_entities.add(e2)
+
+    for rel in set_of_relations:
+        range_constraints_per_rel[rel] = list(set_of_entities - range_constraints_per_rel[rel])
+        domain_constraints_per_rel[rel] = list(set_of_entities - domain_constraints_per_rel[rel])
+
+    return domain_constraints_per_rel,range_constraints_per_rel
 
 
 def create_logger(*, name, p):
@@ -494,9 +519,6 @@ def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     elif model_name == 'DistMult':
         model = DistMult(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif model_name == 'AdaptE':
-        model = AdaptE(args=args)
-        form_of_labelling = 'EntityPrediction'
     else:
         raise ValueError
     print(f'Done! {time.time() - start_time:.3f}')
@@ -536,6 +558,7 @@ def load_json(p: str) -> dict:
     with open(p, 'r') as r:
         args = json.load(r)
     return args
+
 
 def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
     """

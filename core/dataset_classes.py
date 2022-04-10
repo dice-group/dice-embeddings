@@ -6,6 +6,7 @@ import torch
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from typing import List
+import random
 
 
 class StandardDataModule(pl.LightningDataModule):
@@ -233,12 +234,16 @@ class KvsAll(Dataset):
             y_vec = y_vec * (1 - self.label_smoothing_rate) + (1 / y_vec.size(0))
         return self.train_data[idx], y_vec
 
-
 class TriplePredictionDataset(Dataset):
-    """ Negative Sampling Class """
+    """ Negative Sampling Class
+    (1) \forall (h,r,t) \in G obtain,
+    create negative triples{(h,r,x),(,r,t),(h,m,t)}
+
+    (2) Targets
+    Using hard targets (0,1) drives weights to infinity. An outlier produces enormous gradients. """
 
     def __init__(self, triples_idx, num_entities: int, num_relations: int, neg_sample_ratio: int = 1,
-                 soft_confidence_rate: float = 0.001):
+                 soft_confidence_rate: float = 0.01):
         """
 
         :param triples_idx:
@@ -249,17 +254,19 @@ class TriplePredictionDataset(Dataset):
         """
         start_time = time.time()
         print('Initializing negative sampling dataset batching...', end='\t')
-        # triples_idx = torch.LongTensor(triples_idx) to decrease possible memory usage
-        # triples_idx = torch.from_numpy(triples_idx)
         self.soft_confidence_rate = soft_confidence_rate
         self.neg_sample_ratio = neg_sample_ratio  # 0 Implies that we do not add negative samples. This is needed during testing and validation
-        self.head_idx = triples_idx[:, 0]
-        self.rel_idx = triples_idx[:, 1]
-        self.tail_idx = triples_idx[:, 2]
-        assert self.head_idx.shape == self.rel_idx.shape == self.tail_idx.shape
-        assert num_entities > max(self.head_idx) and num_entities > max(self.tail_idx)
-        assert num_relations > max(self.rel_idx)
-        self.length = len(triples_idx)
+        self.triples_idx = triples_idx
+
+        # self.head_idx = triples_idx[:, 0]
+        # self.rel_idx = triples_idx[:, 1]
+        # self.tail_idx = triples_idx[:, 2]
+        # assert self.head_idx.shape == self.rel_idx.shape == self.tail_idx.shape
+        # assert num_entities > max(self.head_idx) and num_entities > max(self.tail_idx)
+        # assert num_relations > max(self.rel_idx)
+        assert num_entities >= max(triples_idx[:, 0]) and num_entities >= max(triples_idx[:, 2])
+        # assert num_relations > max(self.rel_idx)
+        self.length = len(self.triples_idx)
         self.num_entities = num_entities
         self.num_relations = num_relations
         print(f'Done ! {time.time() - start_time:.3f} seconds\n')
@@ -268,10 +275,7 @@ class TriplePredictionDataset(Dataset):
         return self.length
 
     def __getitem__(self, idx):
-        h = self.head_idx[idx]
-        r = self.rel_idx[idx]
-        t = self.tail_idx[idx]
-        return h, r, t
+        return self.triples_idx[idx]
 
     def collate_fn(self, batch):
         batch = torch.LongTensor(batch)
@@ -279,29 +283,32 @@ class TriplePredictionDataset(Dataset):
         size_of_batch, _ = batch.shape
         assert size_of_batch > 0
         label = torch.ones((size_of_batch,), ) - self.soft_confidence_rate
-        # Generate Negative Triples
+
+        # corrupt head, tail or rel ?!
+
+        # (1) Corrupted Entities:
         corr = torch.randint(0, self.num_entities, (size_of_batch * self.neg_sample_ratio, 2))
-        # 2.1 Head Corrupt:
+        # (2) Head Corrupt:
         h_head_corr = corr[:, 0]
         r_head_corr = r.repeat(self.neg_sample_ratio, )
         t_head_corr = t.repeat(self.neg_sample_ratio, )
         label_head_corr = torch.zeros(len(t_head_corr), ) + self.soft_confidence_rate
-
-        # 2.2. Tail Corrupt
+        # (3) Tail Corrupt:
         h_tail_corr = h.repeat(self.neg_sample_ratio, )
         r_tail_corr = r.repeat(self.neg_sample_ratio, )
         t_tail_corr = corr[:, 1]
         label_tail_corr = torch.zeros(len(t_tail_corr), ) + self.soft_confidence_rate
-
-        # 3. Stack True and Corrupted Triples
-        h = torch.cat((h, h_head_corr, h_tail_corr), 0)
-        r = torch.cat((r, r_head_corr, r_tail_corr), 0)
-        t = torch.cat((t, t_head_corr, t_tail_corr), 0)
-
+        # (4) Relations Corrupt:
+        h_rel_corr = h.repeat(self.neg_sample_ratio, )
+        r_rel_corr = torch.randint(0, self.num_relations, (size_of_batch * self.neg_sample_ratio, 1))[:, 0]
+        t_rel_corr = t.repeat(self.neg_sample_ratio, )
+        label_rel_corr = torch.zeros(len(t_rel_corr), ) + self.soft_confidence_rate
+        # (5) Stack True and Corrupted Triples
+        h = torch.cat((h, h_head_corr, h_tail_corr, h_rel_corr), 0)
+        r = torch.cat((r, r_head_corr, r_tail_corr, r_rel_corr), 0)
+        t = torch.cat((t, t_head_corr, t_tail_corr, t_rel_corr), 0)
         x = torch.stack((h, r, t), dim=1)
-
-        label = torch.cat((label, label_head_corr, label_tail_corr), 0)
-
+        label = torch.cat((label, label_head_corr, label_tail_corr, label_rel_corr), 0)
         return x, label
 
 

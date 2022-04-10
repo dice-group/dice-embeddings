@@ -10,10 +10,10 @@ class TestRegressionConEx:
         args = argparse_default([])
         args.model = 'ConEx'
         args.path_dataset_folder = 'KGs/UMLS'
-        args.num_epochs = 10
+        args.num_epochs = 20
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 50
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -26,9 +26,9 @@ class TestRegressionConEx:
         args.num_folds_for_cv = None
 
         result = Execute(args).start()
-        assert 0.25 >= result['Train']['H@1'] >= 0.09
-        assert 0.25 >= result['Val']['H@1'] >= 0.09
-        assert 0.25 >= result['Test']['H@1'] >= 0.09
+        assert 0.38 >= result['Train']['H@1'] >= 0.33
+        assert 0.36 >= result['Val']['H@1'] >= 0.33
+        assert 0.36 >= result['Test']['H@1'] >= 0.33
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
@@ -38,7 +38,7 @@ class TestRegressionConEx:
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 50
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -49,19 +49,19 @@ class TestRegressionConEx:
         args.num_folds_for_cv = None
         args.scoring_technique = '1vsAll'
         result = Execute(args).start()
-        assert 0.75 >= result['Train']['H@1'] > 0.35
-        assert 0.75 >= result['Val']['H@1'] >= 0.35
-        assert 0.75 >= result['Test']['H@1'] >= 0.35
+        assert 0.75 >= result['Train']['H@1'] > 0.32
+        assert 0.75 >= result['Val']['H@1'] >= 0.22
+        assert 0.75 >= result['Test']['H@1'] >= 0.22
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):
         args = argparse_default([])
         args.model = 'ConEx'
         args.path_dataset_folder = 'KGs/UMLS'
-        args.num_epochs = 10
+        args.num_epochs = 50
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 50
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -73,4 +73,6 @@ class TestRegressionConEx:
         args.read_only_few = None
         args.neg_ratio = 1
         result = Execute(args).start()
-        assert 0.48 >= result['Test']['H@1'] >= .35
+        assert 0.41 >= result['Train']['H@1'] >= .38
+        assert 0.41 >= result['Val']['H@1'] >= .30
+        assert 0.41 >= result['Test']['H@1'] >= .30

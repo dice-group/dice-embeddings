@@ -15,7 +15,7 @@ class TestCV_KvsAll:
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 10
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -35,7 +35,7 @@ class TestCV_KvsAll:
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 10
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -55,7 +55,7 @@ class TestCV_KvsAll:
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 10
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -75,7 +75,7 @@ class TestCV_KvsAll:
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 10
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -95,7 +95,7 @@ class TestCV_KvsAll:
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 10
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -115,7 +115,7 @@ class TestCV_KvsAll:
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 10
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -134,7 +134,7 @@ class TestCV_KvsAll:
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 10
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -153,7 +153,7 @@ class TestCV_KvsAll:
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 10
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
