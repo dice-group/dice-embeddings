@@ -172,6 +172,7 @@ class ComplEx(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'ComplEx'
+
     def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)

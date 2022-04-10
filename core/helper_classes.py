@@ -85,15 +85,13 @@ class LabelRelaxationLoss(nn.Module):
 
 
 class RelaxedKvsAllLoss(nn.Module):
-    def __init__(self,probability_threshold=0.1):
+    def __init__(self):
         super(RelaxedKvsAllLoss, self).__init__()
-        self.probability_threshold = probability_threshold
         self.loss = torch.nn.BCEWithLogitsLoss()
 
     def forward(self, input, target):
-        x = torch.abs(torch.sigmoid(input) - target)
-        # If probability diff less than threshold ignore it
-        indexes = x < self.probability_threshold
-        input[indexes] = target[indexes]
-
+        # Degenerate hard 1 labels w.r.t the batch mean of each class label
+        target = target * (1 - target.mean(dim=0))
+        # Add a smoothing probability for hard 0 labels disproportionate to the size of the batch.
+        target[target == 0] += (1 / target.size(0))
         return self.loss(input=input, target=target)

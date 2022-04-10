@@ -12,7 +12,7 @@ from .callbacks import PrintCallback, KGESaveCallback
 from pytorch_lightning.plugins import DDPPlugin, DeepSpeedPlugin
 from pytorch_lightning.callbacks import ModelSummary
 from .dataset_classes import StandardDataModule
-from .helper_classes import LabelRelaxationLoss,RelaxedKvsAllLoss
+from .helper_classes import LabelRelaxationLoss, RelaxedKvsAllLoss
 from .knowledge_graph import KG
 from .static_funcs import *
 
@@ -165,7 +165,7 @@ class Execute:
                 return self.training_kvsall()
             elif self.args.scoring_technique == '1vsAll':
                 return self.training_1vsall()
-            elif self.args.scoring_technique == "RelaxedKvsAll":
+            elif self.args.scoring_technique == "BatchRelaxedKvsAll":
                 return self.train_relaxed_k_vs_all()
             else:
                 raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
@@ -309,7 +309,7 @@ class Execute:
             self.dataset.valid_set = None
             self.dataset.test_set = None
 
-        model.loss =RelaxedKvsAllLoss()
+        model.loss = RelaxedKvsAllLoss()
         model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
         return model, form_of_labelling
 
@@ -326,7 +326,7 @@ class Execute:
             self.eval_with_vs_all(trained_model, form_of_labelling)
         elif self.args.scoring_technique == '1vsAll':
             self.eval_with_vs_all(trained_model, form_of_labelling)
-        elif self.args.scoring_technique == 'RelaxedKvsAll':
+        elif self.args.scoring_technique == 'BatchRelaxedKvsAll':
             self.eval_with_vs_all(trained_model, form_of_labelling)
         else:
             raise ValueError(f'Invalid argument: {self.args.scoring_technique}')

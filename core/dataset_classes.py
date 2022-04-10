@@ -54,21 +54,12 @@ class StandardDataModule(pl.LightningDataModule):
         elif self.form == '1VsAll':
             # Multi-class
             self.dataset_type_class = OneVsAllEntityPredictionDataset
-        elif self.form == 'PathvsAll':
-            pass  # ?        else:
         else:
             raise ValueError(f'Invalid input : {self.form}')
 
     # Train, Valid, TestDATALOADERs
     def train_dataloader(self) -> DataLoader:
-        if self.form == 'PathvsAll':
-            train_set = PathvsAllDataset(self.train_set_idx,
-                                         num_entities=len(self.entity_to_idx),
-                                         num_relations=len(self.relation_to_idx))
-            return DataLoader(train_set, batch_size=self.batch_size,
-                              shuffle=True,
-                              num_workers=0, pin_memory=True)
-        elif self.form == 'NegativeSampling':
+        if self.form == 'NegativeSampling':
             train_set = TriplePredictionDataset(self.train_set_idx,
                                                 num_entities=len(self.entity_to_idx),
                                                 num_relations=len(self.relation_to_idx),
@@ -242,48 +233,6 @@ class KvsAll(Dataset):
         if self.label_smoothing_rate:
             y_vec = y_vec * (1 - self.label_smoothing_rate) + (1 / y_vec.size(0))
         return self.train_data[idx], y_vec
-
-
-class PathvsAllDataset(Dataset):
-
-    def __init__(self, triples_idx, num_entities: int, num_relations: int, soft_confidence_rate: float = 0.01):
-        start_time = time.time()
-        print('Initializing negative sampling dataset batching...', end='\t')
-        self.soft_confidence_rate = soft_confidence_rate
-        self.num_entities = num_entities
-        self.num_relations = num_relations
-        self.reverse_connection = dict()
-
-        store_of_training = dict()
-        self.domain, self.range = dict(), dict()
-
-        for s_idx, p_idx, o_idx in triples_idx:
-            store_of_training.setdefault((s_idx, p_idx), list()).append(o_idx)
-            self.domain.setdefault(p_idx, set()).add(s_idx)
-            self.range.setdefault(p_idx, set()).add(s_idx)
-
-        for k, _ in self.range.items():
-            self.range[k] = list(self.range[k])
-            self.domain[k] = list(self.domain[k])
-
-        self.X = torch.LongTensor(list(store_of_training.keys()))
-        self.y = np.array(list(store_of_training.values()), dtype=object)
-        self.length = len(self.X)
-
-        print('Number of data points:', self.length)
-        print(f'Done ! {time.time() - start_time:.3f} seconds\n')
-
-    def __len__(self):
-        return self.length
-
-    def __getitem__(self, idx):
-        _, r = self.X[idx]
-        # Every possible fact has the minimum probability of 1% and the maximum prob. 99% of correct
-        y_vec = torch.zeros(self.num_entities)  # + .001
-        y_vec[self.range[r.item()]] = .001
-        y_vec[self.y[idx]] = 1.0
-        return self.X[idx], y_vec
-
 
 class TriplePredictionDataset(Dataset):
     """ Negative Sampling Class

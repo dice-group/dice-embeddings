@@ -19,21 +19,20 @@ def argparse_default(description=None):
     parser.add_argument("--seed_for_computation", type=int, default=1, help='Seed for all, see pl seed_everything().')
     parser.add_argument("--min_freq_for_vocab", type=int, default=None,
                         help='Min number of triples for a vocab term to be considered')
-
     # Model and Training Parameters
     parser.add_argument("--model", type=str,
-                        default="QMult",
+                        default="DistMult",
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, "
-                             "Shallom, ConEx, ComplEx, DistMult, AdaptE")
+                             "Shallom, ConEx, ComplEx, DistMult")
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[NAdam, Adam, SGD]')
-    parser.add_argument('--embedding_dim', type=int, default=16,
+    parser.add_argument('--embedding_dim', type=int, default=256,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=512, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.1, help='Learning rate')
     # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='NegSample', help="1vsAll, KvsAll, NegSample")
+    parser.add_argument('--scoring_technique', default='BatchRelaxedKvsAll', help="KvsAll, KvsAll, NegSample, BatchRelaxedKvsAll")
     parser.add_argument('--neg_ratio', type=int, default=1)
     # Additional training params
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
@@ -53,11 +52,10 @@ def argparse_default(description=None):
     parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.5,
                         help='The ratio of the size of the affine transformation w.r.t. the size of the embeddings')
     parser.add_argument("--normalization", type=str, default="LayerNorm", help="LayerNorm, BatchNorm1d")
-
     # Flags for computation
-    parser.add_argument("--eval", type=bool, default=False,
+    parser.add_argument("--eval", type=bool, default=True,
                         help='A flag for using evaluation')
-    parser.add_argument("--eval_on_train", type=bool, default=False,
+    parser.add_argument("--eval_on_train", type=bool, default=True,
                         help='A flag for using train data to evaluation ')
     parser.add_argument("--eval_with_constraint", type=bool, default=False, help='Filter entities not belonging to the range or domain of a relation.')
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'

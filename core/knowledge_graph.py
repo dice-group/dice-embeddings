@@ -222,8 +222,13 @@ class KG:
                                      f'\nNumber of triples on test set: {len(self.test_set) if self.test_set is not None else 0}\n'
 
     def sequential_vocabulary_construction(self):
-        print('Train set compute...')
-        self.train_set = self.train_set.compute(scheduler=self.scheduler_flag)
+
+        if isinstance(self.train_set, ddf.DataFrame):
+            print('Train set compute...')
+            self.train_set = self.train_set.compute(scheduler=self.scheduler_flag)
+        else:
+            assert isinstance(self.train_set,pd.DataFrame)
+
         if self.valid_set is not None:
             print('Valid set compute...')
             self.valid_set = self.valid_set.compute(scheduler=self.scheduler_flag)
@@ -329,6 +334,7 @@ class KG:
             if self.test_set is not None:
                 self.test_set = create_recipriocal_triples_from_dask(self.test_set)
             print('Done !\n')
+
         # (2) Extend KG with triples where entities and relations are randomly sampled.
         if self.add_noise_rate is not None:
             print(f'[4 / 14] Adding noisy triples...', end='\t')
