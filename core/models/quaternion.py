@@ -22,6 +22,16 @@ class QMult(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'QMult'
+        # Temporary solutions: We need to find a day to
+        del self.entity_embeddings
+        del self.relation_embeddings
+        del self.normalize_head_entity_embeddings
+        del self.normalize_relation_embeddings
+        del self.normalize_tail_entity_embeddings
+        del self.input_dp_ent_real
+        del self.input_dp_rel_real
+        del self.hidden_dropout
+
         # Quaternion embeddings of entities
         self.emb_ent_real = nn.Embedding(self.num_entities, self.embedding_dim)  # real
         self.emb_ent_i = nn.Embedding(self.num_entities, self.embedding_dim)  # imaginary i
@@ -70,6 +80,7 @@ class QMult(BaseKGE):
         self.bn_hidden_i = self.normalizer_class(self.embedding_dim)
         self.bn_hidden_j = self.normalizer_class(self.embedding_dim)
         self.bn_hidden_k = self.normalizer_class(self.embedding_dim)
+
 
     def get_embeddings(self):
         entity_emb = torch.cat((self.emb_ent_real.weight.data, self.emb_ent_i.weight.data,
