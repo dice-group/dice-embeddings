@@ -23,6 +23,12 @@ warnings.filterwarnings(action="ignore", category=FutureWarning)
 
 
 class Execute:
+    """ A class for Training, Retraining and Evaluation a model.
+
+    (1) Loading & Preprocessing & Serializing input data.
+    (2) Training & Validation & Testing
+    (3) Storing all necessary info
+    """
     def __init__(self, args, continuous_training=False):
         # (1) Process arguments and sanity checking.
         self.args = preprocesses_input_args(args)
@@ -142,7 +148,7 @@ class Execute:
         # (2) Adding plugins=[DDPPlugin(find_unused_parameters=False)] and explicitly using num_process > 1
         """ pytorch_lightning.utilities.exceptions.DeadlockDetectedException: DeadLock detected from rank: 1  """
         # if not ('Adapt' in self.args.model):
-        self.args.stochastic_weight_avg = True  # => https://pytorch.org/blog/pytorch-1.6-now-includes-stochastic-weight-averaging/
+        self.args.stochastic_weight_avg = True
 
         # (3) Surprisingly, if you do not ask explicitly num_process > 1, computation runs smoothly while using many CPUs
         self.trainer = initialize_pl_trainer(self.args, callbacks, plugins=[])
@@ -153,7 +159,6 @@ class Execute:
         # (6) Return trained model
         return trained_model
 
-    # @TODO Create TrainClass for different strategies
     def train(self) -> Tuple[BaseKGE, str]:
         """ Train selected model via the selected training strategy """
         if self.args.num_folds_for_cv >= 2:
@@ -320,6 +325,7 @@ class Execute:
         :param trained_model:
         :return:
         """
+        # @ TODO: Also compute test loss
         if self.args.scoring_technique == 'NegSample':
             self.eval_rank_of_head_and_tail_entity(trained_model)
         elif self.args.scoring_technique == 'KvsAll':
@@ -330,33 +336,6 @@ class Execute:
             self.eval_with_vs_all(trained_model, form_of_labelling)
         else:
             raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
-
-    def eval_with_path_vs_all(self, trained_model, form_of_labelling) -> None:
-        # 4. Test model on the training dataset if it is needed.
-        if self.args.eval_on_train:
-            res = self.evaluate_pathvsall(trained_model, self.dataset.train_set,
-                                          entity_to_idx=self.dataset.entity_to_idx,
-                                          relation_to_idx=self.dataset.relation_to_idx,
-                                          info=f'Evaluate {trained_model.name} on Train set',
-                                          form_of_labelling=form_of_labelling)
-            self.report['Train'] = res
-
-        # 5. Test model on the validation and test dataset if it is needed.
-        if self.args.eval:
-            if self.dataset.valid_set is not None:
-                res = self.evaluate_pathvsall(trained_model, self.dataset.valid_set,
-                                              entity_to_idx=self.dataset.entity_to_idx,
-                                              relation_to_idx=self.dataset.relation_to_idx,
-                                              info=f'Evaluate {trained_model.name} on Validation set',
-                                              form_of_labelling=form_of_labelling)
-                self.report['Val'] = res
-            if self.dataset.test_set is not None:
-                res = self.evaluate_pathvsall(trained_model, self.dataset.test_set,
-                                              entity_to_idx=self.dataset.entity_to_idx,
-                                              relation_to_idx=self.dataset.relation_to_idx,
-                                              info=f'Evaluate {trained_model.name} on Test set',
-                                              form_of_labelling=form_of_labelling)
-                self.report['Test'] = res
 
     def eval_rank_of_head_and_tail_entity(self, trained_model):
         # 4. Test model on the training dataset if it is needed.
@@ -464,107 +443,6 @@ class Execute:
                     for hits_level in range(10):
                         if rank <= hits_level:
                             hits[hits_level].append(1.0)
-        hit_1 = sum(hits[0]) / (float(len(triple_idx)))
-        hit_3 = sum(hits[2]) / (float(len(triple_idx)))
-        hit_10 = sum(hits[9]) / (float(len(triple_idx)))
-        mean_reciprocal_rank = np.mean(1. / np.array(ranks))
-
-        results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10, 'MRR': mean_reciprocal_rank}
-        if info:
-            print(results)
-        return results
-
-    def evaluate_pathvsall(self, model, triple_idx, entity_to_idx=None, relation_to_idx=None, info=None,
-                           form_of_labelling=None):
-        """
-        Filtered link prediction evaluation.
-        :param model:
-        :param triple_idx: test triples
-        :param info:
-        :param form_of_labelling:
-        :return:
-        """
-        # (1) set model to eval model
-        model.eval()
-        hits = []
-        ranks = []
-        if info:
-            print(info + ':', end=' ')
-        if entity_to_idx:
-            idx_to_entity = dict(zip(entity_to_idx.values(), entity_to_idx.keys()))
-            idx_to_relations = dict(zip(relation_to_idx.values(), relation_to_idx.keys()))
-        else:
-            idx_to_entity = None
-            idx_to_relations = None
-
-        counter = 100
-        for i in range(10):
-            hits.append([])
-        # (2) Evaluation mode
-        # Iterate over integer indexed triples in mini batch fashion
-        for i in triple_idx:
-            s, p, o = i
-            with torch.no_grad():
-                predictions = model(torch.LongTensor(
-                    [self.dataset.entity_to_idx['dummy_entity'], self.dataset.relation_to_idx['dummy_relation'], s,
-                     p]).resize(1, 4)).flatten()
-
-                # predictions = model(torch.LongTensor([s, p]).resize(1, 2)).flatten()
-                """
-                # If we have seen
-                if s not in self.reverse_connection:
-                    predictions = model(
-                        torch.LongTensor(
-                            [self.dataset.entity_to_idx['dummy_entity'], self.dataset.relation_to_idx['dummy_relation'],
-                             s,
-                             p]).resize(1, 4)).flatten()
-                else:
-                    predictions = model(
-                        torch.LongTensor(
-                            [self.dataset.entity_to_idx['dummy_entity'], self.dataset.relation_to_idx['dummy_relation'],
-                             s,
-                             p]).resize(1, 4)).flatten()
-
-                    #input_batch = [i + [s, p] for i in self.reverse_connection[s]]
-                    #predictions = model(torch.LongTensor(input_batch)).sum(dim=0)
-                """
-            filt = self.dataset.er_vocab[(s, p)]
-            target_value = predictions[o].item()
-            predictions[filt] = -np.Inf
-            predictions[o] = target_value
-
-            if self.args.eval_with_constraint:
-                predictions[self.dataset.range_constraints_per_rel[p]] = -np.Inf
-            # Sort predictions.
-            sort_values, sort_idxs = torch.sort(predictions, descending=True)
-            rank = torch.where(sort_idxs == o)[0].item()
-            ranks.append(rank + 1)
-
-            for hits_level in range(10):
-                if rank <= hits_level:
-                    hits[hits_level].append(1.0)
-
-            if rank == 0 and counter < 15:
-                # Explain it
-                if idx_to_entity:
-                    if s in self.reverse_connection:
-                        input_batch = [_ + [s, p] for _ in self.reverse_connection[s]]
-                        with torch.no_grad():
-                            predictions = F.sigmoid(model(torch.LongTensor(input_batch)))
-                            triples_with_scores = []
-                            predicted_tail = idx_to_entity[sort_idxs[0].item()]
-                            for i, x in enumerate(input_batch):
-                                x_str = f'{idx_to_entity[x[0]]},{idx_to_relations[x[1]]},{idx_to_entity[x[2]]},{idx_to_relations[x[3]]},{predicted_tail}'
-                                triples_with_scores.append((predictions[i, o].item(), x_str))
-                            triples_with_scores.sort(reverse=True)
-                            if len(triples_with_scores) > 1:
-                                if triples_with_scores[0][0] > .95:
-                                    print(
-                                        f'Given ({idx_to_entity[s]},{idx_to_relations[p]},{idx_to_entity[o]}), top prediction: **{predicted_tail}**,')
-                                    print(triples_with_scores[0])
-                                    print(triples_with_scores[1])
-                                    counter += 1
-
         hit_1 = sum(hits[0]) / (float(len(triple_idx)))
         hit_3 = sum(hits[2]) / (float(len(triple_idx)))
         hit_10 = sum(hits[9]) / (float(len(triple_idx)))
