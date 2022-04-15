@@ -40,7 +40,8 @@ To test the Installation
 wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
 unzip KGs.zip
 pytest -p no:warnings -x
-pytest -p no:warnings --lf
+pytest -p no:warnings --lf # run only the last one
+pytest -p no:warnings --ff # to run the failures first and then the rest of the tests.
 ```
 ## Pre-trained Models
 Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , if you lack hardware resources to obtain embeddings of a specific knowledge Graph.

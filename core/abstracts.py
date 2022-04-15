@@ -31,6 +31,9 @@ class BaseInteractiveKGE:
         self.num_relations = len(self.relation_to_idx)
         print('Loading indexed training data...')
         self.train_set = pd.read_parquet(self.path + '/idx_train_df.gzip')
+        # TODO: 1 Obtain a mapping from a relation to its ranges
+        # TODO: 2 Convert 2 into a mapping from relations to entities outside of their ranges
+        # TODO 3 Use 2 at predicting scores.
 
     def set_model_train_mode(self):
         self.model.train()

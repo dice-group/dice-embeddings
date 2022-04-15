@@ -1,5 +1,5 @@
 import os
-from typing import AnyStr, Tuple
+from core.typings import *
 import numpy as np
 import torch
 import datetime
