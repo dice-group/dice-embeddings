@@ -331,15 +331,8 @@ class Execute:
         model.loss = RelaxedKvsAllLoss()
         model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
         return model, form_of_labelling
-
+    """
     def eval(self, trained_model, form_of_labelling) -> None:
-        """
-        Evaluate model with Standard
-        :param form_of_labelling:
-        :param trained_model:
-        :return:
-        """
-        # @ TODO: Also compute test loss
         if self.args.scoring_technique == 'NegSample':
             self.eval_rank_of_head_and_tail_entity(trained_model)
         elif self.args.scoring_technique == 'KvsAll':
@@ -350,7 +343,7 @@ class Execute:
             self.eval_with_vs_all(trained_model, form_of_labelling)
         else:
             raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
-
+    """
     def k_fold_cross_validation(self) -> Tuple[BaseKGE, str]:
         """
         Perform K-fold Cross-Validation

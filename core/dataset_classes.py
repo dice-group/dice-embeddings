@@ -39,7 +39,7 @@ class StandardDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
 
-        print('Number of works will be used at batching:', self.num_workers)
+        print('Number of workers will be used at batching:', self.num_workers)
         self.neg_sample_ratio = neg_sample_ratio
         self.label_smoothing_rate = label_smoothing_rate
 
