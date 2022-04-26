@@ -24,7 +24,7 @@ class TestRegressionComplEx:
         args.num_folds_for_cv = None
         args.scoring_technique = 'KvsAll'
         result = Execute(args).start()
-        assert 0.81 >= result['Train']['H@1'] >= 0.75
+        assert 0.83 >= result['Train']['H@1'] >= 0.75
         assert 0.81 >= result['Val']['H@1'] >= 0.60
         assert 0.81 >= result['Test']['H@1'] >= 0.60
 
@@ -71,6 +71,6 @@ class TestRegressionComplEx:
         args.read_only_few = None
         args.num_folds_for_cv = None
         result = Execute(args).start()
-        assert 0.71 >= result['Train']['H@1'] >= .65
+        assert 0.72 >= result['Train']['H@1'] >= .65
         assert 0.71 >= result['Val']['H@1'] >= .57
         assert 0.71 >= result['Test']['H@1'] >= .57

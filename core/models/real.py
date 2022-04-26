@@ -54,6 +54,18 @@ class Shallom(BaseKGE):
         emb_s, emb_o = self.entity_embeddings(e1_idx), self.entity_embeddings(e2_idx)
         return self.shallom(torch.cat((emb_s, emb_o), 1))
 
+    def forward_triples(self, x):
+        """
+
+        :param x:
+        :return:
+        """
+
+        n, d = x.shape
+        assert d == 3
+        scores_for_all_relations = self.forward_k_vs_all(x[:, [0, 2]])
+        return scores_for_all_relations[:, x[:, 1]].flatten()
+
 
 """ On going works"""
 

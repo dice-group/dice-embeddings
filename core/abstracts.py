@@ -102,12 +102,20 @@ class BaseInteractiveKGE:
     def predict_topk(self, *, head_entity: List[str] = None, relation: List[str] = None, tail_entity: List[str] = None,
                      k: int = 10) -> Generator:
         """
+        Predict missing triples
+
         :param k: top k prediction
         :param head_entity:
         :param relation:
         :param tail_entity:
         :return:
         """
+        if head_entity is not None:
+            assert isinstance(head_entity, list)
+        if relation is not None:
+            assert isinstance(relation, list)
+        if tail_entity is not None:
+            assert isinstance(tail_entity, list)
         if head_entity is None:
             assert relation is not None
             assert tail_entity is not None
@@ -128,6 +136,7 @@ class BaseInteractiveKGE:
             scores, entities = self.predict_missing_tail_entity(head_entity, relation, k)
             return torch.sigmoid(scores), entities
         else:
+
             assert len(head_entity) == len(relation) == len(tail_entity)
         head = self.entity_to_idx.loc[head_entity]['entity'].values.tolist()
         relation = self.relation_to_idx.loc[relation]['relation'].values.tolist()
@@ -218,7 +227,7 @@ class BaseInteractiveKGE:
         x = torch.LongTensor([idx_head_entity, idx_relation]).reshape(1, 2)
         return x, labels, idx_tails
 
-    def get_relations(self, entity: str)->List[str]:
+    def get_relations(self, entity: str) -> List[str]:
         """
         Given an entity return relations that occur with this entity regarless of its positition
         :param entity:

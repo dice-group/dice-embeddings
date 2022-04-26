@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 
+
 class Evaluator:
     def __init__(self, executor):
         self.executor = executor
@@ -18,7 +19,7 @@ class Evaluator:
             self.eval_with_vs_all(trained_model, form_of_labelling)
         elif self.executor.args.scoring_technique == '1vsAll':
             self.eval_with_vs_all(trained_model, form_of_labelling)
-        elif self.executor.args.scoring_technique == 'BatchRelaxedKvsAll':
+        elif self.executor.args.scoring_technique in ['BatchRelaxedKvsAll', 'BatchRelaxed1vsAll']:
             self.eval_with_vs_all(trained_model, form_of_labelling)
         else:
             raise ValueError(f'Invalid argument: {self.executor.args.scoring_technique}')
@@ -105,6 +106,7 @@ class Evaluator:
                             hits[hits_level].append(1.0)
 
         else:
+            # TODO: Why do not we use Pytorch Dataset ? for multiprocessing
             # Iterate over integer indexed triples in mini batch fashion
             for i in range(0, len(triple_idx), self.executor.args.batch_size):
                 data_batch = triple_idx[i:i + self.executor.args.batch_size]

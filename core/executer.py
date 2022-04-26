@@ -16,7 +16,7 @@ from pytorch_lightning.callbacks import ModelSummary
 
 from core.callbacks import PrintCallback, KGESaveCallback
 from core.dataset_classes import StandardDataModule
-from core.helper_classes import LabelRelaxationLoss, RelaxedKvsAllLoss
+from core.helper_classes import LabelRelaxationLoss, BatchRelaxedvsAllLoss
 from core.knowledge_graph import KG
 from core.models.base_model import BaseKGE
 from core.evaluator import Evaluator
@@ -162,7 +162,7 @@ class Execute:
         # Adding plugins=[DDPPlugin(find_unused_parameters=False)] and explicitly using num_process > 1
         """ pytorch_lightning.utilities.exceptions.DeadlockDetectedException: DeadLock detected from rank: 1  """
         # Force using SWA.
-        self.args.stochastic_weight_avg = True
+        #self.args.stochastic_weight_avg = True
 
         # (2) Initialize Pytorch-lightning Trainer
         self.trainer = initialize_pl_trainer(self.args, callbacks, plugins=[])
@@ -184,7 +184,7 @@ class Execute:
                 return self.training_kvsall()
             elif self.args.scoring_technique == '1vsAll':
                 return self.training_1vsall()
-            elif self.args.scoring_technique == "BatchRelaxedKvsAll":
+            elif self.args.scoring_technique == "BatchRelaxedKvsAll" or self.args.scoring_technique == "BatchRelaxed1vsAll":
                 return self.train_relaxed_k_vs_all()
             else:
                 raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
@@ -307,14 +307,14 @@ class Execute:
 
     def train_relaxed_k_vs_all(self) -> pl.LightningModule:
         model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
-        print(f'KvsAll training starts: {model.name}')  # -labeling:{form_of_labelling}')
+        print(f'{self.args.scoring_technique}training starts: {model.name}')  # -labeling:{form_of_labelling}')
         # 2. Create training data.)
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,
                                      test_set_idx=self.dataset.test_set,
                                      entity_to_idx=self.dataset.entity_to_idx,
                                      relation_to_idx=self.dataset.relation_to_idx,
-                                     form=form_of_labelling,
+                                     form=self.args.scoring_technique,
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_processes,
@@ -328,22 +328,10 @@ class Execute:
             self.dataset.valid_set = None
             self.dataset.test_set = None
 
-        model.loss = RelaxedKvsAllLoss()
+        model.loss = BatchRelaxedvsAllLoss()
         model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
         return model, form_of_labelling
-    """
-    def eval(self, trained_model, form_of_labelling) -> None:
-        if self.args.scoring_technique == 'NegSample':
-            self.eval_rank_of_head_and_tail_entity(trained_model)
-        elif self.args.scoring_technique == 'KvsAll':
-            self.eval_with_vs_all(trained_model, form_of_labelling)
-        elif self.args.scoring_technique == '1vsAll':
-            self.eval_with_vs_all(trained_model, form_of_labelling)
-        elif self.args.scoring_technique == 'BatchRelaxedKvsAll':
-            self.eval_with_vs_all(trained_model, form_of_labelling)
-        else:
-            raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
-    """
+
     def k_fold_cross_validation(self) -> Tuple[BaseKGE, str]:
         """
         Perform K-fold Cross-Validation

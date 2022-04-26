@@ -54,6 +54,12 @@ class StandardDataModule(pl.LightningDataModule):
         elif self.form == '1VsAll':
             # Multi-class
             self.dataset_type_class = OneVsAllEntityPredictionDataset
+        elif self.form == 'BatchRelaxedKvsAll':
+            self.dataset = BatchRelaxedKvsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
+                                                     relation_idxs=self.relation_to_idx, form=self.form)
+        elif self.form == 'BatchRelaxed1vsAll':
+            self.dataset = BatchRelaxed1vsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
+                                                     relation_idxs=self.relation_to_idx, form=self.form)
         else:
             raise ValueError(f'Invalid input : {self.form}')
 
@@ -82,6 +88,9 @@ class StandardDataModule(pl.LightningDataModule):
                                  label_smoothing_rate=self.label_smoothing_rate)
 
             return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, pin_memory=True,
+                              num_workers=self.num_workers)
+        elif self.form == 'BatchRelaxedKvsAll' or self.form == 'BatchRelaxed1vsAll':
+            return DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, pin_memory=True,
                               num_workers=self.num_workers)
         else:
             raise KeyError(f'{self.form} illegal input.')
@@ -216,8 +225,7 @@ class KvsAll(Dataset):
                 exit(1)
             assert isinstance(self.train_target[0][0], np.int64)
         else:
-            # list of lists where each list has different size
-            self.train_target = np.array(list(store.values()), dtype=object)
+            self.train_target = list(store.values())
             assert isinstance(self.train_target[0], list)
         del store
 
@@ -233,6 +241,89 @@ class KvsAll(Dataset):
         if self.label_smoothing_rate:
             y_vec = y_vec * (1 - self.label_smoothing_rate) + (1 / y_vec.size(0))
         return self.train_data[idx], y_vec
+
+
+class BatchRelaxedKvsAllDataset(Dataset):
+    """
+    For entitiy or relation prediciton
+    """
+
+    def __init__(self, triples_idx, entity_idxs, relation_idxs, form, store=None, label_smoothing_rate=None):
+        super().__init__()
+        assert len(triples_idx) > 0
+        self.train_data = None
+        self.train_target = None
+        self.range_of_relations = dict()
+
+        # (1) Create a dictionary of training data pints
+        # Either from tuple of entitiies or tuple of an entity and a relation
+        if store is None:
+            store = dict()
+            self.target_dim = len(entity_idxs)
+            for s_idx, p_idx, o_idx in triples_idx:
+                store.setdefault((s_idx, p_idx), list()).append(o_idx)
+                self.range_of_relations.setdefault(p_idx, set()).add(o_idx)
+
+        for k, v in self.range_of_relations.items():
+            self.range_of_relations[k] = list(v)
+
+        # Keys in store correspond to integer representation (index) of subject and predicate
+        # Values correspond to a list of integer representations of entities.
+        self.train_data = torch.torch.LongTensor(list(store.keys()))
+
+        if sum([len(i) for i in store.values()]) == len(store):
+            # if each s,p pair contains at most 1 entity
+            self.train_target = np.array(list(store.values()), dtype=np.int64)
+            try:
+                assert isinstance(self.train_target[0], np.ndarray)
+            except IndexError or AssertionError:
+                print(self.train_target)
+                exit(1)
+            assert isinstance(self.train_target[0][0], np.int64)
+        else:
+            self.train_target = list(store.values())
+            assert isinstance(self.train_target[0], list)
+        del store
+
+    def __len__(self):
+        assert len(self.train_data) == len(self.train_target)
+        return len(self.train_data)
+
+    def __getitem__(self, idx):
+        # 1. Initialize a vector of output.
+        y_vec = torch.zeros(self.target_dim)
+        # _, rel = self.train_data[idx]
+        # y_vec[self.range_of_relations[rel.item()]] = .0001
+        y_vec[self.train_target[idx]] = 1.0
+        return self.train_data[idx], y_vec
+
+
+class BatchRelaxed1vsAllDataset(Dataset):
+    def __init__(self, triples_idx, entity_idxs, relation_idxs, form, store=None, label_smoothing_rate=None):
+        super().__init__()
+        assert len(triples_idx) > 0
+        self.train_data = torch.torch.LongTensor(triples_idx)
+
+        self.range_of_relations = dict()
+        self.target_dim = len(entity_idxs)
+
+        for s_idx, p_idx, o_idx in triples_idx:
+            self.range_of_relations.setdefault(p_idx, set()).add(o_idx)
+
+        for k, v in self.range_of_relations.items():
+            self.range_of_relations[k] = list(v)
+
+    def __len__(self):
+        return len(self.train_data)
+
+    def __getitem__(self, idx):
+        y_vec = torch.zeros(self.target_dim)
+        idx_triple = self.train_data[idx]
+        x, y = idx_triple[:2], idx_triple[2]
+        # y_vec[self.range_of_relations[x[1].item()]] = .0001
+        y_vec[y] = 1
+        return x, y_vec
+
 
 class TriplePredictionDataset(Dataset):
     """ Negative Sampling Class

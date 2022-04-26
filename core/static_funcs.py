@@ -1,4 +1,6 @@
 import os
+
+import core
 from core.typings import *
 import numpy as np
 import torch
@@ -411,7 +413,7 @@ def preprocesses_input_args(arg):
     arg.logger = False
     arg.eval = True if arg.eval == 1 else False
     arg.eval_on_train = True if arg.eval_on_train == 1 else False
-    arg.apply_reciprical_or_noise = True if arg.scoring_technique in ['KvsAll', '1vsAll', 'RelaxedKvsAll'] else False
+    arg.apply_reciprical_or_noise = True if arg.scoring_technique in ['KvsAll', '1vsAll', 'BatchRelaxed1vsAll','BatchRelaxedKvsAll'] else False
     if arg.sample_triples_ratio is not None:
         assert 1.0 >= arg.sample_triples_ratio >= 0.0
     sanity_checking_with_arguments(arg)
@@ -596,3 +598,16 @@ def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
         print('Exception occurred at saving entity embeddings. Computation will continue')
         print(e)
     del df
+
+
+def random_prediction(pre_trained_kge):
+    head_entity: List[str]
+    relation: List[str]
+    tail_entity: List[str]
+    head_entity = pre_trained_kge.sample_entity(1)
+    relation = pre_trained_kge.sample_relation(1)
+    tail_entity = pre_trained_kge.sample_entity(1)
+    triple_score = pre_trained_kge.predict_topk(head_entity=head_entity,
+                                                relation=relation,
+                                                tail_entity=tail_entity)
+    return f'( {head_entity[0]},{relation[0]}, {tail_entity[0]} )', pd.DataFrame({'Score': triple_score})

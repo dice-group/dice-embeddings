@@ -84,14 +84,62 @@ class LabelRelaxationLoss(nn.Module):
         return torch.mean(result)
 
 
-class RelaxedKvsAllLoss(nn.Module):
+class BatchRelaxedvsAllLoss(nn.Module):
     def __init__(self):
-        super(RelaxedKvsAllLoss, self).__init__()
-        self.loss = torch.nn.BCEWithLogitsLoss()
+        super(BatchRelaxedvsAllLoss, self).__init__()
+        self.loss = torch.nn.BCELoss()
+
+        torch.set_printoptions(threshold=10_000)
 
     def forward(self, input, target):
-        # Degenerate hard 1 labels w.r.t the batch mean of each class label
-        target = target * (1 - target.mean(dim=0))
-        # Add a smoothing probability for hard 0 labels disproportionate to the size of the batch.
-        target[target == 0] += (1 / target.size(0))
-        return self.loss(input=input, target=target)
+        # (1) Down Scaling: Degenerate hard 1 labels w.r.t the batch mean of each class label
+        # ?
+        # (2) Shifting notknown triples.
+
+        # (2) Compute Credal Set
+        with torch.no_grad():
+            # (1) Obtain probabilities
+            yhat = F.sigmoid(input)
+            # (2) Update hard target values so that no loss should be incurred if (1) within a close distance
+            target = torch.where(torch.abs(yhat - target) < .0000001, yhat, target)
+
+        return self.loss(input=F.sigmoid(input), target=target)
+
+        y_corr = torch.corrcoef(target.T)  # .fill_diagonal_(0)
+        # (2) Current batch smoothing
+        AA = target @ y_corr + target
+        # (3) Normalize between 0 and 1.
+
+        exit(1)
+        """
+        print(xt[0])
+
+        exit(1)
+        _, d = target.shape
+        top_k_corr_coef, top_k_correlated_y = torch.topk(y_corr, 1)
+        for y_i, (coef, y_j) in enumerate(zip(top_k_corr_coef, top_k_correlated_y.flatten())):
+            print(coef)
+
+            print(torch.mean((target[:, y_i] - target[:, y_j]) ** 2))
+
+            print((target[:, y_i] == 1).shape)
+            exit(1)
+
+            target[:, y_i] = torch.where(target[:, y_i] + coef * target[:, y_j[0]] > 0.9, 1, 0)
+
+        """
+        """
+
+        # (1) Down Scaling: Degenerate hard 1 labels w.r.t the batch mean of each class label
+        # stochastic_alpha = target.mean(dim=0)
+        # target = target * (1 - stochastic_alpha ** 2)
+        # (2) Shifting# Add a smoothing probability for hard 0 labels disproportionate to the size of the batch.
+        # target = torch.where(target == 0, stochastic_alpha, target)
+        # (2) Compute Credal Set
+        with torch.no_grad():
+            # (1) Obtain probabilities
+            yhat = F.sigmoid(input)
+            # (2) Update hard target values so that no loss should be incurred if (1) is very close
+            target = torch.where(torch.abs(yhat - target) < .0001, yhat, target)
+        """
+        return self.loss(input=F.sigmoid(input), target=AA)
