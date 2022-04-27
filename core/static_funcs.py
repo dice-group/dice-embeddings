@@ -1,5 +1,7 @@
 import os
-from typing import AnyStr, Tuple
+
+import core
+from core.typings import *
 import numpy as np
 import torch
 import datetime
@@ -32,13 +34,12 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
         try:
             weights = torch.load(storage_path + '/model.pt', torch.device('cpu'))
             model.load_state_dict(weights)
+            for parameter in model.parameters():
+                parameter.requires_grad = True
+            model.train()
         except FileNotFoundError:
             raise FileNotFoundError(
                 f"{storage_path}/model.pt is not found. The model will be trained with random weights")
-        # TODO: Why set it on train mode ?
-        for parameter in model.parameters():
-            parameter.requires_grad = True
-        model.train()
         return model, _
     else:
         return intialize_model(args)
@@ -73,16 +74,23 @@ def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[BaseKG
     return model, entity_to_idx, relation_to_idx
 
 
-def load_model_ensemble(path_of_experiment_folder) -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
-    """ Construct Ensemble Of weights and initialize pytorch module from namespace arguments"""
+def load_model_ensemble(path_of_experiment_folder:str) -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
+    """ Construct Ensemble Of weights and initialize pytorch module from namespace arguments
+
+    (1) Detect models under given path
+    (2) Accumulate parameters of detected models
+    (3) Normalize parameters
+    (4) Insert (3) into model.
+    """
     print('Constructing Ensemble of ', end=' ')
     start_time = time.time()
-    # (1) Load weights..
+    # (1) Detect models under given path.
     paths_for_loading = glob.glob(path_of_experiment_folder + '/model*')
     print(f'{len(paths_for_loading)} models...')
     assert len(paths_for_loading) > 0
     num_of_models = len(paths_for_loading)
     weights = None
+    # (2) Accumulate parameters of detected models.
     while len(paths_for_loading):
         p = paths_for_loading.pop()
         print(f'Model: {p}...')
@@ -90,23 +98,25 @@ def load_model_ensemble(path_of_experiment_folder) -> Tuple[BaseKGE, pd.DataFram
             weights = torch.load(p, torch.device('cpu'))
         else:
             five_weights = torch.load(p, torch.device('cpu'))
+            # (2.1) Accumulate model parameters
             for k, _ in weights.items():
                 if 'weight' in k:
                     weights[k] = (weights[k] + five_weights[k])
+    # (3) Normalize parameters.
     for k, _ in weights.items():
         if 'weight' in k:
             weights[k] /= num_of_models
-    # (2) Loading input configuration..
+    # (4) Insert (3) into model
+    # (4.1) Load report and configuration to initialize model.
     configs = load_json(path_of_experiment_folder + '/configuration.json')
-    # (3) Loading the report of a training process.
     report = load_json(path_of_experiment_folder + '/report.json')
     configs["num_entities"] = report["num_entities"]
     configs["num_relations"] = report["num_relations"]
     print(f'Done! It took {time.time() - start_time:.2f} seconds.')
-    # (4) Select the model
+    # (4.2) Select the model
     model, _ = intialize_model(configs)
-    # (5) Put (1) into (4)
-    model.load_state_dict(weights)
+    # (4.3) Put (3) into their places
+    model.load_state_dict(weights,strict=True)
     # (6) Set it into eval model.
     print('Setting Eval mode & requires_grad params to False')
     for parameter in model.parameters():
@@ -120,7 +130,13 @@ def load_model_ensemble(path_of_experiment_folder) -> Tuple[BaseKGE, pd.DataFram
     return model, entity_to_idx, relation_to_idx
 
 
-def numpy_data_type_changer(train_set, num):
+def numpy_data_type_changer(train_set:np.ndarray, num:int)->np.ndarray:
+    """
+    Detect most efficient data type for a given triples
+    :param train_set:
+    :param num:
+    :return:
+    """
     # train_set = train_set.astype(np.int32)
     if np.iinfo(np.int8).max > num:
         print(f'Setting int8,\t {np.iinfo(np.int8).max}')
@@ -137,6 +153,7 @@ def numpy_data_type_changer(train_set, num):
 
 
 def model_fitting(trainer, model, train_dataloaders) -> None:
+    """ Standard Pytorch Lightning model fitting """
     assert trainer.max_epochs == trainer.min_epochs
     print(f'Number of epochs:{trainer.max_epochs}')
     print(f'Number of mini-batches to compute for a single epoch: {len(train_dataloaders)}')
@@ -144,14 +161,8 @@ def model_fitting(trainer, model, train_dataloaders) -> None:
     trainer.fit(model, train_dataloaders=train_dataloaders)
 
 
-def initialize_pl_trainer(args, callbacks: List, plugins: List):
-    """
-    Initialize pl.Traner
-    :param args: Namedtuple
-    :param callbacks:
-    :param plugins:
-    :return:
-    """
+def initialize_pl_trainer(args, callbacks: List, plugins: List)->pl.Trainer:
+    """ Initialize pl.Traner from input arguments """
     if args.gpus:
         plugins.append(DDPPlugin(find_unused_parameters=False))
         plugins.append(DeepSpeedPlugin(stage=3))  # experiment with it when we use GPUs
@@ -380,13 +391,12 @@ def performance_debugger(func_name):
             r = func(*args, **kwargs)
             print(f' took  {time.time() - starT:.3f}  seconds')
             return r
-
         return debug
-
     return func_decorator
 
 
 def preprocesses_input_args(arg):
+    """ Sanity Checking in input arguments """
     # To update the default value of Trainer in pytorch-lightnings
     arg.max_epochs = arg.num_epochs
     arg.min_epochs = arg.num_epochs
@@ -403,7 +413,7 @@ def preprocesses_input_args(arg):
     arg.logger = False
     arg.eval = True if arg.eval == 1 else False
     arg.eval_on_train = True if arg.eval_on_train == 1 else False
-    arg.apply_reciprical_or_noise = True if arg.scoring_technique in ['KvsAll', '1vsAll','RelaxedKvsAll'] else False
+    arg.apply_reciprical_or_noise = True if arg.scoring_technique in ['KvsAll', '1vsAll', 'BatchRelaxed1vsAll','BatchRelaxedKvsAll'] else False
     if arg.sample_triples_ratio is not None:
         assert 1.0 >= arg.sample_triples_ratio >= 0.0
     sanity_checking_with_arguments(arg)
@@ -415,17 +425,22 @@ def preprocesses_input_args(arg):
     return arg
 
 
-def create_constraints(triples):
+def create_constraints(triples: np.ndarray) -> Tuple[dict, dict]:
     """
+    (1) Extract domains and ranges of relations
+    (2) Store a mapping from relations to entities that are outside of the domain and range.
     Crete constrainted entities based on the range of relations
     :param triples:
     :return:
     """
+    assert isinstance(triples, np.ndarray)
+    assert triples.shape[1] == 3
+
     # (1) Compute the range and domain of each relation
     range_constraints_per_rel = dict()
     domain_constraints_per_rel = dict()
     set_of_entities = set()
-    set_of_relations=set()
+    set_of_relations = set()
     for (e1, p, e2) in triples:
         range_constraints_per_rel.setdefault(p, set()).add(e2)
         domain_constraints_per_rel.setdefault(p, set()).add(e1)
@@ -437,7 +452,7 @@ def create_constraints(triples):
         range_constraints_per_rel[rel] = list(set_of_entities - range_constraints_per_rel[rel])
         domain_constraints_per_rel[rel] = list(set_of_entities - domain_constraints_per_rel[rel])
 
-    return domain_constraints_per_rel,range_constraints_per_rel
+    return domain_constraints_per_rel, range_constraints_per_rel
 
 
 def create_logger(*, name, p):
@@ -492,9 +507,9 @@ def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     elif model_name == 'KronE_wo_f':
         model = KronE_wo_f(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif model_name == 'BaseKronE':
-        model = BaseKronE(args=args)
-        form_of_labelling = 'EntityPrediction'
+    #elif model_name == 'BaseKronE':
+    #    model = BaseKronE(args=args)
+    #    form_of_labelling = 'EntityPrediction'
     elif model_name == 'Shallom':
         model = Shallom(args=args)
         form_of_labelling = 'RelationPrediction'
@@ -583,3 +598,16 @@ def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
         print('Exception occurred at saving entity embeddings. Computation will continue')
         print(e)
     del df
+
+
+def random_prediction(pre_trained_kge):
+    head_entity: List[str]
+    relation: List[str]
+    tail_entity: List[str]
+    head_entity = pre_trained_kge.sample_entity(1)
+    relation = pre_trained_kge.sample_relation(1)
+    tail_entity = pre_trained_kge.sample_entity(1)
+    triple_score = pre_trained_kge.predict_topk(head_entity=head_entity,
+                                                relation=relation,
+                                                tail_entity=tail_entity)
+    return f'( {head_entity[0]},{relation[0]}, {tail_entity[0]} )', pd.DataFrame({'Score': triple_score})

@@ -26,9 +26,9 @@ class TestRegressionConEx:
         args.num_folds_for_cv = None
 
         result = Execute(args).start()
-        assert 0.38 >= result['Train']['H@1'] >= 0.33
-        assert 0.36 >= result['Val']['H@1'] >= 0.33
-        assert 0.36 >= result['Test']['H@1'] >= 0.33
+        assert 0.44 >= result['Train']['H@1'] >= 0.33
+        assert 0.39 >= result['Val']['H@1'] >= 0.33
+        assert 0.41 >= result['Test']['H@1'] >= 0.33
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
@@ -73,6 +73,6 @@ class TestRegressionConEx:
         args.read_only_few = None
         args.neg_ratio = 1
         result = Execute(args).start()
-        assert 0.41 >= result['Train']['H@1'] >= .38
-        assert 0.41 >= result['Val']['H@1'] >= .30
-        assert 0.41 >= result['Test']['H@1'] >= .30
+        assert 0.75 >= result['Train']['H@1'] >= .38
+        assert 0.67 >= result['Val']['H@1'] >= .30
+        assert 0.67 >= result['Test']['H@1'] >= .30

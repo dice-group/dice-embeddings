@@ -25,7 +25,7 @@ class TestRegressionOmult:
         args.num_folds_for_cv = None
         result = Execute(args).start()
         assert 0.90 >= result['Train']['H@1'] >= 0.65
-        assert 0.72 >= result['Val']['H@1'] >= 0.65
+        assert 0.75 >= result['Val']['H@1'] >= 0.65
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
@@ -72,6 +72,6 @@ class TestRegressionOmult:
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
         result = Execute(args).start()
-        assert 0.31 >= result['Test']['H@1'] >= .25
-        assert 0.35 >= result['Val']['H@1'] >= .25
-        assert 0.5 >= result['Train']['H@1'] >= .31
+        assert 0.38 >= result['Test']['H@1'] >= .25
+        assert 0.39 >= result['Val']['H@1'] >= .25
+        assert 0.6 >= result['Train']['H@1'] >= .31

@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 
 import numpy as np
 import pandas as pd
-from core.static_funcs import load_model, intialize_model
+from core.static_funcs import load_model, intialize_model, random_prediction
 import json
 from collections import namedtuple
 import torch
@@ -10,32 +10,27 @@ import gradio as gr
 import random
 from core import KGE
 
-def random_prediction(pre_trained_kge):
-    head_entity: List[str]
-    relation: List[str]
-    tail_entity: List[str]
-    head_entity = pre_trained_kge.sample_entity(1)
-    relation = pre_trained_kge.sample_relation(1)
-    tail_entity = pre_trained_kge.sample_entity(1)
-    triple_score = pre_trained_kge.predict_topk(head_entity=head_entity,
-                                                relation=relation,
-                                                tail_entity=tail_entity)
-    return f'( {head_entity[0]},{relation[0]}, {tail_entity[0]} )', pd.DataFrame({'Score': triple_score})
-
 
 def triple_prediction(pre_trained_kge, str_subject, str_predicate, str_object):
-    triple_score = pre_trained_kge.predict_topk(head_entity=str_subject,
-                                                relation=str_predicate,
-                                                tail_entity=str_object)
+    triple_score = pre_trained_kge.predict_topk(head_entity=[str_subject],
+                                                relation=[str_predicate],
+                                                tail_entity=[str_object])
     return f'( {str_subject}, {str_predicate}, {str_object} )', pd.DataFrame({'Score': triple_score})
 
 
 def tail_entity_prediction(pre_trained_kge, str_subject, str_predicate, top_k):
+    if pre_trained_kge.model.name == 'Shallom':
+        print('Tail entity prediction is not available for Shallom')
+        raise NotImplementedError
     scores, entity = pre_trained_kge.predict_topk(head_entity=[str_subject], relation=[str_predicate], k=top_k)
     return f'(  {str_subject},  {str_predicate}, ? )', pd.DataFrame({'Entity': entity, 'Score': scores})
 
 
 def head_entity_prediction(pre_trained_kge, str_object, str_predicate, top_k):
+    if pre_trained_kge.model.name == 'Shallom':
+        print('Head entity prediction is not available for Shallom')
+        raise NotImplementedError
+
     scores, entity = pre_trained_kge.predict_topk(tail_entity=[str_object], relation=[str_predicate], k=top_k)
     return f'(  ?,  {str_predicate}, {str_object} )', pd.DataFrame({'Entity': entity, 'Score': scores})
 
@@ -101,7 +96,7 @@ def run(args: dict):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--path_of_experiment_folder", type=str, default='Merged/2022-03-25 14:12:22.670410')
+    parser.add_argument("--path_of_experiment_folder", type=str, default='Experiments/2022-04-26 10:57:41.290552')
     parser.add_argument('--share', default=False, type=eval, choices=[True, False])
     parser.add_argument('--top_k', default=10, type=int)
     run(vars(parser.parse_args()))
