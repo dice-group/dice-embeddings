@@ -9,18 +9,21 @@ python_script_path="$main_wd/main.py"
 for kgname in "UMLS"
 do
   kg_path="$main_wd/KGs/$kgname"
-  for model in "DistMult" "ComplEx"
+  for model in "QMult"
   do
-    for epoch in 100
+    for epoch in 1
     do
-      for dim in 32 64 128 256 512
+      for dim in 256
       do
+        for scoring_technique in 'KvsAll' '1vsAll'
+          do
           # shellcheck disable=SC2154
-          config_name="$kgname-$model-$epoch-$dim"
+          config_name="$kgname-$model-$epoch-$dim-$scoring_technique"
           echo "Running $config_name.log"
           #/bin/bash "$PWD/config_runner.sh" "$python_script_path" "$kg_path" "$model" "$epoch" "$dim" > "$config_name.log"
-          python -u "$python_script_path" --path_dataset_folder "$kg_path" --model "$model" --num_epochs "$epoch" --embedding_dim "$dim" --scoring_technique "KvsAll" > "$config_name.log"
+          python -u "$python_script_path" --path_dataset_folder "$kg_path" --model "$model" --num_epochs "$epoch" --embedding_dim "$dim" --scoring_technique "$scoring_technique" > "$config_name.log"
           echo "Done!"
+          done
       done
     done
   done

@@ -28,11 +28,11 @@ def argparse_default(description=None):
                         help='[NAdam, Adam, SGD]')
     parser.add_argument('--embedding_dim', type=int, default=256,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=50, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.01, help='Learning rate')
     # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='1vsAll', help="BatchRelaxedKvsAll, BatchRelaxed1vsAll, 1vsAll, KvsAll, NegSample")
+    parser.add_argument('--scoring_technique', default='KvsAll', help="1vsAll, KvsAll, NegSample")
     parser.add_argument('--neg_ratio', type=int, default=1)
     # Additional training params
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
@@ -42,7 +42,7 @@ def argparse_default(description=None):
     parser.add_argument("--add_noise_rate", type=float, default=None, help='None for not using it. '
                                                                            '.1 means extend train data by adding 10% random data')
     # Optimization related hyperparameters
-    parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty (0.00001)')
+    parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
     parser.add_argument('--input_dropout_rate', type=float, default=0.0)
     parser.add_argument('--hidden_dropout_rate', type=float, default=0.0)
     parser.add_argument("--feature_map_dropout_rate", type=int, default=0.0)

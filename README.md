@@ -18,7 +18,7 @@ conda activate daikiri
 ```
 or via pip:
 ```
-# ensure that python 3.9 is available
+# ensure that python > 3.8 is available
 pip install -r requirements.txt
 ```
 or manually
@@ -39,7 +39,7 @@ To test the Installation
 ```
 wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
 unzip KGs.zip
-pytest -p no:warnings -x
+pytest -p no:warnings -x # it takes circa 15 minutes
 pytest -p no:warnings --lf # run only the last one
 pytest -p no:warnings --ff # to run the failures first and then the rest of the tests.
 ```
