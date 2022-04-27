@@ -6,20 +6,24 @@ main_wd="$(cd "$PWD"; cd ..; pwd)"
 python_script_path="$main_wd/main.py"
 
 # shellcheck disable=SC2043
-for kgname in "OpenEA_V1.1_EN_FR_15K_V1" "OpenEA_V1.1_EN_FR_15K_V2" "OpenEA_V1.1_EN_FR_100K_V1" "OpenEA_V1.1_EN_FR_100K_V2"
+for kgname in "UMLS"
 do
   kg_path="$main_wd/KGs/$kgname"
-  for model in "Shallom"
+  for model in "QMult"
   do
     for epoch in 1
     do
-      for dim in 25
+      for dim in 256
       do
+        for scoring_technique in 'KvsAll' '1vsAll'
+          do
           # shellcheck disable=SC2154
-          config_name="$kgname-$model-$epoch-$dim"
+          config_name="$kgname-$model-$epoch-$dim-$scoring_technique"
           echo "Running $config_name.log"
-          /bin/bash "$PWD/config_runner.sh" "$python_script_path" "$kg_path" "$model" "$epoch" "$dim" > "$config_name.log"
+          #/bin/bash "$PWD/config_runner.sh" "$python_script_path" "$kg_path" "$model" "$epoch" "$dim" > "$config_name.log"
+          python -u "$python_script_path" --path_dataset_folder "$kg_path" --model "$model" --num_epochs "$epoch" --embedding_dim "$dim" --scoring_technique "$scoring_technique" > "$config_name.log"
           echo "Done!"
+          done
       done
     done
   done

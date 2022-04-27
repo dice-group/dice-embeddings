@@ -3,17 +3,27 @@ import logging
 import time
 import warnings
 from types import SimpleNamespace
+import os
+
 import numpy as np
 import pandas as pd
+import torch
+import pytorch_lightning as pl
 from pytorch_lightning import seed_everything
 from sklearn.model_selection import KFold
-from .callbacks import PrintCallback, KGESaveCallback
 from pytorch_lightning.plugins import DDPPlugin, DeepSpeedPlugin
 from pytorch_lightning.callbacks import ModelSummary
-from .dataset_classes import StandardDataModule
-from .helper_classes import LabelRelaxationLoss
-from .knowledge_graph import KG
-from .static_funcs import *
+
+from core.callbacks import PrintCallback, KGESaveCallback
+from core.dataset_classes import StandardDataModule
+from core.helper_classes import LabelRelaxationLoss, BatchRelaxedvsAllLoss
+from core.knowledge_graph import KG
+from core.models.base_model import BaseKGE
+from core.evaluator import Evaluator
+from core.typings import *
+from core.static_funcs import store, extract_model_summary, model_fitting, select_model, initialize_pl_trainer, \
+    config_kge_sanity_checking, \
+    preprocesses_input_args, create_experiment_folder, read_preprocess_index_serialize_kg  # *
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
@@ -22,6 +32,13 @@ warnings.filterwarnings(action="ignore", category=FutureWarning)
 
 
 class Execute:
+    """ A class for Training, Retraining and Evaluation a model.
+
+    (1) Loading & Preprocessing & Serializing input data.
+    (2) Training & Validation & Testing
+    (3) Storing all necessary info
+    """
+
     def __init__(self, args, continuous_training=False):
         # (1) Process arguments and sanity checking.
         self.args = preprocesses_input_args(args)
@@ -44,6 +61,8 @@ class Execute:
         self.dataset = None
         # (7) Store few data in memory for numerical results, e.g. runtime, H@1 etc.
         self.report = dict()
+
+        self.evaluator = Evaluator(self)
 
     def read_preprocess_index_serialize_data(self) -> None:
         """ Read & Preprocess & Index & Serialize Input Data """
@@ -113,21 +132,23 @@ class Execute:
         """
         Training and evaluation procedure
 
-        1. Create Pytorch-lightning Trainer object from input configuration
-        2a. Train and Test a model if  test dataset is available
-        2b. Train a model in k-fold cross validation mode if it is requested
-        2c. Train a model
+        (1) Collect Callbacks to be used during training
+        (2) Initialize Pytorch-lightning Trainer
+        (3) Train a KGE modal via (2)
+        (4) Eval trained model
+        (5) Return trained model
         """
         self.report['num_entities'] = self.dataset.num_entities
         self.report['num_relations'] = self.dataset.num_relations
         print('------------------- Train & Eval -------------------')
+        # (1) Collect Callbacks to be used during training
         callbacks = [PrintCallback(),
                      KGESaveCallback(every_x_epoch=self.args.save_model_at_every_epoch,
                                      max_epochs=self.args.max_epochs,
                                      path=self.args.full_storage_path), ModelSummary(max_depth=-1)]
 
         # PL has some problems with DDPPlugin. It will likely to be solved in their next release.
-        # (1) Explicitly setting num_process > 1 gives you
+        # Explicitly setting num_process > 1 gives you
         """
         [W reducer.cpp: 1303] Warning: find_unused_parameters = True
         was specified in DDP constructor, but did not find any unused parameters in the
@@ -138,21 +159,20 @@ class Execute:
         if your model has flow        control        causing        later        iterations        to        have        unused
         parameters.(function        operator())
         """
-        # (2) Adding plugins=[DDPPlugin(find_unused_parameters=False)] and explicitly using num_process > 1
+        # Adding plugins=[DDPPlugin(find_unused_parameters=False)] and explicitly using num_process > 1
         """ pytorch_lightning.utilities.exceptions.DeadlockDetectedException: DeadLock detected from rank: 1  """
-        if not ('Adapt' in self.args.model):
-            self.args.stochastic_weight_avg = True  # => https://pytorch.org/blog/pytorch-1.6-now-includes-stochastic-weight-averaging/
+        # Force using SWA.
+        #self.args.stochastic_weight_avg = True
 
-        # (3) Surprisingly, if you do not ask explicitly num_process > 1, computation runs smoothly while using many CPUs
+        # (2) Initialize Pytorch-lightning Trainer
         self.trainer = initialize_pl_trainer(self.args, callbacks, plugins=[])
-        # (4) Train model.
+        # (3) Use (2) to train a KGE model
         trained_model, form_of_labelling = self.train()
-        # (5) Eval model.
-        self.eval(trained_model, form_of_labelling)
-        # (6) Return trained model
+        # (4) Eval model.
+        self.evaluator.eval(trained_model, form_of_labelling)
+        # (5) Return trained model
         return trained_model
 
-    # @TODO Create TrainClass for different strategies
     def train(self) -> Tuple[BaseKGE, str]:
         """ Train selected model via the selected training strategy """
         if self.args.num_folds_for_cv >= 2:
@@ -164,6 +184,8 @@ class Execute:
                 return self.training_kvsall()
             elif self.args.scoring_technique == '1vsAll':
                 return self.training_1vsall()
+            elif self.args.scoring_technique == "BatchRelaxedKvsAll" or self.args.scoring_technique == "BatchRelaxed1vsAll":
+                return self.train_relaxed_k_vs_all()
             else:
                 raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
 
@@ -238,9 +260,9 @@ class Execute:
             model.loss = LabelRelaxationLoss(alpha=self.args.label_relaxation_rate)
             # model.loss=LabelSmoothingLossCanonical()
         elif self.args.label_smoothing_rate:
-            model.loss = nn.CrossEntropyLoss(label_smoothing=self.args.label_smoothing_rate)
+            model.loss = torch.nn.CrossEntropyLoss(label_smoothing=self.args.label_smoothing_rate)
         else:
-            model.loss = nn.CrossEntropyLoss()
+            model.loss = torch.nn.CrossEntropyLoss()
         # 3. Train model
         train_dataloaders = dataset.train_dataloader()
         # Release some memory
@@ -283,241 +305,32 @@ class Execute:
         model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
         return model, form_of_labelling
 
-    def eval(self, trained_model, form_of_labelling) -> None:
-        """
-        Evaluate model with Standard
-        :param form_of_labelling:
-        :param trained_model:
-        :return:
-        """
-        if self.args.scoring_technique == 'NegSample':
-            self.eval_rank_of_head_and_tail_entity(trained_model)
-        elif self.args.scoring_technique == 'KvsAll':
-            self.eval_with_vs_all(trained_model, form_of_labelling)
-        elif self.args.scoring_technique == '1vsAll':
-            self.eval_with_vs_all(trained_model, form_of_labelling)
-        else:
-            raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
+    def train_relaxed_k_vs_all(self) -> pl.LightningModule:
+        model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
+        print(f'{self.args.scoring_technique}training starts: {model.name}')  # -labeling:{form_of_labelling}')
+        # 2. Create training data.)
+        dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
+                                     valid_set_idx=self.dataset.valid_set,
+                                     test_set_idx=self.dataset.test_set,
+                                     entity_to_idx=self.dataset.entity_to_idx,
+                                     relation_to_idx=self.dataset.relation_to_idx,
+                                     form=self.args.scoring_technique,
+                                     neg_sample_ratio=self.args.neg_ratio,
+                                     batch_size=self.args.batch_size,
+                                     num_workers=self.args.num_processes,
+                                     label_smoothing_rate=self.args.label_smoothing_rate)
+        # 3. Train model.
+        train_dataloaders = dataset.train_dataloader()
+        # Release some memory
+        del dataset
+        if self.args.eval is False:
+            self.dataset.train_set = None
+            self.dataset.valid_set = None
+            self.dataset.test_set = None
 
-    def eval_rank_of_head_and_tail_entity(self, trained_model):
-        # 4. Test model on the training dataset if it is needed.
-        if self.args.eval_on_train:
-            res = self.evaluate_lp(trained_model, self.dataset.train_set, f'Evaluate {trained_model.name} on Train set')
-            self.report['Train'] = res
-        # 5. Test model on the validation and test dataset if it is needed.
-        if self.args.eval:
-            if self.dataset.valid_set is not None:
-                self.report['Val'] = self.evaluate_lp(trained_model, self.dataset.valid_set,
-                                                      f'Evaluate {trained_model.name} of Validation set')
-
-            if self.dataset.test_set is not None:
-                self.report['Test'] = self.evaluate_lp(trained_model, self.dataset.test_set,
-                                                       f'Evaluate {trained_model.name} of Test set')
-
-    def eval_with_vs_all(self, trained_model, form_of_labelling) -> None:
-        """ Evaluate model after reciprocal triples are added """
-        # 4. Test model on the training dataset if it is needed.
-        if self.args.eval_on_train:
-            res = self.evaluate_lp_k_vs_all(trained_model, self.dataset.train_set,
-                                            info=f'Evaluate {trained_model.name} on Train set',
-                                            form_of_labelling=form_of_labelling)
-            self.report['Train'] = res
-
-        # 5. Test model on the validation and test dataset if it is needed.
-        if self.args.eval:
-            if self.dataset.valid_set is not None:
-                res = self.evaluate_lp_k_vs_all(trained_model, self.dataset.valid_set,
-                                                f'Evaluate {trained_model.name} on Validation set',
-                                                form_of_labelling=form_of_labelling)
-                self.report['Val'] = res
-            if self.dataset.test_set is not None:
-                res = self.evaluate_lp_k_vs_all(trained_model, self.dataset.test_set,
-                                                f'Evaluate {trained_model.name} on Test set',
-                                                form_of_labelling=form_of_labelling)
-                self.report['Test'] = res
-
-    def evaluate_lp_k_vs_all(self, model, triple_idx, info=None, form_of_labelling=None):
-        """
-        Filtered link prediction evaluation.
-        :param model:
-        :param triple_idx: test triples
-        :param info:
-        :param form_of_labelling:
-        :return:
-        """
-        # (1) set model to eval model
-        model.eval()
-        hits = []
-        ranks = []
-        if info:
-            print(info + ':', end=' ')
-        for i in range(10):
-            hits.append([])
-
-        # (2) Evaluation mode
-        if form_of_labelling == 'RelationPrediction':
-            # Iterate over integer indexed triples in mini batch fashion
-            for i in range(0, len(triple_idx), self.args.batch_size):
-                data_batch = triple_idx[i:i + self.args.batch_size]
-                e1_idx_e2_idx, r_idx = torch.tensor(data_batch[:, [0, 2]]), torch.tensor(data_batch[:, 1])
-                # Generate predictions
-                predictions = model.forward_k_vs_all(x=e1_idx_e2_idx)
-                # Filter entities except the target entity
-                for j in range(data_batch.shape[0]):
-                    filt = self.dataset.ee_vocab[(data_batch[j][0], data_batch[j][2])]
-                    target_value = predictions[j, r_idx[j]].item()
-                    predictions[j, filt] = -np.Inf
-                    predictions[j, r_idx[j]] = target_value
-                # Sort predictions.
-                sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
-                # This can be also done in parallel
-                for j in range(data_batch.shape[0]):
-                    rank = torch.where(sort_idxs[j] == r_idx[j])[0].item()
-                    ranks.append(rank + 1)
-
-                    for hits_level in range(10):
-                        if rank <= hits_level:
-                            hits[hits_level].append(1.0)
-
-        else:
-            # Iterate over integer indexed triples in mini batch fashion
-            for i in range(0, len(triple_idx), self.args.batch_size):
-                data_batch = triple_idx[i:i + self.args.batch_size]
-                e1_idx_r_idx, e2_idx = torch.tensor(data_batch[:, [0, 1]]), torch.tensor(data_batch[:, 2])
-                predictions = model(e1_idx_r_idx)
-                # Filter entities except the target entity
-                for j in range(data_batch.shape[0]):
-                    filt = self.dataset.er_vocab[(data_batch[j][0], data_batch[j][1])]
-                    target_value = predictions[j, e2_idx[j]].item()
-                    predictions[j, filt] = -np.Inf
-                    predictions[j, e2_idx[j]] = target_value
-                # Sort predictions.
-                sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
-                # This can be also done in paralel
-                for j in range(data_batch.shape[0]):
-                    rank = torch.where(sort_idxs[j] == e2_idx[j])[0].item()
-                    ranks.append(rank + 1)
-
-                    for hits_level in range(10):
-                        if rank <= hits_level:
-                            hits[hits_level].append(1.0)
-        hit_1 = sum(hits[0]) / (float(len(triple_idx)))
-        hit_3 = sum(hits[2]) / (float(len(triple_idx)))
-        hit_10 = sum(hits[9]) / (float(len(triple_idx)))
-        mean_reciprocal_rank = np.mean(1. / np.array(ranks))
-
-        results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10, 'MRR': mean_reciprocal_rank}
-        if info:
-            print(results)
-        return results
-
-    def evaluate_lp(self, model, triple_idx, info):
-        """
-        Evaluate model in a standard link prediction task
-
-        for each triple
-        the rank is computed by taking the mean of the filtered missing head entity rank and
-        the filtered missing tail entity rank
-        :param model:
-        :param triple_idx:
-        :param info:
-        :return:
-        """
-        model.eval()
-        print(info)
-        print(f'Num of triples {len(triple_idx)}')
-        print('** sequential computation ')
-        hits = dict()
-        reciprocal_ranks = []
-        # Iterate over test triples
-        all_entities = torch.arange(0, self.dataset.num_entities).long()
-        all_entities = all_entities.reshape(len(all_entities), )
-        for i in range(0, len(triple_idx)):
-            # 1. Get a triple
-            data_point = triple_idx[i]
-            s, p, o = data_point[0], data_point[1], data_point[2]
-
-            # 2. Predict missing heads and tails
-            x = torch.stack((torch.tensor(s).repeat(self.dataset.num_entities, ),
-                             torch.tensor(p).repeat(self.dataset.num_entities, ),
-                             all_entities
-                             ), dim=1)
-            predictions_tails = model.forward_triples(x)
-            x = torch.stack((all_entities,
-                             torch.tensor(p).repeat(self.dataset.num_entities, ),
-                             torch.tensor(o).repeat(self.dataset.num_entities)
-                             ), dim=1)
-
-            predictions_heads = model.forward_triples(x)
-            del x
-
-            # 3. Computed filtered ranks for missing tail entities.
-            # 3.1. Compute filtered tail entity rankings
-            filt_tails = self.dataset.er_vocab[(s, p)]
-            # filt_tails = data[(data['subject'] == s) & (data['relation'] == p)]['object'].values
-            # 3.2 Get the predicted target's score
-            target_value = predictions_tails[o].item()
-            # 3.3 Filter scores of all triples containing filtered tail entities
-            predictions_tails[filt_tails] = -np.Inf
-            # 3.4 Reset the target's score
-            predictions_tails[o] = target_value
-            # 3.5. Sotrt the score
-            _, sort_idxs = torch.sort(predictions_tails, descending=True)
-            # sort_idxs = sort_idxs.cpu().numpy()
-            sort_idxs = sort_idxs.detach()  # cpu().numpy()
-            filt_tail_entity_rank = np.where(sort_idxs == o)[0][0]
-
-            # 4. Computed filtered ranks for missing head entities.
-            # 4.1. Retrieve head entities to be filterred
-            filt_heads = self.dataset.re_vocab[(p, o)]
-            # filt_heads = data[(data['relation'] == p) & (data['object'] == o)]['subject'].values
-            # 4.2 Get the predicted target's score
-            target_value = predictions_heads[s].item()
-            # 4.3 Filter scores of all triples containing filtered head entities.
-            predictions_heads[filt_heads] = -np.Inf
-            predictions_heads[s] = target_value
-            _, sort_idxs = torch.sort(predictions_heads, descending=True)
-            # sort_idxs = sort_idxs.cpu().numpy()
-            sort_idxs = sort_idxs.detach()  # cpu().numpy()
-            filt_head_entity_rank = np.where(sort_idxs == s)[0][0]
-
-            # 4. Add 1 to ranks as numpy array first item has the index of 0.
-            filt_head_entity_rank += 1
-            filt_tail_entity_rank += 1
-
-            rr = 1.0 / filt_head_entity_rank + (1.0 / filt_tail_entity_rank)
-            # 5. Store reciprocal ranks.
-            reciprocal_ranks.append(rr)
-            # print(f'{i}.th triple: mean reciprical rank:{rr}')
-
-            # 4. Compute Hit@N
-            for hits_level in range(1, 11):
-                I = 1 if filt_head_entity_rank <= hits_level else 0
-                I += 1 if filt_tail_entity_rank <= hits_level else 0
-                if I > 0:
-                    hits.setdefault(hits_level, []).append(I)
-
-        mean_reciprocal_rank = sum(reciprocal_ranks) / (float(len(triple_idx) * 2))
-
-        if 1 in hits:
-            hit_1 = sum(hits[1]) / (float(len(triple_idx) * 2))
-        else:
-            hit_1 = 0
-
-        if 3 in hits:
-            hit_3 = sum(hits[3]) / (float(len(triple_idx) * 2))
-        else:
-            hit_3 = 0
-
-        if 10 in hits:
-            hit_10 = sum(hits[10]) / (float(len(triple_idx) * 2))
-        else:
-            hit_10 = 0
-
-        results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10,
-                   'MRR': mean_reciprocal_rank}
-        print(results)
-        return results
+        model.loss = BatchRelaxedvsAllLoss()
+        model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
+        return model, form_of_labelling
 
     def k_fold_cross_validation(self) -> Tuple[BaseKGE, str]:
         """
@@ -561,7 +374,8 @@ class Execute:
             model_fitting(trainer=trainer, model=model, train_dataloaders=train_dataloaders)
 
             # 6. Test model on validation and test sets if possible.
-            res = self.evaluate_lp_k_vs_all(model, test_set_for_i_th_fold, form_of_labelling=form_of_labelling)
+            res = self.evaluator.evaluate_lp_k_vs_all(model, test_set_for_i_th_fold,
+                                                      form_of_labelling=form_of_labelling)
             print(res)
             eval_folds.append([res['MRR'], res['H@1'], res['H@3'], res['H@10']])
         eval_folds = pd.DataFrame(eval_folds, columns=['MRR', 'H@1', 'H@3', 'H@10'])

@@ -1,9 +1,7 @@
 import torch
-
 from .base_model import *
 import numpy as np
 from math import sqrt
-
 from .static_funcs import quaternion_mul
 
 
@@ -15,50 +13,19 @@ class DistMult(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'DistMult'
-        # Init Embeddings
-        self.emb_ent_real = nn.Embedding(self.num_entities, self.embedding_dim)  # real
-        self.emb_rel_real = nn.Embedding(self.num_relations, self.embedding_dim)  # real
-        xavier_normal_(self.emb_ent_real.weight.data), xavier_normal_(self.emb_rel_real.weight.data)
-
-        # Dropouts
-        self.input_dp_ent_real = torch.nn.Dropout(self.input_dropout_rate)
-        self.input_dp_rel_real = torch.nn.Dropout(self.input_dropout_rate)
-        # Batch Normalization
-        self.bn_ent_real = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_rel_real = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.bn_hidden_real = torch.nn.BatchNorm1d(self.embedding_dim)
-        self.hidden_dropout = torch.nn.Dropout(self.hidden_dropout_rate)
-
-    def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
-        return self.emb_ent_real.weight.data.data.detach(), self.emb_rel_real.weight.data.detach()
-
-    def forward_k_vs_all(self, x: torch.Tensor):
-        e1_idx: torch.Tensor
-        rel_idx: torch.Tensor
-        e1_idx, rel_idx = x[:, 0], x[:, 1]
-        # (1)
-        # (1.1) Real embeddings of head entities
-        emb_head_real = self.input_dp_ent_real(self.bn_ent_real(self.emb_ent_real(e1_idx)))
-        # (1.2) Real embeddings of relations
-        emb_rel_real = self.input_dp_rel_real(self.bn_rel_real(self.emb_rel_real(rel_idx)))
-        return torch.mm(self.hidden_dropout(self.bn_hidden_real(emb_head_real * emb_rel_real)),
-                        self.emb_ent_real.weight.transpose(1, 0))
+        # Adding this reduces performance in training and generalization
+        self.hidden_normalizer = lambda x: x
 
     def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
-        e1_idx: torch.Tensor
-        rel_idx: torch.Tensor
-        e2_idx: torch.Tensor
-        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1], x[:, 2]
-        # (1)
-        # (1.1) Complex embeddings of head entities and apply batch norm.
-        emb_head_real = self.input_dp_ent_real(self.bn_ent_real(self.emb_ent_real(e1_idx)))
+        # (1) Retrieve embeddings & Apply Dropout & Normalization.
+        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
+        # (2) Compute the score
+        return (self.hidden_dropout(self.hidden_normalizer(head_ent_emb * rel_ent_emb)) * tail_ent_emb).sum(dim=1)
 
-        # (1.2) Complex embeddings of relations and apply batch norm.
-        emb_rel_real = self.input_dp_rel_real(self.bn_rel_real(self.emb_rel_real(rel_idx)))
-
-        # (1.3) Complex embeddings of tail entities.
-        emb_tail_real = self.emb_ent_real(e2_idx)
-        return (self.hidden_dropout(self.bn_hidden_real(emb_head_real * emb_rel_real)) * emb_tail_real).sum(dim=1)
+    def forward_k_vs_all(self, x: torch.Tensor):
+        emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
+        return torch.mm(self.hidden_dropout(self.hidden_normalizer(emb_head_real * emb_rel_real)),
+                        self.entity_embeddings.weight.transpose(1, 0))
 
 
 class Shallom(BaseKGE):
@@ -72,7 +39,7 @@ class Shallom(BaseKGE):
         xavier_normal_(self.entity_embeddings.weight.data)
         self.shallom = nn.Sequential(nn.Dropout(self.input_dropout_rate),
                                      torch.nn.Linear(self.embedding_dim * 2, shallom_width),
-                                     nn.BatchNorm1d(shallom_width),
+                                     self.normalizer_class(shallom_width),
                                      nn.ReLU(),
                                      nn.Dropout(self.hidden_dropout_rate),
                                      torch.nn.Linear(shallom_width, self.num_relations))
@@ -86,6 +53,18 @@ class Shallom(BaseKGE):
         e1_idx, e2_idx = x[:, 0], x[:, 1]
         emb_s, emb_o = self.entity_embeddings(e1_idx), self.entity_embeddings(e2_idx)
         return self.shallom(torch.cat((emb_s, emb_o), 1))
+
+    def forward_triples(self, x):
+        """
+
+        :param x:
+        :return:
+        """
+
+        n, d = x.shape
+        assert d == 3
+        scores_for_all_relations = self.forward_k_vs_all(x[:, [0, 2]])
+        return scores_for_all_relations[:, x[:, 1]].flatten()
 
 
 """ On going works"""

@@ -6,6 +6,7 @@ import torch
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from typing import List
+import random
 
 
 class StandardDataModule(pl.LightningDataModule):
@@ -38,7 +39,7 @@ class StandardDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
 
-        print('Number of works will be used at batching:', self.num_workers)
+        print('Number of workers will be used at batching:', self.num_workers)
         self.neg_sample_ratio = neg_sample_ratio
         self.label_smoothing_rate = label_smoothing_rate
 
@@ -53,6 +54,12 @@ class StandardDataModule(pl.LightningDataModule):
         elif self.form == '1VsAll':
             # Multi-class
             self.dataset_type_class = OneVsAllEntityPredictionDataset
+        elif self.form == 'BatchRelaxedKvsAll':
+            self.dataset = BatchRelaxedKvsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
+                                                     relation_idxs=self.relation_to_idx, form=self.form)
+        elif self.form == 'BatchRelaxed1vsAll':
+            self.dataset = BatchRelaxed1vsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
+                                                     relation_idxs=self.relation_to_idx, form=self.form)
         else:
             raise ValueError(f'Invalid input : {self.form}')
 
@@ -81,6 +88,9 @@ class StandardDataModule(pl.LightningDataModule):
                                  label_smoothing_rate=self.label_smoothing_rate)
 
             return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, pin_memory=True,
+                              num_workers=self.num_workers)
+        elif self.form == 'BatchRelaxedKvsAll' or self.form == 'BatchRelaxed1vsAll':
+            return DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, pin_memory=True,
                               num_workers=self.num_workers)
         else:
             raise KeyError(f'{self.form} illegal input.')
@@ -215,8 +225,7 @@ class KvsAll(Dataset):
                 exit(1)
             assert isinstance(self.train_target[0][0], np.int64)
         else:
-            # list of lists where each list has different size
-            self.train_target = np.array(list(store.values()), dtype=object)
+            self.train_target = list(store.values())
             assert isinstance(self.train_target[0], list)
         del store
 
@@ -234,11 +243,98 @@ class KvsAll(Dataset):
         return self.train_data[idx], y_vec
 
 
+class BatchRelaxedKvsAllDataset(Dataset):
+    """
+    For entitiy or relation prediciton
+    """
+
+    def __init__(self, triples_idx, entity_idxs, relation_idxs, form, store=None, label_smoothing_rate=None):
+        super().__init__()
+        assert len(triples_idx) > 0
+        self.train_data = None
+        self.train_target = None
+        self.range_of_relations = dict()
+
+        # (1) Create a dictionary of training data pints
+        # Either from tuple of entitiies or tuple of an entity and a relation
+        if store is None:
+            store = dict()
+            self.target_dim = len(entity_idxs)
+            for s_idx, p_idx, o_idx in triples_idx:
+                store.setdefault((s_idx, p_idx), list()).append(o_idx)
+                self.range_of_relations.setdefault(p_idx, set()).add(o_idx)
+
+        for k, v in self.range_of_relations.items():
+            self.range_of_relations[k] = list(v)
+
+        # Keys in store correspond to integer representation (index) of subject and predicate
+        # Values correspond to a list of integer representations of entities.
+        self.train_data = torch.torch.LongTensor(list(store.keys()))
+
+        if sum([len(i) for i in store.values()]) == len(store):
+            # if each s,p pair contains at most 1 entity
+            self.train_target = np.array(list(store.values()), dtype=np.int64)
+            try:
+                assert isinstance(self.train_target[0], np.ndarray)
+            except IndexError or AssertionError:
+                print(self.train_target)
+                exit(1)
+            assert isinstance(self.train_target[0][0], np.int64)
+        else:
+            self.train_target = list(store.values())
+            assert isinstance(self.train_target[0], list)
+        del store
+
+    def __len__(self):
+        assert len(self.train_data) == len(self.train_target)
+        return len(self.train_data)
+
+    def __getitem__(self, idx):
+        # 1. Initialize a vector of output.
+        y_vec = torch.zeros(self.target_dim)
+        # _, rel = self.train_data[idx]
+        # y_vec[self.range_of_relations[rel.item()]] = .0001
+        y_vec[self.train_target[idx]] = 1.0
+        return self.train_data[idx], y_vec
+
+
+class BatchRelaxed1vsAllDataset(Dataset):
+    def __init__(self, triples_idx, entity_idxs, relation_idxs, form, store=None, label_smoothing_rate=None):
+        super().__init__()
+        assert len(triples_idx) > 0
+        self.train_data = torch.torch.LongTensor(triples_idx)
+
+        self.range_of_relations = dict()
+        self.target_dim = len(entity_idxs)
+
+        for s_idx, p_idx, o_idx in triples_idx:
+            self.range_of_relations.setdefault(p_idx, set()).add(o_idx)
+
+        for k, v in self.range_of_relations.items():
+            self.range_of_relations[k] = list(v)
+
+    def __len__(self):
+        return len(self.train_data)
+
+    def __getitem__(self, idx):
+        y_vec = torch.zeros(self.target_dim)
+        idx_triple = self.train_data[idx]
+        x, y = idx_triple[:2], idx_triple[2]
+        # y_vec[self.range_of_relations[x[1].item()]] = .0001
+        y_vec[y] = 1
+        return x, y_vec
+
+
 class TriplePredictionDataset(Dataset):
-    """ Negative Sampling Class """
+    """ Negative Sampling Class
+    (1) \forall (h,r,t) \in G obtain,
+    create negative triples{(h,r,x),(,r,t),(h,m,t)}
+
+    (2) Targets
+    Using hard targets (0,1) drives weights to infinity. An outlier produces enormous gradients. """
 
     def __init__(self, triples_idx, num_entities: int, num_relations: int, neg_sample_ratio: int = 1,
-                 soft_confidence_rate: float = 0.001):
+                 soft_confidence_rate: float = 0.01):
         """
 
         :param triples_idx:
@@ -249,17 +345,19 @@ class TriplePredictionDataset(Dataset):
         """
         start_time = time.time()
         print('Initializing negative sampling dataset batching...', end='\t')
-        # triples_idx = torch.LongTensor(triples_idx) to decrease possible memory usage
-        # triples_idx = torch.from_numpy(triples_idx)
         self.soft_confidence_rate = soft_confidence_rate
         self.neg_sample_ratio = neg_sample_ratio  # 0 Implies that we do not add negative samples. This is needed during testing and validation
-        self.head_idx = triples_idx[:, 0]
-        self.rel_idx = triples_idx[:, 1]
-        self.tail_idx = triples_idx[:, 2]
-        assert self.head_idx.shape == self.rel_idx.shape == self.tail_idx.shape
-        assert num_entities > max(self.head_idx) and num_entities > max(self.tail_idx)
-        assert num_relations > max(self.rel_idx)
-        self.length = len(triples_idx)
+        self.triples_idx = triples_idx
+
+        # self.head_idx = triples_idx[:, 0]
+        # self.rel_idx = triples_idx[:, 1]
+        # self.tail_idx = triples_idx[:, 2]
+        # assert self.head_idx.shape == self.rel_idx.shape == self.tail_idx.shape
+        # assert num_entities > max(self.head_idx) and num_entities > max(self.tail_idx)
+        # assert num_relations > max(self.rel_idx)
+        assert num_entities >= max(triples_idx[:, 0]) and num_entities >= max(triples_idx[:, 2])
+        # assert num_relations > max(self.rel_idx)
+        self.length = len(self.triples_idx)
         self.num_entities = num_entities
         self.num_relations = num_relations
         print(f'Done ! {time.time() - start_time:.3f} seconds\n')
@@ -268,10 +366,7 @@ class TriplePredictionDataset(Dataset):
         return self.length
 
     def __getitem__(self, idx):
-        h = self.head_idx[idx]
-        r = self.rel_idx[idx]
-        t = self.tail_idx[idx]
-        return h, r, t
+        return self.triples_idx[idx]
 
     def collate_fn(self, batch):
         batch = torch.LongTensor(batch)
@@ -279,29 +374,32 @@ class TriplePredictionDataset(Dataset):
         size_of_batch, _ = batch.shape
         assert size_of_batch > 0
         label = torch.ones((size_of_batch,), ) - self.soft_confidence_rate
-        # Generate Negative Triples
+
+        # corrupt head, tail or rel ?!
+
+        # (1) Corrupted Entities:
         corr = torch.randint(0, self.num_entities, (size_of_batch * self.neg_sample_ratio, 2))
-        # 2.1 Head Corrupt:
+        # (2) Head Corrupt:
         h_head_corr = corr[:, 0]
         r_head_corr = r.repeat(self.neg_sample_ratio, )
         t_head_corr = t.repeat(self.neg_sample_ratio, )
         label_head_corr = torch.zeros(len(t_head_corr), ) + self.soft_confidence_rate
-
-        # 2.2. Tail Corrupt
+        # (3) Tail Corrupt:
         h_tail_corr = h.repeat(self.neg_sample_ratio, )
         r_tail_corr = r.repeat(self.neg_sample_ratio, )
         t_tail_corr = corr[:, 1]
         label_tail_corr = torch.zeros(len(t_tail_corr), ) + self.soft_confidence_rate
-
-        # 3. Stack True and Corrupted Triples
-        h = torch.cat((h, h_head_corr, h_tail_corr), 0)
-        r = torch.cat((r, r_head_corr, r_tail_corr), 0)
-        t = torch.cat((t, t_head_corr, t_tail_corr), 0)
-
+        # (4) Relations Corrupt:
+        h_rel_corr = h.repeat(self.neg_sample_ratio, )
+        r_rel_corr = torch.randint(0, self.num_relations, (size_of_batch * self.neg_sample_ratio, 1))[:, 0]
+        t_rel_corr = t.repeat(self.neg_sample_ratio, )
+        label_rel_corr = torch.zeros(len(t_rel_corr), ) + self.soft_confidence_rate
+        # (5) Stack True and Corrupted Triples
+        h = torch.cat((h, h_head_corr, h_tail_corr, h_rel_corr), 0)
+        r = torch.cat((r, r_head_corr, r_tail_corr, r_rel_corr), 0)
+        t = torch.cat((t, t_head_corr, t_tail_corr, t_rel_corr), 0)
         x = torch.stack((h, r, t), dim=1)
-
-        label = torch.cat((label, label_head_corr, label_tail_corr), 0)
-
+        label = torch.cat((label, label_head_corr, label_tail_corr, label_rel_corr), 0)
         return x, label
 
 

@@ -15,7 +15,7 @@ class TestCV_NegSample:
         args.path_dataset_folder = 'KGs/Family'
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 10
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -35,7 +35,7 @@ class TestCV_NegSample:
         args.path_dataset_folder = 'KGs/Family'
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 10
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -55,7 +55,7 @@ class TestCV_NegSample:
         args.path_dataset_folder = 'KGs/Family'
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 10
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -75,7 +75,7 @@ class TestCV_NegSample:
         args.num_epochs = 1
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 10
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -95,7 +95,7 @@ class TestCV_NegSample:
         args.neg_ratio = 1
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 10
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -114,7 +114,7 @@ class TestCV_NegSample:
         args.neg_ratio = 1
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 10
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -133,7 +133,7 @@ class TestCV_NegSample:
         args.num_epochs = 1
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 10
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -152,7 +152,7 @@ class TestCV_NegSample:
         args.num_epochs = 1
         args.batch_size = 1024
         args.lr = 0.01
-        args.embedding_dim = 10
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0

@@ -18,7 +18,7 @@ conda activate daikiri
 ```
 or via pip:
 ```
-# ensure that python 3.9 is available
+# ensure that python > 3.8 is available
 pip install -r requirements.txt
 ```
 or manually
@@ -39,8 +39,9 @@ To test the Installation
 ```
 wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
 unzip KGs.zip
-pytest -p no:warnings -x
-pytest -p no:warnings --lf
+pytest -p no:warnings -x # it takes circa 15 minutes
+pytest -p no:warnings --lf # run only the last one
+pytest -p no:warnings --ff # to run the failures first and then the rest of the tests.
 ```
 ## Pre-trained Models
 Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , if you lack hardware resources to obtain embeddings of a specific knowledge Graph.

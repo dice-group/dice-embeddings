@@ -6,6 +6,7 @@ from torch.nn import functional as F
 from torchmetrics import Accuracy as accuracy
 from typing import List, Any, Tuple
 from torch.nn.init import xavier_normal_
+import numpy as np
 
 
 class BaseKGE(pl.LightningModule):
@@ -20,16 +21,30 @@ class BaseKGE(pl.LightningModule):
         self.apply_unit_norm = None
         self.input_dropout_rate = None
         self.hidden_dropout_rate = None
+        self.optimizer_name = None
         self.feature_map_dropout_rate = None
         self.kernel_size = None
         self.num_of_output_channels = None
         self.weight_decay = None
         self.loss = torch.nn.BCEWithLogitsLoss()
         self.selected_optimizer = None
+        self.normalizer_class = torch.nn.LayerNorm
         self.sanity_checking()
 
+        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
+        self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
+        xavier_normal_(self.entity_embeddings.weight.data), xavier_normal_(self.relation_embeddings.weight.data)
+
+        self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim)
+        self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim)
+        self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim)
+        # Dropouts
+        self.input_dp_ent_real = torch.nn.Dropout(self.input_dropout_rate)
+        self.input_dp_rel_real = torch.nn.Dropout(self.input_dropout_rate)
+        self.hidden_dropout = torch.nn.Dropout(self.input_dropout_rate)
+
     def sanity_checking(self):
-        assert self.args['model'] in ['AdaptE', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO',
+        assert self.args['model'] in ['DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO',
                                       'ConEx', 'Shallom']
         if self.args.get('weight_decay'):
             self.weight_decay = self.args['weight_decay']
@@ -84,9 +99,37 @@ class BaseKGE(pl.LightningModule):
             else:
                 self.feature_map_dropout_rate = 0.0
 
+        if self.args.get("normalization") == 'LayerNorm':
+            self.normalizer_class = torch.nn.LayerNorm
+        elif self.args.get("normalization") == 'BatchNorm1d':
+            self.normalizer_class = torch.nn.BatchNorm1d
+        else:
+            raise NotImplementedError()
+
+        if self.args.get("optim") in ['NAdam', 'Adam', 'SGD']:
+            self.optimizer_name = self.args['optim']
+        else:
+            print(self.args)
+            raise NotImplementedError()
+
+    def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
+        return self.entity_embeddings.weight.data.data.detach(), self.relation_embeddings.weight.data.detach()
+
     def configure_optimizers(self):
-        self.selected_optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate,
-                                                   weight_decay=self.weight_decay)
+
+        if self.optimizer_name == 'SGD':
+            self.selected_optimizer = torch.optim.SGD(params=self.parameters(), lr=self.learning_rate,
+                                                      momentum=0, dampening=0, weight_decay=self.weight_decay,
+                                                      nesterov=False)
+        elif self.optimizer_name == 'Adam':
+            self.selected_optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate,
+                                                       weight_decay=self.weight_decay)
+
+        elif self.optimizer_name == 'NAdam':
+            self.selected_optimizer = torch.optim.NAdam(self.parameters(), lr=self.learning_rate, betas=(0.9, 0.999),
+                                                        eps=1e-08, weight_decay=self.weight_decay, momentum_decay=0.004)
+        else:
+            raise KeyError()
         return self.selected_optimizer
 
     def loss_function(self, yhat_batch, y_batch):
@@ -119,7 +162,6 @@ class BaseKGE(pl.LightningModule):
         yhat_batch = self.forward(x_batch)
         train_loss = self.loss_function(yhat_batch=yhat_batch, y_batch=y_batch)
         return train_loss
-
 
     def validation_step(self, batch, batch_idx):
         if len(batch) == 4:
@@ -164,3 +206,23 @@ class BaseKGE(pl.LightningModule):
 
     def train_dataloader(self) -> TRAIN_DATALOADERS:
         pass
+
+    def get_triple_representation(self, indexed_triple):
+        # (1) Split input into indexes.
+        idx_head_entity, idx_relation, idx_tail_entity = indexed_triple[:, 0], indexed_triple[:, 1], indexed_triple[:,
+                                                                                                     2]
+        # (2) Retrieve embeddings & Apply Dropout & Normalization
+        head_ent_emb = self.normalize_head_entity_embeddings(
+            self.input_dp_ent_real(self.entity_embeddings(idx_head_entity)))
+        rel_ent_emb = self.normalize_relation_embeddings(self.input_dp_rel_real(self.relation_embeddings(idx_relation)))
+        tail_ent_emb = self.normalize_tail_entity_embeddings(self.entity_embeddings(idx_tail_entity))
+        return head_ent_emb, rel_ent_emb, tail_ent_emb
+
+    def get_head_relation_representation(self, indexed_triple):
+        # (1) Split input into indexes.
+        idx_head_entity, idx_relation = indexed_triple[:, 0], indexed_triple[:, 1]
+        # (2) Retrieve embeddings & Apply Dropout & Normalization
+        head_ent_emb = self.normalize_head_entity_embeddings(
+            self.input_dp_ent_real(self.entity_embeddings(idx_head_entity)))
+        rel_ent_emb = self.normalize_relation_embeddings(self.input_dp_rel_real(self.relation_embeddings(idx_relation)))
+        return head_ent_emb, rel_ent_emb

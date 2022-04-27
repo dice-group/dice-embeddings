@@ -9,7 +9,8 @@ from dask import dataframe as ddf
 import os
 import pandas as pd
 from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_re_vocab, \
-    create_recipriocal_triples_from_dask, add_noisy_triples, index_triples, load_data_parallel, numpy_data_type_changer
+    create_recipriocal_triples_from_dask, add_noisy_triples, index_triples, load_data_parallel, create_constraints, \
+    numpy_data_type_changer
 from .sanity_checkers import dataset_sanity_checking
 import glob
 
@@ -193,6 +194,7 @@ class KG:
                 self.re_vocab = get_re_vocab(data)
                 # 17. Create a bijection mapping from subject-object pairs to relations.
                 self.ee_vocab = get_ee_vocab(data)
+                self.domain_constraints_per_rel, self.range_constraints_per_rel = create_constraints(self.train_set)
         else:
             self.deserialize(deserialize_flag)
 
@@ -208,6 +210,7 @@ class KG:
                 self.re_vocab = get_re_vocab(data)
                 # 17. Create a bijection mapping from subject-object pairs to relations.
                 self.ee_vocab = get_ee_vocab(data)
+                self.domain_constraints_per_rel, self.range_constraints_per_rel = create_constraints(self.train_set)
                 print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
 
         # 4. Display info
@@ -218,10 +221,14 @@ class KG:
                                      f'\nNumber of triples on valid set: {len(self.valid_set) if self.valid_set is not None else 0}' \
                                      f'\nNumber of triples on test set: {len(self.test_set) if self.test_set is not None else 0}\n'
 
-
     def sequential_vocabulary_construction(self):
-        print('Train set compute...')
-        self.train_set = self.train_set.compute(scheduler=self.scheduler_flag)
+
+        if isinstance(self.train_set, ddf.DataFrame):
+            print('Train set compute...')
+            self.train_set = self.train_set.compute(scheduler=self.scheduler_flag)
+        else:
+            assert isinstance(self.train_set,pd.DataFrame)
+
         if self.valid_set is not None:
             print('Valid set compute...')
             self.valid_set = self.valid_set.compute(scheduler=self.scheduler_flag)
@@ -327,6 +334,7 @@ class KG:
             if self.test_set is not None:
                 self.test_set = create_recipriocal_triples_from_dask(self.test_set)
             print('Done !\n')
+
         # (2) Extend KG with triples where entities and relations are randomly sampled.
         if self.add_noise_rate is not None:
             print(f'[4 / 14] Adding noisy triples...', end='\t')

@@ -10,6 +10,7 @@ class TestDefaultParams:
         args = argparse_default([])
         args.model = 'Shallom'
         args.num_epochs = 1
+        args.multi_cores_at_preprocessing=True
         args.scoring_technique = 'KvsAll'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
@@ -29,6 +30,7 @@ class TestDefaultParams:
         args = argparse_default([])
         args.model = 'ConEx'
         args.num_epochs = 1
+        args.multi_cores_at_preprocessing=True
         args.scoring_technique = 'KvsAll'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
@@ -48,6 +50,7 @@ class TestDefaultParams:
         args = argparse_default([])
         args.model = 'QMult'
         args.num_epochs = 1
+        args.multi_cores_at_preprocessing=True
         args.scoring_technique = 'KvsAll'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
@@ -67,6 +70,7 @@ class TestDefaultParams:
         args = argparse_default([])
         args.model = 'ConvQ'
         args.num_epochs = 1
+        args.multi_cores_at_preprocessing=True
         args.scoring_technique = 'KvsAll'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
@@ -86,6 +90,7 @@ class TestDefaultParams:
         args = argparse_default([])
         args.model = 'OMult'
         args.num_epochs = 1
+        args.multi_cores_at_preprocessing=True
         args.scoring_technique = 'KvsAll'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
@@ -105,6 +110,7 @@ class TestDefaultParams:
         args = argparse_default([])
         args.model = 'ConvO'
         args.num_epochs = 1
+        args.multi_cores_at_preprocessing=True
         args.scoring_technique = 'KvsAll'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
@@ -123,6 +129,7 @@ class TestDefaultParams:
         args = argparse_default([])
         args.model = 'DistMult'
         args.num_epochs = 1
+        args.multi_cores_at_preprocessing=True
         args.scoring_technique = 'KvsAll'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
