@@ -20,7 +20,7 @@ from dask import dataframe as ddf
 import dask
 from .sanity_checkers import sanity_checking_with_arguments, config_kge_sanity_checking
 import swifter
-
+from pytorch_lightning.plugins import DDPPlugin, DeepSpeedPlugin
 
 # @TODO: Could these funcs can be merged?
 def select_model(args: dict, is_continual_training: bool = None, storage_path: str = None):
@@ -74,7 +74,7 @@ def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[BaseKG
     return model, entity_to_idx, relation_to_idx
 
 
-def load_model_ensemble(path_of_experiment_folder:str) -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
+def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
     """ Construct Ensemble Of weights and initialize pytorch module from namespace arguments
 
     (1) Detect models under given path
@@ -116,7 +116,7 @@ def load_model_ensemble(path_of_experiment_folder:str) -> Tuple[BaseKGE, pd.Data
     # (4.2) Select the model
     model, _ = intialize_model(configs)
     # (4.3) Put (3) into their places
-    model.load_state_dict(weights,strict=True)
+    model.load_state_dict(weights, strict=True)
     # (6) Set it into eval model.
     print('Setting Eval mode & requires_grad params to False')
     for parameter in model.parameters():
@@ -130,7 +130,7 @@ def load_model_ensemble(path_of_experiment_folder:str) -> Tuple[BaseKGE, pd.Data
     return model, entity_to_idx, relation_to_idx
 
 
-def numpy_data_type_changer(train_set:np.ndarray, num:int)->np.ndarray:
+def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
     """
     Detect most efficient data type for a given triples
     :param train_set:
@@ -161,7 +161,7 @@ def model_fitting(trainer, model, train_dataloaders) -> None:
     trainer.fit(model, train_dataloaders=train_dataloaders)
 
 
-def initialize_pl_trainer(args, callbacks: List, plugins: List)->pl.Trainer:
+def initialize_pl_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     """ Initialize pl.Traner from input arguments """
     if args.gpus:
         plugins.append(DDPPlugin(find_unused_parameters=False))
@@ -391,7 +391,9 @@ def performance_debugger(func_name):
             r = func(*args, **kwargs)
             print(f' took  {time.time() - starT:.3f}  seconds')
             return r
+
         return debug
+
     return func_decorator
 
 
@@ -413,7 +415,8 @@ def preprocesses_input_args(arg):
     arg.logger = False
     arg.eval = True if arg.eval == 1 else False
     arg.eval_on_train = True if arg.eval_on_train == 1 else False
-    arg.apply_reciprical_or_noise = True if arg.scoring_technique in ['KvsAll', '1vsAll', 'BatchRelaxed1vsAll','BatchRelaxedKvsAll'] else False
+    arg.apply_reciprical_or_noise = True if arg.scoring_technique in ['KvsAll', '1vsAll', 'BatchRelaxed1vsAll',
+                                                                      'BatchRelaxedKvsAll'] else False
     if arg.sample_triples_ratio is not None:
         assert 1.0 >= arg.sample_triples_ratio >= 0.0
     sanity_checking_with_arguments(arg)
@@ -507,7 +510,7 @@ def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     elif model_name == 'KronE_wo_f':
         model = KronE_wo_f(args=args)
         form_of_labelling = 'EntityPrediction'
-    #elif model_name == 'BaseKronE':
+    # elif model_name == 'BaseKronE':
     #    model = BaseKronE(args=args)
     #    form_of_labelling = 'EntityPrediction'
     elif model_name == 'Shallom':
@@ -611,3 +614,32 @@ def random_prediction(pre_trained_kge):
                                                 relation=relation,
                                                 tail_entity=tail_entity)
     return f'( {head_entity[0]},{relation[0]}, {tail_entity[0]} )', pd.DataFrame({'Score': triple_score})
+
+
+def deploy_triple_prediction(pre_trained_kge, str_subject, str_predicate, str_object):
+    triple_score = pre_trained_kge.predict_topk(head_entity=[str_subject],
+                                                relation=[str_predicate],
+                                                tail_entity=[str_object])
+    return f'( {str_subject}, {str_predicate}, {str_object} )', pd.DataFrame({'Score': triple_score})
+
+
+def deploy_tail_entity_prediction(pre_trained_kge, str_subject, str_predicate, top_k):
+    if pre_trained_kge.model.name == 'Shallom':
+        print('Tail entity prediction is not available for Shallom')
+        raise NotImplementedError
+    scores, entity = pre_trained_kge.predict_topk(head_entity=[str_subject], relation=[str_predicate], k=top_k)
+    return f'(  {str_subject},  {str_predicate}, ? )', pd.DataFrame({'Entity': entity, 'Score': scores})
+
+
+def deploy_head_entity_prediction(pre_trained_kge, str_object, str_predicate, top_k):
+    if pre_trained_kge.model.name == 'Shallom':
+        print('Head entity prediction is not available for Shallom')
+        raise NotImplementedError
+
+    scores, entity = pre_trained_kge.predict_topk(tail_entity=[str_object], relation=[str_predicate], k=top_k)
+    return f'(  ?,  {str_predicate}, {str_object} )', pd.DataFrame({'Entity': entity, 'Score': scores})
+
+
+def deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k):
+    scores, relations = pre_trained_kge.predict_topk(head_entity=[str_subject], tail_entity=[str_object], k=top_k)
+    return f'(  {str_subject}, ?, {str_object} )', pd.DataFrame({'Relations': relations, 'Score': scores})

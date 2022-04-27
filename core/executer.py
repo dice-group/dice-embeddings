@@ -11,7 +11,6 @@ import torch
 import pytorch_lightning as pl
 from pytorch_lightning import seed_everything
 from sklearn.model_selection import KFold
-from pytorch_lightning.plugins import DDPPlugin, DeepSpeedPlugin
 from pytorch_lightning.callbacks import ModelSummary
 
 from core.callbacks import PrintCallback, KGESaveCallback
@@ -48,8 +47,10 @@ class Execute:
         self.is_continual_training = continuous_training
         # (4) Create an experiment folder or use the previous one
         if self.is_continual_training:
+            # (4.1) If it is continual, then store new models on previous path.
             self.storage_path = self.args.full_storage_path
         else:
+            # (4.2) Create a folder for the experiments.
             self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
             self.storage_path = self.args.full_storage_path
             with open(self.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
@@ -61,7 +62,7 @@ class Execute:
         self.dataset = None
         # (7) Store few data in memory for numerical results, e.g. runtime, H@1 etc.
         self.report = dict()
-
+        # (8) Create an object to carry out link prediction evaluations
         self.evaluator = Evaluator(self)
 
     def read_preprocess_index_serialize_data(self) -> None:
@@ -79,10 +80,11 @@ class Execute:
 
     def save_trained_model(self, trained_model: BaseKGE, start_time: float) -> None:
         """ Save a knowledge graph embedding model (an instance of BaseKGE class) """
+        # (1) Send model to the eval mode
         trained_model.eval()
-        # (1) Store NumParam and EstimatedSizeMB
+        # (2) Store NumParam and EstimatedSizeMB
         self.report.update(extract_model_summary(trained_model.summarize()))
-        # (2) Store/Serialize Model for further use.
+        # (3) Store/Serialize Model for further use.
         if self.is_continual_training is False:
             store(trained_model, model_name='model', full_storage_path=self.storage_path,
                   dataset=self.dataset)
@@ -90,7 +92,7 @@ class Execute:
             store(trained_model, model_name='model_' + str(datetime.datetime.now()),
                   dataset=self.dataset,
                   full_storage_path=self.storage_path)
-        # (3) Store total runtime.
+        # (4) Store total runtime.
         total_runtime = time.time() - start_time
         if 60 * 60 > total_runtime:
             message = f'{total_runtime / 60:.3f} minutes'
@@ -162,7 +164,7 @@ class Execute:
         # Adding plugins=[DDPPlugin(find_unused_parameters=False)] and explicitly using num_process > 1
         """ pytorch_lightning.utilities.exceptions.DeadlockDetectedException: DeadLock detected from rank: 1  """
         # Force using SWA.
-        #self.args.stochastic_weight_avg = True
+        # self.args.stochastic_weight_avg = True
 
         # (2) Initialize Pytorch-lightning Trainer
         self.trainer = initialize_pl_trainer(self.args, callbacks, plugins=[])
@@ -189,7 +191,7 @@ class Execute:
             else:
                 raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
 
-    ####################Tran & Eval Class methods ######################################
+
     def training_kvsall(self) -> BaseKGE:
         """
         Train models with KvsAll
@@ -198,10 +200,10 @@ class Execute:
         2. y denotes a vector of probabilities, y_j corresponds to probability of j.th indexed entity
         :return: trained BASEKGE
         """
-        # 1. Select model and labelling : Entity Prediction or Relation Prediction.
+        # (1) Select model and labelling : Entity Prediction or Relation Prediction.
         model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         print(f'KvsAll training starts: {model.name}')  # -labeling:{form_of_labelling}')
-        # 2. Create training data.)
+        # (2) Create training data.
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,
                                      test_set_idx=self.dataset.test_set,
@@ -212,7 +214,7 @@ class Execute:
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_processes,
                                      label_smoothing_rate=self.args.label_smoothing_rate)
-        # 3. Train model.
+        # (3) Train model.
         train_dataloaders = dataset.train_dataloader()
         # Release some memory
         del dataset
@@ -222,7 +224,7 @@ class Execute:
             self.dataset.test_set = None
         model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
         """
-        # @TODO
+        # @TODO Model Calibration
         from laplace import Laplace
         from laplace.utils.subnetmask import ModuleNameSubnetMask
         from laplace.utils import ModuleNameSubnetMask
@@ -242,10 +244,10 @@ class Execute:
         return model, form_of_labelling
 
     def training_1vsall(self):
-        # 1. Select model and labelling : Entity Prediction or Relation Prediction.
+        # (1) Select model and labelling : Entity Prediction or Relation Prediction.
         model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         print(f'1vsAll training starts: {model.name}')
-        # 2. Create training data.
+        # (2) Create training data.
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,
                                      test_set_idx=self.dataset.test_set,
@@ -263,7 +265,7 @@ class Execute:
             model.loss = torch.nn.CrossEntropyLoss(label_smoothing=self.args.label_smoothing_rate)
         else:
             model.loss = torch.nn.CrossEntropyLoss()
-        # 3. Train model
+        # (3) Train model
         train_dataloaders = dataset.train_dataloader()
         # Release some memory
         del dataset
@@ -367,7 +369,6 @@ class Execute:
                                          neg_sample_ratio=self.args.neg_ratio,
                                          batch_size=self.args.batch_size,
                                          num_workers=self.args.num_processes)
-            print(self.args.num_processes)
             # 3. Train model
             train_dataloaders = dataset.train_dataloader()
             del dataset
@@ -387,6 +388,7 @@ class Execute:
 
 
 class ContinuousExecute(Execute):
+    """ Continue training a pretrained KGE model """
     def __init__(self, args):
         assert os.path.exists(args.path_experiment_folder)
         assert os.path.isfile(args.path_experiment_folder + '/idx_train_df.gzip')

@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 
 import numpy as np
 import pandas as pd
-from core.static_funcs import load_model, intialize_model, random_prediction
+from core.static_funcs import load_model, intialize_model, random_prediction,deploy_relation_prediction,deploy_triple_prediction,deploy_tail_entity_prediction,deploy_head_entity_prediction
 import json
 from collections import namedtuple
 import torch
@@ -11,33 +11,6 @@ import random
 from core import KGE
 
 
-def triple_prediction(pre_trained_kge, str_subject, str_predicate, str_object):
-    triple_score = pre_trained_kge.predict_topk(head_entity=[str_subject],
-                                                relation=[str_predicate],
-                                                tail_entity=[str_object])
-    return f'( {str_subject}, {str_predicate}, {str_object} )', pd.DataFrame({'Score': triple_score})
-
-
-def tail_entity_prediction(pre_trained_kge, str_subject, str_predicate, top_k):
-    if pre_trained_kge.model.name == 'Shallom':
-        print('Tail entity prediction is not available for Shallom')
-        raise NotImplementedError
-    scores, entity = pre_trained_kge.predict_topk(head_entity=[str_subject], relation=[str_predicate], k=top_k)
-    return f'(  {str_subject},  {str_predicate}, ? )', pd.DataFrame({'Entity': entity, 'Score': scores})
-
-
-def head_entity_prediction(pre_trained_kge, str_object, str_predicate, top_k):
-    if pre_trained_kge.model.name == 'Shallom':
-        print('Head entity prediction is not available for Shallom')
-        raise NotImplementedError
-
-    scores, entity = pre_trained_kge.predict_topk(tail_entity=[str_object], relation=[str_predicate], k=top_k)
-    return f'(  ?,  {str_predicate}, {str_object} )', pd.DataFrame({'Entity': entity, 'Score': scores})
-
-
-def relation_prediction(pre_trained_kge, str_subject, str_object, top_k):
-    scores, relations = pre_trained_kge.predict_topk(head_entity=[str_subject], tail_entity=[str_object], k=top_k)
-    return f'(  {str_subject}, ?, {str_object} )', pd.DataFrame({'Relations': relations, 'Score': scores})
 
 
 def launch_kge(args, pre_trained_kge: KGE):
@@ -55,19 +28,19 @@ def launch_kge(args, pre_trained_kge: KGE):
             if pre_trained_kge.is_seen(entity=str_subject) and pre_trained_kge.is_seen(
                     relation=str_predicate) and pre_trained_kge.is_seen(entity=str_object):
                 """ Triple Prediction """
-                return triple_prediction(pre_trained_kge, str_subject, str_predicate, str_object)
+                return deploy_triple_prediction(pre_trained_kge, str_subject, str_predicate, str_object)
 
             elif pre_trained_kge.is_seen(entity=str_subject) and pre_trained_kge.is_seen(
                     relation=str_predicate):
                 """ Tail Entity Prediction """
-                return tail_entity_prediction(pre_trained_kge, str_subject, str_predicate, args['top_k'])
+                return deploy_tail_entity_prediction(pre_trained_kge, str_subject, str_predicate, args['top_k'])
             elif pre_trained_kge.is_seen(entity=str_object) and pre_trained_kge.is_seen(
                     relation=str_predicate):
                 """ Head Entity Prediction """
-                return head_entity_prediction(pre_trained_kge, str_object, str_predicate, args['top_k'])
+                return deploy_head_entity_prediction(pre_trained_kge, str_object, str_predicate, args['top_k'])
             elif pre_trained_kge.is_seen(entity=str_subject) and pre_trained_kge.is_seen(entity=str_object):
                 """ Relation Prediction """
-                return relation_prediction(pre_trained_kge, str_subject, str_object, args['top_k'])
+                return deploy_relation_prediction(pre_trained_kge, str_subject, str_object, args['top_k'])
             else:
                 KeyError('Uncovered scenario')
         # If user simply select submit
@@ -96,7 +69,7 @@ def run(args: dict):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--path_of_experiment_folder", type=str, default='Experiments/2022-04-26 10:57:41.290552')
-    parser.add_argument('--share', default=False, type=eval, choices=[True, False])
+    parser.add_argument("--path_of_experiment_folder", type=str, default='Experiments/2022-04-27 20:53:49.861173')
+    parser.add_argument('--share', default=True, type=eval, choices=[True, False])
     parser.add_argument('--top_k', default=10, type=int)
     run(vars(parser.parse_args()))
