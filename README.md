@@ -1,4 +1,4 @@
-# Knowledge Graph Embeddings at Scale
+# DICE Embeddings: Hardware-agnostic Framework for of Large-scale Knowledge Graph Embeddings
 
 This open-source project is designed to ease real-world applications of knowledge graph embeddings. 
 Wit this aim, we apply rely on
