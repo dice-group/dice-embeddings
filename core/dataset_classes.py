@@ -334,7 +334,7 @@ class TriplePredictionDataset(Dataset):
     Using hard targets (0,1) drives weights to infinity. An outlier produces enormous gradients. """
 
     def __init__(self, triples_idx, num_entities: int, num_relations: int, neg_sample_ratio: int = 1,
-                 soft_confidence_rate: float = 0.01):
+                 soft_confidence_rate: float = 0.001):
         """
 
         :param triples_idx:
@@ -349,12 +349,6 @@ class TriplePredictionDataset(Dataset):
         self.neg_sample_ratio = neg_sample_ratio  # 0 Implies that we do not add negative samples. This is needed during testing and validation
         self.triples_idx = triples_idx
 
-        # self.head_idx = triples_idx[:, 0]
-        # self.rel_idx = triples_idx[:, 1]
-        # self.tail_idx = triples_idx[:, 2]
-        # assert self.head_idx.shape == self.rel_idx.shape == self.tail_idx.shape
-        # assert num_entities > max(self.head_idx) and num_entities > max(self.tail_idx)
-        # assert num_relations > max(self.rel_idx)
         assert num_entities >= max(triples_idx[:, 0]) and num_entities >= max(triples_idx[:, 2])
         # assert num_relations > max(self.rel_idx)
         self.length = len(self.triples_idx)
