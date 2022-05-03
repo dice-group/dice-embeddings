@@ -4,6 +4,7 @@ import time
 import warnings
 from types import SimpleNamespace
 import os
+import datetime
 
 import numpy as np
 import pandas as pd
@@ -22,7 +23,7 @@ from core.evaluator import Evaluator
 from core.typings import *
 from core.static_funcs import store, extract_model_summary, model_fitting, select_model, initialize_pl_trainer, \
     config_kge_sanity_checking, \
-    preprocesses_input_args, create_experiment_folder, read_preprocess_index_serialize_kg  # *
+    preprocesses_input_args, create_experiment_folder, read_preprocess_index_serialize_kg, load_json, reload_input_data
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
@@ -190,7 +191,6 @@ class Execute:
                 return self.train_relaxed_k_vs_all()
             else:
                 raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
-
 
     def training_kvsall(self) -> BaseKGE:
         """
@@ -389,6 +389,7 @@ class Execute:
 
 class ContinuousExecute(Execute):
     """ Continue training a pretrained KGE model """
+
     def __init__(self, args):
         assert os.path.exists(args.path_experiment_folder)
         assert os.path.isfile(args.path_experiment_folder + '/idx_train_df.gzip')
