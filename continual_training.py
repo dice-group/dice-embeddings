@@ -1,5 +1,4 @@
 from core.executer import ContinuousExecute
-from core import load_json
 import argparse
 import dask.dataframe as dd
 import os
