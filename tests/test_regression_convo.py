@@ -9,6 +9,7 @@ class TestRegressionConvO:
     def test_k_vs_all(self):
         args = argparse_default([])
         args.model = 'ConvO'
+        args.scoring_technique = 'KvsAll'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 50
         args.batch_size = 1024
@@ -17,9 +18,8 @@ class TestRegressionConvO:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.scoring_technique = 'KvsAll'
-        args.eval = 1
-        args.eval_on_train = 1
+        args.eval = True
+        args.eval_on_train = True
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None

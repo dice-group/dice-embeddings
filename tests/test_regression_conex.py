@@ -9,6 +9,8 @@ class TestRegressionConEx:
     def test_k_vs_all(self):
         args = argparse_default([])
         args.model = 'ConEx'
+        args.scoring_technique = 'KvsAll'
+        args.optim='Adam'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 20
         args.batch_size = 1024
@@ -17,12 +19,10 @@ class TestRegressionConEx:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.scoring_technique = 'KvsAll'
-        args.eval = 1
-        args.eval_on_train = 1
+        args.eval = True
+        args.eval_on_train = True
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.num_folds_for_cv = None
         args.num_folds_for_cv = None
 
         result = Execute(args).start()

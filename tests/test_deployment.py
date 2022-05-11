@@ -10,6 +10,7 @@ class TestDefaultParams:
     def test_qmult(self):
         args = argparse_default([])
         args.model = 'QMult'
+        args.optim = 'Adam'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
         args.path_dataset_folder = 'KGs/UMLS'

@@ -13,6 +13,8 @@ class TestEnsembleConstruction:
     def test_k_vs_all(self):
         args = main_argparse_default([])
         args.model = 'QMult'
+        args.scoring_technique = 'KvsAll'
+        args.optim = 'Adam'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
@@ -21,9 +23,8 @@ class TestEnsembleConstruction:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.scoring_technique = 'KvsAll'
-        args.eval = 1
-        args.eval_on_train = 1
+        args.eval = True
+        args.eval_on_train = True
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None

@@ -9,6 +9,8 @@ class TestRegressionComplEx:
     def test_k_vs_all(self):
         args = argparse_default([])
         args.model = 'ComplEx'
+        args.scoring_technique = 'KvsAll'
+        args.optim = 'Adam'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 50
         args.batch_size = 1024
@@ -22,7 +24,6 @@ class TestRegressionComplEx:
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
-        args.scoring_technique = 'KvsAll'
         result = Execute(args).start()
         assert 0.83 >= result['Train']['H@1'] >= 0.75
         assert 0.81 >= result['Val']['H@1'] >= 0.60
@@ -71,6 +72,6 @@ class TestRegressionComplEx:
         args.read_only_few = None
         args.num_folds_for_cv = None
         result = Execute(args).start()
-        assert 0.72 >= result['Train']['H@1'] >= .65
+        assert 0.73 >= result['Train']['H@1'] >= .65
         assert 0.71 >= result['Val']['H@1'] >= .57
         assert 0.71 >= result['Test']['H@1'] >= .57

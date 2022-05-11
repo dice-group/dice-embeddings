@@ -9,6 +9,7 @@ class TestRegressionQmult:
         args = argparse_default([])
         args.model = 'QMult'
         args.path_dataset_folder = 'KGs/UMLS'
+        args.optim = 'Adam'
         args.num_epochs = 50
         args.batch_size = 1024
         args.lr = 0.01
@@ -35,6 +36,7 @@ class TestRegressionQmult:
     def test_1_vs_all(self):
         args = argparse_default([])
         args.model = 'QMult'
+        args.optim = 'Adam'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 50
         args.batch_size = 1024
@@ -63,6 +65,7 @@ class TestRegressionQmult:
     def test_negative_sampling(self):
         args = argparse_default([])
         args.model = 'QMult'
+        args.optim = 'Adam'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 50
         args.batch_size = 1024

@@ -24,7 +24,7 @@ def argparse_default(description=None):
                         default="QMult",
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, "
                              "Shallom, ConEx, ComplEx, DistMult")
-    parser.add_argument('--optim', type=str, default='SGD',
+    parser.add_argument('--optim', type=str, default='Adam',
                         help='[NAdam, Adam, SGD]')
     parser.add_argument('--embedding_dim', type=int, default=32,
                         help='Number of dimensions for an embedding vector. ')

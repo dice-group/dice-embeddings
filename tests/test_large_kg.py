@@ -10,6 +10,7 @@ class TestRegressionDistMult:
         args = argparse_default([])
         args.model = 'DistMult'
         args.path_dataset_folder = 'KGs/WN18RR'
+        args.optim = 'Adam'
         args.num_epochs = 1
         args.batch_size = 4096
         args.lr = 0.1
@@ -35,6 +36,7 @@ class TestRegressionDistMult:
         args = argparse_default([])
         args.model = 'DistMult'
         args.path_dataset_folder = 'KGs/WN18RR'
+        args.optim = 'Adam'
         args.num_epochs = 32
         args.batch_size = 4096
         args.lr = 0.1

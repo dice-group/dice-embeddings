@@ -13,6 +13,8 @@ class TestRegressionCL:
     def test_negative_sampling(self):
         args = main_argparse_default([])
         args.model = 'QMult'
+        args.scoring_technique = 'KvsAll'
+        args.optim = 'Adam'
         args.path_dataset_folder = 'KGs/Family'
         args.num_epochs = 10
         args.batch_size = 1024
@@ -21,7 +23,6 @@ class TestRegressionCL:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.scoring_technique = 'KvsAll'
         args.eval = False
         args.eval_on_train = False
         args.read_only_few = None
@@ -39,6 +40,8 @@ class TestRegressionCL:
         args = main_argparse_default([])
         args.model = 'QMult'
         args.path_dataset_folder = 'KGs/Family'
+        args.scoring_technique = 'KvsAll'
+        args.optim = 'Adam'
         args.num_epochs = 1
         args.batch_size = 1024
         args.lr = 0.1
@@ -46,7 +49,6 @@ class TestRegressionCL:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.scoring_technique = 'KvsAll'
         args.eval = False
         args.eval_on_train = False
         args.read_only_few = None
@@ -64,6 +66,8 @@ class TestRegressionCL:
         args = main_argparse_default([])
         args.model = 'QMult'
         args.path_dataset_folder = 'KGs/Family'
+        args.scoring_technique = 'KvsAll'
+        args.optim = 'Adam'
         args.num_epochs = 1
         args.batch_size = 1024
         args.lr = 0.1
@@ -71,7 +75,6 @@ class TestRegressionCL:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.scoring_technique = 'KvsAll'
         args.eval = False
         args.eval_on_train = False
         args.read_only_few = None
