@@ -14,7 +14,7 @@ from pytorch_lightning import seed_everything
 from sklearn.model_selection import KFold
 from pytorch_lightning.callbacks import ModelSummary
 
-from core.callbacks import PrintCallback, KGESaveCallback
+from core.callbacks import PrintCallback, KGESaveCallback, PseudoLabellingCallback
 from core.dataset_classes import StandardDataModule
 from core.helper_classes import LabelRelaxationLoss, BatchRelaxedvsAllLoss
 from core.knowledge_graph import KG
@@ -150,6 +150,7 @@ class Execute:
                                      max_epochs=self.args.max_epochs,
                                      path=self.args.full_storage_path), ModelSummary(max_depth=-1)]
 
+
         # PL has some problems with DDPPlugin. It will likely to be solved in their next release.
         # Explicitly setting num_process > 1 gives you
         """
@@ -185,12 +186,39 @@ class Execute:
                 return self.training_negative_sampling()
             elif self.args.scoring_technique == 'KvsAll':
                 return self.training_kvsall()
+            elif self.args.scoring_technique == 'CCP1vsAll':
+                return self.training_ccp1vsall()
             elif self.args.scoring_technique == '1vsAll':
                 return self.training_1vsall()
             elif self.args.scoring_technique == "BatchRelaxedKvsAll" or self.args.scoring_technique == "BatchRelaxed1vsAll":
                 return self.train_relaxed_k_vs_all()
             else:
                 raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
+
+    def training_ccp1vsall(self) -> BaseKGE:
+        # (1) Select model and labelling : Entity Prediction or Relation Prediction.
+        model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
+        print(f'CCP1vsAll training starts: {model.name}')
+        # (2) Create training data.
+        dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
+                                     valid_set_idx=self.dataset.valid_set,
+                                     test_set_idx=self.dataset.test_set,
+                                     entity_to_idx=self.dataset.entity_to_idx,
+                                     relation_to_idx=self.dataset.relation_to_idx,
+                                     form=form_of_labelling,
+                                     neg_sample_ratio=self.args.neg_ratio,
+                                     batch_size=self.args.batch_size,
+                                     num_workers=self.args.num_processes
+                                     )
+        self.trainer.callbacks.append(PseudoLabellingCallback(dataset))
+
+        model.loss = torch.nn.CrossEntropyLoss()
+        if self.args.eval is False:
+            self.dataset.train_set = None
+            self.dataset.valid_set = None
+            self.dataset.test_set = None
+        model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
+        return model, form_of_labelling
 
     def training_kvsall(self) -> BaseKGE:
         """
@@ -243,7 +271,7 @@ class Execute:
 
         return model, form_of_labelling
 
-    def training_1vsall(self):
+    def training_1vsall(self) -> BaseKGE:
         # (1) Select model and labelling : Entity Prediction or Relation Prediction.
         model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         print(f'1vsAll training starts: {model.name}')
