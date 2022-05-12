@@ -137,6 +137,7 @@ def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
     :param num:
     :return:
     """
+    assert isinstance(num,int)
     # train_set = train_set.astype(np.int32)
     if np.iinfo(np.int8).max > num:
         print(f'Setting int8,\t {np.iinfo(np.int8).max}')

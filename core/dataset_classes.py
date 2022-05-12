@@ -100,9 +100,9 @@ class StandardDataModule(pl.LightningDataModule):
             valid_set = TriplePredictionDataset(self.valid_set_idx,
                                                 num_entities=len(self.entity_to_idx),
                                                 num_relations=len(self.relation_to_idx),
-                                                neg_sample_ratio=self.neg_sample_ratio)
+                                                neg_sample_ratio=0)
             return DataLoader(valid_set, batch_size=self.batch_size,
-                              shuffle=True,
+                              shuffle=False,
                               num_workers=self.num_workers,
                               collate_fn=valid_set.collate_fn, pin_memory=True
                               )
@@ -110,12 +110,12 @@ class StandardDataModule(pl.LightningDataModule):
             valid_set = KvsAll(self.valid_set_idx, entity_idxs=self.entity_to_idx,
                                relation_idxs=self.relation_to_idx, form=self.form,
                                label_smoothing_rate=self.label_smoothing_rate)
-            return DataLoader(valid_set, batch_size=self.batch_size, shuffle=True, pin_memory=True,
+            return DataLoader(valid_set, batch_size=self.batch_size, shuffle=False, pin_memory=True,
                               num_workers=self.num_workers)
 
         elif self.form == '1VsAll':
             valid_set = OneVsAllEntityPredictionDataset(self.valid_set_idx)
-            return DataLoader(valid_set, batch_size=self.batch_size, shuffle=True, pin_memory=True,
+            return DataLoader(valid_set, batch_size=self.batch_size, shuffle=False, pin_memory=True,
                               num_workers=self.num_workers)
         else:
             raise KeyError(f'{self.form} illegal input.')

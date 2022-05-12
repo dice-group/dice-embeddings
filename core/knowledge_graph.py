@@ -227,7 +227,7 @@ class KG:
             print('Train set compute...')
             self.train_set = self.train_set.compute(scheduler=self.scheduler_flag)
         else:
-            assert isinstance(self.train_set,pd.DataFrame)
+            assert isinstance(self.train_set, pd.DataFrame)
 
         if self.valid_set is not None:
             print('Valid set compute...')
