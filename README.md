@@ -9,21 +9,11 @@ Wit this aim, we apply rely on
 ### Installation
 Clone the repository:
 ```
-git clone https://github.com/dice-group/DAIKIRI-Embedding.git
+git clone https://github.com/dice-group/dice-embeddings.git
 ```
-Install dependencies via conda:
+To install dependencies:
 ```
-conda env create -f environment.yml
-conda activate daikiri
-```
-or via pip:
-```
-# ensure that python > 3.8 is available
-pip install -r requirements.txt
-```
-or manually
-```
-conda create -n daikiri python=3.9
+conda create -n daikiri python=3.10
 conda activate daikiri
 pip install pandas==1.4.1
 pip install swifter==1.1.2
