@@ -19,7 +19,7 @@ class Evaluator:
             self.eval_with_vs_all(trained_model, form_of_labelling)
         elif self.executor.args.scoring_technique == '1vsAll':
             self.eval_with_vs_all(trained_model, form_of_labelling)
-        elif self.executor.args.scoring_technique == 'CCP1vsAll':
+        elif self.executor.args.scoring_technique == 'PvsAll':
             self.eval_with_vs_all(trained_model, form_of_labelling)
         elif self.executor.args.scoring_technique in ['BatchRelaxedKvsAll', 'BatchRelaxed1vsAll']:
             self.eval_with_vs_all(trained_model, form_of_labelling)

@@ -186,8 +186,8 @@ class Execute:
                 return self.training_negative_sampling()
             elif self.args.scoring_technique == 'KvsAll':
                 return self.training_kvsall()
-            elif self.args.scoring_technique == 'CCP1vsAll':
-                return self.training_ccp1vsall()
+            elif self.args.scoring_technique == 'PvsAll':
+                return self.training_PvsAll()
             elif self.args.scoring_technique == '1vsAll':
                 return self.training_1vsall()
             elif self.args.scoring_technique == "BatchRelaxedKvsAll" or self.args.scoring_technique == "BatchRelaxed1vsAll":
@@ -195,10 +195,20 @@ class Execute:
             else:
                 raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
 
-    def training_ccp1vsall(self) -> BaseKGE:
+    def training_PvsAll(self) -> BaseKGE:
+        """
+        Pseudo Singla for KGE
+        After the first 10 epochs
+        1. Randomy generate triples
+        2. Obtain predicted scores of (1)
+        3. Select only those triples whose predicted score is at least 3.
+        :return:
+        """
+
+
         # (1) Select model and labelling : Entity Prediction or Relation Prediction.
         model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
-        print(f'CCP1vsAll training starts: {model.name}')
+        print(f'PvsAll training starts: {model.name}')
         # (2) Create training data.
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,
@@ -210,7 +220,7 @@ class Execute:
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_processes
                                      )
-        self.trainer.callbacks.append(PseudoLabellingCallback(dataset))
+        self.trainer.callbacks.append(PseudoLabellingCallback(dataset,self.dataset))
 
         model.loss = torch.nn.CrossEntropyLoss()
         if self.args.eval is False:
