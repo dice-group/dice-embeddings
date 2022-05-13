@@ -233,7 +233,7 @@ def store_kge(trained_model, path: str) -> None:
 
 
 def store(trained_model, model_name: str = 'model', full_storage_path: str = None,
-          dataset=None) -> None:
+          dataset=None,save_as_csv=False) -> None:
     """
     Store trained_model model and save embeddings into csv file.
 
@@ -241,6 +241,7 @@ def store(trained_model, model_name: str = 'model', full_storage_path: str = Non
     :param full_storage_path: path to save parameters.
     :param model_name: string representation of the name of the model.
     :param trained_model: an instance of BaseKGE(pl.LightningModule) see core.models.base_model .
+    :param save_as_csv: for easy access of embeddings.
     :return:
     """
     print('------------------- Store -------------------')
@@ -251,28 +252,40 @@ def store(trained_model, model_name: str = 'model', full_storage_path: str = Non
 
     # (1) Save pytorch model in trained_model .
     store_kge(trained_model, path=full_storage_path + f'/{model_name}.pt')
-    # (2) See available memory and decide whether embeddings are stored separately or not.
-    available_memory = [i.split() for i in os.popen('free -h').read().splitlines()][1][-1]  # ,e.g., 10Gi
-    available_memory_mb = float(available_memory[:-2]) * 1000
-    # Decision: model size in MB should be at most 1 percent of the available memory.
-    if available_memory_mb * .01 > extract_model_summary(trained_model.summarize())['EstimatedSizeMB']:
+    if save_as_csv:
         # (2.1) Get embeddings.
         entity_emb, relation_ebm = trained_model.get_embeddings()
-        # (2.2) If we have less than 1000 rows total save it as csv.
-        if len(entity_emb) < 1000:
-            save_embeddings(entity_emb.numpy(), indexes=dataset.entities_str,
-                            path=full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
-            del entity_emb
-            if relation_ebm is not None:
-                save_embeddings(relation_ebm.numpy(), indexes=dataset.relations_str,
-                                path=full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
-                del relation_ebm
+        save_embeddings(entity_emb.numpy(), indexes=dataset.entities_str,path=full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
+        del entity_emb
+        if relation_ebm is not None:
+            save_embeddings(relation_ebm.numpy(), indexes=dataset.relations_str,
+                            path=full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
+            del relation_ebm
         else:
-            torch.save(entity_emb, full_storage_path + '/' + trained_model.name + '_entity_embeddings.pt')
-            if relation_ebm is not None:
-                torch.save(relation_ebm, full_storage_path + '/' + trained_model.name + '_relation_embeddings.pt')
+            pass
     else:
-        print('There is not enough memory to store embeddings separately.')
+        # (2) See available memory and decide whether embeddings are stored separately or not.
+        available_memory = [i.split() for i in os.popen('free -h').read().splitlines()][1][-1]  # ,e.g., 10Gi
+        available_memory_mb = float(available_memory[:-2]) * 1000
+        # Decision: model size in MB should be at most 1 percent of the available memory.
+        if available_memory_mb * .01 > extract_model_summary(trained_model.summarize())['EstimatedSizeMB']:
+            # (2.1) Get embeddings.
+            entity_emb, relation_ebm = trained_model.get_embeddings()
+            # (2.2) If we have less than 1000 rows total save it as csv.
+            if len(entity_emb) < 1000:
+                save_embeddings(entity_emb.numpy(), indexes=dataset.entities_str,
+                                path=full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
+                del entity_emb
+                if relation_ebm is not None:
+                    save_embeddings(relation_ebm.numpy(), indexes=dataset.relations_str,
+                                    path=full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
+                    del relation_ebm
+            else:
+                torch.save(entity_emb, full_storage_path + '/' + trained_model.name + '_entity_embeddings.pt')
+                if relation_ebm is not None:
+                    torch.save(relation_ebm, full_storage_path + '/' + trained_model.name + '_relation_embeddings.pt')
+        else:
+            print('There is not enough memory to store embeddings separately.')
 
 
 def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, multi_processing=False):

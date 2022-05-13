@@ -8,8 +8,10 @@ def argparse_default(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Dataset and storage related
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/KINSHIP',
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Biopax',
                         help="The path of a folder containing input data")
+    parser.add_argument("--save_embeddings_as_csv", type=bool, default=True,
+                        help='A flag for saving embeddings in csv file.')
     parser.add_argument("--multi_cores_at_preprocessing", type=bool, default=False,
                         help='A flag for using all cores at parsing.')
     parser.add_argument("--storage_path", type=str, default='Experiments',
@@ -28,11 +30,11 @@ def argparse_default(description=None):
                         help='[NAdam, Adam, SGD]')
     parser.add_argument('--embedding_dim', type=int, default=32,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=50, help='Number of epochs for training. ')
-    parser.add_argument('--batch_size', type=int, default=32, help='Mini batch size')
+    parser.add_argument("--num_epochs", type=int, default=5, help='Number of epochs for training. ')
+    parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.01, help='Learning rate')
     # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='PvsAll', help="PvsAll, 1vsAll, KvsAll, NegSample")
+    parser.add_argument('--scoring_technique', default='KvsAll', help="PvsAll, 1vsAll, KvsAll, NegSample")
     parser.add_argument('--neg_ratio', type=int, default=1)
     # Additional training params
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,

@@ -88,11 +88,12 @@ class Execute:
         # (3) Store/Serialize Model for further use.
         if self.is_continual_training is False:
             store(trained_model, model_name='model', full_storage_path=self.storage_path,
-                  dataset=self.dataset)
+                  dataset=self.dataset,save_as_csv=self.args.save_embeddings_as_csv)
         else:
             store(trained_model, model_name='model_' + str(datetime.datetime.now()),
                   dataset=self.dataset,
                   full_storage_path=self.storage_path)
+
         # (4) Store total runtime.
         total_runtime = time.time() - start_time
         if 60 * 60 > total_runtime:

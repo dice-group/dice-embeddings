@@ -13,11 +13,11 @@ git clone https://github.com/dice-group/dice-embeddings.git
 ```
 To install dependencies:
 ```
-conda create -n daikiri python=3.10
-conda activate daikiri
+conda create -n dice python=3.10
+conda activate dice
 pip install pandas==1.4.1
 pip install swifter==1.1.2
-pip install torch==1.10.1+cu113 -f https://download.pytorch.org/whl/cu113/torch_stable.html
+pip3 install torch --extra-index-url https://download.pytorch.org/whl/cu113
 pip install pytorch-lightning==1.5.9
 pip install "dask[complete]"==2022.1.0
 pip install scikit-learn==1.0.2
