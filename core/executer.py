@@ -225,8 +225,6 @@ class Execute:
                                      num_workers=self.args.num_processes
                                      )
 
-        p_val_norm_var = 0
-
         def on_epoch_start(self, *args, **kwargs):
             """ Update non-conformity scores"""
             with torch.no_grad():
@@ -234,7 +232,6 @@ class Execute:
                 self.non_conf_scores = non_conformity_score_diff(
                     torch.nn.functional.softmax(self.forward(self.calibration_set[:, [0, 1]])),
                     self.calibration_set[:, 2])
-
         setattr(BaseKGE, 'on_epoch_start', on_epoch_start)
 
         def unsupervised_loss_function(self, unlabelled_input_batch):
@@ -246,7 +243,7 @@ class Execute:
                 p_values = construct_p_values(self.non_conf_scores, pseudo_label,
                                               non_conf_score_fn=non_conformity_score_diff)
                 # (1.4) Normalize (1.3)
-                norm_p_values = norm_p_value(p_values, variant=p_val_norm_var)
+                norm_p_values = norm_p_value(p_values, variant=0)
 
             Lu = gen_lr(pseudo_label, norm_p_values)
             return Lu
@@ -282,7 +279,7 @@ class Execute:
                 p_values = construct_p_values(self.non_conf_scores, pseudo_label,
                                               non_conf_score_fn=non_conformity_score_diff)
                 # (2.4) Normalize (2.3)
-                norm_p_values = norm_p_value(p_values, variant=p_val_norm_var)
+                norm_p_values = norm_p_value(p_values, variant=0)
 
             unlabelled_loss = gen_lr(torch.nn.functional.softmax(model(unlabelled_input_batch)), norm_p_values)
 

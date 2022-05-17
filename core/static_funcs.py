@@ -431,8 +431,15 @@ def preprocesses_input_args(arg):
     arg.logger = False
     arg.eval = True if arg.eval == 1 else False
     arg.eval_on_train = True if arg.eval_on_train == 1 else False
-    arg.apply_reciprical_or_noise = True if arg.scoring_technique in ['KvsAll', '1vsAll', 'BatchRelaxed1vsAll',
-                                                                      'BatchRelaxedKvsAll'] else False
+    # reciprocal checking
+    # @TODO We need better way for using apply_reciprical_or_noise.
+    if arg.scoring_technique in ['PvsAll', 'CCvsAll', 'KvsAll', '1vsAll', 'BatchRelaxed1vsAll', 'BatchRelaxedKvsAll']:
+        arg.apply_reciprical_or_noise = True
+    elif arg.scoring_technique == 'NegSample':
+        arg.apply_reciprical_or_noise = False
+    else:
+        raise KeyError(f'Unexpected input for scoring_technique.\t{arg.scoring_technique}')
+
     if arg.sample_triples_ratio is not None:
         assert 1.0 >= arg.sample_triples_ratio >= 0.0
     sanity_checking_with_arguments(arg)
@@ -661,7 +668,7 @@ def deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k):
     return f'(  {str_subject}, ?, {str_object} )', pd.DataFrame({'Relations': relations, 'Score': scores})
 
 
-def semi_supervised_split(train_set: np.ndarray, split_ratio=.10):
+def semi_supervised_split(train_set: np.ndarray, split_ratio=.25):
     """
     Split input triples into three splits
     1. split corresponds to the first 10% of the input
@@ -686,7 +693,7 @@ def non_conformity_score_diff(predictions, targets) -> torch.Tensor:
         predictions = predictions.unsqueeze(0)
     if len(targets.shape) == 1:
         targets = targets.unsqueeze(1)
-    num_class=predictions.shape[1]
+    num_class = predictions.shape[1]
     class_val = torch.gather(predictions, 1, targets.type(torch.int64))
 
     # Exclude the target class here
@@ -806,7 +813,7 @@ def det_lookahead(p_hat, pi, ref_idx, proj, precision=1e-5):
 
 
 def construct_p_values(non_conf_scores, preds, non_conf_score_fn):
-    num_class=preds.shape[1]
+    num_class = preds.shape[1]
     tmp_non_conf = torch.zeros([preds.shape[0], num_class]).detach()
     p_values = torch.zeros([preds.shape[0], num_class]).detach()
     for clz in range(num_class):
