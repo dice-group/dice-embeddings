@@ -30,11 +30,11 @@ def argparse_default(description=None):
                         help='[NAdam, Adam, SGD]')
     parser.add_argument('--embedding_dim', type=int, default=32,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=500, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.01, help='Learning rate')
     # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='CCvsAll', help="PvsAll, 1vsAll, KvsAll, NegSample")
+    parser.add_argument('--scoring_technique', default='CCvsAll', help="PvsAll, CCvsAll, 1vsAll, KvsAll, NegSample")
     parser.add_argument('--neg_ratio', type=int, default=1)
     # Additional training params
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,

@@ -9,6 +9,7 @@ import datetime
 import numpy as np
 import pandas as pd
 import torch
+import torch.nn.functional as F
 import pytorch_lightning as pl
 from pytorch_lightning import seed_everything
 from sklearn.model_selection import KFold
@@ -25,11 +26,13 @@ from core.static_funcs import store, extract_model_summary, model_fitting, selec
     config_kge_sanity_checking, \
     preprocesses_input_args, create_experiment_folder, read_preprocess_index_serialize_kg, load_json, reload_input_data
 
+from core.static_funcs import semi_supervised_split, non_conformity_score_diff, construct_p_values, norm_p_value, \
+    gen_lr
+
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 warnings.filterwarnings(action="ignore", category=FutureWarning)
-import torch.nn.functional as F
 
 
 class Execute:
@@ -206,17 +209,11 @@ class Execute:
         """
         model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         print(f'Conformal Credal Self Training starts: {model.name}')
-        # Divide train_set into
-        # 5 % Train, 5 % Calibration, and 90 % Unlabelled
-        split_ratio = 5
-        n = len(self.dataset.train_set)
-        # (1) Select 5 % of the first triples for the training.
-        train = self.dataset.train_set[:n // split_ratio, :]
-        # (2) Select remaining first 5 % of the triples for the calibration.
-        calibration = torch.LongTensor(self.dataset.train_set[len(train):len(train) + n // split_ratio, :])
-        # (3) Consider remaining triples as unlabelled.
-        unlabelled = torch.LongTensor(self.dataset.train_set[-len(train) - len(calibration):, :])
-        # (4) Create training data.
+        # Split the training triples into train, calibration and unlabelled.
+        train, calibration, unlabelled = semi_supervised_split(self.dataset.train_set)
+        model.calibration = torch.LongTensor(calibration)
+        model.unlabelled = torch.LongTensor(unlabelled)
+        model.unlabelled_size = len(model.unlabelled)
         dataset = StandardDataModule(train_set_idx=train,
                                      valid_set_idx=self.dataset.valid_set,
                                      test_set_idx=self.dataset.test_set,
@@ -230,150 +227,19 @@ class Execute:
         num_class = len(self.dataset.entity_to_idx)
         p_val_norm_var = 0
 
-        def get_unlabelled_batch(batch_size: int) -> torch.LongTensor:
-            """ Create random head and relation pairs  """
-            idx = torch.randint(low=0, high=len(unlabelled), size=(batch_size,))
-            return unlabelled[idx][:, [0, 1]]
-
-        def non_conformity_score_diff(predictions, targets) -> torch.Tensor:
-            if len(predictions.shape) == 1:
-                predictions = predictions.unsqueeze(0)
-            if len(targets.shape) == 1:
-                targets = targets.unsqueeze(1)
-
-            class_val = torch.gather(predictions, 1, targets.type(torch.int64))
-
-            # Exclude the target class here
-            indices = torch.arange(0, num_class).view(1, -1).repeat(predictions.shape[0], 1)
-            mask = torch.zeros_like(indices).bool()
-            mask.scatter_(1, targets.type(torch.int64), True)
-
-            selected_predictions = predictions[~mask].view(-1, num_class - 1)
-
-            return torch.max(selected_predictions - class_val, dim=-1).values
-
-        def p_value(non_conf_scores, act_score):
-            if len(act_score.shape) < 2:
-                act_score = act_score.unsqueeze(-1)
-
-            # return (torch.sum(non_conf_scores >= act_score) + 1) / (len(non_conf_scores) + 1)
-            return (torch.sum(non_conf_scores >= act_score, dim=-1) + 1) / (len(non_conf_scores) + 1)
-
-        def norm_p_value(p_values, variant):
-            if len(p_values.shape) < 2:
-                p_values = p_values.unsqueeze(0)
-
-            if variant == 0:
-                norm_p_values = p_values / (torch.max(p_values, dim=-1).values.unsqueeze(-1))
-            else:
-                norm_p_values = p_values.scatter_(1, torch.max(p_values, dim=-1).indices.unsqueeze(-1),
-                                                  torch.ones_like(p_values))
-            return norm_p_values
-
-        def is_in_credal_set(p_hat, pi):
-            if len(p_hat.shape) == 1:
-                p_hat = p_hat.unsqueeze(0)
-            if len(pi.shape) == 1:
-                pi = pi.unsqueeze(0)
-
-            c = torch.cumsum(torch.flip(p_hat, dims=[-1]), dim=-1)
-            rev_pi = torch.flip(pi, dims=[-1])
-            return torch.all(c <= rev_pi, dim=-1)
-
-        def gen_lr(p_hat, pi):
-
-            if len(p_hat.shape) < 2:
-                p_hat = p_hat.unsqueeze(0)
-            if len(pi.shape) < 2:
-                pi = pi.unsqueeze(0)
-
-            with torch.no_grad():
-                # Sort values
-                sorted_pi_rt = pi.sort(descending=True)
-
-                sorted_pi = sorted_pi_rt.values
-                sorted_p_hat = torch.gather(p_hat, 1, sorted_pi_rt.indices)
-
-                def search_fn(sorted_p_hat, sorted_pi, sorted_pi_rt_ind):
-                    result_probs = torch.zeros_like(sorted_p_hat)
-
-                    for i in range(sorted_p_hat.shape[0]):
-                        # Search for loss
-                        proj = torch.zeros_like(sorted_p_hat[i])
-
-                        j = sorted_p_hat[i].shape[0] - 1
-                        while j >= 0:
-                            lookahead = det_lookahead(sorted_p_hat[i], sorted_pi[i], j, proj)
-                            proj[lookahead:j + 1] = sorted_p_hat[i][lookahead:j + 1] / torch.sum(
-                                sorted_p_hat[i][lookahead:j + 1]) * (
-                                                            sorted_pi[i][lookahead] - torch.sum(proj[j + 1:]))
-
-                            j = lookahead - 1
-
-                        # e-arrange projection again according to original order
-                        proj = proj[sorted_pi_rt_ind[i].sort().indices]
-
-                        result_probs[i] = proj
-                    return result_probs
-
-                is_c_set = is_in_credal_set(sorted_p_hat, sorted_pi)
-
-                sorted_p_hat_non_c = sorted_p_hat[~is_c_set]
-                sorted_pi_non_c = sorted_pi[~is_c_set]
-                sorted_pi_ind_c = sorted_pi_rt.indices[~is_c_set]
-
-                result_probs = torch.zeros_like(sorted_p_hat)
-                result_probs[~is_c_set] = search_fn(sorted_p_hat_non_c, sorted_pi_non_c, sorted_pi_ind_c)
-                result_probs[is_c_set] = p_hat[is_c_set]
-
-            p_hat = torch.clip(p_hat, 1e-5, 1.)
-            result_probs = torch.clip(result_probs, 1e-5, 1.)
-
-            divergence = F.kl_div(p_hat.log(), result_probs, log_target=False, reduction="none")
-            divergence = torch.sum(divergence, dim=-1)
-
-            result = torch.where(is_c_set, torch.zeros_like(divergence), divergence)
-
-            return torch.mean(result)
-
-        def det_lookahead(p_hat, pi, ref_idx, proj, precision=1e-5):
-            for i in range(ref_idx):
-                prop = p_hat[i:ref_idx + 1] / torch.sum(p_hat[i:ref_idx + 1])
-                prop *= (pi[i] - torch.sum(proj[ref_idx + 1:]))
-
-                # Check violation
-                violates = False
-                # TODO: Make this more efficient by using cumsum
-                for j in range(len(prop)):
-                    if (torch.sum(prop[j:]) + torch.sum(proj[ref_idx + 1:])) > (torch.max(pi[i + j:]) + precision):
-                        violates = True
-                        break
-
-                if not violates:
-                    return i
-
-            return ref_idx
-
-        def construct_p_values(non_conf_scores, preds, non_conf_score_fn):
-            tmp_non_conf = torch.zeros([preds.shape[0], num_class]).detach()
-            p_values = torch.zeros([preds.shape[0], num_class]).detach()
-            for clz in range(num_class):
-                tmp_non_conf[:, clz] = non_conf_score_fn(preds, torch.tensor(clz).repeat(preds.shape[0]))
-                p_values[:, clz] = p_value(non_conf_scores, tmp_non_conf[:, clz])
-            return p_values
-
         def unsupervised_loss_function(self, unlabelled_input_batch):
             # (1) Compute non-conformity scores
             with torch.no_grad():
                 # (1.1) Initialize non-conformity scores as zeros.
                 non_conf_scores = non_conformity_score_diff(
-                    torch.nn.functional.softmax(self.forward(calibration[:, [0, 1]])), calibration[:, 2])
+                    torch.nn.functional.softmax(self.forward(self.calibration[:, [0, 1]])), self.calibration[:, 2],
+                    num_class)
                 # (1.2) Predict unlabelled batch \mathcal{B}_u
                 pseudo_label = torch.nn.functional.softmax(model(unlabelled_input_batch).detach())
 
                 # (1.3) Construct p values
                 p_values = construct_p_values(non_conf_scores, pseudo_label,
-                                              non_conf_score_fn=non_conformity_score_diff)
+                                              non_conf_score_fn=non_conformity_score_diff, num_class=num_class)
                 # (1.4) Normalize (1.3)
                 norm_p_values = norm_p_value(p_values, variant=p_val_norm_var)
 
@@ -393,7 +259,10 @@ class Execute:
             train_loss = self.loss_function(yhat_batch=yhat_batch, y_batch=y_batch)
             # (2) UNSUPERVISED PART
             # (2.1) Obtain unlabelled batch (\mathcal{B}_u)
-            unlabelled_input_batch = get_unlabelled_batch(batch_size=len(batch))
+
+            unlabelled_input_batch = self.unlabelled[
+                                         torch.randint(low=0, high=self.unlabelled_size, size=(len(batch),))][:, [0, 1]]
+
             # (2.2) Compute loss
             unlabelled_loss = self.unsupervised_loss_function(unlabelled_input_batch=unlabelled_input_batch)
             return train_loss + unlabelled_loss
@@ -409,18 +278,13 @@ class Execute:
         return model, form_of_labelling
 
     def training_PvsAll(self) -> BaseKGE:
-        """
-        Pseudo Singla for KGE
-        After the first 10 epochs
-        1. Randomy generate triples
-        2. Obtain predicted scores of (1)
-        3. Select only those triples whose predicted score is at least 3.
-        :return:
-        """
+        """ Pseudo Labelling for KGE """
 
         # (1) Select model and labelling : Entity Prediction or Relation Prediction.
         model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         print(f'PvsAll training starts: {model.name}')
+        self.dataset.train_set, _, self.dataset.unlabelled_set = semi_supervised_split(self.dataset.train_set)
+        self.dataset.unlabelled_set = torch.LongTensor(self.dataset.unlabelled_set)
         # (2) Create training data.
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,
@@ -432,7 +296,7 @@ class Execute:
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_processes
                                      )
-        self.trainer.callbacks.append(PseudoLabellingCallback(dataset, self.dataset))
+        self.trainer.callbacks.append(PseudoLabellingCallback(data_module=dataset, kg=self.dataset))
 
         model.loss = torch.nn.CrossEntropyLoss()
         if self.args.eval is False:

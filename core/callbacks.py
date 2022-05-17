@@ -50,27 +50,13 @@ class KGESaveCallback(Callback):
 
 
 class PseudoLabellingCallback(Callback):
-    def __init__(self, dataset, kg):
+    def __init__(self, data_module, kg):
         super().__init__()
-        self.dataset = dataset
+        self.data_module = data_module
         self.kg = kg
         self.num_of_epochs = 0
-
-    def create_random_data(self):
-        # TODO: maybe sample triples that are not outside of the range and domain ?
-        entities = torch.randint(low=0, high=self.kg.num_entities, size=(50, 2))
-        relations = torch.randint(low=0, high=self.kg.num_relations, size=(50,))
-        # unlabelled triples
-        return torch.stack((entities[:, 0], relations, entities[:, 1]), dim=1)
-
-    def setup(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule", stage: Optional[str] = None) -> None:
-        pass
-
-    def teardown(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule", stage: Optional[str] = None) -> None:
-        pass
-
-    def on_batch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
-        pass
+        self.unlabelled_size = len(self.kg.unlabelled_set)
+        self.batch_size = 50
 
     def on_epoch_end(self, trainer, model):
         # Create random triples
@@ -80,15 +66,20 @@ class PseudoLabellingCallback(Callback):
         model.eval()
         with torch.no_grad():
             # (1) Create random triples
-            unlabelled_data = self.create_random_data()
-            # (2) Select (1) s.t. model is too confident
-            unlabelled_data = unlabelled_data[model(unlabelled_data) > 3.0]
+            unlabelled_input_batch = self.kg.unlabelled_set[
+                torch.randint(low=0, high=self.unlabelled_size, size=(self.batch_size,))]  # [:, [0, 1]]
+            # (2) Predict unlabelled batch, and use prediction as pseudo-labels
+            pseudo_label = torch.sigmoid(model(unlabelled_input_batch))
+            selected_triples = unlabelled_input_batch[pseudo_label > .95]
+
         # Update dataset
-        self.dataset.train_set_idx = np.concatenate((self.dataset.train_set_idx, unlabelled_data.detach().numpy()),
-                                                    axis=0)
-        trainer.train_dataloader = self.dataset.train_dataloader()
-        print(trainer.current_epoch, len(self.dataset.train_set_idx))
+        self.data_module.train_set_idx = np.concatenate(
+            (self.data_module.train_set_idx, selected_triples.detach().numpy()),
+            axis=0)
+        trainer.train_dataloader = self.data_module.train_dataloader()
+        print(trainer.current_epoch, len(self.data_module.train_set_idx))
         model.train()
+
 
 # https://pytorch-lightning.readthedocs.io/en/stable/extensions/callbacks.html#persisting-state
 # https://pytorch-lightning.readthedocs.io/en/stable/extensions/callbacks.html#teardown

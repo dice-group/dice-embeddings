@@ -22,6 +22,7 @@ from .sanity_checkers import sanity_checking_with_arguments, config_kge_sanity_c
 import swifter
 from pytorch_lightning.plugins import DDPPlugin, DeepSpeedPlugin
 
+
 # @TODO: Could these funcs can be merged?
 def select_model(args: dict, is_continual_training: bool = None, storage_path: str = None):
     isinstance(args, dict)
@@ -137,7 +138,7 @@ def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
     :param num:
     :return:
     """
-    assert isinstance(num,int)
+    assert isinstance(num, int)
     # train_set = train_set.astype(np.int32)
     if np.iinfo(np.int8).max > num:
         print(f'Setting int8,\t {np.iinfo(np.int8).max}')
@@ -233,7 +234,7 @@ def store_kge(trained_model, path: str) -> None:
 
 
 def store(trained_model, model_name: str = 'model', full_storage_path: str = None,
-          dataset=None,save_as_csv=False) -> None:
+          dataset=None, save_as_csv=False) -> None:
     """
     Store trained_model model and save embeddings into csv file.
 
@@ -255,7 +256,8 @@ def store(trained_model, model_name: str = 'model', full_storage_path: str = Non
     if save_as_csv:
         # (2.1) Get embeddings.
         entity_emb, relation_ebm = trained_model.get_embeddings()
-        save_embeddings(entity_emb.numpy(), indexes=dataset.entities_str,path=full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
+        save_embeddings(entity_emb.numpy(), indexes=dataset.entities_str,
+                        path=full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
         del entity_emb
         if relation_ebm is not None:
             save_embeddings(relation_ebm.numpy(), indexes=dataset.relations_str,
@@ -657,3 +659,156 @@ def deploy_head_entity_prediction(pre_trained_kge, str_object, str_predicate, to
 def deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k):
     scores, relations = pre_trained_kge.predict_topk(head_entity=[str_subject], tail_entity=[str_object], k=top_k)
     return f'(  {str_subject}, ?, {str_object} )', pd.DataFrame({'Relations': relations, 'Score': scores})
+
+
+def semi_supervised_split(train_set: np.ndarray, split_ratio=.05):
+    """
+    Split input triples into three splits
+    1. split corresponds to the first 10% of the input
+    2. split corresponds to the second 10% of the input
+    3. split corresponds to the remaining data.
+    """
+    # Divide train_set into
+    n, d = train_set.shape
+    assert d == 3
+    # (1) Select 5 % of the first triples for the training.
+    train = train_set[: int(n * split_ratio)]
+    # (2) Select remaining first 5 % of the triples for the calibration.
+    calibration = train_set[len(train):len(train) + int(n * split_ratio)]
+    # (3) Consider remaining triples as unlabelled.
+    unlabelled = train_set[-len(train) - len(calibration):]
+    print(f'Shapes:\tTrain{train.shape}\tCalib:{calibration.shape}\tUnlabelled:{unlabelled.shape}')
+    return train, calibration, unlabelled
+
+
+def non_conformity_score_diff(predictions, targets, num_class) -> torch.Tensor:
+    if len(predictions.shape) == 1:
+        predictions = predictions.unsqueeze(0)
+    if len(targets.shape) == 1:
+        targets = targets.unsqueeze(1)
+
+    class_val = torch.gather(predictions, 1, targets.type(torch.int64))
+
+    # Exclude the target class here
+    indices = torch.arange(0, num_class).view(1, -1).repeat(predictions.shape[0], 1)
+    mask = torch.zeros_like(indices).bool()
+    mask.scatter_(1, targets.type(torch.int64), True)
+
+    selected_predictions = predictions[~mask].view(-1, num_class - 1)
+
+    return torch.max(selected_predictions - class_val, dim=-1).values
+
+
+def p_value(non_conf_scores, act_score):
+    if len(act_score.shape) < 2:
+        act_score = act_score.unsqueeze(-1)
+
+    # return (torch.sum(non_conf_scores >= act_score) + 1) / (len(non_conf_scores) + 1)
+    return (torch.sum(non_conf_scores >= act_score, dim=-1) + 1) / (len(non_conf_scores) + 1)
+
+
+def norm_p_value(p_values, variant):
+    if len(p_values.shape) < 2:
+        p_values = p_values.unsqueeze(0)
+
+    if variant == 0:
+        norm_p_values = p_values / (torch.max(p_values, dim=-1).values.unsqueeze(-1))
+    else:
+        norm_p_values = p_values.scatter_(1, torch.max(p_values, dim=-1).indices.unsqueeze(-1),
+                                          torch.ones_like(p_values))
+    return norm_p_values
+
+
+def is_in_credal_set(p_hat, pi):
+    if len(p_hat.shape) == 1:
+        p_hat = p_hat.unsqueeze(0)
+    if len(pi.shape) == 1:
+        pi = pi.unsqueeze(0)
+
+    c = torch.cumsum(torch.flip(p_hat, dims=[-1]), dim=-1)
+    rev_pi = torch.flip(pi, dims=[-1])
+    return torch.all(c <= rev_pi, dim=-1)
+
+
+def gen_lr(p_hat, pi):
+    if len(p_hat.shape) < 2:
+        p_hat = p_hat.unsqueeze(0)
+    if len(pi.shape) < 2:
+        pi = pi.unsqueeze(0)
+
+    with torch.no_grad():
+        # Sort values
+        sorted_pi_rt = pi.sort(descending=True)
+
+        sorted_pi = sorted_pi_rt.values
+        sorted_p_hat = torch.gather(p_hat, 1, sorted_pi_rt.indices)
+
+        def search_fn(sorted_p_hat, sorted_pi, sorted_pi_rt_ind):
+            result_probs = torch.zeros_like(sorted_p_hat)
+
+            for i in range(sorted_p_hat.shape[0]):
+                # Search for loss
+                proj = torch.zeros_like(sorted_p_hat[i])
+
+                j = sorted_p_hat[i].shape[0] - 1
+                while j >= 0:
+                    lookahead = det_lookahead(sorted_p_hat[i], sorted_pi[i], j, proj)
+                    proj[lookahead:j + 1] = sorted_p_hat[i][lookahead:j + 1] / torch.sum(
+                        sorted_p_hat[i][lookahead:j + 1]) * (
+                                                    sorted_pi[i][lookahead] - torch.sum(proj[j + 1:]))
+
+                    j = lookahead - 1
+
+                # e-arrange projection again according to original order
+                proj = proj[sorted_pi_rt_ind[i].sort().indices]
+
+                result_probs[i] = proj
+            return result_probs
+
+        is_c_set = is_in_credal_set(sorted_p_hat, sorted_pi)
+
+        sorted_p_hat_non_c = sorted_p_hat[~is_c_set]
+        sorted_pi_non_c = sorted_pi[~is_c_set]
+        sorted_pi_ind_c = sorted_pi_rt.indices[~is_c_set]
+
+        result_probs = torch.zeros_like(sorted_p_hat)
+        result_probs[~is_c_set] = search_fn(sorted_p_hat_non_c, sorted_pi_non_c, sorted_pi_ind_c)
+        result_probs[is_c_set] = p_hat[is_c_set]
+
+    p_hat = torch.clip(p_hat, 1e-5, 1.)
+    result_probs = torch.clip(result_probs, 1e-5, 1.)
+
+    divergence = F.kl_div(p_hat.log(), result_probs, log_target=False, reduction="none")
+    divergence = torch.sum(divergence, dim=-1)
+
+    result = torch.where(is_c_set, torch.zeros_like(divergence), divergence)
+
+    return torch.mean(result)
+
+
+def det_lookahead(p_hat, pi, ref_idx, proj, precision=1e-5):
+    for i in range(ref_idx):
+        prop = p_hat[i:ref_idx + 1] / torch.sum(p_hat[i:ref_idx + 1])
+        prop *= (pi[i] - torch.sum(proj[ref_idx + 1:]))
+
+        # Check violation
+        violates = False
+        # TODO: Make this more efficient by using cumsum
+        for j in range(len(prop)):
+            if (torch.sum(prop[j:]) + torch.sum(proj[ref_idx + 1:])) > (torch.max(pi[i + j:]) + precision):
+                violates = True
+                break
+
+        if not violates:
+            return i
+
+    return ref_idx
+
+
+def construct_p_values(non_conf_scores, preds, non_conf_score_fn, num_class):
+    tmp_non_conf = torch.zeros([preds.shape[0], num_class]).detach()
+    p_values = torch.zeros([preds.shape[0], num_class]).detach()
+    for clz in range(num_class):
+        tmp_non_conf[:, clz] = non_conf_score_fn(preds, torch.tensor(clz).repeat(preds.shape[0]), num_class)
+        p_values[:, clz] = p_value(non_conf_scores, tmp_non_conf[:, clz])
+    return p_values
