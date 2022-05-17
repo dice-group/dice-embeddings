@@ -50,34 +50,42 @@ class KGESaveCallback(Callback):
 
 
 class PseudoLabellingCallback(Callback):
-    def __init__(self, data_module, kg):
+    def __init__(self, data_module, kg,batch_size):
         super().__init__()
         self.data_module = data_module
         self.kg = kg
         self.num_of_epochs = 0
         self.unlabelled_size = len(self.kg.unlabelled_set)
-        self.batch_size = 50
+        self.batch_size = batch_size
+
+    def create_random_data(self):
+        entities = torch.randint(low=0, high=self.kg.num_entities, size=(self.batch_size, 2))
+        relations = torch.randint(low=0, high=self.kg.num_relations, size=(self.batch_size,))
+        # unlabelled triples
+        return torch.stack((entities[:, 0], relations, entities[:, 1]), dim=1)
 
     def on_epoch_end(self, trainer, model):
         # Create random triples
-        if trainer.current_epoch < 10:
-            return None
+        # if trainer.current_epoch < 10:
+        #    return None
         # Increase it size, Now we increase it.
         model.eval()
         with torch.no_grad():
             # (1) Create random triples
+            # unlabelled_input_batch = self.create_random_data()
+            # (2) or use unlabelled batch
             unlabelled_input_batch = self.kg.unlabelled_set[
-                torch.randint(low=0, high=self.unlabelled_size, size=(self.batch_size,))]  # [:, [0, 1]]
+                torch.randint(low=0, high=self.unlabelled_size, size=(self.batch_size,))]
             # (2) Predict unlabelled batch, and use prediction as pseudo-labels
             pseudo_label = torch.sigmoid(model(unlabelled_input_batch))
-            selected_triples = unlabelled_input_batch[pseudo_label > .95]
-
-        # Update dataset
-        self.data_module.train_set_idx = np.concatenate(
-            (self.data_module.train_set_idx, selected_triples.detach().numpy()),
-            axis=0)
-        trainer.train_dataloader = self.data_module.train_dataloader()
-        print(trainer.current_epoch, len(self.data_module.train_set_idx))
+            selected_triples = unlabelled_input_batch[pseudo_label >= .90]
+        if len(selected_triples) > 0:
+            # Update dataset
+            self.data_module.train_set_idx = np.concatenate(
+                (self.data_module.train_set_idx, selected_triples.detach().numpy()),
+                axis=0)
+            trainer.train_dataloader = self.data_module.train_dataloader()
+            print(f'\tEpoch:{trainer.current_epoch}: Pseudo-labelling\t |D|= {len(self.data_module.train_set_idx)}')
         model.train()
 
 

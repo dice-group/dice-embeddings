@@ -219,27 +219,30 @@ class Execute:
                                      test_set_idx=self.dataset.test_set,
                                      entity_to_idx=self.dataset.entity_to_idx,
                                      relation_to_idx=self.dataset.relation_to_idx,
-                                     form=form_of_labelling,
+                                     form='CCvsAll',
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_processes
                                      )
-        num_class = len(self.dataset.entity_to_idx)
+
         p_val_norm_var = 0
+
+        def on_epoch_start(self, *args, **kwargs):
+            with torch.no_grad():
+                # (1.1) Compute non-conformity scores at each batch/instead of each epoch.
+                self.non_conf_scores = non_conformity_score_diff(
+                    torch.nn.functional.softmax(self.forward(self.calibration[:, [0, 1]])), self.calibration[:, 2])
+
+        setattr(BaseKGE, 'on_epoch_start', on_epoch_start)
 
         def unsupervised_loss_function(self, unlabelled_input_batch):
             # (1) Compute non-conformity scores
             with torch.no_grad():
-                # (1.1) Initialize non-conformity scores as zeros.
-                non_conf_scores = non_conformity_score_diff(
-                    torch.nn.functional.softmax(self.forward(self.calibration[:, [0, 1]])), self.calibration[:, 2],
-                    num_class)
                 # (1.2) Predict unlabelled batch \mathcal{B}_u
                 pseudo_label = torch.nn.functional.softmax(model(unlabelled_input_batch).detach())
-
                 # (1.3) Construct p values
-                p_values = construct_p_values(non_conf_scores, pseudo_label,
-                                              non_conf_score_fn=non_conformity_score_diff, num_class=num_class)
+                p_values = construct_p_values(self.non_conf_scores, pseudo_label,
+                                              non_conf_score_fn=non_conformity_score_diff)
                 # (1.4) Normalize (1.3)
                 norm_p_values = norm_p_value(p_values, variant=p_val_norm_var)
 
@@ -254,17 +257,26 @@ class Execute:
             # (1.1) Extract inputs and labels from a given batch (\mathcal{B}_l)
             x_batch, y_batch = batch
             # (1.2) Predictions
-            yhat_batch = self.forward(x_batch)
-            # (1.3) Compute Loss
-            train_loss = self.loss_function(yhat_batch=yhat_batch, y_batch=y_batch)
+            logits_x = self.forward(x_batch)
+            # (1.3) Compute the supervised Loss
+            # (1.3.1) Via Cross Entropy
+            train_loss = self.loss_function(yhat_batch=logits_x, y_batch=y_batch)
+            """
+            # (1.3.2) Via KL divergence
+            yhat = torch.clip(torch.softmax(logits_x, dim=-1), 1e-5, 1.)
+            one_hot_targets = torch.clip(y_batch, 1e-5, 1.)
+            train_loss = F.kl_div(yhat.log(), one_hot_targets, log_target=False, reduction='batchmean')
+            """
             # (2) UNSUPERVISED PART
             # (2.1) Obtain unlabelled batch (\mathcal{B}_u)
-
             unlabelled_input_batch = self.unlabelled[
-                                         torch.randint(low=0, high=self.unlabelled_size, size=(len(batch),))][:, [0, 1]]
+                                         torch.randint(low=0, high=self.unlabelled_size, size=(len(x_batch),))][:,
+                                     [0, 1]]
 
             # (2.2) Compute loss
             unlabelled_loss = self.unsupervised_loss_function(unlabelled_input_batch=unlabelled_input_batch)
+
+            print(train_loss, unlabelled_loss)
             return train_loss + unlabelled_loss
 
         # Dynamically update
@@ -291,14 +303,14 @@ class Execute:
                                      test_set_idx=self.dataset.test_set,
                                      entity_to_idx=self.dataset.entity_to_idx,
                                      relation_to_idx=self.dataset.relation_to_idx,
-                                     form=form_of_labelling,
+                                     form='PvsAll',
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_processes
                                      )
-        self.trainer.callbacks.append(PseudoLabellingCallback(data_module=dataset, kg=self.dataset))
+        self.trainer.callbacks.append(
+            PseudoLabellingCallback(data_module=dataset, kg=self.dataset, batch_size=self.args.batch_size))
 
-        model.loss = torch.nn.CrossEntropyLoss()
         if self.args.eval is False:
             self.dataset.train_set = None
             self.dataset.valid_set = None
