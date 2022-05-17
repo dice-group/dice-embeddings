@@ -210,11 +210,11 @@ class Execute:
         model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         print(f'Conformal Credal Self Training starts: {model.name}')
         # Split the training triples into train, calibration and unlabelled.
-        train, calibration, unlabelled = semi_supervised_split(self.dataset.train_set)
-        model.calibration = torch.LongTensor(calibration)
-        model.unlabelled = torch.LongTensor(unlabelled)
-        model.unlabelled_size = len(model.unlabelled)
-        dataset = StandardDataModule(train_set_idx=train,
+        train_set, calibration_set, unlabelled_set = semi_supervised_split(self.dataset.train_set)
+        model.calibration_set = torch.LongTensor(calibration_set)
+        model.unlabelled_set = torch.LongTensor(unlabelled_set)
+
+        dataset = StandardDataModule(train_set_idx=train_set,
                                      valid_set_idx=self.dataset.valid_set,
                                      test_set_idx=self.dataset.test_set,
                                      entity_to_idx=self.dataset.entity_to_idx,
@@ -228,10 +228,12 @@ class Execute:
         p_val_norm_var = 0
 
         def on_epoch_start(self, *args, **kwargs):
+            """ Update non-conformity scores"""
             with torch.no_grad():
-                # (1.1) Compute non-conformity scores at each batch/instead of each epoch.
+                # (1.1) Compute non-conformity scores on calibration dataset per epoch.
                 self.non_conf_scores = non_conformity_score_diff(
-                    torch.nn.functional.softmax(self.forward(self.calibration[:, [0, 1]])), self.calibration[:, 2])
+                    torch.nn.functional.softmax(self.forward(self.calibration_set[:, [0, 1]])),
+                    self.calibration_set[:, 2])
 
         setattr(BaseKGE, 'on_epoch_start', on_epoch_start)
 
@@ -269,14 +271,21 @@ class Execute:
             """
             # (2) UNSUPERVISED PART
             # (2.1) Obtain unlabelled batch (\mathcal{B}_u)
-            unlabelled_input_batch = self.unlabelled[
-                                         torch.randint(low=0, high=self.unlabelled_size, size=(len(x_batch),))][:,
+            unlabelled_input_batch = self.unlabelled_set[
+                                         torch.randint(low=0, high=len(unlabelled_set), size=(len(x_batch),))][:,
                                      [0, 1]]
 
-            # (2.2) Compute loss
-            unlabelled_loss = self.unsupervised_loss_function(unlabelled_input_batch=unlabelled_input_batch)
+            with torch.no_grad():
+                # (2.2) Predict unlabelled batch \mathcal{B}_u
+                pseudo_label = torch.nn.functional.softmax(model(unlabelled_input_batch).detach())
+                # (2.3) Construct p values given non-conformity scores and pseudo labels
+                p_values = construct_p_values(self.non_conf_scores, pseudo_label,
+                                              non_conf_score_fn=non_conformity_score_diff)
+                # (2.4) Normalize (2.3)
+                norm_p_values = norm_p_value(p_values, variant=p_val_norm_var)
 
-            print(train_loss, unlabelled_loss)
+            unlabelled_loss = gen_lr(torch.nn.functional.softmax(model(unlabelled_input_batch)), norm_p_values)
+
             return train_loss + unlabelled_loss
 
         # Dynamically update
@@ -295,10 +304,12 @@ class Execute:
         # (1) Select model and labelling : Entity Prediction or Relation Prediction.
         model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         print(f'PvsAll training starts: {model.name}')
-        self.dataset.train_set, _, self.dataset.unlabelled_set = semi_supervised_split(self.dataset.train_set)
-        self.dataset.unlabelled_set = torch.LongTensor(self.dataset.unlabelled_set)
+        train_set, calibration_set, unlabelled_set = semi_supervised_split(self.dataset.train_set)
+
+        model.calibration_set = torch.LongTensor(calibration_set)
+        model.unlabelled_set = torch.LongTensor(unlabelled_set)
         # (2) Create training data.
-        dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
+        dataset = StandardDataModule(train_set_idx=train_set,
                                      valid_set_idx=self.dataset.valid_set,
                                      test_set_idx=self.dataset.test_set,
                                      entity_to_idx=self.dataset.entity_to_idx,
@@ -306,10 +317,35 @@ class Execute:
                                      form='PvsAll',
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_processes
-                                     )
-        self.trainer.callbacks.append(
-            PseudoLabellingCallback(data_module=dataset, kg=self.dataset, batch_size=self.args.batch_size))
+                                     num_workers=self.args.num_processes)
+
+        # Define a new raining set
+        def training_step(self, batch, batch_idx):
+            # (1) SUPERVISED PART
+            # (1.1) Extract inputs and labels from a given batch
+            x_batch, y_batch = batch
+            # (1.2) Predictions
+            logits_x = self.forward(x_batch)
+            # (1.3) Compute the supervised Loss
+            # (1.3.1) Via Cross Entropy
+            supervised_loss = self.loss_function(yhat_batch=logits_x, y_batch=y_batch)
+            # (2) UNSUPERVISED PART
+            # (2.1) Obtain unlabelled batch (\mathcal{B}_u)
+            random_idx = torch.randint(low=0, high=len(self.unlabelled_set), size=(len(x_batch),))
+            # (2.2) Batch of head entity and relation
+            unlabelled_x = self.unlabelled_set[random_idx][:, [0, 1]]
+            # (2.3) Create Pseudo-Labels
+            with torch.no_grad():
+                # (2.2) Compute loss
+                _, max_pseudo_tail = torch.max(self.forward(unlabelled_x), dim=1)
+                pseudo_labels = F.one_hot(max_pseudo_tail, num_classes=y_batch.shape[1]).float()
+
+            unlabelled_loss = self.loss_function(yhat_batch=self.forward(unlabelled_x), y_batch=pseudo_labels)
+
+            return supervised_loss + unlabelled_loss
+
+        # Dynamically update
+        setattr(BaseKGE, 'training_step', training_step)
 
         if self.args.eval is False:
             self.dataset.train_set = None
