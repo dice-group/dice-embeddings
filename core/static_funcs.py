@@ -668,7 +668,7 @@ def deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k):
     return f'(  {str_subject}, ?, {str_object} )', pd.DataFrame({'Relations': relations, 'Score': scores})
 
 
-def semi_supervised_split(train_set: np.ndarray, split_ratio=.25):
+def semi_supervised_split(train_set: np.ndarray, split_ratio=.40):
     """
     Split input triples into three splits
     1. split corresponds to the first 10% of the input
@@ -688,22 +688,6 @@ def semi_supervised_split(train_set: np.ndarray, split_ratio=.25):
     return train, calibration, unlabelled
 
 
-def non_conformity_score_diff(predictions, targets) -> torch.Tensor:
-    if len(predictions.shape) == 1:
-        predictions = predictions.unsqueeze(0)
-    if len(targets.shape) == 1:
-        targets = targets.unsqueeze(1)
-    num_class = predictions.shape[1]
-    class_val = torch.gather(predictions, 1, targets.type(torch.int64))
-
-    # Exclude the target class here
-    indices = torch.arange(0, num_class).view(1, -1).repeat(predictions.shape[0], 1)
-    mask = torch.zeros_like(indices).bool()
-    mask.scatter_(1, targets.type(torch.int64), True)
-
-    selected_predictions = predictions[~mask].view(-1, num_class - 1)
-
-    return torch.max(selected_predictions - class_val, dim=-1).values
 
 
 def p_value(non_conf_scores, act_score):
@@ -820,3 +804,39 @@ def construct_p_values(non_conf_scores, preds, non_conf_score_fn):
         tmp_non_conf[:, clz] = non_conf_score_fn(preds, torch.tensor(clz).repeat(preds.shape[0]))
         p_values[:, clz] = p_value(non_conf_scores, tmp_non_conf[:, clz])
     return p_values
+
+def non_conformity_score_prop(predictions, targets) -> torch.Tensor:
+    if len(predictions.shape) == 1:
+        predictions = predictions.unsqueeze(0)
+    if len(targets.shape) == 1:
+        targets = targets.unsqueeze(1)
+
+    class_val = torch.gather(predictions, 1, targets.type(torch.int64))
+    num_class = predictions.shape[1]
+
+    # Exclude the target class here
+    indices = torch.arange(0, num_class).view(1, -1).repeat(predictions.shape[0], 1)
+    mask = torch.zeros_like(indices).bool()
+    mask.scatter_(1, targets.type(torch.int64), True)
+
+    selected_predictions = predictions[~mask].view(-1, args.num_classes - 1)
+
+    return torch.max(selected_predictions, dim=-1).values.squeeze() / (
+            class_val.squeeze() + args.non_conf_score_prop_gamma + 1e-5)
+
+def non_conformity_score_diff(predictions, targets) -> torch.Tensor:
+    if len(predictions.shape) == 1:
+        predictions = predictions.unsqueeze(0)
+    if len(targets.shape) == 1:
+        targets = targets.unsqueeze(1)
+    num_class = predictions.shape[1]
+    class_val = torch.gather(predictions, 1, targets.type(torch.int64))
+
+    # Exclude the target class here
+    indices = torch.arange(0, num_class).view(1, -1).repeat(predictions.shape[0], 1)
+    mask = torch.zeros_like(indices).bool()
+    mask.scatter_(1, targets.type(torch.int64), True)
+
+    selected_predictions = predictions[~mask].view(-1, num_class - 1)
+
+    return torch.max(selected_predictions - class_val, dim=-1).values

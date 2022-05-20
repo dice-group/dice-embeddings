@@ -214,6 +214,11 @@ class Execute:
         model.calibration_set = torch.LongTensor(calibration_set)
         model.unlabelled_set = torch.LongTensor(unlabelled_set)
 
+        variant = 0
+        non_conf_score_fn = non_conformity_score_diff  # or  non_conformity_score_prop
+        print('Variant:', variant)
+        print('non_conf_score_fn:', non_conf_score_fn)
+
         dataset = StandardDataModule(train_set_idx=train_set,
                                      valid_set_idx=self.dataset.valid_set,
                                      test_set_idx=self.dataset.test_set,
@@ -232,34 +237,16 @@ class Execute:
                 self.non_conf_scores = non_conformity_score_diff(
                     torch.nn.functional.softmax(self.forward(self.calibration_set[:, [0, 1]])),
                     self.calibration_set[:, 2])
+
         setattr(BaseKGE, 'on_epoch_start', on_epoch_start)
-
-        def unsupervised_loss_function(self, unlabelled_input_batch):
-            # (1) Compute non-conformity scores
-            with torch.no_grad():
-                # (1.2) Predict unlabelled batch \mathcal{B}_u
-                pseudo_label = torch.nn.functional.softmax(model(unlabelled_input_batch).detach())
-                # (1.3) Construct p values
-                p_values = construct_p_values(self.non_conf_scores, pseudo_label,
-                                              non_conf_score_fn=non_conformity_score_diff)
-                # (1.4) Normalize (1.3)
-                norm_p_values = norm_p_value(p_values, variant=0)
-
-            Lu = gen_lr(pseudo_label, norm_p_values)
-            return Lu
-
-        setattr(BaseKGE, 'unsupervised_loss_function', unsupervised_loss_function)
 
         # Define a new raining set
         def training_step(self, batch, batch_idx):
             # (1) SUPERVISED PART
             # (1.1) Extract inputs and labels from a given batch (\mathcal{B}_l)
             x_batch, y_batch = batch
-            # (1.2) Predictions
-            logits_x = self.forward(x_batch)
-            # (1.3) Compute the supervised Loss
-            # (1.3.1) Via Cross Entropy
-            train_loss = self.loss_function(yhat_batch=logits_x, y_batch=y_batch)
+            # (1.2) Compute the supervised Loss
+            train_loss = self.loss_function(yhat_batch=self.forward(x_batch), y_batch=y_batch)
             """
             # (1.3.2) Via KL divergence
             yhat = torch.clip(torch.softmax(logits_x, dim=-1), 1e-5, 1.)
@@ -267,21 +254,22 @@ class Execute:
             train_loss = F.kl_div(yhat.log(), one_hot_targets, log_target=False, reduction='batchmean')
             """
             # (2) UNSUPERVISED PART
-            # (2.1) Obtain unlabelled batch (\mathcal{B}_u)
+            # (2.1) Obtain unlabelled batch (\mathcal{B}_u), (x:=(s,p))
             unlabelled_input_batch = self.unlabelled_set[
                                          torch.randint(low=0, high=len(unlabelled_set), size=(len(x_batch),))][:,
                                      [0, 1]]
-
+            # (2.2) Predict unlabelled batch \mathcal{B}_u
             with torch.no_grad():
+                # TODO:Important moving this code outside of the no_grad improved the results a lot.
                 # (2.2) Predict unlabelled batch \mathcal{B}_u
-                pseudo_label = torch.nn.functional.softmax(model(unlabelled_input_batch).detach())
+                pseudo_label = torch.nn.functional.softmax(self.forward(unlabelled_input_batch).detach())
                 # (2.3) Construct p values given non-conformity scores and pseudo labels
-                p_values = construct_p_values(self.non_conf_scores, pseudo_label,
+                p_values = construct_p_values(self.non_conf_scores, pseudo_label.detach(),
                                               non_conf_score_fn=non_conformity_score_diff)
                 # (2.4) Normalize (2.3)
                 norm_p_values = norm_p_value(p_values, variant=0)
 
-            unlabelled_loss = gen_lr(torch.nn.functional.softmax(model(unlabelled_input_batch)), norm_p_values)
+            unlabelled_loss = gen_lr(pseudo_label, norm_p_values)
 
             return train_loss + unlabelled_loss
 

@@ -28,13 +28,13 @@ def argparse_default(description=None):
                              "Shallom, ConEx, ComplEx, DistMult")
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[NAdam, Adam, SGD]')
-    parser.add_argument('--embedding_dim', type=int, default=256,
+    parser.add_argument('--embedding_dim', type=int, default=128,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=50, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=5, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.01, help='Learning rate')
     # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='CCvsAll', help="PvsAll, CCvsAll, 1vsAll, KvsAll, NegSample")
+    parser.add_argument('--scoring_technique', default='PvsAll', help="PvsAll, CCvsAll, 1vsAll, KvsAll, NegSample")
     parser.add_argument('--neg_ratio', type=int, default=1)
     # Additional training params
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,

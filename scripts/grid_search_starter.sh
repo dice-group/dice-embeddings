@@ -6,16 +6,16 @@ main_wd="$(cd "$PWD"; cd ..; pwd)"
 python_script_path="$main_wd/main.py"
 
 # shellcheck disable=SC2043
-for kgname in "UMLS"
+for kgname in "UMLS" "KINSHIP"
 do
   kg_path="$main_wd/KGs/$kgname"
   for model in "QMult"
   do
-    for epoch in 1
+    for epoch in 100
     do
       for dim in 256
       do
-        for scoring_technique in 'KvsAll' '1vsAll'
+        for scoring_technique in 'PvsAll' 'CCvsAll'
           do
           # shellcheck disable=SC2154
           config_name="$kgname-$model-$epoch-$dim-$scoring_technique"
