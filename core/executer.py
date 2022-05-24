@@ -210,7 +210,9 @@ class Execute:
         model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         print(f'Conformal Credal Self Training starts: {model.name}')
         # Split the training triples into train, calibration and unlabelled.
-        train_set, calibration_set, unlabelled_set = semi_supervised_split(self.dataset.train_set)
+        train_set, calibration_set, unlabelled_set = semi_supervised_split(self.dataset.train_set,
+                                                                           train_split_ratio=.3,
+                                                                           calibration_split_ratio=.2)
         model.calibration_set = torch.LongTensor(calibration_set)
         model.unlabelled_set = torch.LongTensor(unlabelled_set)
 
@@ -289,10 +291,11 @@ class Execute:
         # (1) Select model and labelling : Entity Prediction or Relation Prediction.
         model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         print(f'PvsAll training starts: {model.name}')
-        train_set, calibration_set, unlabelled_set = semi_supervised_split(self.dataset.train_set)
-
-        model.calibration_set = torch.LongTensor(calibration_set)
-        model.unlabelled_set = torch.LongTensor(unlabelled_set)
+        train_set, calibration_set, unlabelled_set = semi_supervised_split(self.dataset.train_set,
+                                                                           train_split_ratio=.5,
+                                                                           calibration_split_ratio=.4)
+        # Pseudo Labeling : unlabeled set consts of calibration_set, unlabelled_set
+        model.unlabelled_set = torch.LongTensor(np.concatenate((calibration_set, unlabelled_set), axis=0))
         # (2) Create training data.
         dataset = StandardDataModule(train_set_idx=train_set,
                                      valid_set_idx=self.dataset.valid_set,

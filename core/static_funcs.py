@@ -668,7 +668,7 @@ def deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k):
     return f'(  {str_subject}, ?, {str_object} )', pd.DataFrame({'Relations': relations, 'Score': scores})
 
 
-def semi_supervised_split(train_set: np.ndarray, split_ratio=.40):
+def semi_supervised_split(train_set: np.ndarray, train_split_ratio=None, calibration_split_ratio=None):
     """
     Split input triples into three splits
     1. split corresponds to the first 10% of the input
@@ -678,16 +678,14 @@ def semi_supervised_split(train_set: np.ndarray, split_ratio=.40):
     # Divide train_set into
     n, d = train_set.shape
     assert d == 3
-    # (1) Select 5 % of the first triples for the training.
-    train = train_set[: int(n * split_ratio)]
-    # (2) Select remaining first 5 % of the triples for the calibration.
-    calibration = train_set[len(train):len(train) + int(n * split_ratio)]
+    # (1) Select X % of the first triples for the training.
+    train = train_set[: int(n * train_split_ratio)]
+    # (2) Select remaining first Y % of the triples for the calibration.
+    calibration = train_set[len(train):len(train) + int(n * calibration_split_ratio)]
     # (3) Consider remaining triples as unlabelled.
     unlabelled = train_set[-len(train) - len(calibration):]
     print(f'Shapes:\tTrain{train.shape}\tCalib:{calibration.shape}\tUnlabelled:{unlabelled.shape}')
     return train, calibration, unlabelled
-
-
 
 
 def p_value(non_conf_scores, act_score):
@@ -805,6 +803,7 @@ def construct_p_values(non_conf_scores, preds, non_conf_score_fn):
         p_values[:, clz] = p_value(non_conf_scores, tmp_non_conf[:, clz])
     return p_values
 
+
 def non_conformity_score_prop(predictions, targets) -> torch.Tensor:
     if len(predictions.shape) == 1:
         predictions = predictions.unsqueeze(0)
@@ -823,6 +822,7 @@ def non_conformity_score_prop(predictions, targets) -> torch.Tensor:
 
     return torch.max(selected_predictions, dim=-1).values.squeeze() / (
             class_val.squeeze() + args.non_conf_score_prop_gamma + 1e-5)
+
 
 def non_conformity_score_diff(predictions, targets) -> torch.Tensor:
     if len(predictions.shape) == 1:
