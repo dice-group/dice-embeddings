@@ -34,7 +34,7 @@ def argparse_default(description=None):
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.01, help='Learning rate')
     # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='PvsAll', help="PvsAll, CCvsAll, 1vsAll, KvsAll, NegSample")
+    parser.add_argument('--scoring_technique', default='KvsAll', help="1vsAll, KvsAll, NegSample")
     parser.add_argument('--neg_ratio', type=int, default=1)
     # Additional training params
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
