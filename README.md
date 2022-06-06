@@ -33,7 +33,7 @@ pytest -p no:warnings -x # it takes circa 15 minutes
 pytest -p no:warnings --lf # run only the last one
 pytest -p no:warnings --ff # to run the failures first and then the rest of the tests.
 ```
-## Pre-trained Models
+### Pre-trained Models
 Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , if you lack hardware resources to obtain embeddings of a specific knowledge Graph.
 - [DBpedia version: 03-2021 Embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpediaQMultEmbeddings_03_07):
   - 114,747,963 entities, 13,906 relations, and 375,900,264 triples.
@@ -47,7 +47,7 @@ Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , i
 - [Mammographic ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/ConEx_Mammographic.zip)
 - For more please look at [Hobbit Data](https://hobbitdata.informatik.uni-leipzig.de/KGE/)
 
-## Link Prediction on DBpedia
+#### Link Prediction on DBpedia
 ```python
 from core import KGE
 # (1) Download this folder into your local machine https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpediaQMultEmbeddings_03_07/
@@ -69,7 +69,10 @@ pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Ei
 3. Pseudo-Labelling and Conformal Credal Self-Supervised Learning for KGE ([source](https://arxiv.org/abs/2205.15239)) 
 4. If you have something in your mind, please contact us :)
 
-# How to Deploy Pretrained KGE Model without code
+### Documentation
+Each function should be decorated with the type of inputs and outputs along with concise description of the computation.
+
+### How to Deploy Pretrained KGE Model without code
 Any pretrained model can be deployed with an ease. Moreover, anyone on the internet can use the pretrained model with ```--share``` parameter.
 ```
 python deploy.py --path_of_experiment_folder 'DAIKIRI_Storage/QMultFamily' --share
