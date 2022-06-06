@@ -1,4 +1,5 @@
 import time
+from abc import ABCMeta
 
 from torch.utils.data import Dataset
 import numpy as np
@@ -9,8 +10,8 @@ from typing import List
 import random
 
 
-class StandardDataModule(pl.LightningDataModule):
-    """ Data Class for creating train/val/test datasets depending on the training stragey chosen """
+class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
+    """ Data Class for creating train/val/test datasets depending on the training strategy chosen """
 
     def __init__(self, train_set_idx, entity_to_idx, relation_to_idx, batch_size, form,
                  num_workers=32, valid_set_idx=None, test_set_idx=None, neg_sample_ratio=None,
@@ -51,13 +52,25 @@ class StandardDataModule(pl.LightningDataModule):
             self.dataset_type_class = TriplePredictionDataset
             self.target_dim = 1
             self.neg_sample_ratio = neg_sample_ratio
+
         elif self.form == '1VsAll':
             # Multi-class
-            self.dataset_type_class = OneVsAllEntityPredictionDataset
+            self.dataset = OnevsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
+                                           relation_idxs=self.relation_to_idx, form=self.form)
+        elif self.form == 'CCvsAll':
+            # Multi-class
+            self.dataset = OnevsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
+                                           relation_idxs=self.relation_to_idx, form=self.form)
+        elif self.form == 'PvsAll':
+            # Multi-class
+            self.dataset = OnevsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
+                                           relation_idxs=self.relation_to_idx, form=self.form)
         elif self.form == 'BatchRelaxedKvsAll':
+            # ?
             self.dataset = BatchRelaxedKvsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
                                                      relation_idxs=self.relation_to_idx, form=self.form)
         elif self.form == 'BatchRelaxed1vsAll':
+            # ?
             self.dataset = BatchRelaxed1vsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
                                                      relation_idxs=self.relation_to_idx, form=self.form)
         else:
@@ -82,14 +95,7 @@ class StandardDataModule(pl.LightningDataModule):
             return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, pin_memory=True,
                               num_workers=self.num_workers)
 
-        elif self.form == '1VsAll':
-            train_set = OnevsAll(self.train_set_idx, entity_idxs=self.entity_to_idx,
-                                 relation_idxs=self.relation_to_idx, form=self.form,
-                                 label_smoothing_rate=self.label_smoothing_rate)
-
-            return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, pin_memory=True,
-                              num_workers=self.num_workers)
-        elif self.form == 'BatchRelaxedKvsAll' or self.form == 'BatchRelaxed1vsAll':
+        elif self.form in ['PvsAll', 'CCvsAll', '1VsAll', 'BatchRelaxedKvsAll', 'BatchRelaxed1vsAll']:
             return DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, pin_memory=True,
                               num_workers=self.num_workers)
         else:
@@ -114,8 +120,8 @@ class StandardDataModule(pl.LightningDataModule):
                               num_workers=self.num_workers)
 
         elif self.form == '1VsAll':
-            valid_set = OneVsAllEntityPredictionDataset(self.valid_set_idx)
-            return DataLoader(valid_set, batch_size=self.batch_size, shuffle=False, pin_memory=True,
+            return DataLoader(OneVsAllEntityPredictionDataset(self.valid_set_idx), batch_size=self.batch_size,
+                              shuffle=False, pin_memory=True,
                               num_workers=self.num_workers)
         else:
             raise KeyError(f'{self.form} illegal input.')
@@ -180,6 +186,23 @@ class CVDataModule(pl.LightningDataModule):
     def prepare_data(self, *args, **kwargs):
         # Nothing to be prepared for now.
         pass
+
+
+class OnevsAllDataset(Dataset):
+    def __init__(self, train_set_idx, entity_idxs, relation_idxs, form):
+        super().__init__()
+        assert len(train_set_idx) > 0
+        self.train_data = torch.torch.LongTensor(train_set_idx)
+        self.target_dim = len(entity_idxs)
+
+    def __len__(self):
+        return len(self.train_data)
+
+    def __getitem__(self, idx):
+        y_vec = torch.zeros(self.target_dim)
+        y_vec[self.train_data[idx, 2]] = 1
+
+        return self.train_data[idx, :2], y_vec
 
 
 class KvsAll(Dataset):
@@ -395,19 +418,6 @@ class TriplePredictionDataset(Dataset):
         x = torch.stack((h, r, t), dim=1)
         label = torch.cat((label, label_head_corr, label_tail_corr, label_rel_corr), 0)
         return x, label
-
-
-class OneVsAllEntityPredictionDataset(Dataset):
-    def __init__(self, idx_triples):
-        super().__init__()
-        assert len(idx_triples) > 0
-        self.train_data = torch.torch.LongTensor(idx_triples)
-
-    def __len__(self):
-        return len(self.train_data)
-
-    def __getitem__(self, idx):
-        return self.train_data[idx, :2], self.train_data[idx, 2]
 
 
 class TripleClassificationDataSet(Dataset):

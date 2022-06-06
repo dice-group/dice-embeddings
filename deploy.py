@@ -1,16 +1,8 @@
 from argparse import ArgumentParser
-
-import numpy as np
-import pandas as pd
-from core.static_funcs import load_model, intialize_model, random_prediction,deploy_relation_prediction,deploy_triple_prediction,deploy_tail_entity_prediction,deploy_head_entity_prediction
-import json
-from collections import namedtuple
-import torch
+from core.static_funcs import load_model, intialize_model, random_prediction, deploy_relation_prediction, \
+    deploy_triple_prediction, deploy_tail_entity_prediction, deploy_head_entity_prediction
 import gradio as gr
-import random
 from core import KGE
-
-
 
 
 def launch_kge(args, pre_trained_kge: KGE):
@@ -69,7 +61,7 @@ def run(args: dict):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--path_of_experiment_folder", type=str, default='Experiments/2022-04-27 20:53:49.861173')
+    parser.add_argument("--path_of_experiment_folder", type=str, default='Experiments/2022-06-03 08:58:22.552103')
     parser.add_argument('--share', default=True, type=eval, choices=[True, False])
     parser.add_argument('--top_k', default=10, type=int)
     run(vars(parser.parse_args()))

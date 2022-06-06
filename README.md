@@ -35,7 +35,7 @@ pytest -p no:warnings --ff # to run the failures first and then the rest of the 
 ```
 ## Pre-trained Models
 Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , if you lack hardware resources to obtain embeddings of a specific knowledge Graph.
-- [DBpedia version: 03-2021 Embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpediaQMultEmbeddings):
+- [DBpedia version: 03-2021 Embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpediaQMultEmbeddings_03_07):
   - 114,747,963 entities, 13,906 relations, and 375,900,264 triples.
 - [YAGO3-10 ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/YAGO3-10.zip)
 - [FB15K-237 ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/FB15K-237.zip)
@@ -48,23 +48,28 @@ Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , i
 - For more please look at [Hobbit Data](https://hobbitdata.informatik.uni-leipzig.de/KGE/)
 
 ## Link Prediction on DBpedia
-
 ```python
 from core import KGE
-
-# (1) Train a knowledge graph embedding model on a dataset (example from DBpedia)
+# (1) Download this folder into your local machine https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpediaQMultEmbeddings_03_07/
 # (2) Give the path of serialized (1).
-pre_trained_kge = KGE(path_of_pretrained_model_dir='Experiments/2022-03-11 08:30:52.896174')
+pre_trained_kge = KGE(path_of_pretrained_model_dir='DBpediaQMultEmbeddings_03_07')
 # (3) Triple score.
 pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Ulm"])
-
+# expected output => tensor([0.9948])
 ```
 ### Available KGE Models
 1. Multiplicative based KGE models: [DistMult](https://arxiv.org/pdf/1412.6575.pdf), [ComplEx](https://arxiv.org/pdf/1606.06357.pdf), [QMult](https://proceedings.mlr.press/v157/demir21a.html), and [OMult](https://proceedings.mlr.press/v157/demir21a.html) 
 2. Feed Forward Neural Models: [Shallom](https://arxiv.org/pdf/2101.09090.pdf)
 3. Convolutional Neural models [ConEx](https://openreview.net/forum?id=6T45-4TFqaX&invitationId=eswc-conferences.org/ESWC/2021/Conference/Research_Track/Paper49/-/Camera_Ready_Revision&referrer=%5BTasks%5D(%2Ftasks)), [ConvQ](https://proceedings.mlr.press/v157/demir21a.html), [ConvO](https://proceedings.mlr.press/v157/demir21a.html)
 4. Contact us to add your favorite one :)
-# How to Deploy Pretrained KGE Model
+
+### Features:
+1. Combine Kronecker Decomposition with any embedding model to reduce the memory requirements [source](https://arxiv.org/abs/2205.06560).
+2. Use noise as a tikhonov regularization (see [source](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/02/bishop-tikhonov-nc-95.pdf)
+3. Pseudo-Labelling and Conformal Credal Self-Supervised Learning for KGE ([source](https://arxiv.org/abs/2205.15239)) 
+4. If you have something in your mind, please contact us :)
+
+# How to Deploy Pretrained KGE Model without code
 Any pretrained model can be deployed with an ease. Moreover, anyone on the internet can use the pretrained model with ```--share``` parameter.
 ```
 python deploy.py --path_of_experiment_folder 'DAIKIRI_Storage/QMultFamily' --share
@@ -127,8 +132,15 @@ python main.py --gpus 8 --distributed_backend ddp --path_dataset_folder "KGs/WN1
 6. More examples can be found in run.sh.
 
 ## How to cite
-If you really liked our work :), feel free to cite 
+Currently, we are working on our manuscript describing our framework. 
+If you really like our work and want to cite it now, feel free to chose one :) 
 ```
+@article{demir2022kronecker,
+  title={Kronecker Decomposition for Knowledge Graph Embeddings},
+  author={Demir, Caglar and Lienen, Julian and Ngomo, Axel-Cyrille Ngonga},
+  journal={arXiv preprint arXiv:2205.06560},
+  year={2022}
+}
 # QMult, OMult, ConvQ, ConvO
 @InProceedings{pmlr-v157-demir21a,
   title = 	 {Convolutional Hypercomplex Embeddings for Link Prediction},
