@@ -24,6 +24,7 @@ pip install scikit-learn==1.0.2
 pip install pytest==6.2.5
 pip install gradio==2.7.5.2
 pip install pyarrow==6.0.1
+pip install protobuf==3.20.0 # downgrade it
 ```
 To test the Installation
 ```
