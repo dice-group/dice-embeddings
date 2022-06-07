@@ -206,7 +206,9 @@ def load_data_parallel(data_path, read_only_few: int = None,
             df = df.sample(frac=sample_triples_ratio)
 
         # (4) Drop Rows/triples with double or boolean: Example preprocessing
+        # if the first character of object is **"*, then drop it.
         # Drop rows having ^^
+        # df = df[df["object"].str.contains('"') == False]
         df = df[df["object"].str.contains("<http://www.w3.org/2001/XMLSchema#double>") == False]
         df = df[df["object"].str.contains("<http://www.w3.org/2001/XMLSchema#boolean>") == False]
         df['subject'] = df['subject'].str.removeprefix("<").str.removesuffix(">")
@@ -290,15 +292,14 @@ def store(trained_model, model_name: str = 'model', full_storage_path: str = Non
             print('There is not enough memory to store embeddings separately.')
 
 
-def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, multi_processing=False):
+def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, num_core=False):
     """
-    :param multi_processing:
+    :param num_core:
     :param train_set: pandas dataframe or dask dataframe
     :param entity_to_idx:
     :param relation_to_idx:
     :return:
     """
-
     def entity_look_up(x):
         try:
             return entity_to_idx[x]
@@ -311,7 +312,7 @@ def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, multi_p
         except KeyError:
             return None
 
-    if multi_processing:
+    if num_core > 1:
         assert isinstance(train_set, pd.core.frame.DataFrame)
         train_set['subject'] = train_set['subject'].swifter.apply(lambda x: entity_look_up(x))
         train_set['relation'] = train_set['relation'].swifter.apply(lambda x: relation_look_up(x))
@@ -376,7 +377,8 @@ def read_preprocess_index_serialize_kg(args, cls):
     start_time = time.time()
     # 1. Read & Parse input data
     kg = cls(data_dir=args.path_dataset_folder,
-             multi_cores_at_preprocessing=args.multi_cores_at_preprocessing,
+             num_core=args.num_core,
+             dashboard=args.dashboard,
              add_reciprical=args.apply_reciprical_or_noise,
              eval_model=args.eval,
              read_only_few=args.read_only_few,
@@ -390,7 +392,9 @@ def read_preprocess_index_serialize_kg(args, cls):
     return kg
 
 
-def reload_input_data(storage_path: str, cls):
+def reload_input_data(storage_path: str = None, cls=None):
+    assert isinstance(storage_path, str)
+    assert len(storage_path)
     print('*** Reload Knowledge Graph  ***')
     start_time = time.time()
     kg = cls(deserialize_flag=storage_path)
@@ -424,6 +428,8 @@ def preprocesses_input_args(arg):
     assert arg.weight_decay >= 0.0
     arg.learning_rate = arg.lr
     arg.deterministic = True
+    assert arg.num_core >= 0
+
     # Below part will be investigated
     arg.check_val_every_n_epoch = 10 ** 6
     # del arg.check_val_every_n_epochs
