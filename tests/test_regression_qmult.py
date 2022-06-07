@@ -25,7 +25,7 @@ class TestRegressionQmult:
         result = Execute(args).start()
         assert 1.00 >= result['Train']['H@1'] >= 0.85
         assert 0.80 >= result['Val']['H@1'] >= 0.71
-        assert 0.80 >= result['Test']['H@1'] >= 0.75
+        assert 0.80 >= result['Test']['H@1'] >= 0.73
 
         assert result['Train']['H@10'] >= result['Train']['H@3'] >= result['Train']['H@1']
         assert result['Val']['H@10'] >= result['Val']['H@3'] >= result['Val']['H@1']
@@ -52,9 +52,9 @@ class TestRegressionQmult:
         args.read_only_few = None
         args.sample_triples_ratio = None
         result = Execute(args).start()
-        assert 1.00 >= result['Train']['H@1'] >= 0.98
-        assert 0.81 >= result['Test']['H@1'] >= 0.72
-        assert 0.78 >= result['Val']['H@1'] >= 0.72
+        assert .91 >= result['Train']['H@1'] >= 0.86
+        assert 0.75 >= result['Test']['H@1'] >= 0.71
+        assert 0.75 >= result['Val']['H@1'] >= 0.71
 
         assert result['Train']['H@10'] >= result['Train']['H@3'] >= result['Train']['H@1']
         assert result['Val']['H@10'] >= result['Val']['H@3'] >= result['Val']['H@1']
@@ -82,7 +82,7 @@ class TestRegressionQmult:
         args.read_only_few = None
         args.sample_triples_ratio = None
         result = Execute(args).start()
-        assert 0.99 >= result['Train']['H@1'] >= .80
+        assert 0.70 >= result['Train']['H@1'] >= .67
         assert 0.78 >= result['Test']['H@1'] >= .50
         assert 0.78 >= result['Val']['H@1'] >= .50
         assert result['Train']['H@10'] >= result['Train']['H@3'] >= result['Train']['H@1']
@@ -109,9 +109,9 @@ class TestRegressionQmult:
         args.read_only_few = None
         args.sample_triples_ratio = None
         result = Execute(args).start()
-        assert 0.99 >= result['Train']['H@1'] >= .80
-        assert 0.88 >= result['Test']['H@1'] >= .75
-        assert 0.88 >= result['Val']['H@1'] >= .75
+        assert 0.75 >= result['Train']['H@1'] >= .71
+        assert 0.63 >= result['Test']['H@1'] >= .60
+        assert 0.63 >= result['Val']['H@1'] >= .60
         assert result['Train']['H@10'] >= result['Train']['H@3'] >= result['Train']['H@1']
         assert result['Val']['H@10'] >= result['Val']['H@3'] >= result['Val']['H@1']
         assert result['Test']['H@10'] >= result['Test']['H@3'] >= result['Test']['H@1']
