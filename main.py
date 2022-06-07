@@ -12,6 +12,10 @@ def argparse_default(description=None):
                         help="The path of a folder containing input data")
     parser.add_argument("--save_embeddings_as_csv", type=bool, default=True,
                         help='A flag for saving embeddings in csv file.')
+    parser.add_argument("--num_core", type=int, default=1,
+                        help='Number of cores to be used.')
+    parser.add_argument("--dashboard", type=bool, default=False,
+                        help='Launch DASK dashboard.')
     parser.add_argument("--multi_cores_at_preprocessing", type=bool, default=False,
                         help='A flag for using all cores at parsing.')
     parser.add_argument("--storage_path", type=str, default='Experiments',
