@@ -73,6 +73,6 @@ class TestRegressionOmult:
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
         result = Execute(args).start()
-        assert 0.39 >= result['Test']['H@1'] >= .25
+        assert 0.40 >= result['Test']['H@1'] >= .25
         assert 0.41 >= result['Val']['H@1'] >= .25
         assert 0.6 >= result['Train']['H@1'] >= .31
