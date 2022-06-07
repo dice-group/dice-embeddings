@@ -13,8 +13,10 @@ from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_
     numpy_data_type_changer
 from .sanity_checkers import dataset_sanity_checking
 import glob
+# @ TODO Integrate LocalCluster facility to analyse the utilization of the hardware via the dashboard
+from dask.distributed import Client, LocalCluster
 
-np.random.seed(1)
+# np.random.seed(1)
 pd.set_option('display.max_columns', None)
 
 
@@ -29,7 +31,9 @@ class KG:
     """
 
     def __init__(self, data_dir: str = None, deserialize_flag: str = None,
-                 multi_cores_at_preprocessing: bool = None, add_reciprical: bool = None, eval_model: bool = None,
+                 num_core: int = 1,
+                 dashboard: bool = False,
+                 add_reciprical: bool = None, eval_model: bool = None,
                  read_only_few: int = None, sample_triples_ratio: float = None,
                  path_for_serialization: str = None, add_noise_rate: float = None,
                  min_freq_for_vocab: int = None,
@@ -49,7 +53,7 @@ class KG:
         self.df_str_kg = None
         self.data_dir = data_dir
         self.deserialize_flag = deserialize_flag
-        self.multi_cores_at_preprocessing = multi_cores_at_preprocessing
+        self.num_core = num_core
         self.add_reciprical = add_reciprical
         self.eval_model = eval_model
 
@@ -61,19 +65,13 @@ class KG:
         self.min_freq_for_vocab = min_freq_for_vocab
         self.entity_to_idx = entity_to_idx
         self.relation_to_idx = relation_to_idx
-        if self.multi_cores_at_preprocessing:
-            self.scheduler_flag = 'processes'
-        else:
-            self.scheduler_flag = 'single-threaded'
+        self.scheduler_flag = 'processes' if self.num_core > 1 else 'single-threaded'
 
-        """
-        # @ TODO Integrate LocalCluster facility to analyse the utilization of the hardware via the dashboard
-        from dask.distributed import Client, LocalCluster
-        cluster = LocalCluster()
-        client = Client(cluster)
-        print(client)
-        print(client.dashboard_link)
-        """
+        if dashboard:
+            client = Client()
+            print('DASK:', client)
+            print('DASK-Dashboard:', client.dashboard_link)
+
         # (1) Load + Preprocess input data
         if deserialize_flag is None:
             # (1.1) Load and Preprocess the data.
@@ -98,7 +96,7 @@ class KG:
                 self.train_set = index_triples(self.train_set,
                                                self.entity_to_idx,
                                                self.relation_to_idx,
-                                               multi_processing=self.multi_cores_at_preprocessing)
+                                               num_core=self.num_core)
                 print(f'Done ! {time.time() - start_time:.3f} seconds\n')
                 if path_for_serialization is not None:
                     # 10. Serialize (9).
@@ -224,16 +222,16 @@ class KG:
     def sequential_vocabulary_construction(self):
 
         if isinstance(self.train_set, ddf.DataFrame):
-            print('Train set compute...')
+            print(f'Train set compute with scheduler={self.scheduler_flag}...')
             self.train_set = self.train_set.compute(scheduler=self.scheduler_flag)
         else:
             assert isinstance(self.train_set, pd.DataFrame)
 
         if self.valid_set is not None:
-            print('Valid set compute...')
+            print(f'Valid set compute with scheduler={self.scheduler_flag}...')
             self.valid_set = self.valid_set.compute(scheduler=self.scheduler_flag)
         if self.test_set is not None:
-            print('Test set compute...')
+            print(f'Test set compute with scheduler={self.scheduler_flag}...')
             self.test_set = self.test_set.compute(scheduler=self.scheduler_flag)
 
         # (2) Remove triples from (1).
