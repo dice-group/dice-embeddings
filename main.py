@@ -16,8 +16,6 @@ def argparse_default(description=None):
                         help='Number of cores to be used.')
     parser.add_argument("--dashboard", type=bool, default=False,
                         help='Launch DASK dashboard.')
-    parser.add_argument("--multi_cores_at_preprocessing", type=bool, default=False,
-                        help='A flag for using all cores at parsing.')
     parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="Embeddings, model, and any other related data will be stored therein.")
     parser.add_argument("--read_only_few", type=int, default=None, help='READ only first N triples. If 0, read all.')

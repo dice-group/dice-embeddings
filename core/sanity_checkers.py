@@ -35,8 +35,6 @@ def sanity_checking_with_arguments(args):
         raise
 
     assert isinstance(args.eval, bool)
-    assert isinstance(args.multi_cores_at_preprocessing, bool)
-
 
 def config_kge_sanity_checking(args, dataset):
     """
