@@ -229,7 +229,7 @@ class Execute:
                                      form='CCvsAll',
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_processes
+                                     num_workers=self.args.num_core,
                                      )
 
         def on_epoch_start(self, *args, **kwargs):
@@ -305,7 +305,7 @@ class Execute:
                                      form='PvsAll',
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_processes)
+                                     num_workers=self.args.num_core)
 
         # Define a new raining set
         def training_step(self, batch, batch_idx):
@@ -362,7 +362,7 @@ class Execute:
                                      form=form_of_labelling,
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_processes,
+                                     num_workers=self.args.num_core,
                                      label_smoothing_rate=self.args.label_smoothing_rate)
         # (3) Train model.
         train_dataloaders = dataset.train_dataloader()
@@ -406,7 +406,7 @@ class Execute:
                                      form=form_of_labelling,
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_processes
+                                     num_workers=self.args.num_core
                                      )
         if self.args.label_relaxation_rate:
             model.loss = LabelRelaxationLoss(alpha=self.args.label_relaxation_rate)
@@ -444,7 +444,8 @@ class Execute:
                                      form=form_of_labelling,
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=os.cpu_count() - 1)
+                                     num_workers=self.args.num_core#num_workers=os.cpu_count() - 1
+                                     )
         print(f'Done ! {time.time() - start_time:.3f} seconds\n')
         # 3. Train model
         train_dataloaders = dataset.train_dataloader()
@@ -469,7 +470,7 @@ class Execute:
                                      form=self.args.scoring_technique,
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_processes,
+                                     num_workers=self.args.num_core,
                                      label_smoothing_rate=self.args.label_smoothing_rate)
         # 3. Train model.
         train_dataloaders = dataset.train_dataloader()
@@ -518,7 +519,7 @@ class Execute:
                                          form=form_of_labelling,
                                          neg_sample_ratio=self.args.neg_ratio,
                                          batch_size=self.args.batch_size,
-                                         num_workers=self.args.num_processes)
+                                         num_workers=self.args.num_core)
             # 3. Train model
             train_dataloaders = dataset.train_dataloader()
             del dataset

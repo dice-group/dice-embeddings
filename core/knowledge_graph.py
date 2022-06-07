@@ -65,8 +65,8 @@ class KG:
         self.min_freq_for_vocab = min_freq_for_vocab
         self.entity_to_idx = entity_to_idx
         self.relation_to_idx = relation_to_idx
-        self.scheduler_flag = 'processes' if self.num_core > 1 else 'single-threaded'
-
+        self.scheduler_flag = 'processes' if self.num_core > 1 else 'threads'#'single-threaded'
+        self.scheduler_flag = None#'single-threaded'
         if dashboard:
             client = Client()
             print(f'DASK: {client}\tDASK-Dashboard:\t{client.dashboard_link}')

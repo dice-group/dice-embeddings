@@ -12,7 +12,7 @@ def argparse_default(description=None):
                         help="The path of a folder containing input data")
     parser.add_argument("--save_embeddings_as_csv", type=bool, default=True,
                         help='A flag for saving embeddings in csv file.')
-    parser.add_argument("--num_core", type=int, default=1,
+    parser.add_argument("--num_core", type=int, default=4,
                         help='Number of cores to be used.')
     parser.add_argument("--dashboard", type=bool, default=False,
                         help='Launch DASK dashboard.')
@@ -32,11 +32,11 @@ def argparse_default(description=None):
                         help='[NAdam, Adam, SGD]')
     parser.add_argument('--embedding_dim', type=int, default=128,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=5, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=5000, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.01, help='Learning rate')
     # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='KvsAll', help="1vsAll, KvsAll, NegSample")
+    parser.add_argument('--scoring_technique', default='NegSample', help="1vsAll, KvsAll, NegSample")
     parser.add_argument('--neg_ratio', type=int, default=1)
     # Additional training params
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
