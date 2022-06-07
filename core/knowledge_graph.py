@@ -69,8 +69,7 @@ class KG:
 
         if dashboard:
             client = Client()
-            print('DASK:', client)
-            print('DASK-Dashboard:', client.dashboard_link)
+            print(f'DASK: {client}\tDASK-Dashboard:\t{client.dashboard_link}')
 
         # (1) Load + Preprocess input data
         if deserialize_flag is None:
