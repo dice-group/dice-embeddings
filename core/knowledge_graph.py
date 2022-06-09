@@ -13,8 +13,7 @@ from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_
     numpy_data_type_changer
 from .sanity_checkers import dataset_sanity_checking
 import glob
-# @ TODO Integrate LocalCluster facility to analyse the utilization of the hardware via the dashboard
-from dask.distributed import Client, LocalCluster
+from dask.distributed import Client
 
 # np.random.seed(1)
 pd.set_option('display.max_columns', None)
@@ -65,19 +64,19 @@ class KG:
         self.min_freq_for_vocab = min_freq_for_vocab
         self.entity_to_idx = entity_to_idx
         self.relation_to_idx = relation_to_idx
-        self.scheduler_flag = 'processes' if self.num_core > 1 else 'threads'#'single-threaded'
-        self.scheduler_flag = None#'single-threaded'
+        self.scheduler_flag = 'processes' if self.num_core > 1 else 'threads'  # 'single-threaded'
+        self.scheduler_flag = None
         if dashboard:
             client = Client()
             print(f'DASK: {client}\tDASK-Dashboard:\t{client.dashboard_link}')
 
-        # (1) Load + Preprocess input data
+        # (1) Load + Preprocess input data.
         if deserialize_flag is None:
             # (1.1) Load and Preprocess the data.
             self.train_set, self.valid_set, self.test_set = self.load_read_process()
             # (1.2) Update (1.1).
             self.apply_reciprical_or_noise()
-            # (1.3) Construct integer indexing for entities and relations
+            # (1.3) Construct integer indexing for entities and relations.
             if entity_to_idx is None and relation_to_idx is None:
                 self.sequential_vocabulary_construction()  # via Pandas
                 print(
@@ -91,7 +90,6 @@ class KG:
                 print('[10 / 14] Mapping training data into integers for training...', end='\t')
                 start_time = time.time()
                 # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
-                # @TODO: Benchmark pandasswifter vs Panddas vs DASK on large dataset.
                 self.train_set = index_triples(self.train_set,
                                                self.entity_to_idx,
                                                self.relation_to_idx,
@@ -186,7 +184,7 @@ class KG:
                 else:
                     data = self.train_set
                 # TODO do it via dask: No need to wait here.
-                print('Creating Vocab...', end='\t')
+                print('Final: Creating Vocab...', end='\t')
                 self.er_vocab = get_er_vocab(data)
                 self.re_vocab = get_re_vocab(data)
                 # 17. Create a bijection mapping from subject-object pairs to relations.
@@ -218,25 +216,31 @@ class KG:
                                      f'\nNumber of triples on valid set: {len(self.valid_set) if self.valid_set is not None else 0}' \
                                      f'\nNumber of triples on test set: {len(self.test_set) if self.test_set is not None else 0}\n'
 
-    def sequential_vocabulary_construction(self):
-
+    def sequential_vocabulary_construction(self) -> None:
+        """
+        (1) Read input data into memory
+        (2) Remove triples with a condition
+        (3) Serialize vocabularies in a pandas dataframe where
+                    => the index is integer and
+                    => a single column is string (e.g. URI)
+        """
+        # (1) Read input data into memory.
         if isinstance(self.train_set, ddf.DataFrame):
             print(f'Train set compute with scheduler={self.scheduler_flag}...')
             self.train_set = self.train_set.compute(scheduler=self.scheduler_flag)
         else:
             assert isinstance(self.train_set, pd.DataFrame)
-
+        # (2) Read valid data into memory.
         if self.valid_set is not None:
             print(f'Valid set compute with scheduler={self.scheduler_flag}...')
             self.valid_set = self.valid_set.compute(scheduler=self.scheduler_flag)
+        # (3) Read test data into memory.
         if self.test_set is not None:
             print(f'Test set compute with scheduler={self.scheduler_flag}...')
             self.test_set = self.test_set.compute(scheduler=self.scheduler_flag)
-
-        # (2) Remove triples from (1).
+        # (4) Remove triples from (1).
         self.remove_triples_from_train_with_condition()
-
-        # 1. Concatenate dataframes.
+        # Concatenate dataframes.
         print('\n[4 / 14] Concatenating data to obtain index...', end='\t')
         x = [self.train_set]
         if self.valid_set is not None:
@@ -249,8 +253,11 @@ class KG:
         print('Done !\n')
 
         print('[5 / 14] Creating a mapping from entities to integer indexes...', end='\t')
-        # (3) Create a bijection mapping from entities of (2) to integer indexes.
+        # (5) Create a bijection mapping from entities of (2) to integer indexes.
+        # ravel('K') => Return a contiguous flattened array.
+        # ‘K’ means to read the elements in the order they occur in memory, except for reversing the data when strides are negative.
         ordered_list = pd.unique(self.df_str_kg[['subject', 'object']].values.ravel('K'))
+        # (6) Add integer index.
         self.entity_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)), columns=['entity'], index=ordered_list)
         print('Done !\n')
         print('[6 / 14] Serializing compressed entity integer mapping...', end='\t')
@@ -305,16 +312,19 @@ class KG:
             f'[1 / 14] Lazy Loading and Preprocessing training data: read_only_few: {self.read_only_few} , sample_triples_ratio: {self.sample_triples_ratio}...',
             end='\t')
         self.train_set = load_data_parallel(self.data_dir + '/train', self.read_only_few, self.sample_triples_ratio)
+        print('Train Dataset:', self.train_set)
         print('Done !\n')
         print(
             f'[2 / 14] Lazy Loading and Preprocessing valid data...',
             end='\t')
         self.valid_set = load_data_parallel(self.data_dir + '/valid')
+        print('Validation Dataset:', self.valid_set)
         print('Done !\n')
         print(
             f'[3 / 14] Lazy Loading and Preprocessing test data...',
             end='\t')
         self.test_set = load_data_parallel(self.data_dir + '/test')
+        print('Test Dataset:', self.test_set)
         print('Done !\n')
         return self.train_set, self.valid_set, self.test_set
 
