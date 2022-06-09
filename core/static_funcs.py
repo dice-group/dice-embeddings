@@ -1,5 +1,4 @@
 import os
-
 import core
 from core.typings import *
 import numpy as np
@@ -171,8 +170,7 @@ def initialize_pl_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
         return pl.Trainer.from_argparse_args(args, plugins=plugins,
                                              callbacks=callbacks)
     else:
-        return pl.Trainer.from_argparse_args(args, plugins=plugins,
-                                             callbacks=callbacks)
+        return pl.Trainer.from_argparse_args(args, plugins=plugins, callbacks=callbacks)
 
 
 def load_data_parallel(data_path, read_only_few: int = None,
@@ -205,15 +203,14 @@ def load_data_parallel(data_path, read_only_few: int = None,
             print(f'Subsampling {sample_triples_ratio} of input data...')
             df = df.sample(frac=sample_triples_ratio)
 
-        # (4) Drop Rows/triples with double or boolean: Example preprocessing
-        # if the first character of object is **"*, then drop it.
-        # Drop rows having ^^
-        # df = df[df["object"].str.contains('"') == False]
-        df = df[df["object"].str.contains("<http://www.w3.org/2001/XMLSchema#double>") == False]
-        df = df[df["object"].str.contains("<http://www.w3.org/2001/XMLSchema#boolean>") == False]
-        df['subject'] = df['subject'].str.removeprefix("<").str.removesuffix(">")
-        df['relation'] = df['relation'].str.removeprefix("<").str.removesuffix(">")
-        df['object'] = df['object'].str.removeprefix("<").str.removesuffix(">")
+        if sum(df.head()["subject"].str.startswith('<')) + sum(df.head()["relation"].str.startswith('<')) == 10:
+            # (4) Drop Rows/triples with double or boolean: Example preprocessing
+            # Drop of object does not start with **<**
+            df = df[df["object"].str.startswith('<')]
+            # (5) Remove **<** and **>**
+            df['subject'] = df['subject'].str.removeprefix("<").str.removesuffix(">")
+            df['relation'] = df['relation'].str.removeprefix("<").str.removesuffix(">")
+            df['object'] = df['object'].str.removeprefix("<").str.removesuffix(">")
         return df
     else:
         print(f'{data_path} could not found!')
@@ -292,7 +289,7 @@ def store(trained_model, model_name: str = 'model', full_storage_path: str = Non
             print('There is not enough memory to store embeddings separately.')
 
 
-def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, num_core=False):
+def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, num_core=False) -> pd.core.frame.DataFrame:
     """
     :param num_core:
     :param train_set: pandas dataframe or dask dataframe
@@ -300,6 +297,7 @@ def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, num_cor
     :param relation_to_idx:
     :return:
     """
+
     def entity_look_up(x):
         try:
             return entity_to_idx[x]
