@@ -61,7 +61,8 @@ def argparse_default(description=None):
                         help='A flag for using evaluation')
     parser.add_argument("--eval_on_train", type=bool, default=True,
                         help='A flag for using train data to evaluation ')
-    parser.add_argument("--eval_with_constraint", type=bool, default=False, help='Filter entities not belonging to the range or domain of a relation.')
+    parser.add_argument("--eval_with_constraint", type=bool, default=False,
+                        help='Filter entities not belonging to the range or domain of a relation.')
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
                                                                         'If >2 ,no evaluation scenario is applied implies no evaluation.')
     if description is None:
@@ -70,4 +71,12 @@ def argparse_default(description=None):
 
 
 if __name__ == '__main__':
-    Execute(argparse_default()).start()
+    report = Execute(argparse_default()).start()
+    """
+    {'num_train_triples': .., 'num_entities': .., 'num_relations': .., 
+    'Train': {'H@1': .., 'H@3': .., 'H@10': .., 'MRR': ..}, 
+    'Val': {'H@1': .., 'H@3': .., 'H@10': .., 'MRR': ..},  
+    'Test': {'H@1': .., 'H@3': .., 'H@10': .., 'MRR': ..},  
+    'NumParam': .., 'EstimatedSizeMB': .., 'Runtime': '.., 
+    'path_experiment_folder': ..}
+    """

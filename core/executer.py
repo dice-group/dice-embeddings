@@ -146,6 +146,7 @@ class Execute:
         (4) Eval trained model
         (5) Return trained model
         """
+        self.report['num_train_triples'] = len(self.dataset.train_set)
         self.report['num_entities'] = self.dataset.num_entities
         self.report['num_relations'] = self.dataset.num_relations
         print('------------------- Train & Eval -------------------')
