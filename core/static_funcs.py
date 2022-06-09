@@ -289,37 +289,23 @@ def store(trained_model, model_name: str = 'model', full_storage_path: str = Non
             print('There is not enough memory to store embeddings separately.')
 
 
-def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, num_core=False) -> pd.core.frame.DataFrame:
+def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, num_core=0) -> pd.core.frame.DataFrame:
     """
-    :param num_core:
-    :param train_set: pandas dataframe or dask dataframe
-    :param entity_to_idx:
-    :param relation_to_idx:
-    :return:
+    :param train_set: pandas dataframe
+    :param entity_to_idx: a mapping from str to integer index
+    :param relation_to_idx: a mapping from str to integer index
+    :return: indexed triples, i.e., pandas dataframe
+
     """
-
-    def entity_look_up(x):
-        try:
-            return entity_to_idx[x]
-        except KeyError:
-            return None
-
-    def relation_look_up(x):
-        try:
-            return relation_to_idx[x]
-        except KeyError:
-            return None
-
     if num_core > 1:
         assert isinstance(train_set, pd.core.frame.DataFrame)
-        train_set['subject'] = train_set['subject'].swifter.apply(lambda x: entity_look_up(x))
-        train_set['relation'] = train_set['relation'].swifter.apply(lambda x: relation_look_up(x))
-        train_set['object'] = train_set['object'].swifter.apply(lambda x: entity_look_up(x))
+        train_set['subject'] = train_set['subject'].swifter.apply(lambda x: entity_to_idx.get(x))
+        train_set['relation'] = train_set['relation'].swifter.apply(lambda x: relation_to_idx.get(x))
+        train_set['object'] = train_set['object'].swifter.apply(lambda x: entity_to_idx.get(x))
     else:
-        train_set['subject'] = train_set['subject'].apply(lambda x: entity_look_up(x))
-        train_set['relation'] = train_set['relation'].apply(lambda x: relation_look_up(x))
-        train_set['object'] = train_set['object'].apply(lambda x: entity_look_up(x))
-
+        train_set['subject'] = train_set['subject'].apply(lambda x: entity_to_idx.get(x))
+        train_set['relation'] = train_set['relation'].apply(lambda x: relation_to_idx.get(x))
+        train_set['object'] = train_set['object'].apply(lambda x: entity_to_idx.get(x))
     train_set = train_set.dropna()
     return train_set
 
@@ -844,3 +830,9 @@ def non_conformity_score_diff(predictions, targets) -> torch.Tensor:
     selected_predictions = predictions[~mask].view(-1, num_class - 1)
 
     return torch.max(selected_predictions - class_val, dim=-1).values
+
+
+def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
+    print(print_into, end='\t')
+    vocab_to_idx.to_parquet(path_for_serialization + f'/{name}', compression='gzip')
+    print('Done !\n')

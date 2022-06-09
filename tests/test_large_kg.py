@@ -12,7 +12,7 @@ class TestRegressionDistMult:
         args.path_dataset_folder = 'KGs/WN18RR'
         args.optim = 'Adam'
         args.num_epochs = 1
-        args.batch_size = 4096
+        args.batch_size = 32
         args.lr = 0.1
         args.embedding_dim = 32
         args.input_dropout_rate = 0.0
@@ -28,8 +28,8 @@ class TestRegressionDistMult:
         args.min_freq_for_vocab = None
         args.scoring_technique = 'KvsAll'
         result = Execute(args).start()
-        assert 0.003 >= result['Val']['MRR'] >= 0.00024
-        assert 0.004 >= result['Test']['MRR'] >= 0.00035
+        assert 0.03 >= result['Val']['MRR'] >= 0.00024
+        assert 0.03 >= result['Test']['MRR'] >= 0.00035
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_neg_sample(self):
@@ -38,7 +38,7 @@ class TestRegressionDistMult:
         args.path_dataset_folder = 'KGs/WN18RR'
         args.optim = 'Adam'
         args.num_epochs = 1
-        args.batch_size = 4096
+        args.batch_size = 32
         args.lr = 0.1
         args.embedding_dim = 32
         args.input_dropout_rate = 0.0
@@ -54,4 +54,4 @@ class TestRegressionDistMult:
         args.min_freq_for_vocab = None
         args.scoring_technique = 'NegSample'
         result = Execute(args).start()
-        assert 0.0004 >= result['Test']['MRR'] >= 0.0001
+        assert 0.03 >= result['Test']['MRR'] >= 0.0001

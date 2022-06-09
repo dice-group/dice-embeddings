@@ -10,7 +10,7 @@ import os
 import pandas as pd
 from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_re_vocab, \
     create_recipriocal_triples_from_dask, add_noisy_triples, index_triples, load_data_parallel, create_constraints, \
-    numpy_data_type_changer
+    numpy_data_type_changer, vocab_to_parquet
 from .sanity_checkers import dataset_sanity_checking
 import glob
 from dask.distributed import Client
@@ -90,6 +90,7 @@ class KG:
                 print('[10 / 14] Mapping training data into integers for training...', end='\t')
                 start_time = time.time()
                 # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
+
                 self.train_set = index_triples(self.train_set,
                                                self.entity_to_idx,
                                                self.relation_to_idx,
@@ -257,12 +258,11 @@ class KG:
         # ravel('K') => Return a contiguous flattened array.
         # ‘K’ means to read the elements in the order they occur in memory, except for reversing the data when strides are negative.
         ordered_list = pd.unique(self.df_str_kg[['subject', 'object']].values.ravel('K'))
-        # (6) Add integer index.
         self.entity_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)), columns=['entity'], index=ordered_list)
         print('Done !\n')
-        print('[6 / 14] Serializing compressed entity integer mapping...', end='\t')
-        self.entity_to_idx.to_parquet(self.path_for_serialization + '/entity_to_idx.gzip', compression='gzip')
-        print('Done !\n')
+
+        vocab_to_parquet(self.entity_to_idx, 'entity_to_idx.gzip', self.path_for_serialization,
+                         print_into='[6 / 14] Serializing compressed entity integer mapping...')
         # 5. Create a bijection mapping  from relations to integer indexes.
         print('[7 / 14] Creating a mapping from relations to integer indexes...', end='\t')
         ordered_list = pd.unique(self.df_str_kg['relation'].values.ravel('K'))
@@ -270,9 +270,9 @@ class KG:
                                             columns=['relation'],
                                             index=ordered_list)
         print('Done !\n')
-        print('[8 / 14] Serializing compressed relation integer mapping...', end='\t')
-        self.relation_to_idx.to_parquet(self.path_for_serialization + '/relation_to_idx.gzip', compression='gzip')
-        print('Done !\n')
+
+        vocab_to_parquet(self.relation_to_idx, 'relation_to_idx.gzip', self.path_for_serialization,
+                         '[8 / 14] Serializing compressed relation integer mapping...')
         del ordered_list
 
     def remove_triples_from_train_with_condition(self):

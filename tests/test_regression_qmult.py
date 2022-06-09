@@ -82,9 +82,9 @@ class TestRegressionQmult:
         args.read_only_few = None
         args.sample_triples_ratio = None
         result = Execute(args).start()
-        assert 0.70 >= result['Train']['H@1'] >= .63
-        assert 0.78 >= result['Test']['H@1'] >= .50
-        assert 0.78 >= result['Val']['H@1'] >= .50
+        assert 0.70 >= result['Train']['H@1'] >= .60
+        assert 0.78 >= result['Test']['H@1'] >= .49
+        assert 0.78 >= result['Val']['H@1'] >= .49
         assert result['Train']['H@10'] >= result['Train']['H@3'] >= result['Train']['H@1']
         assert result['Val']['H@10'] >= result['Val']['H@3'] >= result['Val']['H@1']
         assert result['Test']['H@10'] >= result['Test']['H@3'] >= result['Test']['H@1']
