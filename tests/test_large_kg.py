@@ -37,7 +37,7 @@ class TestRegressionDistMult:
         args.model = 'DistMult'
         args.path_dataset_folder = 'KGs/WN18RR'
         args.optim = 'Adam'
-        args.num_epochs = 32
+        args.num_epochs = 1
         args.batch_size = 4096
         args.lr = 0.1
         args.embedding_dim = 32
@@ -54,5 +54,4 @@ class TestRegressionDistMult:
         args.min_freq_for_vocab = None
         args.scoring_technique = 'NegSample'
         result = Execute(args).start()
-        assert 0.14 >= result['Test']['MRR'] >= 0.001
-        assert 0.14 >= result['Val']['MRR'] >= 0.02
+        assert 0.0004 >= result['Test']['MRR'] >= 0.0001
