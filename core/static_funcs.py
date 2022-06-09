@@ -197,7 +197,7 @@ def load_data_parallel(data_path, read_only_few: int = None,
         # (2)a Read only few if it is asked.
         if isinstance(read_only_few, int):
             if read_only_few > 0:
-                df = df.loc[:read_only_few]
+                df = df.head(read_only_few)  # df.loc[:read_only_few]
         # (3) Read only sample
         if sample_triples_ratio:
             print(f'Subsampling {sample_triples_ratio} of input data...')
