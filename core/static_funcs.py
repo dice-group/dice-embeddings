@@ -205,8 +205,9 @@ def load_data_parallel(data_path, read_only_few: int = None,
 
         if sum(df.head()["subject"].str.startswith('<')) + sum(df.head()["relation"].str.startswith('<')) == 10:
             # (4) Drop Rows/triples with double or boolean: Example preprocessing
-            # Drop of object does not start with **<**
-            df = df[df["object"].str.startswith('<')]
+            # Drop of object does not start with **<**.
+            # Specifying na to be False instead of NaN.
+            df = df[df["object"].str.startswith('<', na=False)]
             # (5) Remove **<** and **>**
             df['subject'] = df['subject'].str.removeprefix("<").str.removesuffix(">")
             df['relation'] = df['relation'].str.removeprefix("<").str.removesuffix(">")
