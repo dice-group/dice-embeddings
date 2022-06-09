@@ -64,7 +64,11 @@ def dataset_sanity_checking(train_set: np.ndarray, num_entities: int, num_relati
     assert isinstance(train_set, np.ndarray)
     n, d = train_set.shape
     assert d == 3
-
+    try:
+        assert n > 0
+    except AssertionError:
+        print('Size of the training dataset must be greater than 0.')
+        exit(1)
     try:
         assert num_entities >= max(train_set[:, 0]) and num_entities >= max(train_set[:, 2])
     except AssertionError:
