@@ -306,6 +306,7 @@ def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, num_cor
     :param train_set: pandas dataframe
     :param entity_to_idx: a mapping from str to integer index
     :param relation_to_idx: a mapping from str to integer index
+    :param num_core: number of cores to be used
     :return: indexed triples, i.e., pandas dataframe
     """
     n, d = train_set.shape
