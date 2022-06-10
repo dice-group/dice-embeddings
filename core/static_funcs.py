@@ -859,3 +859,35 @@ def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
     print(print_into, end='\t')
     vocab_to_idx.to_parquet(path_for_serialization + f'/{name}', compression='gzip')
     print('Done !\n')
+
+
+
+def dask_remove_triples_with_condition(dask_kg_dataframe:dask.dataframe.core.DataFrame,min_freq_for_vocab:int=None)->dask.dataframe.core.DataFrame:
+    assert isinstance(dask_kg_dataframe,dask.dataframe.core.DataFrame)
+    if min_freq_for_vocab is not None:
+        assert isinstance(min_freq_for_vocab, int)
+        assert min_freq_for_vocab > 0
+        print(
+            f'[5 / 14] Dropping triples having infrequent entities or relations (>{min_freq_for_vocab})...',
+            end=' ')
+        num_triples = dask_kg_dataframe.size.compute()
+        print('Total num triples:', num_triples, end=' ')
+        # Compute entity frequency: index is URI, val is number of occurrences.
+        entity_frequency = ddf.concat([dask_kg_dataframe['subject'], dask_kg_dataframe['object']], ignore_index=True).value_counts().compute()
+        relation_frequency = dask_kg_dataframe['relation'].value_counts().compute()
+        # low_frequency_entities index and values are the same URIs: dask.dataframe.core.DataFrame
+        low_frequency_entities = entity_frequency[
+            entity_frequency <= min_freq_for_vocab].index.values
+        low_frequency_relation = relation_frequency[
+            relation_frequency <= min_freq_for_vocab].index.values
+
+        # If triple contains subject that is in low_freq, set False do not select
+        dask_kg_dataframe = dask_kg_dataframe[~dask_kg_dataframe['subject'].isin(low_frequency_entities)]
+        # If triple contains object that is in low_freq, set False do not select
+        dask_kg_dataframe = dask_kg_dataframe[~dask_kg_dataframe['object'].isin(low_frequency_entities)]
+        # If triple contains relation that is in low_freq, set False do not select
+        dask_kg_dataframe = dask_kg_dataframe[~dask_kg_dataframe['relation'].isin(low_frequency_relation)]
+        # print('\t after dropping:', df_str_kg.size.compute(scheduler=scheduler_flag))
+        print('\t after dropping:', dask_kg_dataframe.size.compute(),end='\t')
+        print('Done !')
+        return dask_kg_dataframe

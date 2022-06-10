@@ -10,7 +10,7 @@ import os
 import pandas as pd
 from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_re_vocab, \
     create_recipriocal_triples_from_dask, add_noisy_triples, index_triples, load_data_parallel, create_constraints, \
-    numpy_data_type_changer, vocab_to_parquet, preprocess_dask_dataframe_kg
+    numpy_data_type_changer, vocab_to_parquet, preprocess_dask_dataframe_kg, dask_remove_triples_with_condition
 from .sanity_checkers import dataset_sanity_checking
 import glob
 from dask.distributed import Client
@@ -71,8 +71,7 @@ class KG:
             self.client = Client()
             print(f'DASK: {self.client}\tDASK-Dashboard:\t{self.client.dashboard_link}')
             print('If you are running this code in a remote server')
-            print('***local$ssh - L 8000: localhost:8787 user@remote***\n'
-                  'remote$ dash-scheduler')
+            print('**** ssh - L 8000: localhost:8787 user@remote **** and then ***dask-scheduler ***')
             print('Go to http://localhost:8000/status on your local')
 
         # (1) Load + Preprocess input data.
@@ -232,6 +231,8 @@ class KG:
                     => the index is integer and
                     => a single column is string (e.g. URI)
         """
+        # (4) Remove triples from (1).
+        self.train_set = dask_remove_triples_with_condition(self.train_set, self.min_freq_for_vocab)
         print('\n[4 / 14] Concatenating data to obtain index...', end='\t')
         x = [self.train_set]
         if self.valid_set is not None:
@@ -241,12 +242,6 @@ class KG:
         df_str_kg = ddf.concat(x, ignore_index=True)
         del x
         print('Done !\n')
-
-        if self.min_freq_for_vocab is not None:
-            assert isinstance(self.min_freq_for_vocab, int)
-            assert self.min_freq_for_vocab > 0
-            raise NotImplementedError('We did not implement the removal of less frequent terms in parquet mode')
-            # self.remove_triples_from_train_with_condition()
 
         print('[5 / 14] Creating a mapping from entities to integer indexes (actual compute)...', end='\t')
         self.entity_to_idx = ddf.concat([df_str_kg['subject'].unique(), df_str_kg['object'].unique()],
