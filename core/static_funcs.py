@@ -173,6 +173,36 @@ def initialize_pl_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
         return pl.Trainer.from_argparse_args(args, plugins=plugins, callbacks=callbacks)
 
 
+def preprocess(df: dask.dataframe.core.DataFrame, read_only_few: int = None,
+               sample_triples_ratio: float = None) -> dask.dataframe.core.DataFrame:
+    """ Preprocess lazy loaded dask dataframe
+    (1) Read only few triples
+    (2) Sample few triples
+    (3) Remove **<>** if exists.
+    """
+    assert isinstance(df, dask.dataframe.core.DataFrame)
+
+    # (2)a Read only few if it is asked.
+    if isinstance(read_only_few, int):
+        if read_only_few > 0:
+            df = df.head(read_only_few)  # df.loc[:read_only_few]
+    # (3) Read only sample
+    if sample_triples_ratio:
+        print(f'Subsampling {sample_triples_ratio} of input data...')
+        df = df.sample(frac=sample_triples_ratio)
+
+    if sum(df.head()["subject"].str.startswith('<')) + sum(df.head()["relation"].str.startswith('<')) == 10:
+        # (4) Drop Rows/triples with double or boolean: Example preprocessing
+        # Drop of object does not start with **<**.
+        # Specifying na to be False instead of NaN.
+        df = df[df["object"].str.startswith('<', na=False)]
+        # (5) Remove **<** and **>**
+        df['subject'] = df['subject'].str.removeprefix("<").str.removesuffix(">")
+        df['relation'] = df['relation'].str.removeprefix("<").str.removesuffix(">")
+        df['object'] = df['object'].str.removeprefix("<").str.removesuffix(">")
+    return df
+
+
 def load_data_parallel(data_path, read_only_few: int = None,
                        sample_triples_ratio: float = None) -> dask.dataframe.core.DataFrame:
     """
@@ -187,32 +217,13 @@ def load_data_parallel(data_path, read_only_few: int = None,
         # (1) Read knowledge graph  via
         # (1.1) Using the whitespace as a deliminator
         # (1.2) Taking first three columns detected in (1.1.)
-        #  Delayed Read operation
         df = ddf.read_csv(data_path + '*',
                           delim_whitespace=True,
                           header=None,
                           usecols=[0, 1, 2],
                           names=['subject', 'relation', 'object'],
                           dtype=str)
-        # (2)a Read only few if it is asked.
-        if isinstance(read_only_few, int):
-            if read_only_few > 0:
-                df = df.head(read_only_few)  # df.loc[:read_only_few]
-        # (3) Read only sample
-        if sample_triples_ratio:
-            print(f'Subsampling {sample_triples_ratio} of input data...')
-            df = df.sample(frac=sample_triples_ratio)
-
-        if sum(df.head()["subject"].str.startswith('<')) + sum(df.head()["relation"].str.startswith('<')) == 10:
-            # (4) Drop Rows/triples with double or boolean: Example preprocessing
-            # Drop of object does not start with **<**.
-            # Specifying na to be False instead of NaN.
-            df = df[df["object"].str.startswith('<', na=False)]
-            # (5) Remove **<** and **>**
-            df['subject'] = df['subject'].str.removeprefix("<").str.removesuffix(">")
-            df['relation'] = df['relation'].str.removeprefix("<").str.removesuffix(">")
-            df['object'] = df['object'].str.removeprefix("<").str.removesuffix(">")
-        return df
+        return preprocess(df, read_only_few, sample_triples_ratio)
     else:
         print(f'{data_path} could not found!')
         return None
