@@ -1,5 +1,5 @@
 import time
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 from collections import defaultdict
 import numpy as np
 import pickle
@@ -304,28 +304,34 @@ class KG:
             del low_frequency_entities
             print('Done !\n')
 
-    def load_read_process(self) -> Tuple[dask.dataframe.DataFrame, dask.dataframe.DataFrame, dask.dataframe.DataFrame]:
+    def load_read_process(self) -> Tuple[
+        dask.dataframe.DataFrame, Union[dask.dataframe.DataFrame, None], Union[dask.dataframe.DataFrame, None]]:
         """ Load train valid (if exists), and test (if exists) into memory """
-
-        # 1. LOAD Data. (First pass on data)
-        print(
-            f'[1 / 14] Lazy Loading and Preprocessing training data: read_only_few: {self.read_only_few} , sample_triples_ratio: {self.sample_triples_ratio}...',
-            end='\t')
-        self.train_set = load_data_parallel(self.data_dir + '/train', self.read_only_few, self.sample_triples_ratio)
-        print('Train Dataset:', self.train_set)
-        print('Done !\n')
-        print(
-            f'[2 / 14] Lazy Loading and Preprocessing valid data...',
-            end='\t')
-        self.valid_set = load_data_parallel(self.data_dir + '/valid')
-        print('Validation Dataset:', self.valid_set)
-        print('Done !\n')
-        print(
-            f'[3 / 14] Lazy Loading and Preprocessing test data...',
-            end='\t')
-        self.test_set = load_data_parallel(self.data_dir + '/test')
-        print('Test Dataset:', self.test_set)
-        print('Done !\n')
+        # (1) Check whether a path leading to a directory is a parquet formatted file
+        if self.data_dir[-8:] == '.parquet':
+            self.train_set = ddf.read_parquet(self.data_dir, engine='pyarrow')
+            self.valid_set = None
+            self.test_set = None
+        else:
+            # 1. LOAD Data. (First pass on data)
+            print(
+                f'[1 / 14] Lazy Loading and Preprocessing training data: read_only_few: {self.read_only_few} , sample_triples_ratio: {self.sample_triples_ratio}...',
+                end='\t')
+            self.train_set = load_data_parallel(self.data_dir + '/train', self.read_only_few, self.sample_triples_ratio)
+            print('Train Dataset:', self.train_set)
+            print('Done !\n')
+            print(
+                f'[2 / 14] Lazy Loading and Preprocessing valid data...',
+                end='\t')
+            self.valid_set = load_data_parallel(self.data_dir + '/valid')
+            print('Validation Dataset:', self.valid_set)
+            print('Done !\n')
+            print(
+                f'[3 / 14] Lazy Loading and Preprocessing test data...',
+                end='\t')
+            self.test_set = load_data_parallel(self.data_dir + '/test')
+            print('Test Dataset:', self.test_set)
+            print('Done !\n')
         return self.train_set, self.valid_set, self.test_set
 
     def apply_reciprical_or_noise(self) -> None:
