@@ -173,8 +173,8 @@ def initialize_pl_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
         return pl.Trainer.from_argparse_args(args, plugins=plugins, callbacks=callbacks)
 
 
-def preprocess(df: dask.dataframe.core.DataFrame, read_only_few: int = None,
-               sample_triples_ratio: float = None) -> dask.dataframe.core.DataFrame:
+def preprocess_dask_dataframe_kg(df: dask.dataframe.core.DataFrame, read_only_few: int = None,
+                                 sample_triples_ratio: float = None) -> dask.dataframe.core.DataFrame:
     """ Preprocess lazy loaded dask dataframe
     (1) Read only few triples
     (2) Sample few triples
@@ -223,7 +223,7 @@ def load_data_parallel(data_path, read_only_few: int = None,
                           usecols=[0, 1, 2],
                           names=['subject', 'relation', 'object'],
                           dtype=str)
-        return preprocess(df, read_only_few, sample_triples_ratio)
+        return preprocess_dask_dataframe_kg(df, read_only_few, sample_triples_ratio)
     else:
         print(f'{data_path} could not found!')
         return None
@@ -307,18 +307,28 @@ def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, num_cor
     :param entity_to_idx: a mapping from str to integer index
     :param relation_to_idx: a mapping from str to integer index
     :return: indexed triples, i.e., pandas dataframe
-
     """
+    n, d = train_set.shape
     if num_core > 1:
         assert isinstance(train_set, pd.core.frame.DataFrame)
         train_set['subject'] = train_set['subject'].swifter.apply(lambda x: entity_to_idx.get(x))
         train_set['relation'] = train_set['relation'].swifter.apply(lambda x: relation_to_idx.get(x))
         train_set['object'] = train_set['object'].swifter.apply(lambda x: entity_to_idx.get(x))
+        assert (n, d) == train_set.shape
     else:
         train_set['subject'] = train_set['subject'].apply(lambda x: entity_to_idx.get(x))
         train_set['relation'] = train_set['relation'].apply(lambda x: relation_to_idx.get(x))
         train_set['object'] = train_set['object'].apply(lambda x: entity_to_idx.get(x))
     train_set = train_set.dropna()
+    if isinstance(train_set, pd.core.frame.DataFrame):
+        assert (n, d) == train_set.shape
+    elif isinstance(train_set, dask.dataframe.core.DataFrame):
+        nn, dd = train_set.shape
+        assert isinstance(dd, int)
+        if isinstance(nn, int):
+            assert n == nn and d == dd
+    else:
+        raise KeyError('Wrong type training data')
     return train_set
 
 
