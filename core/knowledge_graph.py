@@ -10,7 +10,7 @@ import os
 import pandas as pd
 from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_re_vocab, \
     create_recipriocal_triples_from_dask, add_noisy_triples, index_triples, load_data_parallel, create_constraints, \
-    numpy_data_type_changer, vocab_to_parquet
+    numpy_data_type_changer, vocab_to_parquet, preprocess_dask_dataframe_kg
 from .sanity_checkers import dataset_sanity_checking
 import glob
 from dask.distributed import Client
@@ -66,9 +66,14 @@ class KG:
         self.relation_to_idx = relation_to_idx
         self.scheduler_flag = 'processes' if self.num_core > 1 else 'threads'  # 'single-threaded'
         self.scheduler_flag = None
+        self.input_is_parquet = None
         if dashboard:
-            client = Client()
-            print(f'DASK: {client}\tDASK-Dashboard:\t{client.dashboard_link}')
+            self.client = Client()
+            print(f'DASK: {self.client}\tDASK-Dashboard:\t{self.client.dashboard_link}')
+            print('If you are running this code in a remote server')
+            print('***local$ssh - L 8000: localhost:8787 user@remote***\n'
+                  'remote$ dash-scheduler')
+            print('Go to http://localhost:8000/status on your local')
 
         # (1) Load + Preprocess input data.
         if deserialize_flag is None:
@@ -78,7 +83,11 @@ class KG:
             self.apply_reciprical_or_noise()
             # (1.3) Construct integer indexing for entities and relations.
             if entity_to_idx is None and relation_to_idx is None:
-                self.sequential_vocabulary_construction()  # via Pandas
+                if self.input_is_parquet:
+                    self.vocabulary_construction()
+                    self.train_set = self.train_set.compute()
+                else:
+                    self.sequential_vocabulary_construction()  # via Pandas
                 print(
                     '[9 / 14] Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...',
                     end='\t')
@@ -90,7 +99,6 @@ class KG:
                 print('[10 / 14] Mapping training data into integers for training...', end='\t')
                 start_time = time.time()
                 # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
-
                 self.train_set = index_triples(self.train_set,
                                                self.entity_to_idx,
                                                self.relation_to_idx,
@@ -136,7 +144,6 @@ class KG:
                 self.train_set = self.train_set.values
 
             self.train_set = numpy_data_type_changer(self.train_set, num=max(self.num_entities, self.num_relations))
-
             print('[13 / 14 ] Sanity checking...', end='\t')
             # 12. Sanity checking: indexed training set can not have an indexed entity assigned with larger indexed than the number of entities.
             dataset_sanity_checking(self.train_set, self.num_entities, self.num_relations)
@@ -216,6 +223,50 @@ class KG:
                                      f'\nNumber of triples on train set: {len(self.train_set)}' \
                                      f'\nNumber of triples on valid set: {len(self.valid_set) if self.valid_set is not None else 0}' \
                                      f'\nNumber of triples on test set: {len(self.test_set) if self.test_set is not None else 0}\n'
+
+    def vocabulary_construction(self) -> None:
+        """
+        (1) Read input data into memory
+        (2) Remove triples with a condition
+        (3) Serialize vocabularies in a pandas dataframe where
+                    => the index is integer and
+                    => a single column is string (e.g. URI)
+        """
+        print('\n[4 / 14] Concatenating data to obtain index...', end='\t')
+        x = [self.train_set]
+        if self.valid_set is not None:
+            x.append(self.valid_set)
+        if self.test_set is not None:
+            x.append(self.test_set)
+        df_str_kg = ddf.concat(x, ignore_index=True)
+        del x
+        print('Done !\n')
+
+        if self.min_freq_for_vocab is not None:
+            assert isinstance(self.min_freq_for_vocab, int)
+            assert self.min_freq_for_vocab > 0
+            raise NotImplementedError('We did not implement the removal of less frequent terms in parquet mode')
+            # self.remove_triples_from_train_with_condition()
+
+        print('[5 / 14] Creating a mapping from entities to integer indexes (actual compute)...', end='\t')
+        self.entity_to_idx = ddf.concat([df_str_kg['subject'].unique(), df_str_kg['object'].unique()],
+                                        ignore_index=True).unique().to_frame(name='entity').compute()
+        print('Done !\n')
+        integer_indexes = self.entity_to_idx.index
+        self.entity_to_idx = self.entity_to_idx.set_index(self.entity_to_idx.entity)
+        self.entity_to_idx['entity'] = integer_indexes
+        vocab_to_parquet(self.entity_to_idx, 'entity_to_idx.gzip', self.path_for_serialization,
+                         print_into='[6 / 14] Serializing compressed entity integer mapping...')
+
+        print('[7 / 14] Creating a mapping from relations to integer indexes (actual compute)...', end='\t')
+        self.relation_to_idx = df_str_kg['relation'].unique().to_frame(name='relation').compute()
+        print('Done !\n')
+        integer_indexes = self.relation_to_idx.index
+        self.relation_to_idx = self.relation_to_idx.set_index(self.relation_to_idx.relation)
+        self.relation_to_idx['relation'] = integer_indexes
+        vocab_to_parquet(self.relation_to_idx, 'relation_to_idx.gzip', self.path_for_serialization,
+                         '[8 / 14] Serializing compressed relation integer mapping...')
+        del integer_indexes
 
     def sequential_vocabulary_construction(self) -> None:
         """
@@ -309,9 +360,11 @@ class KG:
         """ Load train valid (if exists), and test (if exists) into memory """
         # (1) Check whether a path leading to a directory is a parquet formatted file
         if self.data_dir[-8:] == '.parquet':
-            self.train_set = ddf.read_parquet(self.data_dir, engine='pyarrow')
+            # if we have enough memory
+            self.train_set = preprocess_dask_dataframe_kg(ddf.read_parquet(self.data_dir, engine='pyarrow')).persist()
             self.valid_set = None
             self.test_set = None
+            self.input_is_parquet = True
         else:
             # 1. LOAD Data. (First pass on data)
             print(
@@ -332,6 +385,7 @@ class KG:
             self.test_set = load_data_parallel(self.data_dir + '/test')
             print('Test Dataset:', self.test_set)
             print('Done !\n')
+            self.input_is_parquet = False
         return self.train_set, self.valid_set, self.test_set
 
     def apply_reciprical_or_noise(self) -> None:
