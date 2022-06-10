@@ -10,7 +10,7 @@ def argparse_default(description=None):
     # Dataset and storage related
     parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
                         help="The path of a folder containing input data")
-    parser.add_argument("--save_embeddings_as_csv", type=bool, default=True,
+    parser.add_argument("--save_embeddings_as_csv", type=bool, default=False,
                         help='A flag for saving embeddings in csv file.')
     parser.add_argument("--num_core", type=int, default=1,
                         help='Number of cores to be used.')
@@ -32,7 +32,7 @@ def argparse_default(description=None):
                         help='[NAdam, Adam, SGD]')
     parser.add_argument('--embedding_dim', type=int, default=128,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=0, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.01, help='Learning rate')
     # Hyperparameters for training.
@@ -57,9 +57,9 @@ def argparse_default(description=None):
                         help='The ratio of the size of the affine transformation w.r.t. the size of the embeddings')
     parser.add_argument("--normalization", type=str, default="LayerNorm", help="LayerNorm, BatchNorm1d")
     # Flags for computation
-    parser.add_argument("--eval", type=bool, default=True,
+    parser.add_argument("--eval", type=bool, default=False,
                         help='A flag for using evaluation')
-    parser.add_argument("--eval_on_train", type=bool, default=True,
+    parser.add_argument("--eval_on_train", type=bool, default=False,
                         help='A flag for using train data to evaluation ')
     parser.add_argument("--eval_with_constraint", type=bool, default=False,
                         help='Filter entities not belonging to the range or domain of a relation.')
