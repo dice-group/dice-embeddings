@@ -232,6 +232,7 @@ class KG:
                     => a single column is string (e.g. URI)
         """
         # (4) Remove triples from (1).
+        print('Vocab construction')
         self.train_set = dask_remove_triples_with_condition(self.train_set, self.min_freq_for_vocab)
         print('\n[4 / 14] Concatenating data to obtain index...', end='\t')
         x = [self.train_set]
@@ -355,7 +356,9 @@ class KG:
         """ Load train valid (if exists), and test (if exists) into memory """
         # (1) Check whether a path leading to a directory is a parquet formatted file
         if self.data_dir[-8:] == '.parquet':
-            # if we have enough memory
+            print(
+                f'[1 / 14] Loading, Preprocessing and Persisting training data: read_only_few: {self.read_only_few} , sample_triples_ratio: {self.sample_triples_ratio}...',
+                end='\t')
             self.train_set = preprocess_dask_dataframe_kg(ddf.read_parquet(self.data_dir, engine='pyarrow')).persist()
             self.valid_set = None
             self.test_set = None
