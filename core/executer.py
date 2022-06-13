@@ -156,23 +156,6 @@ class Execute:
                                      max_epochs=self.args.max_epochs,
                                      path=self.args.full_storage_path), ModelSummary(max_depth=-1)]
 
-        # PL has some problems with DDPPlugin. It will likely to be solved in their next release.
-        # Explicitly setting num_process > 1 gives you
-        """
-        [W reducer.cpp: 1303] Warning: find_unused_parameters = True
-        was specified in DDP constructor, but did not find any unused parameters in the
-        forward pass.
-        This flag results in an extra traversal of the autograd graph every iteration, which can adversely affect
-        performance. If your model indeed never has any unused parameters in the forward pass, 
-        consider turning this flag off. Note that this warning may be a false positive 
-        if your model has flow        control        causing        later        iterations        to        have        unused
-        parameters.(function        operator())
-        """
-        # Adding plugins=[DDPPlugin(find_unused_parameters=False)] and explicitly using num_process > 1
-        """ pytorch_lightning.utilities.exceptions.DeadlockDetectedException: DeadLock detected from rank: 1  """
-        # Force using SWA.
-        # self.args.stochastic_weight_avg = True
-
         # (2) Initialize Pytorch-lightning Trainer
         self.trainer = initialize_pl_trainer(self.args, callbacks, plugins=[])
         # (3) Use (2) to train a KGE model
@@ -184,6 +167,7 @@ class Execute:
 
     def train(self) -> Tuple[BaseKGE, str]:
         """ Train selected model via the selected training strategy """
+        print("Train selected model via the selected training strategy ")
         if self.args.num_folds_for_cv >= 2:
             return self.k_fold_cross_validation()
         else:
@@ -432,6 +416,7 @@ class Execute:
         Train models with Negative Sampling
         """
         assert self.args.neg_ratio > 0
+        # (1) Select the model
         model, _ = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         form_of_labelling = 'NegativeSampling'
         print(f'Training starts: {model.name}-labeling:{form_of_labelling}')
