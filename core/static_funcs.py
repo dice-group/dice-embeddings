@@ -165,14 +165,17 @@ def model_fitting(trainer, model, train_dataloaders) -> None:
 def initialize_pl_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     """ Initialize pl.Traner from input arguments """
     print('Initialize Pytorch-lightning Trainer')
+    return pl.Trainer.from_argparse_args(args, plugins=plugins, callbacks=callbacks)
+    """
+    DeepSpeedPlugin ignored.
     if args.gpus:
-        # plugins.append(DDPPlugin(find_unused_parameters=False))
+        # https://pytorch-lightning.readthedocs.io/en/1.4.2/api/pytorch_lightning.plugins.training_type.DeepSpeedPlugin.html ?
         plugins.append(DeepSpeedPlugin(stage=3))
         return pl.Trainer.from_argparse_args(args, plugins=plugins,
                                              callbacks=callbacks)
     else:
         return pl.Trainer.from_argparse_args(args, plugins=plugins, callbacks=callbacks)
-
+    """
 
 def preprocess_dask_dataframe_kg(df: dask.dataframe.core.DataFrame, read_only_few: int = None,
                                  sample_triples_ratio: float = None) -> dask.dataframe.core.DataFrame:
