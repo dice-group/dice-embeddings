@@ -28,18 +28,18 @@ git clone https://github.com/dice-group/dice-embeddings.git
 ```
 To install dependencies:
 ```
-conda create -n dice python=3.10
+# python=3.10 with torch cuda nncl https://discuss.pytorch.org/t/issues-on-using-nn-dataparallel-with-python-3-10-and-pytorch-1-11/146745/13
+conda create -n dice python=3.9.12
 conda activate dice
-pip3 install pandas==1.4.1
-pip3 install swifter==1.1.2
+pip3 install pandas==1.4.2
+pip3 install swifter==1.1.2 # we can remove it later
 pip3 install torch --extra-index-url https://download.pytorch.org/whl/cu113
-pip3 install pytorch-lightning==1.5.9
-pip3 install "dask[complete]"==2022.1.0
-pip3 install scikit-learn==1.0.2
+pip3 install pytorch-lightning==1.6.4
+pip3 install "dask[complete]"==2022.6.0
+pip3 install scikit-learn==1.1.1
 pip3 install pytest==6.2.5
-pip3 install gradio==2.7.5.2
-pip3 install pyarrow==6.0.1
-pip3 install protobuf==3.20.0 # downgrade it
+pip3 install gradio==3.0.17
+pip3 install pyarrow==8.0.0
 ```
 To test the Installation
 ```

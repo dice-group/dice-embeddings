@@ -83,10 +83,11 @@ class KG:
             # (1.3) Construct integer indexing for entities and relations.
             if entity_to_idx is None and relation_to_idx is None:
                 if self.input_is_parquet:
-                    self.vocabulary_construction()
+                    self.dask_vocabulary_construction()
                     self.train_set = self.train_set.compute()
                 else:
                     self.sequential_vocabulary_construction()  # via Pandas
+                # @TODO self.entity_to_idx and self.relation_to_idx can be reassigned via futures,
                 print(
                     '[9 / 14] Obtaining entity to integer index mapping from pandas dataframe...', end='\t')
                 self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
@@ -107,7 +108,8 @@ class KG:
                 if path_for_serialization is not None:
                     # 10. Serialize (9).
                     print('[11 / 14] Serializing integer mapped data...', end='\t')
-                    self.train_set.to_parquet(path_for_serialization + '/idx_train_df.gzip', compression='gzip',engine='pyarrow')
+                    self.train_set.to_parquet(path_for_serialization + '/idx_train_df.gzip', compression='gzip',
+                                              engine='pyarrow')
                     print('Done !\n')
                 assert isinstance(self.train_set, pd.core.frame.DataFrame)
                 # 11. Convert data from pandas dataframe to numpy ndarray.
@@ -152,7 +154,7 @@ class KG:
                 if path_for_serialization is not None:
                     print('[14 / 14 ] Serializing validation data for Continual Learning...', end='\t')
                     self.valid_set.to_parquet(
-                        path_for_serialization + '/valid_df.gzip', compression='gzip',engine='pyarrow')
+                        path_for_serialization + '/valid_df.gzip', compression='gzip', engine='pyarrow')
                     print('Done !\n')
                 print('[14 / 14 ] Indexing validation dataset...', end='\t')
                 self.valid_set = index_triples(self.valid_set, self.entity_to_idx, self.relation_to_idx)
@@ -160,7 +162,7 @@ class KG:
                 if path_for_serialization is not None:
                     print('[15 / 14 ] Serializing indexed validation dataset...', end='\t')
                     self.valid_set.to_parquet(
-                        path_for_serialization + '/idx_valid_df.gzip', compression='gzip',engine='pyarrow')
+                        path_for_serialization + '/idx_valid_df.gzip', compression='gzip', engine='pyarrow')
                     print('Done !\n')
                 # To numpy
                 self.valid_set = self.valid_set.values  # .compute(scheduler=scheduler_flag)
@@ -170,7 +172,7 @@ class KG:
                 if path_for_serialization is not None:
                     print('[16 / 14 ] Serializing test data for Continual Learning...', end='\t')
                     self.test_set.to_parquet(
-                        path_for_serialization + '/test_df.gzip', compression='gzip',engine='pyarrow')
+                        path_for_serialization + '/test_df.gzip', compression='gzip', engine='pyarrow')
                     print('Done !\n')
                 print('[17 / 14 ] Indexing test dataset...', end='\t')
                 self.test_set = index_triples(self.test_set, self.entity_to_idx, self.relation_to_idx)
@@ -178,7 +180,7 @@ class KG:
                 if path_for_serialization is not None:
                     print('[18 / 14 ] Serializing indexed test dataset...', end='\t')
                     self.test_set.to_parquet(
-                        path_for_serialization + '/idx_test_df.gzip', compression='gzip',engine='pyarrow')
+                        path_for_serialization + '/idx_test_df.gzip', compression='gzip', engine='pyarrow')
                 # To numpy
                 self.test_set = self.test_set.values
                 dataset_sanity_checking(self.test_set, self.num_entities, self.num_relations)
@@ -224,7 +226,7 @@ class KG:
                                      f'\nNumber of triples on valid set: {len(self.valid_set) if self.valid_set is not None else 0}' \
                                      f'\nNumber of triples on test set: {len(self.test_set) if self.test_set is not None else 0}\n'
 
-    def vocabulary_construction(self) -> None:
+    def dask_vocabulary_construction(self) -> None:
         """
         (1) Read input data into memory
         (2) Remove triples with a condition
@@ -233,9 +235,8 @@ class KG:
                     => a single column is string (e.g. URI)
         """
         # (4) Remove triples from (1).
-        print('Vocab construction')
         self.train_set = dask_remove_triples_with_condition(self.train_set, self.min_freq_for_vocab)
-        print('\n[4 / 14] Concatenating data to obtain index...', end='\t')
+        print('[4 / 14] Concatenating data to obtain index...', end='\t')
         x = [self.train_set]
         if self.valid_set is not None:
             x.append(self.valid_set)
@@ -244,6 +245,8 @@ class KG:
         df_str_kg = ddf.concat(x, ignore_index=True)
         del x
         print('Done !\n')
+
+        # @TODO: Next computation does not need to done in sequential order. Use Dask Futures.
         print('[5 / 14] Creating a mapping from entities to integer indexes (actual compute)...', end='\t')
         self.entity_to_idx = ddf.concat([df_str_kg['subject'].unique(), df_str_kg['object'].unique()],
                                         ignore_index=True).unique().to_frame(name='entity').compute()
@@ -323,6 +326,7 @@ class KG:
         del ordered_list
 
     def remove_triples_from_train_with_condition(self):
+        # @TODO: Move to static_funcs.py
         if self.min_freq_for_vocab is not None:
             assert isinstance(self.min_freq_for_vocab, int)
             assert self.min_freq_for_vocab > 0
@@ -357,9 +361,13 @@ class KG:
         # (1) Check whether a path leading to a directory is a parquet formatted file
         if self.data_dir[-8:] == '.parquet':
             print(
-                f'[1 / 14] Loading, Preprocessing and Persisting training data: read_only_few: {self.read_only_few} , sample_triples_ratio: {self.sample_triples_ratio}...',
-                end='\t')
-            self.train_set = preprocess_dask_dataframe_kg(ddf.read_parquet(self.data_dir, engine='pyarrow')).persist()
+                f'[1 / 14] DASK read_parquet with pyarrow and preprocess: read_only_few: {self.read_only_few} , sample_triples_ratio: {self.sample_triples_ratio}...')
+            self.train_set = preprocess_dask_dataframe_kg(ddf.read_parquet(self.data_dir, engine='pyarrow'))
+            print('Train Dataset:', self.train_set)
+            print('Done !\n')
+            print('Persisting...',end='\t')
+            self.train_set = self.train_set.persist()
+            print('Done !\n')
             self.valid_set = None
             self.test_set = None
             self.input_is_parquet = True

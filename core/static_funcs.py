@@ -316,8 +316,10 @@ def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, num_cor
     :return: indexed triples, i.e., pandas dataframe
     """
     n, d = train_set.shape
-    print(f'Number of cores will be used :{num_core}', end='\t')
-    if num_core > 1:
+    """
+    @TODO: Benchmark using apply on dask dataframe, swifter and plain pandas
+    if num_core > 1000:
+        print(f'Number of cores will be used :{num_core}', end='\t')
         assert isinstance(train_set, pd.core.frame.DataFrame)
         train_set['subject'] = train_set['subject'].swifter.apply(lambda x: entity_to_idx.get(x))
         train_set['relation'] = train_set['relation'].swifter.apply(lambda x: relation_to_idx.get(x))
@@ -327,6 +329,10 @@ def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, num_cor
         train_set['subject'] = train_set['subject'].apply(lambda x: entity_to_idx.get(x))
         train_set['relation'] = train_set['relation'].apply(lambda x: relation_to_idx.get(x))
         train_set['object'] = train_set['object'].apply(lambda x: entity_to_idx.get(x))
+    """
+    train_set['subject'] = train_set['subject'].apply(lambda x: entity_to_idx.get(x))
+    train_set['relation'] = train_set['relation'].apply(lambda x: relation_to_idx.get(x))
+    train_set['object'] = train_set['object'].apply(lambda x: entity_to_idx.get(x))
     train_set = train_set.dropna()
     if isinstance(train_set, pd.core.frame.DataFrame):
         assert (n, d) == train_set.shape
