@@ -1,0 +1,60 @@
+Loading parquet formated knowledge graph on
+
+
+qilin
+GIGABYTE Server R262-ZA2-00
+
+2x NVIDIA GeForce RTX A5000 24GB
+AMD EPYC 7713 64-Core Processor	64	1024 GB	KCD61LUL15T3 13.97 TiB CS3040 4TB SSD
+Debian IRB managed 11 (bullseye)
+5.10.0-14-amd64 x86_64
+
+
+Python 3.9.12 (main, Jun  1 2022, 11:38:51)
+[GCC 7.5.0] :: Anaconda, Inc. on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> from dask import dataframe as ddf
+
+>>> df = ddf.read_parquet('cleaned_well_partitioned_dbpedia_03_2022.parquet',engine='pyarrow')
+>>> df
+Dask DataFrame Structure:
+                 subject relation  object
+npartitions=2763
+                  object   object  object
+                     ...      ...     ...
+...                  ...      ...     ...
+                     ...      ...     ...
+                     ...      ...     ...
+Dask Name: read-parquet, 2763 tasks
+
+# Loading to Memory
+
+## Loading to Memory via process
+%timeit -n 5  df.partitions[:10].compute(scheduler='processes')
+2.37 s ± 21.1 ms per loop (mean ± std. dev. of 7 runs, 5 loops each)
+
+## Loading to Memory via process only 10 cores
+%timeit -n 5  df.partitions[:10].compute(scheduler='processes',num_workers=10)
+2.38 s ± 25.3 ms per loop (mean ± std. dev. of 7 runs, 5 loops each)
+
+## Loading to Memory via threads
+%timeit -n 5  df.partitions[:10].compute(scheduler='threads')
+837 ms ± 4.53 ms per loop (mean ± std. dev. of 7 runs, 5 loops each)
+
+## Loading to Memory via 10 threads
+%timeit -n 5  df.partitions[:10].compute(scheduler='threads',num_workers=10)
+832 ms ± 7.04 ms per loop (mean ± std. dev. of 7 runs, 5 loops each)
+
+
+# Loading to Memory & Sampling
+%timeit -n 5 df.partitions[:10].sample(frac=.25).compute(scheduler='processes')
+1.69 s ± 25.5 ms per loop (mean ± std. dev. of 7 runs, 5 loops each)
+
+%timeit -n 5 df.partitions[:10].sample(frac=.25).compute(scheduler='threads')
+1.02 s ± 4.56 ms per loop (mean ± std. dev. of 7 runs, 5 loops each)
+
+%timeit -n 5 df.partitions[:10].sample(frac=.25).compute(scheduler='threads',num_workers=10)
+1.02 s ± 5.59 ms per loop (mean ± std. dev. of 7 runs, 5 loops each)
+
+%timeit -n 5 df.partitions[:10].sample(frac=.25).compute(scheduler='threads',num_workers=20)
+1.01 s ± 8.33 ms per loop (mean ± std. dev. of 7 runs, 5 loops each)
