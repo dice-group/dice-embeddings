@@ -15,11 +15,8 @@ import pandas as pd
 import json
 import glob
 import dask.dataframe as dd
-from dask import dataframe as ddf
 import dask
-from .sanity_checkers import sanity_checking_with_arguments, config_kge_sanity_checking
-import swifter
-from pytorch_lightning.plugins import DDPPlugin, DeepSpeedPlugin
+from .sanity_checkers import sanity_checking_with_arguments
 
 
 # @TODO: Could these funcs can be merged?
@@ -166,16 +163,6 @@ def initialize_pl_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     """ Initialize pl.Traner from input arguments """
     print('Initialize Pytorch-lightning Trainer')
     return pl.Trainer.from_argparse_args(args, plugins=plugins, callbacks=callbacks)
-    """
-    DeepSpeedPlugin ignored.
-    if args.gpus:
-        # https://pytorch-lightning.readthedocs.io/en/1.4.2/api/pytorch_lightning.plugins.training_type.DeepSpeedPlugin.html ?
-        plugins.append(DeepSpeedPlugin(stage=3))
-        return pl.Trainer.from_argparse_args(args, plugins=plugins,
-                                             callbacks=callbacks)
-    else:
-        return pl.Trainer.from_argparse_args(args, plugins=plugins, callbacks=callbacks)
-    """
 
 
 def preprocess_dask_dataframe_kg(df: dask.dataframe.core.DataFrame, read_only_few: int = None,
@@ -190,7 +177,7 @@ def preprocess_dask_dataframe_kg(df: dask.dataframe.core.DataFrame, read_only_fe
     # (2)a Read only few if it is asked.
     if isinstance(read_only_few, int):
         if read_only_few > 0:
-            df = df.head(read_only_few)  # df.loc[:read_only_few]
+            df = df.head(read_only_few)
     # (3) Read only sample
     if sample_triples_ratio:
         print(f'Subsampling {sample_triples_ratio} of input data...')
@@ -222,7 +209,7 @@ def load_data_parallel(data_path, read_only_few: int = None,
         # (1) Read knowledge graph  via
         # (1.1) Using the whitespace as a deliminator
         # (1.2) Taking first three columns detected in (1.1.)
-        df = ddf.read_csv(data_path + '*',
+        df = dd.read_csv(data_path + '*',
                           delim_whitespace=True,
                           header=None,
                           usecols=[0, 1, 2],
@@ -889,7 +876,7 @@ def dask_remove_triples_with_condition(dask_kg_dataframe: dask.dataframe.core.Da
         num_triples = dask_kg_dataframe.size.compute()
         print('Total num triples:', num_triples, end=' ')
         # Compute entity frequency: index is URI, val is number of occurrences.
-        entity_frequency = ddf.concat([dask_kg_dataframe['subject'], dask_kg_dataframe['object']],
+        entity_frequency = dd.concat([dask_kg_dataframe['subject'], dask_kg_dataframe['object']],
                                       ignore_index=True).value_counts().compute()
         relation_frequency = dask_kg_dataframe['relation'].value_counts().compute()
         # low_frequency_entities index and values are the same URIs: dask.dataframe.core.DataFrame

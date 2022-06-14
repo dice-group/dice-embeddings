@@ -122,7 +122,7 @@ class KG:
 
                 print(
                     '[4 / 14] Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...',
-            )
+                )
                 self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
                 self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
                 self.num_entities = len(self.entity_to_idx)
@@ -249,8 +249,6 @@ class KG:
         df_str_kg = ddf.concat(x, ignore_index=True)
         del x
         print('Done !\n')
-
-        # @TODO: Next computation does not need to done in sequential order. Use Dask Futures.
         print('[5 / 14] Creating a mapping from entities to integer indexes (actual compute)...')
         self.entity_to_idx = ddf.concat([df_str_kg['subject'].unique(), df_str_kg['object'].unique()],
                                         ignore_index=True).unique().to_frame(name='entity').compute()
@@ -258,6 +256,7 @@ class KG:
         integer_indexes = self.entity_to_idx.index
         self.entity_to_idx = self.entity_to_idx.set_index(self.entity_to_idx.entity)
         self.entity_to_idx['entity'] = integer_indexes
+
         vocab_to_parquet(self.entity_to_idx, 'entity_to_idx.gzip', self.path_for_serialization,
                          print_into='[6 / 14] Serializing compressed entity integer mapping...')
 
@@ -379,19 +378,19 @@ class KG:
             # 1. LOAD Data. (First pass on data)
             print(
                 f'[1 / 14] Lazy Loading and Preprocessing training data: read_only_few: {self.read_only_few} , sample_triples_ratio: {self.sample_triples_ratio}...',
-        )
+            )
             self.train_set = load_data_parallel(self.data_dir + '/train', self.read_only_few, self.sample_triples_ratio)
             print('Train Dataset:', self.train_set)
             print('Done !\n')
             print(
                 f'[2 / 14] Lazy Loading and Preprocessing valid data...',
-        )
+            )
             self.valid_set = load_data_parallel(self.data_dir + '/valid')
             print('Validation Dataset:', self.valid_set)
             print('Done !\n')
             print(
                 f'[3 / 14] Lazy Loading and Preprocessing test data...',
-        )
+            )
             self.test_set = load_data_parallel(self.data_dir + '/test')
             print('Test Dataset:', self.test_set)
             print('Done !\n')
@@ -404,7 +403,7 @@ class KG:
         if self.add_reciprical and self.eval_model:
             print(
                 '[3.1 / 14] Add reciprocal triples to train, validation, and test sets, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}',
-        )
+            )
             self.train_set = create_recipriocal_triples_from_dask(self.train_set)
             if self.valid_set is not None:
                 self.valid_set = create_recipriocal_triples_from_dask(self.valid_set)
@@ -435,7 +434,7 @@ class KG:
         self.num_relations = len(self.relation_to_idx)
         print(
             '[3 / 4] Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...',
-    )
+        )
         start_time = time.time()
         self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
         self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
