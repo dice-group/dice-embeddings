@@ -25,9 +25,9 @@ class TestRegressionComplEx:
         args.read_only_few = None
         args.num_folds_for_cv = None
         result = Execute(args).start()
-        assert 0.83 >= result['Train']['H@1'] >= 0.75
-        assert 0.81 >= result['Val']['H@1'] >= 0.60
-        assert 0.81 >= result['Test']['H@1'] >= 0.60
+        assert 0.84 >= result['Train']['H@1'] >= 0.75
+        assert 0.84 >= result['Val']['H@1'] >= 0.60
+        assert 0.84 >= result['Test']['H@1'] >= 0.60
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
