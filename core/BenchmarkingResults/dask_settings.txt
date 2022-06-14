@@ -1,0 +1,3 @@
+Using persist often halves the preprocessing time
+print('Persisting...')
+self.train_set = self.train_set.persist()
