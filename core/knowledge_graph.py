@@ -64,7 +64,7 @@ class KG:
         self.min_freq_for_vocab = min_freq_for_vocab
         self.entity_to_idx = entity_to_idx
         self.relation_to_idx = relation_to_idx
-        self.scheduler_flag = 'processes' if self.num_core > 1 else 'threads'  # 'single-threaded'
+        # self.scheduler_flag = 'processes' if self.num_core > 1 else 'threads'  # 'single-threaded'
         self.scheduler_flag = None
         self.input_is_parquet = None
         if dashboard:
@@ -88,25 +88,26 @@ class KG:
                 else:
                     self.sequential_vocabulary_construction()  # via Pandas
                 print(
-                    '[9 / 14] Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...',
-                    end='\t')
+                    '[9 / 14] Obtaining entity to integer index mapping from pandas dataframe...', end='\t')
                 self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
+                print('Done !\n')
+                print('[9 / 14] Obtaining relation to integer index mapping from pandas dataframe...', end='\t')
                 self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
+                print('Done !\n')
                 self.num_entities = len(self.entity_to_idx)
                 self.num_relations = len(self.relation_to_idx)
-                print('Done !\n')
                 print('[10 / 14] Mapping training data into integers for training...', end='\t')
                 start_time = time.time()
                 # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
                 self.train_set = index_triples(self.train_set,
                                                self.entity_to_idx,
                                                self.relation_to_idx,
-                                               num_core=self.num_core)
+                                               num_core=os.cpu_count())
                 print(f'Done ! {time.time() - start_time:.3f} seconds\n')
                 if path_for_serialization is not None:
                     # 10. Serialize (9).
                     print('[11 / 14] Serializing integer mapped data...', end='\t')
-                    self.train_set.to_parquet(path_for_serialization + '/idx_train_df.gzip', compression='gzip')
+                    self.train_set.to_parquet(path_for_serialization + '/idx_train_df.gzip', compression='gzip',engine='pyarrow')
                     print('Done !\n')
                 assert isinstance(self.train_set, pd.core.frame.DataFrame)
                 # 11. Convert data from pandas dataframe to numpy ndarray.
@@ -151,7 +152,7 @@ class KG:
                 if path_for_serialization is not None:
                     print('[14 / 14 ] Serializing validation data for Continual Learning...', end='\t')
                     self.valid_set.to_parquet(
-                        path_for_serialization + '/valid_df.gzip', compression='gzip')
+                        path_for_serialization + '/valid_df.gzip', compression='gzip',engine='pyarrow')
                     print('Done !\n')
                 print('[14 / 14 ] Indexing validation dataset...', end='\t')
                 self.valid_set = index_triples(self.valid_set, self.entity_to_idx, self.relation_to_idx)
@@ -159,7 +160,7 @@ class KG:
                 if path_for_serialization is not None:
                     print('[15 / 14 ] Serializing indexed validation dataset...', end='\t')
                     self.valid_set.to_parquet(
-                        path_for_serialization + '/idx_valid_df.gzip', compression='gzip')
+                        path_for_serialization + '/idx_valid_df.gzip', compression='gzip',engine='pyarrow')
                     print('Done !\n')
                 # To numpy
                 self.valid_set = self.valid_set.values  # .compute(scheduler=scheduler_flag)
@@ -169,7 +170,7 @@ class KG:
                 if path_for_serialization is not None:
                     print('[16 / 14 ] Serializing test data for Continual Learning...', end='\t')
                     self.test_set.to_parquet(
-                        path_for_serialization + '/test_df.gzip', compression='gzip')
+                        path_for_serialization + '/test_df.gzip', compression='gzip',engine='pyarrow')
                     print('Done !\n')
                 print('[17 / 14 ] Indexing test dataset...', end='\t')
                 self.test_set = index_triples(self.test_set, self.entity_to_idx, self.relation_to_idx)
@@ -177,7 +178,7 @@ class KG:
                 if path_for_serialization is not None:
                     print('[18 / 14 ] Serializing indexed test dataset...', end='\t')
                     self.test_set.to_parquet(
-                        path_for_serialization + '/idx_test_df.gzip', compression='gzip')
+                        path_for_serialization + '/idx_test_df.gzip', compression='gzip',engine='pyarrow')
                 # To numpy
                 self.test_set = self.test_set.values
                 dataset_sanity_checking(self.test_set, self.num_entities, self.num_relations)
@@ -243,7 +244,6 @@ class KG:
         df_str_kg = ddf.concat(x, ignore_index=True)
         del x
         print('Done !\n')
-
         print('[5 / 14] Creating a mapping from entities to integer indexes (actual compute)...', end='\t')
         self.entity_to_idx = ddf.concat([df_str_kg['subject'].unique(), df_str_kg['object'].unique()],
                                         ignore_index=True).unique().to_frame(name='entity').compute()
@@ -351,8 +351,8 @@ class KG:
             del low_frequency_entities
             print('Done !\n')
 
-    def load_read_process(self) -> Tuple[
-        dask.dataframe.DataFrame, Union[dask.dataframe.DataFrame, None], Union[dask.dataframe.DataFrame, None]]:
+    def load_read_process(self) -> Tuple[dask.dataframe.DataFrame, Union[dask.dataframe.DataFrame, None],
+                                         Union[dask.dataframe.DataFrame, None]]:
         """ Load train valid (if exists), and test (if exists) into memory """
         # (1) Check whether a path leading to a directory is a parquet formatted file
         if self.data_dir[-8:] == '.parquet':

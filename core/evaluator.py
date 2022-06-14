@@ -13,6 +13,7 @@ class Evaluator:
         :param trained_model:
         :return:
         """
+        print('Evaluation Starts.')
         if self.executor.args.scoring_technique == 'NegSample':
             self.eval_rank_of_head_and_tail_entity(trained_model)
         elif self.executor.args.scoring_technique == 'KvsAll':

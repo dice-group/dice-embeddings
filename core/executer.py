@@ -154,7 +154,8 @@ class Execute:
         callbacks = [PrintCallback(),
                      KGESaveCallback(every_x_epoch=self.args.save_model_at_every_epoch,
                                      max_epochs=self.args.max_epochs,
-                                     path=self.args.full_storage_path), ModelSummary(max_depth=-1)]
+                                     path=self.args.full_storage_path),
+                     ModelSummary(max_depth=-1)]
 
         # (2) Initialize Pytorch-lightning Trainer
         self.trainer = initialize_pl_trainer(self.args, callbacks, plugins=[])
@@ -214,8 +215,7 @@ class Execute:
                                      form='CCvsAll',
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_core,
-                                     )
+                                     num_workers=self.args.num_core)
 
         def on_epoch_start(self, *args, **kwargs):
             """ Update non-conformity scores"""
@@ -391,8 +391,7 @@ class Execute:
                                      form=form_of_labelling,
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_core
-                                     )
+                                     num_workers=self.args.num_core)
         if self.args.label_relaxation_rate:
             model.loss = LabelRelaxationLoss(alpha=self.args.label_relaxation_rate)
             # model.loss=LabelSmoothingLossCanonical()

@@ -160,6 +160,7 @@ def model_fitting(trainer, model, train_dataloaders) -> None:
     print(f'Number of mini-batches to compute for a single epoch: {len(train_dataloaders)}')
     print(f'Learning rate:{model.learning_rate}\n')
     trainer.fit(model, train_dataloaders=train_dataloaders)
+    print(f'Model fitting is done!')
 
 
 def initialize_pl_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
@@ -176,6 +177,7 @@ def initialize_pl_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     else:
         return pl.Trainer.from_argparse_args(args, plugins=plugins, callbacks=callbacks)
     """
+
 
 def preprocess_dask_dataframe_kg(df: dask.dataframe.core.DataFrame, read_only_few: int = None,
                                  sample_triples_ratio: float = None) -> dask.dataframe.core.DataFrame:
@@ -314,6 +316,7 @@ def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, num_cor
     :return: indexed triples, i.e., pandas dataframe
     """
     n, d = train_set.shape
+    print(f'Number of cores will be used :{num_core}', end='\t')
     if num_core > 1:
         assert isinstance(train_set, pd.core.frame.DataFrame)
         train_set['subject'] = train_set['subject'].swifter.apply(lambda x: entity_to_idx.get(x))
@@ -860,13 +863,17 @@ def non_conformity_score_diff(predictions, targets) -> torch.Tensor:
 
 
 def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
+    # @TODO: This function should take any DASK/Pandas DataFrame or Series.
     print(print_into, end='\t')
-    vocab_to_idx.to_parquet(path_for_serialization + f'/{name}', compression='gzip')
+    vocab_to_idx.to_parquet(path_for_serialization + f'/{name}', compression='gzip', engine='pyarrow')
     print('Done !\n')
 
 
 def dask_remove_triples_with_condition(dask_kg_dataframe: dask.dataframe.core.DataFrame,
                                        min_freq_for_vocab: int = None) -> dask.dataframe.core.DataFrame:
+    """
+    Remove rows/triples from an input dataframe
+    """
     assert isinstance(dask_kg_dataframe, dask.dataframe.core.DataFrame)
     if min_freq_for_vocab is not None:
         assert isinstance(min_freq_for_vocab, int)
@@ -895,4 +902,6 @@ def dask_remove_triples_with_condition(dask_kg_dataframe: dask.dataframe.core.Da
         # print('\t after dropping:', df_str_kg.size.compute(scheduler=scheduler_flag))
         print('\t after dropping:', dask_kg_dataframe.size.compute(), end='\t')
         print('Done !')
+        return dask_kg_dataframe
+    else:
         return dask_kg_dataframe
