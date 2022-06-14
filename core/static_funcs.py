@@ -138,15 +138,14 @@ def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
     :return:
     """
     assert isinstance(num, int)
-    # train_set = train_set.astype(np.int32)
     if np.iinfo(np.int8).max > num:
-        print(f'Setting int8,\t {np.iinfo(np.int8).max}')
+        # print(f'Setting int8,\t {np.iinfo(np.int8).max}')
         train_set = train_set.astype(np.int8)
     elif np.iinfo(np.int16).max > num:
-        print(f'Setting int16,\t {np.iinfo(np.int16).max}')
+        # print(f'Setting int16,\t {np.iinfo(np.int16).max}')
         train_set = train_set.astype(np.int16)
     elif np.iinfo(np.int32).max > num:
-        print(f'Setting int32,\t {np.iinfo(np.int32).max}')
+        # print(f'Setting int32,\t {np.iinfo(np.int32).max}')
         train_set = train_set.astype(np.int32)
     else:
         pass
@@ -319,7 +318,7 @@ def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, num_cor
     """
     @TODO: Benchmark using apply on dask dataframe, swifter and plain pandas
     if num_core > 1000:
-        print(f'Number of cores will be used :{num_core}', end='\t')
+        print(f'Number of cores will be used :{num_core}')
         assert isinstance(train_set, pd.core.frame.DataFrame)
         train_set['subject'] = train_set['subject'].swifter.apply(lambda x: entity_to_idx.get(x))
         train_set['relation'] = train_set['relation'].swifter.apply(lambda x: relation_to_idx.get(x))
@@ -870,7 +869,7 @@ def non_conformity_score_diff(predictions, targets) -> torch.Tensor:
 
 def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
     # @TODO: This function should take any DASK/Pandas DataFrame or Series.
-    print(print_into, end='\t')
+    print(print_into)
     vocab_to_idx.to_parquet(path_for_serialization + f'/{name}', compression='gzip', engine='pyarrow')
     print('Done !\n')
 
@@ -906,7 +905,7 @@ def dask_remove_triples_with_condition(dask_kg_dataframe: dask.dataframe.core.Da
         # If triple contains relation that is in low_freq, set False do not select
         dask_kg_dataframe = dask_kg_dataframe[~dask_kg_dataframe['relation'].isin(low_frequency_relation)]
         # print('\t after dropping:', df_str_kg.size.compute(scheduler=scheduler_flag))
-        print('\t after dropping:', dask_kg_dataframe.size.compute(), end='\t')
+        print('\t after dropping:', dask_kg_dataframe.size.compute())
         print('Done !')
         return dask_kg_dataframe
     else:

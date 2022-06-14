@@ -89,15 +89,15 @@ class KG:
                     self.sequential_vocabulary_construction()  # via Pandas
                 # @TODO self.entity_to_idx and self.relation_to_idx can be reassigned via futures,
                 print(
-                    '[9 / 14] Obtaining entity to integer index mapping from pandas dataframe...', end='\t')
+                    '[9 / 14] Obtaining entity to integer index mapping from pandas dataframe...')
                 self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
                 print('Done !\n')
-                print('[9 / 14] Obtaining relation to integer index mapping from pandas dataframe...', end='\t')
+                print('[9 / 14] Obtaining relation to integer index mapping from pandas dataframe...')
                 self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
                 print('Done !\n')
                 self.num_entities = len(self.entity_to_idx)
                 self.num_relations = len(self.relation_to_idx)
-                print('[10 / 14] Mapping training data into integers for training...', end='\t')
+                print('[10 / 14] Mapping training data into integers for training...')
                 start_time = time.time()
                 # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
                 self.train_set = index_triples(self.train_set,
@@ -107,13 +107,13 @@ class KG:
                 print(f'Done ! {time.time() - start_time:.3f} seconds\n')
                 if path_for_serialization is not None:
                     # 10. Serialize (9).
-                    print('[11 / 14] Serializing integer mapped data...', end='\t')
+                    print('[11 / 14] Serializing integer mapped data...')
                     self.train_set.to_parquet(path_for_serialization + '/idx_train_df.gzip', compression='gzip',
                                               engine='pyarrow')
                     print('Done !\n')
                 assert isinstance(self.train_set, pd.core.frame.DataFrame)
                 # 11. Convert data from pandas dataframe to numpy ndarray.
-                print('[12 / 14] Mapping from pandas data frame to numpy ndarray to reduce memory usage...', end='\t')
+                print('[12 / 14] Mapping from pandas data frame to numpy ndarray to reduce memory usage...')
                 self.train_set = self.train_set.values
                 print('Done !\n')
             else:
@@ -122,45 +122,49 @@ class KG:
 
                 print(
                     '[4 / 14] Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...',
-                    end='\t')
+            )
                 self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
                 self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
                 self.num_entities = len(self.entity_to_idx)
                 self.num_relations = len(self.relation_to_idx)
                 print('Done !\n')
-                print('[10 / 14] Mapping training data into integers for training...', end='\t')
+                print('[10 / 14] Mapping training data into integers for training...')
                 # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
                 self.train_set = index_triples(self.train_set, self.entity_to_idx, self.relation_to_idx)
                 print('Done !\n')
-                print('Train set compute...', end='\t')
+                print('Train set compute...')
                 self.train_set = self.train_set.compute()
+                print('Done !\n')
                 if self.valid_set is not None:
-                    print('Valid set compute...', end='\t')
+                    print('Valid set compute...')
                     self.valid_set = self.valid_set.compute()
+                    print('Done !\n')
                 if self.test_set is not None:
-                    print('Test set compute...', end='\t')
+                    print('Test set compute...')
                     self.test_set = self.test_set.compute()
+                    print('Done !\n')
                 assert isinstance(self.train_set, pd.core.frame.DataFrame)
                 # 11. Convert data from pandas dataframe to numpy ndarray.
-                print('[12 / 14] Mapping from pandas data frame to numpy ndarray to reduce memory usage...', end='\t')
+                print('[12 / 14] Mapping from pandas data frame to numpy ndarray to reduce memory usage...')
                 self.train_set = self.train_set.values
+                print('Done !\n')
 
             self.train_set = numpy_data_type_changer(self.train_set, num=max(self.num_entities, self.num_relations))
-            print('[13 / 14 ] Sanity checking...', end='\t')
+            print('[13 / 14 ] Sanity checking...')
             # 12. Sanity checking: indexed training set can not have an indexed entity assigned with larger indexed than the number of entities.
             dataset_sanity_checking(self.train_set, self.num_entities, self.num_relations)
             print('Done !\n')
             if self.valid_set is not None:
                 if path_for_serialization is not None:
-                    print('[14 / 14 ] Serializing validation data for Continual Learning...', end='\t')
+                    print('[14 / 14 ] Serializing validation data for Continual Learning...')
                     self.valid_set.to_parquet(
                         path_for_serialization + '/valid_df.gzip', compression='gzip', engine='pyarrow')
                     print('Done !\n')
-                print('[14 / 14 ] Indexing validation dataset...', end='\t')
+                print('[14 / 14 ] Indexing validation dataset...')
                 self.valid_set = index_triples(self.valid_set, self.entity_to_idx, self.relation_to_idx)
                 print('Done !\n')
                 if path_for_serialization is not None:
-                    print('[15 / 14 ] Serializing indexed validation dataset...', end='\t')
+                    print('[15 / 14 ] Serializing indexed validation dataset...')
                     self.valid_set.to_parquet(
                         path_for_serialization + '/idx_valid_df.gzip', compression='gzip', engine='pyarrow')
                     print('Done !\n')
@@ -170,15 +174,15 @@ class KG:
                 self.valid_set = numpy_data_type_changer(self.valid_set, num=max(self.num_entities, self.num_relations))
             if self.test_set is not None:
                 if path_for_serialization is not None:
-                    print('[16 / 14 ] Serializing test data for Continual Learning...', end='\t')
+                    print('[16 / 14 ] Serializing test data for Continual Learning...')
                     self.test_set.to_parquet(
                         path_for_serialization + '/test_df.gzip', compression='gzip', engine='pyarrow')
                     print('Done !\n')
-                print('[17 / 14 ] Indexing test dataset...', end='\t')
+                print('[17 / 14 ] Indexing test dataset...')
                 self.test_set = index_triples(self.test_set, self.entity_to_idx, self.relation_to_idx)
                 print('Done !\n')
                 if path_for_serialization is not None:
-                    print('[18 / 14 ] Serializing indexed test dataset...', end='\t')
+                    print('[18 / 14 ] Serializing indexed test dataset...')
                     self.test_set.to_parquet(
                         path_for_serialization + '/idx_test_df.gzip', compression='gzip', engine='pyarrow')
                 # To numpy
@@ -194,7 +198,7 @@ class KG:
                 else:
                     data = self.train_set
                 # TODO do it via dask: No need to wait here.
-                print('Final: Creating Vocab...', end='\t')
+                print('Final: Creating Vocab...')
                 self.er_vocab = get_er_vocab(data)
                 self.re_vocab = get_re_vocab(data)
                 # 17. Create a bijection mapping from subject-object pairs to relations.
@@ -209,7 +213,7 @@ class KG:
                     data = np.concatenate([self.train_set, self.valid_set, self.test_set])
                 else:
                     data = self.train_set
-                print('[7 / 4] Creating er,re, and ee type vocabulary for evaluation...', end='\t')
+                print('[7 / 4] Creating er,re, and ee type vocabulary for evaluation...')
                 start_time = time.time()
                 self.er_vocab = get_er_vocab(data)
                 self.re_vocab = get_re_vocab(data)
@@ -236,7 +240,7 @@ class KG:
         """
         # (4) Remove triples from (1).
         self.train_set = dask_remove_triples_with_condition(self.train_set, self.min_freq_for_vocab)
-        print('[4 / 14] Concatenating data to obtain index...', end='\t')
+        print('[4 / 14] Concatenating data to obtain index...')
         x = [self.train_set]
         if self.valid_set is not None:
             x.append(self.valid_set)
@@ -247,7 +251,7 @@ class KG:
         print('Done !\n')
 
         # @TODO: Next computation does not need to done in sequential order. Use Dask Futures.
-        print('[5 / 14] Creating a mapping from entities to integer indexes (actual compute)...', end='\t')
+        print('[5 / 14] Creating a mapping from entities to integer indexes (actual compute)...')
         self.entity_to_idx = ddf.concat([df_str_kg['subject'].unique(), df_str_kg['object'].unique()],
                                         ignore_index=True).unique().to_frame(name='entity').compute()
         print('Done !\n')
@@ -257,7 +261,7 @@ class KG:
         vocab_to_parquet(self.entity_to_idx, 'entity_to_idx.gzip', self.path_for_serialization,
                          print_into='[6 / 14] Serializing compressed entity integer mapping...')
 
-        print('[7 / 14] Creating a mapping from relations to integer indexes (actual compute)...', end='\t')
+        print('[7 / 14] Creating a mapping from relations to integer indexes (actual compute)...')
         self.relation_to_idx = df_str_kg['relation'].unique().to_frame(name='relation').compute()
         print('Done !\n')
         integer_indexes = self.relation_to_idx.index
@@ -292,7 +296,7 @@ class KG:
         # (4) Remove triples from (1).
         self.remove_triples_from_train_with_condition()
         # Concatenate dataframes.
-        print('\n[4 / 14] Concatenating data to obtain index...', end='\t')
+        print('\n[4 / 14] Concatenating data to obtain index...')
         x = [self.train_set]
         if self.valid_set is not None:
             x.append(self.valid_set)
@@ -303,7 +307,7 @@ class KG:
         del x
         print('Done !\n')
 
-        print('[5 / 14] Creating a mapping from entities to integer indexes...', end='\t')
+        print('[5 / 14] Creating a mapping from entities to integer indexes...')
         # (5) Create a bijection mapping from entities of (2) to integer indexes.
         # ravel('K') => Return a contiguous flattened array.
         # ‘K’ means to read the elements in the order they occur in memory, except for reversing the data when strides are negative.
@@ -314,7 +318,7 @@ class KG:
         vocab_to_parquet(self.entity_to_idx, 'entity_to_idx.gzip', self.path_for_serialization,
                          print_into='[6 / 14] Serializing compressed entity integer mapping...')
         # 5. Create a bijection mapping  from relations to integer indexes.
-        print('[7 / 14] Creating a mapping from relations to integer indexes...', end='\t')
+        print('[7 / 14] Creating a mapping from relations to integer indexes...')
         ordered_list = pd.unique(self.df_str_kg['relation'].values.ravel('K'))
         self.relation_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
                                             columns=['relation'],
@@ -365,7 +369,7 @@ class KG:
             self.train_set = preprocess_dask_dataframe_kg(ddf.read_parquet(self.data_dir, engine='pyarrow'))
             print('Train Dataset:', self.train_set)
             print('Done !\n')
-            print('Persisting...',end='\t')
+            print('Persisting...')
             self.train_set = self.train_set.persist()
             print('Done !\n')
             self.valid_set = None
@@ -375,19 +379,19 @@ class KG:
             # 1. LOAD Data. (First pass on data)
             print(
                 f'[1 / 14] Lazy Loading and Preprocessing training data: read_only_few: {self.read_only_few} , sample_triples_ratio: {self.sample_triples_ratio}...',
-                end='\t')
+        )
             self.train_set = load_data_parallel(self.data_dir + '/train', self.read_only_few, self.sample_triples_ratio)
             print('Train Dataset:', self.train_set)
             print('Done !\n')
             print(
                 f'[2 / 14] Lazy Loading and Preprocessing valid data...',
-                end='\t')
+        )
             self.valid_set = load_data_parallel(self.data_dir + '/valid')
             print('Validation Dataset:', self.valid_set)
             print('Done !\n')
             print(
                 f'[3 / 14] Lazy Loading and Preprocessing test data...',
-                end='\t')
+        )
             self.test_set = load_data_parallel(self.data_dir + '/test')
             print('Test Dataset:', self.test_set)
             print('Done !\n')
@@ -400,7 +404,7 @@ class KG:
         if self.add_reciprical and self.eval_model:
             print(
                 '[3.1 / 14] Add reciprocal triples to train, validation, and test sets, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}',
-                end='\t')
+        )
             self.train_set = create_recipriocal_triples_from_dask(self.train_set)
             if self.valid_set is not None:
                 self.valid_set = create_recipriocal_triples_from_dask(self.valid_set)
@@ -410,7 +414,7 @@ class KG:
 
         # (2) Extend KG with triples where entities and relations are randomly sampled.
         if self.add_noise_rate is not None:
-            print(f'[4 / 14] Adding noisy triples...', end='\t')
+            print(f'[4 / 14] Adding noisy triples...')
             self.train_set = add_noisy_triples(self.train_set, self.add_noise_rate)
             print('Done!\n')
 
@@ -418,12 +422,12 @@ class KG:
         """ Deserialize data """
         print(f'Deserialization Path Path: {storage_path}\n')
         start_time = time.time()
-        print('[1 / 4] Deserializing compressed entity integer mapping...', end='\t')
+        print('[1 / 4] Deserializing compressed entity integer mapping...')
         self.entity_to_idx = pd.read_parquet(storage_path + '/entity_to_idx.gzip')  # .compute()
         print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
         self.num_entities = len(self.entity_to_idx)
 
-        print('[2 / ] Deserializing compressed relation integer mapping...', end='\t')
+        print('[2 / ] Deserializing compressed relation integer mapping...')
         start_time = time.time()
         self.relation_to_idx = pd.read_parquet(storage_path + '/relation_to_idx.gzip')
         print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
@@ -431,18 +435,18 @@ class KG:
         self.num_relations = len(self.relation_to_idx)
         print(
             '[3 / 4] Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...',
-            end='\t')
+    )
         start_time = time.time()
         self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
         self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
         print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
         # 10. Serialize (9).
-        print('[4 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...', end='\t')
+        print('[4 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
         start_time = time.time()
         self.train_set = ddf.read_parquet(storage_path + '/idx_train_df.gzip').values.compute()
         print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
         try:
-            print('[5 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...', end='\t')
+            print('[5 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
             self.valid_set = ddf.read_parquet(storage_path + '/idx_valid_df.gzip').values.compute()
             print('Done!\n')
         except FileNotFoundError:
@@ -450,7 +454,7 @@ class KG:
             self.valid_set = None  # pd.DataFrame()
 
         try:
-            print('[6 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...', end='\t')
+            print('[6 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
             self.test_set = ddf.read_parquet(storage_path + '/idx_test_df.gzip').values.compute()
             print('Done!\n')
         except FileNotFoundError:
