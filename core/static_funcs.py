@@ -210,11 +210,11 @@ def load_data_parallel(data_path, read_only_few: int = None,
         # (1.1) Using the whitespace as a deliminator
         # (1.2) Taking first three columns detected in (1.1.)
         df = dd.read_csv(data_path + '*',
-                          delim_whitespace=True,
-                          header=None,
-                          usecols=[0, 1, 2],
-                          names=['subject', 'relation', 'object'],
-                          dtype=str)
+                         delim_whitespace=True,
+                         header=None,
+                         usecols=[0, 1, 2],
+                         names=['subject', 'relation', 'object'],
+                         dtype=str)
         return preprocess_dask_dataframe_kg(df, read_only_few, sample_triples_ratio)
     else:
         print(f'{data_path} could not found!')
@@ -877,7 +877,7 @@ def dask_remove_triples_with_condition(dask_kg_dataframe: dask.dataframe.core.Da
         print('Total num triples:', num_triples, end=' ')
         # Compute entity frequency: index is URI, val is number of occurrences.
         entity_frequency = dd.concat([dask_kg_dataframe['subject'], dask_kg_dataframe['object']],
-                                      ignore_index=True).value_counts().compute()
+                                     ignore_index=True).value_counts().compute()
         relation_frequency = dask_kg_dataframe['relation'].value_counts().compute()
         # low_frequency_entities index and values are the same URIs: dask.dataframe.core.DataFrame
         low_frequency_entities = entity_frequency[
