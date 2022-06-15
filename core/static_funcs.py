@@ -279,6 +279,7 @@ def store(trained_model, model_name: str = 'model', full_storage_path: str = Non
         else:
             pass
     else:
+        """
         # (2) See available memory and decide whether embeddings are stored separately or not.
         available_memory = [i.split() for i in os.popen('free -h').read().splitlines()][1][-1]  # ,e.g., 10Gi
         available_memory_mb = float(available_memory[:-2]) * 1000
@@ -301,7 +302,7 @@ def store(trained_model, model_name: str = 'model', full_storage_path: str = Non
                     torch.save(relation_ebm, full_storage_path + '/' + trained_model.name + '_relation_embeddings.pt')
         else:
             print('There is not enough memory to store embeddings separately.')
-
+        """
 
 def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, num_core=0) -> pd.core.frame.DataFrame:
     """

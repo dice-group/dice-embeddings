@@ -83,6 +83,7 @@ class Execute:
         """ Save a knowledge graph embedding model (an instance of BaseKGE class) """
         # (1) Send model to the eval mode
         trained_model.eval()
+        trained_model.to('cpu')
         # (2) Store NumParam and EstimatedSizeMB
         self.report.update(extract_model_summary(trained_model.summarize()))
         # (3) Store/Serialize Model for further use.
@@ -92,7 +93,7 @@ class Execute:
         else:
             store(trained_model, model_name='model_' + str(datetime.datetime.now()),
                   dataset=self.dataset,
-                  full_storage_path=self.storage_path)
+                  full_storage_path=self.storage_path,save_as_csv=self.args.save_embeddings_as_csv)
 
         # (4) Store total runtime.
         total_runtime = time.time() - start_time
