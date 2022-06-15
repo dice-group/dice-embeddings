@@ -365,7 +365,20 @@ class KG:
         """ Load train valid (if exists), and test (if exists) into memory """
         # (1) Check whether a path leading to a directory is a parquet formatted file
         if self.data_dir[-8:] == '.parquet':
-            print(f'[1 / 14] Read parquet formatted KG with pyarrow and preprocess: read_only_few: {self.read_only_few} , sample_triples_ratio: {self.sample_triples_ratio}...')
+            print(
+                f'[1 / 14] Read parquet formatted KG with pyarrow and preprocess: read_only_few: {self.read_only_few} , sample_triples_ratio: {self.sample_triples_ratio}...')
+            """
+            # @TODO read parquet file via arrow.apache by selecting only those triples having
+            # @TODO particular relation or entity ?
+            import pyarrow.parquet as pq
+            # https://arrow.apache.org/docs/python/generated/pyarrow.parquet.read_table.html
+
+            self.train_set = preprocess_dataframe_of_kg(pq.read_table(self.data_dir,
+                                                                      columns=['subject', 'relation', 'object'],
+                                                                      filters=[('relation', '=',
+                                                                                '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>')]).to_pandas())
+            """
+
             self.train_set = preprocess_dataframe_of_kg(pd.read_parquet(self.data_dir, engine='pyarrow'))
             print('Train Dataset:', self.train_set)
             print('Done !\n')

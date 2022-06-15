@@ -8,12 +8,14 @@ def argparse_default(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Dataset and storage related
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Mutagenesis.parquet',
                         help="The path of a folder containing input data")
     parser.add_argument("--save_embeddings_as_csv", type=bool, default=False,
                         help='A flag for saving embeddings in csv file.')
     parser.add_argument("--num_core", type=int, default=1,
                         help='Number of cores to be used.')
+    # @TODO read parquet file via arrow.apache by selecting only those triples having
+    # @TODO particular relation or entity ?
     parser.add_argument("--dashboard", type=bool, default=False,
                         help='Launch DASK dashboard.')
     parser.add_argument("--storage_path", type=str, default='Experiments',
@@ -30,9 +32,9 @@ def argparse_default(description=None):
                              "Shallom, ConEx, ComplEx, DistMult")
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[NAdam, Adam, SGD]')
-    parser.add_argument('--embedding_dim', type=int, default=128,
+    parser.add_argument('--embedding_dim', type=int, default=32,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=0, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.01, help='Learning rate')
     # Hyperparameters for training.

@@ -181,19 +181,25 @@ def preprocess_dataframe_of_kg(df: Union[dask.dataframe.core.DataFrame, pandas.D
     # (2)a Read only few if it is asked.
     if isinstance(read_only_few, int):
         if read_only_few > 0:
+            print(f'Reading only few input data {read_only_few}...')
             df = df.head(read_only_few)
+            print('Done !\n')
     # (3) Read only sample
     if sample_triples_ratio:
         print(f'Subsampling {sample_triples_ratio} of input data...')
         df = df.sample(frac=sample_triples_ratio)
-
+        print('Done !\n')
     if sum(df.head()["subject"].str.startswith('<')) + sum(df.head()["relation"].str.startswith('<')) == 10:
         # (4) Drop Rows/triples with double or boolean: Example preprocessing
         # Drop of object does not start with **<**.
         # Specifying na to be False instead of NaN.
+        print('Removing triples with literal values...')
         df = df[df["object"].str.startswith('<', na=False)]
+        print('Done !\n')
         # (5) Remove **<** and **>**
+        print('Removing brackets **<** and **>**...')
         df = df.transform(lambda x: x.str.removeprefix("<").str.removesuffix(">"))
+        print('Done !\n')
     return df
 
 
