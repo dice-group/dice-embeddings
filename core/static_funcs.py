@@ -401,8 +401,8 @@ def read_preprocess_index_serialize_kg(args, cls):
              sample_triples_ratio=args.sample_triples_ratio,
              path_for_serialization=args.full_storage_path,
              add_noise_rate=args.add_noise_rate,
-             min_freq_for_vocab=args.min_freq_for_vocab
-             )
+             min_freq_for_vocab=args.min_freq_for_vocab,
+             dnf_predicates=args.dnf_predicates)
     print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
     print(kg.description_of_input)
     return kg
