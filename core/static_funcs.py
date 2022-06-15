@@ -176,8 +176,10 @@ def preprocess_dataframe_of_kg(df: Union[dask.dataframe.core.DataFrame, pandas.D
     (2) Sample few triples
     (3) Remove **<>** if exists.
     """
-    assert isinstance(df, dask.dataframe.core.DataFrame) or isinstance(df, pandas.DataFrame)
-
+    try:
+        assert isinstance(df, dask.dataframe.core.DataFrame) or isinstance(df, pandas.DataFrame)
+    except AssertionError:
+        raise AssertionError(type(df))
     # (2)a Read only few if it is asked.
     if isinstance(read_only_few, int):
         if read_only_few > 0:

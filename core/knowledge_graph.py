@@ -379,6 +379,14 @@ class KG:
                                                                                 '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>')]).to_pandas())
             """
 
+            """
+            # @TODO: Test modin read_parquet with large dat https://modin.readthedocs.io/en/latest/
+            import modin.pandas as pd
+            start_time=time.time()
+            self.train_set = pd.read_parquet(self.data_dir, engine='pyarrow')
+            print(time.time()-start_time)
+            """
+
             self.train_set = preprocess_dataframe_of_kg(pd.read_parquet(self.data_dir, engine='pyarrow'))
             print('Train Dataset:', self.train_set)
             print('Done !\n')

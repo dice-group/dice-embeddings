@@ -14,10 +14,9 @@ def argparse_default(description=None):
                         help='A flag for saving embeddings in csv file.')
     parser.add_argument("--num_core", type=int, default=1,
                         help='Number of cores to be used.')
-    # @TODO read parquet file via arrow.apache by selecting only those triples having
-    # @TODO particular relation or entity ?
-    parser.add_argument("--dashboard", type=bool, default=False,
-                        help='Launch DASK dashboard.')
+    parser.add_argument("--dnf_predicates", type=list, default=None,
+                        help="Predicates in Disjunctive normal form to select only valid triples on the fly."
+                             "[('relation', '=','<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>')]")
     parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="Embeddings, model, and any other related data will be stored therein.")
     parser.add_argument("--read_only_few", type=int, default=None, help='READ only first N triples. If 0, read all.')
@@ -67,6 +66,9 @@ def argparse_default(description=None):
                         help='Filter entities not belonging to the range or domain of a relation.')
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
                                                                         'If >2 ,no evaluation scenario is applied implies no evaluation.')
+    parser.add_argument("--dashboard", type=bool, default=False,
+                        help='Launch DASK dashboard.')
+
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)
