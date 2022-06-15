@@ -10,7 +10,7 @@ import os
 import pandas as pd
 from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_re_vocab, \
     create_recipriocal_triples_from_dask, add_noisy_triples, index_triples, load_data_parallel, create_constraints, \
-    numpy_data_type_changer, vocab_to_parquet, preprocess_dask_dataframe_kg, dask_remove_triples_with_condition
+    numpy_data_type_changer, vocab_to_parquet, preprocess_dataframe_of_kg, dask_remove_triples_with_condition
 from .sanity_checkers import dataset_sanity_checking
 import glob
 from dask.distributed import Client
@@ -73,7 +73,7 @@ class KG:
             print('If you are running this code in a remote server')
             print('**** ssh - L 8000: localhost:8787 user@remote **** and then ***dask-scheduler ***')
             print('Go to http://localhost:8000/status on your local')
-
+        # @TODO: User to decide whether the input data fits into memory.
         # (1) Load + Preprocess input data.
         if deserialize_flag is None:
             # (1.1) Load and Preprocess the data.
@@ -83,8 +83,12 @@ class KG:
             # (1.3) Construct integer indexing for entities and relations.
             if entity_to_idx is None and relation_to_idx is None:
                 if self.input_is_parquet:
-                    self.dask_vocabulary_construction()
-                    self.train_set = self.train_set.compute()
+                    # Performance depends on a large number of things. I
+                    # t's quite common for Dask DataFrame to not provide a speed up over Pandas, especially for datasets that fit comfortably into memory.
+                    # by MRocklin (https://stackoverflow.com/a/57104255/5363103)
+                    self.sequential_vocabulary_construction()
+                    # self.dask_vocabulary_construction()
+                    # self.train_set = self.train_set.compute()
                 else:
                     self.sequential_vocabulary_construction()  # via Pandas
                 # @TODO self.entity_to_idx and self.relation_to_idx can be reassigned via futures,
@@ -301,8 +305,7 @@ class KG:
             x.append(self.valid_set)
         if self.test_set is not None:
             x.append(self.test_set)
-        # self.df_str_kg = ddf.concat(x, ignore_index=True)
-        self.df_str_kg = pd.concat(x, ignore_index=True)
+        df_str_kg = pd.concat(x, ignore_index=True)
         del x
         print('Done !\n')
 
@@ -310,15 +313,14 @@ class KG:
         # (5) Create a bijection mapping from entities of (2) to integer indexes.
         # ravel('K') => Return a contiguous flattened array.
         # ‘K’ means to read the elements in the order they occur in memory, except for reversing the data when strides are negative.
-        ordered_list = pd.unique(self.df_str_kg[['subject', 'object']].values.ravel('K'))
+        ordered_list = pd.unique(df_str_kg[['subject', 'object']].values.ravel('K'))
         self.entity_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)), columns=['entity'], index=ordered_list)
         print('Done !\n')
-
         vocab_to_parquet(self.entity_to_idx, 'entity_to_idx.gzip', self.path_for_serialization,
                          print_into='[6 / 14] Serializing compressed entity integer mapping...')
         # 5. Create a bijection mapping  from relations to integer indexes.
         print('[7 / 14] Creating a mapping from relations to integer indexes...')
-        ordered_list = pd.unique(self.df_str_kg['relation'].values.ravel('K'))
+        ordered_list = pd.unique(df_str_kg['relation'].values.ravel('K'))
         self.relation_to_idx = pd.DataFrame(data=np.arange(len(ordered_list)),
                                             columns=['relation'],
                                             index=ordered_list)
@@ -363,13 +365,9 @@ class KG:
         """ Load train valid (if exists), and test (if exists) into memory """
         # (1) Check whether a path leading to a directory is a parquet formatted file
         if self.data_dir[-8:] == '.parquet':
-            print(
-                f'[1 / 14] DASK read_parquet with pyarrow and preprocess: read_only_few: {self.read_only_few} , sample_triples_ratio: {self.sample_triples_ratio}...')
-            self.train_set = preprocess_dask_dataframe_kg(ddf.read_parquet(self.data_dir, engine='pyarrow'))
+            print(f'[1 / 14] Read parquet formatted KG with pyarrow and preprocess: read_only_few: {self.read_only_few} , sample_triples_ratio: {self.sample_triples_ratio}...')
+            self.train_set = preprocess_dataframe_of_kg(pd.read_parquet(self.data_dir, engine='pyarrow'))
             print('Train Dataset:', self.train_set)
-            print('Done !\n')
-            print('Persisting...')
-            self.train_set = self.train_set.persist()
             print('Done !\n')
             self.valid_set = None
             self.test_set = None

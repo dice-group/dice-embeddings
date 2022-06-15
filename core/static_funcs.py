@@ -1,4 +1,7 @@
 import os
+
+import pandas
+
 import core
 from core.typings import *
 import numpy as np
@@ -165,14 +168,15 @@ def initialize_pl_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     return pl.Trainer.from_argparse_args(args, plugins=plugins, callbacks=callbacks)
 
 
-def preprocess_dask_dataframe_kg(df: dask.dataframe.core.DataFrame, read_only_few: int = None,
-                                 sample_triples_ratio: float = None) -> dask.dataframe.core.DataFrame:
+def preprocess_dataframe_of_kg(df: Union[dask.dataframe.core.DataFrame, pandas.DataFrame], read_only_few: int = None,
+                               sample_triples_ratio: float = None) -> Union[
+    dask.dataframe.core.DataFrame, pandas.DataFrame]:
     """ Preprocess lazy loaded dask dataframe
     (1) Read only few triples
     (2) Sample few triples
     (3) Remove **<>** if exists.
     """
-    assert isinstance(df, dask.dataframe.core.DataFrame)
+    assert isinstance(df, dask.dataframe.core.DataFrame) or isinstance(df, pandas.DataFrame)
 
     # (2)a Read only few if it is asked.
     if isinstance(read_only_few, int):
@@ -189,9 +193,7 @@ def preprocess_dask_dataframe_kg(df: dask.dataframe.core.DataFrame, read_only_fe
         # Specifying na to be False instead of NaN.
         df = df[df["object"].str.startswith('<', na=False)]
         # (5) Remove **<** and **>**
-        df['subject'] = df['subject'].str.removeprefix("<").str.removesuffix(">")
-        df['relation'] = df['relation'].str.removeprefix("<").str.removesuffix(">")
-        df['object'] = df['object'].str.removeprefix("<").str.removesuffix(">")
+        df = df.transform(lambda x: x.str.removeprefix("<").str.removesuffix(">"))
     return df
 
 
@@ -215,7 +217,7 @@ def load_data_parallel(data_path, read_only_few: int = None,
                          usecols=[0, 1, 2],
                          names=['subject', 'relation', 'object'],
                          dtype=str)
-        return preprocess_dask_dataframe_kg(df, read_only_few, sample_triples_ratio)
+        return preprocess_dataframe_of_kg(df, read_only_few, sample_triples_ratio)
     else:
         print(f'{data_path} could not found!')
         return None

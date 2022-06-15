@@ -1,1 +1,1 @@
-from typing import AnyStr, Tuple
+from typing import AnyStr, Tuple, Union

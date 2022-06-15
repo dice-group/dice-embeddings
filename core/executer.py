@@ -22,12 +22,8 @@ from core.knowledge_graph import KG
 from core.models.base_model import BaseKGE
 from core.evaluator import Evaluator
 from core.typings import *
-from core.static_funcs import store, extract_model_summary, model_fitting, select_model, initialize_pl_trainer, \
-    config_kge_sanity_checking, \
-    preprocesses_input_args, create_experiment_folder, read_preprocess_index_serialize_kg, load_json, reload_input_data
-
-from core.static_funcs import semi_supervised_split, non_conformity_score_diff, construct_p_values, norm_p_value, \
-    gen_lr
+from core.static_funcs import *
+from core.sanity_checkers import *
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
@@ -129,14 +125,16 @@ class Execute:
         else:
             # (1.2) Load indexed input data.
             self.load_indexed_data()
-        # (2) Train and Evaluate.
-        trained_model = self.train_and_eval()
+        # (2) Train
+        trained_model, form_of_labelling = self.training_process()
         # (3) Store trained model.
         self.save_trained_model(trained_model, start_time)
+        # (4) Eval model.
+        self.evaluator.eval(trained_model, form_of_labelling)
         # (4) Return the report of the training process.
         return self.report
 
-    def train_and_eval(self) -> BaseKGE:
+    def training_process(self) -> BaseKGE:
         """
         Training and evaluation procedure
 
@@ -161,10 +159,8 @@ class Execute:
         self.trainer = initialize_pl_trainer(self.args, callbacks, plugins=[])
         # (3) Use (2) to train a KGE model
         trained_model, form_of_labelling = self.train()
-        # (4) Eval model.
-        self.evaluator.eval(trained_model, form_of_labelling)
         # (5) Return trained model
-        return trained_model
+        return trained_model, form_of_labelling
 
     def train(self) -> Tuple[BaseKGE, str]:
         """ Train selected model via the selected training strategy """
