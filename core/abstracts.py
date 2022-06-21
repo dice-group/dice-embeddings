@@ -52,6 +52,7 @@ class BaseInteractiveKGE:
         :param tail_entity: list of URIs
         :return:
         """
+        # @TODO can be defined as __predict_missing_head_entity
         assert k >= 0
 
         head_entity = torch.LongTensor(self.entity_to_idx['entity'].values.tolist())
@@ -66,7 +67,7 @@ class BaseInteractiveKGE:
         sort_scores, sort_idxs = torch.topk(scores, k)
         return sort_scores, entities[sort_idxs]
 
-    def predict_missing_relations(self, head_entity: List[str], tail_entity: List[str], k: int) -> Tuple:
+    def predict_missing_relations(self, head_entity: List[str], tail_entity: List[str], k: int = 3) -> Tuple:
         assert k >= 0
 
         head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values.tolist())
@@ -81,7 +82,7 @@ class BaseInteractiveKGE:
         sort_scores, sort_idxs = torch.topk(scores, k)
         return sort_scores, relations[sort_idxs]
 
-    def predict_missing_tail_entity(self, head_entity: List[str], relation: List[str], k: int) -> Tuple:
+    def predict_missing_tail_entity(self, head_entity: List[str], relation: List[str], k: int = 3) -> Tuple:
         assert k >= 0
         # Get index of head entity
         head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values.tolist())

@@ -6,16 +6,19 @@ Yet, using these frameworks in real-world applications becomes more challenging 
 
 We developed DICE Embeddings framework based on Pytorch Lightning and Hugging Face to compute embeddings for large-scale knowledge graphs in a hardware-agnostic manner.
 By this, we rely on
-1. [DASK](https://dask.org/) to use multi-CPUs at preprocessing a large knowledge graph,
+1. [Pandas](https://github.com/pandas-dev/pandas) & [DASK](https://dask.org/) to use parallelism at preprocessing a large knowledge graph,
 2. [PytorchLightning](https://www.pytorchlightning.ai/) to learn knowledge graph embeddings via multi-CPUs, GPUs, TPUs or computing cluster, and
 3. [Gradio](https://gradio.app/) to ease the deployment of pre-trained models.
 
-**Why DASK ?**
-DASK allows us to read, preprocess (removing literals) and indexed input knowledge graph efficiently.
-These computations can be done with a single CPU as in many frameworks as well as a cluster of computers.
+**Why Pandas & DASK?**
+Pandas allows us to read, preprocess (removing literals) and indexed input knowledge graph efficiently.
+Through parquet within pandas or dask, a billion of triples can be read in parallel fashion. 
+Importantly, dask allow us to perform all necessary computations on a single CPU as well as a cluster of computers.
 
 **Why Pytorch-lightning ?**
 Scale the training without the boilerplate.
+Importantly, Pytorch-lightning provides state-of-the-art training techniques (e.g. Fully Sharded Training, FairScale, and DeepSpeed) to train
+gigantic models (>10B parameters). These techniques do not simply copy a model into all GPUs, hence, allow us to use our hardware efficiently. 
 
 **Why Hugging-face Gradio?**
 Deploy a pre-trained embedding model without writing a single line of code.
@@ -68,9 +71,9 @@ Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , i
 from core import KGE
 # (1) Download this folder into your local machine https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpediaQMultEmbeddings_03_07/
 # (2) Give the path of serialized (1).
-pre_trained_kge = KGE(path_of_pretrained_model_dir='DBpediaQMultEmbeddings_03_07')
+pre_trained_kge = KGE(path_of_pretrained_model_dir='QMultDBpedia10Epoch')
 # (3) Triple score.
-pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Ulm"])
+pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"],tail_entity=["http://dbpedia.org/resource/Ulm"])
 # expected output => tensor([0.9948])
 ```
 

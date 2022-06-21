@@ -395,7 +395,7 @@ def read_preprocess_index_serialize_kg(args, cls):
     # 1. Read & Parse input data
     kg = cls(data_dir=args.path_dataset_folder,
              num_core=args.num_core,
-             dashboard=args.dashboard,
+             use_dask=args.use_dask,
              add_reciprical=args.apply_reciprical_or_noise,
              eval_model=args.eval,
              read_only_few=args.read_only_few,

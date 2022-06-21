@@ -14,9 +14,9 @@ from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_
 from .sanity_checkers import dataset_sanity_checking
 import glob
 from dask.distributed import Client
+import pyarrow.parquet as pq
 
-# np.random.seed(1)
-pd.set_option('display.max_columns', None)
+# pd.set_option('display.max_columns', None)
 
 
 class KG:
@@ -31,12 +31,12 @@ class KG:
 
     def __init__(self, data_dir: str = None, deserialize_flag: str = None,
                  num_core: int = 1,
-                 dashboard: bool = False,
+                 use_dask: bool = False,
                  add_reciprical: bool = None, eval_model: bool = None,
                  read_only_few: int = None, sample_triples_ratio: float = None,
                  path_for_serialization: str = None, add_noise_rate: float = None,
                  min_freq_for_vocab: int = None,
-                 entity_to_idx=None, relation_to_idx=None,dnf_predicates=None):
+                 entity_to_idx=None, relation_to_idx=None, dnf_predicates=None):
         """
 
         :param data_dir: A path of a folder containing the input knowledge graph
@@ -67,14 +67,16 @@ class KG:
         # self.scheduler_flag = 'processes' if self.num_core > 1 else 'threads'  # 'single-threaded'
         self.scheduler_flag = None
         self.input_is_parquet = None
-        self.dnf_predicates=dnf_predicates
-        if dashboard:
+        self.dnf_predicates = dnf_predicates
+        if use_dask:
             self.client = Client()
             print(f'DASK: {self.client}\tDASK-Dashboard:\t{self.client.dashboard_link}')
             print('If you are running this code in a remote server')
             print('**** ssh - L 8000: localhost:8787 user@remote **** and then ***dask-scheduler ***')
             print('Go to http://localhost:8000/status on your local')
-        # @TODO: User to decide whether the input data fits into memory.
+            # Performance depends on a large number of things. I
+            # t's quite common for Dask DataFrame to not provide a speed up over Pandas, especially for datasets that fit comfortably into memory.
+            # by MRocklin (https://stackoverflow.com/a/57104255/5363103)
         # (1) Load + Preprocess input data.
         if deserialize_flag is None:
             # (1.1) Load and Preprocess the data.
@@ -84,12 +86,11 @@ class KG:
             # (1.3) Construct integer indexing for entities and relations.
             if entity_to_idx is None and relation_to_idx is None:
                 if self.input_is_parquet:
-                    # Performance depends on a large number of things. I
-                    # t's quite common for Dask DataFrame to not provide a speed up over Pandas, especially for datasets that fit comfortably into memory.
-                    # by MRocklin (https://stackoverflow.com/a/57104255/5363103)
-                    self.sequential_vocabulary_construction()
-                    # self.dask_vocabulary_construction()
-                    # self.train_set = self.train_set.compute()
+                    if use_dask:
+                        self.dask_vocabulary_construction()
+                        self.train_set = self.train_set.compute()
+                    else:
+                        self.sequential_vocabulary_construction()
                 else:
                     self.sequential_vocabulary_construction()  # via Pandas
                 # @TODO self.entity_to_idx and self.relation_to_idx can be reassigned via futures,
@@ -369,12 +370,10 @@ class KG:
             print(
                 f'[1 / 14] Read parquet formatted KG with pyarrow and preprocess: read_only_few: {self.read_only_few} , sample_triples_ratio: {self.sample_triples_ratio}...')
             if self.dnf_predicates:
-                import pyarrow.parquet as pq
                 # https://arrow.apache.org/docs/python/generated/pyarrow.parquet.read_table.html
                 self.train_set = preprocess_dataframe_of_kg(pq.read_table(self.data_dir,
                                                                           columns=['subject', 'relation', 'object'],
-                                                                          filters=[('relation', '=',
-                                                                                    '<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>')]).to_pandas())
+                                                                          filters=self.dnf_predicates).to_pandas())
             else:
                 """
                 # @TODO: Test modin read_parquet with large dat https://modin.readthedocs.io/en/latest/

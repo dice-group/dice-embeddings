@@ -8,7 +8,7 @@ def argparse_default(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Dataset and storage related
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Mutagenesis.parquet',
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
                         help="The path of a folder containing input data")
     parser.add_argument("--save_embeddings_as_csv", type=bool, default=False,
                         help='A flag for saving embeddings in csv file.')
@@ -33,7 +33,7 @@ def argparse_default(description=None):
                         help='[NAdam, Adam, SGD]')
     parser.add_argument('--embedding_dim', type=int, default=32,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=0, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.01, help='Learning rate')
     # Hyperparameters for training.
@@ -66,8 +66,9 @@ def argparse_default(description=None):
                         help='Filter entities not belonging to the range or domain of a relation.')
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
                                                                         'If >2 ,no evaluation scenario is applied implies no evaluation.')
-    parser.add_argument("--dashboard", type=bool, default=False,
-                        help='Launch DASK dashboard.')
+    parser.add_argument("--use_dask", type=bool, default=False,
+                        help='DASK can be used if the input dataset does not fit into memory.'
+                             '**Its quite common for Dask DataFrame to not provide a speed up over Pandas, especially for datasets that fit comfortably into memory by MRocklin (https://stackoverflow.com/a/57104255/5363103)**')
 
     if description is None:
         return parser.parse_args()
