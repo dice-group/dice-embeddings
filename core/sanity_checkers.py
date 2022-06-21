@@ -22,9 +22,9 @@ def sanity_checking_with_arguments(args):
     except AssertionError:
         print(f'num_folds_for_cv can not be negative. Currently:{args.num_folds_for_cv}')
         raise
-    # Check whether is a directory ?
+    # Check whether is a directory or a file?
     try:
-        assert os.path.isdir(args.path_dataset_folder)
+        assert os.path.isdir(args.path_dataset_folder) or os.path.isfile(args.path_dataset_folder)
     except AssertionError:
         raise AssertionError(f'The path_dataset_folder does not lead to a directory ***{args.path_dataset_folder}***')
     # Check whether the input parameter leads a standard data format (e.g. FOLDER/train.txt) or a data in the parquet format
@@ -36,6 +36,7 @@ def sanity_checking_with_arguments(args):
         raise ValueError(
             f'Data format is not recognized.\nThe path_dataset_folder parameter **{args.path_dataset_folder}** must lead to (a) **folder/train.txt** or *** triples stored in the parquet format')
     assert isinstance(args.eval, bool)
+
 
 def config_kge_sanity_checking(args, dataset):
     """
