@@ -371,9 +371,11 @@ class KG:
                 f'[1 / 14] Read parquet formatted KG with pyarrow and preprocess: read_only_few: {self.read_only_few} , sample_triples_ratio: {self.sample_triples_ratio}...')
             if self.dnf_predicates:
                 # https://arrow.apache.org/docs/python/generated/pyarrow.parquet.read_table.html
-                self.train_set = preprocess_dataframe_of_kg(pq.read_table(self.data_dir,
+                self.train_set = preprocess_dataframe_of_kg(df=pq.read_table(self.data_dir,
                                                                           columns=['subject', 'relation', 'object'],
-                                                                          filters=self.dnf_predicates).to_pandas())
+                                                                          filters=self.dnf_predicates).to_pandas(),
+                                                            read_only_few=self.read_only_few,
+                                                            sample_triples_ratio=self.sample_triples_ratio)
             else:
                 """
                 # @TODO: Test modin read_parquet with large dat https://modin.readthedocs.io/en/latest/
@@ -382,7 +384,9 @@ class KG:
                 self.train_set = pd.read_parquet(self.data_dir, engine='pyarrow')
                 print(time.time()-start_time)
                 """
-                self.train_set = preprocess_dataframe_of_kg(pd.read_parquet(self.data_dir, engine='pyarrow'))
+                self.train_set = preprocess_dataframe_of_kg(df=pd.read_parquet(self.data_dir, engine='pyarrow'),
+                                                            read_only_few=self.read_only_few,
+                                                            sample_triples_ratio=self.sample_triples_ratio)
             print('Train Dataset:', self.train_set)
             print('Done !\n')
             self.valid_set = None
