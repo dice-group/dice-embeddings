@@ -81,6 +81,11 @@ class Execute:
 
     def save_trained_model(self, trained_model: BaseKGE, start_time: float) -> None:
         """ Save a knowledge graph embedding model (an instance of BaseKGE class) """
+        # @TODO: maybe we can read it from a checkout rather than storing only weights.
+        # Save it as dictionary
+        #  mdict=torch.load('trainer_checkpoint.pt')
+        # dict_keys(['epoch', 'global_step', 'pytorch-lightning_version', 'state_dict', 'loops', 'callbacks','optimizer_states', 'lr_schedulers'])
+        self.trainer.save_checkpoint(self.storage_path+'/trainer_checkpoint.pt')
         # (1) Send model to the eval mode
         trained_model.eval()
         trained_model.to('cpu')
@@ -93,7 +98,7 @@ class Execute:
         else:
             store(trained_model, model_name='model_' + str(datetime.datetime.now()),
                   dataset=self.dataset,
-                  full_storage_path=self.storage_path,save_as_csv=self.args.save_embeddings_as_csv)
+                  full_storage_path=self.storage_path, save_as_csv=self.args.save_embeddings_as_csv)
 
         # (4) Store total runtime.
         total_runtime = time.time() - start_time
@@ -160,6 +165,9 @@ class Execute:
         self.trainer = initialize_pl_trainer(self.args, callbacks, plugins=[])
         # (3) Use (2) to train a KGE model
         trained_model, form_of_labelling = self.train()
+
+        self.trainer.save_checkpoint('trainer_model.pt')
+
         # (5) Return trained model
         return trained_model, form_of_labelling
 
