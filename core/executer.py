@@ -165,9 +165,6 @@ class Execute:
         self.trainer = initialize_pl_trainer(self.args, callbacks, plugins=[])
         # (3) Use (2) to train a KGE model
         trained_model, form_of_labelling = self.train()
-
-        self.trainer.save_checkpoint('trainer_model.pt')
-
         # (5) Return trained model
         return trained_model, form_of_labelling
 
