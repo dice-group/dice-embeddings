@@ -28,22 +28,22 @@ class BaseKGE(pl.LightningModule):
         self.weight_decay = None
         self.loss = torch.nn.BCEWithLogitsLoss()
         self.selected_optimizer = None
-        self.normalizer_class = torch.nn.LayerNorm
-        self.sanity_checking()
+        self.normalizer_class = None
+        self.normalize_head_entity_embeddings = None
+        self.normalize_relation_embeddings = None
+        self.normalize_tail_entity_embeddings = None
+        self.init_params_with_sanity_checking()
 
         self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
         self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
         xavier_normal_(self.entity_embeddings.weight.data), xavier_normal_(self.relation_embeddings.weight.data)
 
-        self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim)
-        self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim)
-        self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim)
         # Dropouts
         self.input_dp_ent_real = torch.nn.Dropout(self.input_dropout_rate)
         self.input_dp_rel_real = torch.nn.Dropout(self.input_dropout_rate)
         self.hidden_dropout = torch.nn.Dropout(self.input_dropout_rate)
 
-    def sanity_checking(self):
+    def init_params_with_sanity_checking(self):
         assert self.args['model'] in ['DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO',
                                       'ConEx', 'Shallom']
         if self.args.get('weight_decay'):
@@ -101,10 +101,19 @@ class BaseKGE(pl.LightningModule):
 
         if self.args.get("normalization") == 'LayerNorm':
             self.normalizer_class = torch.nn.LayerNorm
+            self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim)
+            self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim)
+            self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim)
         elif self.args.get("normalization") == 'BatchNorm1d':
+            # https://twitter.com/karpathy/status/1299921324333170689/photo/1
+            # to decrease the memory usage.
             self.normalizer_class = torch.nn.BatchNorm1d
+            self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
+            self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
+            self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
         else:
             raise NotImplementedError()
+
 
         if self.args.get("optim") in ['NAdam', 'Adam', 'SGD']:
             self.optimizer_name = self.args['optim']
