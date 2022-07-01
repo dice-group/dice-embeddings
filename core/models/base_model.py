@@ -128,7 +128,7 @@ class BaseKGE(pl.LightningModule):
 
         if self.optimizer_name == 'SGD':
             self.selected_optimizer = torch.optim.SGD(params=self.parameters(), lr=self.learning_rate,
-                                                      momentum=0, dampening=0, weight_decay=self.weight_decay,
+                                                      momentum=0.05, dampening=0, weight_decay=self.weight_decay,
                                                       nesterov=False)
         elif self.optimizer_name == 'Adam':
             self.selected_optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate,
