@@ -19,6 +19,7 @@ class TestReadFewOnly:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
+        args.test_mode = True
         args.eval = True
         args.sample_triples_ratio = None
         args.read_only_few = 10
@@ -41,6 +42,7 @@ class TestReadFewOnly:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
+        args.test_mode = True
         args.eval = True
         args.sample_triples_ratio = None
         args.read_only_few = 10
@@ -64,6 +66,7 @@ class TestReadFewOnly:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
+        args.test_mode = True
         args.eval = True
         args.sample_triples_ratio = None
         args.read_only_few = 10

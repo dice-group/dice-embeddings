@@ -31,13 +31,13 @@ def argparse_default(description=None):
                              "Shallom, ConEx, ComplEx, DistMult")
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[NAdam, Adam, SGD]')
-    parser.add_argument('--embedding_dim', type=int, default=32,
+    parser.add_argument('--embedding_dim', type=int, default=4,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
-    parser.add_argument("--lr", type=float, default=0.01, help='Learning rate')
+    parser.add_argument("--lr", type=float, default=0.01, help='Learning rate, 0.0003 maybe?')
     # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='NegSample', help="1vsAll, KvsAll, NegSample")
+    parser.add_argument('--scoring_technique', default='KvsAll', help="1vsAll, KvsAll, NegSample")
     parser.add_argument('--neg_ratio', type=int, default=1)
     # Additional training params
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
@@ -58,7 +58,7 @@ def argparse_default(description=None):
                         help='The ratio of the size of the affine transformation w.r.t. the size of the embeddings')
     parser.add_argument("--normalization", type=str, default="LayerNorm", help="LayerNorm, BatchNorm1d")
     # Flags for computation
-    parser.add_argument("--eval", type=bool, default=False,
+    parser.add_argument("--eval", type=bool, default=True,
                         help='A flag for using evaluation')
     parser.add_argument("--eval_on_train", type=bool, default=False,
                         help='A flag for using train data to evaluation ')
@@ -69,7 +69,7 @@ def argparse_default(description=None):
     parser.add_argument("--use_dask", type=bool, default=False,
                         help='DASK can be used if the input dataset does not fit into memory.'
                              '**Its quite common for Dask DataFrame to not provide a speed up over Pandas, especially for datasets that fit comfortably into memory by MRocklin (https://stackoverflow.com/a/57104255/5363103)**')
-
+    parser.add_argument("--test_mode", type=bool, default=False)
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)

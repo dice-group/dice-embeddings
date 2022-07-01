@@ -20,6 +20,7 @@ import glob
 import dask.dataframe as dd
 import dask
 from .sanity_checkers import sanity_checking_with_arguments
+from pytorch_lightning.strategies.ddp import DDPStrategy
 
 
 # @TODO: Could these funcs can be merged?
@@ -38,8 +39,7 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
                 parameter.requires_grad = True
             model.train()
         except FileNotFoundError:
-            raise FileNotFoundError(
-                f"{storage_path}/model.pt is not found. The model will be trained with random weights")
+            print(f"{storage_path}/model.pt is not found. The model will be trained with random weights")
         return model, _
     else:
         return intialize_model(args)
@@ -165,7 +165,17 @@ def model_fitting(trainer, model, train_dataloaders) -> None:
 def initialize_pl_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     """ Initialize pl.Traner from input arguments """
     print('Initialize Pytorch-lightning Trainer')
-    return pl.Trainer.from_argparse_args(args, plugins=plugins, callbacks=callbacks)
+    # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
+
+    if args.test_mode:
+        return pl.Trainer.from_argparse_args(args,
+                                             plugins=plugins,
+                                             callbacks=callbacks)
+    else:
+        return pl.Trainer.from_argparse_args(args,
+                                             strategy=DDPStrategy(find_unused_parameters=False),
+                                             plugins=plugins,
+                                             callbacks=callbacks)
 
 
 def preprocess_dataframe_of_kg(df: Union[dask.dataframe.core.DataFrame, pandas.DataFrame], read_only_few: int = None,
