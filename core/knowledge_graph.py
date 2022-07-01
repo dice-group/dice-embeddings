@@ -213,7 +213,8 @@ class KG:
         else:
             self.deserialize(deserialize_flag)
 
-            if eval_model:
+
+            if self.eval_model:
                 if self.valid_set is not None and self.test_set is not None:
                     # 16. Create a bijection mapping from subject-relation pairs to tail entities.
                     data = np.concatenate([self.train_set, self.valid_set, self.test_set])

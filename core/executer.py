@@ -77,7 +77,7 @@ class Execute:
 
     def load_indexed_data(self) -> None:
         """ Load Indexed Data"""
-        self.dataset = reload_input_data(self.storage_path, cls=KG)
+        self.dataset = reload_input_data(self.args, cls=KG)
 
     def save_trained_model(self, trained_model: BaseKGE, start_time: float) -> None:
         """ Save a knowledge graph embedding model (an instance of BaseKGE class) """
@@ -85,7 +85,11 @@ class Execute:
         # Save it as dictionary
         #  mdict=torch.load('trainer_checkpoint.pt')
         # dict_keys(['epoch', 'global_step', 'pytorch-lightning_version', 'state_dict', 'loops', 'callbacks','optimizer_states', 'lr_schedulers'])
-        self.trainer.save_checkpoint(self.storage_path+'/trainer_checkpoint.pt')
+        try:
+            self.trainer.save_checkpoint(self.storage_path+'/trainer_checkpoint.pt')
+        except AttributeError as e:
+            print(e)
+            print('skipped..')
         # (1) Send model to the eval mode
         trained_model.eval()
         trained_model.to('cpu')
@@ -125,12 +129,14 @@ class Execute:
         """
         start_time = time.time()
         # (1) Data Preparation.
-        if self.is_continual_training is False:
-            # (1.1) Read, Preprocess, Index, and Serialize input data.
-            self.read_preprocess_index_serialize_data()
-        else:
+        if self.is_continual_training:
+            print(self.args)
             # (1.2) Load indexed input data.
             self.load_indexed_data()
+        else:
+            # (1.1) Read, Preprocess, Index, and Serialize input data.
+            self.read_preprocess_index_serialize_data()
+
         # (2) Train
         trained_model, form_of_labelling = self.training_process()
         # (3) Store trained model.

@@ -304,6 +304,7 @@ def store(trained_model, model_name: str = 'model', full_storage_path: str = Non
             print('There is not enough memory to store embeddings separately.')
         """
 
+
 def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, num_core=0) -> pd.core.frame.DataFrame:
     """
     :param train_set: pandas dataframe
@@ -409,12 +410,21 @@ def read_preprocess_index_serialize_kg(args, cls):
     return kg
 
 
-def reload_input_data(storage_path: str = None, cls=None):
-    assert isinstance(storage_path, str)
-    assert len(storage_path)
+def reload_input_data(args: str = None, cls=None):
     print('*** Reload Knowledge Graph  ***')
     start_time = time.time()
-    kg = cls(deserialize_flag=storage_path)
+    kg = cls(data_dir=args.path_dataset_folder,
+             num_core=args.num_core,
+             use_dask=args.use_dask,
+             add_reciprical=args.apply_reciprical_or_noise,
+             eval_model=args.eval,
+             read_only_few=args.read_only_few,
+             sample_triples_ratio=args.sample_triples_ratio,
+             path_for_serialization=args.full_storage_path,
+             add_noise_rate=args.add_noise_rate,
+             min_freq_for_vocab=args.min_freq_for_vocab,
+             dnf_predicates=args.dnf_predicates,
+             deserialize_flag=args.path_experiment_folder)
     print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
     print(kg.description_of_input)
     return kg
@@ -450,7 +460,7 @@ def preprocesses_input_args(arg):
     # Below part will be investigated
     arg.check_val_every_n_epoch = 10 ** 6
     # del arg.check_val_every_n_epochs
-    arg.checkpoint_callback = False
+    # arg.checkpoint_callback = False
     arg.logger = False
     arg.eval = True if arg.eval == 1 else False
     arg.eval_on_train = True if arg.eval_on_train == 1 else False
