@@ -103,17 +103,18 @@ class BaseKGE(pl.LightningModule):
             self.normalizer_class = torch.nn.LayerNorm
             self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim)
             self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim)
-            self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim)
+            if self.args['scoring_technique'] == 'NegSample':
+                self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim)
         elif self.args.get("normalization") == 'BatchNorm1d':
             # https://twitter.com/karpathy/status/1299921324333170689/photo/1
             # to decrease the memory usage.
             self.normalizer_class = torch.nn.BatchNorm1d
             self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
             self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
-            self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
+            if self.args['scoring_technique'] == 'NegSample':
+                self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
         else:
             raise NotImplementedError()
-
 
         if self.args.get("optim") in ['NAdam', 'Adam', 'SGD']:
             self.optimizer_name = self.args['optim']
