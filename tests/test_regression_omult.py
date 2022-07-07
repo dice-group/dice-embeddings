@@ -9,6 +9,7 @@ class TestRegressionOmult:
     def test_k_vs_all(self):
         args = argparse_default([])
         args.model = 'OMult'
+        args.optim = 'Adam'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 50
         args.batch_size = 1024
@@ -32,6 +33,7 @@ class TestRegressionOmult:
     def test_1_vs_all(self):
         args = argparse_default([])
         args.model = 'OMult'
+        args.optim = 'Adam'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 50
         args.batch_size = 1024
@@ -78,4 +80,4 @@ class TestRegressionOmult:
         result = Execute(args).start()
         assert 0.60 >= result['Test']['H@1'] >= .25
         assert 0.60 >= result['Val']['H@1'] >= .25
-        assert 0.60 >= result['Train']['H@1'] >= .31
+        assert 0.63 >= result['Train']['H@1'] >= .31

@@ -29,9 +29,9 @@ class BaseKGE(pl.LightningModule):
         self.loss = torch.nn.BCEWithLogitsLoss()
         self.selected_optimizer = None
         self.normalizer_class = None
-        self.normalize_head_entity_embeddings = None
-        self.normalize_relation_embeddings = None
-        self.normalize_tail_entity_embeddings = None
+        self.normalize_head_entity_embeddings = lambda x: x
+        self.normalize_relation_embeddings = lambda x: x
+        self.normalize_tail_entity_embeddings = lambda x: x
         self.init_params_with_sanity_checking()
 
         self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
@@ -103,19 +103,19 @@ class BaseKGE(pl.LightningModule):
             self.normalizer_class = torch.nn.LayerNorm
             self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim)
             self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim)
-            if self.args['scoring_technique'] == 'NegSample':
-                self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim)
+            self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim)
         elif self.args.get("normalization") == 'BatchNorm1d':
             # https://twitter.com/karpathy/status/1299921324333170689/photo/1
             # to decrease the memory usage.
             self.normalizer_class = torch.nn.BatchNorm1d
             self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
             self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
-            if self.args['scoring_technique'] == 'NegSample':
-                self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
+            self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
         else:
             raise NotImplementedError()
 
+        # @ TODO: if scoring is not negative sampling
+        # self.normalize_tail_entity_embeddings = lambda x: x
         if self.args.get("optim") in ['NAdam', 'Adam', 'SGD']:
             self.optimizer_name = self.args['optim']
         else:
@@ -174,7 +174,7 @@ class BaseKGE(pl.LightningModule):
         if len(batch) == 2:
             x_batch, y_batch = batch
             yhat_batch = self.forward(x_batch)
-        elif len(batch)==3:
+        elif len(batch) == 3:
             x_batch, y_idx_batch, y_batch, = batch
             yhat_batch = self.forward(x_batch, y_idx_batch)
         else:
@@ -182,7 +182,6 @@ class BaseKGE(pl.LightningModule):
             raise ValueError('Unexpected batch shape..')
         train_loss = self.loss_function(yhat_batch=yhat_batch, y_batch=y_batch)
         return train_loss
-
 
     def validation_step(self, batch, batch_idx):
         if len(batch) == 4:

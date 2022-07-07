@@ -96,6 +96,7 @@ class TestRegressionQmult:
     def test_negative_sampling_larger(self):
         args = argparse_default([])
         args.model = 'QMult'
+        args.optim = 'Adam'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 50
         args.batch_size = 1024
@@ -114,8 +115,8 @@ class TestRegressionQmult:
         args.sample_triples_ratio = None
         result = Execute(args).start()
         assert 0.75 >= result['Train']['H@1'] >= .68
-        assert 0.63 >= result['Test']['H@1'] >= .56
-        assert 0.63 >= result['Val']['H@1'] >= .56
+        assert 0.64 >= result['Test']['H@1'] >= .56
+        assert 0.64 >= result['Val']['H@1'] >= .56
         assert result['Train']['H@10'] >= result['Train']['H@3'] >= result['Train']['H@1']
         assert result['Val']['H@10'] >= result['Val']['H@3'] >= result['Val']['H@1']
         assert result['Test']['H@10'] >= result['Test']['H@3'] >= result['Test']['H@1']

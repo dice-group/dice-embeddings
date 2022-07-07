@@ -67,9 +67,10 @@ class TestRegressionComplEx:
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'NegSample'
+        args.optim = 'Adam'
         args.neg_ratio = 1
-        args.eval = 1
-        args.eval_on_train = 1
+        args.eval = True
+        args.eval_on_train = True
         args.test_mode = True
         args.sample_triples_ratio = None
         args.read_only_few = None
@@ -77,4 +78,4 @@ class TestRegressionComplEx:
         result = Execute(args).start()
         assert 0.73 >= result['Train']['H@1'] >= .65
         assert 0.71 >= result['Val']['H@1'] >= .57
-        assert 0.71 >= result['Test']['H@1'] >= .57
+        assert 0.71 >= result['Test']['H@1'] >= .53
