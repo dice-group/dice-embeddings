@@ -86,7 +86,7 @@ class Execute:
         #  mdict=torch.load('trainer_checkpoint.pt')
         # dict_keys(['epoch', 'global_step', 'pytorch-lightning_version', 'state_dict', 'loops', 'callbacks','optimizer_states', 'lr_schedulers'])
         try:
-            self.trainer.save_checkpoint(self.storage_path+'/trainer_checkpoint.pt')
+            self.trainer.save_checkpoint(self.storage_path + '/trainer_checkpoint.pt')
         except AttributeError as e:
             print(e)
             print('skipped..')
@@ -130,13 +130,11 @@ class Execute:
         start_time = time.time()
         # (1) Data Preparation.
         if self.is_continual_training:
-            print(self.args)
             # (1.2) Load indexed input data.
             self.load_indexed_data()
         else:
             # (1.1) Read, Preprocess, Index, and Serialize input data.
             self.read_preprocess_index_serialize_data()
-
         # (2) Train
         trained_model, form_of_labelling = self.training_process()
         # (3) Store trained model.
@@ -185,7 +183,7 @@ class Execute:
             elif self.args.scoring_technique == 'KvsAll':
                 return self.training_kvsall()
             elif self.args.scoring_technique == 'KvsSample':
-                return self.training_kvssample()
+                return self.training_KvsSample()
             elif self.args.scoring_technique == 'PvsAll':
                 return self.training_PvsAll()
             elif self.args.scoring_technique == 'CCvsAll':
@@ -479,18 +477,20 @@ class Execute:
         model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
         return model, form_of_labelling
 
-    def training_kvssample(self) -> BaseKGE:
-        """
-        Train models with KvsSample
-        D= {(x,y)_i }_i ^n where
+    def training_KvsSample(self) -> BaseKGE:
+        """ A memory efficient variant of KvsAll training regime.
+
+        Let D= {(x_i,y_i) }_i ^n where
         1. x denotes a tuple of indexes of a head entity and a relation
-        2. y denotes a vector of probabilities, y_j corresponds to probability of j.th indexed entity
+        2. y\in {0,1}^neg_sample_ratio
+
+        Compared to KvsAll, KvsSample uses a subset of entities instead of using all entities.
         :return: trained BASEKGE
         """
         # (1) Select model and labelling : Entity Prediction or Relation Prediction.
         model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
-        form_of_labelling='KvsSample'
-        print(f'Stochastic KvsAll training starts: {model.name}')  # -labeling:{form_of_labelling}')
+        form_of_labelling = 'KvsSample'
+        print(f'KvsSample training starts: {model.name}')  # -labeling:{form_of_labelling}')
         # (2) Create training data.
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,
@@ -511,24 +511,6 @@ class Execute:
             self.dataset.valid_set = None
             self.dataset.test_set = None
         model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
-        """
-        # @TODO Model Calibration
-        from laplace import Laplace
-        from laplace.utils.subnetmask import ModuleNameSubnetMask
-        from laplace.utils import ModuleNameSubnetMask
-        from laplace import Laplace
-        # No change in link prediciton results
-        subnetwork_mask = ModuleNameSubnetMask(model, module_names=['emb_ent_real'])
-        subnetwork_mask.select()
-        subnetwork_indices = subnetwork_mask.indices
-        la = Laplace(model, 'classification',
-                     subset_of_weights='subnetwork',
-                     hessian_structure='full',
-                     subnetwork_indices=subnetwork_indices)
-        # la.fit(dataset.train_dataloader())
-        # la.optimize_prior_precision(method='CV', val_loader=dataset.val_dataloader())
-        """
-
         return model, form_of_labelling
 
     def k_fold_cross_validation(self) -> Tuple[BaseKGE, str]:

@@ -38,7 +38,7 @@ def argparse_default(description=None):
     parser.add_argument("--lr", type=float, default=0.01, help='Learning rate, 0.0003 maybe?')
     # Hyperparameters for training.
     parser.add_argument('--scoring_technique', default='KvsSample', help="KvsSample, 1vsAll, KvsAll, NegSample")
-    parser.add_argument('--neg_ratio', type=int, default=1)
+    parser.add_argument('--neg_ratio', type=int, default=1, help='The number of negative triples generated per positive triple.')
     # Additional training params
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
                         help='At every X number of epochs model will be saved. If None, we save 4 times.')

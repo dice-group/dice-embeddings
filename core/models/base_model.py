@@ -103,20 +103,19 @@ class BaseKGE(pl.LightningModule):
             self.normalizer_class = torch.nn.LayerNorm
             self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim)
             self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim)
-            self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim)
+            if self.args['scoring_technique'] == 'NegSample':
+                self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim)
         elif self.args.get("normalization") == 'BatchNorm1d':
             # https://twitter.com/karpathy/status/1299921324333170689/photo/1
             # to decrease the memory usage.
             self.normalizer_class = torch.nn.BatchNorm1d
             self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
             self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
-            self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
+            if self.args['scoring_technique'] == 'NegSample':
+                self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
         else:
             raise NotImplementedError()
-
-        # @ TODO: if scoring is not negative sampling
-        # self.normalize_tail_entity_embeddings = lambda x: x
-        if self.args.get("optim") in ['NAdam', 'Adam', 'SGD']:
+        if self.args.get("optim") in ['NAdam', 'Adam', 'SGD', 'ASGD']:
             self.optimizer_name = self.args['optim']
         else:
             print(self.args)
@@ -126,7 +125,7 @@ class BaseKGE(pl.LightningModule):
         return self.entity_embeddings.weight.data.data.detach(), self.relation_embeddings.weight.data.detach()
 
     def configure_optimizers(self):
-
+        # default params in pytorch.
         if self.optimizer_name == 'SGD':
             self.selected_optimizer = torch.optim.SGD(params=self.parameters(), lr=self.learning_rate,
                                                       momentum=0.05, dampening=0, weight_decay=self.weight_decay,
@@ -138,6 +137,14 @@ class BaseKGE(pl.LightningModule):
         elif self.optimizer_name == 'NAdam':
             self.selected_optimizer = torch.optim.NAdam(self.parameters(), lr=self.learning_rate, betas=(0.9, 0.999),
                                                         eps=1e-08, weight_decay=self.weight_decay, momentum_decay=0.004)
+        elif self.optimizer_name == 'Adagrad':
+            self.selected_optimizer = torch.optim.Adagrad(self.parameters(),
+                                                          lr=self.learning_rate, eps=1e-10,
+                                                          weight_decay=self.weight_decay)
+        elif self.optimizer_name == 'ASGD':
+            self.selected_optimizer = torch.optim.ASGD(self.parameters(),
+                                                       lr=self.learning_rate, lambd=0.0001, alpha=0.75,
+                                                       weight_decay=self.weight_decay)
         else:
             raise KeyError()
         return self.selected_optimizer
