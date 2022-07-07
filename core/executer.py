@@ -22,12 +22,8 @@ from core.knowledge_graph import KG
 from core.models.base_model import BaseKGE
 from core.evaluator import Evaluator
 from core.typings import *
-from core.static_funcs import store, extract_model_summary, model_fitting, select_model, initialize_pl_trainer, \
-    config_kge_sanity_checking, \
-    preprocesses_input_args, create_experiment_folder, read_preprocess_index_serialize_kg, load_json, reload_input_data
-
-from core.static_funcs import semi_supervised_split, non_conformity_score_diff, construct_p_values, norm_p_value, \
-    gen_lr
+from core.static_funcs import *
+from core.sanity_checkers import *
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
@@ -81,12 +77,22 @@ class Execute:
 
     def load_indexed_data(self) -> None:
         """ Load Indexed Data"""
-        self.dataset = reload_input_data(self.storage_path, cls=KG)
+        self.dataset = reload_input_data(self.args, cls=KG)
 
     def save_trained_model(self, trained_model: BaseKGE, start_time: float) -> None:
         """ Save a knowledge graph embedding model (an instance of BaseKGE class) """
+        # @TODO: maybe we can read it from a checkout rather than storing only weights.
+        # Save it as dictionary
+        #  mdict=torch.load('trainer_checkpoint.pt')
+        # dict_keys(['epoch', 'global_step', 'pytorch-lightning_version', 'state_dict', 'loops', 'callbacks','optimizer_states', 'lr_schedulers'])
+        try:
+            self.trainer.save_checkpoint(self.storage_path+'/trainer_checkpoint.pt')
+        except AttributeError as e:
+            print(e)
+            print('skipped..')
         # (1) Send model to the eval mode
         trained_model.eval()
+        trained_model.to('cpu')
         # (2) Store NumParam and EstimatedSizeMB
         self.report.update(extract_model_summary(trained_model.summarize()))
         # (3) Store/Serialize Model for further use.
@@ -96,7 +102,7 @@ class Execute:
         else:
             store(trained_model, model_name='model_' + str(datetime.datetime.now()),
                   dataset=self.dataset,
-                  full_storage_path=self.storage_path)
+                  full_storage_path=self.storage_path, save_as_csv=self.args.save_embeddings_as_csv)
 
         # (4) Store total runtime.
         total_runtime = time.time() - start_time
@@ -123,20 +129,24 @@ class Execute:
         """
         start_time = time.time()
         # (1) Data Preparation.
-        if self.is_continual_training is False:
-            # (1.1) Read, Preprocess, Index, and Serialize input data.
-            self.read_preprocess_index_serialize_data()
-        else:
+        if self.is_continual_training:
+            print(self.args)
             # (1.2) Load indexed input data.
             self.load_indexed_data()
-        # (2) Train and Evaluate.
-        trained_model = self.train_and_eval()
+        else:
+            # (1.1) Read, Preprocess, Index, and Serialize input data.
+            self.read_preprocess_index_serialize_data()
+
+        # (2) Train
+        trained_model, form_of_labelling = self.training_process()
         # (3) Store trained model.
         self.save_trained_model(trained_model, start_time)
+        # (4) Eval model.
+        self.evaluator.eval(trained_model, form_of_labelling)
         # (4) Return the report of the training process.
         return self.report
 
-    def train_and_eval(self) -> BaseKGE:
+    def training_process(self) -> BaseKGE:
         """
         Training and evaluation procedure
 
@@ -146,6 +156,7 @@ class Execute:
         (4) Eval trained model
         (5) Return trained model
         """
+        self.report['num_train_triples'] = len(self.dataset.train_set)
         self.report['num_entities'] = self.dataset.num_entities
         self.report['num_relations'] = self.dataset.num_relations
         print('------------------- Train & Eval -------------------')
@@ -153,36 +164,19 @@ class Execute:
         callbacks = [PrintCallback(),
                      KGESaveCallback(every_x_epoch=self.args.save_model_at_every_epoch,
                                      max_epochs=self.args.max_epochs,
-                                     path=self.args.full_storage_path), ModelSummary(max_depth=-1)]
-
-        # PL has some problems with DDPPlugin. It will likely to be solved in their next release.
-        # Explicitly setting num_process > 1 gives you
-        """
-        [W reducer.cpp: 1303] Warning: find_unused_parameters = True
-        was specified in DDP constructor, but did not find any unused parameters in the
-        forward pass.
-        This flag results in an extra traversal of the autograd graph every iteration, which can adversely affect
-        performance. If your model indeed never has any unused parameters in the forward pass, 
-        consider turning this flag off. Note that this warning may be a false positive 
-        if your model has flow        control        causing        later        iterations        to        have        unused
-        parameters.(function        operator())
-        """
-        # Adding plugins=[DDPPlugin(find_unused_parameters=False)] and explicitly using num_process > 1
-        """ pytorch_lightning.utilities.exceptions.DeadlockDetectedException: DeadLock detected from rank: 1  """
-        # Force using SWA.
-        # self.args.stochastic_weight_avg = True
+                                     path=self.args.full_storage_path),
+                     ModelSummary(max_depth=-1)]
 
         # (2) Initialize Pytorch-lightning Trainer
         self.trainer = initialize_pl_trainer(self.args, callbacks, plugins=[])
         # (3) Use (2) to train a KGE model
         trained_model, form_of_labelling = self.train()
-        # (4) Eval model.
-        self.evaluator.eval(trained_model, form_of_labelling)
         # (5) Return trained model
-        return trained_model
+        return trained_model, form_of_labelling
 
     def train(self) -> Tuple[BaseKGE, str]:
         """ Train selected model via the selected training strategy """
+        print("Train selected model via the selected training strategy ")
         if self.args.num_folds_for_cv >= 2:
             return self.k_fold_cross_validation()
         else:
@@ -190,6 +184,8 @@ class Execute:
                 return self.training_negative_sampling()
             elif self.args.scoring_technique == 'KvsAll':
                 return self.training_kvsall()
+            elif self.args.scoring_technique == 'KvsSample':
+                return self.training_kvssample()
             elif self.args.scoring_technique == 'PvsAll':
                 return self.training_PvsAll()
             elif self.args.scoring_technique == 'CCvsAll':
@@ -229,8 +225,7 @@ class Execute:
                                      form='CCvsAll',
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_processes
-                                     )
+                                     num_workers=self.args.num_core)
 
         def on_epoch_start(self, *args, **kwargs):
             """ Update non-conformity scores"""
@@ -305,7 +300,7 @@ class Execute:
                                      form='PvsAll',
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_processes)
+                                     num_workers=self.args.num_core)
 
         # Define a new raining set
         def training_step(self, batch, batch_idx):
@@ -362,7 +357,7 @@ class Execute:
                                      form=form_of_labelling,
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_processes,
+                                     num_workers=self.args.num_core,
                                      label_smoothing_rate=self.args.label_smoothing_rate)
         # (3) Train model.
         train_dataloaders = dataset.train_dataloader()
@@ -406,8 +401,7 @@ class Execute:
                                      form=form_of_labelling,
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_processes
-                                     )
+                                     num_workers=self.args.num_core)
         if self.args.label_relaxation_rate:
             model.loss = LabelRelaxationLoss(alpha=self.args.label_relaxation_rate)
             # model.loss=LabelSmoothingLossCanonical()
@@ -431,6 +425,7 @@ class Execute:
         Train models with Negative Sampling
         """
         assert self.args.neg_ratio > 0
+        # (1) Select the model
         model, _ = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         form_of_labelling = 'NegativeSampling'
         print(f'Training starts: {model.name}-labeling:{form_of_labelling}')
@@ -444,7 +439,7 @@ class Execute:
                                      form=form_of_labelling,
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=os.cpu_count() - 1)
+                                     num_workers=self.args.num_core)
         print(f'Done ! {time.time() - start_time:.3f} seconds\n')
         # 3. Train model
         train_dataloaders = dataset.train_dataloader()
@@ -469,7 +464,7 @@ class Execute:
                                      form=self.args.scoring_technique,
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_processes,
+                                     num_workers=self.args.num_core,
                                      label_smoothing_rate=self.args.label_smoothing_rate)
         # 3. Train model.
         train_dataloaders = dataset.train_dataloader()
@@ -482,6 +477,58 @@ class Execute:
 
         model.loss = BatchRelaxedvsAllLoss()
         model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
+        return model, form_of_labelling
+
+    def training_kvssample(self) -> BaseKGE:
+        """
+        Train models with KvsSample
+        D= {(x,y)_i }_i ^n where
+        1. x denotes a tuple of indexes of a head entity and a relation
+        2. y denotes a vector of probabilities, y_j corresponds to probability of j.th indexed entity
+        :return: trained BASEKGE
+        """
+        # (1) Select model and labelling : Entity Prediction or Relation Prediction.
+        model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
+        form_of_labelling='KvsSample'
+        print(f'Stochastic KvsAll training starts: {model.name}')  # -labeling:{form_of_labelling}')
+        # (2) Create training data.
+        dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
+                                     valid_set_idx=self.dataset.valid_set,
+                                     test_set_idx=self.dataset.test_set,
+                                     entity_to_idx=self.dataset.entity_to_idx,
+                                     relation_to_idx=self.dataset.relation_to_idx,
+                                     form=form_of_labelling,
+                                     neg_sample_ratio=self.args.neg_ratio,
+                                     batch_size=self.args.batch_size,
+                                     num_workers=self.args.num_core,
+                                     label_smoothing_rate=self.args.label_smoothing_rate)
+        # (3) Train model.
+        train_dataloaders = dataset.train_dataloader()
+        # Release some memory
+        del dataset
+        if self.args.eval is False:
+            self.dataset.train_set = None
+            self.dataset.valid_set = None
+            self.dataset.test_set = None
+        model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
+        """
+        # @TODO Model Calibration
+        from laplace import Laplace
+        from laplace.utils.subnetmask import ModuleNameSubnetMask
+        from laplace.utils import ModuleNameSubnetMask
+        from laplace import Laplace
+        # No change in link prediciton results
+        subnetwork_mask = ModuleNameSubnetMask(model, module_names=['emb_ent_real'])
+        subnetwork_mask.select()
+        subnetwork_indices = subnetwork_mask.indices
+        la = Laplace(model, 'classification',
+                     subset_of_weights='subnetwork',
+                     hessian_structure='full',
+                     subnetwork_indices=subnetwork_indices)
+        # la.fit(dataset.train_dataloader())
+        # la.optimize_prior_precision(method='CV', val_loader=dataset.val_dataloader())
+        """
+
         return model, form_of_labelling
 
     def k_fold_cross_validation(self) -> Tuple[BaseKGE, str]:
@@ -518,7 +565,7 @@ class Execute:
                                          form=form_of_labelling,
                                          neg_sample_ratio=self.args.neg_ratio,
                                          batch_size=self.args.batch_size,
-                                         num_workers=self.args.num_processes)
+                                         num_workers=self.args.num_core)
             # 3. Train model
             train_dataloaders = dataset.train_dataloader()
             del dataset

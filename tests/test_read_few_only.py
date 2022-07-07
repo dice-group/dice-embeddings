@@ -4,80 +4,73 @@ import sys
 import pytest
 
 
-class TestRegressionOmult:
+class TestReadFewOnly:
     @pytest.mark.filterwarnings('ignore::UserWarning')
-    def test_k_vs_all(self):
+    def test_qmult_kvsall(self):
         args = argparse_default([])
-        args.model = 'OMult'
-        args.optim = 'Adam'
-        args.path_dataset_folder = 'KGs/UMLS'
-        args.num_epochs = 50
-        args.batch_size = 1024
-        args.lr = 0.01
-        args.embedding_dim = 32
-        args.input_dropout_rate = 0.0
-        args.hidden_dropout_rate = 0.0
-        args.feature_map_dropout_rate = 0.0
+        args.model = 'QMult'
+        args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
-        args.test_mode = True
-        args.eval = True
-        args.eval_on_train = True
-        args.read_only_few = None
-        args.sample_triples_ratio = None
-        args.num_folds_for_cv = None
-        result = Execute(args).start()
-        assert 0.90 >= result['Train']['H@1'] >= 0.65
-        assert 0.75 >= result['Val']['H@1'] >= 0.65
-
-    @pytest.mark.filterwarnings('ignore::UserWarning')
-    def test_1_vs_all(self):
-        args = argparse_default([])
-        args.model = 'OMult'
-        args.optim = 'Adam'
         args.path_dataset_folder = 'KGs/UMLS'
-        args.num_epochs = 50
+        args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
         args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
+        args.test_mode = True
+        args.eval = True
+        args.sample_triples_ratio = None
+        args.read_only_few = 10
+        args.sample_triples_ratio = None
+        report = Execute(args).start()
+        # as we add negative triples
+        assert report['num_train_triples'] == int(args.read_only_few * 2)
+
+    @pytest.mark.filterwarnings('ignore::UserWarning')
+    def test_qmult_1vsall(self):
+        args = argparse_default([])
+        args.model = 'QMult'
+        args.num_epochs = 1
         args.scoring_technique = '1vsAll'
-        args.test_mode = True
-        args.eval = True
-        args.eval_on_train = True
-        args.sample_triples_ratio = None
-        args.read_only_few = None
-        args.sample_triples_ratio = None
-        args.num_folds_for_cv = None
-        result = Execute(args).start()
-        assert 0.75 >= result['Test']['H@1'] >= 0.72
-        assert 0.75 >= result['Val']['H@1'] >= 0.70
-        assert 0.91 >= result['Train']['H@1'] >= 0.86
-
-    @pytest.mark.filterwarnings('ignore::UserWarning')
-    def test_negative_sampling(self):
-        args = argparse_default([])
-        args.model = 'OMult'
-        args.optim = 'Adam'
         args.path_dataset_folder = 'KGs/UMLS'
-        args.num_epochs = 50
+        args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
         args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.scoring_technique = 'NegSample'
-        args.neg_ratio = 1
         args.test_mode = True
         args.eval = True
-        args.eval_on_train = True
         args.sample_triples_ratio = None
-        args.read_only_few = None
+        args.read_only_few = 10
         args.sample_triples_ratio = None
-        args.num_folds_for_cv = None
-        result = Execute(args).start()
-        assert 0.60 >= result['Test']['H@1'] >= .25
-        assert 0.60 >= result['Val']['H@1'] >= .25
-        assert 0.63 >= result['Train']['H@1'] >= .31
+        report = Execute(args).start()
+        # as we add negative triples
+        assert report['num_train_triples'] == int(args.read_only_few * 2)
+
+
+    @pytest.mark.filterwarnings('ignore::UserWarning')
+    def test_qmult_neg_sampling(self):
+        args = argparse_default([])
+        args.model = 'QMult'
+        args.num_epochs = 1
+        args.scoring_technique = 'NegSample'
+        args.path_dataset_folder = 'KGs/UMLS'
+        args.num_epochs = 10
+        args.batch_size = 1024
+        args.lr = 0.01
+        args.embedding_dim = 32
+        args.input_dropout_rate = 0.0
+        args.hidden_dropout_rate = 0.0
+        args.feature_map_dropout_rate = 0.0
+        args.test_mode = True
+        args.eval = True
+        args.sample_triples_ratio = None
+        args.read_only_few = 10
+        args.sample_triples_ratio = None
+        report = Execute(args).start()
+        # as we add negative triples
+        assert report['num_train_triples'] == args.read_only_few

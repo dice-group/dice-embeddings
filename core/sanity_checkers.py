@@ -10,7 +10,8 @@ def sanity_checking_with_arguments(args):
         print(f'embedding_dim must be strictly positive. Currently:{args.embedding_dim}')
         raise
 
-    if not (args.scoring_technique in ['CCvsAll', 'PvsAll', 'KvsAll', 'NegSample', '1vsAll', 'BatchRelaxedKvsAll',
+    if not (args.scoring_technique in ['KvsSample', 'CCvsAll', 'PvsAll', 'KvsAll', 'NegSample', '1vsAll',
+                                       'BatchRelaxedKvsAll',
                                        'BatchRelaxed1vsAll']):
         raise KeyError(f'Invalid training strategy => {args.scoring_technique}.')
 
@@ -22,20 +23,20 @@ def sanity_checking_with_arguments(args):
     except AssertionError:
         print(f'num_folds_for_cv can not be negative. Currently:{args.num_folds_for_cv}')
         raise
-
+    # Check whether is a directory or a file?
     try:
-        assert os.path.isdir(args.path_dataset_folder)
+        assert os.path.isdir(args.path_dataset_folder) or os.path.isfile(args.path_dataset_folder)
     except AssertionError:
-        raise AssertionError(f'The path does not direct to a file {args.path_dataset_folder}')
-
-    try:
-        assert glob.glob(args.path_dataset_folder + '/train*')
-    except AssertionError:
-        print(f'The directory {args.path_dataset_folder} must contain a train.*  .')
-        raise
-
+        raise AssertionError(f'The path_dataset_folder does not lead to a directory ***{args.path_dataset_folder}***')
+    # Check whether the input parameter leads a standard data format (e.g. FOLDER/train.txt) or a data in the parquet format
+    if '.parquet' == args.path_dataset_folder[-8:]:
+        """ all is good we have xxx.parquet data"""
+    elif glob.glob(args.path_dataset_folder + '/train*'):
+        """ all is good we have xxx/train.txt"""
+    else:
+        raise ValueError(
+            f'Data format is not recognized.\nThe path_dataset_folder parameter **{args.path_dataset_folder}** must lead to (a) **folder/train.txt** or *** triples stored in the parquet format')
     assert isinstance(args.eval, bool)
-    assert isinstance(args.multi_cores_at_preprocessing, bool)
 
 
 def config_kge_sanity_checking(args, dataset):
@@ -66,7 +67,11 @@ def dataset_sanity_checking(train_set: np.ndarray, num_entities: int, num_relati
     assert isinstance(train_set, np.ndarray)
     n, d = train_set.shape
     assert d == 3
-
+    try:
+        assert n > 0
+    except AssertionError:
+        print('Size of the training dataset must be greater than 0.')
+        exit(1)
     try:
         assert num_entities >= max(train_set[:, 0]) and num_entities >= max(train_set[:, 2])
     except AssertionError:

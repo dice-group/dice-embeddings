@@ -23,6 +23,7 @@ class TestRegressionCL:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
+        args.test_mode=True
         args.eval = False
         args.eval_on_train = False
         args.read_only_few = None
@@ -49,6 +50,7 @@ class TestRegressionCL:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
+        args.test_mode=True
         args.eval = False
         args.eval_on_train = False
         args.read_only_few = None
@@ -75,6 +77,7 @@ class TestRegressionCL:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
+        args.test_mode=True
         args.eval = False
         args.eval_on_train = False
         args.read_only_few = None

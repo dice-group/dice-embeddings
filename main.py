@@ -10,10 +10,13 @@ def argparse_default(description=None):
     # Dataset and storage related
     parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
                         help="The path of a folder containing input data")
-    parser.add_argument("--save_embeddings_as_csv", type=bool, default=True,
+    parser.add_argument("--save_embeddings_as_csv", type=bool, default=False,
                         help='A flag for saving embeddings in csv file.')
-    parser.add_argument("--multi_cores_at_preprocessing", type=bool, default=False,
-                        help='A flag for using all cores at parsing.')
+    parser.add_argument("--num_core", type=int, default=4,
+                        help='Number of cores to be used.')
+    parser.add_argument("--dnf_predicates", type=list, default=None,
+                        help="Predicates in Disjunctive normal form to select only valid triples on the fly."
+                             "[('relation', '=','<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>')]")
     parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="Embeddings, model, and any other related data will be stored therein.")
     parser.add_argument("--read_only_few", type=int, default=None, help='READ only first N triples. If 0, read all.')
@@ -28,13 +31,13 @@ def argparse_default(description=None):
                              "Shallom, ConEx, ComplEx, DistMult")
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[NAdam, Adam, SGD]')
-    parser.add_argument('--embedding_dim', type=int, default=128,
+    parser.add_argument('--embedding_dim', type=int, default=16,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=5, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=50, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
-    parser.add_argument("--lr", type=float, default=0.01, help='Learning rate')
+    parser.add_argument("--lr", type=float, default=0.01, help='Learning rate, 0.0003 maybe?')
     # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='KvsAll', help="1vsAll, KvsAll, NegSample")
+    parser.add_argument('--scoring_technique', default='KvsSample', help="KvsSample, 1vsAll, KvsAll, NegSample")
     parser.add_argument('--neg_ratio', type=int, default=1)
     # Additional training params
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
@@ -57,15 +60,28 @@ def argparse_default(description=None):
     # Flags for computation
     parser.add_argument("--eval", type=bool, default=True,
                         help='A flag for using evaluation')
-    parser.add_argument("--eval_on_train", type=bool, default=True,
+    parser.add_argument("--eval_on_train", type=bool, default=False,
                         help='A flag for using train data to evaluation ')
-    parser.add_argument("--eval_with_constraint", type=bool, default=False, help='Filter entities not belonging to the range or domain of a relation.')
+    parser.add_argument("--eval_with_constraint", type=bool, default=False,
+                        help='Filter entities not belonging to the range or domain of a relation.')
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
                                                                         'If >2 ,no evaluation scenario is applied implies no evaluation.')
+    parser.add_argument("--use_dask", type=bool, default=False,
+                        help='DASK can be used if the input dataset does not fit into memory.'
+                             '**Its quite common for Dask DataFrame to not provide a speed up over Pandas, especially for datasets that fit comfortably into memory by MRocklin (https://stackoverflow.com/a/57104255/5363103)**')
+    parser.add_argument("--test_mode", type=bool, default=False)
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)
 
 
 if __name__ == '__main__':
-    Execute(argparse_default()).start()
+    report = Execute(argparse_default()).start()
+    """
+    {'num_train_triples': .., 'num_entities': .., 'num_relations': .., 
+    'Train': {'H@1': .., 'H@3': .., 'H@10': .., 'MRR': ..}, 
+    'Val': {'H@1': .., 'H@3': .., 'H@10': .., 'MRR': ..},  
+    'Test': {'H@1': .., 'H@3': .., 'H@10': .., 'MRR': ..},  
+    'NumParam': .., 'EstimatedSizeMB': .., 'Runtime': '.., 
+    'path_experiment_folder': ..}
+    """

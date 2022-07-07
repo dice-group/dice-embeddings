@@ -19,6 +19,7 @@ class TestCV_1vsAll:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
+        args.test_mode=True
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.eval = 1

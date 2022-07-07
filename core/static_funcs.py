@@ -1,5 +1,7 @@
 import os
 
+import pandas
+
 import core
 from core.typings import *
 import numpy as np
@@ -16,11 +18,9 @@ import pandas as pd
 import json
 import glob
 import dask.dataframe as dd
-from dask import dataframe as ddf
 import dask
-from .sanity_checkers import sanity_checking_with_arguments, config_kge_sanity_checking
-import swifter
-from pytorch_lightning.plugins import DDPPlugin, DeepSpeedPlugin
+from .sanity_checkers import sanity_checking_with_arguments
+from pytorch_lightning.strategies.ddp import DDPStrategy
 
 
 # @TODO: Could these funcs can be merged?
@@ -39,8 +39,7 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
                 parameter.requires_grad = True
             model.train()
         except FileNotFoundError:
-            raise FileNotFoundError(
-                f"{storage_path}/model.pt is not found. The model will be trained with random weights")
+            print(f"{storage_path}/model.pt is not found. The model will be trained with random weights")
         return model, _
     else:
         return intialize_model(args)
@@ -139,15 +138,14 @@ def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
     :return:
     """
     assert isinstance(num, int)
-    # train_set = train_set.astype(np.int32)
     if np.iinfo(np.int8).max > num:
-        print(f'Setting int8,\t {np.iinfo(np.int8).max}')
+        # print(f'Setting int8,\t {np.iinfo(np.int8).max}')
         train_set = train_set.astype(np.int8)
     elif np.iinfo(np.int16).max > num:
-        print(f'Setting int16,\t {np.iinfo(np.int16).max}')
+        # print(f'Setting int16,\t {np.iinfo(np.int16).max}')
         train_set = train_set.astype(np.int16)
     elif np.iinfo(np.int32).max > num:
-        print(f'Setting int32,\t {np.iinfo(np.int32).max}')
+        # print(f'Setting int32,\t {np.iinfo(np.int32).max}')
         train_set = train_set.astype(np.int32)
     else:
         pass
@@ -161,18 +159,59 @@ def model_fitting(trainer, model, train_dataloaders) -> None:
     print(f'Number of mini-batches to compute for a single epoch: {len(train_dataloaders)}')
     print(f'Learning rate:{model.learning_rate}\n')
     trainer.fit(model, train_dataloaders=train_dataloaders)
+    print(f'Model fitting is done!')
 
 
 def initialize_pl_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
-    """ Initialize pl.Traner from input arguments """
-    if args.gpus:
-        plugins.append(DDPPlugin(find_unused_parameters=False))
-        plugins.append(DeepSpeedPlugin(stage=3))  # experiment with it when we use GPUs
-        return pl.Trainer.from_argparse_args(args, plugins=plugins,
+    """ Initialize pl.Trainer from input arguments """
+    print('Initialize Pytorch-lightning Trainer')
+    # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
+    if args.test_mode:
+        return pl.Trainer.from_argparse_args(args,
+                                             plugins=plugins,
                                              callbacks=callbacks)
     else:
-        return pl.Trainer.from_argparse_args(args, plugins=plugins,
+        return pl.Trainer.from_argparse_args(args,
+                                             strategy=DDPStrategy(find_unused_parameters=False),
+                                             plugins=plugins,
                                              callbacks=callbacks)
+
+
+def preprocess_dataframe_of_kg(df: Union[dask.dataframe.core.DataFrame, pandas.DataFrame], read_only_few: int = None,
+                               sample_triples_ratio: float = None) -> Union[
+    dask.dataframe.core.DataFrame, pandas.DataFrame]:
+    """ Preprocess lazy loaded dask dataframe
+    (1) Read only few triples
+    (2) Sample few triples
+    (3) Remove **<>** if exists.
+    """
+    try:
+        assert isinstance(df, dask.dataframe.core.DataFrame) or isinstance(df, pandas.DataFrame)
+    except AssertionError:
+        raise AssertionError(type(df))
+    # (2)a Read only few if it is asked.
+    if isinstance(read_only_few, int):
+        if read_only_few > 0:
+            print(f'Reading only few input data {read_only_few}...')
+            df = df.head(read_only_few)
+            print('Done !\n')
+    # (3) Read only sample
+    if sample_triples_ratio:
+        print(f'Subsampling {sample_triples_ratio} of input data...')
+        df = df.sample(frac=sample_triples_ratio)
+        print('Done !\n')
+    if sum(df.head()["subject"].str.startswith('<')) + sum(df.head()["relation"].str.startswith('<')) == 10:
+        # (4) Drop Rows/triples with double or boolean: Example preprocessing
+        # Drop of object does not start with **<**.
+        # Specifying na to be False instead of NaN.
+        print('Removing triples with literal values...')
+        df = df[df["object"].str.startswith('<', na=False)]
+        print('Done !\n')
+        # (5) Remove **<** and **>**
+        print('Removing brackets **<** and **>**...')
+        df = df.transform(lambda x: x.str.removeprefix("<").str.removesuffix(">"))
+        print('Done !\n')
+    return df
 
 
 def load_data_parallel(data_path, read_only_few: int = None,
@@ -189,30 +228,13 @@ def load_data_parallel(data_path, read_only_few: int = None,
         # (1) Read knowledge graph  via
         # (1.1) Using the whitespace as a deliminator
         # (1.2) Taking first three columns detected in (1.1.)
-        #  Delayed Read operation
-        df = ddf.read_csv(data_path + '*',
-                          delim_whitespace=True,
-                          header=None,
-                          usecols=[0, 1, 2],
-                          names=['subject', 'relation', 'object'],
-                          dtype=str)
-        # (2)a Read only few if it is asked.
-        if isinstance(read_only_few, int):
-            if read_only_few > 0:
-                df = df.loc[:read_only_few]
-        # (3) Read only sample
-        if sample_triples_ratio:
-            print(f'Subsampling {sample_triples_ratio} of input data...')
-            df = df.sample(frac=sample_triples_ratio)
-
-        # (4) Drop Rows/triples with double or boolean: Example preprocessing
-        # Drop rows having ^^
-        df = df[df["object"].str.contains("<http://www.w3.org/2001/XMLSchema#double>") == False]
-        df = df[df["object"].str.contains("<http://www.w3.org/2001/XMLSchema#boolean>") == False]
-        df['subject'] = df['subject'].str.removeprefix("<").str.removesuffix(">")
-        df['relation'] = df['relation'].str.removeprefix("<").str.removesuffix(">")
-        df['object'] = df['object'].str.removeprefix("<").str.removesuffix(">")
-        return df
+        df = dd.read_csv(data_path + '*',
+                         delim_whitespace=True,
+                         header=None,
+                         usecols=[0, 1, 2],
+                         names=['subject', 'relation', 'object'],
+                         dtype=str)
+        return preprocess_dataframe_of_kg(df, read_only_few, sample_triples_ratio)
     else:
         print(f'{data_path} could not found!')
         return None
@@ -266,6 +288,7 @@ def store(trained_model, model_name: str = 'model', full_storage_path: str = Non
         else:
             pass
     else:
+        """
         # (2) See available memory and decide whether embeddings are stored separately or not.
         available_memory = [i.split() for i in os.popen('free -h').read().splitlines()][1][-1]  # ,e.g., 10Gi
         available_memory_mb = float(available_memory[:-2]) * 1000
@@ -288,40 +311,45 @@ def store(trained_model, model_name: str = 'model', full_storage_path: str = Non
                     torch.save(relation_ebm, full_storage_path + '/' + trained_model.name + '_relation_embeddings.pt')
         else:
             print('There is not enough memory to store embeddings separately.')
+        """
 
 
-def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, multi_processing=False):
+def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, num_core=0) -> pd.core.frame.DataFrame:
     """
-    :param multi_processing:
-    :param train_set: pandas dataframe or dask dataframe
-    :param entity_to_idx:
-    :param relation_to_idx:
-    :return:
+    :param train_set: pandas dataframe
+    :param entity_to_idx: a mapping from str to integer index
+    :param relation_to_idx: a mapping from str to integer index
+    :param num_core: number of cores to be used
+    :return: indexed triples, i.e., pandas dataframe
     """
-
-    def entity_look_up(x):
-        try:
-            return entity_to_idx[x]
-        except KeyError:
-            return None
-
-    def relation_look_up(x):
-        try:
-            return relation_to_idx[x]
-        except KeyError:
-            return None
-
-    if multi_processing:
+    n, d = train_set.shape
+    """
+    @TODO: Benchmark using apply on dask dataframe, swifter and plain pandas
+    if num_core > 1000:
+        print(f'Number of cores will be used :{num_core}')
         assert isinstance(train_set, pd.core.frame.DataFrame)
-        train_set['subject'] = train_set['subject'].swifter.apply(lambda x: entity_look_up(x))
-        train_set['relation'] = train_set['relation'].swifter.apply(lambda x: relation_look_up(x))
-        train_set['object'] = train_set['object'].swifter.apply(lambda x: entity_look_up(x))
+        train_set['subject'] = train_set['subject'].swifter.apply(lambda x: entity_to_idx.get(x))
+        train_set['relation'] = train_set['relation'].swifter.apply(lambda x: relation_to_idx.get(x))
+        train_set['object'] = train_set['object'].swifter.apply(lambda x: entity_to_idx.get(x))
+        assert (n, d) == train_set.shape
     else:
-        train_set['subject'] = train_set['subject'].apply(lambda x: entity_look_up(x))
-        train_set['relation'] = train_set['relation'].apply(lambda x: relation_look_up(x))
-        train_set['object'] = train_set['object'].apply(lambda x: entity_look_up(x))
-
+        train_set['subject'] = train_set['subject'].apply(lambda x: entity_to_idx.get(x))
+        train_set['relation'] = train_set['relation'].apply(lambda x: relation_to_idx.get(x))
+        train_set['object'] = train_set['object'].apply(lambda x: entity_to_idx.get(x))
+    """
+    train_set['subject'] = train_set['subject'].apply(lambda x: entity_to_idx.get(x))
+    train_set['relation'] = train_set['relation'].apply(lambda x: relation_to_idx.get(x))
+    train_set['object'] = train_set['object'].apply(lambda x: entity_to_idx.get(x))
     train_set = train_set.dropna()
+    if isinstance(train_set, pd.core.frame.DataFrame):
+        assert (n, d) == train_set.shape
+    elif isinstance(train_set, dask.dataframe.core.DataFrame):
+        nn, dd = train_set.shape
+        assert isinstance(dd, int)
+        if isinstance(nn, int):
+            assert n == nn and d == dd
+    else:
+        raise KeyError('Wrong type training data')
     return train_set
 
 
@@ -376,24 +404,36 @@ def read_preprocess_index_serialize_kg(args, cls):
     start_time = time.time()
     # 1. Read & Parse input data
     kg = cls(data_dir=args.path_dataset_folder,
-             multi_cores_at_preprocessing=args.multi_cores_at_preprocessing,
+             num_core=args.num_core,
+             use_dask=args.use_dask,
              add_reciprical=args.apply_reciprical_or_noise,
              eval_model=args.eval,
              read_only_few=args.read_only_few,
              sample_triples_ratio=args.sample_triples_ratio,
              path_for_serialization=args.full_storage_path,
              add_noise_rate=args.add_noise_rate,
-             min_freq_for_vocab=args.min_freq_for_vocab
-             )
+             min_freq_for_vocab=args.min_freq_for_vocab,
+             dnf_predicates=args.dnf_predicates)
     print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
     print(kg.description_of_input)
     return kg
 
 
-def reload_input_data(storage_path: str, cls):
+def reload_input_data(args: str = None, cls=None):
     print('*** Reload Knowledge Graph  ***')
     start_time = time.time()
-    kg = cls(deserialize_flag=storage_path)
+    kg = cls(data_dir=args.path_dataset_folder,
+             num_core=args.num_core,
+             use_dask=args.use_dask,
+             add_reciprical=args.apply_reciprical_or_noise,
+             eval_model=args.eval,
+             read_only_few=args.read_only_few,
+             sample_triples_ratio=args.sample_triples_ratio,
+             path_for_serialization=args.full_storage_path,
+             add_noise_rate=args.add_noise_rate,
+             min_freq_for_vocab=args.min_freq_for_vocab,
+             dnf_predicates=args.dnf_predicates,
+             deserialize_flag=args.path_experiment_folder)
     print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
     print(kg.description_of_input)
     return kg
@@ -424,16 +464,19 @@ def preprocesses_input_args(arg):
     assert arg.weight_decay >= 0.0
     arg.learning_rate = arg.lr
     arg.deterministic = True
+    assert arg.num_core >= 0
+
     # Below part will be investigated
     arg.check_val_every_n_epoch = 10 ** 6
     # del arg.check_val_every_n_epochs
-    arg.checkpoint_callback = False
+    # arg.checkpoint_callback = False
     arg.logger = False
     arg.eval = True if arg.eval == 1 else False
     arg.eval_on_train = True if arg.eval_on_train == 1 else False
     # reciprocal checking
     # @TODO We need better way for using apply_reciprical_or_noise.
-    if arg.scoring_technique in ['PvsAll', 'CCvsAll', 'KvsAll', '1vsAll', 'BatchRelaxed1vsAll', 'BatchRelaxedKvsAll']:
+    if arg.scoring_technique in ['KvsSample', 'PvsAll', 'CCvsAll', 'KvsAll', '1vsAll', 'BatchRelaxed1vsAll',
+                                 'BatchRelaxedKvsAll']:
         arg.apply_reciprical_or_noise = True
     elif arg.scoring_technique == 'NegSample':
         arg.apply_reciprical_or_noise = False
@@ -840,3 +883,48 @@ def non_conformity_score_diff(predictions, targets) -> torch.Tensor:
     selected_predictions = predictions[~mask].view(-1, num_class - 1)
 
     return torch.max(selected_predictions - class_val, dim=-1).values
+
+
+def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
+    # @TODO: This function should take any DASK/Pandas DataFrame or Series.
+    print(print_into)
+    vocab_to_idx.to_parquet(path_for_serialization + f'/{name}', compression='gzip', engine='pyarrow')
+    print('Done !\n')
+
+
+def dask_remove_triples_with_condition(dask_kg_dataframe: dask.dataframe.core.DataFrame,
+                                       min_freq_for_vocab: int = None) -> dask.dataframe.core.DataFrame:
+    """
+    Remove rows/triples from an input dataframe
+    """
+    assert isinstance(dask_kg_dataframe, dask.dataframe.core.DataFrame)
+    if min_freq_for_vocab is not None:
+        assert isinstance(min_freq_for_vocab, int)
+        assert min_freq_for_vocab > 0
+        print(
+            f'Dropping triples having infrequent entities or relations (>{min_freq_for_vocab})...',
+            end=' ')
+        num_triples = dask_kg_dataframe.size.compute()
+        print('Total num triples:', num_triples, end=' ')
+        # Compute entity frequency: index is URI, val is number of occurrences.
+        entity_frequency = dd.concat([dask_kg_dataframe['subject'], dask_kg_dataframe['object']],
+                                     ignore_index=True).value_counts().compute()
+        relation_frequency = dask_kg_dataframe['relation'].value_counts().compute()
+        # low_frequency_entities index and values are the same URIs: dask.dataframe.core.DataFrame
+        low_frequency_entities = entity_frequency[
+            entity_frequency <= min_freq_for_vocab].index.values
+        low_frequency_relation = relation_frequency[
+            relation_frequency <= min_freq_for_vocab].index.values
+
+        # If triple contains subject that is in low_freq, set False do not select
+        dask_kg_dataframe = dask_kg_dataframe[~dask_kg_dataframe['subject'].isin(low_frequency_entities)]
+        # If triple contains object that is in low_freq, set False do not select
+        dask_kg_dataframe = dask_kg_dataframe[~dask_kg_dataframe['object'].isin(low_frequency_entities)]
+        # If triple contains relation that is in low_freq, set False do not select
+        dask_kg_dataframe = dask_kg_dataframe[~dask_kg_dataframe['relation'].isin(low_frequency_relation)]
+        # print('\t after dropping:', df_str_kg.size.compute(scheduler=scheduler_flag))
+        print('\t after dropping:', dask_kg_dataframe.size.compute())
+        print('Done !')
+        return dask_kg_dataframe
+    else:
+        return dask_kg_dataframe

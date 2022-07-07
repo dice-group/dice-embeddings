@@ -19,15 +19,16 @@ class TestRegressionComplEx:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.eval = 1
+        args.test_mode = True
+        args.eval = True
         args.eval_on_train = 1
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
         result = Execute(args).start()
-        assert 0.83 >= result['Train']['H@1'] >= 0.75
-        assert 0.81 >= result['Val']['H@1'] >= 0.60
-        assert 0.81 >= result['Test']['H@1'] >= 0.60
+        assert 0.84 >= result['Train']['H@1'] >= 0.75
+        assert 0.84 >= result['Val']['H@1'] >= 0.60
+        assert 0.84 >= result['Test']['H@1'] >= 0.60
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
@@ -41,11 +42,12 @@ class TestRegressionComplEx:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
+        args.test_mode = True
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
-        args.eval = 1
-        args.eval_on_train = 1
+        args.eval = True
+        args.eval_on_train = True
         args.scoring_technique = '1vsAll'
         result = Execute(args).start()
         assert 1.0 >= result['Train']['H@1'] >= 0.30
@@ -65,13 +67,15 @@ class TestRegressionComplEx:
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'NegSample'
+        args.optim = 'Adam'
         args.neg_ratio = 1
-        args.eval = 1
-        args.eval_on_train = 1
+        args.eval = True
+        args.eval_on_train = True
+        args.test_mode = True
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
         result = Execute(args).start()
         assert 0.73 >= result['Train']['H@1'] >= .65
         assert 0.71 >= result['Val']['H@1'] >= .57
-        assert 0.71 >= result['Test']['H@1'] >= .57
+        assert 0.71 >= result['Test']['H@1'] >= .53

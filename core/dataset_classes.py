@@ -73,6 +73,11 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
             # ?
             self.dataset = BatchRelaxed1vsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
                                                      relation_idxs=self.relation_to_idx, form=self.form)
+        elif self.form == 'KvsSample':
+            self.dataset = KvsSampleDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
+                                            relation_idxs=self.relation_to_idx, form=self.form,
+                                            neg_sample_ratio=self.neg_sample_ratio,
+                                            label_smoothing_rate=self.label_smoothing_rate)
         else:
             raise ValueError(f'Invalid input : {self.form}')
 
@@ -83,21 +88,15 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
                                                 num_entities=len(self.entity_to_idx),
                                                 num_relations=len(self.relation_to_idx),
                                                 neg_sample_ratio=self.neg_sample_ratio)
-            return DataLoader(train_set, batch_size=self.batch_size,
-                              shuffle=True,
-                              num_workers=self.num_workers,
-                              collate_fn=train_set.collate_fn, pin_memory=True)
+            return DataLoader(train_set, batch_size=self.batch_size, shuffle=True,
+                              num_workers=self.num_workers, collate_fn=train_set.collate_fn)
         elif self.form == 'EntityPrediction' or self.form == 'RelationPrediction':
             train_set = KvsAll(self.train_set_idx, entity_idxs=self.entity_to_idx,
                                relation_idxs=self.relation_to_idx, form=self.form,
                                label_smoothing_rate=self.label_smoothing_rate)
-
-            return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, pin_memory=True,
-                              num_workers=self.num_workers)
-
-        elif self.form in ['PvsAll', 'CCvsAll', '1VsAll', 'BatchRelaxedKvsAll', 'BatchRelaxed1vsAll']:
-            return DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, pin_memory=True,
-                              num_workers=self.num_workers)
+            return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
+        elif self.form in ['KvsSample', 'PvsAll', 'CCvsAll', '1VsAll', 'BatchRelaxedKvsAll', 'BatchRelaxed1vsAll']:
+            return DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
         else:
             raise KeyError(f'{self.form} illegal input.')
 
@@ -110,18 +109,16 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
             return DataLoader(valid_set, batch_size=self.batch_size,
                               shuffle=False,
                               num_workers=self.num_workers,
-                              collate_fn=valid_set.collate_fn, pin_memory=True
-                              )
+                              collate_fn=valid_set.collate_fn)
         elif self.form == 'EntityPrediction' or self.form == 'RelationPrediction':
             valid_set = KvsAll(self.valid_set_idx, entity_idxs=self.entity_to_idx,
                                relation_idxs=self.relation_to_idx, form=self.form,
                                label_smoothing_rate=self.label_smoothing_rate)
-            return DataLoader(valid_set, batch_size=self.batch_size, shuffle=False, pin_memory=True,
-                              num_workers=self.num_workers)
+            return DataLoader(valid_set, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers)
 
         elif self.form == '1VsAll':
             return DataLoader(OneVsAllEntityPredictionDataset(self.valid_set_idx), batch_size=self.batch_size,
-                              shuffle=False, pin_memory=True,
+                              shuffle=False,
                               num_workers=self.num_workers)
         else:
             raise KeyError(f'{self.form} illegal input.')
@@ -131,14 +128,12 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
             test_set = TriplePredictionDataset(self.test_set_idx,
                                                num_entities=len(self.entity_to_idx),
                                                num_relations=len(self.relation_to_idx), )
-            return DataLoader(test_set, batch_size=self.batch_size, num_workers=self.num_workers,
-                              pin_memory=True)
+            return DataLoader(test_set, batch_size=self.batch_size, num_workers=self.num_workers)
 
         elif self.form == 'EntityPrediction':
             test_set = KvsAll(self.test_set_idx, entity_idxs=self.entity_to_idx,
                               relation_idxs=self.relation_to_idx, form=self.form)
-            return DataLoader(test_set, batch_size=self.batch_size, num_workers=self.num_workers,
-                              pin_memory=True)
+            return DataLoader(test_set, batch_size=self.batch_size, num_workers=self.num_workers)
         else:
             raise KeyError(f'{self.form} illegal input.')
 
@@ -175,7 +170,7 @@ class CVDataModule(pl.LightningDataModule):
         return DataLoader(train_set, batch_size=self.batch_size,
                           shuffle=True,
                           num_workers=self.num_workers,
-                          collate_fn=train_set.collate_fn, pin_memory=True)
+                          collate_fn=train_set.collate_fn)
 
     def setup(self, *args, **kwargs):
         pass
@@ -264,6 +259,65 @@ class KvsAll(Dataset):
         if self.label_smoothing_rate:
             y_vec = y_vec * (1 - self.label_smoothing_rate) + (1 / y_vec.size(0))
         return self.train_data[idx], y_vec
+
+
+class KvsSampleDataset(Dataset):
+    """
+    For entitiy or relation prediciton
+    """
+
+    def __init__(self, triples_idx, entity_idxs, relation_idxs, form, store=None, neg_sample_ratio: int = None,
+                 label_smoothing_rate=None):
+        super().__init__()
+        assert len(triples_idx) > 0
+        self.train_data = None
+        self.train_target = None
+        self.label_smoothing_rate = label_smoothing_rate
+        self.neg_sample_ratio = neg_sample_ratio
+        assert self.neg_sample_ratio > 0
+        store = dict()
+        self.num_entities = len(entity_idxs)
+        for s_idx, p_idx, o_idx in triples_idx:
+            store.setdefault((s_idx, p_idx), list()).append(o_idx)
+
+        assert len(store) > 0
+        # Keys in store correspond to integer representation (index) of subject and predicate
+        # Values correspond to a list of integer representations of entities.
+        self.train_data = torch.torch.LongTensor(list(store.keys()))
+
+        if sum([len(i) for i in store.values()]) == len(store):
+            # if each s,p pair contains at most 1 entity
+            self.train_target = np.array(list(store.values()), dtype=np.int64)
+            try:
+                assert isinstance(self.train_target[0], np.ndarray)
+            except IndexError or AssertionError:
+                print(self.train_target)
+                exit(1)
+            assert isinstance(self.train_target[0][0], np.int64)
+        else:
+            self.train_target = list(store.values())
+            assert isinstance(self.train_target[0], list)
+        del store
+
+    def __len__(self):
+        assert len(self.train_data) == len(self.train_target)
+        return len(self.train_data)
+
+    def __getitem__(self, idx):
+        # (head,relation)
+        x = self.train_data[idx]
+        positives_idx = self.train_target[idx]
+        num_positives = len(positives_idx)
+        if num_positives < self.neg_sample_ratio:
+            positives_idx = random.choices(positives_idx, k=self.neg_sample_ratio)
+        else:
+            positives_idx = random.sample(positives_idx, self.neg_sample_ratio)
+
+        positives_idx = torch.LongTensor(positives_idx)
+        negative_idx = torch.randint(low=0, high=self.num_entities, size=(self.neg_sample_ratio,))
+        y_idx = torch.cat((positives_idx, negative_idx), 0)
+        y_vec = torch.cat((torch.ones(self.neg_sample_ratio), torch.zeros(self.neg_sample_ratio)), 0)
+        return x, y_idx, y_vec
 
 
 class BatchRelaxedKvsAllDataset(Dataset):

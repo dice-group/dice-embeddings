@@ -1,6 +1,7 @@
 from .base_model import *
 from .static_funcs import quaternion_mul
 
+
 def quaternion_mul_with_unit_norm(*, Q_1, Q_2):
     a_h, b_h, c_h, d_h = Q_1  # = {a_h + b_h i + c_h j + d_h k : a_r, b_r, c_r, d_r \in R^k}
     a_r, b_r, c_r, d_r = Q_2  # = {a_r + b_r i + c_r j + d_r k : a_r, b_r, c_r, d_r \in R^k}
@@ -18,7 +19,107 @@ def quaternion_mul_with_unit_norm(*, Q_1, Q_2):
     k_val = a_h * v + b_h * u - c_h * q + d_h * p
     return r_val, i_val, j_val, k_val
 
+
 class QMult(BaseKGE):
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = 'QMult'
+
+    def forward_triples(self, indexed_triple: torch.Tensor) -> torch.Tensor:
+        # (1) Retrieve embeddings & Apply Dropout & Normalization.
+        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(indexed_triple)
+        # (2) Split (1) into real and imaginary parts.
+        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(head_ent_emb, 4)
+        emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k = torch.hsplit(rel_ent_emb, 4)
+        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(tail_ent_emb, 4)
+
+        # (2)
+        # (2.1) Apply BN + Dropout on (1.2)-relations.
+        # (2.2) Apply quaternion multiplication on (1.1) and (2.1).
+        r_val, i_val, j_val, k_val = quaternion_mul(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
+                                                    Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
+
+        # (3)
+        # (3.1) Dropout on (2)-result of quaternion multiplication.
+        # (3.2) Inner product
+        real_score = torch.sum(r_val * emb_tail_real, dim=1)
+        i_score = torch.sum(i_val * emb_tail_i, dim=1)
+        j_score = torch.sum(j_val * emb_tail_j, dim=1)
+        k_score = torch.sum(k_val * emb_tail_k, dim=1)
+        return real_score + i_score + j_score + k_score
+
+    def forward_k_vs_all(self, x):
+        """
+        Completed.
+        Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,
+        [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
+        Given a batch of head entities and relations => shape (size of batch,| Entities|)
+        """
+
+        # (1) Retrieve embeddings & Apply Dropout & Normalization.
+        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
+        # (2) Split (1) into real and imaginary parts.
+        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(head_ent_emb, 4)
+        emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k = torch.hsplit(rel_ent_emb, 4)
+        r_val, i_val, j_val, k_val = quaternion_mul(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
+                                                    Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
+
+        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(self.entity_embeddings.weight, 4)
+        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = emb_tail_real.transpose(1, 0), emb_tail_i.transpose(1,
+                                                                                                                0), emb_tail_j.transpose(
+            1, 0), emb_tail_k.transpose(1, 0)
+
+        # (3)
+        # (3.1) Dropout on (2)-result of quaternion multiplication.
+        # (3.2) Inner product
+        real_score = torch.mm(r_val, emb_tail_real)
+        i_score = torch.mm(i_val, emb_tail_i)
+        j_score = torch.mm(j_val, emb_tail_j)
+        k_score = torch.mm(k_val, emb_tail_k)
+
+        return real_score + i_score + j_score + k_score
+
+    def forward_k_vs_sample(self, x, target_entity_idx):
+        """
+        Completed.
+        Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,
+        [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
+        Given a batch of head entities and relations => shape (size of batch,| Entities|)
+        """
+
+        # (1) Retrieve embeddings & Apply Dropout & Normalization.
+        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
+        # (2) Split (1) into real and imaginary parts.
+        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(head_ent_emb, 4)
+        emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k = torch.hsplit(rel_ent_emb, 4)
+        r_val, i_val, j_val, k_val = quaternion_mul(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
+                                                    Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
+
+        # (batch size, num. selected entity, dimension)
+        tail_entity_emb = self.entity_embeddings(target_entity_idx)
+        # quaternion vectors
+        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.tensor_split(tail_entity_emb, 4, dim=2)
+
+        emb_tail_real = emb_tail_real.transpose(1, 2)
+        emb_tail_i = emb_tail_i.transpose(1, 2)
+        emb_tail_j = emb_tail_j.transpose(1, 2)
+        emb_tail_k = emb_tail_k.transpose(1, 2)
+
+        # (batch size, 1, dimension)
+        r_val = r_val.unsqueeze(1)
+        i_val = i_val.unsqueeze(1)
+        j_val = j_val.unsqueeze(1)
+        k_val = k_val.unsqueeze(1)
+
+        real_score = torch.bmm(r_val, emb_tail_real)
+        i_score = torch.bmm(i_val, emb_tail_i)
+        j_score = torch.bmm(j_val, emb_tail_j)
+        k_score = torch.bmm(k_val, emb_tail_k)
+
+        return (real_score + i_score + j_score + k_score).squeeze(1)
+
+
+class oldQMult(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'QMult'
@@ -80,7 +181,6 @@ class QMult(BaseKGE):
         self.bn_hidden_i = self.normalizer_class(self.embedding_dim)
         self.bn_hidden_j = self.normalizer_class(self.embedding_dim)
         self.bn_hidden_k = self.normalizer_class(self.embedding_dim)
-
 
     def get_embeddings(self):
         entity_emb = torch.cat((self.emb_ent_real.weight.data, self.emb_ent_i.weight.data,
@@ -252,65 +352,6 @@ class QMult(BaseKGE):
 
         return real_score + i_score + j_score + k_score
 
-class newQMult(BaseKGE):
-    def __init__(self, args):
-        super().__init__(args)
-        self.name = 'QMult'
-
-    def forward_triples(self, indexed_triple: torch.Tensor) -> torch.Tensor:
-        # (1) Retrieve embeddings & Apply Dropout & Normalization.
-        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(indexed_triple)
-        # (2) Split (1) into real and imaginary parts.
-        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(head_ent_emb, 4)
-        emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k = torch.hsplit(rel_ent_emb, 4)
-        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(tail_ent_emb, 4)
-
-        # (2)
-        # (2.1) Apply BN + Dropout on (1.2)-relations.
-        # (2.2) Apply quaternion multiplication on (1.1) and (2.1).
-        r_val, i_val, j_val, k_val = quaternion_mul(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
-                                                    Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
-
-        # (3)
-        # (3.1) Dropout on (2)-result of quaternion multiplication.
-        # (3.2) Inner product
-        real_score = torch.sum(r_val * emb_tail_real, dim=1)
-        i_score = torch.sum(i_val * emb_tail_i, dim=1)
-        j_score = torch.sum(j_val * emb_tail_j, dim=1)
-        k_score = torch.sum(k_val * emb_tail_k, dim=1)
-        return real_score + i_score + j_score + k_score
-
-    def forward_k_vs_all(self, x):
-        """
-        Completed.
-        Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,
-        [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
-        Given a batch of head entities and relations => shape (size of batch,| Entities|)
-        """
-
-        # (1) Retrieve embeddings & Apply Dropout & Normalization.
-        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
-        # (2) Split (1) into real and imaginary parts.
-        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(head_ent_emb, 4)
-        emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k = torch.hsplit(rel_ent_emb, 4)
-        r_val, i_val, j_val, k_val = quaternion_mul(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
-                                                    Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
-
-        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(self.entity_embeddings.weight, 4)
-        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = emb_tail_real.transpose(1, 0), emb_tail_i.transpose(1,
-                                                                                                                0), emb_tail_j.transpose(
-            1, 0), emb_tail_k.transpose(1, 0)
-
-        # (3)
-        # (3.1) Dropout on (2)-result of quaternion multiplication.
-        # (3.2) Inner product
-        real_score = torch.mm(r_val, emb_tail_real)
-        i_score = torch.mm(i_val, emb_tail_i)
-        j_score = torch.mm(j_val, emb_tail_j)
-        k_score = torch.mm(k_val, emb_tail_k)
-
-        return real_score + i_score + j_score + k_score
-
 
 class ConvQ(BaseKGE):
     """ Convolutional Quaternion Knowledge Graph Embeddings
@@ -402,9 +443,6 @@ class ConvQ(BaseKGE):
                                         Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
         conv_real, conv_imag_i, conv_imag_j, conv_imag_k = Q_3
 
-
-
-
         r_val, i_val, j_val, k_val = quaternion_mul(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
                                                     Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
 
@@ -413,17 +451,15 @@ class ConvQ(BaseKGE):
                                                                                                                 0), emb_tail_j.transpose(
             1, 0), emb_tail_k.transpose(1, 0)
 
-
         # (3)
         # (3.1) Dropout on (2)-result of quaternion multiplication.
         # (3.2) Inner product
-        real_score = torch.mm(conv_real*r_val, emb_tail_real)
-        i_score = torch.mm(conv_imag_i*i_val, emb_tail_i)
-        j_score = torch.mm(conv_imag_j*j_val, emb_tail_j)
-        k_score = torch.mm(conv_imag_k*k_val, emb_tail_k)
+        real_score = torch.mm(conv_real * r_val, emb_tail_real)
+        i_score = torch.mm(conv_imag_i * i_val, emb_tail_i)
+        j_score = torch.mm(conv_imag_j * j_val, emb_tail_j)
+        k_score = torch.mm(conv_imag_k * k_val, emb_tail_k)
 
         return real_score + i_score + j_score + k_score
-
 
 
 # TODO: Remove these classes

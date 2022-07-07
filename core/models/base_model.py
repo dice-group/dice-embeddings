@@ -28,22 +28,22 @@ class BaseKGE(pl.LightningModule):
         self.weight_decay = None
         self.loss = torch.nn.BCEWithLogitsLoss()
         self.selected_optimizer = None
-        self.normalizer_class = torch.nn.LayerNorm
-        self.sanity_checking()
+        self.normalizer_class = None
+        self.normalize_head_entity_embeddings = lambda x: x
+        self.normalize_relation_embeddings = lambda x: x
+        self.normalize_tail_entity_embeddings = lambda x: x
+        self.init_params_with_sanity_checking()
 
         self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
         self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
         xavier_normal_(self.entity_embeddings.weight.data), xavier_normal_(self.relation_embeddings.weight.data)
 
-        self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim)
-        self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim)
-        self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim)
         # Dropouts
         self.input_dp_ent_real = torch.nn.Dropout(self.input_dropout_rate)
         self.input_dp_rel_real = torch.nn.Dropout(self.input_dropout_rate)
         self.hidden_dropout = torch.nn.Dropout(self.input_dropout_rate)
 
-    def sanity_checking(self):
+    def init_params_with_sanity_checking(self):
         assert self.args['model'] in ['DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO',
                                       'ConEx', 'Shallom']
         if self.args.get('weight_decay'):
@@ -101,11 +101,21 @@ class BaseKGE(pl.LightningModule):
 
         if self.args.get("normalization") == 'LayerNorm':
             self.normalizer_class = torch.nn.LayerNorm
+            self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim)
+            self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim)
+            self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim)
         elif self.args.get("normalization") == 'BatchNorm1d':
+            # https://twitter.com/karpathy/status/1299921324333170689/photo/1
+            # to decrease the memory usage.
             self.normalizer_class = torch.nn.BatchNorm1d
+            self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
+            self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
+            self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
         else:
             raise NotImplementedError()
 
+        # @ TODO: if scoring is not negative sampling
+        # self.normalize_tail_entity_embeddings = lambda x: x
         if self.args.get("optim") in ['NAdam', 'Adam', 'SGD']:
             self.optimizer_name = self.args['optim']
         else:
@@ -119,7 +129,7 @@ class BaseKGE(pl.LightningModule):
 
         if self.optimizer_name == 'SGD':
             self.selected_optimizer = torch.optim.SGD(params=self.parameters(), lr=self.learning_rate,
-                                                      momentum=0, dampening=0, weight_decay=self.weight_decay,
+                                                      momentum=0.05, dampening=0, weight_decay=self.weight_decay,
                                                       nesterov=False)
         elif self.optimizer_name == 'Adam':
             self.selected_optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate,
@@ -141,25 +151,35 @@ class BaseKGE(pl.LightningModule):
     def forward_k_vs_all(self, *args, **kwargs):
         raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_all function')
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: torch.Tensor, y_idx: torch.Tensor = None):
         """
 
         :param x:
         :return:
         """
-        batch_size, dim = x.shape
-        if dim == 3:
-            return self.forward_triples(x)
-        elif dim == 2:
-            # h, y = x[0], x[1]
-            # Note that y can be relation or tail entity.
-            return self.forward_k_vs_all(x=x)
+        if y_idx is None:
+            batch_size, dim = x.shape
+            if dim == 3:
+                return self.forward_triples(x)
+            elif dim == 2:
+                # h, y = x[0], x[1]
+                # Note that y can be relation or tail entity.
+                return self.forward_k_vs_all(x=x)
+            else:
+                raise ValueError('Not valid input')
         else:
-            raise ValueError('Not valid input')
+            return self.forward_k_vs_sample(x=x, target_entity_idx=y_idx)
 
     def training_step(self, batch, batch_idx):
-        x_batch, y_batch = batch
-        yhat_batch = self.forward(x_batch)
+        if len(batch) == 2:
+            x_batch, y_batch = batch
+            yhat_batch = self.forward(x_batch)
+        elif len(batch) == 3:
+            x_batch, y_idx_batch, y_batch, = batch
+            yhat_batch = self.forward(x_batch, y_idx_batch)
+        else:
+            print(len(batch))
+            raise ValueError('Unexpected batch shape..')
         train_loss = self.loss_function(yhat_batch=yhat_batch, y_batch=y_batch)
         return train_loss
 
