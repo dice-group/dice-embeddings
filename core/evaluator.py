@@ -16,13 +16,7 @@ class Evaluator:
         print('Evaluation Starts.')
         if self.executor.args.scoring_technique == 'NegSample':
             self.eval_rank_of_head_and_tail_entity(trained_model)
-        elif self.executor.args.scoring_technique == 'KvsAll':
-            self.eval_with_vs_all(trained_model, form_of_labelling)
-        elif self.executor.args.scoring_technique == '1vsAll':
-            self.eval_with_vs_all(trained_model, form_of_labelling)
-        elif self.executor.args.scoring_technique == 'PvsAll':
-            self.eval_with_vs_all(trained_model, form_of_labelling)
-        elif self.executor.args.scoring_technique == 'CCvsAll':
+        elif self.executor.args.scoring_technique in ['KvsAll', 'KvsSample', '1vsAll', 'PvsAll', 'CCvsAll']:
             self.eval_with_vs_all(trained_model, form_of_labelling)
         elif self.executor.args.scoring_technique in ['BatchRelaxedKvsAll', 'BatchRelaxed1vsAll']:
             self.eval_with_vs_all(trained_model, form_of_labelling)

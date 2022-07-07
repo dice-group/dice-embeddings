@@ -151,27 +151,38 @@ class BaseKGE(pl.LightningModule):
     def forward_k_vs_all(self, *args, **kwargs):
         raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_all function')
 
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: torch.Tensor, y_idx: torch.Tensor = None):
         """
 
         :param x:
         :return:
         """
-        batch_size, dim = x.shape
-        if dim == 3:
-            return self.forward_triples(x)
-        elif dim == 2:
-            # h, y = x[0], x[1]
-            # Note that y can be relation or tail entity.
-            return self.forward_k_vs_all(x=x)
+        if y_idx is None:
+            batch_size, dim = x.shape
+            if dim == 3:
+                return self.forward_triples(x)
+            elif dim == 2:
+                # h, y = x[0], x[1]
+                # Note that y can be relation or tail entity.
+                return self.forward_k_vs_all(x=x)
+            else:
+                raise ValueError('Not valid input')
         else:
-            raise ValueError('Not valid input')
+            return self.forward_k_vs_sample(x=x, target_entity_idx=y_idx)
 
     def training_step(self, batch, batch_idx):
-        x_batch, y_batch = batch
-        yhat_batch = self.forward(x_batch)
+        if len(batch) == 2:
+            x_batch, y_batch = batch
+            yhat_batch = self.forward(x_batch)
+        elif len(batch)==3:
+            x_batch, y_idx_batch, y_batch, = batch
+            yhat_batch = self.forward(x_batch, y_idx_batch)
+        else:
+            print(len(batch))
+            raise ValueError('Unexpected batch shape..')
         train_loss = self.loss_function(yhat_batch=yhat_batch, y_batch=y_batch)
         return train_loss
+
 
     def validation_step(self, batch, batch_idx):
         if len(batch) == 4:

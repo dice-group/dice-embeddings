@@ -184,6 +184,8 @@ class Execute:
                 return self.training_negative_sampling()
             elif self.args.scoring_technique == 'KvsAll':
                 return self.training_kvsall()
+            elif self.args.scoring_technique == 'KvsSample':
+                return self.training_kvssample()
             elif self.args.scoring_technique == 'PvsAll':
                 return self.training_PvsAll()
             elif self.args.scoring_technique == 'CCvsAll':
@@ -475,6 +477,58 @@ class Execute:
 
         model.loss = BatchRelaxedvsAllLoss()
         model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
+        return model, form_of_labelling
+
+    def training_kvssample(self) -> BaseKGE:
+        """
+        Train models with KvsSample
+        D= {(x,y)_i }_i ^n where
+        1. x denotes a tuple of indexes of a head entity and a relation
+        2. y denotes a vector of probabilities, y_j corresponds to probability of j.th indexed entity
+        :return: trained BASEKGE
+        """
+        # (1) Select model and labelling : Entity Prediction or Relation Prediction.
+        model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
+        form_of_labelling='KvsSample'
+        print(f'Stochastic KvsAll training starts: {model.name}')  # -labeling:{form_of_labelling}')
+        # (2) Create training data.
+        dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
+                                     valid_set_idx=self.dataset.valid_set,
+                                     test_set_idx=self.dataset.test_set,
+                                     entity_to_idx=self.dataset.entity_to_idx,
+                                     relation_to_idx=self.dataset.relation_to_idx,
+                                     form=form_of_labelling,
+                                     neg_sample_ratio=self.args.neg_ratio,
+                                     batch_size=self.args.batch_size,
+                                     num_workers=self.args.num_core,
+                                     label_smoothing_rate=self.args.label_smoothing_rate)
+        # (3) Train model.
+        train_dataloaders = dataset.train_dataloader()
+        # Release some memory
+        del dataset
+        if self.args.eval is False:
+            self.dataset.train_set = None
+            self.dataset.valid_set = None
+            self.dataset.test_set = None
+        model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
+        """
+        # @TODO Model Calibration
+        from laplace import Laplace
+        from laplace.utils.subnetmask import ModuleNameSubnetMask
+        from laplace.utils import ModuleNameSubnetMask
+        from laplace import Laplace
+        # No change in link prediciton results
+        subnetwork_mask = ModuleNameSubnetMask(model, module_names=['emb_ent_real'])
+        subnetwork_mask.select()
+        subnetwork_indices = subnetwork_mask.indices
+        la = Laplace(model, 'classification',
+                     subset_of_weights='subnetwork',
+                     hessian_structure='full',
+                     subnetwork_indices=subnetwork_indices)
+        # la.fit(dataset.train_dataloader())
+        # la.optimize_prior_precision(method='CV', val_loader=dataset.val_dataloader())
+        """
+
         return model, form_of_labelling
 
     def k_fold_cross_validation(self) -> Tuple[BaseKGE, str]:

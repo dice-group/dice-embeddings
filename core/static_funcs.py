@@ -163,10 +163,9 @@ def model_fitting(trainer, model, train_dataloaders) -> None:
 
 
 def initialize_pl_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
-    """ Initialize pl.Traner from input arguments """
+    """ Initialize pl.Trainer from input arguments """
     print('Initialize Pytorch-lightning Trainer')
     # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
-
     if args.test_mode:
         return pl.Trainer.from_argparse_args(args,
                                              plugins=plugins,
@@ -476,7 +475,8 @@ def preprocesses_input_args(arg):
     arg.eval_on_train = True if arg.eval_on_train == 1 else False
     # reciprocal checking
     # @TODO We need better way for using apply_reciprical_or_noise.
-    if arg.scoring_technique in ['PvsAll', 'CCvsAll', 'KvsAll', '1vsAll', 'BatchRelaxed1vsAll', 'BatchRelaxedKvsAll']:
+    if arg.scoring_technique in ['KvsSample', 'PvsAll', 'CCvsAll', 'KvsAll', '1vsAll', 'BatchRelaxed1vsAll',
+                                 'BatchRelaxedKvsAll']:
         arg.apply_reciprical_or_noise = True
     elif arg.scoring_technique == 'NegSample':
         arg.apply_reciprical_or_noise = False
