@@ -575,9 +575,14 @@ class ContinuousExecute(Execute):
         assert os.path.isfile(args.path_experiment_folder + '/configuration.json')
         # (1) Load Previous input configuration
         previous_args = load_json(args.path_experiment_folder + '/configuration.json')
+        dargs = vars(args)
+        del args
+        for k in list(dargs.keys()):
+            if dargs[k] is None:
+                del dargs[k]
         # (2) Update (1) with new input
-        previous_args.update(vars(args))
-        report = load_json(args.path_experiment_folder + '/report.json')
+        previous_args.update(dargs)
+        report = load_json(dargs['path_experiment_folder'] + '/report.json')
         previous_args['num_entities'] = report['num_entities']
         previous_args['num_relations'] = report['num_relations']
         previous_args = SimpleNamespace(**previous_args)
