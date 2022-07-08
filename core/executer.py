@@ -588,4 +588,5 @@ class ContinuousExecute(Execute):
         previous_args = SimpleNamespace(**previous_args)
         previous_args.full_storage_path = previous_args.path_experiment_folder
         print('ContinuousExecute starting...')
+        print(previous_args)
         super().__init__(previous_args, continuous_training=True)
