@@ -314,6 +314,7 @@ class KvsSampleDataset(Dataset):
             positives_idx = random.sample(positives_idx, self.neg_sample_ratio)
 
         positives_idx = torch.LongTensor(positives_idx)
+        # TODO: Sample based on a given relation. Not randomly ?
         negative_idx = torch.randint(low=0, high=self.num_entities, size=(self.neg_sample_ratio,))
         y_idx = torch.cat((positives_idx, negative_idx), 0)
         y_vec = torch.cat((torch.ones(self.neg_sample_ratio), torch.zeros(self.neg_sample_ratio)), 0)

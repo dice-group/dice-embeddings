@@ -1,0 +1,1 @@
+# 1vsAll Training Technique
