@@ -33,7 +33,7 @@ class Evaluator:
         if self.executor.args.eval_on_train:
             res = self.evaluate_lp(trained_model, self.executor.dataset.train_set,
                                    f'Evaluate {trained_model.name} on Train set')
-            self.self.report['Train'] = res
+            self.report['Train'] = res
         # 5. Test model on the validation and test dataset if it is needed.
         if self.executor.args.eval:
             if self.executor.dataset.valid_set is not None:

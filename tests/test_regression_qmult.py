@@ -24,7 +24,7 @@ class TestRegressionQmult:
         args.read_only_few = None
         args.sample_triples_ratio = None
         result = Execute(args).start()
-        assert 1.00 >= result['Train']['H@1'] >= 0.85
+        assert 1.00 >= result['Train']['H@1'] >= 0.84
         assert 0.80 >= result['Val']['H@1'] >= 0.71
         assert 0.80 >= result['Test']['H@1'] >= 0.73
 
@@ -54,7 +54,7 @@ class TestRegressionQmult:
         args.read_only_few = None
         args.sample_triples_ratio = None
         result = Execute(args).start()
-        assert .91 >= result['Train']['H@1'] >= 0.86
+        assert 0.92 >= result['Train']['H@1'] >= 0.86
         assert 0.75 >= result['Test']['H@1'] >= 0.71
         assert 0.75 >= result['Val']['H@1'] >= 0.71
 
@@ -114,7 +114,7 @@ class TestRegressionQmult:
         args.read_only_few = None
         args.sample_triples_ratio = None
         result = Execute(args).start()
-        assert 0.75 >= result['Train']['H@1'] >= .68
+        assert 0.76 >= result['Train']['H@1'] >= .68
         assert 0.64 >= result['Test']['H@1'] >= .56
         assert 0.64 >= result['Val']['H@1'] >= .56
         assert result['Train']['H@10'] >= result['Train']['H@3'] >= result['Train']['H@1']

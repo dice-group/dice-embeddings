@@ -15,7 +15,7 @@ Pandas allows us to read, preprocess (removing literals) and indexed input knowl
 Through parquet within pandas or dask, a billion of triples can be read in parallel fashion. 
 Importantly, dask allow us to perform all necessary computations on a single CPU as well as a cluster of computers.
 
-**Why Pytorch-lightning ?**
+**Why Pytorch & Pytorch-lightning ?**
 Scale the training without the boilerplate.
 Importantly, Pytorch-lightning provides state-of-the-art training techniques (e.g. Fully Sharded Training, FairScale, and DeepSpeed) to train
 gigantic models (>10B parameters). These techniques do not simply copy a model into all GPUs, hence, allow us to use our hardware efficiently. 
@@ -66,8 +66,12 @@ Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , i
 - [Mammographic ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/ConEx_Mammographic.zip)
 - For more please look at [Hobbit Data](https://hobbitdata.informatik.uni-leipzig.de/KGE/)
 
-## Training
+## Training 
 please see examples/Training.md.
+### Documentation
+In the documents folder, we explained many details about knowledge graphs, knowledge graph embeddings, training strategies and many more background knowledge.
+We continuously work on documenting each and every step to increase the readability of our code.
+
 
 ## Interactive Link Prediction on DBpedia
 ```python
@@ -92,9 +96,6 @@ Running on public URL: https://54886.gradio.app
 This share link expires in 72 hours. For free permanent hosting, check out Spaces (https://huggingface.co/spaces)
 ```
 ![alt text](core/figures/deploy_qmult_family.png)
-### Documentation
-We aim to document each function by adding input and output types along with concise description of the performt computation.
-Yet, if something is unclear, please let us know.
 ## How to cite
 Currently, we are working on our manuscript describing our framework. 
 If you really like our work and want to cite it now, feel free to chose one :) 

@@ -52,8 +52,8 @@ class TestRegressionOmult:
         args.num_folds_for_cv = None
         result = Execute(args).start()
         assert 0.75 >= result['Test']['H@1'] >= 0.72
-        assert 0.75 >= result['Val']['H@1'] >= 0.70
-        assert 0.91 >= result['Train']['H@1'] >= 0.86
+        assert 0.77 >= result['Val']['H@1'] >= 0.70
+        assert 0.92 >= result['Train']['H@1'] >= 0.86
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):

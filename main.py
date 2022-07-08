@@ -12,7 +12,7 @@ def argparse_default(description=None):
                         help="The path of a folder containing input data")
     parser.add_argument("--save_embeddings_as_csv", type=bool, default=False,
                         help='A flag for saving embeddings in csv file.')
-    parser.add_argument("--num_core", type=int, default=4,
+    parser.add_argument("--num_core", type=int, default=1,
                         help='Number of cores to be used.')
     parser.add_argument("--dnf_predicates", type=list, default=None,
                         help="Predicates in Disjunctive normal form to select only valid triples on the fly."
@@ -21,7 +21,7 @@ def argparse_default(description=None):
                         help="Embeddings, model, and any other related data will be stored therein.")
     parser.add_argument("--read_only_few", type=int, default=None, help='READ only first N triples. If 0, read all.')
     parser.add_argument("--sample_triples_ratio", type=float, default=None, help='Sample input data.')
-    parser.add_argument("--seed_for_computation", type=int, default=1, help='Seed for all, see pl seed_everything().')
+    parser.add_argument("--seed_for_computation", type=int, default=0, help='Seed for all, see pl seed_everything().')
     parser.add_argument("--min_freq_for_vocab", type=int, default=None,
                         help='Min number of triples for a vocab term to be considered')
     # Model and Training Parameters
@@ -38,7 +38,7 @@ def argparse_default(description=None):
     parser.add_argument("--lr", type=float, default=0.01, help='Learning rate, 0.0003 maybe?')
     # Hyperparameters for training.
     parser.add_argument('--scoring_technique', default='KvsSample', help="KvsSample, 1vsAll, KvsAll, NegSample")
-    parser.add_argument('--neg_ratio', type=int, default=1, help='The number of negative triples generated per positive triple.')
+    parser.add_argument('--neg_ratio', type=int, default=135, help='The number of negative triples generated per positive triple.')
     # Additional training params
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
                         help='At every X number of epochs model will be saved. If None, we save 4 times.')
@@ -70,6 +70,7 @@ def argparse_default(description=None):
                         help='DASK can be used if the input dataset does not fit into memory.'
                              '**Its quite common for Dask DataFrame to not provide a speed up over Pandas, especially for datasets that fit comfortably into memory by MRocklin (https://stackoverflow.com/a/57104255/5363103)**')
     parser.add_argument("--test_mode", type=bool, default=False)
+    parser.add_argument("--torch_trainer", type=bool, default=False)
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)

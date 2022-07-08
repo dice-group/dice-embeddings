@@ -76,6 +76,6 @@ class TestRegressionComplEx:
         args.read_only_few = None
         args.num_folds_for_cv = None
         result = Execute(args).start()
-        assert 0.73 >= result['Train']['H@1'] >= .65
+        assert 0.76 >= result['Train']['H@1'] >= .65
         assert 0.71 >= result['Val']['H@1'] >= .57
         assert 0.71 >= result['Test']['H@1'] >= .53

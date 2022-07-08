@@ -13,6 +13,7 @@ import pytorch_lightning as pl
 import sys
 from .helper_classes import CustomArg
 from .models import *
+from .trainers import CustomTrainer
 import time
 import pandas as pd
 import json
@@ -162,19 +163,23 @@ def model_fitting(trainer, model, train_dataloaders) -> None:
     print(f'Model fitting is done!')
 
 
-def initialize_pl_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
-    """ Initialize pl.Trainer from input arguments """
-    print('Initialize Pytorch-lightning Trainer')
-    # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
-    if args.test_mode:
-        return pl.Trainer.from_argparse_args(args,
-                                             plugins=plugins,
-                                             callbacks=callbacks)
+def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
+    """ Initialize Trainer from input arguments """
+    if args.torch_trainer:
+        print('Initialize Custom Trainer')
+        return CustomTrainer(args)
     else:
-        return pl.Trainer.from_argparse_args(args,
-                                             strategy=DDPStrategy(find_unused_parameters=False),
-                                             plugins=plugins,
-                                             callbacks=callbacks)
+        print('Initialize Pytorch-lightning Trainer')
+        # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
+        if args.test_mode:
+            return pl.Trainer.from_argparse_args(args,
+                                                 plugins=plugins,
+                                                 callbacks=callbacks)
+        else:
+            return pl.Trainer.from_argparse_args(args,
+                                                 strategy=DDPStrategy(find_unused_parameters=False),
+                                                 plugins=plugins,
+                                                 callbacks=callbacks)
 
 
 def preprocess_dataframe_of_kg(df: Union[dask.dataframe.core.DataFrame, pandas.DataFrame], read_only_few: int = None,

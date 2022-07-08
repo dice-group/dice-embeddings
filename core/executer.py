@@ -142,7 +142,7 @@ class Execute:
         # (4) Eval model.
         self.evaluator.eval(trained_model, form_of_labelling)
         # (4) Return the report of the training process.
-        return self.report
+        return {**self.report, **self.evaluator.report}
 
     def training_process(self) -> BaseKGE:
         """
@@ -165,8 +165,8 @@ class Execute:
                                      path=self.args.full_storage_path),
                      ModelSummary(max_depth=-1)]
 
-        # (2) Initialize Pytorch-lightning Trainer
-        self.trainer = initialize_pl_trainer(self.args, callbacks, plugins=[])
+        # (2) Initialize Trainer
+        self.trainer = initialize_trainer(self.args, callbacks, plugins=[])
         # (3) Use (2) to train a KGE model
         trained_model, form_of_labelling = self.train()
         # (5) Return trained model
