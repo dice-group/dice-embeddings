@@ -158,10 +158,14 @@ class BaseKGE(pl.LightningModule):
     def forward_k_vs_all(self, *args, **kwargs):
         raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_all function')
 
+    def forward_k_vs_sample(self, *args, **kwargs):
+        raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_sample function')
+
     def forward(self, x: torch.Tensor, y_idx: torch.Tensor = None):
         """
 
-        :param x:
+        :param x: a batch of inputs
+        :param y_idx: index of selected output labels.
         :return:
         """
         if y_idx is None:
