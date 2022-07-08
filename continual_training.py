@@ -9,10 +9,11 @@ from types import SimpleNamespace
 def argparse_default(description=None):
     parser = argparse.ArgumentParser(add_help=False)
     # Dataset and storage related
-    parser.add_argument("--path_experiment_folder", type=str, default="Experiments/2022-07-08 13:56:07.504626",
+    parser.add_argument("--path_experiment_folder", type=str, default="Experiments/2022-07-08 14:15:59.442837",
                         help="The path of a folder containing pretrained model")
     parser.add_argument("--num_epochs", type=int, default=None, help='Number of epochs for training.')
     parser.add_argument("--lr", type=float, default=None)
+    parser.add_argument("--num_core", type=int, default=None,help='Number of cores to be used.')
     parser.add_argument('--scoring_technique', default=None, help="KvsSample, 1vsAll, KvsAll, NegSample")
     parser.add_argument('--neg_ratio', type=int, default=None, help='The number of negative triples generated per positive triple.')
     parser.add_argument('--optim', type=str, default=None, help='[NAdam, Adam, SGD]')

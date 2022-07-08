@@ -1,10 +1,12 @@
 import torch
 import numpy as np
+import json
 
 
 class Evaluator:
     def __init__(self, executor):
         self.executor = executor
+        self.report = dict()
 
     def eval(self, trained_model, form_of_labelling) -> None:
         """
@@ -22,6 +24,8 @@ class Evaluator:
             self.eval_with_vs_all(trained_model, form_of_labelling)
         else:
             raise ValueError(f'Invalid argument: {self.executor.args.scoring_technique}')
+        with open(self.executor.args.full_storage_path + '/eval_report.json', 'w') as file_descriptor:
+            json.dump(self.report, file_descriptor, indent=4)
         print('Evaluation Ends.')
 
     def eval_rank_of_head_and_tail_entity(self, trained_model):
@@ -29,16 +33,16 @@ class Evaluator:
         if self.executor.args.eval_on_train:
             res = self.evaluate_lp(trained_model, self.executor.dataset.train_set,
                                    f'Evaluate {trained_model.name} on Train set')
-            self.executor.report['Train'] = res
+            self.self.report['Train'] = res
         # 5. Test model on the validation and test dataset if it is needed.
         if self.executor.args.eval:
             if self.executor.dataset.valid_set is not None:
-                self.executor.report['Val'] = self.evaluate_lp(trained_model, self.executor.dataset.valid_set,
-                                                               f'Evaluate {trained_model.name} of Validation set')
+                self.report['Val'] = self.evaluate_lp(trained_model, self.executor.dataset.valid_set,
+                                                      f'Evaluate {trained_model.name} of Validation set')
 
             if self.executor.dataset.test_set is not None:
-                self.executor.report['Test'] = self.evaluate_lp(trained_model, self.executor.dataset.test_set,
-                                                                f'Evaluate {trained_model.name} of Test set')
+                self.report['Test'] = self.evaluate_lp(trained_model, self.executor.dataset.test_set,
+                                                       f'Evaluate {trained_model.name} of Test set')
 
     def eval_with_vs_all(self, trained_model, form_of_labelling) -> None:
         """ Evaluate model after reciprocal triples are added """
@@ -47,7 +51,7 @@ class Evaluator:
             res = self.evaluate_lp_k_vs_all(trained_model, self.executor.dataset.train_set,
                                             info=f'Evaluate {trained_model.name} on Train set',
                                             form_of_labelling=form_of_labelling)
-            self.executor.report['Train'] = res
+            self.report['Train'] = res
 
         # 5. Test model on the validation and test dataset if it is needed.
         if self.executor.args.eval:
@@ -55,12 +59,12 @@ class Evaluator:
                 res = self.evaluate_lp_k_vs_all(trained_model, self.executor.dataset.valid_set,
                                                 f'Evaluate {trained_model.name} on Validation set',
                                                 form_of_labelling=form_of_labelling)
-                self.executor.report['Val'] = res
+                self.report['Val'] = res
             if self.executor.dataset.test_set is not None:
                 res = self.evaluate_lp_k_vs_all(trained_model, self.executor.dataset.test_set,
                                                 f'Evaluate {trained_model.name} on Test set',
                                                 form_of_labelling=form_of_labelling)
-                self.executor.report['Test'] = res
+                self.report['Test'] = res
 
     def evaluate_lp_k_vs_all(self, model, triple_idx, info=None, form_of_labelling=None):
         """
