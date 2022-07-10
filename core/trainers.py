@@ -46,7 +46,8 @@ class CustomTrainer:
         self.model.to(self.device)
         
         num_total_batches = len(data_loader)
-        print(f'Number of batches for an epoch:{num_total_batches}')
+        print_period=num_total_batches // 10
+        print(f'Number of batches for an epoch:{num_total_batches}\t printing period:{print_period}')
         for epoch in range(self.attributes['max_epochs']):
             epoch_loss = 0
             start_time=time.time()
@@ -60,10 +61,10 @@ class CustomTrainer:
                 batch_loss = self.loss_function(yhat_batch, y_batch)
 
                 epoch_loss += batch_loss.item()
-                if i > 0 and num_total_batches % i == 10:
-                    print(f"Batch:{i}\t avg. batch loss until now:\t{epoch_loss / i}")
+                if i > 0 and i % print_period == 0:
+                    print(f"Batch:{i}\t avg. batch loss until now:\t{epoch_loss / i}\t TotalRuntime:{(time.time()-start_time)/60:.3f} minutes")
+        
                 # Backward pass
-                
                 batch_loss.backward()
                 # Adjust learning weights
                 self.optimizer.step()
