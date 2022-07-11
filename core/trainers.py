@@ -6,6 +6,7 @@ import torch.distributed as dist
 import os
 import tempfile
 
+
 class CustomTrainer:
     """ Custom Trainer"""
 
@@ -93,15 +94,15 @@ def setup(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = '12355'
 
-    # initialize the process group
-    dist.init_process_group('nccl', rank=rank, world_size=world_size)
+    # initialize the process group, nccl
+    dist.init_process_group(backend='nccl', rank=rank, world_size=world_size)
 
 
 def cleanup():
     dist.destroy_process_group()
 
 
-def distributed_training(rank: int, args):
+def distributed_training(rank: int, *args):
     """
     distributed_training is called as the entrypoint of the spawned process.
     This function must be defined at the top level of a module so it can be pickled and spawned.
@@ -110,6 +111,8 @@ def distributed_training(rank: int, args):
     The function is called as ``fn(i, *args)``, where ``i`` is the process index and ``args`` is the passed through tuple of arguments.
     """
     world_size, model, dataset = args
+    batch_size = 6000
+    max_epochs = 1
 
     print(f"Running basic DDP example on rank {rank}.")
     print(f"torch.utils.data.get_worker_info():{torch.utils.data.get_worker_info()}")
@@ -118,32 +121,30 @@ def distributed_training(rank: int, args):
     # Move the model to GPU with id rank
     model = model.to(rank)
     ddp_model = DDP(model, device_ids=[rank])
-
     loss_function = torch.nn.BCEWithLogitsLoss()
-    optimizer = optim.Adam(ddp_model.parameters(), lr=0.001)
-    train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset,
+    optimizer = torch.optim.Adam(ddp_model.parameters(), lr=0.001)
+    train_sampler = torch.utils.data.distributed.DistributedSampler(dataset,
                                                                     num_replicas=world_size,
                                                                     rank=rank)
     # worker_init_fn?
     data_loader = torch.utils.data.DataLoader(dataset,
                                               batch_size=batch_size,
-                                              shuffle=True,
+                                              shuffle=False,
                                               num_workers=0,
                                               collate_fn=dataset.collate_fn,
                                               sampler=train_sampler)
     num_total_batches = len(data_loader)
     print_period = max(num_total_batches // 10, 1)
     print(f'Number of batches for an epoch:{num_total_batches}\t printing period:{print_period}')
-    for epoch in range(self.attributes['max_epochs']):
+    for epoch in range(max_epochs):
         epoch_loss = 0
         start_time = time.time()
         for i, z in enumerate(data_loader):
             # Zero your gradients for every batch!
-            self.optimizer.zero_grad()
+            optimizer.zero_grad()
             x_batch, y_batch = z
             # the data transfer should be overlapped by the kernel execution
-            x_batch, y_batch = x_batch.to(self.device, non_blocking=True), y_batch.to(self.device,
-                                                                                      non_blocking=True)
+            x_batch, y_batch = x_batch.to(device, non_blocking=True), y_batch.to(device, non_blocking=True)
             yhat_batch = model(x_batch)
             batch_loss = loss_function(yhat_batch, y_batch)
 
@@ -162,7 +163,7 @@ def distributed_training(rank: int, args):
         else:
             print(f"{epoch} epoch: Average batch loss:{epoch_loss:.3f}")
 
-        if rank==0:
+        if rank == 0:
             CHECKPOINT_PATH = tempfile.gettempdir() + "/model.checkpoint"
             torch.save(ddp_model.state_dict(), CHECKPOINT_PATH)
 

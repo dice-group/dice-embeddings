@@ -13,7 +13,7 @@ import pytorch_lightning as pl
 import sys
 from .helper_classes import CustomArg
 from .models import *
-from .trainers import CustomTrainer
+from .trainers import CustomTrainer, CustomDistributedTrainer
 import time
 import pandas as pd
 import json
@@ -167,7 +167,7 @@ def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     """ Initialize Trainer from input arguments """
     if args.torch_trainer:
         print('Initialize Custom Trainer')
-        return CustomTrainer(args)
+        return CustomDistributedTrainer(args)#CustomTrainer(args)
     else:
         print('Initialize Pytorch-lightning Trainer')
         # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
