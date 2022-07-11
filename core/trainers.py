@@ -111,7 +111,7 @@ def distributed_training(rank: int, *args):
     The function is called as ``fn(i, *args)``, where ``i`` is the process index and ``args`` is the passed through tuple of arguments.
     """
     world_size, model, dataset = args
-    batch_size = 6000
+    batch_size = 1024
     max_epochs = 1
 
     print(f"Running basic DDP example on rank {rank}.")
@@ -122,7 +122,7 @@ def distributed_training(rank: int, *args):
     model = model.to(rank)
     ddp_model = DDP(model, device_ids=[rank])
     loss_function = torch.nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.Adam(ddp_model.parameters(), lr=0.001)
+    optimizer = torch.optim.SGD(ddp_model.parameters(), lr=0.001)
     train_sampler = torch.utils.data.distributed.DistributedSampler(dataset,
                                                                     num_replicas=world_size,
                                                                     rank=rank)
@@ -144,7 +144,7 @@ def distributed_training(rank: int, *args):
             optimizer.zero_grad()
             x_batch, y_batch = z
             # the data transfer should be overlapped by the kernel execution
-            x_batch, y_batch = x_batch.to(device, non_blocking=True), y_batch.to(device, non_blocking=True)
+            x_batch, y_batch = x_batch.to(rank, non_blocking=True), y_batch.to(rank, non_blocking=True)
             yhat_batch = model(x_batch)
             batch_loss = loss_function(yhat_batch, y_batch)
 
