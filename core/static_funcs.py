@@ -167,7 +167,7 @@ def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     """ Initialize Trainer from input arguments """
     if args.torch_trainer:
         print('Initialize Custom Trainer')
-        return CustomDistributedTrainer(args)#CustomTrainer(args)
+        return CustomTrainer(args)#CustomDistributedTrainer(args)#CustomTrainer(args)
     else:
         print('Initialize Pytorch-lightning Trainer')
         # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995

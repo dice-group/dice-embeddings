@@ -136,6 +136,7 @@ def distributed_training(rank: int, *args):
     num_total_batches = len(data_loader)
     print_period = max(num_total_batches // 10, 1)
     print(f'Number of batches for an epoch:{num_total_batches}\t printing period:{print_period}')
+    fp16_scaler = torch.cuda.amp.GradScaler(enabled=True)
     for epoch in range(max_epochs):
         epoch_loss = 0
         start_time = time.time()
@@ -145,18 +146,26 @@ def distributed_training(rank: int, *args):
             x_batch, y_batch = z
             # the data transfer should be overlapped by the kernel execution
             x_batch, y_batch = x_batch.to(rank, non_blocking=True), y_batch.to(rank, non_blocking=True)
-            yhat_batch = model(x_batch)
-            batch_loss = loss_function(yhat_batch, y_batch)
+            with torch.cuda.amp.autocast():
+                yhat_batch = model(x_batch)
+                batch_loss = loss_function(yhat_batch, y_batch)
 
             epoch_loss += batch_loss.item()
             if i > 0 and i % print_period == 0:
                 print(
                     f"Batch:{i}\t avg. batch loss until now:\t{epoch_loss / i}\t TotalRuntime:{(time.time() - start_time) / 60:.3f} minutes")
-
+            
+            batch_loss=fp16_scaler.scale(batch_loss)
             # Backward pass
             batch_loss.backward()
             # Adjust learning weights
-            optimizer.step()
+            fp16_scaler.step(optimizer)#optimizer.step()
+            fp16_scaler.update()
+
+            if i == 100:
+                print('Break the epoch')
+                break
+
         print(f"Epoch took {(time.time() - start_time) / 60:.3f} minutes")
         if i > 0:
             print(f"{epoch} epoch: Average batch loss:{epoch_loss / i:.3f}")
@@ -164,8 +173,7 @@ def distributed_training(rank: int, *args):
             print(f"{epoch} epoch: Average batch loss:{epoch_loss:.3f}")
 
         if rank == 0:
-            CHECKPOINT_PATH = tempfile.gettempdir() + "/model.checkpoint"
-            torch.save(ddp_model.state_dict(), CHECKPOINT_PATH)
+            torch.save(ddp_model.state_dict(), "model.pt")
 
 
 class CustomDistributedTrainer:
