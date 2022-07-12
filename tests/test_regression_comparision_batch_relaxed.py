@@ -22,6 +22,7 @@ class TestRegressionQmult:
         args.eval_on_train = True
         args.read_only_few = None
         args.sample_triples_ratio = None
+        args.torch_trainer = None
         result = Execute(args).start()
         assert 1.00 >= result['Train']['H@1'] >= 0.85
         assert 0.85 >= result['Val']['H@1'] >= 0.70

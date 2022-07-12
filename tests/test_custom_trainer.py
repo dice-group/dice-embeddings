@@ -23,7 +23,7 @@ class TestDefaultParams:
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
-        args.torch_trainer=True
+        args.torch_trainer = True
         Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -44,7 +44,7 @@ class TestDefaultParams:
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
-        args.torch_trainer=True
+        args.torch_trainer = True
         Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -65,7 +65,7 @@ class TestDefaultParams:
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.torch_trainer=True
+        args.torch_trainer = True
         Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -86,7 +86,7 @@ class TestDefaultParams:
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
-        args.torch_trainer=True
+        args.torch_trainer = True
         Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -95,7 +95,7 @@ class TestDefaultParams:
         args.model = 'OMult'
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'
-        args.neg_ratio=1
+        args.neg_ratio = 1
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
@@ -108,7 +108,7 @@ class TestDefaultParams:
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
-        args.torch_trainer=True
+        args.torch_trainer = True
         Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -117,7 +117,7 @@ class TestDefaultParams:
         args.model = 'ConvO'
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'
-        args.neg_ratio=1
+        args.neg_ratio = 1
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
@@ -130,7 +130,7 @@ class TestDefaultParams:
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.torch_trainer=True
+        args.torch_trainer = True
         Execute(args).start()
 
     def test_distmult(self):
@@ -138,7 +138,7 @@ class TestDefaultParams:
         args.model = 'DistMult'
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'
-        args.neg_ratio=1
+        args.neg_ratio = 1
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
@@ -151,5 +151,5 @@ class TestDefaultParams:
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
-        args.torch_trainer=True
+        args.torch_trainer = True
         Execute(args).start()

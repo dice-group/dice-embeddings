@@ -22,7 +22,8 @@ class TestCV_NegSample:
         args.test_mode = True
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.eval = 1
+        args.eval = True
+        args.torch_trainer = None
         args.num_folds_for_cv = 3
         Execute(args).start()
 
@@ -43,7 +44,8 @@ class TestCV_NegSample:
         args.test_mode = True
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.eval = 1
+        args.eval = True
+        args.torch_trainer = None
         args.num_folds_for_cv = 3
         Execute(args).start()
 
@@ -64,7 +66,8 @@ class TestCV_NegSample:
         args.test_mode = True
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.eval = 1
+        args.eval = True
+        args.torch_trainer = None
         args.num_folds_for_cv = 3
         Execute(args).start()
 
@@ -85,7 +88,8 @@ class TestCV_NegSample:
         args.test_mode = True
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.eval = 1
+        args.eval = True
+        args.torch_trainer = None
         args.num_folds_for_cv = 3
         Execute(args).start()
 
@@ -106,7 +110,8 @@ class TestCV_NegSample:
         args.test_mode = True
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.eval = 1
+        args.eval = True
+        args.torch_trainer = None
         args.num_folds_for_cv = 3
         Execute(args).start()
 
@@ -126,7 +131,8 @@ class TestCV_NegSample:
         args.test_mode = True
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.eval = 1
+        args.eval = True
+        args.torch_trainer = None
         args.num_folds_for_cv = 3
         Execute(args).start()
 
@@ -146,7 +152,8 @@ class TestCV_NegSample:
         args.test_mode = True
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.eval = 1
+        args.eval = True
+        args.torch_trainer = None
         args.num_folds_for_cv = 3
         Execute(args).start()
 
@@ -166,6 +173,7 @@ class TestCV_NegSample:
         args.test_mode = True
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.eval = 1
+        args.eval = True
+        args.torch_trainer = None
         args.num_folds_for_cv = 3
         Execute(args).start()

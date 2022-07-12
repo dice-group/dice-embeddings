@@ -22,6 +22,7 @@ class TestCV_1vsAll:
         args.test_mode=True
         args.read_only_few = None
         args.sample_triples_ratio = None
+        args.torch_trainer = None
         args.eval = 1
         args.num_folds_for_cv = 3
         Execute(args).start()
@@ -42,6 +43,7 @@ class TestCV_1vsAll:
         args.feature_map_dropout_rate = 0.0
         args.read_only_few = None
         args.sample_triples_ratio = None
+        args.torch_trainer = None
         args.eval = 1
         args.num_folds_for_cv = 3
         Execute(args).start()
@@ -62,6 +64,7 @@ class TestCV_1vsAll:
         args.feature_map_dropout_rate = 0.0
         args.read_only_few = None
         args.sample_triples_ratio = None
+        args.torch_trainer = None
         args.eval = 1
         args.num_folds_for_cv = 3
         Execute(args).start()
@@ -82,8 +85,9 @@ class TestCV_1vsAll:
         args.feature_map_dropout_rate = 0.0
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.eval = 1
+        args.eval = True
         args.num_folds_for_cv = 3
+        args.torch_trainer = None
         Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -102,7 +106,8 @@ class TestCV_1vsAll:
         args.feature_map_dropout_rate = 0.0
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.eval = 1
+        args.eval = True
+        args.torch_trainer = None
         args.num_folds_for_cv = 3
         Execute(args).start()
 
@@ -122,8 +127,9 @@ class TestCV_1vsAll:
         args.feature_map_dropout_rate = 0.0
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.eval = 1
+        args.eval = True
         args.num_folds_for_cv = 3
+        args.torch_trainer = None
         Execute(args).start()
 
     def test_distmult_1vs_all(self):
@@ -141,8 +147,9 @@ class TestCV_1vsAll:
         args.feature_map_dropout_rate = 0.0
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.eval = 1
+        args.eval = True
         args.num_folds_for_cv = 3
+        args.torch_trainer = None
         Execute(args).start()
 
     def test_complex_1vs_all(self):
@@ -160,6 +167,7 @@ class TestCV_1vsAll:
         args.feature_map_dropout_rate = 0.0
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.eval = 1
+        args.eval = True
         args.num_folds_for_cv = 3
+        args.torch_trainer = None
         Execute(args).start()

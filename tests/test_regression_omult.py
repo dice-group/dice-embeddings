@@ -25,6 +25,7 @@ class TestRegressionOmult:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
+        args.torch_trainer = None
         result = Execute(args).start()
         assert 0.90 >= result['Train']['H@1'] >= 0.65
         assert 0.75 >= result['Val']['H@1'] >= 0.65
@@ -50,6 +51,7 @@ class TestRegressionOmult:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
+        args.torch_trainer = None
         result = Execute(args).start()
         assert 0.75 >= result['Test']['H@1'] >= 0.72
         assert 0.77 >= result['Val']['H@1'] >= 0.70
@@ -77,6 +79,7 @@ class TestRegressionOmult:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
+        args.torch_trainer = None
         result = Execute(args).start()
         assert 0.60 >= result['Test']['H@1'] >= .25
         assert 0.60 >= result['Val']['H@1'] >= .25
