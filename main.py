@@ -38,7 +38,8 @@ def argparse_default(description=None):
     parser.add_argument("--lr", type=float, default=0.01, help='Learning rate, 0.0003 maybe?')
     # Hyperparameters for training.
     parser.add_argument('--scoring_technique', default='NegSample', help="KvsSample, 1vsAll, KvsAll, NegSample")
-    parser.add_argument('--neg_ratio', type=int, default=2, help='The number of negative triples generated per positive triple.')
+    parser.add_argument('--neg_ratio', type=int, default=2,
+                        help='The number of negative triples generated per positive triple.')
     # Additional training params
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
                         help='At every X number of epochs model will be saved. If None, we save 4 times.')
@@ -70,7 +71,8 @@ def argparse_default(description=None):
                         help='DASK can be used if the input dataset does not fit into memory.'
                              '**Its quite common for Dask DataFrame to not provide a speed up over Pandas, especially for datasets that fit comfortably into memory by MRocklin (https://stackoverflow.com/a/57104255/5363103)**')
     parser.add_argument("--test_mode", type=bool, default=False)
-    parser.add_argument("--torch_trainer", type=bool, default=True)
+    parser.add_argument("--torch_trainer", type=str, default='DistributedDataParallelTrainer',
+                        help='None, DistributedDataParallelTrainer or DataParallelTrainer')
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)
