@@ -139,5 +139,5 @@ url={https://openreview.net/forum?id=6T45-4TFqaX}}
   year={2021},
   organization={IEEE}
 ```
-For any questions or wishes, please contact:  ```caglar.demir@upb.de``` or ```caglardemir8@gmail.com.de```
+For any questions or wishes, please contact:  ```caglar.demir@upb.de``` or ```caglardemir8@gmail.com```
 
