@@ -1,3 +1,12 @@
+""" Custom Trainer Class
+
+* DataParallelTrainer implements a trainer class as in pytorch lightning based on torch.nn.DataParallel
+
+* DistributedDataParallelTrainer implements a trainer class based on torch.nn.parallel.DistributedDataParallel
+
+Although DistributedDataParallel is faster than DataParallel, the former is more memory extensive.
+
+"""
 import torch
 import time
 import torch.multiprocessing as mp
@@ -7,8 +16,8 @@ import os
 import tempfile
 
 
-class CustomTrainer:
-    """ Custom Trainer"""
+class DataParallelTrainer:
+    """ A Trainer based on torch.nn.DataParallel (https://pytorch.org/docs/stable/generated/torch.nn.DataParallel.html)"""
 
     def __init__(self, args):
         self.attributes = vars(args)
@@ -93,8 +102,8 @@ class CustomTrainer:
 def setup(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = '12355'
-
     # initialize the process group, nccl
+    # gloo, mpi or ncclhttps://pytorch.org/docs/stable/distributed.html#torch.distributed.init_process_group
     dist.init_process_group(backend='nccl', rank=rank, world_size=world_size)
 
 
@@ -110,10 +119,7 @@ def distributed_training(rank: int, *args):
 
     The function is called as ``fn(i, *args)``, where ``i`` is the process index and ``args`` is the passed through tuple of arguments.
     """
-    world_size, model, dataset = args
-    batch_size = 1024
-    max_epochs = 1
-
+    world_size, model, dataset, batch_size, max_epochs, lr = args
     print(f"Running basic DDP example on rank {rank}.")
     print(f"torch.utils.data.get_worker_info():{torch.utils.data.get_worker_info()}")
     print(f"torch.initial_seed():{torch.initial_seed()}")
@@ -122,17 +128,17 @@ def distributed_training(rank: int, *args):
     model = model.to(rank)
     ddp_model = DDP(model, device_ids=[rank])
     loss_function = torch.nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.SGD(ddp_model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(ddp_model.parameters(), lr=lr)
     train_sampler = torch.utils.data.distributed.DistributedSampler(dataset,
                                                                     num_replicas=world_size,
                                                                     rank=rank)
     # worker_init_fn?
     data_loader = torch.utils.data.DataLoader(dataset,
                                               batch_size=batch_size,
-                                              shuffle=False,
+                                              shuffle=True,
                                               num_workers=0,
                                               collate_fn=dataset.collate_fn,
-                                              sampler=train_sampler)
+                                              sampler=train_sampler,pin_memory=True)
     num_total_batches = len(data_loader)
     print_period = max(num_total_batches // 10, 1)
     print(f'Number of batches for an epoch:{num_total_batches}\t printing period:{print_period}')
@@ -154,17 +160,13 @@ def distributed_training(rank: int, *args):
             if i > 0 and i % print_period == 0:
                 print(
                     f"Batch:{i}\t avg. batch loss until now:\t{epoch_loss / i}\t TotalRuntime:{(time.time() - start_time) / 60:.3f} minutes")
-            
-            batch_loss=fp16_scaler.scale(batch_loss)
+
+            batch_loss = fp16_scaler.scale(batch_loss)
             # Backward pass
             batch_loss.backward()
             # Adjust learning weights
-            fp16_scaler.step(optimizer)#optimizer.step()
+            fp16_scaler.step(optimizer)  # optimizer.step()
             fp16_scaler.update()
-
-            if i == 100:
-                print('Break the epoch')
-                break
 
         print(f"Epoch took {(time.time() - start_time) / 60:.3f} minutes")
         if i > 0:
@@ -176,15 +178,11 @@ def distributed_training(rank: int, *args):
             torch.save(ddp_model.state_dict(), "model.pt")
 
 
-class CustomDistributedTrainer:
-    """ Custom Trainer"""
+class DistributedDataParallelTrainer:
+    """ A Trainer based on torch.nn.parallel.DistributedDataParallel (https://pytorch.org/docs/stable/notes/ddp.html#ddp)"""
 
     def __init__(self, args):
         self.attributes = vars(args)
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.loss_function = None
-        self.optimizer = None
-        self.model = None
         torch.manual_seed(self.seed_for_computation)
         torch.cuda.manual_seed_all(self.seed_for_computation)
 
@@ -198,9 +196,11 @@ class CustomDistributedTrainer:
         model, = args
 
         # nodes * gpus
-        world_size = 2 * 1
+        world_size = self.num_nodes * 1
         dataset = kwargs['train_dataloaders'].dataset
-        mp.spawn(fn=distributed_training, args=(world_size, model, dataset), nprocs=world_size, join=True)
+        mp.spawn(fn=distributed_training, args=(world_size, model, dataset, self.batch_size, self.max_epochs, self.lr),
+                 nprocs=world_size,
+                 join=True)
 
     @staticmethod
     def save_checkpoint(path):

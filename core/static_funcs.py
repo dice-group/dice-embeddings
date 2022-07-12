@@ -13,7 +13,7 @@ import pytorch_lightning as pl
 import sys
 from .helper_classes import CustomArg
 from .models import *
-from .trainers import CustomTrainer, CustomDistributedTrainer
+from .trainers import DataParallelTrainer, DistributedDataParallelTrainer
 import time
 import pandas as pd
 import json
@@ -165,9 +165,11 @@ def model_fitting(trainer, model, train_dataloaders) -> None:
 
 def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     """ Initialize Trainer from input arguments """
-    if args.torch_trainer:
-        print('Initialize Custom Trainer')
-        return CustomTrainer(args)#CustomDistributedTrainer(args)#CustomTrainer(args)
+    if args.torch_trainer == 'DataParallelTrainer':
+        print('Initialize DataParallelTrainer Trainer')
+        return DataParallelTrainer(args)
+    elif args.torch_trainer == 'DistributedDataParallelTrainer':
+        return DistributedDataParallelTrainer(args)
     else:
         print('Initialize Pytorch-lightning Trainer')
         # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
