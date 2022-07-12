@@ -52,27 +52,30 @@ def argparse_default(description=None):
     parser.add_argument('--input_dropout_rate', type=float, default=0.0)
     parser.add_argument('--hidden_dropout_rate', type=float, default=0.0)
     parser.add_argument("--feature_map_dropout_rate", type=int, default=0.0)
+    parser.add_argument("--normalization", type=str, default="LayerNorm", help="LayerNorm, BatchNorm1d")
+    # Flags for computation
+    parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
+                                                                        'If >2 ,no evaluation scenario is applied implies no evaluation.')
+    parser.add_argument("--use_dask", type=bool, default=False,
+                        help='DASK can be used if the input dataset does not fit into memory.'
+                             '**Its quite common for Dask DataFrame to not provide a speed up over Pandas, especially for datasets that fit comfortably into memory by MRocklin (https://stackoverflow.com/a/57104255/5363103)**')
+    parser.add_argument("--torch_trainer", type=str, default='DistributedDataParallelTrainer',
+                        help='None, DistributedDataParallelTrainer or DataParallelTrainer')
+
+    # @TODO: Rethink about the following params.
+    parser.add_argument("--test_mode", type=bool, default=False)
     parser.add_argument('--apply_unit_norm', type=bool, default=False)
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
     parser.add_argument("--num_of_output_channels", type=int, default=3, help="# of output channels in convolution")
     parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.5,
                         help='The ratio of the size of the affine transformation w.r.t. the size of the embeddings')
-    parser.add_argument("--normalization", type=str, default="LayerNorm", help="LayerNorm, BatchNorm1d")
-    # Flags for computation
+    # @TODO: --eval string [train, val, test, train_val, train_test, val_test, train_val_test]
     parser.add_argument("--eval", type=bool, default=True,
                         help='A flag for using evaluation')
     parser.add_argument("--eval_on_train", type=bool, default=False,
                         help='A flag for using train data to evaluation ')
     parser.add_argument("--eval_with_constraint", type=bool, default=False,
                         help='Filter entities not belonging to the range or domain of a relation.')
-    parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
-                                                                        'If >2 ,no evaluation scenario is applied implies no evaluation.')
-    parser.add_argument("--use_dask", type=bool, default=False,
-                        help='DASK can be used if the input dataset does not fit into memory.'
-                             '**Its quite common for Dask DataFrame to not provide a speed up over Pandas, especially for datasets that fit comfortably into memory by MRocklin (https://stackoverflow.com/a/57104255/5363103)**')
-    parser.add_argument("--test_mode", type=bool, default=False)
-    parser.add_argument("--torch_trainer", type=str, default='DistributedDataParallelTrainer',
-                        help='None, DistributedDataParallelTrainer or DataParallelTrainer')
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)
