@@ -127,7 +127,7 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, pd.Dat
     print('Loading entity and relation indexes...', end=' ')
     entity_to_idx = pd.read_parquet(path_of_experiment_folder + '/entity_to_idx.gzip')
     relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')
-    print(f'Done! It took {time.time() - start_time:.4f}')
+    print(f'Done! It took {time.time() - start_time:.4f} seconds')
     return model, entity_to_idx, relation_to_idx
 
 

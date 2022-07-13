@@ -78,9 +78,11 @@ We continuously work on documenting each and every step to increase the readabil
 from core import KGE
 # (1) Download this folder into your local machine https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpediaQMultEmbeddings_03_07/
 # (2) Give the path of serialized (1).
-pre_trained_kge = KGE(path_of_pretrained_model_dir='QMultDBpedia10Epoch')
+pre_trained_kge = KGE(path_of_pretrained_model_dir='QMultDBpedia')
 # (3) Triple score.
-pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"],tail_entity=["http://dbpedia.org/resource/Ulm"])
+pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Ulm"])
+pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Germany"])
+pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/France"])
 # expected output => tensor([0.9948])
 ```
 
