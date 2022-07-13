@@ -1,4 +1,5 @@
 """
+@TODO: Reconsider whether we still needed.
 Large-Scale KGE Challenges:
 
 + Time requirement: Training a KGE model on 4 x 10^7 triples even with a large batch (50 000)
@@ -83,7 +84,7 @@ def train_on_randomly_sampled_entities():
     for ith, entity in enumerate(
             pre_trained_kge.entity_to_idx.sample(1, random_state=random.randint(1, 1_000_000)).index):
         # Retrieve relations occurring with (2))
-        relations = pre_trained_kge.get_relations(entity)
+        relations = pre_trained_kge.get_cooccuring_relations_given_entity(entity)
         print(f'Example:{ith}\t Learning over {entity} and {len(relations)} relations')
         # z:= {(h,r), y)_i }_i ^n s.t. n:=| {r | (h,r,x) OR (x,r,h) \in G }|
         for relation in relations:
