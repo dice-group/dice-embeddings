@@ -173,15 +173,9 @@ def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     else:
         print('Initialize Pytorch-lightning Trainer')
         # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
-        if args.test_mode:
-            return pl.Trainer.from_argparse_args(args,
-                                                 plugins=plugins,
-                                                 callbacks=callbacks)
-        else:
-            return pl.Trainer.from_argparse_args(args,
-                                                 strategy=DDPStrategy(find_unused_parameters=False),
-                                                 plugins=plugins,
-                                                 callbacks=callbacks)
+        return pl.Trainer.from_argparse_args(args,
+                                             strategy=DDPStrategy(find_unused_parameters=False),
+                                             plugins=plugins, callbacks=callbacks)
 
 
 def preprocess_dataframe_of_kg(df: Union[dask.dataframe.core.DataFrame, pandas.DataFrame], read_only_few: int = None,

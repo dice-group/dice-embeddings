@@ -57,11 +57,23 @@ class DataParallelTrainer:
             for i, z in enumerate(data_loader):
                 # Zero your gradients for every batch!
                 self.optimizer.zero_grad()
-                x_batch, y_batch = z
-                # the data transfer should be overlapped by the kernel execution
-                x_batch, y_batch = x_batch.to(self.device, non_blocking=True), y_batch.to(self.device,
-                                                                                          non_blocking=True)
-                yhat_batch = self.model(x_batch)
+                if len(z) == 3:
+                    x_batch, y_idx, y_batch = z
+                    # the data transfer should be overlapped by the kernel execution
+                    x_batch, y_idx, y_batch = x_batch.to(self.device, non_blocking=True), y_idx.to(self.device,
+                                                                                                   non_blocking=True), y_batch.to(
+                        self.device,
+                        non_blocking=True)
+                    yhat_batch = self.model(x_batch, y_idx)
+                elif len(z) == 2:
+                    x_batch, y_batch = z
+                    # the data transfer should be overlapped by the kernel execution
+                    x_batch, y_batch = x_batch.to(self.device, non_blocking=True), y_batch.to(self.device,
+                                                                                              non_blocking=True)
+                    yhat_batch = self.model(x_batch)
+                else:
+                    raise ValueError(len(z))
+
                 batch_loss = self.loss_function(yhat_batch, y_batch)
 
                 epoch_loss += batch_loss.item()
@@ -138,7 +150,7 @@ def distributed_training(rank: int, *args):
                                               shuffle=True,
                                               num_workers=0,
                                               collate_fn=dataset.collate_fn,
-                                              sampler=train_sampler,pin_memory=True)
+                                              sampler=train_sampler, pin_memory=True)
     num_total_batches = len(data_loader)
     print_period = max(num_total_batches // 10, 1)
     print(f'Number of batches for an epoch:{num_total_batches}\t printing period:{print_period}')

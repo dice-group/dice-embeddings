@@ -20,12 +20,11 @@ class TestRegressionQmult:
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'KvsSample'
         args.neg_ratio = 10
-        args.test_mode = True
         args.eval = True
         args.eval_on_train = True
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.torch_trainer = False
+        args.torch_trainer = 'DataParallelTrainer'
         result = Execute(args).start()
 
         assert result['Train']['H@10'] >= result['Train']['H@3'] >= result['Train']['H@1']
@@ -55,11 +54,9 @@ class TestRegressionQmult:
         args.hidden_dropout_rate = 0.0
         args.normalization = 'LayerNorm'
         args.weight_decay = 0.0
-        args.test_mode = True
         args.eval = True
         args.eval_on_train = True
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.torch_trainer = False
-
+        args.torch_trainer = 'DataParallelTrainer'
         Execute(args).start()

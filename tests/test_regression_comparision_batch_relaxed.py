@@ -17,12 +17,11 @@ class TestRegressionQmult:
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'KvsAll'
-        args.test_mode = True
         args.eval = True
         args.eval_on_train = True
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.torch_trainer = None
+        args.torch_trainer = 'DataParallelTrainer'
         result = Execute(args).start()
         assert 1.00 >= result['Train']['H@1'] >= 0.85
         assert 0.85 >= result['Val']['H@1'] >= 0.70

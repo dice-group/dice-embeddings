@@ -211,9 +211,10 @@ class KvsAll(Dataset):
         self.train_data = None
         self.train_target = None
         self.label_smoothing_rate = label_smoothing_rate
+        self.collate_fn = None
 
         # (1) Create a dictionary of training data pints
-        # Either from tuple of entitiies or tuple of an entity and a relation
+        # Either from tuple of entities or tuple of an entity and a relation
         if store is None:
             store = dict()
             if form == 'RelationPrediction':
@@ -274,6 +275,7 @@ class KvsSampleDataset(Dataset):
         self.train_target = None
         self.label_smoothing_rate = label_smoothing_rate
         self.neg_sample_ratio = neg_sample_ratio
+        self.collate_fn = None
         assert self.neg_sample_ratio > 0
         store = dict()
         self.num_entities = len(entity_idxs)
