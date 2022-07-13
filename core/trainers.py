@@ -16,26 +16,49 @@ import os
 import tempfile
 
 
-class DataParallelTrainer:
-    """ A Trainer based on torch.nn.DataParallel (https://pytorch.org/docs/stable/generated/torch.nn.DataParallel.html)"""
-
-    def __init__(self, args):
+class AbstractTrainer:
+    def __init__(self, args, callbacks):
         self.attributes = vars(args)
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.loss_function = None
-        self.optimizer = None
-        self.model = None
-        torch.manual_seed(self.seed_for_computation)
-        torch.cuda.manual_seed_all(self.seed_for_computation)
-
+        self.callbacks = callbacks
         print(self.attributes)
 
     def __getattr__(self, attr):
         return self.attributes[attr]
 
+    def on_fit_start(self, *args, **kwargs):
+        """ """
+
+        for c in self.callbacks:
+            c.on_fit_start(*args, **kwargs)
+
+    def on_fit_end(self, *args, **kwargs):
+        """ """
+        for c in self.callbacks:
+            c.on_fit_end(*args, **kwargs)
+
+    @staticmethod
+    def save_checkpoint(path):
+        print('no checkpoint saving')
+
+class DataParallelTrainer(AbstractTrainer):
+    """ A Trainer based on torch.nn.DataParallel (https://pytorch.org/docs/stable/generated/torch.nn.DataParallel.html)"""
+
+    def __init__(self, args, callbacks):
+        super().__init__(args, callbacks)
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.loss_function = None
+        self.optimizer = None
+        self.model = None
+        self.is_global_zero = True
+        torch.manual_seed(self.seed_for_computation)
+        torch.cuda.manual_seed_all(self.seed_for_computation)
+
+        print(self.attributes)
+
     def fit(self, *args, **kwargs):
         assert len(args) == 1
         model, = args
+        self.on_fit_start(trainer=self, pl_module=model)
         self.model = model
         print(kwargs)
         dataset = kwargs['train_dataloaders'].dataset
@@ -87,9 +110,11 @@ class DataParallelTrainer:
                 self.optimizer.step()
             print(f"Epoch took {(time.time() - start_time) / 60:.3f} minutes")
             if i > 0:
-                print(f"{epoch} epoch: Average batch loss:{epoch_loss / i:.3f}")
+                print(f"{epoch} epoch: Average batch loss:{epoch_loss / i}")
             else:
                 print(f"{epoch} epoch: Average batch loss:{epoch_loss:.3f}")
+
+        self.on_fit_end(self, self.model)
 
     def compute_forward(self, z):
         if len(z) == 2:
@@ -105,10 +130,6 @@ class DataParallelTrainer:
         else:
             print(len(batch))
             raise ValueError('Unexpected batch shape..')
-
-    @staticmethod
-    def save_checkpoint(path):
-        print('no checkpoint saving')
 
 
 def setup(rank, world_size):
@@ -190,18 +211,16 @@ def distributed_training(rank: int, *args):
             torch.save(ddp_model.state_dict(), "model.pt")
 
 
-class DistributedDataParallelTrainer:
+class DistributedDataParallelTrainer(AbstractTrainer):
     """ A Trainer based on torch.nn.parallel.DistributedDataParallel (https://pytorch.org/docs/stable/notes/ddp.html#ddp)"""
 
-    def __init__(self, args):
+    def __init__(self, args, callbacks):
+        super().__init__(args, callbacks)
         self.attributes = vars(args)
+        self.callbacks = callbacks
+
         torch.manual_seed(self.seed_for_computation)
         torch.cuda.manual_seed_all(self.seed_for_computation)
-
-        print(self.attributes)
-
-    def __getattr__(self, attr):
-        return self.attributes[attr]
 
     def fit(self, *args, **kwargs):
         assert len(args) == 1
@@ -213,7 +232,3 @@ class DistributedDataParallelTrainer:
         mp.spawn(fn=distributed_training, args=(world_size, model, dataset, self.batch_size, self.max_epochs, self.lr),
                  nprocs=world_size,
                  join=True)
-
-    @staticmethod
-    def save_checkpoint(path):
-        print('no checkpoint saving')
