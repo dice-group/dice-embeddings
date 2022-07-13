@@ -170,9 +170,9 @@ def distributed_training(rank: int, *args):
 
         print(f"Epoch took {(time.time() - start_time) / 60:.3f} minutes")
         if i > 0:
-            print(f"{epoch} epoch: Average batch loss:{epoch_loss / i:.3f}")
+            print(f"{epoch} epoch: Average batch loss:{epoch_loss / i}")
         else:
-            print(f"{epoch} epoch: Average batch loss:{epoch_loss:.3f}")
+            print(f"{epoch} epoch: Average batch loss:{epoch_loss}")
 
         if rank == 0:
             torch.save(ddp_model.state_dict(), "model.pt")
