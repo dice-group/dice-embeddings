@@ -49,7 +49,7 @@ To test the Installation
 wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
 unzip KGs.zip
 pytest -p no:warnings -x # it takes circa 15 minutes
-pytest -p no:warnings --lf # run only the last one
+pytest -p no:warnings --lf # run only the last failed test
 pytest -p no:warnings --ff # to run the failures first and then the rest of the tests.
 ```
 ## Pre-trained Models

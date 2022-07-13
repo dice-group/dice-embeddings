@@ -31,14 +31,14 @@ def argparse_default(description=None):
                              "Shallom, ConEx, ComplEx, DistMult")
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[NAdam, Adam, SGD]')
-    parser.add_argument('--embedding_dim', type=int, default=16,
+    parser.add_argument('--embedding_dim', type=int, default=32,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=15, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=150, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.01, help='Learning rate, 0.0003 maybe?')
     # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='NegSample', help="KvsSample, 1vsAll, KvsAll, NegSample")
-    parser.add_argument('--neg_ratio', type=int, default=2,
+    parser.add_argument('--scoring_technique', default='KvsSample', help="KvsSample, 1vsAll, KvsAll, NegSample")
+    parser.add_argument('--neg_ratio', type=int, default=20,
                         help='The number of negative triples generated per positive triple.')
     # Additional training params
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
@@ -59,11 +59,9 @@ def argparse_default(description=None):
     parser.add_argument("--use_dask", type=bool, default=False,
                         help='DASK can be used if the input dataset does not fit into memory.'
                              '**Its quite common for Dask DataFrame to not provide a speed up over Pandas, especially for datasets that fit comfortably into memory by MRocklin (https://stackoverflow.com/a/57104255/5363103)**')
-    parser.add_argument("--torch_trainer", type=str, default='DistributedDataParallelTrainer',
+    parser.add_argument("--torch_trainer", type=str, default='DataParallelTrainer',
                         help='None, DistributedDataParallelTrainer or DataParallelTrainer')
 
-    # @TODO: Rethink about the following params.
-    parser.add_argument("--test_mode", type=bool, default=False)
     parser.add_argument('--apply_unit_norm', type=bool, default=False)
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
     parser.add_argument("--num_of_output_channels", type=int, default=3, help="# of output channels in convolution")
