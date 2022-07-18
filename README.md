@@ -83,9 +83,24 @@ from core import KGE
 pre_trained_kge = KGE(path_of_pretrained_model_dir='QMultDBpedia')
 # (3) Triple score.
 pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Ulm"])
+# tensor([0.9744])
 pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Germany"])
+# tensor([0.6037])
 pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/France"])
-# expected output => tensor([0.9948])
+#tensor([0.4480])
+pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"])
+(tensor([0.9969, 0.9967, 0.9961, 0.9958, 0.9949, 0.9948, 0.9946, 0.9938, 0.9937,
+        0.9934]), array(['http://dbpedia.org/resource/Grand_Duchy_of_Baden',
+       'http://dbpedia.org/resource/Province_of_Hesse-Nassau',
+       'http://dbpedia.org/resource/Kingdom_of_Bavaria',
+       'http://dbpedia.org/resource/Kingdom_of_Prussia',
+       'http://dbpedia.org/resource/Kingdom_of_Württemberg',
+       'http://dbpedia.org/resource/Bad_Kissingen',
+       'http://dbpedia.org/resource/Barmen',
+       'http://dbpedia.org/resource/Electorate_of_Bavaria',
+       'http://dbpedia.org/resource/Prussia',
+       'http://dbpedia.org/resource/Saxe-Weimar-Eisenach'], dtype=object))
+
 ```
 
 ## How to Deploy
