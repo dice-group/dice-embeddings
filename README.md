@@ -1,28 +1,31 @@
 # DICE Embeddings: Hardware-agnostic Framework for of Large-scale Knowledge Graph Embeddings
 
 Knowledge graph embedding research has mainly focused on learning continuous representations of knowledge graphs towards the link prediction problem. 
-Recently developed frameworks can be effectively applied in wide range of research-related applications.
+Recently developed frameworks can be effectively applied in a wide range of research-related applications.
 Yet, using these frameworks in real-world applications becomes more challenging as the size of the knowledge graph grows.
 
-We developed DICE Embeddings framework based on Pytorch Lightning and Hugging Face to compute embeddings for large-scale knowledge graphs in a hardware-agnostic manner.
+We developed DICE Embeddings framework to compute embeddings for large-scale knowledge graphs in a hardware-agnostic manner.
 By this, we rely on
-1. [Pandas](https://github.com/pandas-dev/pandas) & [DASK](https://dask.org/) to use parallelism at preprocessing a large knowledge graph,
-2. [PytorchLightning](https://www.pytorchlightning.ai/) to learn knowledge graph embeddings via multi-CPUs, GPUs, TPUs or computing cluster, and
+1. [Pandas](https://pandas.pydata.org/)) & [DASK](https://dask.org/) to use parallelism at preprocessing a large knowledge graph,
+2. [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/) to learn knowledge graph embeddings via multi-CPUs, GPUs, TPUs or computing cluster, and
 3. [Gradio](https://gradio.app/) to ease the deployment of pre-trained models.
 
-**Why Pandas & DASK?**
-Pandas allows us to read, preprocess (removing literals) and indexed input knowledge graph efficiently.
-Through parquet within pandas or dask, a billion of triples can be read in parallel fashion. 
-Importantly, dask allow us to perform all necessary computations on a single CPU as well as a cluster of computers.
+**Why [Pandas](https://pandas.pydata.org/)) & [DASK](https://dask.org/) ?**
+Pandas allows us to read, preprocess (e.g. removing literals) and index an input knowledge graph in parallel.
+Through parquet within pandas, a billion of triples can be read in parallel fashion. 
+Importantly, Dask allows us to perform all necessary computations on a single CPU as well as a cluster of computers.
 
-**Why Pytorch & Pytorch-lightning ?**
-Scale the training without the boilerplate.
-Importantly, Pytorch-lightning provides state-of-the-art training techniques (e.g. Fully Sharded Training, FairScale, and DeepSpeed) to train
-gigantic models (>10B parameters). These techniques do not simply copy a model into all GPUs, hence, allow us to use our hardware efficiently. 
+**Why [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/) ?**
+PyTorch is one of the best machine learning frameworks currently available.
+PytorchLightning facilitates to scale the training procedure of PyTorch without the boilerplate.
+In our framework, we combine [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/).
+By this, we were able to train gigantic knowledge graph embedding model having billions of parameters.
+PytorchLightning allows us to use  state-of-the-art model parallelism techniques (e.g. Fully Sharded Training, FairScale, or DeepSpeed)
+without an effort.
+In our framework, practitioners can directly use PytorchLightning for model parallelism to train gigantic embedding models.
 
 **Why Hugging-face Gradio?**
 Deploy a pre-trained embedding model without writing a single line of code.
-
 
 ## Installation
 Clone the repository:
@@ -69,9 +72,8 @@ Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , i
 ## Training 
 please see examples/Training.md.
 ### Documentation
-In the documents folder, we explained many details about knowledge graphs, knowledge graph embeddings, training strategies and many more background knowledge.
+In documents folder, we explained many details about knowledge graphs, knowledge graph embeddings, training strategies and many more background knowledge.
 We continuously work on documenting each and every step to increase the readability of our code.
-
 
 ## Interactive Link Prediction on DBpedia
 ```python

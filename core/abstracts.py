@@ -10,7 +10,8 @@ import pandas as pd
 class BaseInteractiveKGE:
     """ Base class for interactive KGE """
 
-    def __init__(self, path_of_pretrained_model_dir, construct_ensemble=False, model_name=None):
+    def __init__(self, path_of_pretrained_model_dir, construct_ensemble=False, model_name=None,
+                 apply_semantic_constraint=False):
         try:
             assert os.path.isdir(path_of_pretrained_model_dir)
         except AssertionError:
@@ -31,11 +32,12 @@ class BaseInteractiveKGE:
         self.num_relations = len(self.relation_to_idx)
         print('Loading indexed training data...')
         self.train_set = pd.read_parquet(self.path + '/idx_train_df.gzip')
-
-        # TODO: 1 Obtain a mapping from a relation to its ranges
-        # TODO: 2 Convert 2 into a mapping from relations to entities outside of their ranges
-        self.domain_constraints_per_rel, self.range_constraints_per_rel = create_constraints(self.train_set.to_numpy())
-        # TODO 3 Use 2 at predicting scores.
+        if apply_semantic_constraint:
+            # TODO: 1 Obtain a mapping from a relation to its ranges
+            # TODO: 2 Convert 2 into a mapping from relations to entities outside of their ranges
+            self.domain_constraints_per_rel, self.range_constraints_per_rel = create_constraints(
+                self.train_set.to_numpy())
+            # TODO 3 Use 2 at predicting scores.
 
     def set_model_train_mode(self):
         self.model.train()

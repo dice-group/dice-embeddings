@@ -12,8 +12,10 @@ from .dataset_classes import TriplePredictionDataset
 class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
 
-    def __init__(self, path_of_pretrained_model_dir, construct_ensemble=False, model_name=None):
-        super().__init__(path_of_pretrained_model_dir, construct_ensemble=construct_ensemble, model_name=model_name)
+    def __init__(self, path_of_pretrained_model_dir, construct_ensemble=False, model_name=None,
+                 apply_semantic_constraint=False):
+        super().__init__(path_of_pretrained_model_dir, construct_ensemble=construct_ensemble, model_name=model_name,
+                         apply_semantic_constraint=apply_semantic_constraint)
 
     def construct_input_and_output(self, head_entity: List[str], relation: List[str], tail_entity: List[str], labels):
         """
