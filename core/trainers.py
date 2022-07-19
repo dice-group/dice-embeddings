@@ -169,7 +169,7 @@ def distributed_training(rank: int, *args):
     data_loader = torch.utils.data.DataLoader(dataset,
                                               batch_size=batch_size,
                                               shuffle=True,
-                                              num_workers=0,
+                                              num_workers=16,
                                               collate_fn=dataset.collate_fn,
                                               sampler=train_sampler, pin_memory=True)
     num_total_batches = len(data_loader)

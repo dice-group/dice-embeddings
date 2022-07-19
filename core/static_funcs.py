@@ -167,9 +167,9 @@ def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     """ Initialize Trainer from input arguments """
     if args.torch_trainer == 'DataParallelTrainer':
         print('Initialize DataParallelTrainer Trainer')
-        return DataParallelTrainer(args,callbacks=callbacks)
+        return DataParallelTrainer(args, callbacks=callbacks)
     elif args.torch_trainer == 'DistributedDataParallelTrainer':
-        return DistributedDataParallelTrainer(args,callbacks=callbacks)
+        return DistributedDataParallelTrainer(args, callbacks=callbacks)
     else:
         print('Initialize Pytorch-lightning Trainer')
         # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
