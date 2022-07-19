@@ -40,6 +40,7 @@ class AbstractTrainer:
     def save_checkpoint(path):
         print('no checkpoint saving')
 
+
 class DataParallelTrainer(AbstractTrainer):
     """ A Trainer based on torch.nn.DataParallel (https://pytorch.org/docs/stable/generated/torch.nn.DataParallel.html)"""
 
@@ -161,20 +162,19 @@ def distributed_training(rank: int, *args):
     model = model.to(rank)
     ddp_model = DDP(model, device_ids=[rank])
     loss_function = torch.nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.Adam(ddp_model.parameters(), lr=lr)
+    optimizer = torch.optim.SGD(ddp_model.parameters(), lr=lr)
     train_sampler = torch.utils.data.distributed.DistributedSampler(dataset,
                                                                     num_replicas=world_size,
                                                                     rank=rank)
     # worker_init_fn?
     data_loader = torch.utils.data.DataLoader(dataset,
                                               batch_size=batch_size,
-                                              num_workers=16,
+                                              num_workers=0,
                                               collate_fn=dataset.collate_fn,
-                                              sampler=train_sampler, pin_memory=True)
+                                              sampler=train_sampler)  # , pin_memory=False)
     num_total_batches = len(data_loader)
     print_period = max(num_total_batches // 10, 1)
     print(f'Number of batches for an epoch:{num_total_batches}\t printing period:{print_period}')
-    fp16_scaler = torch.cuda.amp.GradScaler(enabled=True)
     for epoch in range(max_epochs):
         epoch_loss = 0
         start_time = time.time()
@@ -184,10 +184,8 @@ def distributed_training(rank: int, *args):
             x_batch, y_batch = z
             # the data transfer should be overlapped by the kernel execution
             x_batch, y_batch = x_batch.to(rank, non_blocking=True), y_batch.to(rank, non_blocking=True)
-            with torch.cuda.amp.autocast():
-                yhat_batch = model(x_batch)
-                batch_loss = loss_function(yhat_batch, y_batch)
-
+            yhat_batch = model(x_batch)
+            batch_loss = loss_function(yhat_batch, y_batch)
             epoch_loss += batch_loss.item()
             if i > 0 and i % print_period == 0:
                 print(
@@ -197,8 +195,7 @@ def distributed_training(rank: int, *args):
             # Backward pass
             batch_loss.backward()
             # Adjust learning weights
-            fp16_scaler.step(optimizer)  # optimizer.step()
-            fp16_scaler.update()
+            optimizer.step()
 
         print(f"Epoch took {(time.time() - start_time) / 60:.3f} minutes")
         if i > 0:
