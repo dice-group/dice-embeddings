@@ -11,6 +11,7 @@ import torch
 import time
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.distributed.optim import ZeroRedundancyOptimizer
 import torch.distributed as dist
 import os
 import tempfile
@@ -144,6 +145,9 @@ def setup(rank, world_size):
 def cleanup():
     dist.destroy_process_group()
 
+def print_peak_memory(prefix, device):
+    if device == 0:
+        print(f"{prefix}: {torch.cuda.max_memory_allocated(device) // 1e6}MB ")
 
 def distributed_training(rank: int, *args):
     """
@@ -161,8 +165,14 @@ def distributed_training(rank: int, *args):
     # Move the model to GPU with id rank
     model = model.to(rank)
     ddp_model = DDP(model, device_ids=[rank])
+
     loss_function = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.SGD(ddp_model.parameters(), lr=lr)
+    # https://pytorch.org/tutorials/recipes/zero_redundancy_optimizer.html
+    # Note: ZeroRedundancy Increases the computation time quite a bit. DBpedia/10 => 3mins
+    # Without ZeroReundancy optimizer we have 0.770 minutes
+    #optimizer = ZeroRedundancyOptimizer(ddp_model.parameters(),optimizer_class=torch.optim.SGD, lr=lr )
+
     train_sampler = torch.utils.data.distributed.DistributedSampler(dataset,
                                                                     num_replicas=world_size,
                                                                     rank=rank)
@@ -195,6 +205,7 @@ def distributed_training(rank: int, *args):
             # Adjust learning weights
             optimizer.step()
 
+
         print(f"Epoch took {(time.time() - start_time) / 60:.3f} minutes")
         if i > 0:
             print(f"{epoch} epoch: Average batch loss:{epoch_loss / i}")
@@ -202,7 +213,7 @@ def distributed_training(rank: int, *args):
             print(f"{epoch} epoch: Average batch loss:{epoch_loss}")
 
         if rank == 0:
-            torch.save(ddp_model.state_dict(), "model.pt")
+            torch.save(ddp_model.module.state_dict(), "model.pt")
 
 
 class DistributedDataParallelTrainer(AbstractTrainer):
@@ -223,6 +234,12 @@ class DistributedDataParallelTrainer(AbstractTrainer):
         # nodes * gpus
         world_size = self.num_nodes * torch.cuda.device_count()
         dataset = kwargs['train_dataloaders'].dataset
+        print(model)
         mp.spawn(fn=distributed_training, args=(world_size, model, dataset, self.batch_size, self.max_epochs, self.lr),
                  nprocs=world_size,
                  join=True)
+
+        model = model.load_state_dict(torch.load('model.pt'))
+        os.remove('model.pt')
+        self.model = model
+        self.on_fit_end(self, self.model)
