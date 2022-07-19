@@ -227,7 +227,7 @@ class DistributedDataParallelTrainer(AbstractTrainer):
         model, = args
 
         # nodes * gpus
-        world_size = self.num_nodes * 1
+        world_size = self.num_nodes * torch.cuda.device_count()
         dataset = kwargs['train_dataloaders'].dataset
         mp.spawn(fn=distributed_training, args=(world_size, model, dataset, self.batch_size, self.max_epochs, self.lr),
                  nprocs=world_size,
