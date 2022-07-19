@@ -190,8 +190,6 @@ def distributed_training(rank: int, *args):
             if i > 0 and i % print_period == 0:
                 print(
                     f"Batch:{i}\t avg. batch loss until now:\t{epoch_loss / i}\t TotalRuntime:{(time.time() - start_time) / 60:.3f} minutes")
-
-            batch_loss = fp16_scaler.scale(batch_loss)
             # Backward pass
             batch_loss.backward()
             # Adjust learning weights
