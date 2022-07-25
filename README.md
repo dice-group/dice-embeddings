@@ -1,4 +1,4 @@
-# DICE Embeddings: Hardware-agnostic Framework for of Large-scale Knowledge Graph Embeddings
+# DICE Embeddings: Hardware-agnostic Framework for Large-scale Knowledge Graph Embeddings
 
 Knowledge graph embedding research has mainly focused on learning continuous representations of knowledge graphs towards the link prediction problem. 
 Recently developed frameworks can be effectively applied in a wide range of research-related applications.
