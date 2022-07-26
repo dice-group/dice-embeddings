@@ -6,11 +6,11 @@ Yet, using these frameworks in real-world applications becomes more challenging 
 
 We developed DICE Embeddings framework to compute embeddings for large-scale knowledge graphs in a hardware-agnostic manner.
 By this, we rely on
-1. [Pandas](https://pandas.pydata.org/)) & [DASK](https://dask.org/) to use parallelism at preprocessing a large knowledge graph,
+1. [Pandas](https://pandas.pydata.org/) & [DASK](https://dask.org/) to use parallelism at preprocessing a large knowledge graph,
 2. [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/) to learn knowledge graph embeddings via multi-CPUs, GPUs, TPUs or computing cluster, and
 3. [Gradio](https://gradio.app/) to ease the deployment of pre-trained models.
 
-**Why [Pandas](https://pandas.pydata.org/)) & [DASK](https://dask.org/) ?**
+**Why [Pandas](https://pandas.pydata.org/) & [DASK](https://dask.org/) ?**
 Pandas allows us to read, preprocess (e.g. removing literals) and index an input knowledge graph in parallel.
 Through parquet within pandas, a billion of triples can be read in parallel fashion. 
 Importantly, Dask allows us to perform all necessary computations on a single CPU as well as a cluster of computers.
@@ -70,16 +70,13 @@ Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , i
 - For more please look at [Hobbit Data](https://hobbitdata.informatik.uni-leipzig.de/KGE/)
 
 ## Training 
-please see examples/Training.md.
-### Documentation
-In documents folder, we explained many details about knowledge graphs, knowledge graph embeddings, training strategies and many more background knowledge.
-We continuously work on documenting each and every step to increase the readability of our code.
+
+> A knowledge graph embedding model can be trained via different strategies (e.g. 1vsAll, KvsAll or Negative Sampling). For details, we refer to `documents/training_techniques`.
 
 ## Interactive Link Prediction on DBpedia
 ```python
 from core import KGE
-# (1) Download this folder into your local machine https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpediaQMultEmbeddings_03_07/
-# (2) Give the path of serialized (1).
+# (1) Download an experiment directory e.g wget https://hobbitdata.informatik.uni-leipzig.de/KGE/QMultDBpedia
 pre_trained_kge = KGE(path_of_pretrained_model_dir='QMultDBpedia')
 # (3) Triple score.
 pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Ulm"])
@@ -89,19 +86,9 @@ pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Ei
 pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/France"])
 #tensor([0.4480])
 pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"])
-(tensor([0.9969, 0.9967, 0.9961, 0.9958, 0.9949, 0.9948, 0.9946, 0.9938, 0.9937,
-        0.9934]), array(['http://dbpedia.org/resource/Grand_Duchy_of_Baden',
-       'http://dbpedia.org/resource/Province_of_Hesse-Nassau',
-       'http://dbpedia.org/resource/Kingdom_of_Bavaria',
-       'http://dbpedia.org/resource/Kingdom_of_Prussia',
-       'http://dbpedia.org/resource/Kingdom_of_Württemberg',
-       'http://dbpedia.org/resource/Bad_Kissingen',
-       'http://dbpedia.org/resource/Barmen',
-       'http://dbpedia.org/resource/Electorate_of_Bavaria',
-       'http://dbpedia.org/resource/Prussia',
-       'http://dbpedia.org/resource/Saxe-Weimar-Eisenach'], dtype=object))
-
+# ...
 ```
+> For relation prediction, or extracting embeddings, we refer to `documents`.
 
 ## How to Deploy
 Any pretrained model can be deployed with an ease. Moreover, anyone on the internet can use the pretrained model with ```--share``` parameter.
@@ -115,10 +102,22 @@ Running on public URL: https://54886.gradio.app
 This share link expires in 72 hours. For free permanent hosting, check out Spaces (https://huggingface.co/spaces)
 ```
 ![alt text](core/figures/deploy_qmult_family.png)
+### Documentation
+In documents folder, we explained many details about knowledge graphs, knowledge graph embeddings, training strategies and many more background knowledge.
+We continuously work on documenting each and every step to increase the readability of our code.
 ## How to cite
 Currently, we are working on our manuscript describing our framework. 
 If you really like our work and want to cite it now, feel free to chose one :) 
 ```
+# DICE Embedding Framework
+@article{demir2022hardware,
+  title={Hardware-agnostic computation for large-scale knowledge graph embeddings},
+  author={Demir, Caglar and Ngomo, Axel-Cyrille Ngonga},
+  journal={Software Impacts},
+  year={2022},
+  publisher={Elsevier}
+}
+# KronE
 @article{demir2022kronecker,
   title={Kronecker Decomposition for Knowledge Graph Embeddings},
   author={Demir, Caglar and Lienen, Julian and Ngomo, Axel-Cyrille Ngonga},
@@ -140,7 +139,6 @@ If you really like our work and want to cite it now, feel free to chose one :)
   pdf = 	 {https://proceedings.mlr.press/v157/demir21a/demir21a.pdf},
   url = 	 {https://proceedings.mlr.press/v157/demir21a.html},
 }
-
 # ConEx
 @inproceedings{demir2021convolutional,
 title={Convolutional Complex Knowledge Graph Embeddings},
@@ -148,7 +146,6 @@ author={Caglar Demir and Axel-Cyrille Ngonga Ngomo},
 booktitle={Eighteenth Extended Semantic Web Conference - Research Track},
 year={2021},
 url={https://openreview.net/forum?id=6T45-4TFqaX}}
-
 # Shallom
 @inproceedings{demir2021shallow,
   title={A shallow neural model for relation prediction},
