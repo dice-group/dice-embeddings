@@ -19,10 +19,10 @@ class TestDefaultParams:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.test_mode = True
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
+        args.torch_trainer = 'DataParallelTrainer'
         Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -39,10 +39,10 @@ class TestDefaultParams:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.test_mode = True
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
+        args.torch_trainer = 'DataParallelTrainer'
         Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -59,10 +59,10 @@ class TestDefaultParams:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.test_mode = True
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.sample_triples_ratio = None
+        args.torch_trainer = 'DataParallelTrainer'
         Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -79,10 +79,10 @@ class TestDefaultParams:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.test_mode = True
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
+        args.torch_trainer = 'DataParallelTrainer'
         Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -99,10 +99,10 @@ class TestDefaultParams:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.test_mode = True
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
+        args.torch_trainer = 'DataParallelTrainer'
         Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -119,10 +119,10 @@ class TestDefaultParams:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.test_mode = True
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.sample_triples_ratio = None
+        args.torch_trainer = 'DataParallelTrainer'
         Execute(args).start()
 
     def test_distmult(self):
@@ -138,8 +138,8 @@ class TestDefaultParams:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.test_mode = True
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
+        args.torch_trainer = 'DataParallelTrainer'
         Execute(args).start()

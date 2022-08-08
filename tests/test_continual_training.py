@@ -23,12 +23,12 @@ class TestRegressionCL:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.test_mode=True
         args.eval = False
         args.eval_on_train = False
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
+        args.torch_trainer = 'DataParallelTrainer'
         result = Execute(args).start()
         assert os.path.isdir(result['path_experiment_folder'])
         pre_trained_kge = KGE(path_of_pretrained_model_dir=result['path_experiment_folder'])
@@ -50,12 +50,13 @@ class TestRegressionCL:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.test_mode=True
+        args.test_mode = True
         args.eval = False
         args.eval_on_train = False
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
+        args.torch_trainer = 'DataParallelTrainer'
         result = Execute(args).start()
         assert os.path.isdir(result['path_experiment_folder'])
         pre_trained_kge = KGE(path_of_pretrained_model_dir=result['path_experiment_folder'])
@@ -77,12 +78,13 @@ class TestRegressionCL:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.test_mode=True
+        args.test_mode = True
         args.eval = False
         args.eval_on_train = False
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
+        args.torch_trainer = 'DataParallelTrainer'
         result = Execute(args).start()
         assert os.path.isdir(result['path_experiment_folder'])
         pre_trained_kge = KGE(path_of_pretrained_model_dir=result['path_experiment_folder'])

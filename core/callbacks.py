@@ -13,9 +13,9 @@ class PrintCallback(Callback):
         super().__init__()
         self.start_time = time.time()
 
-    def on_fit_start(self, trainer, model):
-        print(model)
-        print(model.summarize())
+    def on_fit_start(self, trainer, pl_module):
+        print(pl_module)
+        print(pl_module.summarize())
         print("\n[1 / 1] Training is started..")
 
     def on_fit_end(self, trainer, pl_module):
@@ -41,6 +41,9 @@ class KGESaveCallback(Callback):
         if self.every_x_epoch is None:
             self.every_x_epoch = max(self.max_epochs // 2, 1)
 
+    def on_fit_start(self, *args, **kwargs):
+        pass
+
     def on_epoch_end(self, trainer, model):
         if self.epoch_counter % self.every_x_epoch == 0 and self.epoch_counter > 1:
             print(f'\nStoring model {self.epoch_counter}...')
@@ -50,7 +53,7 @@ class KGESaveCallback(Callback):
 
 
 class PseudoLabellingCallback(Callback):
-    def __init__(self, data_module, kg,batch_size):
+    def __init__(self, data_module, kg, batch_size):
         super().__init__()
         self.data_module = data_module
         self.kg = kg

@@ -13,6 +13,7 @@ import pytorch_lightning as pl
 import sys
 from .helper_classes import CustomArg
 from .models import *
+from .trainers import DataParallelTrainer, DistributedDataParallelTrainer
 import time
 import pandas as pd
 import json
@@ -126,7 +127,7 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, pd.Dat
     print('Loading entity and relation indexes...', end=' ')
     entity_to_idx = pd.read_parquet(path_of_experiment_folder + '/entity_to_idx.gzip')
     relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')
-    print(f'Done! It took {time.time() - start_time:.4f}')
+    print(f'Done! It took {time.time() - start_time:.4f} seconds')
     return model, entity_to_idx, relation_to_idx
 
 
@@ -162,19 +163,19 @@ def model_fitting(trainer, model, train_dataloaders) -> None:
     print(f'Model fitting is done!')
 
 
-def initialize_pl_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
-    """ Initialize pl.Trainer from input arguments """
-    print('Initialize Pytorch-lightning Trainer')
-    # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
-    if args.test_mode:
-        return pl.Trainer.from_argparse_args(args,
-                                             plugins=plugins,
-                                             callbacks=callbacks)
+def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
+    """ Initialize Trainer from input arguments """
+    if args.torch_trainer == 'DataParallelTrainer':
+        print('Initialize DataParallelTrainer Trainer')
+        return DataParallelTrainer(args, callbacks=callbacks)
+    elif args.torch_trainer == 'DistributedDataParallelTrainer':
+        return DistributedDataParallelTrainer(args, callbacks=callbacks)
     else:
+        print('Initialize Pytorch-lightning Trainer')
+        # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
         return pl.Trainer.from_argparse_args(args,
                                              strategy=DDPStrategy(find_unused_parameters=False),
-                                             plugins=plugins,
-                                             callbacks=callbacks)
+                                             plugins=plugins, callbacks=callbacks)
 
 
 def preprocess_dataframe_of_kg(df: Union[dask.dataframe.core.DataFrame, pandas.DataFrame], read_only_few: int = None,
