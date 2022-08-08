@@ -57,35 +57,32 @@ pytest -p no:warnings --ff # to run the failures first and then the rest of the 
 ```
 ## Pre-trained Models
 Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , if you lack hardware resources to obtain embeddings of a specific knowledge Graph.
-- [DBpedia version: 03-2021 Embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpediaQMultEmbeddings_03_07):
-  - 114,747,963 entities, 13,906 relations, and 375,900,264 triples.
+- [DBpedia version: 06-2022 Embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpediaQMultEmbeddings_03_07):
+  - Models: ConEx, QMult
 - [YAGO3-10 ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/YAGO3-10.zip)
 - [FB15K-237 ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/FB15K-237.zip)
-- [FB15K ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/FB15K.zip)
 - [WN18RR ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/WN18RR.zip)
-- [WN18 ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/WN18.zip)
-- [Hepatitis ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/ConEx_Hepatitis.zip)
-- [Lymphography ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/ConEx_Lymphography.zip)
-- [Mammographic ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/ConEx_Mammographic.zip)
 - For more please look at [Hobbit Data](https://hobbitdata.informatik.uni-leipzig.de/KGE/)
 
 ## Training 
 
 > A knowledge graph embedding model can be trained via different strategies (e.g. 1vsAll, KvsAll or Negative Sampling). For details, we refer to `documents/training_techniques`.
 
-## Interactive Link Prediction on DBpedia
+## Using Pre-trained ConEx on DBpedia 03-2022
+```bash
+# To download a pretrained ConEx
+mkdir ConEx && cd ConEx && wget -r -nd -np https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpedia/ConEx/ && cd ..
+```
 ```python
 from core import KGE
-# (1) Download an experiment directory e.g wget https://hobbitdata.informatik.uni-leipzig.de/KGE/QMultDBpedia
-pre_trained_kge = KGE(path_of_pretrained_model_dir='QMultDBpedia')
-# (3) Triple score.
+pre_trained_kge = KGE(path_of_pretrained_model_dir='ConEx')
 pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Ulm"])
 # tensor([0.9744])
 pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Germany"])
-# tensor([0.6037])
+# tensor([0.9498])
 pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/France"])
-#tensor([0.4480])
-pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"])
+# tensor([[2.0340e-10])
+pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"]) # needs more memory than simple triple eval.
 # ...
 ```
 > For relation prediction, or extracting embeddings, we refer to `documents`.

@@ -11,7 +11,7 @@ from .dataset_classes import TriplePredictionDataset
 
 class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
-
+    # @TODO: we can download the model if it is not present locally
     def __init__(self, path_of_pretrained_model_dir, construct_ensemble=False, model_name=None,
                  apply_semantic_constraint=False):
         super().__init__(path_of_pretrained_model_dir, construct_ensemble=construct_ensemble, model_name=model_name,

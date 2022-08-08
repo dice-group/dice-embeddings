@@ -1,7 +1,6 @@
 import os
 import datetime
 from .static_funcs import load_model_ensemble, load_model, store_kge, create_constraints
-from typing import List
 import torch
 from typing import List, Tuple, Generator
 import pandas as pd
@@ -249,3 +248,11 @@ class BaseInteractiveKGE:
             'relation'].unique()
         # => relation_to_idx must be a dataframe with monotonically increasing
         return self.relation_to_idx.iloc[idx_relations].index.values.tolist()
+
+    def get_entity_embeddings(self, uri: List[str]):
+        """ Return embedding of an URI"""
+        return self.model.entity_embeddings(torch.LongTensor(self.entity_to_idx.loc[uri]['entity'].values))
+
+    def get_relation_embeddings(self, uri: List[str]):
+        """ Return embedding of an URI"""
+        return self.model.relation_to_idx(torch.LongTensor(self.relation_to_idx.loc[uri]['relation'].values))
