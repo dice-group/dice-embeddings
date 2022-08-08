@@ -19,12 +19,12 @@ class TestRegressionOmult:
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'KvsAll'
-        args.test_mode = True
         args.eval = True
         args.eval_on_train = True
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
+        args.torch_trainer = 'DataParallelTrainer'
         result = Execute(args).start()
         assert 0.90 >= result['Train']['H@1'] >= 0.65
         assert 0.75 >= result['Val']['H@1'] >= 0.65
@@ -43,17 +43,17 @@ class TestRegressionOmult:
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = '1vsAll'
-        args.test_mode = True
         args.eval = True
         args.eval_on_train = True
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
+        args.torch_trainer = 'DataParallelTrainer'
         result = Execute(args).start()
         assert 0.75 >= result['Test']['H@1'] >= 0.72
-        assert 0.75 >= result['Val']['H@1'] >= 0.70
-        assert 0.91 >= result['Train']['H@1'] >= 0.86
+        assert 0.77 >= result['Val']['H@1'] >= 0.70
+        assert 0.92 >= result['Train']['H@1'] >= 0.86
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):
@@ -70,13 +70,13 @@ class TestRegressionOmult:
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'NegSample'
         args.neg_ratio = 1
-        args.test_mode = True
         args.eval = True
         args.eval_on_train = True
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
+        args.torch_trainer = 'DataParallelTrainer'
         result = Execute(args).start()
         assert 0.60 >= result['Test']['H@1'] >= .25
         assert 0.60 >= result['Val']['H@1'] >= .25

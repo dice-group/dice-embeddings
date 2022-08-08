@@ -211,9 +211,10 @@ class KvsAll(Dataset):
         self.train_data = None
         self.train_target = None
         self.label_smoothing_rate = label_smoothing_rate
+        self.collate_fn = None
 
         # (1) Create a dictionary of training data pints
-        # Either from tuple of entitiies or tuple of an entity and a relation
+        # Either from tuple of entities or tuple of an entity and a relation
         if store is None:
             store = dict()
             if form == 'RelationPrediction':
@@ -274,6 +275,7 @@ class KvsSampleDataset(Dataset):
         self.train_target = None
         self.label_smoothing_rate = label_smoothing_rate
         self.neg_sample_ratio = neg_sample_ratio
+        self.collate_fn = None
         assert self.neg_sample_ratio > 0
         store = dict()
         self.num_entities = len(entity_idxs)
@@ -304,18 +306,24 @@ class KvsSampleDataset(Dataset):
         return len(self.train_data)
 
     def __getitem__(self, idx):
-        # (head,relation)
+        # (1) Get ith unique (head,relation) pair
         x = self.train_data[idx]
+        # (2) Get tail entities given (1)
         positives_idx = self.train_target[idx]
         num_positives = len(positives_idx)
+        # (3) Subsample positive examples to generate a batch of same sized inputs
         if num_positives < self.neg_sample_ratio:
             positives_idx = random.choices(positives_idx, k=self.neg_sample_ratio)
         else:
             positives_idx = random.sample(positives_idx, self.neg_sample_ratio)
-
+        # (3) Obtain LongTensor
         positives_idx = torch.LongTensor(positives_idx)
+        # (4) Generate random entities
+        # TODO: Sample based on a given relation. Not randomly ?
         negative_idx = torch.randint(low=0, high=self.num_entities, size=(self.neg_sample_ratio,))
+        # (5) Create selected indexes
         y_idx = torch.cat((positives_idx, negative_idx), 0)
+        # (6) Create binary labels.
         y_vec = torch.cat((torch.ones(self.neg_sample_ratio), torch.zeros(self.neg_sample_ratio)), 0)
         return x, y_idx, y_vec
 

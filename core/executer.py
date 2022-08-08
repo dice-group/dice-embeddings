@@ -142,7 +142,7 @@ class Execute:
         # (4) Eval model.
         self.evaluator.eval(trained_model, form_of_labelling)
         # (4) Return the report of the training process.
-        return self.report
+        return {**self.report, **self.evaluator.report}
 
     def training_process(self) -> BaseKGE:
         """
@@ -165,8 +165,8 @@ class Execute:
                                      path=self.args.full_storage_path),
                      ModelSummary(max_depth=-1)]
 
-        # (2) Initialize Pytorch-lightning Trainer
-        self.trainer = initialize_pl_trainer(self.args, callbacks, plugins=[])
+        # (2) Initialize Trainer
+        self.trainer = initialize_trainer(self.args, callbacks, plugins=[])
         # (3) Use (2) to train a KGE model
         trained_model, form_of_labelling = self.train()
         # (5) Return trained model
@@ -575,12 +575,18 @@ class ContinuousExecute(Execute):
         assert os.path.isfile(args.path_experiment_folder + '/configuration.json')
         # (1) Load Previous input configuration
         previous_args = load_json(args.path_experiment_folder + '/configuration.json')
+        dargs = vars(args)
+        del args
+        for k in list(dargs.keys()):
+            if dargs[k] is None:
+                del dargs[k]
         # (2) Update (1) with new input
-        previous_args.update(vars(args))
-        report = load_json(args.path_experiment_folder + '/report.json')
+        previous_args.update(dargs)
+        report = load_json(dargs['path_experiment_folder'] + '/report.json')
         previous_args['num_entities'] = report['num_entities']
         previous_args['num_relations'] = report['num_relations']
         previous_args = SimpleNamespace(**previous_args)
         previous_args.full_storage_path = previous_args.path_experiment_folder
         print('ContinuousExecute starting...')
+        print(previous_args)
         super().__init__(previous_args, continuous_training=True)

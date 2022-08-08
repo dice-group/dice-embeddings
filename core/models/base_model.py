@@ -103,7 +103,7 @@ class BaseKGE(pl.LightningModule):
             self.normalizer_class = torch.nn.LayerNorm
             self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim)
             self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim)
-            if self.args['scoring_technique'] == 'NegSample':
+            if self.args['scoring_technique'] in ['NegSample', 'KvsSample']:
                 self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim)
         elif self.args.get("normalization") == 'BatchNorm1d':
             # https://twitter.com/karpathy/status/1299921324333170689/photo/1
@@ -111,7 +111,7 @@ class BaseKGE(pl.LightningModule):
             self.normalizer_class = torch.nn.BatchNorm1d
             self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
             self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
-            if self.args['scoring_technique'] == 'NegSample':
+            if self.args['scoring_technique'] in ['NegSample', 'KvsSample']:
                 self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
         else:
             raise NotImplementedError()
@@ -158,10 +158,14 @@ class BaseKGE(pl.LightningModule):
     def forward_k_vs_all(self, *args, **kwargs):
         raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_all function')
 
+    def forward_k_vs_sample(self, *args, **kwargs):
+        raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_sample function')
+
     def forward(self, x: torch.Tensor, y_idx: torch.Tensor = None):
         """
 
-        :param x:
+        :param x: a batch of inputs
+        :param y_idx: index of selected output labels.
         :return:
         """
         if y_idx is None:

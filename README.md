@@ -1,28 +1,31 @@
-# DICE Embeddings: Hardware-agnostic Framework for of Large-scale Knowledge Graph Embeddings
+# DICE Embeddings: Hardware-agnostic Framework for Large-scale Knowledge Graph Embeddings
 
 Knowledge graph embedding research has mainly focused on learning continuous representations of knowledge graphs towards the link prediction problem. 
-Recently developed frameworks can be effectively applied in wide range of research-related applications.
+Recently developed frameworks can be effectively applied in a wide range of research-related applications.
 Yet, using these frameworks in real-world applications becomes more challenging as the size of the knowledge graph grows.
 
-We developed DICE Embeddings framework based on Pytorch Lightning and Hugging Face to compute embeddings for large-scale knowledge graphs in a hardware-agnostic manner.
+We developed DICE Embeddings framework to compute embeddings for large-scale knowledge graphs in a hardware-agnostic manner.
 By this, we rely on
-1. [Pandas](https://github.com/pandas-dev/pandas) & [DASK](https://dask.org/) to use parallelism at preprocessing a large knowledge graph,
-2. [PytorchLightning](https://www.pytorchlightning.ai/) to learn knowledge graph embeddings via multi-CPUs, GPUs, TPUs or computing cluster, and
+1. [Pandas](https://pandas.pydata.org/) & [DASK](https://dask.org/) to use parallelism at preprocessing a large knowledge graph,
+2. [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/) to learn knowledge graph embeddings via multi-CPUs, GPUs, TPUs or computing cluster, and
 3. [Gradio](https://gradio.app/) to ease the deployment of pre-trained models.
 
-**Why Pandas & DASK?**
-Pandas allows us to read, preprocess (removing literals) and indexed input knowledge graph efficiently.
-Through parquet within pandas or dask, a billion of triples can be read in parallel fashion. 
-Importantly, dask allow us to perform all necessary computations on a single CPU as well as a cluster of computers.
+**Why [Pandas](https://pandas.pydata.org/) & [DASK](https://dask.org/) ?**
+Pandas allows us to read, preprocess (e.g. removing literals) and index an input knowledge graph in parallel.
+Through parquet within pandas, a billion of triples can be read in parallel fashion. 
+Importantly, Dask allows us to perform all necessary computations on a single CPU as well as a cluster of computers.
 
-**Why Pytorch-lightning ?**
-Scale the training without the boilerplate.
-Importantly, Pytorch-lightning provides state-of-the-art training techniques (e.g. Fully Sharded Training, FairScale, and DeepSpeed) to train
-gigantic models (>10B parameters). These techniques do not simply copy a model into all GPUs, hence, allow us to use our hardware efficiently. 
+**Why [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/) ?**
+PyTorch is one of the best machine learning frameworks currently available.
+PytorchLightning facilitates to scale the training procedure of PyTorch without the boilerplate.
+In our framework, we combine [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/).
+By this, we were able to train gigantic knowledge graph embedding model having billions of parameters.
+PytorchLightning allows us to use  state-of-the-art model parallelism techniques (e.g. Fully Sharded Training, FairScale, or DeepSpeed)
+without an effort.
+In our framework, practitioners can directly use PytorchLightning for model parallelism to train gigantic embedding models.
 
-**Why Hugging-face Gradio?**
+**Why [Hugging-face Gradio](https://huggingface.co/gradio)?**
 Deploy a pre-trained embedding model without writing a single line of code.
-
 
 ## Installation
 Clone the repository:
@@ -49,36 +52,40 @@ To test the Installation
 wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
 unzip KGs.zip
 pytest -p no:warnings -x # it takes circa 15 minutes
-pytest -p no:warnings --lf # run only the last one
+pytest -p no:warnings --lf # run only the last failed test
 pytest -p no:warnings --ff # to run the failures first and then the rest of the tests.
 ```
 ## Pre-trained Models
 Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , if you lack hardware resources to obtain embeddings of a specific knowledge Graph.
-- [DBpedia version: 03-2021 Embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpediaQMultEmbeddings_03_07):
-  - 114,747,963 entities, 13,906 relations, and 375,900,264 triples.
+- [DBpedia version: 06-2022 Embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpediaQMultEmbeddings_03_07):
+  - Models: ConEx, QMult
 - [YAGO3-10 ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/YAGO3-10.zip)
 - [FB15K-237 ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/FB15K-237.zip)
-- [FB15K ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/FB15K.zip)
 - [WN18RR ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/WN18RR.zip)
-- [WN18 ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/WN18.zip)
-- [Hepatitis ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/ConEx_Hepatitis.zip)
-- [Lymphography ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/ConEx_Lymphography.zip)
-- [Mammographic ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/ConEx_Mammographic.zip)
 - For more please look at [Hobbit Data](https://hobbitdata.informatik.uni-leipzig.de/KGE/)
 
-## Training
-please see examples/Training.md.
+## Training 
 
-## Interactive Link Prediction on DBpedia
+> A knowledge graph embedding model can be trained via different strategies (e.g. 1vsAll, KvsAll or Negative Sampling). For details, we refer to `documents/training_techniques`.
+
+## Using Pre-trained ConEx on DBpedia 03-2022
+```bash
+# To download a pretrained ConEx
+mkdir ConEx && cd ConEx && wget -r -nd -np https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpedia/ConEx/ && cd ..
+```
 ```python
 from core import KGE
-# (1) Download this folder into your local machine https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpediaQMultEmbeddings_03_07/
-# (2) Give the path of serialized (1).
-pre_trained_kge = KGE(path_of_pretrained_model_dir='QMultDBpedia10Epoch')
-# (3) Triple score.
-pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://www.w3.org/1999/02/22-rdf-syntax-ns#type"],tail_entity=["http://dbpedia.org/resource/Ulm"])
-# expected output => tensor([0.9948])
+pre_trained_kge = KGE(path_of_pretrained_model_dir='ConEx')
+pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Ulm"])
+# tensor([0.9744])
+pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Germany"])
+# tensor([0.9498])
+pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/France"])
+# tensor([[2.0340e-10])
+pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"]) # needs more memory than simple triple eval.
+# ...
 ```
+> For relation prediction, or extracting embeddings, we refer to `documents`.
 
 ## How to Deploy
 Any pretrained model can be deployed with an ease. Moreover, anyone on the internet can use the pretrained model with ```--share``` parameter.
@@ -93,12 +100,21 @@ This share link expires in 72 hours. For free permanent hosting, check out Space
 ```
 ![alt text](core/figures/deploy_qmult_family.png)
 ### Documentation
-We aim to document each function by adding input and output types along with concise description of the performt computation.
-Yet, if something is unclear, please let us know.
+In documents folder, we explained many details about knowledge graphs, knowledge graph embeddings, training strategies and many more background knowledge.
+We continuously work on documenting each and every step to increase the readability of our code.
 ## How to cite
 Currently, we are working on our manuscript describing our framework. 
 If you really like our work and want to cite it now, feel free to chose one :) 
 ```
+# DICE Embedding Framework
+@article{demir2022hardware,
+  title={Hardware-agnostic computation for large-scale knowledge graph embeddings},
+  author={Demir, Caglar and Ngomo, Axel-Cyrille Ngonga},
+  journal={Software Impacts},
+  year={2022},
+  publisher={Elsevier}
+}
+# KronE
 @article{demir2022kronecker,
   title={Kronecker Decomposition for Knowledge Graph Embeddings},
   author={Demir, Caglar and Lienen, Julian and Ngomo, Axel-Cyrille Ngonga},
@@ -120,7 +136,6 @@ If you really like our work and want to cite it now, feel free to chose one :)
   pdf = 	 {https://proceedings.mlr.press/v157/demir21a/demir21a.pdf},
   url = 	 {https://proceedings.mlr.press/v157/demir21a.html},
 }
-
 # ConEx
 @inproceedings{demir2021convolutional,
 title={Convolutional Complex Knowledge Graph Embeddings},
@@ -128,7 +143,6 @@ author={Caglar Demir and Axel-Cyrille Ngonga Ngomo},
 booktitle={Eighteenth Extended Semantic Web Conference - Research Track},
 year={2021},
 url={https://openreview.net/forum?id=6T45-4TFqaX}}
-
 # Shallom
 @inproceedings{demir2021shallow,
   title={A shallow neural model for relation prediction},
@@ -138,5 +152,5 @@ url={https://openreview.net/forum?id=6T45-4TFqaX}}
   year={2021},
   organization={IEEE}
 ```
-For any questions or wishes, please contact:  ```caglar.demir@upb.de``` or ```caglardemir8@gmail.com.de```
+For any questions or wishes, please contact:  ```caglar.demir@upb.de``` or ```caglardemir8@gmail.com```
 
