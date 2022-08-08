@@ -85,12 +85,11 @@ pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Ei
 pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"]) # needs more memory than simple triple eval.
 # ...
 ```
-> For relation prediction, or extracting embeddings, we refer to `documents`.
 
 ## How to Deploy
 Any pretrained model can be deployed with an ease. Moreover, anyone on the internet can use the pretrained model with ```--share``` parameter.
 ```
-python deploy.py --path_of_experiment_folder 'DAIKIRI_Storage/QMultFamily' --share
+python deploy.py --path_of_experiment_folder 'ConEx' --share True
 Loading Model...
 Model is loaded!
 Running on local URL:  http://127.0.0.1:7860/
