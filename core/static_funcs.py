@@ -604,6 +604,9 @@ def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     elif model_name == 'DistMult':
         model = DistMult(args=args)
         form_of_labelling = 'EntityPrediction'
+    elif model_name == 'TransE':
+        model = TransE(args=args)
+        form_of_labelling = 'EntityPrediction'
     else:
         raise ValueError
     print(f'Done! {time.time() - start_time:.3f}')
