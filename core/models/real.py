@@ -28,6 +28,32 @@ class DistMult(BaseKGE):
                         self.entity_embeddings.weight.transpose(1, 0))
 
 
+class TransE(BaseKGE):
+    """
+    Translating Embeddings for Modeling
+    Multi-relational Data
+    https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf"""
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = 'TransE'
+        # Adding this reduces performance in training and generalization
+        self.hidden_normalizer = lambda x: x
+        self.loss = torch.nn.BCELoss()
+        self._norm = 2
+        self.margin = 5
+
+    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
+        # (1) Retrieve embeddings & Apply Dropout & Normalization.
+        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
+        # Original || s+p - t|| true label > 0 distance, false label
+        # Update: 1 - sigmoid(|| s+p -t ||) to work with BCE
+        distance = torch.nn.functional.pairwise_distance(head_ent_emb + rel_ent_emb, tail_ent_emb, p=self._norm)
+
+        scores = torch.sigmoid(distance + self.margin)
+        return scores
+
+
 class Shallom(BaseKGE):
     """ A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090) """
 
