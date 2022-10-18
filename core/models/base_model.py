@@ -7,6 +7,7 @@ from torchmetrics import Accuracy as accuracy
 from typing import List, Any, Tuple
 from torch.nn.init import xavier_normal_
 import numpy as np
+from core.custom_opt import Sls
 
 
 class BaseKGE(pl.LightningModule):
@@ -115,7 +116,7 @@ class BaseKGE(pl.LightningModule):
                 self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
         else:
             raise NotImplementedError()
-        if self.args.get("optim") in ['NAdam', 'Adam', 'SGD', 'ASGD']:
+        if self.args.get("optim") in ['NAdam', 'Adam', 'SGD', 'ASGD', 'Sls']:
             self.optimizer_name = self.args['optim']
         else:
             print(self.args)
@@ -145,6 +146,18 @@ class BaseKGE(pl.LightningModule):
             self.selected_optimizer = torch.optim.ASGD(self.parameters(),
                                                        lr=self.learning_rate, lambd=0.0001, alpha=0.75,
                                                        weight_decay=self.weight_decay)
+        elif self.optimizer_name == 'Sls':
+            self.selected_optimizer = Sls(params=self.parameters(),
+                                          n_batches_per_epoch=500,
+                                          init_step_size=1,
+                                          c=0.1,
+                                          beta_b=0.9,
+                                          gamma=2.0,
+                                          beta_f=2.0,
+                                          reset_option=1,
+                                          eta_max=10,
+                                          bound_step_size=True,
+                                          line_search_fn="armijo")
         else:
             raise KeyError()
         return self.selected_optimizer

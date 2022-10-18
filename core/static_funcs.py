@@ -21,7 +21,7 @@ import glob
 import dask.dataframe as dd
 import dask
 from .sanity_checkers import sanity_checking_with_arguments
-from pytorch_lightning.strategies.ddp import DDPStrategy
+#from pytorch_lightning.strategies.ddp import DDPStrategy
 
 
 # @TODO: Could these funcs can be merged?

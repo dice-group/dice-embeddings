@@ -62,10 +62,17 @@ class DataParallelTrainer(AbstractTrainer):
         model, = args
         self.on_fit_start(trainer=self, pl_module=model)
         self.model = model
-        print(kwargs)
         dataset = kwargs['train_dataloaders'].dataset
         self.loss_function = model.loss_function
+        pytorch_loss_function = model.loss
         self.optimizer = model.configure_optimizers()
+
+        from core.custom_opt.sls import Sls
+        if isinstance(self.optimizer, Sls):
+            use_closure = True
+        else:
+            use_closure = False
+
         self.model = torch.nn.DataParallel(model)
         self.model.to(self.device)
         data_loader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size,
@@ -99,20 +106,24 @@ class DataParallelTrainer(AbstractTrainer):
                 else:
                     raise ValueError(len(z))
 
-                batch_loss = self.loss_function(yhat_batch, y_batch)
+                if use_closure:
+                    batch_loss = self.optimizer.step(closure=lambda: pytorch_loss_function(self.model(x_batch), y_batch))
+                else:
+                    batch_loss = self.loss_function(yhat_batch, y_batch)
+                    # Backward pass
+                    batch_loss.backward()
+                    # Adjust learning weights
+                    self.optimizer.step()
 
                 epoch_loss += batch_loss.item()
                 if i > 0 and i % print_period == 0:
                     print(
                         f"Batch:{i}\t avg. batch loss until now:\t{epoch_loss / i}\t TotalRuntime:{(time.time() - start_time) / 60:.3f} minutes")
 
-                # Backward pass
-                batch_loss.backward()
-                # Adjust learning weights
-                self.optimizer.step()
             print(f"Epoch took {(time.time() - start_time) / 60:.3f} minutes")
-            if i > 0:
-                print(f"{epoch} epoch: Average batch loss:{epoch_loss / i}")
+            assert print_period == i
+            if print_period > 0:
+                print(f"{epoch} epoch: Average batch loss:{epoch_loss / print_period}")
             else:
                 print(f"{epoch} epoch: Average batch loss:{epoch_loss:.3f}")
 
@@ -145,9 +156,11 @@ def setup(rank, world_size):
 def cleanup():
     dist.destroy_process_group()
 
+
 def print_peak_memory(prefix, device):
     if device == 0:
         print(f"{prefix}: {torch.cuda.max_memory_allocated(device) // 1e6}MB ")
+
 
 def distributed_training(rank: int, *args):
     """
@@ -171,7 +184,7 @@ def distributed_training(rank: int, *args):
     # https://pytorch.org/tutorials/recipes/zero_redundancy_optimizer.html
     # Note: ZeroRedundancy Increases the computation time quite a bit. DBpedia/10 => 3mins
     # Without ZeroReundancy optimizer we have 0.770 minutes
-    #optimizer = ZeroRedundancyOptimizer(ddp_model.parameters(),optimizer_class=torch.optim.SGD, lr=lr )
+    # optimizer = ZeroRedundancyOptimizer(ddp_model.parameters(),optimizer_class=torch.optim.SGD, lr=lr )
 
     train_sampler = torch.utils.data.distributed.DistributedSampler(dataset,
                                                                     num_replicas=world_size,
@@ -204,7 +217,6 @@ def distributed_training(rank: int, *args):
             batch_loss.backward()
             # Adjust learning weights
             optimizer.step()
-
 
         print(f"Epoch took {(time.time() - start_time) / 60:.3f} minutes")
         if i > 0:
