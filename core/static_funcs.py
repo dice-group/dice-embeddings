@@ -201,7 +201,7 @@ def preprocess_dataframe_of_kg(df: Union[dask.dataframe.core.DataFrame, pandas.D
         print(f'Subsampling {sample_triples_ratio} of input data...')
         df = df.sample(frac=sample_triples_ratio)
         print('Done !\n')
-    if sum(df.head()["subject"].str.startswith('<')) + sum(df.head()["relation"].str.startswith('<')) == 10:
+    if sum(df.head()["subject"].str.startswith('<')) + sum(df.head()["relation"].str.startswith('<')) > 2:
         # (4) Drop Rows/triples with double or boolean: Example preprocessing
         # Drop of object does not start with **<**.
         # Specifying na to be False instead of NaN.
@@ -210,7 +210,9 @@ def preprocess_dataframe_of_kg(df: Union[dask.dataframe.core.DataFrame, pandas.D
         print('Done !\n')
         # (5) Remove **<** and **>**
         print('Removing brackets **<** and **>**...')
-        df = df.transform(lambda x: x.str.removeprefix("<").str.removesuffix(">"))
+        # Dask does not have transform implemented.
+        # df = df.transform(lambda x: x.str.removeprefix("<").str.removesuffix(">"))
+        df = df.apply(lambda x: x.str.removeprefix("<").str.removesuffix(">"), axis=1)
         print('Done !\n')
     return df
 
