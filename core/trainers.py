@@ -107,7 +107,8 @@ class DataParallelTrainer(AbstractTrainer):
                     raise ValueError(len(z))
 
                 if use_closure:
-                    batch_loss = self.optimizer.step(closure=lambda: pytorch_loss_function(self.model(x_batch), y_batch))
+                    batch_loss = self.optimizer.step(
+                        closure=lambda: pytorch_loss_function(self.model(x_batch), y_batch))
                 else:
                     batch_loss = self.loss_function(yhat_batch, y_batch)
                     # Backward pass
@@ -116,16 +117,10 @@ class DataParallelTrainer(AbstractTrainer):
                     self.optimizer.step()
 
                 epoch_loss += batch_loss.item()
-                if i > 0 and i % print_period == 0:
-                    print(
-                        f"Batch:{i}\t avg. batch loss until now:\t{epoch_loss / i}\t TotalRuntime:{(time.time() - start_time) / 60:.3f} minutes")
+                # if i > 0 and i % print_period == 0:
+                #    print(f"Batch:{i}\t avg. batch loss until now:\t{epoch_loss / i}\t TotalRuntime:{(time.time() - start_time) / 60:.3f} minutes")
 
-            print(f"Epoch took {(time.time() - start_time) / 60:.3f} minutes")
-            assert print_period == i
-            if print_period > 0:
-                print(f"{epoch} epoch: Average batch loss:{epoch_loss / print_period}")
-            else:
-                print(f"{epoch} epoch: Average batch loss:{epoch_loss:.3f}")
+            print(f"{epoch} epoch: Runtime: {(time.time() - start_time) / 60:.3f} minutes \tAverage loss:{epoch_loss / num_total_batches}")
 
         self.on_fit_end(self, self.model)
 
