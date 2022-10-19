@@ -37,7 +37,7 @@ To install dependencies:
 # python=3.10 with torch cuda nncl https://discuss.pytorch.org/t/issues-on-using-nn-dataparallel-with-python-3-10-and-pytorch-1-11/146745/13
 conda create -n dice python=3.9.12
 conda activate dice
-pip3 install pandas==1.4.2
+pip3 install pandas==1.5.0
 pip3 install swifter==1.1.2 # we can remove it later
 pip3 install torch --extra-index-url https://download.pytorch.org/whl/cu113
 pip3 install pytorch-lightning==1.6.4
