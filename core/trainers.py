@@ -68,7 +68,8 @@ class DataParallelTrainer(AbstractTrainer):
         self.optimizer = model.configure_optimizers()
 
         from core.custom_opt.sls import Sls
-        if isinstance(self.optimizer, Sls):
+        from core.custom_opt.adam_sls import AdamSLS
+        if isinstance(self.optimizer, Sls) or isinstance(self.optimizer, AdamSLS):
             use_closure = True
         else:
             use_closure = False

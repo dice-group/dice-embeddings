@@ -7,7 +7,7 @@ from torchmetrics import Accuracy as accuracy
 from typing import List, Any, Tuple
 from torch.nn.init import xavier_normal_
 import numpy as np
-from core.custom_opt import Sls
+from core.custom_opt import Sls, AdamSLS, Adan
 
 
 class BaseKGE(pl.LightningModule):
@@ -116,11 +116,11 @@ class BaseKGE(pl.LightningModule):
                 self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
         else:
             raise NotImplementedError()
-        if self.args.get("optim") in ['NAdam', 'Adam', 'SGD', 'ASGD', 'Sls']:
+        if self.args.get("optim") in ['Adan', 'NAdam', 'Adam', 'SGD', 'ASGD', 'Sls', 'AdamSLS']:
             self.optimizer_name = self.args['optim']
         else:
             print(self.args)
-            raise NotImplementedError()
+            raise KeyError(f'--optim (***{self.args.get("optim")}***) not found')
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
         return self.entity_embeddings.weight.data.data.detach(), self.relation_embeddings.weight.data.detach()
@@ -146,6 +146,12 @@ class BaseKGE(pl.LightningModule):
             self.selected_optimizer = torch.optim.ASGD(self.parameters(),
                                                        lr=self.learning_rate, lambd=0.0001, alpha=0.75,
                                                        weight_decay=self.weight_decay)
+        elif self.optimizer_name == 'Adan':
+            self.selected_optimizer = Adan(self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay,
+                                           betas=(0.98, 0.92, 0.99),
+                                           eps=1e-08,
+                                           max_grad_norm=0.0,
+                                           no_prox=False)
         elif self.optimizer_name == 'Sls':
             self.selected_optimizer = Sls(params=self.parameters(),
                                           n_batches_per_epoch=500,
@@ -158,6 +164,23 @@ class BaseKGE(pl.LightningModule):
                                           eta_max=10,
                                           bound_step_size=True,
                                           line_search_fn="armijo")
+        elif self.optimizer_name == 'AdamSLS':
+            self.selected_optimizer = AdamSLS(params=self.parameters(),
+                                              n_batches_per_epoch=500,
+                                              init_step_size=0.00001,
+                                              c=0.1,
+                                              gamma=2.0,
+                                              beta=0.999,
+                                              momentum=0.9,
+                                              gv_option='per_param',
+                                              base_opt='adam',
+                                              pp_norm_method='pp_armijo',
+                                              mom_type='standard',
+                                              clip_grad=False,
+                                              beta_b=0.9,
+                                              beta_f=2.0,
+                                              reset_option=1,
+                                              line_search_fn="armijo")
         else:
             raise KeyError()
         return self.selected_optimizer
