@@ -73,6 +73,7 @@ Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , i
 # To download a pretrained ConEx
 mkdir ConEx && cd ConEx && wget -r -nd -np https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpedia/ConEx/ && cd ..
 ```
+### Triple Classification
 ```python
 from core import KGE
 pre_trained_kge = KGE(path_of_pretrained_model_dir='ConEx')
@@ -83,8 +84,20 @@ pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Ei
 pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Germany"]) # tensor([0.9498])
 pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/France"]) # very low
 pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Italy"]) # very low
-pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"]) # needs more memory than simple triple eval.
-# ...
+```
+### Relation Prediction
+```python
+from core import KGE
+pre_trained_kge = KGE(path_of_pretrained_model_dir='ConEx')
+pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],tail_entity=["http://dbpedia.org/resource/Ulm"])
+```
+
+### Entity Prediction
+```python
+from core import KGE
+pre_trained_kge = KGE(path_of_pretrained_model_dir='ConEx')
+pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"]) 
+pre_trained_kge.predict_topk(relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Albert_Einstein"]) 
 ```
 
 ## How to Deploy
