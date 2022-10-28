@@ -22,6 +22,7 @@ class TestRegressionQmult:
         args.eval_on_train = True
         args.read_only_few = None
         args.sample_triples_ratio = None
+        args.normalization='LayerNorm'
         args.torch_trainer = 'DataParallelTrainer'
         result = Execute(args).start()
         assert 1.00 >= result['Train']['H@1'] >= 0.84
@@ -84,6 +85,7 @@ class TestRegressionQmult:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.torch_trainer = 'DataParallelTrainer'
+        args.normalization='LayerNorm'
         result = Execute(args).start()
         assert 0.70 >= result['Train']['H@1'] >= .60
         assert 0.78 >= result['Test']['H@1'] >= .49
@@ -106,6 +108,7 @@ class TestRegressionQmult:
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'NegSample'
+        args.normalization='LayerNorm'
         args.neg_ratio = 3
         args.eval = True
         args.eval_on_train = True

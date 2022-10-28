@@ -3,6 +3,7 @@ from core.executer import Execute
 import sys
 import pytest
 
+
 class TestRegressionQmult:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
@@ -21,6 +22,7 @@ class TestRegressionQmult:
         args.eval_on_train = True
         args.read_only_few = None
         args.sample_triples_ratio = None
+        args.normalization = 'LayerNorm'
         args.torch_trainer = 'DataParallelTrainer'
         result = Execute(args).start()
         assert 1.00 >= result['Train']['H@1'] >= 0.85
@@ -33,4 +35,4 @@ class TestRegressionQmult:
         assert 0.85 >= result2['Val']['H@1'] >= 0.70
         assert 0.85 >= result2['Test']['H@1'] >= 0.70
 
-        assert result2['Test']['H@1'] == result ['Test']['H@1']
+        assert result2['Test']['H@1'] == result['Test']['H@1']

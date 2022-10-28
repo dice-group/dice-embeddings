@@ -24,6 +24,7 @@ class TestRegressionComplEx:
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
+        args.normalization='LayerNorm'
         args.torch_trainer = 'DataParallelTrainer'
         result = Execute(args).start()
         assert 0.84 >= result['Train']['H@1'] >= 0.75
@@ -47,6 +48,7 @@ class TestRegressionComplEx:
         args.num_folds_for_cv = None
         args.eval = True
         args.eval_on_train = True
+        args.normalization='LayerNorm'
         args.torch_trainer = 'DataParallelTrainer'
         args.scoring_technique = '1vsAll'
         result = Execute(args).start()
@@ -67,6 +69,7 @@ class TestRegressionComplEx:
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'NegSample'
+        args.normalization='LayerNorm'
         args.optim = 'Adam'
         args.neg_ratio = 1
         args.eval = True

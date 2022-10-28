@@ -5,12 +5,12 @@ import contextlib
 
 
 def check_armijo_conditions(step_size, step_size_old, loss, grad_norm,
-                      loss_next, c, beta_b):
+                            loss_next, c, beta_b):
     found = 0
 
     # computing the new break condition
     break_condition = loss_next - \
-        (loss - (step_size) * c * grad_norm**2)
+                      (loss - (step_size) * c * grad_norm ** 2)
 
     if (break_condition <= 0):
         found = 1
@@ -21,33 +21,34 @@ def check_armijo_conditions(step_size, step_size_old, loss, grad_norm,
 
     return found, step_size, step_size_old
 
+
 def check_goldstein_conditions(step_size, loss, grad_norm,
-                          loss_next,
-                          c, beta_b, beta_f, bound_step_size, eta_max):
-	found = 0
-	if(loss_next <= (loss - (step_size) * c * grad_norm ** 2)):
-		found = 1
+                               loss_next,
+                               c, beta_b, beta_f, bound_step_size, eta_max):
+    found = 0
+    if (loss_next <= (loss - (step_size) * c * grad_norm ** 2)):
+        found = 1
 
-	if(loss_next >= (loss - (step_size) * (1 - c) * grad_norm ** 2)):
-		if found == 1:
-			found = 3 # both conditions are satisfied
-		else:
-			found = 2 # only the curvature condition is satisfied
+    if (loss_next >= (loss - (step_size) * (1 - c) * grad_norm ** 2)):
+        if found == 1:
+            found = 3  # both conditions are satisfied
+        else:
+            found = 2  # only the curvature condition is satisfied
 
-	if (found == 0):
-		raise ValueError('Error')
+    if (found == 0):
+        raise ValueError('Error')
 
-	elif (found == 1):
-		# step-size might be too small
-		step_size = step_size * beta_f
-		if bound_step_size:
-			step_size = min(step_size, eta_max)
+    elif (found == 1):
+        # step-size might be too small
+        step_size = step_size * beta_f
+        if bound_step_size:
+            step_size = min(step_size, eta_max)
 
-	elif (found == 2):
-		# step-size might be too large
-		step_size = max(step_size * beta_b, 1e-8)
+    elif (found == 2):
+        # step-size might be too large
+        step_size = max(step_size * beta_b, 1e-8)
 
-	return {"found":found, "step_size":step_size}
+    return {"found": found, "step_size": step_size}
 
 
 def reset_step(step_size, n_batches_per_epoch=None, gamma=None, reset_option=1,
@@ -56,18 +57,20 @@ def reset_step(step_size, n_batches_per_epoch=None, gamma=None, reset_option=1,
         pass
 
     elif reset_option == 1:
-        step_size = step_size * gamma**(1. / n_batches_per_epoch)
+        step_size = step_size * gamma ** (1. / n_batches_per_epoch)
 
     elif reset_option == 2:
         step_size = init_step_size
 
     return step_size
 
+
 def try_sgd_update(params, step_size, params_current, grad_current):
     zipped = zip(params, params_current, grad_current)
 
     for p_next, p_current, g_current in zipped:
         p_next.data = p_current - step_size * g_current
+
 
 def compute_grad_norm(grad_list):
     grad_norm = 0.
@@ -82,6 +85,7 @@ def compute_grad_norm(grad_list):
 def get_grad_list(params):
     return [p.grad for p in params]
 
+
 @contextlib.contextmanager
 def random_seed(seed):
     state = np.random.get_state()
@@ -90,6 +94,7 @@ def random_seed(seed):
         yield
     finally:
         np.random.set_state(state)
+
 
 @contextlib.contextmanager
 def random_seed_torch(seed, device=0):

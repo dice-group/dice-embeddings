@@ -24,6 +24,7 @@ class TestRegressionQmult:
         args.eval_on_train = True
         args.read_only_few = None
         args.sample_triples_ratio = None
+        args.normalization = 'LayerNorm'
         args.torch_trainer = 'DataParallelTrainer'
         result = Execute(args).start()
 

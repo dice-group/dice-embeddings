@@ -15,6 +15,8 @@ from torch.distributed.optim import ZeroRedundancyOptimizer
 import torch.distributed as dist
 import os
 import tempfile
+from core.custom_opt.sls import Sls
+from core.custom_opt.adam_sls import AdamSLS
 
 
 class AbstractTrainer:
@@ -38,8 +40,8 @@ class AbstractTrainer:
             c.on_fit_end(*args, **kwargs)
 
     @staticmethod
-    def save_checkpoint(path):
-        print('no checkpoint saving')
+    def save_checkpoint(full_path, model):
+        torch.save(model.state_dict(), full_path)
 
 
 class DataParallelTrainer(AbstractTrainer):
@@ -67,8 +69,6 @@ class DataParallelTrainer(AbstractTrainer):
         pytorch_loss_function = model.loss
         self.optimizer = model.configure_optimizers()
 
-        from core.custom_opt.sls import Sls
-        from core.custom_opt.adam_sls import AdamSLS
         if isinstance(self.optimizer, Sls) or isinstance(self.optimizer, AdamSLS):
             use_closure = True
         else:
@@ -84,12 +84,16 @@ class DataParallelTrainer(AbstractTrainer):
         num_total_batches = len(data_loader)
         print_period = max(num_total_batches // 10, 1)
         print(f'Number of batches for an epoch:{num_total_batches}\t printing period:{print_period}')
+
+        polyak_region = int(self.attributes['max_epochs'] * .75)
+
         for epoch in range(self.attributes['max_epochs']):
             epoch_loss = 0
             start_time = time.time()
             for i, z in enumerate(data_loader):
                 # Zero your gradients for every batch!
                 self.optimizer.zero_grad()
+                # TODO: Move this one
                 if len(z) == 3:
                     x_batch, y_idx, y_batch = z
                     # the data transfer should be overlapped by the kernel execution
@@ -121,7 +125,31 @@ class DataParallelTrainer(AbstractTrainer):
                 # if i > 0 and i % print_period == 0:
                 #    print(f"Batch:{i}\t avg. batch loss until now:\t{epoch_loss / i}\t TotalRuntime:{(time.time() - start_time) / 60:.3f} minutes")
 
-            print(f"{epoch} epoch: Runtime: {(time.time() - start_time) / 60:.3f} minutes \tAverage loss:{epoch_loss / num_total_batches}")
+            avg_epoch_loss = epoch_loss / num_total_batches
+            print(
+                f"{epoch} epoch: Runtime: {(time.time() - start_time) / 60:.3f} minutes \tAverage loss:{avg_epoch_loss}")
+
+            if self.attributes['apply_polyak_avg']:
+                if epoch > polyak_region and epoch % 2 == 0:
+                    print('Saving..', end='')
+                    self.save_checkpoint(full_path=f"{self.full_storage_path}/trainer_checkpoint_{str(epoch)}.pt",
+                                         model=self.model)
+                    print('.')
+        if self.attributes['apply_polyak_avg']:
+            self.model.eval()
+            last_state = self.model.state_dict()
+            counter = 1.0
+            for i in os.listdir(self.full_storage_path):
+                if '.pt' in i:
+                    counter += 1
+                    # model = model.load_state_dict()
+                    for k, v in torch.load(f'{self.full_storage_path}/{i}').items():
+                        last_state[k] += v
+
+            for k, v in last_state.items():
+                if v.dtype != torch.int64:
+                    last_state[k] /= counter
+            self.model.load_state_dict(last_state)
 
         self.on_fit_end(self, self.model)
 

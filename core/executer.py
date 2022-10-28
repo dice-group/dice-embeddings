@@ -85,11 +85,11 @@ class Execute:
         # Save it as dictionary
         #  mdict=torch.load('trainer_checkpoint.pt')
         # dict_keys(['epoch', 'global_step', 'pytorch-lightning_version', 'state_dict', 'loops', 'callbacks','optimizer_states', 'lr_schedulers'])
-        try:
-            self.trainer.save_checkpoint(self.storage_path + '/trainer_checkpoint.pt')
-        except AttributeError as e:
-            print(e)
-            print('skipped..')
+        #try:
+        #    self.trainer.save_checkpoint(self.storage_path + '/trainer_checkpoint.pt')
+        #except AttributeError as e:
+        #    print(e)
+        #    print('skipped..')
         # (1) Send model to the eval mode
         trained_model.eval()
         trained_model.to('cpu')

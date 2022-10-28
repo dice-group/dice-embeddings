@@ -21,7 +21,7 @@ import glob
 import dask.dataframe as dd
 import dask
 from .sanity_checkers import sanity_checking_with_arguments
-#from pytorch_lightning.strategies.ddp import DDPStrategy
+from pytorch_lightning.strategies import DDPStrategy
 
 
 # @TODO: Could these funcs can be merged?
@@ -341,7 +341,7 @@ def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, num_cor
     train_set['subject'] = train_set['subject'].apply(lambda x: entity_to_idx.get(x))
     train_set['relation'] = train_set['relation'].apply(lambda x: relation_to_idx.get(x))
     train_set['object'] = train_set['object'].apply(lambda x: entity_to_idx.get(x))
-    train_set = train_set.dropna()
+    # train_set = train_set.dropna(inplace=True)
     if isinstance(train_set, pd.core.frame.DataFrame):
         assert (n, d) == train_set.shape
     elif isinstance(train_set, dask.dataframe.core.DataFrame):
