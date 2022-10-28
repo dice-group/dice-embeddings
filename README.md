@@ -4,25 +4,25 @@ Knowledge graph embedding research has mainly focused on learning continuous rep
 Recently developed frameworks can be effectively applied in a wide range of research-related applications.
 Yet, using these frameworks in real-world applications becomes more challenging as the size of the knowledge graph grows.
 
-We developed DICE Embeddings framework to compute embeddings for large-scale knowledge graphs in a hardware-agnostic manner.
-By this, we rely on
-1. [Pandas](https://pandas.pydata.org/) & [DASK](https://dask.org/) to use parallelism at preprocessing a large knowledge graph,
+We developed the DICE Embeddings framework to compute embeddings for large-scale knowledge graphs in a hardware-agnostic manner.
+To achieve this goal, we rely on
+1. [Pandas](https://pandas.pydata.org/) & [DASK](https://dask.org/) to use parallelism while preprocessing a large input knowledge graph,
 2. [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/) to learn knowledge graph embeddings via multi-CPUs, GPUs, TPUs or computing cluster, and
 3. [Gradio](https://gradio.app/) to ease the deployment of pre-trained models.
 
 **Why [Pandas](https://pandas.pydata.org/) & [DASK](https://dask.org/) ?**
-Pandas allows us to read, preprocess (e.g. removing literals) and index an input knowledge graph in parallel.
-Through parquet within pandas, a billion of triples can be read in parallel fashion. 
-Importantly, Dask allows us to perform all necessary computations on a single CPU as well as a cluster of computers.
+Pandas allows us to read, preprocess (e.g., removing literals) and index an input knowledge graph in parallel.
+Through Parquet within pandas, billions of triples can be read in parallel fashion. 
+Importantly, Dask allows us to perform all necessary computations on a wide array of hardware configurations ranging from a single CPU to a cluster of computers.
 
 **Why [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/) ?**
-PyTorch is one of the best machine learning frameworks currently available.
-PytorchLightning facilitates to scale the training procedure of PyTorch without the boilerplate.
+PyTorch is one of the most popular machine learning frameworks available at the time of writing. 
+PytorchLightning facilitates scaling the training procedure of PyTorch without boilerplate.
 In our framework, we combine [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/).
-By this, we were able to train gigantic knowledge graph embedding model having billions of parameters.
-PytorchLightning allows us to use  state-of-the-art model parallelism techniques (e.g. Fully Sharded Training, FairScale, or DeepSpeed)
-without an effort.
-In our framework, practitioners can directly use PytorchLightning for model parallelism to train gigantic embedding models.
+By this, we are able to train large knowledge graph embedding models with billions of parameters.
+PytorchLightning allows us to use state-of-the-art model parallelism techniques (e.g. Fully Sharded Training, FairScale, or DeepSpeed)
+without extra effort.
+With our framework, practitioners can directly use PytorchLightning for model parallelism to train gigantic embedding models.
 
 **Why [Hugging-face Gradio](https://huggingface.co/gradio)?**
 Deploy a pre-trained embedding model without writing a single line of code.
