@@ -473,6 +473,7 @@ def preprocesses_input_args(arg):
     # arg.checkpoint_callback = False
     arg.logger = False
     arg.eval = True if arg.eval == 1 else False
+    arg.apply_polyak_avg=True if arg.apply_polyak_avg==1 else False
     arg.eval_on_train = True if arg.eval_on_train == 1 else False
     # reciprocal checking
     # @TODO We need better way for using apply_reciprical_or_noise.
@@ -486,6 +487,7 @@ def preprocesses_input_args(arg):
 
     if arg.sample_triples_ratio is not None:
         assert 1.0 >= arg.sample_triples_ratio >= 0.0
+
     sanity_checking_with_arguments(arg)
     if arg.num_folds_for_cv > 0:
         arg.eval = True
