@@ -31,6 +31,7 @@ def argparse_default(description=None):
                              "Shallom, ConEx, ComplEx, DistMult")
     parser.add_argument('--optim', type=str, default='Adan',
                         help='[Adan,NAdam, Adam, SGD, Sls, AdamSLS]')
+    parser.add_argument('--apply_polyak_avg', type=bool, default=False)
     parser.add_argument('--embedding_dim', type=int, default=100,
                         help='Number of dimensions for an embedding vector. ')
     parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
