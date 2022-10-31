@@ -155,7 +155,7 @@ class BaseKGE(pl.LightningModule):
         elif self.optimizer_name == 'Sls':
             self.selected_optimizer = Sls(params=self.parameters(),
                                           n_batches_per_epoch=500,
-                                          init_step_size=1,
+                                          init_step_size=self.learning_rate,  # 1 originally
                                           c=0.1,
                                           beta_b=0.9,
                                           gamma=2.0,
@@ -167,7 +167,7 @@ class BaseKGE(pl.LightningModule):
         elif self.optimizer_name == 'AdamSLS':
             self.selected_optimizer = AdamSLS(params=self.parameters(),
                                               n_batches_per_epoch=500,
-                                              init_step_size=self.learning_rate,#0.1,0.00001,
+                                              init_step_size=self.learning_rate,  # 0.1,0.00001,
                                               c=0.1,
                                               gamma=2.0,
                                               beta=0.999,

@@ -34,6 +34,18 @@ def argparse_default(description=None):
     parser.add_argument('--scoring_technique', default='KvsAll', help="KvsSample, 1vsAll, KvsAll, NegSample")
     parser.add_argument('--neg_ratio', type=int, default=0,
                         help='The number of negative triples generated per positive triple.')
+    # Optimization related hyperparameters
+    parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
+    parser.add_argument('--input_dropout_rate', type=float, default=0.0)
+    parser.add_argument('--hidden_dropout_rate', type=float, default=0.0)
+    parser.add_argument("--feature_map_dropout_rate", type=int, default=0.0)
+    parser.add_argument("--normalization", type=str, default="BatchNorm1d", help="LayerNorm, BatchNorm1d")
+    # Flags for computation
+    parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
+                                                                        'If >2 ,no evaluation scenario is applied implies no evaluation.')
+    parser.add_argument("--eval", type=str, default='train_val_test',
+                        help='train, val, test, constraint, combine them anyway you want, e.g. '
+                             'train_val,train_val_test, val_test, val_test_constraint ')
     # Additional training params
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
                         help='At every X number of epochs model will be saved. If None, we save 4 times.')
@@ -41,18 +53,6 @@ def argparse_default(description=None):
     parser.add_argument("--label_relaxation_rate", type=float, default=None, help='None for not using it.')
     parser.add_argument("--add_noise_rate", type=float, default=None, help='None for not using it. '
                                                                            '.1 means extend train data by adding 10% random data')
-    # Optimization related hyperparameters
-    parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
-    parser.add_argument('--input_dropout_rate', type=float, default=0.0)
-    parser.add_argument('--hidden_dropout_rate', type=float, default=0.0)
-    parser.add_argument("--feature_map_dropout_rate", type=int, default=0.0)
-    parser.add_argument("--normalization", type=str, default="LayerNorm", help="LayerNorm, BatchNorm1d")
-    # Flags for computation
-    parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
-                                                                        'If >2 ,no evaluation scenario is applied implies no evaluation.')
-    parser.add_argument("--eval", type=str, default='test',
-                        help='train, val, test, constraint, combine them anyway you want, e.g. '
-                             'train_val,train_val_test, val_test, val_test_constraint ')
     # @TODO: Remove maybe ?
     parser.add_argument("--use_dask", type=bool, default=False,
                         help='DASK can be used if the input dataset does not fit into memory.'
@@ -63,9 +63,7 @@ def argparse_default(description=None):
     parser.add_argument('--apply_unit_norm', type=bool, default=False)
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
     parser.add_argument("--num_of_output_channels", type=int, default=3, help="# of output channels in convolution")
-    # @TODO: Rename or remove ?
-    parser.add_argument("--shallom_width_ratio_of_emb", type=float, default=1.5,
-                        help='The ratio of the size of the affine transformation w.r.t. the size of the embeddings')
+
     parser.add_argument("--dnf_predicates", type=list, default=None,
                         help="Predicates in Disjunctive normal form to select only valid triples on the fly."
                              "[('relation', '=','<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>')]")
