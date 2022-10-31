@@ -85,9 +85,9 @@ class Execute:
         # Save it as dictionary
         #  mdict=torch.load('trainer_checkpoint.pt')
         # dict_keys(['epoch', 'global_step', 'pytorch-lightning_version', 'state_dict', 'loops', 'callbacks','optimizer_states', 'lr_schedulers'])
-        #try:
+        # try:
         #    self.trainer.save_checkpoint(self.storage_path + '/trainer_checkpoint.pt')
-        #except AttributeError as e:
+        # except AttributeError as e:
         #    print(e)
         #    print('skipped..')
         # (1) Send model to the eval mode
@@ -135,7 +135,6 @@ class Execute:
         else:
             # (1.1) Read, Preprocess, Index, and Serialize input data.
             self.read_preprocess_index_serialize_data()
-
         # (2) Train
         trained_model, form_of_labelling = self.training_process()
         # (3) Store trained model.
@@ -177,9 +176,7 @@ class Execute:
         """ Train selected model via the selected training strategy """
         print("Train selected model via the selected training strategy ")
         if self.args.num_folds_for_cv >= 2:
-            print('Kfold is broken')
-            #return self.k_fold_cross_validation()
-            return self.training_kvsall()
+            return self.k_fold_cross_validation()
         else:
             if self.args.scoring_technique == 'NegSample':
                 return self.training_negative_sampling()
@@ -534,10 +531,12 @@ class Execute:
         kf = KFold(n_splits=self.args.num_folds_for_cv, shuffle=True, random_state=1)
         model = None
         eval_folds = []
-
         for (ith, (train_index, test_index)) in enumerate(kf.split(self.dataset.train_set)):
-            trainer = pl.Trainer.from_argparse_args(self.args)
-            print(self.args)
+            # trainer = pl.Trainer.from_argparse_args(self.args)
+            callbacks = [PrintCallback(), KGESaveCallback(every_x_epoch=self.args.save_model_at_every_epoch,
+                                                          max_epochs=self.args.max_epochs,
+                                                          path=self.args.full_storage_path), ModelSummary(max_depth=-1)]
+            trainer = initialize_trainer(self.args, callbacks, plugins=[])
             model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
             print(f'{form_of_labelling} training starts: {model.name}')  # -labeling:{form_of_labelling}')
 
@@ -557,16 +556,16 @@ class Execute:
             del dataset
             model_fitting(trainer=trainer, model=model, train_dataloaders=train_dataloaders)
 
-            # 6. Test model on validation and test sets if possible.
-            res = self.evaluator.evaluate_lp_k_vs_all(model, test_set_for_i_th_fold,
-                                                      form_of_labelling=form_of_labelling)
-            print(res)
+            res = self.evaluator.eval_with_data(model, test_set_for_i_th_fold, form_of_labelling=form_of_labelling)
+            # res = self.evaluator.evaluate_lp_k_vs_all(model, test_set_for_i_th_fold, form_of_labelling=form_of_labelling)
             eval_folds.append([res['MRR'], res['H@1'], res['H@3'], res['H@10']])
         eval_folds = pd.DataFrame(eval_folds, columns=['MRR', 'H@1', 'H@3', 'H@10'])
-
-        results = {'H@1': eval_folds['H@1'].mean(), 'H@3': eval_folds['H@3'].mean(), 'H@10': eval_folds['H@10'].mean(),
-                   'MRR': eval_folds['MRR'].mean()}
-        print(f'Evaluate {model.name} on test set: {results}')
+        self.evaluator.report = eval_folds.to_dict()
+        print(eval_folds)
+        print(eval_folds.describe())
+        # results = {'H@1': eval_folds['H@1'].mean(), 'H@3': eval_folds['H@3'].mean(), 'H@10': eval_folds['H@10'].mean(),
+        #           'MRR': eval_folds['MRR'].mean()}
+        # print(f'KFold Cross Validation Results: {results}')
         return model, form_of_labelling
 
 

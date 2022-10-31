@@ -480,8 +480,8 @@ def preprocesses_input_args(arg):
         assert 1.0 >= arg.sample_triples_ratio >= 0.0
 
     sanity_checking_with_arguments(arg)
-    if arg.num_folds_for_cv > 0:
-        arg.eval = True
+    #if arg.num_folds_for_cv > 0:
+    #    arg.eval = True
     if arg.model == 'Shallom':
         arg.scoring_technique = 'KvsAll'
     assert arg.normalization in ['LayerNorm', 'BatchNorm1d']

@@ -20,6 +20,7 @@ class TestRegressionQmult:
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'KvsSample'
         args.neg_ratio = 10
+        args.num_folds_for_cv = 0
         args.eval = 'train_val_test'
         args.read_only_few = None
         args.sample_triples_ratio = None

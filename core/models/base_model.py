@@ -81,6 +81,7 @@ class BaseKGE(pl.LightningModule):
             self.hidden_dropout_rate = 0.0
 
         if self.args['model'] in ['QMult', 'OMult', 'ConvQ', 'ConvO']:
+            # @TODO: We should remove this unit norm part
             if self.args.get("apply_unit_norm"):
                 self.apply_unit_norm = self.args['apply_unit_norm']
             else:
