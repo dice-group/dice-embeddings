@@ -23,8 +23,7 @@ class TestEnsembleConstruction:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.eval = True
-        args.eval_on_train = True
+        args.eval = 'train_val_test'
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None

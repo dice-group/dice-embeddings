@@ -38,7 +38,6 @@ To install dependencies:
 conda create -n dice python=3.9.12
 conda activate dice
 pip3 install pandas==1.4.2
-pip3 install swifter==1.1.2 # we can remove it later
 pip3 install torch==1.13.0 
 pip3 install pytorch-lightning==1.6.4
 pip3 install "dask[complete]"==2022.6.0

@@ -18,8 +18,7 @@ class TestRegressionQmult:
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'KvsAll'
-        args.eval = True
-        args.eval_on_train = True
+        args.eval = 'train_val_test'
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.normalization='LayerNorm'
@@ -48,11 +47,9 @@ class TestRegressionQmult:
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = '1vsAll'
-        args.eval = True
-        args.eval_on_train = True
+        args.eval = 'train_val_test'
         args.sample_triples_ratio = None
         args.read_only_few = None
-        args.sample_triples_ratio = None
         args.torch_trainer = 'DataParallelTrainer'
         result = Execute(args).start()
         assert 0.92 >= result['Train']['H@1'] >= 0.86
@@ -79,8 +76,7 @@ class TestRegressionQmult:
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'NegSample'
         args.neg_ratio = 1
-        args.eval = True
-        args.eval_on_train = True
+        args.eval = 'train_val_test'
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.sample_triples_ratio = None
@@ -110,8 +106,7 @@ class TestRegressionQmult:
         args.scoring_technique = 'NegSample'
         args.normalization='LayerNorm'
         args.neg_ratio = 3
-        args.eval = True
-        args.eval_on_train = True
+        args.eval = 'train_val_test'
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.sample_triples_ratio = None

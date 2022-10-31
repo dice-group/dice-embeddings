@@ -135,6 +135,7 @@ class Execute:
         else:
             # (1.1) Read, Preprocess, Index, and Serialize input data.
             self.read_preprocess_index_serialize_data()
+
         # (2) Train
         trained_model, form_of_labelling = self.training_process()
         # (3) Store trained model.
@@ -176,7 +177,9 @@ class Execute:
         """ Train selected model via the selected training strategy """
         print("Train selected model via the selected training strategy ")
         if self.args.num_folds_for_cv >= 2:
-            return self.k_fold_cross_validation()
+            print('Kfold is broken')
+            #return self.k_fold_cross_validation()
+            return self.training_kvsall()
         else:
             if self.args.scoring_technique == 'NegSample':
                 return self.training_negative_sampling()
@@ -534,6 +537,7 @@ class Execute:
 
         for (ith, (train_index, test_index)) in enumerate(kf.split(self.dataset.train_set)):
             trainer = pl.Trainer.from_argparse_args(self.args)
+            print(self.args)
             model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
             print(f'{form_of_labelling} training starts: {model.name}')  # -labeling:{form_of_labelling}')
 

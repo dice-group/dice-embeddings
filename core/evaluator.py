@@ -16,6 +16,12 @@ class Evaluator:
         :return:
         """
         print('Evaluation Starts.')
+        if self.executor.args.eval is None:
+            return
+        if isinstance(self.executor.args.eval, bool):
+            print('Wrong input:RESET')
+            self.executor.args.eval = 'train_val_test'
+
         if self.executor.args.scoring_technique == 'NegSample':
             self.eval_rank_of_head_and_tail_entity(trained_model)
         elif self.executor.args.scoring_technique in ['KvsAll', 'KvsSample', '1vsAll', 'PvsAll', 'CCvsAll']:
@@ -30,41 +36,41 @@ class Evaluator:
 
     def eval_rank_of_head_and_tail_entity(self, trained_model):
         # 4. Test model on the training dataset if it is needed.
-        if self.executor.args.eval_on_train:
+        if 'train' in self.executor.args.eval:
             res = self.evaluate_lp(trained_model, self.executor.dataset.train_set,
                                    f'Evaluate {trained_model.name} on Train set')
             self.report['Train'] = res
         # 5. Test model on the validation and test dataset if it is needed.
-        if self.executor.args.eval:
+        if 'val' in self.executor.args.eval:
             if self.executor.dataset.valid_set is not None:
                 self.report['Val'] = self.evaluate_lp(trained_model, self.executor.dataset.valid_set,
                                                       f'Evaluate {trained_model.name} of Validation set')
 
-            if self.executor.dataset.test_set is not None:
-                self.report['Test'] = self.evaluate_lp(trained_model, self.executor.dataset.test_set,
-                                                       f'Evaluate {trained_model.name} of Test set')
+        if self.executor.dataset.test_set is not None and 'test' in self.executor.args.eval:
+            self.report['Test'] = self.evaluate_lp(trained_model, self.executor.dataset.test_set,
+                                                   f'Evaluate {trained_model.name} of Test set')
 
     def eval_with_vs_all(self, trained_model, form_of_labelling) -> None:
         """ Evaluate model after reciprocal triples are added """
         # 4. Test model on the training dataset if it is needed.
-        if self.executor.args.eval_on_train:
+        if 'train' in self.executor.args.eval:
             res = self.evaluate_lp_k_vs_all(trained_model, self.executor.dataset.train_set,
                                             info=f'Evaluate {trained_model.name} on Train set',
                                             form_of_labelling=form_of_labelling)
             self.report['Train'] = res
 
         # 5. Test model on the validation and test dataset if it is needed.
-        if self.executor.args.eval:
+        if 'val' in self.executor.args.eval:
             if self.executor.dataset.valid_set is not None:
                 res = self.evaluate_lp_k_vs_all(trained_model, self.executor.dataset.valid_set,
                                                 f'Evaluate {trained_model.name} on Validation set',
                                                 form_of_labelling=form_of_labelling)
                 self.report['Val'] = res
-            if self.executor.dataset.test_set is not None:
-                res = self.evaluate_lp_k_vs_all(trained_model, self.executor.dataset.test_set,
-                                                f'Evaluate {trained_model.name} on Test set',
-                                                form_of_labelling=form_of_labelling)
-                self.report['Test'] = res
+        if self.executor.dataset.test_set is not None and 'test' in self.executor.args.eval:
+            res = self.evaluate_lp_k_vs_all(trained_model, self.executor.dataset.test_set,
+                                            f'Evaluate {trained_model.name} on Test set',
+                                            form_of_labelling=form_of_labelling)
+            self.report['Test'] = res
 
     def evaluate_lp_k_vs_all(self, model, triple_idx, info=None, form_of_labelling=None):
         """
@@ -123,7 +129,8 @@ class Evaluator:
                     target_value = predictions[j, e2_idx[j]].item()
                     predictions[j, filt] = -np.Inf
                     # 3.3.1 Filter entities outside of the range
-                    if self.executor.args.eval_with_constraint:
+                    # TODO: Fix it CV resets from str to boolean
+                    if 'constraint' in self.executor.args.eval:
                         predictions[j, self.executor.dataset.range_constraints_per_rel[data_batch[j, 1]]] = -np.Inf
                     predictions[j, e2_idx[j]] = target_value
                 # Sort predictions.
@@ -195,7 +202,7 @@ class Evaluator:
             # 3.3 Filter scores of all triples containing filtered tail entities
             predictions_tails[filt_tails] = -np.Inf
             # 3.3.1 Filter entities outside of the range
-            if self.executor.args.eval_with_constraint:
+            if 'constraint' in self.executor.args.eval:
                 predictions_tails[self.executor.dataset.range_constraints_per_rel[p]] = -np.Inf
             # 3.4 Reset the target's score
             predictions_tails[o] = target_value
@@ -213,9 +220,10 @@ class Evaluator:
             target_value = predictions_heads[s].item()
             # 4.3 Filter scores of all triples containing filtered head entities.
             predictions_heads[filt_heads] = -np.Inf
-            if self.executor.args.eval_with_constraint:
-                # 4.3.1 Filter entities that are outside the domain
-                predictions_heads[self.executor.dataset.domain_constraints_per_rel[p]] = -np.Inf
+            if isinstance(self.executor.args.eval, bool) is False:
+                if 'constraint' in self.executor.args.eval:
+                    # 4.3.1 Filter entities that are outside the domain
+                    predictions_heads[self.executor.dataset.domain_constraints_per_rel[p]] = -np.Inf
             predictions_heads[s] = target_value
             _, sort_idxs = torch.sort(predictions_heads, descending=True)
             # sort_idxs = sort_idxs.cpu().numpy()
