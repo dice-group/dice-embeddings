@@ -29,7 +29,7 @@ def argparse_default(description=None):
     parser.add_argument("--lr", type=float, default=0.01, help='Learning rate, 0.0003 maybe?')
     parser.add_argument('--callbacks',
                         '--list',
-                        default='["Polyak"]',
+                        default='[]',  # '["Polyak"]',
                         type=json.loads,
                         help='List of tuples representing a callback and values')
 
