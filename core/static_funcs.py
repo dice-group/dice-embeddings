@@ -465,7 +465,7 @@ def preprocesses_input_args(arg):
     except KeyError as e:
         print(arg.eval)
         exit(1)
-    arg.apply_polyak_avg = True if arg.apply_polyak_avg == 1 else False
+    #arg.apply_polyak_avg = True if arg.apply_polyak_avg == 1 else False
     # reciprocal checking
     # @TODO We need better way for using apply_reciprical_or_noise.
     if arg.scoring_technique in ['KvsSample', 'PvsAll', 'CCvsAll', 'KvsAll', '1vsAll', 'BatchRelaxed1vsAll',

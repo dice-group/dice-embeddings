@@ -15,7 +15,7 @@ from pytorch_lightning import seed_everything
 from sklearn.model_selection import KFold
 from pytorch_lightning.callbacks import ModelSummary
 
-from core.callbacks import PrintCallback, KGESaveCallback, PseudoLabellingCallback
+from core.callbacks import PrintCallback, KGESaveCallback, PseudoLabellingCallback, PolyakCallback
 from core.dataset_classes import StandardDataModule
 from core.helper_classes import LabelRelaxationLoss, BatchRelaxedvsAllLoss
 from core.knowledge_graph import KG
@@ -164,7 +164,9 @@ class Execute:
                                      max_epochs=self.args.max_epochs,
                                      path=self.args.full_storage_path),
                      ModelSummary(max_depth=-1)]
-
+        for i in self.args.callbacks:
+            if i == 'Polyak':
+                callbacks.append(PolyakCallback(max_epochs=self.args.max_epochs,path=self.args.full_storage_path))
         # (2) Initialize Trainer
         self.trainer = initialize_trainer(self.args, callbacks, plugins=[])
         # (3) Use (2) to train a KGE model

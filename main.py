@@ -1,6 +1,7 @@
 from core.executer import Execute
 import argparse
 import pytorch_lightning as pl
+import json
 
 
 def argparse_default(description=None):
@@ -16,20 +17,23 @@ def argparse_default(description=None):
                         help="Embeddings, model, and any other related data will be stored therein.")
     # Model and Training Parameters
     parser.add_argument("--model", type=str,
-                        default="Shallom",
+                        default="QMult",
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, "
                              "Shallom, ConEx, ComplEx, DistMult")
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[Adan,NAdam, Adam, SGD, Sls, AdamSLS]')
     parser.add_argument('--embedding_dim', type=int, default=100,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=2, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.01, help='Learning rate, 0.0003 maybe?')
+    parser.add_argument('--callbacks',
+                        '--list',
+                        default='["Polyak"]',
+                        type=json.loads,
+                        help='List of tuples representing a callback and values')
 
-    # @TODO: Rethinkg apply_polyak_avg flipping coints after  75% training is done ?
-    parser.add_argument('--apply_polyak_avg', type=int, default=0, help='1/0')
-    # @TODO: Apply construct_krone?
+    # @TODO: Apply construct_krone as callback?
     # Hyperparameters for training.
     parser.add_argument('--scoring_technique', default='KvsAll', help="KvsSample, 1vsAll, KvsAll, NegSample")
     parser.add_argument('--neg_ratio', type=int, default=0,
@@ -59,8 +63,6 @@ def argparse_default(description=None):
                              '**Its quite common for Dask DataFrame to not provide a speed up over Pandas, especially for datasets that fit comfortably into memory by MRocklin (https://stackoverflow.com/a/57104255/5363103)**')
     parser.add_argument("--torch_trainer", type=str, default='DataParallelTrainer',
                         help='None, DistributedDataParallelTrainer or DataParallelTrainer')
-    # @TODO: Remove
-    parser.add_argument('--apply_unit_norm', type=bool, default=False)
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
     parser.add_argument("--num_of_output_channels", type=int, default=3, help="# of output channels in convolution")
 

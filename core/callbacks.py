@@ -6,6 +6,7 @@ import torch
 from pytorch_lightning.callbacks import Callback
 from .static_funcs import store_kge
 from typing import Optional
+import os
 
 
 class PrintCallback(Callback):
@@ -90,6 +91,43 @@ class PseudoLabellingCallback(Callback):
             trainer.train_dataloader = self.data_module.train_dataloader()
             print(f'\tEpoch:{trainer.current_epoch}: Pseudo-labelling\t |D|= {len(self.data_module.train_set_idx)}')
         model.train()
+
+
+class PolyakCallback(Callback):
+    def __init__(self, *, path: str, max_epochs: int, polyak_start_ratio=0.75):
+        super().__init__()
+        self.epoch_counter = 0
+        self.polyak_starts = int(max_epochs * polyak_start_ratio)
+        self.path = path
+
+    def on_fit_start(self, *args, **kwargs):
+        pass
+
+    def on_train_epoch_end(self, trainer, model):
+        # (1) Polyak Save Condition
+        if self.epoch_counter > self.polyak_starts:
+            torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_{str(self.epoch_counter)}.pt")
+        self.epoch_counter += 1
+
+    def on_fit_end(self, trainer, model):
+        """ END:Called """
+        print('Perform Polyak on weights stored in disk')
+        # (1) Set in eval model
+        model.eval()
+        last_state = model.state_dict()
+        counter = 1.0
+        # (2) Accumulate weights
+        for i in os.listdir(self.path):
+            if '.pt' in i:
+                counter += 1
+                for k, v in torch.load(f'{self.path}/{i}').items():
+                    last_state[k] += v
+        # (3) Average (2)
+        for k, v in last_state.items():
+            if v.dtype != torch.int64:
+                last_state[k] /= counter
+        # (4) Set (3)
+        model.load_state_dict(last_state)
 
 
 # https://pytorch-lightning.readthedocs.io/en/stable/extensions/callbacks.html#persisting-state

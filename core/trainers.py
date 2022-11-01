@@ -39,6 +39,11 @@ class AbstractTrainer:
         for c in self.callbacks:
             c.on_fit_end(*args, **kwargs)
 
+    def on_train_epoch_end(self, *args, **kwargs):
+        """ """
+        for c in self.callbacks:
+            c.on_train_epoch_end(*args, **kwargs)
+
     @staticmethod
     def save_checkpoint(full_path, model):
         torch.save(model.state_dict(), full_path)
@@ -85,8 +90,6 @@ class DataParallelTrainer(AbstractTrainer):
         print_period = max(num_total_batches // 10, 1)
         print(f'Number of batches for an epoch:{num_total_batches}\t printing period:{print_period}')
 
-        polyak_region = int(self.attributes['max_epochs'] * .75)
-
         for epoch in range(self.attributes['max_epochs']):
             epoch_loss = 0
             start_time = time.time()
@@ -128,29 +131,8 @@ class DataParallelTrainer(AbstractTrainer):
             avg_epoch_loss = epoch_loss / num_total_batches
             print(
                 f"{epoch} epoch: Runtime: {(time.time() - start_time) / 60:.3f} minutes \tAverage loss:{avg_epoch_loss}")
-
-            if self.attributes['apply_polyak_avg']:
-                if epoch > polyak_region and epoch % 2 == 0:
-                    print('Saving..', end='')
-                    self.save_checkpoint(full_path=f"{self.full_storage_path}/trainer_checkpoint_{str(epoch)}.pt",
-                                         model=self.model)
-                    print('.')
-        if self.attributes['apply_polyak_avg']:
-            self.model.eval()
-            last_state = self.model.state_dict()
-            counter = 1.0
-            for i in os.listdir(self.full_storage_path):
-                if '.pt' in i:
-                    counter += 1
-                    # model = model.load_state_dict()
-                    for k, v in torch.load(f'{self.full_storage_path}/{i}').items():
-                        last_state[k] += v
-
-            for k, v in last_state.items():
-                if v.dtype != torch.int64:
-                    last_state[k] /= counter
-            self.model.load_state_dict(last_state)
-
+            # Fit on epochs e
+            self.on_train_epoch_end(self, self.model)
         self.on_fit_end(self, self.model)
 
     def compute_forward(self, z):
