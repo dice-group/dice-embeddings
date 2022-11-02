@@ -205,7 +205,10 @@ class BaseKGE(pl.LightningModule):
         :param y_idx: index of selected output labels.
         :return:
         """
-        if y_idx is None:
+        if isinstance(x, tuple):
+            x, y_idx = x
+            return self.forward_k_vs_sample(x=x, target_entity_idx=y_idx)
+        else:
             batch_size, dim = x.shape
             if dim == 3:
                 return self.forward_triples(x)
@@ -215,10 +218,21 @@ class BaseKGE(pl.LightningModule):
                 return self.forward_k_vs_all(x=x)
             else:
                 raise ValueError('Not valid input')
-        else:
-            return self.forward_k_vs_sample(x=x, target_entity_idx=y_idx)
+            """
+            if y_idx is None:
+                batch_size, dim = x.shape
+                if dim == 3:
+                    return self.forward_triples(x)
+                elif dim == 2:
+                    # h, y = x[0], x[1]
+                    # Note that y can be relation or tail entity.
+                    return self.forward_k_vs_all(x=x)
+                else:
+                    raise ValueError('Not valid input')
+            """
 
     def training_step(self, batch, batch_idx):
+        # @TODO: why do we have this ?!
         if len(batch) == 2:
             x_batch, y_batch = batch
             yhat_batch = self.forward(x_batch)
