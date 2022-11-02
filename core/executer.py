@@ -166,7 +166,7 @@ class Execute:
                      ModelSummary(max_depth=-1)]
         for i in self.args.callbacks:
             if i == 'Polyak':
-                callbacks.append(PolyakCallback(max_epochs=self.args.max_epochs,path=self.args.full_storage_path))
+                callbacks.append(PolyakCallback(max_epochs=self.args.max_epochs, path=self.args.full_storage_path))
         # (2) Initialize Trainer
         self.trainer = initialize_trainer(self.args, callbacks, plugins=[])
         # (3) Use (2) to train a KGE model

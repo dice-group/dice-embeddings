@@ -1,6 +1,5 @@
 import os
 
-import pandas
 
 import core
 from core.typings import *
@@ -18,6 +17,7 @@ import time
 import pandas as pd
 import json
 import glob
+import pandas
 import dask.dataframe as dd
 import dask
 from .sanity_checkers import sanity_checking_with_arguments

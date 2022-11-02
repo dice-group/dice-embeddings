@@ -24,13 +24,13 @@ def argparse_default(description=None):
                         help='[Adan,NAdam, Adam, SGD, Sls, AdamSLS]')
     parser.add_argument('--embedding_dim', type=int, default=100,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=0, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.01, help='Learning rate, 0.0003 maybe?')
     parser.add_argument('--callbacks',
                         '--list',
+                        nargs='+',
                         default='[]',  # '["Polyak"]',
-                        type=json.loads,
                         help='List of tuples representing a callback and values')
 
     # @TODO: Apply construct_krone as callback?
