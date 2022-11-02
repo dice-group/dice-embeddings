@@ -54,6 +54,7 @@ class DataParallelTrainer(AbstractTrainer):
 
     def __init__(self, args, callbacks):
         super().__init__(args, callbacks)
+        self.use_closure = None
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.loss_function = None
         self.optimizer = None
@@ -72,15 +73,15 @@ class DataParallelTrainer(AbstractTrainer):
         dataset = kwargs['train_dataloaders'].dataset
         self.loss_function = model.loss_function
         pytorch_loss_function = model.loss
-        self.optimizer = model.configure_optimizers()
 
         if isinstance(self.optimizer, Sls) or isinstance(self.optimizer, AdamSLS):
-            use_closure = True
+            self.use_closure = True
         else:
-            use_closure = False
+            self.use_closure = False
 
         self.model = torch.nn.DataParallel(model)
         self.model.to(self.device)
+        self.optimizer = self.model.configure_optimizers()
         data_loader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size,
                                                   shuffle=True,
                                                   num_workers=self.num_core,
@@ -93,10 +94,15 @@ class DataParallelTrainer(AbstractTrainer):
         for epoch in range(self.attributes['max_epochs']):
             epoch_loss = 0
             start_time = time.time()
+            z:list
             for i, z in enumerate(data_loader):
                 # Zero your gradients for every batch!
                 self.optimizer.zero_grad()
+
+                x_batch, y_batch = self.extract_input_outputs(z)
+                # batch_loss = self.compute_forward()
                 # TODO: Move this one
+                """
                 if len(z) == 3:
                     x_batch, y_idx, y_batch = z
                     # the data transfer should be overlapped by the kernel execution
@@ -113,8 +119,9 @@ class DataParallelTrainer(AbstractTrainer):
                     yhat_batch = self.model(x_batch)
                 else:
                     raise ValueError(len(z))
-
-                if use_closure:
+                """
+                yhat_batch = self.model(x_batch)
+                if self.use_closure:
                     batch_loss = self.optimizer.step(
                         closure=lambda: pytorch_loss_function(self.model(x_batch), y_batch))
                 else:
@@ -134,6 +141,23 @@ class DataParallelTrainer(AbstractTrainer):
             # Fit on epochs e
             self.on_train_epoch_end(self, self.model)
         self.on_fit_end(self, self.model)
+
+    def extract_input_outputs(self, z):
+        """
+        Construct inputs and outputs from a batch of inputs with outputs
+        From a batch of inputs and put
+        """
+        if len(z) == 2:
+            x_batch, y_batch = z
+            return x_batch.to(self.device), y_batch.to(self.device)
+        elif len(z) == 3:
+            x_batch, y_idx_batch, y_batch, = z
+            x_batch, y_idx_batch, y_batch = x_batch.to(self.device), y_idx_batch.to(self.device), y_batch.to(
+                self.device)
+            return (x_batch, y_idx_batch), y_batch
+        else:
+            print(len(batch))
+            raise ValueError('Unexpected batch shape..')
 
     def compute_forward(self, z):
         if len(z) == 2:
