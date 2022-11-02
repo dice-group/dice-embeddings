@@ -52,12 +52,10 @@ class AdamSLS(StochLineSearchBase):
 
         self.momentum = momentum
         self.beta = beta
-        # self.state['step_size'] = init_step_size
 
         self.clip_grad = clip_grad
         self.gv_option = gv_option
         self.base_opt = base_opt
-        # self.step_size_method = step_size_method
 
         # gv options
         self.gv_option = gv_option
@@ -241,7 +239,7 @@ class AdamSLS(StochLineSearchBase):
                     p_next.data[:] = p_current.data
                     p_next.data.add_((pv_list * mv_i_scaled), alpha=- step_size)
 
-            elif (self.base_opt in ['rmsprop', 'adagrad']):
+            elif self.base_opt in ['rmsprop', 'adagrad']:
                 zipped = zip(params, params_current, grad_current, self.state['gv'])
                 for p_next, p_current, g_current, gv_i in zipped:
                     pv_list = 1. / (torch.sqrt(gv_i) + 1e-8)
@@ -250,7 +248,7 @@ class AdamSLS(StochLineSearchBase):
                     p_next.data[:] = p_current.data
                     p_next.data.add_((pv_list * g_current), alpha=- step_size)
 
-            elif (self.base_opt in ['diag_hessian', 'diag_ggn_ex', 'diag_ggn_mc']):
+            elif self.base_opt in ['diag_hessian', 'diag_ggn_ex', 'diag_ggn_mc']:
                 zipped = zip(params, params_current, grad_current, self.state['gv'])
                 for p_next, p_current, g_current, gv_i in zipped:
                     pv_list = 1. / (gv_i + 1e-8)  # adding 1e-8 to avoid overflow.

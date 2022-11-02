@@ -2,7 +2,6 @@ import torch
 import copy
 import collections
 import numpy as np
-#import wandb
 
 from . import utils as ut
 
@@ -94,19 +93,21 @@ class StochLineSearchBase(torch.optim.Optimizer):
 
         return step_size, loss_next
 
-    def check_armijo_conditions(self, step_size, loss, suff_dec, loss_next, c, beta_b):
+    @staticmethod
+    def check_armijo_conditions(step_size, loss, suff_dec, loss_next, c, beta_b):
         found = 0
-        sufficient_decrease = (step_size) * c * suff_dec
+        sufficient_decrease = step_size * c * suff_dec
         rhs = loss - sufficient_decrease
         break_condition = loss_next - rhs
-        if (break_condition <= 0):
+        if break_condition <= 0:
             found = 1
         else:
             step_size = step_size * beta_b
 
         return found, step_size
 
-    def reset_step(self, step_size, n_batches_per_epoch=None, gamma=None, reset_option=1, init_step_size=None):
+    @staticmethod
+    def reset_step(step_size, n_batches_per_epoch=None, gamma=None, reset_option=1, init_step_size=None):
 
         if reset_option == 0:
             pass
@@ -148,6 +149,7 @@ class StochLineSearchBase(torch.optim.Optimizer):
         self.state['zero_steps'] = 0
         self.state['numerical_error'] = 0
 
+    @staticmethod
     def gather_flat_grad(self, params):
         views = []
         for p in params:
@@ -160,6 +162,7 @@ class StochLineSearchBase(torch.optim.Optimizer):
             views.append(view)
         return torch.cat(views, 0)
 
+    @staticmethod
     def flatten_vect(self, vect):
         views = []
         for p in vect:
