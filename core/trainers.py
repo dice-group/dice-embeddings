@@ -119,7 +119,7 @@ class DataParallelTrainer(AbstractTrainer):
     def compute_forward_loss_backward(self, x_batch: torch.Tensor, y_batch: torch.Tensor) -> torch.Tensor:
         """ Compute the forward, loss and backward """
         if self.use_closure:
-            batch_loss = self.optimizer.step(closure=lambda: self.loss_function.loss(self.model(x_batch), y_batch))
+            batch_loss = self.optimizer.step(closure=lambda: self.loss_function(self.model(x_batch), y_batch))
             return batch_loss
         else:
             # (4) Backpropagate the gradient of (3) w.r.t. parameters.
