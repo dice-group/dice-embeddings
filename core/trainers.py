@@ -72,16 +72,14 @@ class DataParallelTrainer(AbstractTrainer):
         self.model = model
         dataset = kwargs['train_dataloaders'].dataset
         self.loss_function = model.loss_function
-        pytorch_loss_function = model.loss
+        self.model = torch.nn.DataParallel(model)
+        self.optimizer = model.configure_optimizers(self.model.parameters())
 
         if isinstance(self.optimizer, Sls) or isinstance(self.optimizer, AdamSLS):
             self.use_closure = True
         else:
             self.use_closure = False
 
-        self.model = torch.nn.DataParallel(model)
-        self.model.to(self.device)
-        self.optimizer = self.model.configure_optimizers()
         data_loader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size,
                                                   shuffle=True,
                                                   num_workers=self.num_core,
@@ -94,42 +92,15 @@ class DataParallelTrainer(AbstractTrainer):
         for epoch in range(self.attributes['max_epochs']):
             epoch_loss = 0
             start_time = time.time()
-            z:list
-            for i, z in enumerate(data_loader):
-                # Zero your gradients for every batch!
+            i: int
+            batch: list
+            for i, batch in enumerate(data_loader):
+                # (1) Zero the gradients.
                 self.optimizer.zero_grad()
-
-                x_batch, y_batch = self.extract_input_outputs(z)
-                # batch_loss = self.compute_forward()
-                # TODO: Move this one
-                """
-                if len(z) == 3:
-                    x_batch, y_idx, y_batch = z
-                    # the data transfer should be overlapped by the kernel execution
-                    x_batch, y_idx, y_batch = x_batch.to(self.device, non_blocking=True), y_idx.to(self.device,
-                                                                                                   non_blocking=True), y_batch.to(
-                        self.device,
-                        non_blocking=True)
-                    yhat_batch = self.model(x_batch, y_idx)
-                elif len(z) == 2:
-                    x_batch, y_batch = z
-                    # the data transfer should be overlapped by the kernel execution
-                    x_batch, y_batch = x_batch.to(self.device, non_blocking=True), y_batch.to(self.device,
-                                                                                              non_blocking=True)
-                    yhat_batch = self.model(x_batch)
-                else:
-                    raise ValueError(len(z))
-                """
-                yhat_batch = self.model(x_batch)
-                if self.use_closure:
-                    batch_loss = self.optimizer.step(
-                        closure=lambda: pytorch_loss_function(self.model(x_batch), y_batch))
-                else:
-                    batch_loss = self.loss_function(yhat_batch, y_batch)
-                    # Backward pass
-                    batch_loss.backward()
-                    # Adjust learning weights
-                    self.optimizer.step()
+                # (2) Extract Input and Outputs.
+                x_batch, y_batch = self.extract_input_outputs(batch)
+                # (3) Loss Forward and Backward w.r.t the batch.
+                batch_loss = self.compute_forward_loss_backward(x_batch, y_batch)
 
                 epoch_loss += batch_loss.item()
                 # if i > 0 and i % print_period == 0:
@@ -140,13 +111,27 @@ class DataParallelTrainer(AbstractTrainer):
                 f"{epoch} epoch: Runtime: {(time.time() - start_time) / 60:.3f} minutes \tAverage loss:{avg_epoch_loss}")
             # Fit on epochs e
             self.on_train_epoch_end(self, self.model)
+            # Write a callback to store
+            # print(self.optimizer.state['step_size'])
+
         self.on_fit_end(self, self.model)
 
-    def extract_input_outputs(self, z):
-        """
-        Construct inputs and outputs from a batch of inputs with outputs
-        From a batch of inputs and put
-        """
+    def compute_forward_loss_backward(self, x_batch: torch.Tensor, y_batch: torch.Tensor) -> torch.Tensor:
+        """ Compute the forward, loss and backward """
+        if self.use_closure:
+            batch_loss = self.optimizer.step(closure=lambda: self.model.loss(self.model(x_batch), y_batch))
+            return batch_loss
+        else:
+            # (4) Backpropagate the gradient of (3) w.r.t. parameters.
+            batch_loss = self.loss_function(self.model(x_batch), y_batch)
+            # Backward pass
+            batch_loss.backward()
+            # Adjust learning weights
+            self.optimizer.step()
+            return batch_loss
+
+    def extract_input_outputs(self, z: list) -> tuple:
+        """ Construct inputs and outputs from a batch of inputs with outputs From a batch of inputs and put """
         if len(z) == 2:
             x_batch, y_batch = z
             return x_batch.to(self.device), y_batch.to(self.device)
@@ -155,21 +140,6 @@ class DataParallelTrainer(AbstractTrainer):
             x_batch, y_idx_batch, y_batch = x_batch.to(self.device), y_idx_batch.to(self.device), y_batch.to(
                 self.device)
             return (x_batch, y_idx_batch), y_batch
-        else:
-            print(len(batch))
-            raise ValueError('Unexpected batch shape..')
-
-    def compute_forward(self, z):
-        if len(z) == 2:
-            x_batch, y_batch = z
-            x_batch, y_batch = x_batch.to(self.device), y_batch.to(self.device)
-            return self.model.forward(x=x_batch), y_batch
-        elif len(z) == 3:
-            x_batch, y_idx_batch, y_batch, = z
-            x_batch, y_idx_batch, y_batch = x_batch.to(self.device), y_idx_batch.to(self.device), y_batch.to(
-                self.device)
-            return self.model.forward(x=x_batch, y_idx=y_idx_batch), y_batch
-
         else:
             print(len(batch))
             raise ValueError('Unexpected batch shape..')

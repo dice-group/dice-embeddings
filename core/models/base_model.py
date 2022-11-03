@@ -126,35 +126,38 @@ class BaseKGE(pl.LightningModule):
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
         return self.entity_embeddings.weight.data.data.detach(), self.relation_embeddings.weight.data.detach()
 
-    def configure_optimizers(self):
+    def configure_optimizers(self,parameters =None):
+        if parameters is None:
+            parameters=self.parameters()
+
         # default params in pytorch.
         if self.optimizer_name == 'SGD':
-            self.selected_optimizer = torch.optim.SGD(params=self.parameters(), lr=self.learning_rate,
+            self.selected_optimizer = torch.optim.SGD(params=parameters, lr=self.learning_rate,
                                                       momentum=0, dampening=0, weight_decay=self.weight_decay,
                                                       nesterov=False)
         elif self.optimizer_name == 'Adam':
-            self.selected_optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate,
+            self.selected_optimizer = torch.optim.Adam(parameters, lr=self.learning_rate,
                                                        weight_decay=self.weight_decay)
 
         elif self.optimizer_name == 'NAdam':
-            self.selected_optimizer = torch.optim.NAdam(self.parameters(), lr=self.learning_rate, betas=(0.9, 0.999),
+            self.selected_optimizer = torch.optim.NAdam(parameters, lr=self.learning_rate, betas=(0.9, 0.999),
                                                         eps=1e-08, weight_decay=self.weight_decay, momentum_decay=0.004)
         elif self.optimizer_name == 'Adagrad':
-            self.selected_optimizer = torch.optim.Adagrad(self.parameters(),
+            self.selected_optimizer = torch.optim.Adagrad(parameters,
                                                           lr=self.learning_rate, eps=1e-10,
                                                           weight_decay=self.weight_decay)
         elif self.optimizer_name == 'ASGD':
-            self.selected_optimizer = torch.optim.ASGD(self.parameters(),
+            self.selected_optimizer = torch.optim.ASGD(parameters,
                                                        lr=self.learning_rate, lambd=0.0001, alpha=0.75,
                                                        weight_decay=self.weight_decay)
         elif self.optimizer_name == 'Adan':
-            self.selected_optimizer = Adan(self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay,
+            self.selected_optimizer = Adan(parameters, lr=self.learning_rate, weight_decay=self.weight_decay,
                                            betas=(0.98, 0.92, 0.99),
                                            eps=1e-08,
                                            max_grad_norm=0.0,
                                            no_prox=False)
         elif self.optimizer_name == 'Sls':
-            self.selected_optimizer = Sls(params=self.parameters(),
+            self.selected_optimizer = Sls(params=parameters,
                                           n_batches_per_epoch=500,
                                           init_step_size=self.learning_rate,  # 1 originally
                                           c=0.1,
@@ -166,7 +169,7 @@ class BaseKGE(pl.LightningModule):
                                           bound_step_size=True,
                                           line_search_fn="armijo")
         elif self.optimizer_name == 'AdamSLS':
-            self.selected_optimizer = AdamSLS(params=self.parameters(),
+            self.selected_optimizer = AdamSLS(params=parameters,
                                               n_batches_per_epoch=500,
                                               init_step_size=self.learning_rate,  # 0.1,0.00001,
                                               c=0.1,
