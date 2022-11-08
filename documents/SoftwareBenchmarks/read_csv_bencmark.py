@@ -55,14 +55,7 @@ def read_by_polar(path_csv: str):
     import polars
     print(f'Reading with Polar {polars.__version__}...', end='\t')
     start_time = time.time()
-    df = polars.read_csv(path_csv,
-                         # delim_whitespace=True,
-                         # header=None,
-                         # usecols=[0, 1, 2],
-                         # names=['subject', 'relation', 'object'],
-                         # dtype=str
-                         )
-
+    df = polars.read_csv(path_csv, new_columns=['subject', 'relation', 'object'],sep="\t").to_pandas()
     print(f'Took {time.time() - start_time} seconds')
     print(f'Shape: {df.shape}')
     print(f'Type:{type(df)}')
