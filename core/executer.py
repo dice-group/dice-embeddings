@@ -128,6 +128,7 @@ class Execute:
         (4) Return a report of the training
         """
         start_time = time.time()
+        # @TODO: Refactor this if else into a single line or method
         # (1) Data Preparation.
         if self.is_continual_training:
             # (1.2) Load indexed input data.
@@ -159,6 +160,7 @@ class Execute:
         self.report['num_relations'] = self.dataset.num_relations
         print('------------------- Train & Eval -------------------')
         # (1) Collect Callbacks to be used during training
+        # @TODO: Refactor this callback generation and extension into a single line/function
         callbacks = [PrintCallback(),
                      KGESaveCallback(every_x_epoch=self.args.save_model_at_every_epoch,
                                      max_epochs=self.args.max_epochs,
