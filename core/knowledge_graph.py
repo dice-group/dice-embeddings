@@ -4,19 +4,14 @@ from collections import defaultdict
 import numpy as np
 import pickle
 import json
-import dask
-from dask import dataframe as ddf
 import os
 import pandas as pd
 from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_re_vocab, \
-    create_recipriocal_triples_from_dask, add_noisy_triples, index_triples, load_data_parallel, create_constraints, \
+    create_recipriocal_triples, add_noisy_triples, index_triples, load_data_parallel, create_constraints, \
     numpy_data_type_changer, vocab_to_parquet, preprocess_dataframe_of_kg, dask_remove_triples_with_condition
 from .sanity_checkers import dataset_sanity_checking
 import glob
-from dask.distributed import Client
 import pyarrow.parquet as pq
-
-# pd.set_option('display.max_columns', None)
 
 
 class KG:
@@ -31,12 +26,11 @@ class KG:
 
     def __init__(self, data_dir: str = None, deserialize_flag: str = None,
                  num_core: int = 1,
-                 use_dask: bool = False,
                  add_reciprical: bool = None, eval_model: bool = None,
                  read_only_few: int = None, sample_triples_ratio: float = None,
                  path_for_serialization: str = None, add_noise_rate: float = None,
                  min_freq_for_vocab: int = None,
-                 entity_to_idx=None, relation_to_idx=None, dnf_predicates=None):
+                 entity_to_idx=None, relation_to_idx=None, dnf_predicates=None, backend=None):
         """
 
         :param data_dir: A path of a folder containing the input knowledge graph
@@ -64,19 +58,13 @@ class KG:
         self.min_freq_for_vocab = min_freq_for_vocab
         self.entity_to_idx = entity_to_idx
         self.relation_to_idx = relation_to_idx
-        # self.scheduler_flag = 'processes' if self.num_core > 1 else 'threads'  # 'single-threaded'
+
+        self.backend = 'pandas' if backend is None else backend
+
         self.scheduler_flag = None
         self.input_is_parquet = None
         self.dnf_predicates = dnf_predicates
-        if use_dask:
-            self.client = Client()
-            print(f'DASK: {self.client}\tDASK-Dashboard:\t{self.client.dashboard_link}')
-            print('If you are running this code in a remote server')
-            print('**** ssh - L 8000: localhost:8787 user@remote **** and then ***dask-scheduler ***')
-            print('Go to http://localhost:8000/status on your local')
-            # Performance depends on a large number of things. I
-            # t's quite common for Dask DataFrame to not provide a speed up over Pandas, especially for datasets that fit comfortably into memory.
-            # by MRocklin (https://stackoverflow.com/a/57104255/5363103)
+
         # (1) Load + Preprocess input data.
         if deserialize_flag is None:
             # (1.1) Load and Preprocess the data.
@@ -86,14 +74,9 @@ class KG:
             # (1.3) Construct integer indexing for entities and relations.
             if entity_to_idx is None and relation_to_idx is None:
                 if self.input_is_parquet:
-                    if use_dask:
-                        self.dask_vocabulary_construction()
-                        self.train_set = self.train_set.compute()
-                    else:
-                        self.sequential_vocabulary_construction()
+                    self.sequential_vocabulary_construction()
                 else:
                     self.sequential_vocabulary_construction()  # via Pandas
-                # @TODO self.entity_to_idx and self.relation_to_idx can be reassigned via futures,
                 print(
                     '[9 / 14] Obtaining entity to integer index mapping from pandas dataframe...')
                 self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
@@ -123,9 +106,6 @@ class KG:
                 self.train_set = self.train_set.values
                 print('Done !\n')
             else:
-                # self.parallel_vocabulary_construction()
-                # self.sequential_vocabulary_construction()
-
                 print(
                     '[4 / 14] Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...',
                 )
@@ -139,15 +119,15 @@ class KG:
                 self.train_set = index_triples(self.train_set, self.entity_to_idx, self.relation_to_idx)
                 print('Done !\n')
                 print('Train set compute...')
-                self.train_set = self.train_set.compute()
+                self.train_set = self.train_set
                 print('Done !\n')
                 if self.valid_set is not None:
                     print('Valid set compute...')
-                    self.valid_set = self.valid_set.compute()
+                    self.valid_set = self.valid_set
                     print('Done !\n')
                 if self.test_set is not None:
                     print('Test set compute...')
-                    self.test_set = self.test_set.compute()
+                    self.test_set = self.test_set
                     print('Done !\n')
                 assert isinstance(self.train_set, pd.core.frame.DataFrame)
                 # 11. Convert data from pandas dataframe to numpy ndarray.
@@ -175,7 +155,7 @@ class KG:
                         path_for_serialization + '/idx_valid_df.gzip', compression='gzip', engine='pyarrow')
                     print('Done !\n')
                 # To numpy
-                self.valid_set = self.valid_set.values  # .compute(scheduler=scheduler_flag)
+                self.valid_set = self.valid_set.values
                 dataset_sanity_checking(self.valid_set, self.num_entities, self.num_relations)
                 self.valid_set = numpy_data_type_changer(self.valid_set, num=max(self.num_entities, self.num_relations))
             if self.test_set is not None:
@@ -213,7 +193,6 @@ class KG:
         else:
             self.deserialize(deserialize_flag)
 
-
             if self.eval_model:
                 if self.valid_set is not None and self.test_set is not None:
                     # 16. Create a bijection mapping from subject-relation pairs to tail entities.
@@ -237,46 +216,6 @@ class KG:
                                      f'\nNumber of triples on valid set: {len(self.valid_set) if self.valid_set is not None else 0}' \
                                      f'\nNumber of triples on test set: {len(self.test_set) if self.test_set is not None else 0}\n'
 
-    def dask_vocabulary_construction(self) -> None:
-        """
-        (1) Read input data into memory
-        (2) Remove triples with a condition
-        (3) Serialize vocabularies in a pandas dataframe where
-                    => the index is integer and
-                    => a single column is string (e.g. URI)
-        """
-        # (4) Remove triples from (1).
-        self.train_set = dask_remove_triples_with_condition(self.train_set, self.min_freq_for_vocab)
-        print('[4 / 14] Concatenating data to obtain index...')
-        x = [self.train_set]
-        if self.valid_set is not None:
-            x.append(self.valid_set)
-        if self.test_set is not None:
-            x.append(self.test_set)
-        df_str_kg = ddf.concat(x, ignore_index=True)
-        del x
-        print('Done !\n')
-        print('[5 / 14] Creating a mapping from entities to integer indexes (actual compute)...')
-        self.entity_to_idx = ddf.concat([df_str_kg['subject'].unique(), df_str_kg['object'].unique()],
-                                        ignore_index=True).unique().to_frame(name='entity').compute()
-        print('Done !\n')
-        integer_indexes = self.entity_to_idx.index
-        self.entity_to_idx = self.entity_to_idx.set_index(self.entity_to_idx.entity)
-        self.entity_to_idx['entity'] = integer_indexes
-
-        vocab_to_parquet(self.entity_to_idx, 'entity_to_idx.gzip', self.path_for_serialization,
-                         print_into='[6 / 14] Serializing compressed entity integer mapping...')
-
-        print('[7 / 14] Creating a mapping from relations to integer indexes (actual compute)...')
-        self.relation_to_idx = df_str_kg['relation'].unique().to_frame(name='relation').compute()
-        print('Done !\n')
-        integer_indexes = self.relation_to_idx.index
-        self.relation_to_idx = self.relation_to_idx.set_index(self.relation_to_idx.relation)
-        self.relation_to_idx['relation'] = integer_indexes
-        vocab_to_parquet(self.relation_to_idx, 'relation_to_idx.gzip', self.path_for_serialization,
-                         '[8 / 14] Serializing compressed relation integer mapping...')
-        del integer_indexes
-
     def sequential_vocabulary_construction(self) -> None:
         """
         (1) Read input data into memory
@@ -285,20 +224,15 @@ class KG:
                     => the index is integer and
                     => a single column is string (e.g. URI)
         """
-        # (1) Read input data into memory.
-        if isinstance(self.train_set, ddf.DataFrame):
-            print(f'Train set compute with scheduler={self.scheduler_flag}...')
-            self.train_set = self.train_set.compute(scheduler=self.scheduler_flag)
-        else:
+        try:
             assert isinstance(self.train_set, pd.DataFrame)
-        # (2) Read valid data into memory.
-        if self.valid_set is not None:
-            print(f'Valid set compute with scheduler={self.scheduler_flag}...')
-            self.valid_set = self.valid_set.compute(scheduler=self.scheduler_flag)
-        # (3) Read test data into memory.
-        if self.test_set is not None:
-            print(f'Test set compute with scheduler={self.scheduler_flag}...')
-            self.test_set = self.test_set.compute(scheduler=self.scheduler_flag)
+        except TypeError:
+            print(type(self.train_set))
+            print('HEREE')
+            exit(1)
+        assert isinstance(self.valid_set, pd.DataFrame) or self.valid_set is None
+        assert isinstance(self.test_set, pd.DataFrame) or self.test_set is None
+
         # (4) Remove triples from (1).
         self.remove_triples_from_train_with_condition()
         # Concatenate dataframes.
@@ -363,8 +297,9 @@ class KG:
             del low_frequency_entities
             print('Done !\n')
 
-    def load_read_process(self) -> Tuple[dask.dataframe.DataFrame, Union[dask.dataframe.DataFrame, None],
-                                         Union[dask.dataframe.DataFrame, None]]:
+    def load_read_process(self):  # -> Tuple[dask.dataframe.DataFrame, Union[dask.dataframe.DataFrame, None],
+        #          Union[dask.dataframe.DataFrame, None]]\
+
         """ Load train valid (if exists), and test (if exists) into memory """
         # (1) Check whether a path leading to a directory is a parquet formatted file
         if self.data_dir[-8:] == '.parquet':
@@ -373,18 +308,11 @@ class KG:
             if self.dnf_predicates:
                 # https://arrow.apache.org/docs/python/generated/pyarrow.parquet.read_table.html
                 self.train_set = preprocess_dataframe_of_kg(df=pq.read_table(self.data_dir,
-                                                                          columns=['subject', 'relation', 'object'],
-                                                                          filters=self.dnf_predicates).to_pandas(),
+                                                                             columns=['subject', 'relation', 'object'],
+                                                                             filters=self.dnf_predicates).to_pandas(),
                                                             read_only_few=self.read_only_few,
                                                             sample_triples_ratio=self.sample_triples_ratio)
             else:
-                """
-                # @TODO: Test modin read_parquet with large dat https://modin.readthedocs.io/en/latest/
-                import modin.pandas as pd
-                start_time=time.time()
-                self.train_set = pd.read_parquet(self.data_dir, engine='pyarrow')
-                print(time.time()-start_time)
-                """
                 self.train_set = preprocess_dataframe_of_kg(df=pd.read_parquet(self.data_dir, engine='pyarrow'),
                                                             read_only_few=self.read_only_few,
                                                             sample_triples_ratio=self.sample_triples_ratio)
@@ -398,19 +326,21 @@ class KG:
             print(
                 f'[1 / 14] Lazy Loading and Preprocessing training data: read_only_few: {self.read_only_few} , sample_triples_ratio: {self.sample_triples_ratio}...',
             )
-            self.train_set = load_data_parallel(self.data_dir + '/train', self.read_only_few, self.sample_triples_ratio)
+            self.train_set = load_data_parallel(self.data_dir + '/train.txt', self.read_only_few,
+                                                self.sample_triples_ratio,
+                                                backend=self.backend)
             print('Train Dataset:', self.train_set)
             print('Done !\n')
             print(
                 f'[2 / 14] Lazy Loading and Preprocessing valid data...',
             )
-            self.valid_set = load_data_parallel(self.data_dir + '/valid')
+            self.valid_set = load_data_parallel(self.data_dir + '/valid.txt', backend=self.backend)
             print('Validation Dataset:', self.valid_set)
             print('Done !\n')
             print(
                 f'[3 / 14] Lazy Loading and Preprocessing test data...',
             )
-            self.test_set = load_data_parallel(self.data_dir + '/test')
+            self.test_set = load_data_parallel(self.data_dir + '/test.txt', backend=self.backend)
             print('Test Dataset:', self.test_set)
             print('Done !\n')
             self.input_is_parquet = False
@@ -423,11 +353,11 @@ class KG:
             print(
                 '[3.1 / 14] Add reciprocal triples to train, validation, and test sets, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}',
             )
-            self.train_set = create_recipriocal_triples_from_dask(self.train_set)
+            self.train_set = create_recipriocal_triples(self.train_set)
             if self.valid_set is not None:
-                self.valid_set = create_recipriocal_triples_from_dask(self.valid_set)
+                self.valid_set = create_recipriocal_triples(self.valid_set)
             if self.test_set is not None:
-                self.test_set = create_recipriocal_triples_from_dask(self.test_set)
+                self.test_set = create_recipriocal_triples(self.test_set)
             print('Done !\n')
 
         # (2) Extend KG with triples where entities and relations are randomly sampled.
