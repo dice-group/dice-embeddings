@@ -38,8 +38,7 @@ To install dependencies:
 conda create -n dice python=3.9.12
 conda activate dice
 pip3 install pandas==1.5.0
-pip3 install swifter==1.1.2 # we can remove it later
-pip3 install torch --extra-index-url https://download.pytorch.org/whl/cu113
+pip3 install torch==1.13.0 
 pip3 install pytorch-lightning==1.6.4
 pip3 install "dask[complete]"==2022.6.0
 pip3 install scikit-learn==1.1.1
@@ -73,6 +72,7 @@ Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , i
 # To download a pretrained ConEx
 mkdir ConEx && cd ConEx && wget -r -nd -np https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpedia/ConEx/ && cd ..
 ```
+### Triple Classification
 ```python
 from core import KGE
 pre_trained_kge = KGE(path_of_pretrained_model_dir='ConEx')
@@ -83,8 +83,20 @@ pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Ei
 pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Germany"]) # tensor([0.9498])
 pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/France"]) # very low
 pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Italy"]) # very low
-pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"]) # needs more memory than simple triple eval.
-# ...
+```
+### Relation Prediction
+```python
+from core import KGE
+pre_trained_kge = KGE(path_of_pretrained_model_dir='ConEx')
+pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],tail_entity=["http://dbpedia.org/resource/Ulm"])
+```
+
+### Entity Prediction
+```python
+from core import KGE
+pre_trained_kge = KGE(path_of_pretrained_model_dir='ConEx')
+pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"]) 
+pre_trained_kge.predict_topk(relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Albert_Einstein"]) 
 ```
 
 ## How to Deploy

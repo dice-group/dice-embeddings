@@ -96,7 +96,8 @@ class QMult(BaseKGE):
                                                     Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
 
         # (batch size, num. selected entity, dimension)
-        tail_entity_emb = self.normalize_tail_entity_embeddings(self.entity_embeddings(target_entity_idx))
+        # tail_entity_emb = self.normalize_tail_entity_embeddings(self.entity_embeddings(target_entity_idx))
+        tail_entity_emb = self.entity_embeddings(target_entity_idx)
         # quaternion vectors
         emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.tensor_split(tail_entity_emb, 4, dim=2)
 

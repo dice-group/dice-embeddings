@@ -60,7 +60,8 @@ class Shallom(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'Shallom'
-        shallom_width = int(args['shallom_width_ratio_of_emb'] * self.embedding_dim)
+        # Fixed
+        shallom_width = int(2*self.embedding_dim)
         self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
         xavier_normal_(self.entity_embeddings.weight.data)
         self.shallom = nn.Sequential(nn.Dropout(self.input_dropout_rate),

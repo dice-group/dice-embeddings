@@ -1,6 +1,5 @@
 import os
 
-import pandas
 
 import core
 from core.typings import *
@@ -18,10 +17,11 @@ import time
 import pandas as pd
 import json
 import glob
+import pandas
 import dask.dataframe as dd
 import dask
 from .sanity_checkers import sanity_checking_with_arguments
-from pytorch_lightning.strategies.ddp import DDPStrategy
+from pytorch_lightning.strategies import DDPStrategy
 
 
 # @TODO: Could these funcs can be merged?
@@ -326,24 +326,10 @@ def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, num_cor
     :return: indexed triples, i.e., pandas dataframe
     """
     n, d = train_set.shape
-    """
-    @TODO: Benchmark using apply on dask dataframe, swifter and plain pandas
-    if num_core > 1000:
-        print(f'Number of cores will be used :{num_core}')
-        assert isinstance(train_set, pd.core.frame.DataFrame)
-        train_set['subject'] = train_set['subject'].swifter.apply(lambda x: entity_to_idx.get(x))
-        train_set['relation'] = train_set['relation'].swifter.apply(lambda x: relation_to_idx.get(x))
-        train_set['object'] = train_set['object'].swifter.apply(lambda x: entity_to_idx.get(x))
-        assert (n, d) == train_set.shape
-    else:
-        train_set['subject'] = train_set['subject'].apply(lambda x: entity_to_idx.get(x))
-        train_set['relation'] = train_set['relation'].apply(lambda x: relation_to_idx.get(x))
-        train_set['object'] = train_set['object'].apply(lambda x: entity_to_idx.get(x))
-    """
     train_set['subject'] = train_set['subject'].apply(lambda x: entity_to_idx.get(x))
     train_set['relation'] = train_set['relation'].apply(lambda x: relation_to_idx.get(x))
     train_set['object'] = train_set['object'].apply(lambda x: entity_to_idx.get(x))
-    train_set = train_set.dropna()
+    # train_set = train_set.dropna(inplace=True)
     if isinstance(train_set, pd.core.frame.DataFrame):
         assert (n, d) == train_set.shape
     elif isinstance(train_set, dask.dataframe.core.DataFrame):
@@ -474,8 +460,14 @@ def preprocesses_input_args(arg):
     # del arg.check_val_every_n_epochs
     # arg.checkpoint_callback = False
     arg.logger = False
-    arg.eval = True if arg.eval == 1 else False
-    arg.eval_on_train = True if arg.eval_on_train == 1 else False
+    # arg.eval = True if arg.eval == 1 else False
+    # arg.eval_on_train = True if arg.eval_on_train == 1 else False
+    try:
+        assert arg.eval in [None, 'train', 'val', 'test', 'train_val', 'train_test', 'val_test', 'train_val_test']
+    except KeyError as e:
+        print(arg.eval)
+        exit(1)
+    #arg.apply_polyak_avg = True if arg.apply_polyak_avg == 1 else False
     # reciprocal checking
     # @TODO We need better way for using apply_reciprical_or_noise.
     if arg.scoring_technique in ['KvsSample', 'PvsAll', 'CCvsAll', 'KvsAll', '1vsAll', 'BatchRelaxed1vsAll',
@@ -488,9 +480,10 @@ def preprocesses_input_args(arg):
 
     if arg.sample_triples_ratio is not None:
         assert 1.0 >= arg.sample_triples_ratio >= 0.0
+
     sanity_checking_with_arguments(arg)
-    if arg.num_folds_for_cv > 0:
-        arg.eval = True
+    # if arg.num_folds_for_cv > 0:
+    #    arg.eval = True
     if arg.model == 'Shallom':
         arg.scoring_technique = 'KvsAll'
     assert arg.normalization in ['LayerNorm', 'BatchNorm1d']
