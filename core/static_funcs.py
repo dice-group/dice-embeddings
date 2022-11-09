@@ -577,6 +577,7 @@ def create_experiment_folder(folder_name='Experiments'):
 
 def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     print('Initializing the selected model...', end=' ')
+    # @TODO: Apply construct_krone as callback? or use KronE_QMult as a prefix.
     start_time = time.time()
     model_name = args['model']
     if model_name == 'KronELinear':
@@ -595,9 +596,6 @@ def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     elif model_name == 'KronE_wo_f':
         model = KronE_wo_f(args=args)
         form_of_labelling = 'EntityPrediction'
-    # elif model_name == 'BaseKronE':
-    #    model = BaseKronE(args=args)
-    #    form_of_labelling = 'EntityPrediction'
     elif model_name == 'Shallom':
         model = Shallom(args=args)
         form_of_labelling = 'RelationPrediction'
@@ -625,6 +623,7 @@ def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     elif model_name == 'TransE':
         model = TransE(args=args)
         form_of_labelling = 'EntityPrediction'
+    # elif for PYKEEN https://github.com/dice-group/dice-embeddings/issues/54
     else:
         raise ValueError
     print(f'Done! {time.time() - start_time:.3f}')

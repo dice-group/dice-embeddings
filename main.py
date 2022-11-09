@@ -16,7 +16,6 @@ def argparse_default(description=None):
     parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="Embeddings, model, and any other related data will be stored therein.")
     # Model and Training Parameters
-    # @TODO: Apply construct_krone as callback? or use KronE_QMult as a prefix.
     parser.add_argument("--model", type=str,
                         default="QMult",
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, "
@@ -35,7 +34,7 @@ def argparse_default(description=None):
                         help='List of tuples representing a callback and values')
 
     # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='NegSample', help="KvsSample, 1vsAll, KvsAll, NegSample")
+    parser.add_argument('--scoring_technique', default='KvsSample', help="KvsSample, 1vsAll, KvsAll, NegSample")
     parser.add_argument('--neg_ratio', type=int, default=10,
                         help='The number of negative triples generated per positive triple.')
     # Optimization related hyperparameters
