@@ -4,7 +4,7 @@ from pytorch_lightning.utilities.types import TRAIN_DATALOADERS, EVAL_DATALOADER
 from torch import nn
 from torch.nn import functional as F
 from torchmetrics import Accuracy as accuracy
-from typing import List, Any, Tuple
+from typing import List, Any, Tuple, Union
 from torch.nn.init import xavier_normal_
 import numpy as np
 from core.custom_opt import Sls, AdamSLS, Adan
@@ -126,9 +126,9 @@ class BaseKGE(pl.LightningModule):
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
         return self.entity_embeddings.weight.data.data.detach(), self.relation_embeddings.weight.data.detach()
 
-    def configure_optimizers(self,parameters =None):
+    def configure_optimizers(self, parameters=None):
         if parameters is None:
-            parameters=self.parameters()
+            parameters = self.parameters()
 
         # default params in pytorch.
         if self.optimizer_name == 'SGD':
@@ -201,7 +201,8 @@ class BaseKGE(pl.LightningModule):
     def forward_k_vs_sample(self, *args, **kwargs):
         raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_sample function')
 
-    def forward(self, x: torch.Tensor, y_idx: torch.Tensor = None):
+    def forward(self, x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]],
+                y_idx: torch.LongTensor = None):
         """
 
         :param x: a batch of inputs
@@ -221,18 +222,6 @@ class BaseKGE(pl.LightningModule):
                 return self.forward_k_vs_all(x=x)
             else:
                 raise ValueError('Not valid input')
-            """
-            if y_idx is None:
-                batch_size, dim = x.shape
-                if dim == 3:
-                    return self.forward_triples(x)
-                elif dim == 2:
-                    # h, y = x[0], x[1]
-                    # Note that y can be relation or tail entity.
-                    return self.forward_k_vs_all(x=x)
-                else:
-                    raise ValueError('Not valid input')
-            """
 
     def training_step(self, batch, batch_idx):
         # @TODO: why do we have this ?!

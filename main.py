@@ -16,7 +16,6 @@ def argparse_default(description=None):
     parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="Embeddings, model, and any other related data will be stored therein.")
     # Model and Training Parameters
-    # @TODO: Apply construct_krone as callback? or use KronE_QMult as a prefix.
     parser.add_argument("--model", type=str,
                         default="QMult",
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, "
@@ -30,8 +29,8 @@ def argparse_default(description=None):
     parser.add_argument('--callbacks', '--list', nargs='+', default='[]',  # '["Polyak"]',
                         help='List of tuples representing a callback and values')
     # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='KvsAll', help="KvsSample, 1vsAll, KvsAll, NegSample")
-    parser.add_argument('--neg_ratio', type=int, default=0,
+    parser.add_argument('--scoring_technique', default='KvsSample', help="KvsSample, 1vsAll, KvsAll, NegSample")
+    parser.add_argument('--neg_ratio', type=int, default=10,
                         help='The number of negative triples generated per positive triple.')
     # Optimization related hyperparameters
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
@@ -52,11 +51,10 @@ def argparse_default(description=None):
     parser.add_argument("--label_relaxation_rate", type=float, default=None, help='None for not using it.')
     parser.add_argument("--add_noise_rate", type=float, default=None, help='None for not using it. '
                                                                            '.1 means extend train data by adding 10% random data')
-    # @TODO: Remove maybe ?
-    parser.add_argument("--use_dask", type=bool, default=False,
-                        help='DASK can be used if the input dataset does not fit into memory.'
-                             '**Its quite common for Dask DataFrame to not provide a speed up over Pandas, especially for datasets that fit comfortably into memory by MRocklin (https://stackoverflow.com/a/57104255/5363103)**')
-    parser.add_argument("--torch_trainer", type=str, default='DistributedDataParallelTrainer',
+    parser.add_argument("--backend", type=str, default='pandas',
+                        help='Select [modin, pandas, vaex, polars]')
+
+    parser.add_argument("--torch_trainer", type=str, default='DataParallelTrainer',
                         help='None, DistributedDataParallelTrainer or DataParallelTrainer')
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
     parser.add_argument("--num_of_output_channels", type=int, default=3, help="# of output channels in convolution")

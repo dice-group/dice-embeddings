@@ -6,14 +6,14 @@ Yet, using these frameworks in real-world applications becomes more challenging 
 
 We developed DICE Embeddings framework to compute embeddings for large-scale knowledge graphs in a hardware-agnostic manner.
 By this, we rely on
-1. [Pandas](https://pandas.pydata.org/) & [DASK](https://dask.org/) to use parallelism at preprocessing a large knowledge graph,
-2. [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/) to learn knowledge graph embeddings via multi-CPUs, GPUs, TPUs or computing cluster, and
+1. [Pandas](https://pandas.pydata.org/) to use parallelism at preprocessing a large knowledge graph,
+2. [PyTorch](https://pytorch.org/) to learn knowledge graph embeddings via multi-CPUs, GPUs, TPUs or computing cluster, and
 3. [Gradio](https://gradio.app/) to ease the deployment of pre-trained models.
 
-**Why [Pandas](https://pandas.pydata.org/) & [DASK](https://dask.org/) ?**
+**Why [Pandas](https://pandas.pydata.org/) & Co. ?**
 Pandas allows us to read, preprocess (e.g. removing literals) and index an input knowledge graph in parallel.
 Through parquet within pandas, a billion of triples can be read in parallel fashion. 
-Importantly, Dask allows us to perform all necessary computations on a single CPU as well as a cluster of computers.
+Importantly, using frameworks based on Pandas (modin, vaex) allows us to perform all necessary computations on a single CPU as well as a cluster of computers.
 
 **Why [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/) ?**
 PyTorch is one of the best machine learning frameworks currently available.
@@ -37,10 +37,10 @@ To install dependencies:
 # python=3.10 with torch cuda nncl https://discuss.pytorch.org/t/issues-on-using-nn-dataparallel-with-python-3-10-and-pytorch-1-11/146745/13
 conda create -n dice python=3.9.12
 conda activate dice
-pip3 install pandas==1.5.0
+# Choose a backend
+pip3 install pandas==1.5.1 modin==0.16.2 vaex==4.14.0 polars==0.14.26 
 pip3 install torch==1.13.0 
 pip3 install pytorch-lightning==1.6.4
-pip3 install "dask[complete]"==2022.6.0
 pip3 install scikit-learn==1.1.1
 pip3 install pytest==6.2.5
 pip3 install gradio==3.0.17
