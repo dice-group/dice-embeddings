@@ -623,6 +623,9 @@ def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     elif model_name == 'TransE':
         model = TransE(args=args)
         form_of_labelling = 'EntityPrediction'
+    elif model_name == 'CLf':
+        model = CLf(args=args)
+        form_of_labelling = 'EntityPrediction'
     # elif for PYKEEN https://github.com/dice-group/dice-embeddings/issues/54
     else:
         raise ValueError

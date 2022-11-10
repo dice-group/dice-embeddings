@@ -96,6 +96,36 @@ class Shallom(BaseKGE):
 
 """ On going works"""
 
+class CLf(BaseKGE):
+    """Clifford:Embedding Space Search in Clifford Algebras"""
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = 'CLf'
+        # Adding this reduces performance in training and generalization
+        self.hidden_normalizer = lambda x: x
+
+    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
+        # (1) Retrieve embeddings & Apply Dropout & Normalization.
+        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
+
+        # (2) Formula for CL_{p,1}(\mathbb R) =>  a + \sum_i ^p b_i v_i + \sum_j ^q c_j u_j.
+        # (3) a + bv + cu provided that p= 1 and q=1.
+        # (4) Head embedding representation in CL (a + bv + cu)
+        a, b, c = torch.hsplit(head_ent_emb, 3)
+        # (5) Relation embedding representation in CL (a' + b'v + c'u).
+        a_prime, b_prime, c_prime = torch.hsplit(rel_ent_emb, 3)
+        # (6) Tail embedding representation in CL (a''' + b'''v + c'''u).
+        a_3prime, b_3prime, c_3prime = torch.hsplit(tail_ent_emb, 3)
+        # (7) Scoring function.
+        score_vec = a_3prime * ((a * a_prime + b * b_prime) - (c * c_prime)) + b_3prime * (
+                    a * b_prime + a_prime * b) + c_3prime * (a * c_prime + a_prime * c)
+        return score_vec.sum(dim=1)
+
+    def forward_k_vs_all(self, x: torch.Tensor):
+        emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
+        print('Hello')
+        raise NotImplementedError('Implement scoring function for KvsAll')
 
 class DimAdaptiveDistMult(BaseKGE):
 
