@@ -19,11 +19,11 @@ class TestRegressionConEx:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.eval = True
-        args.eval_on_train = True
+        args.eval = 'train_val_test'
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
+        args.normalization = 'LayerNorm'
         args.torch_trainer = 'DataParallelTrainer'
         result = Execute(args).start()
         assert 0.46 >= result['Train']['H@1'] >= 0.33
@@ -42,12 +42,11 @@ class TestRegressionConEx:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.eval = True
-        args.eval_on_train = True
-        args.test_mode = True
+        args.eval = 'train_val_test'
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
+        args.normalization = 'LayerNorm'
         args.scoring_technique = '1vsAll'
         args.torch_trainer = 'DataParallelTrainer'
         result = Execute(args).start()
@@ -68,13 +67,12 @@ class TestRegressionConEx:
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'NegSample'
-        args.eval = True
-        args.eval_on_train = True
-        args.test_mode = True
+        args.eval = 'train_val_test'
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
         args.read_only_few = None
         args.neg_ratio = 1
+        args.normalization = 'LayerNorm'
         args.torch_trainer = 'DataParallelTrainer'
         result = Execute(args).start()
         assert 0.75 >= result['Train']['H@1'] >= .38

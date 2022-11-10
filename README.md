@@ -6,14 +6,14 @@ Yet, using these frameworks in real-world applications becomes more challenging 
 
 We developed the DICE Embeddings framework to compute embeddings for large-scale knowledge graphs in a hardware-agnostic manner.
 To achieve this goal, we rely on
-1. [Pandas](https://pandas.pydata.org/) & [DASK](https://dask.org/) to use parallelism while preprocessing a large input knowledge graph,
+1. [Pandas](https://pandas.pydata.org/) to use parallelism at preprocessing a large knowledge graph,
 2. [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/) to learn knowledge graph embeddings via multi-CPUs, GPUs, TPUs or computing cluster, and
 3. [Gradio](https://gradio.app/) to ease the deployment of pre-trained models.
 
-**Why [Pandas](https://pandas.pydata.org/) & [DASK](https://dask.org/) ?**
-Pandas allows us to read, preprocess (e.g., removing literals) and index an input knowledge graph in parallel.
-Through Parquet within pandas, billions of triples can be read in parallel fashion. 
-Importantly, Dask allows us to perform all necessary computations on a wide array of hardware configurations ranging from a single CPU to a cluster of computers.
+**Why [Pandas](https://pandas.pydata.org/) & Co. ?**
+Pandas allows us to read, preprocess (e.g. removing literals) and index an input knowledge graph in parallel.
+Through parquet within pandas, a billion of triples can be read in parallel fashion. 
+Importantly, using frameworks based on Pandas (modin, vaex or polars) allow us to perform all necessary computations on a single CPU as well as a cluster of computers.
 
 **Why [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/) ?**
 PyTorch is one of the most popular machine learning frameworks available at the time of writing. 
@@ -37,11 +37,10 @@ To install dependencies:
 # python=3.10 with torch cuda nncl https://discuss.pytorch.org/t/issues-on-using-nn-dataparallel-with-python-3-10-and-pytorch-1-11/146745/13
 conda create -n dice python=3.9.12
 conda activate dice
-pip3 install pandas==1.5.0
-pip3 install swifter==1.1.2 # we can remove it later
-pip3 install torch --extra-index-url https://download.pytorch.org/whl/cu113
+# Choose a backend
+pip3 install pandas==1.5.1 modin==0.16.2 vaex==4.14.0 polars==0.14.26 
+pip3 install torch==1.13.0 
 pip3 install pytorch-lightning==1.6.4
-pip3 install "dask[complete]"==2022.6.0
 pip3 install scikit-learn==1.1.1
 pip3 install pytest==6.2.5
 pip3 install gradio==3.0.17
@@ -73,6 +72,7 @@ Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , i
 # To download a pretrained ConEx
 mkdir ConEx && cd ConEx && wget -r -nd -np https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpedia/ConEx/ && cd ..
 ```
+### Triple Classification
 ```python
 from core import KGE
 pre_trained_kge = KGE(path_of_pretrained_model_dir='ConEx')
@@ -83,8 +83,20 @@ pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Ei
 pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Germany"]) # tensor([0.9498])
 pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/France"]) # very low
 pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Italy"]) # very low
-pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"]) # needs more memory than simple triple eval.
-# ...
+```
+### Relation Prediction
+```python
+from core import KGE
+pre_trained_kge = KGE(path_of_pretrained_model_dir='ConEx')
+pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],tail_entity=["http://dbpedia.org/resource/Ulm"])
+```
+
+### Entity Prediction
+```python
+from core import KGE
+pre_trained_kge = KGE(path_of_pretrained_model_dir='ConEx')
+pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"]) 
+pre_trained_kge.predict_topk(relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Albert_Einstein"]) 
 ```
 
 ## How to Deploy

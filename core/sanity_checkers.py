@@ -36,7 +36,7 @@ def sanity_checking_with_arguments(args):
     else:
         raise ValueError(
             f'Data format is not recognized.\nThe path_dataset_folder parameter **{args.path_dataset_folder}** must lead to (a) **folder/train.txt** or *** triples stored in the parquet format')
-    assert isinstance(args.eval, bool)
+    #assert isinstance(args.eval, bool)
 
 
 def config_kge_sanity_checking(args, dataset):

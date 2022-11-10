@@ -1,7 +1,5 @@
 import os
 
-import pandas
-
 import core
 from core.typings import *
 import numpy as np
@@ -18,10 +16,9 @@ import time
 import pandas as pd
 import json
 import glob
-import dask.dataframe as dd
-import dask
+import pandas
 from .sanity_checkers import sanity_checking_with_arguments
-from pytorch_lightning.strategies.ddp import DDPStrategy
+from pytorch_lightning.strategies import DDPStrategy
 
 
 # @TODO: Could these funcs can be merged?
@@ -178,18 +175,20 @@ def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
                                              plugins=plugins, callbacks=callbacks)
 
 
-def preprocess_dataframe_of_kg(df: Union[dask.dataframe.core.DataFrame, pandas.DataFrame], read_only_few: int = None,
-                               sample_triples_ratio: float = None) -> Union[
-    dask.dataframe.core.DataFrame, pandas.DataFrame]:
+def preprocess_dataframe_of_kg(df, read_only_few: int = None,
+                               sample_triples_ratio: float = None):
     """ Preprocess lazy loaded dask dataframe
     (1) Read only few triples
     (2) Sample few triples
     (3) Remove **<>** if exists.
     """
+    """
     try:
         assert isinstance(df, dask.dataframe.core.DataFrame) or isinstance(df, pandas.DataFrame)
     except AssertionError:
         raise AssertionError(type(df))
+    """
+
     # (2)a Read only few if it is asked.
     if isinstance(read_only_few, int):
         if read_only_few > 0:
@@ -218,13 +217,41 @@ def preprocess_dataframe_of_kg(df: Union[dask.dataframe.core.DataFrame, pandas.D
 
 
 def load_data_parallel(data_path, read_only_few: int = None,
-                       sample_triples_ratio: float = None) -> dask.dataframe.core.DataFrame:
+                       sample_triples_ratio: float = None, backend=None):
     """
     Parse KG via DASK.
     :param read_only_few:
     :param data_path:
     :param sample_triples_ratio:
+    :param backend:
     :return:
+    """
+    assert backend
+    # If path exits
+    if glob.glob(data_path):
+        if backend == 'modin':
+            import modin.pandas as pd
+            df = pd.read_csv(data_path,
+                             delim_whitespace=True,
+                             header=None,
+                             usecols=[0, 1, 2],
+                             names=['subject', 'relation', 'object'],
+                             dtype=str)
+        elif backend == 'pandas':
+            import pandas as pd
+            df = pd.read_csv(data_path,
+                             delim_whitespace=True,
+                             header=None,
+                             usecols=[0, 1, 2],
+                             names=['subject', 'relation', 'object'],
+                             dtype=str)
+        else:
+            raise NotImplementedError
+
+        return preprocess_dataframe_of_kg(df, read_only_few, sample_triples_ratio)
+    else:
+        print(f'{data_path} could not found!')
+        return None
     """
     # (1) Check file exists, .e.g, ../../train.* exists
     if glob.glob(data_path + '*'):
@@ -241,6 +268,7 @@ def load_data_parallel(data_path, read_only_few: int = None,
     else:
         print(f'{data_path} could not found!')
         return None
+    """
 
 
 def store_kge(trained_model, path: str) -> None:
@@ -326,24 +354,10 @@ def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, num_cor
     :return: indexed triples, i.e., pandas dataframe
     """
     n, d = train_set.shape
-    """
-    @TODO: Benchmark using apply on dask dataframe, swifter and plain pandas
-    if num_core > 1000:
-        print(f'Number of cores will be used :{num_core}')
-        assert isinstance(train_set, pd.core.frame.DataFrame)
-        train_set['subject'] = train_set['subject'].swifter.apply(lambda x: entity_to_idx.get(x))
-        train_set['relation'] = train_set['relation'].swifter.apply(lambda x: relation_to_idx.get(x))
-        train_set['object'] = train_set['object'].swifter.apply(lambda x: entity_to_idx.get(x))
-        assert (n, d) == train_set.shape
-    else:
-        train_set['subject'] = train_set['subject'].apply(lambda x: entity_to_idx.get(x))
-        train_set['relation'] = train_set['relation'].apply(lambda x: relation_to_idx.get(x))
-        train_set['object'] = train_set['object'].apply(lambda x: entity_to_idx.get(x))
-    """
     train_set['subject'] = train_set['subject'].apply(lambda x: entity_to_idx.get(x))
     train_set['relation'] = train_set['relation'].apply(lambda x: relation_to_idx.get(x))
     train_set['object'] = train_set['object'].apply(lambda x: entity_to_idx.get(x))
-    train_set = train_set.dropna()
+    # train_set = train_set.dropna(inplace=True)
     if isinstance(train_set, pd.core.frame.DataFrame):
         assert (n, d) == train_set.shape
     elif isinstance(train_set, dask.dataframe.core.DataFrame):
@@ -356,16 +370,13 @@ def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict, num_cor
     return train_set
 
 
-def add_noisy_triples(train_set, add_noise_rate: float) -> pd.DataFrame:
+def add_noisy_triples(train_set: pd.DataFrame, add_noise_rate: float) -> pd.DataFrame:
     """
     Add randomly constructed triples
     :param train_set:
     :param add_noise_rate:
     :return:
     """
-    # Can not be applied on large
-    train_set = train_set.compute()
-
     num_triples = len(train_set)
     num_noisy_triples = int(num_triples * add_noise_rate)
     print(f'[4 / 14] Generating {num_noisy_triples} noisy triples for training data...')
@@ -389,14 +400,13 @@ def add_noisy_triples(train_set, add_noise_rate: float) -> pd.DataFrame:
     return train_set
 
 
-def create_recipriocal_triples_from_dask(x):
+def create_recipriocal_triples(x):
     """
     Add inverse triples into dask dataframe
     :param x:
     :return:
     """
-    # x dask dataframe
-    return dd.concat([x, x['object'].to_frame(name='subject').join(
+    return pd.concat([x, x['object'].to_frame(name='subject').join(
         x['relation'].map(lambda x: x + '_inverse').to_frame(name='relation')).join(
         x['subject'].to_frame(name='object'))], ignore_index=True)
 
@@ -408,7 +418,6 @@ def read_preprocess_index_serialize_kg(args, cls):
     # 1. Read & Parse input data
     kg = cls(data_dir=args.path_dataset_folder,
              num_core=args.num_core,
-             use_dask=args.use_dask,
              add_reciprical=args.apply_reciprical_or_noise,
              eval_model=args.eval,
              read_only_few=args.read_only_few,
@@ -416,7 +425,8 @@ def read_preprocess_index_serialize_kg(args, cls):
              path_for_serialization=args.full_storage_path,
              add_noise_rate=args.add_noise_rate,
              min_freq_for_vocab=args.min_freq_for_vocab,
-             dnf_predicates=args.dnf_predicates)
+             dnf_predicates=args.dnf_predicates,
+             backend=args.backend)
     print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
     print(kg.description_of_input)
     return kg
@@ -427,7 +437,6 @@ def reload_input_data(args: str = None, cls=None):
     start_time = time.time()
     kg = cls(data_dir=args.path_dataset_folder,
              num_core=args.num_core,
-             use_dask=args.use_dask,
              add_reciprical=args.apply_reciprical_or_noise,
              eval_model=args.eval,
              read_only_few=args.read_only_few,
@@ -474,8 +483,13 @@ def preprocesses_input_args(arg):
     # del arg.check_val_every_n_epochs
     # arg.checkpoint_callback = False
     arg.logger = False
-    arg.eval = True if arg.eval == 1 else False
-    arg.eval_on_train = True if arg.eval_on_train == 1 else False
+    # arg.eval = True if arg.eval == 1 else False
+    # arg.eval_on_train = True if arg.eval_on_train == 1 else False
+    try:
+        assert arg.eval in [None, 'train', 'val', 'test', 'train_val', 'train_test', 'val_test', 'train_val_test']
+    except KeyError as e:
+        print(arg.eval)
+        exit(1)
     # reciprocal checking
     # @TODO We need better way for using apply_reciprical_or_noise.
     if arg.scoring_technique in ['KvsSample', 'PvsAll', 'CCvsAll', 'KvsAll', '1vsAll', 'BatchRelaxed1vsAll',
@@ -488,9 +502,12 @@ def preprocesses_input_args(arg):
 
     if arg.sample_triples_ratio is not None:
         assert 1.0 >= arg.sample_triples_ratio >= 0.0
+
+    assert arg.backend in ["modin", "pandas", "vaex", "polars"]
+
     sanity_checking_with_arguments(arg)
-    if arg.num_folds_for_cv > 0:
-        arg.eval = True
+    # if arg.num_folds_for_cv > 0:
+    #    arg.eval = True
     if arg.model == 'Shallom':
         arg.scoring_technique = 'KvsAll'
     assert arg.normalization in ['LayerNorm', 'BatchNorm1d']
@@ -561,6 +578,7 @@ def create_experiment_folder(folder_name='Experiments'):
 
 def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     print('Initializing the selected model...', end=' ')
+    # @TODO: Apply construct_krone as callback? or use KronE_QMult as a prefix.
     start_time = time.time()
     model_name = args['model']
     if model_name == 'KronELinear':
@@ -579,9 +597,6 @@ def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     elif model_name == 'KronE_wo_f':
         model = KronE_wo_f(args=args)
         form_of_labelling = 'EntityPrediction'
-    # elif model_name == 'BaseKronE':
-    #    model = BaseKronE(args=args)
-    #    form_of_labelling = 'EntityPrediction'
     elif model_name == 'Shallom':
         model = Shallom(args=args)
         form_of_labelling = 'RelationPrediction'
@@ -609,6 +624,7 @@ def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     elif model_name == 'TransE':
         model = TransE(args=args)
         form_of_labelling = 'EntityPrediction'
+    # elif for PYKEEN https://github.com/dice-group/dice-embeddings/issues/54
     else:
         raise ValueError
     print(f'Done! {time.time() - start_time:.3f}')
@@ -898,10 +914,12 @@ def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
     print('Done !\n')
 
 
-def dask_remove_triples_with_condition(dask_kg_dataframe: dask.dataframe.core.DataFrame,
-                                       min_freq_for_vocab: int = None) -> dask.dataframe.core.DataFrame:
+def dask_remove_triples_with_condition(dask_kg_dataframe,  # ,: dask.dataframe.core.DataFrame,
+                                       min_freq_for_vocab: int = None):  # -> dask.dataframe.core.DataFrame:
     """
     Remove rows/triples from an input dataframe
+    """
+    raise NotImplementedError
     """
     assert isinstance(dask_kg_dataframe, dask.dataframe.core.DataFrame)
     if min_freq_for_vocab is not None:
@@ -934,3 +952,5 @@ def dask_remove_triples_with_condition(dask_kg_dataframe: dask.dataframe.core.Da
         return dask_kg_dataframe
     else:
         return dask_kg_dataframe
+    """
+    return None

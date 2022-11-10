@@ -19,10 +19,9 @@ class TestReadFewOnly:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.eval = True
+        args.eval = 'train'
         args.sample_triples_ratio = None
         args.read_only_few = 10
-        args.sample_triples_ratio = None
         args.torch_trainer = 'DataParallelTrainer'
         report = Execute(args).start()
         # as we add negative triples
@@ -42,15 +41,13 @@ class TestReadFewOnly:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.eval = True
-        args.sample_triples_ratio = None
+        args.eval = 'train'
         args.read_only_few = 10
         args.sample_triples_ratio = None
         args.torch_trainer = 'DataParallelTrainer'
         report = Execute(args).start()
         # as we add negative triples
         assert report['num_train_triples'] == int(args.read_only_few * 2)
-
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult_neg_sampling(self):
@@ -66,10 +63,10 @@ class TestReadFewOnly:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.eval = True
-        args.sample_triples_ratio = None
+        args.eval = 'train'
         args.read_only_few = 10
         args.sample_triples_ratio = None
+        args.neg_ratio = 1
         args.torch_trainer = 'DataParallelTrainer'
         report = Execute(args).start()
         # as we add negative triples

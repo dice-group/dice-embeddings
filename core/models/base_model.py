@@ -4,9 +4,10 @@ from pytorch_lightning.utilities.types import TRAIN_DATALOADERS, EVAL_DATALOADER
 from torch import nn
 from torch.nn import functional as F
 from torchmetrics import Accuracy as accuracy
-from typing import List, Any, Tuple
+from typing import List, Any, Tuple, Union
 from torch.nn.init import xavier_normal_
 import numpy as np
+from core.custom_opt import Sls, AdamSLS, Adan
 
 
 class BaseKGE(pl.LightningModule):
@@ -80,6 +81,7 @@ class BaseKGE(pl.LightningModule):
             self.hidden_dropout_rate = 0.0
 
         if self.args['model'] in ['QMult', 'OMult', 'ConvQ', 'ConvO']:
+            # @TODO: We should remove this unit norm part
             if self.args.get("apply_unit_norm"):
                 self.apply_unit_norm = self.args['apply_unit_norm']
             else:
@@ -115,36 +117,74 @@ class BaseKGE(pl.LightningModule):
                 self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
         else:
             raise NotImplementedError()
-        if self.args.get("optim") in ['NAdam', 'Adam', 'SGD', 'ASGD']:
+        if self.args.get("optim") in ['Adan', 'NAdam', 'Adam', 'SGD', 'ASGD', 'Sls', 'AdamSLS']:
             self.optimizer_name = self.args['optim']
         else:
             print(self.args)
-            raise NotImplementedError()
+            raise KeyError(f'--optim (***{self.args.get("optim")}***) not found')
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
         return self.entity_embeddings.weight.data.data.detach(), self.relation_embeddings.weight.data.detach()
 
-    def configure_optimizers(self):
+    def configure_optimizers(self, parameters=None):
+        if parameters is None:
+            parameters = self.parameters()
+
         # default params in pytorch.
         if self.optimizer_name == 'SGD':
-            self.selected_optimizer = torch.optim.SGD(params=self.parameters(), lr=self.learning_rate,
-                                                      momentum=0.05, dampening=0, weight_decay=self.weight_decay,
+            self.selected_optimizer = torch.optim.SGD(params=parameters, lr=self.learning_rate,
+                                                      momentum=0, dampening=0, weight_decay=self.weight_decay,
                                                       nesterov=False)
         elif self.optimizer_name == 'Adam':
-            self.selected_optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate,
+            self.selected_optimizer = torch.optim.Adam(parameters, lr=self.learning_rate,
                                                        weight_decay=self.weight_decay)
 
         elif self.optimizer_name == 'NAdam':
-            self.selected_optimizer = torch.optim.NAdam(self.parameters(), lr=self.learning_rate, betas=(0.9, 0.999),
+            self.selected_optimizer = torch.optim.NAdam(parameters, lr=self.learning_rate, betas=(0.9, 0.999),
                                                         eps=1e-08, weight_decay=self.weight_decay, momentum_decay=0.004)
         elif self.optimizer_name == 'Adagrad':
-            self.selected_optimizer = torch.optim.Adagrad(self.parameters(),
+            self.selected_optimizer = torch.optim.Adagrad(parameters,
                                                           lr=self.learning_rate, eps=1e-10,
                                                           weight_decay=self.weight_decay)
         elif self.optimizer_name == 'ASGD':
-            self.selected_optimizer = torch.optim.ASGD(self.parameters(),
+            self.selected_optimizer = torch.optim.ASGD(parameters,
                                                        lr=self.learning_rate, lambd=0.0001, alpha=0.75,
                                                        weight_decay=self.weight_decay)
+        elif self.optimizer_name == 'Adan':
+            self.selected_optimizer = Adan(parameters, lr=self.learning_rate, weight_decay=self.weight_decay,
+                                           betas=(0.98, 0.92, 0.99),
+                                           eps=1e-08,
+                                           max_grad_norm=0.0,
+                                           no_prox=False)
+        elif self.optimizer_name == 'Sls':
+            self.selected_optimizer = Sls(params=parameters,
+                                          n_batches_per_epoch=500,
+                                          init_step_size=self.learning_rate,  # 1 originally
+                                          c=0.1,
+                                          beta_b=0.9,
+                                          gamma=2.0,
+                                          beta_f=2.0,
+                                          reset_option=1,
+                                          eta_max=10,
+                                          bound_step_size=True,
+                                          line_search_fn="armijo")
+        elif self.optimizer_name == 'AdamSLS':
+            self.selected_optimizer = AdamSLS(params=parameters,
+                                              n_batches_per_epoch=500,
+                                              init_step_size=self.learning_rate,  # 0.1,0.00001,
+                                              c=0.1,
+                                              gamma=2.0,
+                                              beta=0.999,
+                                              momentum=0.9,
+                                              gv_option='per_param',
+                                              base_opt='adam',
+                                              pp_norm_method='pp_armijo',
+                                              mom_type='standard',
+                                              clip_grad=False,
+                                              beta_b=0.9,
+                                              beta_f=2.0,
+                                              reset_option=1,
+                                              line_search_fn="armijo")
         else:
             raise KeyError()
         return self.selected_optimizer
@@ -161,14 +201,18 @@ class BaseKGE(pl.LightningModule):
     def forward_k_vs_sample(self, *args, **kwargs):
         raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_sample function')
 
-    def forward(self, x: torch.Tensor, y_idx: torch.Tensor = None):
+    def forward(self, x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]],
+                y_idx: torch.LongTensor = None):
         """
 
         :param x: a batch of inputs
         :param y_idx: index of selected output labels.
         :return:
         """
-        if y_idx is None:
+        if isinstance(x, tuple):
+            x, y_idx = x
+            return self.forward_k_vs_sample(x=x, target_entity_idx=y_idx)
+        else:
             batch_size, dim = x.shape
             if dim == 3:
                 return self.forward_triples(x)
@@ -178,10 +222,9 @@ class BaseKGE(pl.LightningModule):
                 return self.forward_k_vs_all(x=x)
             else:
                 raise ValueError('Not valid input')
-        else:
-            return self.forward_k_vs_sample(x=x, target_entity_idx=y_idx)
 
     def training_step(self, batch, batch_idx):
+        # @TODO: why do we have this ?!
         if len(batch) == 2:
             x_batch, y_batch = batch
             yhat_batch = self.forward(x_batch)

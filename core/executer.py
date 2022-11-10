@@ -15,7 +15,7 @@ from pytorch_lightning import seed_everything
 from sklearn.model_selection import KFold
 from pytorch_lightning.callbacks import ModelSummary
 
-from core.callbacks import PrintCallback, KGESaveCallback, PseudoLabellingCallback
+from core.callbacks import PrintCallback, KGESaveCallback, PseudoLabellingCallback, PolyakCallback
 from core.dataset_classes import StandardDataModule
 from core.helper_classes import LabelRelaxationLoss, BatchRelaxedvsAllLoss
 from core.knowledge_graph import KG
@@ -85,11 +85,11 @@ class Execute:
         # Save it as dictionary
         #  mdict=torch.load('trainer_checkpoint.pt')
         # dict_keys(['epoch', 'global_step', 'pytorch-lightning_version', 'state_dict', 'loops', 'callbacks','optimizer_states', 'lr_schedulers'])
-        try:
-            self.trainer.save_checkpoint(self.storage_path + '/trainer_checkpoint.pt')
-        except AttributeError as e:
-            print(e)
-            print('skipped..')
+        # try:
+        #    self.trainer.save_checkpoint(self.storage_path + '/trainer_checkpoint.pt')
+        # except AttributeError as e:
+        #    print(e)
+        #    print('skipped..')
         # (1) Send model to the eval mode
         trained_model.eval()
         trained_model.to('cpu')
@@ -128,6 +128,7 @@ class Execute:
         (4) Return a report of the training
         """
         start_time = time.time()
+        # @TODO: Refactor this if else into a single line or method
         # (1) Data Preparation.
         if self.is_continual_training:
             # (1.2) Load indexed input data.
@@ -159,12 +160,15 @@ class Execute:
         self.report['num_relations'] = self.dataset.num_relations
         print('------------------- Train & Eval -------------------')
         # (1) Collect Callbacks to be used during training
+        # @TODO: Refactor this callback generation and extension into a single line/function
         callbacks = [PrintCallback(),
                      KGESaveCallback(every_x_epoch=self.args.save_model_at_every_epoch,
                                      max_epochs=self.args.max_epochs,
                                      path=self.args.full_storage_path),
                      ModelSummary(max_depth=-1)]
-
+        for i in self.args.callbacks:
+            if i == 'Polyak':
+                callbacks.append(PolyakCallback(max_epochs=self.args.max_epochs, path=self.args.full_storage_path))
         # (2) Initialize Trainer
         self.trainer = initialize_trainer(self.args, callbacks, plugins=[])
         # (3) Use (2) to train a KGE model
@@ -531,9 +535,12 @@ class Execute:
         kf = KFold(n_splits=self.args.num_folds_for_cv, shuffle=True, random_state=1)
         model = None
         eval_folds = []
-
         for (ith, (train_index, test_index)) in enumerate(kf.split(self.dataset.train_set)):
-            trainer = pl.Trainer.from_argparse_args(self.args)
+            # trainer = pl.Trainer.from_argparse_args(self.args)
+            callbacks = [PrintCallback(), KGESaveCallback(every_x_epoch=self.args.save_model_at_every_epoch,
+                                                          max_epochs=self.args.max_epochs,
+                                                          path=self.args.full_storage_path), ModelSummary(max_depth=-1)]
+            trainer = initialize_trainer(self.args, callbacks, plugins=[])
             model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
             print(f'{form_of_labelling} training starts: {model.name}')  # -labeling:{form_of_labelling}')
 
@@ -553,16 +560,16 @@ class Execute:
             del dataset
             model_fitting(trainer=trainer, model=model, train_dataloaders=train_dataloaders)
 
-            # 6. Test model on validation and test sets if possible.
-            res = self.evaluator.evaluate_lp_k_vs_all(model, test_set_for_i_th_fold,
-                                                      form_of_labelling=form_of_labelling)
-            print(res)
+            res = self.evaluator.eval_with_data(model, test_set_for_i_th_fold, form_of_labelling=form_of_labelling)
+            # res = self.evaluator.evaluate_lp_k_vs_all(model, test_set_for_i_th_fold, form_of_labelling=form_of_labelling)
             eval_folds.append([res['MRR'], res['H@1'], res['H@3'], res['H@10']])
         eval_folds = pd.DataFrame(eval_folds, columns=['MRR', 'H@1', 'H@3', 'H@10'])
-
-        results = {'H@1': eval_folds['H@1'].mean(), 'H@3': eval_folds['H@3'].mean(), 'H@10': eval_folds['H@10'].mean(),
-                   'MRR': eval_folds['MRR'].mean()}
-        print(f'Evaluate {model.name} on test set: {results}')
+        self.evaluator.report = eval_folds.to_dict()
+        print(eval_folds)
+        print(eval_folds.describe())
+        # results = {'H@1': eval_folds['H@1'].mean(), 'H@3': eval_folds['H@3'].mean(), 'H@10': eval_folds['H@10'].mean(),
+        #           'MRR': eval_folds['MRR'].mean()}
+        # print(f'KFold Cross Validation Results: {results}')
         return model, form_of_labelling
 
 
