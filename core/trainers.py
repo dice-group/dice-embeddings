@@ -89,6 +89,9 @@ class DataParallelTrainer(AbstractTrainer):
         print_period = max(num_total_batches // 10, 1)
         print(f'Number of batches for an epoch:{num_total_batches}\t printing period:{print_period}')
 
+        # @TODO:
+        # self.model.training_step() should be used
+        # Not needed extract_input_outputs() and compute_forward_loss_backward()
         for epoch in range(self.attributes['max_epochs']):
             epoch_loss = 0
             start_time = time.time()

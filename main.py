@@ -17,20 +17,23 @@ def argparse_default(description=None):
                         help="Embeddings, model, and any other related data will be stored therein.")
     # Model and Training Parameters
     parser.add_argument("--model", type=str,
-                        default="QMult",
+                        default="TransE",
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, "
-                             "Shallom, ConEx, ComplEx, DistMult")
+                             "Shallom, ConEx, ComplEx, DistMult, TransE, CLf")
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[Adan,NAdam, Adam, SGD, Sls, AdamSLS]')
     parser.add_argument('--embedding_dim', type=int, default=100,help='Number of dimensions for an embedding vector. ')
     parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
-    parser.add_argument("--lr", type=float, default=0.01, help='Learning rate, 0.0003 maybe?')
-    parser.add_argument('--callbacks', '--list', nargs='+', default='[]',  # '["Polyak"]',
+    parser.add_argument("--lr", type=float, default=0.001)
+    parser.add_argument('--callbacks',
+                        '--list',
+                        nargs='+',
+                        default='[]',  # '["Polyak"]',
                         help='List of tuples representing a callback and values')
     # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='KvsSample', help="KvsSample, 1vsAll, KvsAll, NegSample")
-    parser.add_argument('--neg_ratio', type=int, default=10,
+    parser.add_argument('--scoring_technique', default='KvsAll', help="KvsSample, 1vsAll, KvsAll, NegSample")
+    parser.add_argument('--neg_ratio', type=int, default=0,
                         help='The number of negative triples generated per positive triple.')
     # Optimization related hyperparameters
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
@@ -51,10 +54,10 @@ def argparse_default(description=None):
     parser.add_argument("--label_relaxation_rate", type=float, default=None, help='None for not using it.')
     parser.add_argument("--add_noise_rate", type=float, default=None, help='None for not using it. '
                                                                            '.1 means extend train data by adding 10% random data')
-    parser.add_argument("--backend", type=str, default='pandas',
+    parser.add_argument("--backend", type=str, default='modin',
                         help='Select [modin, pandas, vaex, polars]')
 
-    parser.add_argument("--torch_trainer", type=str, default='DataParallelTrainer',
+    parser.add_argument("--torch_trainer", type=str, default='None',
                         help='None, DistributedDataParallelTrainer or DataParallelTrainer')
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
     parser.add_argument("--num_of_output_channels", type=int, default=3, help="# of output channels in convolution")
