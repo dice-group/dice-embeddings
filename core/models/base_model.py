@@ -45,7 +45,7 @@ class BaseKGE(pl.LightningModule):
         self.hidden_dropout = torch.nn.Dropout(self.input_dropout_rate)
 
     def init_params_with_sanity_checking(self):
-        assert self.args['model'] in ['DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO',
+        assert self.args['model'] in ['CLf', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO',
                                       'ConEx', 'Shallom', 'TransE']
         if self.args.get('weight_decay'):
             self.weight_decay = self.args['weight_decay']
@@ -224,7 +224,6 @@ class BaseKGE(pl.LightningModule):
                 raise ValueError('Not valid input')
 
     def training_step(self, batch, batch_idx):
-        # @TODO: why do we have this ?!
         if len(batch) == 2:
             x_batch, y_batch = batch
             yhat_batch = self.forward(x_batch)
