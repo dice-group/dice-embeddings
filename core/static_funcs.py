@@ -175,6 +175,35 @@ def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
                                              plugins=plugins, callbacks=callbacks)
 
 
+def preprocess_modin_dataframe_of_kg(df, read_only_few: int = None, sample_triples_ratio: float = None):
+    """ Preprocess a modin dataframe to pandas dataframe """
+    # df <class 'modin.pandas.dataframe.DataFrame'>
+    # return pandas DataFrame
+    # (2)a Read only few if it is asked.
+    if isinstance(read_only_few, int):
+        if read_only_few > 0:
+            print(f'Reading only few input data {read_only_few}...')
+            df = df.head(read_only_few)
+            print('Done !\n')
+    # (3) Read only sample
+    if sample_triples_ratio:
+        print(f'Subsampling {sample_triples_ratio} of input data...')
+        df = df.sample(frac=sample_triples_ratio)
+        print('Done !\n')
+    if sum(df.head()["subject"].str.startswith('<')) + sum(df.head()["relation"].str.startswith('<')) > 2:
+        # (4) Drop Rows/triples with double or boolean: Example preprocessing
+        # Drop of object does not start with **<**.
+        # Specifying na to be False instead of NaN.
+        print('Removing triples with literal values...')
+        df = df[df["object"].str.startswith('<', na=False)]
+        print('Done !\n')
+        # (5) Remove **<** and **>**
+        print('Removing brackets **<** and **>**...')
+        df = df.apply(lambda x: x.str.removeprefix("<").str.removesuffix(">"), axis=1)
+        print('Done !\n')
+    return df._to_pandas()
+
+
 def preprocess_dataframe_of_kg(df, read_only_few: int = None,
                                sample_triples_ratio: float = None):
     """ Preprocess lazy loaded dask dataframe
@@ -235,6 +264,7 @@ def load_data_parallel(data_path, read_only_few: int = None,
                              usecols=[0, 1, 2],
                              names=['subject', 'relation', 'object'],
                              dtype=str)
+            return preprocess_modin_dataframe_of_kg(df, read_only_few, sample_triples_ratio)
         elif backend == 'pandas':
             import pandas as pd
             df = pd.read_csv(data_path,
@@ -243,30 +273,13 @@ def load_data_parallel(data_path, read_only_few: int = None,
                              usecols=[0, 1, 2],
                              names=['subject', 'relation', 'object'],
                              dtype=str)
+            return preprocess_dataframe_of_kg(df, read_only_few, sample_triples_ratio)
         else:
             raise NotImplementedError
 
-        return preprocess_dataframe_of_kg(df, read_only_few, sample_triples_ratio)
     else:
         print(f'{data_path} could not found!')
         return None
-    """
-    # (1) Check file exists, .e.g, ../../train.* exists
-    if glob.glob(data_path + '*'):
-        # (1) Read knowledge graph  via
-        # (1.1) Using the whitespace as a deliminator
-        # (1.2) Taking first three columns detected in (1.1.)
-        df = dd.read_csv(data_path + '*',
-                         delim_whitespace=True,
-                         header=None,
-                         usecols=[0, 1, 2],
-                         names=['subject', 'relation', 'object'],
-                         dtype=str)
-        return preprocess_dataframe_of_kg(df, read_only_few, sample_triples_ratio)
-    else:
-        print(f'{data_path} could not found!')
-        return None
-    """
 
 
 def store_kge(trained_model, path: str) -> None:

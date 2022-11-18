@@ -224,7 +224,6 @@ class BaseKGE(pl.LightningModule):
                 raise ValueError('Not valid input')
 
     def training_step(self, batch, batch_idx):
-        # @TODO: why do we have this ?!
         if len(batch) == 2:
             x_batch, y_batch = batch
             yhat_batch = self.forward(x_batch)

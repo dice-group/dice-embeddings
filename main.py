@@ -26,7 +26,7 @@ def argparse_default(description=None):
                         help='Number of dimensions for an embedding vector. ')
     parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
-    parser.add_argument("--lr", type=float, default=0.01, help='Learning rate, 0.0003 maybe?')
+    parser.add_argument("--lr", type=float, default=0.001, help='Learning rate, 0.0003 maybe?')
     parser.add_argument('--callbacks',
                         '--list',
                         nargs='+',
@@ -56,7 +56,7 @@ def argparse_default(description=None):
     parser.add_argument("--label_relaxation_rate", type=float, default=None, help='None for not using it.')
     parser.add_argument("--add_noise_rate", type=float, default=None, help='None for not using it. '
                                                                            '.1 means extend train data by adding 10% random data')
-    parser.add_argument("--backend", type=str, default='pandas',
+    parser.add_argument("--backend", type=str, default='modin',
                         help='Select [modin, pandas, vaex, polars]')
 
     parser.add_argument("--torch_trainer", type=str, default='None',

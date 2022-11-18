@@ -41,21 +41,24 @@ class TransE(BaseKGE):
         self.hidden_normalizer = lambda x: x
         self.loss = torch.nn.BCELoss()
         self._norm = 2
-        self.margin = 1
+        self.margin = 4
 
-    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
+    def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
-        # Original || s+p - t|| true label > 0 distance, false label
-        # Update: 1 - sigmoid(|| s+p -t ||) to work with BCE
+        # Original d:=|| s+p - t||_2 \approx 0 distance, if true
+        # if d =0 sigma(5-0) => 1
+        # if d =5 sigma(5-5) => 0.5
+        # Update: sigmoid( \gamma - d)
         distance = torch.nn.functional.pairwise_distance(head_ent_emb + rel_ent_emb, tail_ent_emb, p=self._norm)
-        scores = torch.sigmoid(distance + self.margin)
+        scores = torch.sigmoid(self.margin - distance)
         return scores
 
-    def forward_k_vs_all(self, x: torch.Tensor):
+    def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
         emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
-        distance = torch.nn.functional.pairwise_distance(torch.unsqueeze(emb_head_real + emb_rel_real, 1), self.entity_embeddings.weight, p=self._norm)
-        scores = torch.sigmoid(distance + self.margin)
+        distance = torch.nn.functional.pairwise_distance(torch.unsqueeze(emb_head_real + emb_rel_real, 1),
+                                                         self.entity_embeddings.weight, p=self._norm)
+        scores = torch.sigmoid(self.margin - distance)
         return scores
 
 
@@ -66,7 +69,7 @@ class Shallom(BaseKGE):
         super().__init__(args)
         self.name = 'Shallom'
         # Fixed
-        shallom_width = int(2*self.embedding_dim)
+        shallom_width = int(2 * self.embedding_dim)
         self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
         xavier_normal_(self.entity_embeddings.weight.data)
         self.shallom = nn.Sequential(nn.Dropout(self.input_dropout_rate),
@@ -79,14 +82,14 @@ class Shallom(BaseKGE):
     def get_embeddings(self) -> Tuple[np.ndarray, None]:
         return self.entity_embeddings.weight.data.detach(), None
 
-    def forward_k_vs_all(self, x):
+    def forward_k_vs_all(self, x)-> torch.FloatTensor:
         e1_idx: torch.Tensor
         e2_idx: torch.Tensor
         e1_idx, e2_idx = x[:, 0], x[:, 1]
         emb_s, emb_o = self.entity_embeddings(e1_idx), self.entity_embeddings(e2_idx)
         return self.shallom(torch.cat((emb_s, emb_o), 1))
 
-    def forward_triples(self, x):
+    def forward_triples(self, x)-> torch.FloatTensor:
         """
 
         :param x:
@@ -101,6 +104,7 @@ class Shallom(BaseKGE):
 
 """ On going works"""
 
+
 class CLf(BaseKGE):
     """Clifford:Embedding Space Search in Clifford Algebras"""
 
@@ -110,7 +114,7 @@ class CLf(BaseKGE):
         # Adding this reduces performance in training and generalization
         self.hidden_normalizer = lambda x: x
 
-    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
+    def forward_triples(self, x: torch.Tensor)-> torch.FloatTensor:
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
 
@@ -124,13 +128,14 @@ class CLf(BaseKGE):
         a_3prime, b_3prime, c_3prime = torch.hsplit(tail_ent_emb, 3)
         # (7) Scoring function.
         score_vec = a_3prime * ((a * a_prime + b * b_prime) - (c * c_prime)) + b_3prime * (
-                    a * b_prime + a_prime * b) + c_3prime * (a * c_prime + a_prime * c)
+                a * b_prime + a_prime * b) + c_3prime * (a * c_prime + a_prime * c)
         return score_vec.sum(dim=1)
 
-    def forward_k_vs_all(self, x: torch.Tensor):
+    def forward_k_vs_all(self, x: torch.Tensor)-> torch.FloatTensor:
         emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
         print('Hello')
         raise NotImplementedError('Implement scoring function for KvsAll')
+
 
 class DimAdaptiveDistMult(BaseKGE):
 
