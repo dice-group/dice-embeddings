@@ -63,6 +63,8 @@ class TestDefaultParams:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.torch_trainer = 'DataParallelTrainer'
+        # args.torch_trainer = 'None'
+        # args.use_pykeen=True
         Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -129,7 +131,7 @@ class TestDefaultParams:
         args = argparse_default([])
         args.model = 'DistMult'
         args.num_epochs = 1
-        args.scoring_technique = 'KvsAll'
+        args.scoring_technique = 'NegSample'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
@@ -143,3 +145,5 @@ class TestDefaultParams:
         args.num_folds_for_cv = None
         args.torch_trainer = 'DataParallelTrainer'
         Execute(args).start()
+
+

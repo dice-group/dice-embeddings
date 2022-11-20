@@ -138,9 +138,11 @@ class Execute:
             self.read_preprocess_index_serialize_data()
         # (2) Train
         trained_model, form_of_labelling = self.training_process()
+        
         # (3) Store trained model.
         self.save_trained_model(trained_model, start_time)
         # (4) Eval model.
+        # @TODO: modified the evaluator such that pykeen can be adpadted to DICE
         self.evaluator.eval(trained_model, form_of_labelling)
         # (4) Return the report of the training process.
         return {**self.report, **self.evaluator.report}
@@ -170,9 +172,12 @@ class Execute:
             if i == 'Polyak':
                 callbacks.append(PolyakCallback(max_epochs=self.args.max_epochs, path=self.args.full_storage_path))
         # (2) Initialize Trainer
+       
         self.trainer = initialize_trainer(self.args, callbacks, plugins=[])
         # (3) Use (2) to train a KGE model
+        
         trained_model, form_of_labelling = self.train()
+        
         # (5) Return trained model
         return trained_model, form_of_labelling
 
@@ -430,6 +435,7 @@ class Execute:
         # (1) Select the model
         model, _ = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         form_of_labelling = 'NegativeSampling'
+        # import pdb; pdb.set_trace()
         print(f'Training starts: {model.name}-labeling:{form_of_labelling}')
         print('Creating training data...', end='\t')
         start_time = time.time()
@@ -442,7 +448,9 @@ class Execute:
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_core)
+                               
         print(f'Done ! {time.time() - start_time:.3f} seconds\n')
+       
         # 3. Train model
         train_dataloaders = dataset.train_dataloader()
         # Release some memory

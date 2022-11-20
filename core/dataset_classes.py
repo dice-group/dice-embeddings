@@ -83,11 +83,14 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
 
     # Train, Valid, TestDATALOADERs
     def train_dataloader(self) -> DataLoader:
+        # import pdb; pdb.set_trace()
+        # print("fired in train_dataloader")
         if self.form == 'NegativeSampling':
             train_set = TriplePredictionDataset(self.train_set_idx,
                                                 num_entities=len(self.entity_to_idx),
                                                 num_relations=len(self.relation_to_idx),
                                                 neg_sample_ratio=self.neg_sample_ratio)
+                                            
             return DataLoader(train_set, batch_size=self.batch_size, shuffle=True,
                               num_workers=self.num_workers, collate_fn=train_set.collate_fn)
         elif self.form == 'EntityPrediction' or self.form == 'RelationPrediction':
