@@ -114,7 +114,7 @@ class PolyakCallback(Callback):
         print('Perform Polyak on weights stored in disk')
         # (1) Set in eval model
         model.eval()
-        trained_model.to('cpu')
+        model.to('cpu')
         last_state = model.state_dict()
         counter = 1.0
         # (2) Accumulate weights
