@@ -33,7 +33,7 @@ def argparse_default(description=None):
     parser.add_argument("--backend", type=str, default='pandas',
                         help='Select [modin, pandas]')
 
-    parser.add_argument("--torch_trainer", type=str, default=None,
+    parser.add_argument("--torch_trainer", type=str, default="DataParallelTrainer",
                         help='None, DistributedDataParallelTrainer or DataParallelTrainer')
     # Hyperparameters for training.
     parser.add_argument('--scoring_technique', default='KvsAll', help="KvsSample, 1vsAll, KvsAll, NegSample")

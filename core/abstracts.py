@@ -6,6 +6,35 @@ from typing import List, Tuple, Generator
 import pandas as pd
 
 
+class AbstractTrainer:
+    def __init__(self, args, callbacks):
+        self.attributes = vars(args)
+        self.callbacks = callbacks
+        print(self.attributes)
+
+    def __getattr__(self, attr):
+        return self.attributes[attr]
+
+    def on_fit_start(self, *args, **kwargs):
+        """ """
+
+        for c in self.callbacks:
+            c.on_fit_start(*args, **kwargs)
+
+    def on_fit_end(self, *args, **kwargs):
+        """ """
+        for c in self.callbacks:
+            c.on_fit_end(*args, **kwargs)
+
+    def on_train_epoch_end(self, *args, **kwargs):
+        """ """
+        for c in self.callbacks:
+            c.on_train_epoch_end(*args, **kwargs)
+
+    @staticmethod
+    def save_checkpoint(full_path, model):
+        torch.save(model.state_dict(), full_path)
+
 class BaseInteractiveKGE:
     """ Base class for interactive KGE """
 
