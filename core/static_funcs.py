@@ -11,14 +11,14 @@ import pytorch_lightning as pl
 import sys
 from .helper_classes import CustomArg
 from .models import *
-from .trainers import DataParallelTrainer, DistributedDataParallelTrainer
+#from .trainers import DataParallelTrainer, DistributedDataParallelTrainer
 import time
 import pandas as pd
 import json
 import glob
 import pandas
 from .sanity_checkers import sanity_checking_with_arguments
-from pytorch_lightning.strategies import DDPStrategy
+
 
 
 # @TODO: Could these funcs can be merged?

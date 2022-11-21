@@ -1,7 +1,6 @@
 from core.executer import Execute
 import argparse
 import pytorch_lightning as pl
-import json
 
 
 def argparse_default(description=None):
@@ -25,14 +24,14 @@ def argparse_default(description=None):
     parser.add_argument('--embedding_dim', type=int, default=100, help='Number of dimensions for an embedding vector. ')
     parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
-    parser.add_argument("--lr", type=float, default=0.001)
+    parser.add_argument("--lr", type=float, default=0.01)
     parser.add_argument('--callbacks',
                         '--list',
                         nargs='+',
                         default=[],  # ['Polyak'],
                         help='List of tuples representing a callback and values')
     parser.add_argument("--backend", type=str, default='pandas',
-                        help='Select [modin, pandas, vaex, polars]')
+                        help='Select [modin, pandas]')
 
     parser.add_argument("--torch_trainer", type=str, default=None,
                         help='None, DistributedDataParallelTrainer or DataParallelTrainer')
