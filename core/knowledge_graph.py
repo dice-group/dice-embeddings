@@ -5,6 +5,7 @@ import numpy as np
 import pickle
 import json
 import os
+import pandas
 import pandas as pd
 from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_re_vocab, \
     create_recipriocal_triples, add_noisy_triples, index_triples, load_data_parallel, create_constraints, \
@@ -70,12 +71,9 @@ class KG:
             self.apply_reciprical_or_noise()
             # (1.3) Construct integer indexing for entities and relations.
             if entity_to_idx is None and relation_to_idx is None:
-                if self.input_is_parquet:
-                    self.sequential_vocabulary_construction()
-                else:
-                    self.sequential_vocabulary_construction()  # via Pandas
-                print(
-                    '[9 / 14] Obtaining entity to integer index mapping from pandas dataframe...')
+                self.sequential_vocabulary_construction()
+                print('[9 / 14] Obtaining entity to integer index mapping from pandas dataframe...')
+                # CD: <> brackets are not removed anymore <http://embedding.cc/resource/Karim_Fegrouch>
                 self.entity_to_idx = self.entity_to_idx.to_dict()['entity']
                 print('Done !\n')
                 print('[9 / 14] Obtaining relation to integer index mapping from pandas dataframe...')
@@ -88,8 +86,7 @@ class KG:
                 # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
                 self.train_set = index_triples(self.train_set,
                                                self.entity_to_idx,
-                                               self.relation_to_idx,
-                                               num_core=os.cpu_count())
+                                               self.relation_to_idx)
                 print(f'Done ! {time.time() - start_time:.3f} seconds\n')
                 if path_for_serialization is not None:
                     # 10. Serialize (9).
@@ -170,7 +167,6 @@ class KG:
                     data = np.concatenate([self.train_set, self.valid_set, self.test_set])
                 else:
                     data = self.train_set
-                # TODO do it via dask: No need to wait here.
                 print('Final: Creating Vocab...')
                 self.er_vocab = get_er_vocab(data)
                 self.re_vocab = get_re_vocab(data)
@@ -284,11 +280,39 @@ class KG:
             del low_frequency_entities
             print('Done !\n')
 
-    def load_read_process(self):  # -> Tuple[dask.dataframe.DataFrame, Union[dask.dataframe.DataFrame, None],
-        #          Union[dask.dataframe.DataFrame, None]]\
+    def load_read_process(self) -> Tuple[pandas.core.frame.DataFrame, Union[pandas.core.frame.DataFrame, None], Union[
+        pandas.core.frame.DataFrame, None]]:
+        """Load and preprocess train, valid, and test datasets
 
-        """ Load train valid (if exists), and test (if exists) into memory """
+        A data written in the disk (a csv, parquet or text format) is read into memory and preprocessed
+
+        return:
+        """
         # (1) Check whether a path leading to a directory is a parquet formatted file
+        self.train_set, self.valid_set, self.test_set = None, None, None
+        # (CD) Removed
+        if self.dnf_predicates:
+            # https://arrow.apache.org/docs/python/generated/pyarrow.parquet.read_table.html
+            # pq.read_table(self.data_dir,columns=['subject', 'relation', 'object'],filters=self.dnf_predicates)
+            raise NotImplementedError
+
+        for i in glob.glob(self.data_dir + '/*'):
+            if 'train' in i:
+                # 1. LOAD Data. (First pass on data)
+                print(
+                    f'[1 / 14] Loading and Preprocessing Training Data: read_only_few: {self.read_only_few} , sample_triples_ratio: {self.sample_triples_ratio}...')
+                self.train_set = load_data_parallel(i, self.read_only_few, self.sample_triples_ratio,
+                                                    backend=self.backend)
+            elif 'test' in i:
+                print(f'[1 / 14] Loading and Preprocessing Test Data:')
+                self.test_set = load_data_parallel(i, backend=self.backend)
+            elif 'valid' in i:
+                print(f'[1 / 14] Loading and Preprocessing Valid Data:')
+                self.valid_set = load_data_parallel(i, backend=self.backend)
+            else:
+                print(f'Unrecognized data {i}')
+
+        """
         if self.data_dir[-8:] == '.parquet':
             print(
                 f'[1 / 14] Read parquet formatted KG with pyarrow and preprocess: read_only_few: {self.read_only_few} , sample_triples_ratio: {self.sample_triples_ratio}...')
@@ -331,6 +355,7 @@ class KG:
             print('Test Dataset:', self.test_set)
             print('Done !\n')
             self.input_is_parquet = False
+        """
         return self.train_set, self.valid_set, self.test_set
 
     def apply_reciprical_or_noise(self) -> None:
