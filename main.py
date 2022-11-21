@@ -65,8 +65,8 @@ def argparse_default(description=None):
     parser.add_argument("--dnf_predicates", type=list, default=None,
                         help="Predicates in Disjunctive normal form to select only valid triples on the fly."
                              "[('relation', '=','<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>')]")
-    parser.add_argument("--num_core", type=int, default=1,
-                        help='Number of cores to be used.')
+    parser.add_argument("--num_core", type=int, default=0, help='Number of cores to be used. 0=> use all cpus')
+
     parser.add_argument("--seed_for_computation", type=int, default=0, help='Seed for all, see pl seed_everything().')
     parser.add_argument("--sample_triples_ratio", type=float, default=None, help='Sample input data.')
     parser.add_argument("--read_only_few", type=int, default=None, help='READ only first N triples. If 0, read all.')

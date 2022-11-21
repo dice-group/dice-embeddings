@@ -89,8 +89,7 @@ class KG:
                 # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
                 self.train_set = index_triples(self.train_set,
                                                self.entity_to_idx,
-                                               self.relation_to_idx,
-                                               num_core=os.cpu_count())
+                                               self.relation_to_idx)
                 print(f'Done ! {time.time() - start_time:.3f} seconds\n')
                 if path_for_serialization is not None:
                     # 10. Serialize (9).
