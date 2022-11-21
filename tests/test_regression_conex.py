@@ -76,5 +76,5 @@ class TestRegressionConEx:
         args.torch_trainer = 'DataParallelTrainer'
         result = Execute(args).start()
         assert 0.75 >= result['Train']['H@1'] >= .38
-        assert 0.67 >= result['Val']['H@1'] >= .30
+        assert 0.69 >= result['Val']['H@1'] >= .30
         assert 0.68 >= result['Test']['H@1'] >= .30
