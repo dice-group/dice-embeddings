@@ -204,7 +204,7 @@ def preprocess_modin_dataframe_of_kg(df, read_only_few: int = None, sample_tripl
     return df._to_pandas()
 
 
-def preprocess_dataframe_of_kg(df, read_only_few: int = None,
+def old_preprocess_dataframe_of_kg(df, read_only_few: int = None,
                                sample_triples_ratio: float = None):
     """ Preprocess lazy loaded dask dataframe
     (1) Read only few triples
@@ -243,6 +243,40 @@ def preprocess_dataframe_of_kg(df, read_only_few: int = None,
     return df
 
 
+def preprocess_dataframe_of_kg(df, read_only_few: int = None,
+                               sample_triples_ratio: float = None):
+    """ Preprocess lazy loaded dask dataframe
+    (1) Read only few triples
+    (2) Sample few triples
+    (3) Remove **<>** if exists.
+    """
+    """
+    try:
+        assert isinstance(df, dask.dataframe.core.DataFrame) or isinstance(df, pandas.DataFrame)
+    except AssertionError:
+        raise AssertionError(type(df))
+    """
+
+    # (2)a Read only few if it is asked.
+    if isinstance(read_only_few, int):
+        if read_only_few > 0:
+            print(f'Reading only few input data {read_only_few}...')
+            df = df.head(read_only_few)
+            print('Done !\n')
+    # (3) Read only sample
+    if sample_triples_ratio:
+        print(f'Subsampling {sample_triples_ratio} of input data...')
+        df = df.sample(frac=sample_triples_ratio)
+        print('Done !\n')
+    if sum(df.head()["subject"].str.startswith('<')) + sum(df.head()["relation"].str.startswith('<')) > 2:
+        # (4) Drop Rows/triples with double or boolean: Example preprocessing
+        # Drop of object does not start with **<**.
+        # Specifying na to be False instead of NaN.
+        print('Removing triples with literal values...')
+        df = df[df["object"].str.startswith('<', na=False)]
+        print('Done !\n')
+    return df
+
 def load_data_parallel(data_path, read_only_few: int = None,
                        sample_triples_ratio: float = None, backend=None):
     """
@@ -258,21 +292,27 @@ def load_data_parallel(data_path, read_only_few: int = None,
     if glob.glob(data_path):
         if backend == 'modin':
             import modin.pandas as pd
-            df = pd.read_csv(data_path,
-                             delim_whitespace=True,
-                             header=None,
-                             usecols=[0, 1, 2],
-                             names=['subject', 'relation', 'object'],
-                             dtype=str)
+            if data_path[-3:] in ['txt', 'csv']:
+                df = pd.read_csv(data_path,
+                                 delim_whitespace=True,
+                                 header=None,
+                                 usecols=[0, 1, 2],
+                                 names=['subject', 'relation', 'object'],
+                                 dtype=str)
+            else:
+                df = pd.read_parquet(data_path, engine='pyarrow')
             return preprocess_modin_dataframe_of_kg(df, read_only_few, sample_triples_ratio)
         elif backend == 'pandas':
             import pandas as pd
-            df = pd.read_csv(data_path,
-                             delim_whitespace=True,
-                             header=None,
-                             usecols=[0, 1, 2],
-                             names=['subject', 'relation', 'object'],
-                             dtype=str)
+            if data_path[-3:] in ['txt', 'csv']:
+                df = pd.read_csv(data_path,
+                                 delim_whitespace=True,
+                                 header=None,
+                                 usecols=[0, 1, 2],
+                                 names=['subject', 'relation', 'object'],
+                                 dtype=str)
+            else:
+                df = pd.read_parquet(data_path, engine='pyarrow')
             return preprocess_dataframe_of_kg(df, read_only_few, sample_triples_ratio)
         else:
             raise NotImplementedError

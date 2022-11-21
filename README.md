@@ -63,9 +63,10 @@ Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , i
 - [WN18RR ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/WN18RR.zip)
 - For more please look at [Hobbit Data](https://hobbitdata.informatik.uni-leipzig.de/KGE/)
 
-## Training 
+## Examples 
+> How to use the framework:`documents/using_dice_embedding_framework`.
 
-> A knowledge graph embedding model can be trained via different strategies (e.g. 1vsAll, KvsAll or Negative Sampling). For details, we refer to `documents/training_techniques`.
+> Training different strategies: `documents/training_techniques`.
 
 ## Using Pre-trained ConEx on DBpedia 03-2022
 ```bash
