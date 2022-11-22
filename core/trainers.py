@@ -39,7 +39,7 @@ class DICE_Trainer:
     """
     DICE_Trainer implement
     1- PL training schema
-    2- Pytorch Dataparalel
+    2- Pytorch Dataparalell
     3- Pytorch DistributedDataParallel
     """
 
