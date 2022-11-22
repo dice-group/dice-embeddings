@@ -514,7 +514,7 @@ def preprocesses_input_args(arg):
     arg.learning_rate = arg.lr
     arg.deterministic = True
     if arg.num_core <= 0:
-        arg.num_core = os.cpu_count()
+        arg.num_core = os.cpu_count()//2
 
     # Below part will be investigated
     arg.check_val_every_n_epoch = 10 ** 6  # ,i.e., no eval

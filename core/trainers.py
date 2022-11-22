@@ -8,6 +8,7 @@ Although DistributedDataParallel is faster than DataParallel, the former is more
 
 """
 import torch
+from tqdm import tqdm
 import time
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -29,6 +30,7 @@ from pytorch_lightning.strategies import DDPStrategy
 from core.dataset_classes import StandardDataModule
 from core.helper_classes import LabelRelaxationLoss, BatchRelaxedvsAllLoss
 from core.static_funcs import select_model, model_fitting
+from core.abstracts import AbstractTrainer
 import pandas as pd
 from sklearn.model_selection import KFold
 
@@ -37,7 +39,7 @@ class DICE_Trainer:
     """
     DICE_Trainer implement
     1- PL training schema
-    2- Pytorch Dataparalel
+    2- Pytorch Dataparalell
     3- Pytorch DistributedDataParallel
     """
 
@@ -100,147 +102,6 @@ class DICE_Trainer:
                 return self.train_relaxed_k_vs_all()
             else:
                 raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
-
-    def training_CCvsAll(self) -> BaseKGE:
-        """ Conformal Credal Self-Supervised Learning for KGE
-        D:= {(x,y)}, where
-        x is an input is a head-entity & relation pair
-        y is a one-hot vector
-        """
-        model, form_of_labelling = select_model(vars(self.args), self.executor.is_continual_training,
-                                                self.executor.storage_path)
-        print(f'Conformal Credal Self Training starts: {model.name}')
-        # Split the training triples into train, calibration and unlabelled.
-        train_set, calibration_set, unlabelled_set = semi_supervised_split(self.dataset.train_set,
-                                                                           train_split_ratio=.3,
-                                                                           calibration_split_ratio=.2)
-        model.calibration_set = torch.LongTensor(calibration_set)
-        model.unlabelled_set = torch.LongTensor(unlabelled_set)
-
-        variant = 0
-        non_conf_score_fn = non_conformity_score_diff  # or  non_conformity_score_prop
-        print('Variant:', variant)
-        print('non_conf_score_fn:', non_conf_score_fn)
-
-        dataset = StandardDataModule(train_set_idx=train_set,
-                                     valid_set_idx=self.dataset.valid_set,
-                                     test_set_idx=self.dataset.test_set,
-                                     entity_to_idx=self.dataset.entity_to_idx,
-                                     relation_to_idx=self.dataset.relation_to_idx,
-                                     form='CCvsAll',
-                                     neg_sample_ratio=self.args.neg_ratio,
-                                     batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_core)
-
-        def on_epoch_start(self, *args, **kwargs):
-            """ Update non-conformity scores"""
-            with torch.no_grad():
-                # (1.1) Compute non-conformity scores on calibration dataset per epoch.
-                self.non_conf_scores = non_conformity_score_diff(
-                    torch.nn.functional.softmax(self.forward(self.calibration_set[:, [0, 1]])),
-                    self.calibration_set[:, 2])
-
-        setattr(BaseKGE, 'on_epoch_start', on_epoch_start)
-
-        # Define a new raining set
-        def training_step(self, batch, batch_idx):
-            # (1) SUPERVISED PART
-            # (1.1) Extract inputs and labels from a given batch (\mathcal{B}_l)
-            x_batch, y_batch = batch
-            # (1.2) Compute the supervised Loss
-            train_loss = self.loss_function(yhat_batch=self.forward(x_batch), y_batch=y_batch)
-            """
-            # (1.3.2) Via KL divergence
-            yhat = torch.clip(torch.softmax(logits_x, dim=-1), 1e-5, 1.)
-            one_hot_targets = torch.clip(y_batch, 1e-5, 1.)
-            train_loss = F.kl_div(yhat.log(), one_hot_targets, log_target=False, reduction='batchmean')
-            """
-            # (2) UNSUPERVISED PART
-            # (2.1) Obtain unlabelled batch (\mathcal{B}_u), (x:=(s,p))
-            unlabelled_input_batch = self.unlabelled_set[
-                                         torch.randint(low=0, high=len(unlabelled_set), size=(len(x_batch),))][:,
-                                     [0, 1]]
-            # (2.2) Predict unlabelled batch \mathcal{B}_u
-            with torch.no_grad():
-                # TODO:Important moving this code outside of the no_grad improved the results a lot.
-                # (2.2) Predict unlabelled batch \mathcal{B}_u
-                pseudo_label = torch.nn.functional.softmax(self.forward(unlabelled_input_batch).detach())
-                # (2.3) Construct p values given non-conformity scores and pseudo labels
-                p_values = construct_p_values(self.non_conf_scores, pseudo_label.detach(),
-                                              non_conf_score_fn=non_conformity_score_diff)
-                # (2.4) Normalize (2.3)
-                norm_p_values = norm_p_value(p_values, variant=0)
-
-            unlabelled_loss = gen_lr(pseudo_label, norm_p_values)
-
-            return train_loss + unlabelled_loss
-
-        # Dynamically update
-        setattr(BaseKGE, 'training_step', training_step)
-
-        if self.args.eval is False:
-            self.dataset.train_set = None
-            self.dataset.valid_set = None
-            self.dataset.test_set = None
-        model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
-        return model, form_of_labelling
-
-    def training_PvsAll(self) -> BaseKGE:
-        """ Pseudo Labelling for KGE """
-
-        # (1) Select model and labelling : Entity Prediction or Relation Prediction.
-        model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
-        print(f'PvsAll training starts: {model.name}')
-        train_set, calibration_set, unlabelled_set = semi_supervised_split(self.dataset.train_set,
-                                                                           train_split_ratio=.5,
-                                                                           calibration_split_ratio=.4)
-        # Pseudo Labeling : unlabeled set consts of calibration_set, unlabelled_set
-        model.unlabelled_set = torch.LongTensor(np.concatenate((calibration_set, unlabelled_set), axis=0))
-        # (2) Create training data.
-        dataset = StandardDataModule(train_set_idx=train_set,
-                                     valid_set_idx=self.dataset.valid_set,
-                                     test_set_idx=self.dataset.test_set,
-                                     entity_to_idx=self.dataset.entity_to_idx,
-                                     relation_to_idx=self.dataset.relation_to_idx,
-                                     form='PvsAll',
-                                     neg_sample_ratio=self.args.neg_ratio,
-                                     batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_core)
-
-        # Define a new raining set
-        def training_step(self, batch, batch_idx):
-            # (1) SUPERVISED PART
-            # (1.1) Extract inputs and labels from a given batch
-            x_batch, y_batch = batch
-            # (1.2) Predictions
-            logits_x = self.forward(x_batch)
-            # (1.3) Compute the supervised Loss
-            # (1.3.1) Via Cross Entropy
-            supervised_loss = self.loss_function(yhat_batch=logits_x, y_batch=y_batch)
-            # (2) UNSUPERVISED PART
-            # (2.1) Obtain unlabelled batch (\mathcal{B}_u)
-            random_idx = torch.randint(low=0, high=len(self.unlabelled_set), size=(len(x_batch),))
-            # (2.2) Batch of head entity and relation
-            unlabelled_x = self.unlabelled_set[random_idx][:, [0, 1]]
-            # (2.3) Create Pseudo-Labels
-            with torch.no_grad():
-                # (2.2) Compute loss
-                _, max_pseudo_tail = torch.max(self.forward(unlabelled_x), dim=1)
-                pseudo_labels = F.one_hot(max_pseudo_tail, num_classes=y_batch.shape[1]).float()
-
-            unlabelled_loss = self.loss_function(yhat_batch=self.forward(unlabelled_x), y_batch=pseudo_labels)
-
-            return supervised_loss + unlabelled_loss
-
-        # Dynamically update
-        setattr(BaseKGE, 'training_step', training_step)
-
-        if self.args.eval is False:
-            self.dataset.train_set = None
-            self.dataset.valid_set = None
-            self.dataset.test_set = None
-        model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
-        return model, form_of_labelling
 
     def training_kvsall(self) -> BaseKGE:
         """
@@ -475,36 +336,6 @@ class DICE_Trainer:
         return model, form_of_labelling
 
 
-class AbstractTrainer:
-    def __init__(self, args, callbacks):
-        self.attributes = vars(args)
-        self.callbacks = callbacks
-        print(self.attributes)
-
-    def __getattr__(self, attr):
-        return self.attributes[attr]
-
-    def on_fit_start(self, *args, **kwargs):
-        """ """
-
-        for c in self.callbacks:
-            c.on_fit_start(*args, **kwargs)
-
-    def on_fit_end(self, *args, **kwargs):
-        """ """
-        for c in self.callbacks:
-            c.on_fit_end(*args, **kwargs)
-
-    def on_train_epoch_end(self, *args, **kwargs):
-        """ """
-        for c in self.callbacks:
-            c.on_train_epoch_end(*args, **kwargs)
-
-    @staticmethod
-    def save_checkpoint(full_path, model):
-        torch.save(model.state_dict(), full_path)
-
-
 class DataParallelTrainer(AbstractTrainer):
     """ A Trainer based on torch.nn.DataParallel (https://pytorch.org/docs/stable/generated/torch.nn.DataParallel.html)"""
 
@@ -524,12 +355,12 @@ class DataParallelTrainer(AbstractTrainer):
     def fit(self, *args, **kwargs):
         assert len(args) == 1
         model, = args
-        self.on_fit_start(trainer=self, pl_module=model)
         self.model = model
+        self.on_fit_start(trainer=self, pl_module=self.model)
         dataset = kwargs['train_dataloaders'].dataset
         self.loss_function = model.loss_function
-        self.model = torch.nn.DataParallel(model)
-        self.optimizer = model.configure_optimizers(self.model.parameters())
+        # self.model = torch.nn.DataParallel(model)
+        self.optimizer = self.model.configure_optimizers()
 
         if isinstance(self.optimizer, Sls) or isinstance(self.optimizer, AdamSLS):
             self.use_closure = True
@@ -545,10 +376,7 @@ class DataParallelTrainer(AbstractTrainer):
         print_period = max(num_total_batches // 10, 1)
         print(f'Number of batches for an epoch:{num_total_batches}\t printing period:{print_period}')
 
-        # @TODO:
-        # self.model.training_step() should be used
-        # Not needed extract_input_outputs() and compute_forward_loss_backward()
-        for epoch in range(self.attributes['max_epochs']):
+        for epoch in (pbar := tqdm(range(self.attributes['max_epochs']))):
             epoch_loss = 0
             start_time = time.time()
             i: int
@@ -562,12 +390,9 @@ class DataParallelTrainer(AbstractTrainer):
                 batch_loss = self.compute_forward_loss_backward(x_batch, y_batch)
 
                 epoch_loss += batch_loss.item()
-                # if i > 0 and i % print_period == 0:
-                #    print(f"Batch:{i}\t avg. batch loss until now:\t{epoch_loss / i}\t TotalRuntime:{(time.time() - start_time) / 60:.3f} minutes")
-
-            avg_epoch_loss = epoch_loss / num_total_batches
-            print(
-                f"{epoch} epoch: Runtime: {(time.time() - start_time) / 60:.3f} minutes \tAverage loss:{avg_epoch_loss}")
+            epoch_loss /= num_total_batches
+            pbar.set_postfix_str(f"{epoch+1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} mins \tEpoch loss: {epoch_loss:.8f}")
+            self.model.loss_history.append(epoch_loss)
             # Fit on epochs e
             self.on_train_epoch_end(self, self.model)
             # Write a callback to store
@@ -714,6 +539,147 @@ class DistributedDataParallelTrainer(AbstractTrainer):
         os.remove('model.pt')
         self.model = model
         self.on_fit_end(self, self.model)
+
+    def training_CCvsAll(self) -> BaseKGE:
+        """ Conformal Credal Self-Supervised Learning for KGE
+        D:= {(x,y)}, where
+        x is an input is a head-entity & relation pair
+        y is a one-hot vector
+        """
+        model, form_of_labelling = select_model(vars(self.args), self.executor.is_continual_training,
+                                                self.executor.storage_path)
+        print(f'Conformal Credal Self Training starts: {model.name}')
+        # Split the training triples into train, calibration and unlabelled.
+        train_set, calibration_set, unlabelled_set = semi_supervised_split(self.dataset.train_set,
+                                                                           train_split_ratio=.3,
+                                                                           calibration_split_ratio=.2)
+        model.calibration_set = torch.LongTensor(calibration_set)
+        model.unlabelled_set = torch.LongTensor(unlabelled_set)
+
+        variant = 0
+        non_conf_score_fn = non_conformity_score_diff  # or  non_conformity_score_prop
+        print('Variant:', variant)
+        print('non_conf_score_fn:', non_conf_score_fn)
+
+        dataset = StandardDataModule(train_set_idx=train_set,
+                                     valid_set_idx=self.dataset.valid_set,
+                                     test_set_idx=self.dataset.test_set,
+                                     entity_to_idx=self.dataset.entity_to_idx,
+                                     relation_to_idx=self.dataset.relation_to_idx,
+                                     form='CCvsAll',
+                                     neg_sample_ratio=self.args.neg_ratio,
+                                     batch_size=self.args.batch_size,
+                                     num_workers=self.args.num_core)
+
+        def on_epoch_start(self, *args, **kwargs):
+            """ Update non-conformity scores"""
+            with torch.no_grad():
+                # (1.1) Compute non-conformity scores on calibration dataset per epoch.
+                self.non_conf_scores = non_conformity_score_diff(
+                    torch.nn.functional.softmax(self.forward(self.calibration_set[:, [0, 1]])),
+                    self.calibration_set[:, 2])
+
+        setattr(BaseKGE, 'on_epoch_start', on_epoch_start)
+
+        # Define a new raining set
+        def training_step(self, batch, batch_idx):
+            # (1) SUPERVISED PART
+            # (1.1) Extract inputs and labels from a given batch (\mathcal{B}_l)
+            x_batch, y_batch = batch
+            # (1.2) Compute the supervised Loss
+            train_loss = self.loss_function(yhat_batch=self.forward(x_batch), y_batch=y_batch)
+            """
+            # (1.3.2) Via KL divergence
+            yhat = torch.clip(torch.softmax(logits_x, dim=-1), 1e-5, 1.)
+            one_hot_targets = torch.clip(y_batch, 1e-5, 1.)
+            train_loss = F.kl_div(yhat.log(), one_hot_targets, log_target=False, reduction='batchmean')
+            """
+            # (2) UNSUPERVISED PART
+            # (2.1) Obtain unlabelled batch (\mathcal{B}_u), (x:=(s,p))
+            unlabelled_input_batch = self.unlabelled_set[
+                                         torch.randint(low=0, high=len(unlabelled_set), size=(len(x_batch),))][:,
+                                     [0, 1]]
+            # (2.2) Predict unlabelled batch \mathcal{B}_u
+            with torch.no_grad():
+                # TODO:Important moving this code outside of the no_grad improved the results a lot.
+                # (2.2) Predict unlabelled batch \mathcal{B}_u
+                pseudo_label = torch.nn.functional.softmax(self.forward(unlabelled_input_batch).detach())
+                # (2.3) Construct p values given non-conformity scores and pseudo labels
+                p_values = construct_p_values(self.non_conf_scores, pseudo_label.detach(),
+                                              non_conf_score_fn=non_conformity_score_diff)
+                # (2.4) Normalize (2.3)
+                norm_p_values = norm_p_value(p_values, variant=0)
+
+            unlabelled_loss = gen_lr(pseudo_label, norm_p_values)
+
+            return train_loss + unlabelled_loss
+
+        # Dynamically update
+        setattr(BaseKGE, 'training_step', training_step)
+
+        if self.args.eval is False:
+            self.dataset.train_set = None
+            self.dataset.valid_set = None
+            self.dataset.test_set = None
+        model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
+        return model, form_of_labelling
+
+    def training_PvsAll(self) -> BaseKGE:
+        """ Pseudo Labelling for KGE """
+
+        # (1) Select model and labelling : Entity Prediction or Relation Prediction.
+        model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
+        print(f'PvsAll training starts: {model.name}')
+        train_set, calibration_set, unlabelled_set = semi_supervised_split(self.dataset.train_set,
+                                                                           train_split_ratio=.5,
+                                                                           calibration_split_ratio=.4)
+        # Pseudo Labeling : unlabeled set consts of calibration_set, unlabelled_set
+        model.unlabelled_set = torch.LongTensor(np.concatenate((calibration_set, unlabelled_set), axis=0))
+        # (2) Create training data.
+        dataset = StandardDataModule(train_set_idx=train_set,
+                                     valid_set_idx=self.dataset.valid_set,
+                                     test_set_idx=self.dataset.test_set,
+                                     entity_to_idx=self.dataset.entity_to_idx,
+                                     relation_to_idx=self.dataset.relation_to_idx,
+                                     form='PvsAll',
+                                     neg_sample_ratio=self.args.neg_ratio,
+                                     batch_size=self.args.batch_size,
+                                     num_workers=self.args.num_core)
+
+        # Define a new raining set
+        def training_step(self, batch, batch_idx):
+            # (1) SUPERVISED PART
+            # (1.1) Extract inputs and labels from a given batch
+            x_batch, y_batch = batch
+            # (1.2) Predictions
+            logits_x = self.forward(x_batch)
+            # (1.3) Compute the supervised Loss
+            # (1.3.1) Via Cross Entropy
+            supervised_loss = self.loss_function(yhat_batch=logits_x, y_batch=y_batch)
+            # (2) UNSUPERVISED PART
+            # (2.1) Obtain unlabelled batch (\mathcal{B}_u)
+            random_idx = torch.randint(low=0, high=len(self.unlabelled_set), size=(len(x_batch),))
+            # (2.2) Batch of head entity and relation
+            unlabelled_x = self.unlabelled_set[random_idx][:, [0, 1]]
+            # (2.3) Create Pseudo-Labels
+            with torch.no_grad():
+                # (2.2) Compute loss
+                _, max_pseudo_tail = torch.max(self.forward(unlabelled_x), dim=1)
+                pseudo_labels = F.one_hot(max_pseudo_tail, num_classes=y_batch.shape[1]).float()
+
+            unlabelled_loss = self.loss_function(yhat_batch=self.forward(unlabelled_x), y_batch=pseudo_labels)
+
+            return supervised_loss + unlabelled_loss
+
+        # Dynamically update
+        setattr(BaseKGE, 'training_step', training_step)
+
+        if self.args.eval is False:
+            self.dataset.train_set = None
+            self.dataset.valid_set = None
+            self.dataset.test_set = None
+        model_fitting(trainer=self.trainer, model=model, train_dataloaders=dataset.train_dataloader())
+        return model, form_of_labelling
 
 
 def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
