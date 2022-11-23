@@ -58,21 +58,29 @@ class Trainer:
         self.optimizer.zero_grad()
         output = self.model(source)
         loss = self.loss_func(output, targets)
+        batch_loss = loss.item()
         loss.backward()
         self.optimizer.step()
+        return batch_loss
 
-    def _run_epoch(self, epoch):
+    def _run_epoch(self, epoch, pbar):
         b_sz = len(next(iter(self.train_data))[0])
-        print(f"[GPU{self.gpu_id}] Epoch {epoch} | Batchsize: {b_sz} | Steps: {len(self.train_data)}")
+        print(f"[GPU {self.gpu_id}] Epoch {epoch} | Batchsize: {b_sz} | Datapoints: {len(self.train_data)}")
         self.train_data.sampler.set_epoch(epoch)
-        for source, targets in self.train_data:
-            source = source.to(self.gpu_id)
-            targets = targets.to(self.gpu_id)
-            self._run_batch(source, targets)
+        epoch_loss = 0
+        for i, (source, targets) in enumerate(self.train_data):
+            source, targets = source.to(self.gpu_id), targets.to(self.gpu_id)
+            batch_loss = self._run_batch(source, targets)
+            pbar.set_description_str(f"{epoch + 1}. epoch: {i + 1}.batch")
+            epoch_loss += batch_loss
+        return epoch_loss / len(self.train_data)
 
     def train(self, max_epochs: int):
-        for epoch in range(max_epochs):
-            self._run_epoch(epoch)
+        for epoch in (pbar := tqdm(range(max_epochs))):
+            start_time = time.time()
+            epoch_loss = self._run_epoch(epoch, pbar)
+            pbar.set_postfix_str(
+                f"{epoch + 1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} mins \tEpoch loss: {epoch_loss:.8f}")
 
 
 def distributed_training(rank: int, world_size, model, train_dataset, batch_size, max_epochs, lr):
@@ -101,8 +109,6 @@ def distributed_training(rank: int, world_size, model, train_dataset, batch_size
         torch.save(trainer.model.module.state_dict(), "model.pt")
     dist.destroy_process_group()
     """
-    destroy_process_group()
-
     # Move the model to GPU with id rank
     model = model.to(rank)
     ddp_model = DDP(model, device_ids=[rank])
