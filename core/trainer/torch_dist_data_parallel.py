@@ -63,12 +63,12 @@ class Trainer:
         self.optimizer.step()
         return batch_loss
 
-    def _run_epoch(self, epoch, pbar):
+    def _run_epoch(self, epoch):
         b_sz = len(next(iter(self.train_data))[0])
-        print(f"[GPU {self.gpu_id}] Epoch {epoch} | Batchsize: {b_sz} | Datapoints: {len(self.train_data)}")
+        print(f"[GPU {self.gpu_id}] Epoch {epoch} | Batchsize: {b_sz}")
         self.train_data.sampler.set_epoch(epoch)
         epoch_loss = 0
-        for i, (source, targets) in enumerate(self.train_data):
+        for i, (source, targets) in (pbar := tqdm(enumerate(self.train_data))):
             source, targets = source.to(self.gpu_id), targets.to(self.gpu_id)
             batch_loss = self._run_batch(source, targets)
             pbar.set_description_str(f"{epoch + 1}. epoch: {i + 1}.batch")
@@ -78,7 +78,7 @@ class Trainer:
     def train(self, max_epochs: int):
         for epoch in (pbar := tqdm(range(max_epochs))):
             start_time = time.time()
-            epoch_loss = self._run_epoch(epoch, pbar)
+            epoch_loss = self._run_epoch(epoch)
             pbar.set_postfix_str(
                 f"{epoch + 1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} mins \tEpoch loss: {epoch_loss:.8f}")
 
