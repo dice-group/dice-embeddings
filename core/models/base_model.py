@@ -10,6 +10,10 @@ import numpy as np
 from core.custom_opt import Sls, AdamSLS, Adan
 
 
+def identity(x):
+    return x
+
+
 class BaseKGE(pl.LightningModule):
 
     def __init__(self, args: dict):
@@ -30,9 +34,9 @@ class BaseKGE(pl.LightningModule):
         self.loss = torch.nn.BCEWithLogitsLoss()
         self.selected_optimizer = None
         self.normalizer_class = None
-        self.normalize_head_entity_embeddings = lambda x: x
-        self.normalize_relation_embeddings = lambda x: x
-        self.normalize_tail_entity_embeddings = lambda x: x
+        self.normalize_head_entity_embeddings = identity  # lambda x: x
+        self.normalize_relation_embeddings = identity  # lambda x: x
+        self.normalize_tail_entity_embeddings = identity  # lambda x: x
         self.init_params_with_sanity_checking()
 
         self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)

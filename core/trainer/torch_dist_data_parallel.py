@@ -170,12 +170,12 @@ class DistributedDataParallelTrainer(AbstractTrainer):
         # nodes * gpus
         world_size = self.num_nodes * torch.cuda.device_count()
         train_dataset = kwargs['train_dataloaders'].dataset
-        print(model)
         if world_size == 0:
             print('#' * 10)
             print('Can not compute distributed computing')
             print('#' * 10)
             return
+        # pickle
         # Save the model
         mp.spawn(fn=distributed_training,
                  args=(world_size, model, train_dataset, self.batch_size, self.max_epochs, self.lr),
