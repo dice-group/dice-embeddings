@@ -36,20 +36,17 @@ def print_peak_memory(prefix, device):
         print(f"{prefix}: {torch.cuda.max_memory_allocated(device) // 1e6}MB ")
 
 
-def prepare_dataloader(train_dataset: Dataset, batch_size: int):
-    return DataLoader(train_dataset, batch_size=batch_size, pin_memory=True, shuffle=False,
-                      sampler=torch.utils.data.distributed.DistributedSampler(train_dataset))
 
 
 class Trainer:
     def __init__(self,
                  model: torch.nn.Module,
-                 train_data: DataLoader,
+                 train_dataset_loader: DataLoader,
                  optimizer: torch.optim.Optimizer,
                  gpu_id: int) -> None:
         self.gpu_id = gpu_id
         self.model = model.to(gpu_id)
-        self.train_data = train_data
+        self.train_dataset_loader = train_dataset_loader
         self.loss_func = torch.nn.BCEWithLogitsLoss()
         self.optimizer = optimizer
         self.model = DDP(model, device_ids=[gpu_id])
@@ -64,23 +61,22 @@ class Trainer:
         return batch_loss
 
     def _run_epoch(self, epoch):
-        b_sz = len(next(iter(self.train_data))[0])
-        print(f"[GPU {self.gpu_id}] Epoch {epoch} | Batchsize: {b_sz}")
-        self.train_data.sampler.set_epoch(epoch)
+        b_sz = len(next(iter(self.train_dataset_loader))[0])
+        print(f"[GPU {self.gpu_id}] Epoch {epoch} | Batchsize: {b_sz} | Number of Batches per Epoch:{len(self.train_data)}")
+        self.train_dataset_loader.sampler.set_epoch(epoch)
         epoch_loss = 0
-        for i, (source, targets) in (pbar := tqdm(enumerate(self.train_data))):
+        for i, (source, targets) in (pbar := tqdm(enumerate(self.train_dataset_loader))):
             source, targets = source.to(self.gpu_id), targets.to(self.gpu_id)
             batch_loss = self._run_batch(source, targets)
-            pbar.set_description_str(f"{epoch + 1}. epoch: {i + 1}.batch")
+            pbar.set_description_str(f"{epoch + 1}. epoch | {i + 1}.batch | Loss: {batch_loss:.8f}")
             epoch_loss += batch_loss
         return epoch_loss / len(self.train_data)
 
     def train(self, max_epochs: int):
-        for epoch in (pbar := tqdm(range(max_epochs))):
+        for epoch in range(max_epochs):
             start_time = time.time()
             epoch_loss = self._run_epoch(epoch)
-            pbar.set_postfix_str(
-                f"{epoch + 1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} mins \tEpoch loss: {epoch_loss:.8f}")
+            print(f"{epoch + 1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} mins \tEpoch loss: {epoch_loss:.8f}")
 
 
 def distributed_training(rank: int, world_size, model, train_dataset, batch_size, max_epochs, lr):
@@ -98,7 +94,8 @@ def distributed_training(rank: int, world_size, model, train_dataset, batch_size
     print(f"torch.utils.data.get_worker_info():{torch.utils.data.get_worker_info()}")
     print(f"torch.initial_seed():{torch.initial_seed()}")
     # (1)
-    train_dataset_loader = prepare_dataloader(train_dataset, batch_size)
+    train_dataset_loader = DataLoader(train_dataset, batch_size=batch_size, pin_memory=True, shuffle=False,
+                      sampler=torch.utils.data.distributed.DistributedSampler(train_dataset))
 
     # (2) Create Optimizer
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
