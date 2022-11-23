@@ -11,6 +11,7 @@ import pytorch_lightning as pl
 from core.typings import *
 from core.abstracts import AbstractTrainer
 from torch.utils.data import Dataset, DataLoader
+import pandas as pd
 
 
 def ddp_setup(rank: int, world_size: int):
@@ -36,8 +37,6 @@ def print_peak_memory(prefix, device):
         print(f"{prefix}: {torch.cuda.max_memory_allocated(device) // 1e6}MB ")
 
 
-
-
 class Trainer:
     def __init__(self,
                  model: torch.nn.Module,
@@ -50,6 +49,7 @@ class Trainer:
         self.loss_func = torch.nn.BCEWithLogitsLoss()
         self.optimizer = optimizer
         self.model = DDP(model, device_ids=[gpu_id])
+        self.loss_history = []
 
     def _run_batch(self, source, targets):
         self.optimizer.zero_grad()
@@ -62,7 +62,8 @@ class Trainer:
 
     def _run_epoch(self, epoch):
         b_sz = len(next(iter(self.train_dataset_loader))[0])
-        print(f"[GPU {self.gpu_id}] Epoch {epoch} | Batchsize: {b_sz} | Number of Batches per Epoch:{len(self.train_dataset_loader)}")
+        print(
+            f"[GPU {self.gpu_id}] Epoch {epoch} | Batchsize: {b_sz} | Number of Batches per Epoch:{len(self.train_dataset_loader)}")
         self.train_dataset_loader.sampler.set_epoch(epoch)
         epoch_loss = 0
         for i, (source, targets) in (pbar := tqdm(enumerate(self.train_dataset_loader))):
@@ -76,7 +77,9 @@ class Trainer:
         for epoch in range(max_epochs):
             start_time = time.time()
             epoch_loss = self._run_epoch(epoch)
-            print(f"{epoch + 1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} mins\tEpoch loss: {epoch_loss:.8f}")
+            print(
+                f"{epoch + 1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} mins\tEpoch loss: {epoch_loss:.8f}")
+            self.loss_history.append(epoch_loss)
 
 
 def distributed_training(rank: int, world_size, model, train_dataset, batch_size, max_epochs, lr):
@@ -95,7 +98,7 @@ def distributed_training(rank: int, world_size, model, train_dataset, batch_size
     print(f"torch.initial_seed():{torch.initial_seed()}")
     # (1)
     train_dataset_loader = DataLoader(train_dataset, batch_size=batch_size, pin_memory=True, shuffle=False,
-                      sampler=torch.utils.data.distributed.DistributedSampler(train_dataset))
+                                      sampler=torch.utils.data.distributed.DistributedSampler(train_dataset))
 
     # (2) Create Optimizer
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
@@ -104,6 +107,7 @@ def distributed_training(rank: int, world_size, model, train_dataset, batch_size
     trainer.train(max_epochs)
     if rank == 0:
         torch.save(trainer.model.module.state_dict(), "model.pt")
+        pd.Series(trainer.loss_history).to_csv('epoch_losses.csv')
     dist.destroy_process_group()
     """
     # Move the model to GPU with id rank
@@ -190,4 +194,5 @@ class DistributedDataParallelTrainer(AbstractTrainer):
         model = model.load_state_dict(torch.load('model.pt'))
         os.remove('model.pt')
         self.model = model
+        self.model.loss_history = pd.read_csv('epoch_losses.csv').values.tolist()
         self.on_fit_end(self, self.model)
