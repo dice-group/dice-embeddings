@@ -12,6 +12,7 @@ from core.typings import *
 from core.abstracts import AbstractTrainer
 from torch.utils.data import Dataset, DataLoader
 
+
 def ddp_setup(rank: int, world_size: int):
     """ Setup for Distributed  Data Parallel
     world size total number of process in a group.
@@ -97,7 +98,7 @@ def distributed_training(rank: int, world_size, model, train_dataset, batch_size
     trainer = Trainer(model, train_dataset_loader, optimizer, rank)
     trainer.train(max_epochs)
     if rank == 0:
-        torch.save(model.module.state_dict(), "model.pt")
+        torch.save(trainer.model.module.state_dict(), "model.pt")
     destroy_process_group()
     """
     destroy_process_group()
@@ -152,6 +153,7 @@ def distributed_training(rank: int, world_size, model, train_dataset, batch_size
             print(f"{epoch} epoch: Average batch loss:{epoch_loss}")
         """
 
+
 class DistributedDataParallelTrainer(AbstractTrainer):
     """ A Trainer based on torch.nn.parallel.DistributedDataParallel (https://pytorch.org/docs/stable/notes/ddp.html#ddp)"""
 
@@ -159,7 +161,7 @@ class DistributedDataParallelTrainer(AbstractTrainer):
         super().__init__(args, callbacks)
         self.attributes = vars(args)
         self.callbacks = callbacks
-
+        self.model = None
         torch.manual_seed(self.seed_for_computation)
         torch.cuda.manual_seed_all(self.seed_for_computation)
 
@@ -182,7 +184,6 @@ class DistributedDataParallelTrainer(AbstractTrainer):
                  nprocs=world_size,
                  join=True,  # ?
                  )
-
         model = model.load_state_dict(torch.load('model.pt'))
         os.remove('model.pt')
         self.model = model

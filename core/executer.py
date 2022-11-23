@@ -63,6 +63,7 @@ class Execute:
         self.evaluator = None  # e.g. Evaluator(self)
         # (9) Create an object to carry out training
         self.trainer = None  # e.g. DICE_Trainer(self)
+        self.trained_model = None
 
     def read_preprocess_index_serialize_data(self) -> None:
         """ Read & Preprocess & Index & Serialize Input Data """
@@ -136,11 +137,11 @@ class Execute:
         # (3) Create a trainer object.
         self.trainer = DICE_Trainer(self, self.evaluator)
         # (4) Start the training
-        trained_model, form_of_labelling = self.trainer.start()
+        self.trained_model, form_of_labelling = self.trainer.start()
         # (5) Store trained model.
-        self.save_trained_model(trained_model, start_time)
+        self.save_trained_model(self.trained_model, start_time)
         # (6) Eval model.
-        self.evaluator.eval(trained_model, form_of_labelling)
+        self.evaluator.eval(self.trained_model, form_of_labelling)
         # (7) Return the report of the training process.
         return {**self.report, **self.evaluator.report}
 
