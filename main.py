@@ -16,13 +16,13 @@ def argparse_default(description=None):
                         help="Embeddings, model, and any other related data will be stored therein.")
     # Model and Training Parameters
     parser.add_argument("--model", type=str,
-                        default="Shallom",
+                        default="QMult",
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, "
                              "Shallom, ConEx, ComplEx, DistMult, TransE, CLf")
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[Adan,NAdam, Adam, SGD, Sls, AdamSLS]')
     parser.add_argument('--embedding_dim', type=int, default=100, help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=0, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.01)
     parser.add_argument('--callbacks',
@@ -33,7 +33,7 @@ def argparse_default(description=None):
     parser.add_argument("--backend", type=str, default='pandas',
                         help='Select [modin, pandas]')
 
-    parser.add_argument("--torch_trainer", type=str, default=None,
+    parser.add_argument("--torch_trainer", type=str, default='DataParallelTrainer',
                         help='None, DistributedDataParallelTrainer or DataParallelTrainer')
     # Hyperparameters for training.
     parser.add_argument('--scoring_technique', default='KvsAll', help="KvsSample, 1vsAll, KvsAll, NegSample")

@@ -359,7 +359,7 @@ class DataParallelTrainer(AbstractTrainer):
         self.on_fit_start(trainer=self, pl_module=self.model)
         dataset = kwargs['train_dataloaders'].dataset
         self.loss_function = model.loss_function
-        # self.model = torch.nn.DataParallel(model)
+        # self.model = torch.nn.DataParallel(model)?
         self.optimizer = self.model.configure_optimizers()
 
         if isinstance(self.optimizer, Sls) or isinstance(self.optimizer, AdamSLS):
@@ -388,7 +388,7 @@ class DataParallelTrainer(AbstractTrainer):
                 x_batch, y_batch = self.extract_input_outputs(batch)
                 # (3) Loss Forward and Backward w.r.t the batch.
                 batch_loss = self.compute_forward_loss_backward(x_batch, y_batch)
-
+                pbar.set_description_str(f"{epoch + 1}. epoch: {i + 1}.batch")
                 epoch_loss += batch_loss.item()
             epoch_loss /= num_total_batches
             pbar.set_postfix_str(
