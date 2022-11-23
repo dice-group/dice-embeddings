@@ -82,7 +82,7 @@ class Trainer:
             self.loss_history.append(epoch_loss)
 
 
-def distributed_training(rank: int, world_size, model, train_dataset, batch_size, max_epochs, lr):
+def distributed_training(rank: int, world_size, model, train_dataset, batch_size, max_epochs):
     """
     distributed_training is called as the entrypoint of the spawned process.
     This function must be defined at the top level of a module so it can be pickled and spawned.
@@ -101,7 +101,8 @@ def distributed_training(rank: int, world_size, model, train_dataset, batch_size
                                       sampler=torch.utils.data.distributed.DistributedSampler(train_dataset))
 
     # (2) Create Optimizer
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+    # optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+    optimizer = model.configure_optimizers()
 
     trainer = Trainer(model, train_dataset_loader, optimizer, rank)
     trainer.train(max_epochs)
@@ -187,12 +188,12 @@ class DistributedDataParallelTrainer(AbstractTrainer):
         # pickle
         # Save the model
         mp.spawn(fn=distributed_training,
-                 args=(world_size, model, train_dataset, self.batch_size, self.max_epochs, self.lr),
+                 args=(world_size, model, train_dataset, self.batch_size, self.max_epochs),
                  nprocs=world_size,
                  join=True,  # ?
                  )
         model = model.load_state_dict(torch.load('model.pt'))
         os.remove('model.pt')
         self.model = model
-        self.model.loss_history = [ i[0] for i in pd.read_csv('epoch_losses.csv',index_col=0).values.tolist()]
+        self.model.loss_history = [i[0] for i in pd.read_csv('epoch_losses.csv', index_col=0).values.tolist()]
         self.on_fit_end(self, self.model)
