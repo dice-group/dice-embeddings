@@ -13,6 +13,7 @@ from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_
 from .sanity_checkers import dataset_sanity_checking
 import glob
 import pyarrow.parquet as pq
+import concurrent.futures
 
 
 class KG:
@@ -170,7 +171,6 @@ class KG:
                 # @TODO: Takes too much time
                 # We need to parallelise the next four steps.
                 print('Final: Creating Vocab...')
-                import concurrent.futures
                 executor = concurrent.futures.ProcessPoolExecutor()
                 self.er_vocab = executor.submit(get_er_vocab, data)  # get_er_vocab(data)
                 self.re_vocab = executor.submit(get_re_vocab, data)  # get_re_vocab(data)

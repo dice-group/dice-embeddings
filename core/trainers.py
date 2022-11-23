@@ -70,7 +70,6 @@ class DICE_Trainer:
         print('------------------- Train & Eval -------------------')
         # (1) Collect Callbacks to be used during training
         # (2) Initialize Trainer
-
         self.trainer = initialize_trainer(self.args, callbacks=get_callbacks(self.args), plugins=[])
         # (3) Use (2) to train a KGE model
         trained_model, form_of_labelling = self.train()
@@ -356,6 +355,7 @@ class DataParallelTrainer(AbstractTrainer):
         assert len(args) == 1
         model, = args
         self.model = model
+        self.model.to(self.device)
         self.on_fit_start(trainer=self, pl_module=self.model)
         dataset = kwargs['train_dataloaders'].dataset
         self.loss_function = model.loss_function
