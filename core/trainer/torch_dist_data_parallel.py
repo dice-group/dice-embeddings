@@ -62,7 +62,7 @@ class Trainer:
 
     def _run_epoch(self, epoch):
         b_sz = len(next(iter(self.train_dataset_loader))[0])
-        print(f"[GPU {self.gpu_id}] Epoch {epoch} | Batchsize: {b_sz} | Number of Batches per Epoch:{len(self.train_data)}")
+        print(f"[GPU {self.gpu_id}] Epoch {epoch} | Batchsize: {b_sz} | Number of Batches per Epoch:{len(self.train_dataset_loader)}")
         self.train_dataset_loader.sampler.set_epoch(epoch)
         epoch_loss = 0
         for i, (source, targets) in (pbar := tqdm(enumerate(self.train_dataset_loader))):
@@ -76,7 +76,7 @@ class Trainer:
         for epoch in range(max_epochs):
             start_time = time.time()
             epoch_loss = self._run_epoch(epoch)
-            print(f"{epoch + 1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} mins \tEpoch loss: {epoch_loss:.8f}")
+            print(f"{epoch + 1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} mins\tEpoch loss: {epoch_loss:.8f}")
 
 
 def distributed_training(rank: int, world_size, model, train_dataset, batch_size, max_epochs, lr):
