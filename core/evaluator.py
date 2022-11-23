@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 import json
+from tqdm import tqdm
 
 
 class Evaluator:
@@ -116,7 +117,7 @@ class Evaluator:
         # (2) Evaluation mode
         if form_of_labelling == 'RelationPrediction':
             # Iterate over integer indexed triples in mini batch fashion
-            for i in range(0, len(triple_idx), self.executor.args.batch_size):
+            for i in (pbar := tqdm(range(0, len(triple_idx), self.executor.args.batch_size))):
                 data_batch = triple_idx[i:i + self.executor.args.batch_size]
                 e1_idx_e2_idx, r_idx = torch.LongTensor(data_batch[:, [0, 2]]), torch.LongTensor(data_batch[:, 1])
                 # Generate predictions
@@ -141,7 +142,7 @@ class Evaluator:
         else:
             # TODO: Why do not we use Pytorch Dataset ? for multiprocessing
             # Iterate over integer indexed triples in mini batch fashion
-            for i in range(0, len(triple_idx), self.executor.args.batch_size):
+            for i in (pbar := tqdm(range(0, len(triple_idx), self.executor.args.batch_size))):
                 data_batch = triple_idx[i:i + self.executor.args.batch_size]
                 e1_idx_r_idx, e2_idx = torch.LongTensor(data_batch[:, [0, 1]]), torch.tensor(data_batch[:, 2])
                 with torch.no_grad():
@@ -190,14 +191,14 @@ class Evaluator:
         model.eval()
         print(info)
         print(f'Num of triples {len(triple_idx)}')
-        print('** sequential computation ')
+        print('** Evaluation without batching')
         hits = dict()
         reciprocal_ranks = []
         # Iterate over test triples
         all_entities = torch.arange(0, self.executor.dataset.num_entities).long()
         all_entities = all_entities.reshape(len(all_entities), )
         # Iterating one by one is not good when you are using batch norm
-        for i in range(0, len(triple_idx)):
+        for i in (pbar := tqdm(range(0, len(triple_idx)))):
             # 1. Get a triple
             data_point = triple_idx[i]
             s, p, o = data_point[0], data_point[1], data_point[2]
