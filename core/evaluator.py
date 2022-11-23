@@ -34,7 +34,11 @@ class Evaluator:
         if isinstance(self.executor.dataset.domain_constraints_per_rel, dict):
             pass
         else:
-            self.executor.dataset.domain_constraints_per_rel, self.executor.dataset.range_constraints_per_rel = self.executor.dataset.constraints.result()
+            try:
+                self.executor.dataset.domain_constraints_per_rel, self.executor.dataset.range_constraints_per_rel = self.executor.dataset.constraints.result()
+            except:
+                print('Domain constraint exception occurred')
+                pass
 
         print('Evaluation Starts.')
         if self.executor.args.eval_model is None:

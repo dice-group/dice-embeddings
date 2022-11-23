@@ -35,7 +35,46 @@ def print_peak_memory(prefix, device):
         print(f"{prefix}: {torch.cuda.max_memory_allocated(device) // 1e6}MB ")
 
 
-def distributed_training(rank: int, world_size, model, dataset, batch_size, max_epochs, lr):
+def prepare_dataloader(train_dataset: Dataset, batch_size: int):
+    return DataLoader(train_dataset, batch_size=batch_size, pin_memory=True, shuffle=False,
+                      sampler=torch.utils.data.distributed.DistributedSampler(train_dataset))
+
+
+class Trainer:
+    def __init__(self,
+                 model: torch.nn.Module,
+                 train_data: DataLoader,
+                 optimizer: torch.optim.Optimizer,
+                 gpu_id: int) -> None:
+        self.gpu_id = gpu_id
+        self.model = model.to(gpu_id)
+        self.train_data = train_data
+        self.loss_func = torch.nn.BCEWithLogitsLoss()
+        self.optimizer = optimizer
+        self.model = DDP(model, device_ids=[gpu_id])
+
+    def _run_batch(self, source, targets):
+        self.optimizer.zero_grad()
+        output = self.model(source)
+        loss = self.loss_func(output, targets)
+        loss.backward()
+        self.optimizer.step()
+
+    def _run_epoch(self, epoch):
+        b_sz = len(next(iter(self.train_data))[0])
+        print(f"[GPU{self.gpu_id}] Epoch {epoch} | Batchsize: {b_sz} | Steps: {len(self.train_data)}")
+        self.train_data.sampler.set_epoch(epoch)
+        for source, targets in self.train_data:
+            source = source.to(self.gpu_id)
+            targets = targets.to(self.gpu_id)
+            self._run_batch(source, targets)
+
+    def train(self, max_epochs: int):
+        for epoch in range(max_epochs):
+            self._run_epoch(epoch)
+
+
+def distributed_training(rank: int, world_size, model, train_dataset, batch_size, max_epochs, lr):
     """
     distributed_training is called as the entrypoint of the spawned process.
     This function must be defined at the top level of a module so it can be pickled and spawned.
@@ -49,6 +88,20 @@ def distributed_training(rank: int, world_size, model, dataset, batch_size, max_
     print(f"Running basic DDP example on rank {rank}.")
     print(f"torch.utils.data.get_worker_info():{torch.utils.data.get_worker_info()}")
     print(f"torch.initial_seed():{torch.initial_seed()}")
+    # (1)
+    train_dataset_loader = prepare_dataloader(train_dataset, batch_size)
+
+    # (2) Create Optimizer
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
+
+    trainer = Trainer(model, train_dataset_loader, optimizer, rank)
+    trainer.train(max_epochs)
+    if rank == 0:
+        torch.save(model.module.state_dict(), "model.pt")
+    destroy_process_group()
+    """
+    destroy_process_group()
+
     # Move the model to GPU with id rank
     model = model.to(rank)
     ddp_model = DDP(model, device_ids=[rank])
@@ -97,10 +150,7 @@ def distributed_training(rank: int, world_size, model, dataset, batch_size, max_
             print(f"{epoch} epoch: Average batch loss:{epoch_loss / i}")
         else:
             print(f"{epoch} epoch: Average batch loss:{epoch_loss}")
-
-        if rank == 0:
-            torch.save(ddp_model.module.state_dict(), "model.pt")
-
+        """
 
 class DistributedDataParallelTrainer(AbstractTrainer):
     """ A Trainer based on torch.nn.parallel.DistributedDataParallel (https://pytorch.org/docs/stable/notes/ddp.html#ddp)"""
@@ -126,8 +176,9 @@ class DistributedDataParallelTrainer(AbstractTrainer):
             print('Can not compute distributed computing')
             print('#' * 10)
             return
+        # Save the model
         mp.spawn(fn=distributed_training,
-                 args=(world_size, model, dataset, self.batch_size, self.max_epochs, self.lr),
+                 args=(world_size, model, train_dataset, self.batch_size, self.max_epochs, self.lr),
                  nprocs=world_size,
                  join=True,  # ?
                  )
