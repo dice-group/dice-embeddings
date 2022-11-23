@@ -130,7 +130,7 @@ class DICE_Trainer:
         train_dataloaders = dataset.train_dataloader()
         # Release some memory
         del dataset
-        if self.args.eval is False:
+        if self.args.eval_model is False:
             self.dataset.train_set = None
             self.dataset.valid_set = None
             self.dataset.test_set = None
@@ -181,7 +181,7 @@ class DICE_Trainer:
         train_dataloaders = dataset.train_dataloader()
         # Release some memory
         del dataset
-        if self.args.eval is False:
+        if self.args.eval_model is False:
             self.dataset.train_set = None
             self.dataset.valid_set = None
             self.dataset.test_set = None
@@ -213,7 +213,7 @@ class DICE_Trainer:
         train_dataloaders = dataset.train_dataloader()
         # Release some memory
         del dataset
-        if self.args.eval is False:
+        if self.args.eval_model is False:
             self.dataset.train_set = None
             self.dataset.valid_set = None
             self.dataset.test_set = None
@@ -238,7 +238,7 @@ class DICE_Trainer:
         train_dataloaders = dataset.train_dataloader()
         # Release some memory
         del dataset
-        if self.args.eval is False:
+        if self.args.eval_model is False:
             self.dataset.train_set = None
             self.dataset.valid_set = None
             self.dataset.test_set = None
@@ -276,7 +276,7 @@ class DICE_Trainer:
         train_dataloaders = dataset.train_dataloader()
         # Release some memory
         del dataset
-        if self.args.eval is False:
+        if self.args.eval_model is False:
             self.dataset.train_set = None
             self.dataset.valid_set = None
             self.dataset.test_set = None
@@ -391,7 +391,8 @@ class DataParallelTrainer(AbstractTrainer):
 
                 epoch_loss += batch_loss.item()
             epoch_loss /= num_total_batches
-            pbar.set_postfix_str(f"{epoch+1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} mins \tEpoch loss: {epoch_loss:.8f}")
+            pbar.set_postfix_str(
+                f"{epoch + 1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} mins \tEpoch loss: {epoch_loss:.8f}")
             self.model.loss_history.append(epoch_loss)
             # Fit on epochs e
             self.on_train_epoch_end(self, self.model)
@@ -617,7 +618,7 @@ class DistributedDataParallelTrainer(AbstractTrainer):
         # Dynamically update
         setattr(BaseKGE, 'training_step', training_step)
 
-        if self.args.eval is False:
+        if self.args.eval_model is False:
             self.dataset.train_set = None
             self.dataset.valid_set = None
             self.dataset.test_set = None
@@ -674,7 +675,7 @@ class DistributedDataParallelTrainer(AbstractTrainer):
         # Dynamically update
         setattr(BaseKGE, 'training_step', training_step)
 
-        if self.args.eval is False:
+        if self.args.eval_model is False:
             self.dataset.train_set = None
             self.dataset.valid_set = None
             self.dataset.test_set = None

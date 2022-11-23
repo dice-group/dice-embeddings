@@ -15,15 +15,35 @@ class Evaluator:
         :param trained_model:
         :return:
         """
+        if isinstance(self.executor.dataset.er_vocab, dict):
+            pass
+        else:
+            self.executor.dataset.er_vocab = self.executor.dataset.er_vocab.result()
+
+        if isinstance(self.executor.dataset.re_vocab, dict):
+            pass
+        else:
+            self.executor.dataset.re_vocab = self.executor.dataset.re_vocab.result()
+
+        if isinstance(self.executor.dataset.ee_vocab, dict):
+            pass
+        else:
+            self.executor.dataset.ee_vocab = self.executor.dataset.ee_vocab.result()
+
+        if isinstance(self.executor.dataset.domain_constraints_per_rel, dict):
+            pass
+        else:
+            self.executor.dataset.domain_constraints_per_rel, self.executor.dataset.range_constraints_per_rel = self.executor.dataset.constraints.result()
+
         print('Evaluation Starts.')
-        if self.executor.args.eval is None:
+        if self.executor.args.eval_model is None:
             return
         if self.executor.args.num_folds_for_cv > 1:
             # the evaluation must have done in the training part
             return
-        if isinstance(self.executor.args.eval, bool):
+        if isinstance(self.executor.args.eval_model, bool):
             print('Wrong input:RESET')
-            self.executor.args.eval = 'train_val_test'
+            self.executor.args.eval_model = 'train_val_test'
 
         if self.executor.args.scoring_technique == 'NegSample':
             self.eval_rank_of_head_and_tail_entity(trained_model)
@@ -39,37 +59,37 @@ class Evaluator:
 
     def eval_rank_of_head_and_tail_entity(self, trained_model):
         # 4. Test model on the training dataset if it is needed.
-        if 'train' in self.executor.args.eval:
+        if 'train' in self.executor.args.eval_model:
             res = self.evaluate_lp(trained_model, self.executor.dataset.train_set,
                                    f'Evaluate {trained_model.name} on Train set')
             self.report['Train'] = res
         # 5. Test model on the validation and test dataset if it is needed.
-        if 'val' in self.executor.args.eval:
+        if 'val' in self.executor.args.eval_model:
             if self.executor.dataset.valid_set is not None:
                 self.report['Val'] = self.evaluate_lp(trained_model, self.executor.dataset.valid_set,
                                                       f'Evaluate {trained_model.name} of Validation set')
 
-        if self.executor.dataset.test_set is not None and 'test' in self.executor.args.eval:
+        if self.executor.dataset.test_set is not None and 'test' in self.executor.args.eval_model:
             self.report['Test'] = self.evaluate_lp(trained_model, self.executor.dataset.test_set,
                                                    f'Evaluate {trained_model.name} of Test set')
 
     def eval_with_vs_all(self, trained_model, form_of_labelling) -> None:
         """ Evaluate model after reciprocal triples are added """
         # 4. Test model on the training dataset if it is needed.
-        if 'train' in self.executor.args.eval:
+        if 'train' in self.executor.args.eval_model:
             res = self.evaluate_lp_k_vs_all(trained_model, self.executor.dataset.train_set,
                                             info=f'Evaluate {trained_model.name} on Train set',
                                             form_of_labelling=form_of_labelling)
             self.report['Train'] = res
 
         # 5. Test model on the validation and test dataset if it is needed.
-        if 'val' in self.executor.args.eval:
+        if 'val' in self.executor.args.eval_model:
             if self.executor.dataset.valid_set is not None:
                 res = self.evaluate_lp_k_vs_all(trained_model, self.executor.dataset.valid_set,
                                                 f'Evaluate {trained_model.name} on Validation set',
                                                 form_of_labelling=form_of_labelling)
                 self.report['Val'] = res
-        if self.executor.dataset.test_set is not None and 'test' in self.executor.args.eval:
+        if self.executor.dataset.test_set is not None and 'test' in self.executor.args.eval_model:
             res = self.evaluate_lp_k_vs_all(trained_model, self.executor.dataset.test_set,
                                             f'Evaluate {trained_model.name} on Test set',
                                             form_of_labelling=form_of_labelling)
@@ -132,8 +152,7 @@ class Evaluator:
                     target_value = predictions[j, e2_idx[j]].item()
                     predictions[j, filt] = -np.Inf
                     # 3.3.1 Filter entities outside of the range
-                    # TODO: Fix it CV resets from str to boolean
-                    if 'constraint' in self.executor.args.eval:
+                    if 'constraint' in self.executor.args.eval_model:
                         predictions[j, self.executor.dataset.range_constraints_per_rel[data_batch[j, 1]]] = -np.Inf
                     predictions[j, e2_idx[j]] = target_value
                 # Sort predictions.
@@ -205,7 +224,7 @@ class Evaluator:
             # 3.3 Filter scores of all triples containing filtered tail entities
             predictions_tails[filt_tails] = -np.Inf
             # 3.3.1 Filter entities outside of the range
-            if 'constraint' in self.executor.args.eval:
+            if 'constraint' in self.executor.args.eval_model:
                 predictions_tails[self.executor.dataset.range_constraints_per_rel[p]] = -np.Inf
             # 3.4 Reset the target's score
             predictions_tails[o] = target_value
@@ -223,8 +242,8 @@ class Evaluator:
             target_value = predictions_heads[s].item()
             # 4.3 Filter scores of all triples containing filtered head entities.
             predictions_heads[filt_heads] = -np.Inf
-            if isinstance(self.executor.args.eval, bool) is False:
-                if 'constraint' in self.executor.args.eval:
+            if isinstance(self.executor.args.eval_model, bool) is False:
+                if 'constraint' in self.executor.args.eval_model:
                     # 4.3.1 Filter entities that are outside the domain
                     predictions_heads[self.executor.dataset.domain_constraints_per_rel[p]] = -np.Inf
             predictions_heads[s] = target_value
@@ -272,6 +291,25 @@ class Evaluator:
         return results
 
     def eval_with_data(self, trained_model, triple_idx: np.ndarray, form_of_labelling: str):
+        if isinstance(self.executor.dataset.er_vocab, dict):
+            pass
+        else:
+            self.executor.dataset.er_vocab = self.executor.dataset.er_vocab.result()
+
+        if isinstance(self.executor.dataset.re_vocab, dict):
+            pass
+        else:
+            self.executor.dataset.re_vocab = self.executor.dataset.re_vocab.result()
+
+        if isinstance(self.executor.dataset.ee_vocab, dict):
+            pass
+        else:
+            self.executor.dataset.ee_vocab = self.executor.dataset.ee_vocab.result()
+
+        if isinstance(self.executor.dataset.domain_constraints_per_rel, dict):
+            pass
+        else:
+            self.executor.dataset.domain_constraints_per_rel, self.executor.dataset.range_constraints_per_rel = self.executor.dataset.constraints.result()
         """ Evaluate a trained model on a given a dataset"""
         if self.executor.args.scoring_technique == 'NegSample':
             return self.evaluate_lp(trained_model, triple_idx,

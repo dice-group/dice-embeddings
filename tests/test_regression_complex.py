@@ -19,7 +19,7 @@ class TestRegressionComplEx:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.eval = 'train_val_test'
+        args.eval_model = 'train_val_test'
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
@@ -45,7 +45,7 @@ class TestRegressionComplEx:
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
-        args.eval = 'train_val_test'
+        args.eval_model = 'train_val_test'
         args.normalization='LayerNorm'
         args.torch_trainer = 'DataParallelTrainer'
         args.scoring_technique = '1vsAll'
@@ -70,7 +70,7 @@ class TestRegressionComplEx:
         args.normalization='LayerNorm'
         args.optim = 'Adam'
         args.neg_ratio = 1
-        args.eval = 'train_val_test'
+        args.eval_model = 'train_val_test'
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None

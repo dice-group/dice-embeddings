@@ -19,7 +19,7 @@ class TestReadFewOnly:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.eval = 'train'
+        args.eval_model = 'train'
         args.sample_triples_ratio = None
         args.read_only_few = 10
         args.torch_trainer = 'DataParallelTrainer'
@@ -41,7 +41,7 @@ class TestReadFewOnly:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.eval = 'train'
+        args.eval_model = 'train'
         args.read_only_few = 10
         args.sample_triples_ratio = None
         args.torch_trainer = 'DataParallelTrainer'
@@ -63,7 +63,7 @@ class TestReadFewOnly:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.eval = 'train'
+        args.eval_model = 'train'
         args.read_only_few = 10
         args.sample_triples_ratio = None
         args.neg_ratio = 1

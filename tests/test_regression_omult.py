@@ -19,7 +19,7 @@ class TestRegressionOmult:
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'KvsAll'
-        args.eval = 'train_val_test'
+        args.eval_model = 'train_val_test'
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
@@ -43,7 +43,7 @@ class TestRegressionOmult:
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = '1vsAll'
-        args.eval = 'train_val_test'
+        args.eval_model = 'train_val_test'
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.sample_triples_ratio = None
@@ -70,7 +70,7 @@ class TestRegressionOmult:
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'NegSample'
         args.neg_ratio = 1
-        args.eval = 'train_val_test'
+        args.eval_model = 'train_val_test'
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.sample_triples_ratio = None

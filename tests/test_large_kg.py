@@ -18,7 +18,7 @@ class TestRegressionDistMult:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.eval = 'val_test'
+        args.eval_model = 'val_test'
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.seed_for_computation = 1
@@ -43,7 +43,7 @@ class TestRegressionDistMult:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.eval = 'test'
+        args.eval_model = 'test'
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.seed_for_computation = 1

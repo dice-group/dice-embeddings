@@ -21,7 +21,7 @@ class TestRegressionQmult:
         args.scoring_technique = 'KvsSample'
         args.neg_ratio = 10
         args.num_folds_for_cv = 0
-        args.eval = 'train_val_test'
+        args.eval_model = 'train_val_test'
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.normalization = 'LayerNorm'
@@ -55,7 +55,7 @@ class TestRegressionQmult:
         args.hidden_dropout_rate = 0.0
         args.normalization = 'LayerNorm'
         args.weight_decay = 0.0
-        args.eval = 'train_val_test'
+        args.eval_model = 'train_val_test'
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.torch_trainer = 'DataParallelTrainer'

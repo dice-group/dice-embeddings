@@ -18,7 +18,7 @@ class TestRegressionDistMult:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.eval = 'train_val_test'
+        args.eval_model = 'train_val_test'
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.scoring_technique = 'KvsAll'
@@ -39,7 +39,7 @@ class TestRegressionDistMult:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.eval = 'train_val_test'
+        args.eval_model = 'train_val_test'
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
@@ -65,7 +65,7 @@ class TestRegressionDistMult:
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'NegSample'
         args.neg_ratio = 1
-        args.eval = 'train_val_test'
+        args.eval_model = 'train_val_test'
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
