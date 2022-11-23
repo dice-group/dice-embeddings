@@ -19,7 +19,7 @@ from core.evaluator import Evaluator
 from core.typings import *
 from core.static_funcs import *
 from core.sanity_checkers import *
-from core.trainers import DICE_Trainer
+from core.trainer import DICE_Trainer
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
