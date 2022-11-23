@@ -194,5 +194,5 @@ class DistributedDataParallelTrainer(AbstractTrainer):
         model = model.load_state_dict(torch.load('model.pt'))
         os.remove('model.pt')
         self.model = model
-        self.model.loss_history = pd.read_csv('epoch_losses.csv').values.tolist()
+        self.model.loss_history = [ i[0] for i in pd.read_csv('epoch_losses.csv',index_col=0).values.tolist()]
         self.on_fit_end(self, self.model)
