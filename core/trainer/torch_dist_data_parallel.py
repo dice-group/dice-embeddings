@@ -71,7 +71,7 @@ class Trainer:
             batch_loss = self._run_batch(source, targets)
             pbar.set_description_str(f"{epoch + 1}. epoch | {i + 1}.batch | Loss: {batch_loss:.8f}")
             epoch_loss += batch_loss
-        return epoch_loss / len(self.train_data)
+        return epoch_loss / len(self.train_dataset_loader)
 
     def train(self, max_epochs: int):
         for epoch in range(max_epochs):
