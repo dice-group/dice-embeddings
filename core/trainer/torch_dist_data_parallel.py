@@ -99,7 +99,7 @@ def distributed_training(rank: int, world_size, model, train_dataset, batch_size
     trainer.train(max_epochs)
     if rank == 0:
         torch.save(trainer.model.module.state_dict(), "model.pt")
-    destroy_process_group()
+    dist.destroy_process_group()
     """
     destroy_process_group()
 
