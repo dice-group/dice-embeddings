@@ -22,8 +22,8 @@ class TestRegressionDistMult:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.scoring_technique = 'KvsAll'
-        args.normalization='LayerNorm'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.normalization = 'LayerNorm'
+        args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 0.58 >= result['Val']['H@1'] >= 0.01
 
@@ -44,8 +44,8 @@ class TestRegressionDistMult:
         args.read_only_few = None
         args.num_folds_for_cv = None
         args.scoring_technique = '1vsAll'
-        args.normalization='LayerNorm'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.normalization = 'LayerNorm'
+        args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 0.99 >= result['Train']['H@1'] >= 0.30
         assert 0.99 >= result['Test']['H@1'] >= 0.25
@@ -69,8 +69,8 @@ class TestRegressionDistMult:
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
-        args.normalization='LayerNorm'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.normalization = 'LayerNorm'
+        args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 0.73 >= result['Train']['H@1'] >= 0.01
         assert 0.73 >= result['Test']['H@1'] >= 0.01

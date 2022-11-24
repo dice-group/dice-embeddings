@@ -5,8 +5,8 @@ from core.models.base_model import BaseKGE
 from core.static_funcs import select_model, model_fitting
 from core.callbacks import PrintCallback, KGESaveCallback, PseudoLabellingCallback, PolyakCallback
 from core.dataset_classes import StandardDataModule
-from .torch_data_parallel import DataParallelTrainer
-from .torch_dist_data_parallel import DistributedDataParallelTrainer
+from .torch_data_parallel import TorchTrainer
+from .torch_dist_data_parallel import TorchDDPTrainer
 
 import os
 import torch
@@ -17,19 +17,21 @@ from core.helper_classes import LabelRelaxationLoss, BatchRelaxedvsAllLoss
 import pandas as pd
 from sklearn.model_selection import KFold
 
+
 def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     """ Initialize Trainer from input arguments """
-    if args.torch_trainer == 'DataParallelTrainer':
+    if args.trainer == 'torchCPUTrainer':
         print('Initialize DataParallelTrainer Trainer')
-        return DataParallelTrainer(args, callbacks=callbacks)
-    elif args.torch_trainer == 'DistributedDataParallelTrainer':
-        return DistributedDataParallelTrainer(args, callbacks=callbacks)
+        return TorchTrainer(args, callbacks=callbacks)
+    elif args.trainer == 'torchDDP':
+        return TorchDDPTrainer(args, callbacks=callbacks)
     else:
         print('Initialize Pytorch-lightning Trainer')
         # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
         return pl.Trainer.from_argparse_args(args,
                                              strategy=DDPStrategy(find_unused_parameters=False),
                                              plugins=plugins, callbacks=callbacks)
+
 
 # @TODO: Move the static
 def get_callbacks(args):
@@ -42,6 +44,8 @@ def get_callbacks(args):
         if i == 'Polyak':
             callbacks.append(PolyakCallback(max_epochs=args.max_epochs, path=args.full_storage_path))
     return callbacks
+
+
 class DICE_Trainer:
     """
     DICE_Trainer implement
@@ -340,5 +344,3 @@ class DICE_Trainer:
         #           'MRR': eval_folds['MRR'].mean()}
         # print(f'KFold Cross Validation Results: {results}')
         return model, form_of_labelling
-
-

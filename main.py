@@ -10,7 +10,7 @@ def argparse_default(description=None):
     # Dataset and storage related
     parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
                         help="The path of a folder containing input data")
-    parser.add_argument("--save_embeddings_as_csv", type=bool, default=True,
+    parser.add_argument("--save_embeddings_as_csv", type=bool, default=False,
                         help='A flag for saving embeddings in csv file.')
     parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="Embeddings, model, and any other related data will be stored therein.")
@@ -33,8 +33,8 @@ def argparse_default(description=None):
     parser.add_argument("--backend", type=str, default='pandas',
                         help='Select [modin, pandas]')
 
-    parser.add_argument("--torch_trainer", type=str, default='DistributedDataParallelTrainer',
-                        help='None, DistributedDataParallelTrainer or DataParallelTrainer')
+    parser.add_argument("--trainer", type=str, default='torchCPUTrainer',  # 'torchDDP',
+                        help='None, torchDDP')
     # Hyperparameters for training.
     parser.add_argument('--scoring_technique', default='KvsAll', help="KvsSample, 1vsAll, KvsAll, NegSample")
     parser.add_argument('--neg_ratio', type=int, default=0,

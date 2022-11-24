@@ -25,7 +25,7 @@ class TestRegressionQmult:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.normalization = 'LayerNorm'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
 
         assert result['Train']['H@10'] >= result['Train']['H@3'] >= result['Train']['H@1']
@@ -58,5 +58,5 @@ class TestRegressionQmult:
         args.eval_model = 'train_val_test'
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         Execute(args).start()

@@ -29,7 +29,7 @@ class TestEnsembleConstruction:
         args.num_folds_for_cv = None
         args.save_model_at_every_epoch = 3
         args.normalization = 'LayerNorm'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 0.71 >= result['Train']['H@1'] >= 0.03
         assert 0.71 >= result['Val']['H@1'] >= 0.03

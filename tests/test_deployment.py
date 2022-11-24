@@ -24,7 +24,7 @@ class TestDefaultParams:
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         executor = Execute(args)
         executor.start()
 

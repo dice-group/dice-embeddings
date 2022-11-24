@@ -22,7 +22,7 @@ class TestCV_KvsAll:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.eval_model = 'train'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
         Execute(args).start()
 
@@ -43,7 +43,7 @@ class TestCV_KvsAll:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.eval_model = 'train'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
         Execute(args).start()
 
@@ -64,7 +64,7 @@ class TestCV_KvsAll:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.eval_model = 'train'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
         Execute(args).start()
 
@@ -86,7 +86,7 @@ class TestCV_KvsAll:
         args.sample_triples_ratio = None
         args.eval_model = 'train'
         args.num_folds_for_cv = 3
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -107,7 +107,7 @@ class TestCV_KvsAll:
         args.sample_triples_ratio = None
         args.eval_model = 'train'
         args.num_folds_for_cv = 3
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -128,7 +128,7 @@ class TestCV_KvsAll:
         args.sample_triples_ratio = None
         args.eval_model = 'train'
         args.num_folds_for_cv = 3
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         Execute(args).start()
 
     def test_distmult_kvs_all(self):
@@ -148,7 +148,7 @@ class TestCV_KvsAll:
         args.sample_triples_ratio = None
         args.eval_model = 'train'
         args.num_folds_for_cv = 3
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         Execute(args).start()
 
     def test_complex_kvs_all(self):
@@ -168,5 +168,5 @@ class TestCV_KvsAll:
         args.sample_triples_ratio = None
         args.eval_model = 'train'
         args.num_folds_for_cv = 3
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         Execute(args).start()

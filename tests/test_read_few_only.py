@@ -22,7 +22,7 @@ class TestReadFewOnly:
         args.eval_model = 'train'
         args.sample_triples_ratio = None
         args.read_only_few = 10
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         report = Execute(args).start()
         # as we add negative triples
         assert report['num_train_triples'] == int(args.read_only_few * 2)
@@ -44,7 +44,7 @@ class TestReadFewOnly:
         args.eval_model = 'train'
         args.read_only_few = 10
         args.sample_triples_ratio = None
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         report = Execute(args).start()
         # as we add negative triples
         assert report['num_train_triples'] == int(args.read_only_few * 2)
@@ -67,7 +67,7 @@ class TestReadFewOnly:
         args.read_only_few = 10
         args.sample_triples_ratio = None
         args.neg_ratio = 1
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         report = Execute(args).start()
         # as we add negative triples
         assert report['num_train_triples'] == args.read_only_few

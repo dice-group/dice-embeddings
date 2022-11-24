@@ -13,6 +13,7 @@ class TestPickle:
         args.path_dataset_folder = 'KGs/UMLS'
         args.model = 'DistMult'
         executor = Execute(args)
+        args.trainer = 'torchCPUTrainer'
         executor.start()
         pickle.dump(executor.trained_model, open("trained_model.p", "wb"))
         pickled_trained_model = pickle.load(open("trained_model.p", "rb"))
@@ -24,6 +25,7 @@ class TestPickle:
         args.path_dataset_folder = 'KGs/UMLS'
         args.model = 'TransE'
         executor = Execute(args)
+        args.trainer = 'torchCPUTrainer'
         executor.start()
         pickle.dump(executor.trained_model, open("trained_model.p", "wb"))
         pickled_trained_model = pickle.load(open("trained_model.p", "rb"))
@@ -35,6 +37,7 @@ class TestPickle:
         args.path_dataset_folder = 'KGs/UMLS'
         args.model = 'QMult'
         executor = Execute(args)
+        args.trainer = 'torchCPUTrainer'
         executor.start()
         pickle.dump(executor.trained_model, open("trained_model.p", "wb"))
         pickled_trained_model = pickle.load(open("trained_model.p", "rb"))
@@ -46,6 +49,7 @@ class TestPickle:
         args.path_dataset_folder = 'KGs/UMLS'
         args.model = 'ComplEx'
         executor = Execute(args)
+        args.trainer = 'torchCPUTrainer'
         executor.start()
         pickle.dump(executor.trained_model, open("trained_model.p", "wb"))
         pickled_trained_model = pickle.load(open("trained_model.p", "rb"))
@@ -57,6 +61,7 @@ class TestPickle:
         args.path_dataset_folder = 'KGs/UMLS'
         args.model = 'ConEx'
         executor = Execute(args)
+        args.trainer = 'torchCPUTrainer'
         executor.start()
         pickle.dump(executor.trained_model, open("trained_model.p", "wb"))
         pickled_trained_model = pickle.load(open("trained_model.p", "rb"))

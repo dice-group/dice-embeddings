@@ -100,6 +100,13 @@ pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Ei
 pre_trained_kge.predict_topk(relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Albert_Einstein"]) 
 ```
 
+### Knowledge Graph Completion
+```python
+from core import KGE
+pre_trained_kge = KGE(path_of_pretrained_model_dir='ConEx')
+missing_triples = pre_trained_kge.find_missing_triples(confidence=0.95)
+```
+
 ## How to Deploy
 Any pretrained model can be deployed with an ease. Moreover, anyone on the internet can use the pretrained model with ```--share``` parameter.
 ```

@@ -10,6 +10,8 @@ class AbstractTrainer:
     def __init__(self, args, callbacks):
         self.attributes = vars(args)
         self.callbacks = callbacks
+        # Set True to use Model summary callback of pl.
+        self.is_global_zero = True
         print(self.attributes)
 
     def __getattr__(self, attr):
@@ -34,6 +36,7 @@ class AbstractTrainer:
     @staticmethod
     def save_checkpoint(full_path, model):
         torch.save(model.state_dict(), full_path)
+
 
 class BaseInteractiveKGE:
     """ Base class for interactive KGE """

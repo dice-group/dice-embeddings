@@ -24,7 +24,7 @@ class TestRegressionConEx:
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
         args.normalization = 'LayerNorm'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 0.46 >= result['Train']['H@1'] >= 0.33
         assert 0.46 >= result['Val']['H@1'] >= 0.33
@@ -48,7 +48,7 @@ class TestRegressionConEx:
         args.num_folds_for_cv = None
         args.normalization = 'LayerNorm'
         args.scoring_technique = '1vsAll'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 0.75 >= result['Train']['H@1'] > 0.32
         assert 0.75 >= result['Val']['H@1'] >= 0.22
@@ -73,7 +73,7 @@ class TestRegressionConEx:
         args.read_only_few = None
         args.neg_ratio = 1
         args.normalization = 'LayerNorm'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 0.76 >= result['Train']['H@1'] >= .38
         assert 0.69 >= result['Val']['H@1'] >= .30

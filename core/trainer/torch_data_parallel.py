@@ -6,13 +6,11 @@ from core.custom_opt.adam_sls import AdamSLS
 from tqdm import tqdm
 import time
 
-class DataParallelTrainer(AbstractTrainer):
-    """ A Trainer based on torch.nn.DataParallel (https://pytorch.org/docs/stable/generated/torch.nn.DataParallel.html)"""
-
+class TorchTrainer(AbstractTrainer):
     def __init__(self, args, callbacks):
         super().__init__(args, callbacks)
         self.use_closure = None
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.device = torch.device("cpu")
         self.loss_function = None
         self.optimizer = None
         self.model = None

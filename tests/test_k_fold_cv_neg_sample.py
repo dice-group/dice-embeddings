@@ -22,7 +22,7 @@ class TestCV_NegSample:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.eval_model = 'train'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
         Execute(args).start()
 
@@ -43,7 +43,7 @@ class TestCV_NegSample:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.eval_model = 'train'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
         Execute(args).start()
 
@@ -64,7 +64,7 @@ class TestCV_NegSample:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.eval_model = 'train'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
         Execute(args).start()
 
@@ -85,7 +85,7 @@ class TestCV_NegSample:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.eval_model = 'train'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
         Execute(args).start()
 
@@ -106,7 +106,7 @@ class TestCV_NegSample:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.eval_model = 'train'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
         Execute(args).start()
 
@@ -126,7 +126,7 @@ class TestCV_NegSample:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.eval_model = 'train'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
         Execute(args).start()
 
@@ -146,7 +146,7 @@ class TestCV_NegSample:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.eval_model = 'train'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
         Execute(args).start()
 
@@ -166,6 +166,6 @@ class TestCV_NegSample:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.eval_model = 'train'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
         Execute(args).start()

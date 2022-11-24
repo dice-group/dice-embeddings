@@ -3,6 +3,7 @@ from core.executer import Execute
 import sys
 import pytest
 
+
 class TestRegressionQmult:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
@@ -21,8 +22,8 @@ class TestRegressionQmult:
         args.eval_model = 'train_val_test'
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.normalization='LayerNorm'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.normalization = 'LayerNorm'
+        args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 1.00 >= result['Train']['H@1'] >= 0.84
         assert 0.80 >= result['Val']['H@1'] >= 0.71
@@ -31,7 +32,6 @@ class TestRegressionQmult:
         assert result['Train']['H@10'] >= result['Train']['H@3'] >= result['Train']['H@1']
         assert result['Val']['H@10'] >= result['Val']['H@3'] >= result['Val']['H@1']
         assert result['Test']['H@10'] >= result['Test']['H@3'] >= result['Test']['H@1']
-
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
@@ -50,7 +50,7 @@ class TestRegressionQmult:
         args.eval_model = 'train_val_test'
         args.sample_triples_ratio = None
         args.read_only_few = None
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 0.92 >= result['Train']['H@1'] >= 0.86
         assert 0.75 >= result['Test']['H@1'] >= 0.71
@@ -59,7 +59,6 @@ class TestRegressionQmult:
         assert result['Train']['H@10'] >= result['Train']['H@3'] >= result['Train']['H@1']
         assert result['Val']['H@10'] >= result['Val']['H@3'] >= result['Val']['H@1']
         assert result['Test']['H@10'] >= result['Test']['H@3'] >= result['Test']['H@1']
-
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):
@@ -80,8 +79,8 @@ class TestRegressionQmult:
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.torch_trainer = 'DataParallelTrainer'
-        args.normalization='LayerNorm'
+        args.trainer = 'torchCPUTrainer'
+        args.normalization = 'LayerNorm'
         result = Execute(args).start()
         assert 0.70 >= result['Train']['H@1'] >= .60
         assert 0.78 >= result['Test']['H@1'] >= .49
@@ -104,13 +103,13 @@ class TestRegressionQmult:
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'NegSample'
-        args.normalization='LayerNorm'
+        args.normalization = 'LayerNorm'
         args.neg_ratio = 3
         args.eval_model = 'train_val_test'
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 0.76 >= result['Train']['H@1'] >= .68
         assert 0.64 >= result['Test']['H@1'] >= .56
@@ -118,4 +117,3 @@ class TestRegressionQmult:
         assert result['Train']['H@10'] >= result['Train']['H@3'] >= result['Train']['H@1']
         assert result['Val']['H@10'] >= result['Val']['H@3'] >= result['Val']['H@1']
         assert result['Test']['H@10'] >= result['Test']['H@3'] >= result['Test']['H@1']
-
