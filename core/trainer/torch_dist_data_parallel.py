@@ -23,9 +23,9 @@ class TorchDDPTrainer(AbstractTrainer):
     def fit(self, *args, **kwargs):
         """ Train model        """
         assert len(args) == 1
-        self.model, = args
+        model, = args
         # (1) Fit start.
-        self.on_fit_start(trainer=self, pl_module=self.model)
+        self.on_fit_start(trainer=self, pl_module=model)
         # nodes * gpus
         world_size = self.num_nodes * torch.cuda.device_count()
         train_dataset = kwargs['train_dataloaders'].dataset
@@ -41,12 +41,11 @@ class TorchDDPTrainer(AbstractTrainer):
                  nprocs=world_size,
                  join=True,  # ?
                  )
-        self.model = self.model.load_state_dict(torch.load('model.pt'))
+        model = model.load_state_dict(torch.load('model.pt'))
         os.remove('model.pt')
         losses = pd.read_csv('epoch_losses.csv', index_col=0)
-        self.model.loss_history = [i[0] for i in losses.values.tolist()]
-        # (1) Fit Ends
-        self.on_fit_end(self, self.model)
+        model.loss_history = [i[0] for i in losses.values.tolist()]
+        print('FIT ON END DOESNT WORK')
 
 
 class Trainer:
