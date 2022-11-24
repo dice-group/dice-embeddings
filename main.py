@@ -33,8 +33,8 @@ def argparse_default(description=None):
     parser.add_argument("--backend", type=str, default='pandas',
                         help='Select [modin, pandas]')
 
-    parser.add_argument("--trainer", type=str, default='torchCPUTrainer',  # 'torchDDP',
-                        help='None, torchDDP')
+    parser.add_argument("--trainer", type=str, default='torchDDP',
+                        help='None (pytorch lightning trainer), torchDDP (custom ddp) ,torchCPUTrainer (custom cpu only)')
     # Hyperparameters for training.
     parser.add_argument('--scoring_technique', default='KvsAll', help="KvsSample, 1vsAll, KvsAll, NegSample")
     parser.add_argument('--neg_ratio', type=int, default=0,

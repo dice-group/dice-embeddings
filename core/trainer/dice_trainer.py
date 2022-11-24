@@ -49,9 +49,9 @@ def get_callbacks(args):
 class DICE_Trainer:
     """
     DICE_Trainer implement
-    1- PL training schema
-    2- Pytorch Dataparalell
-    3- Pytorch DistributedDataParallel
+    1- Pytorch Lightning trainer (https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html)
+    2- Multi-GPU Trainer(https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html)
+    3- CPU Trainer
     """
 
     def __init__(self, executor, evaluator=None):
@@ -79,8 +79,7 @@ class DICE_Trainer:
         self.executor.report['num_entities'] = self.executor.dataset.num_entities
         self.executor.report['num_relations'] = self.executor.dataset.num_relations
         print('------------------- Train & Eval -------------------')
-        # (1) Collect Callbacks to be used during training
-        # (2) Initialize Trainer
+        # (2) Initialize trainer
         self.trainer = initialize_trainer(self.args, callbacks=get_callbacks(self.args), plugins=[])
         # (3) Use (2) to train a KGE model
         trained_model, form_of_labelling = self.train()
