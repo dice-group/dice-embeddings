@@ -40,14 +40,11 @@ class TorchDDPTrainer(AbstractTrainer):
                  nprocs=world_size,
                  join=True,  # ?
                  )
-        # Load the saved model
-        model = model.load_state_dict(torch.load('model.pt'))
+        model = torch.load("model.pt", map_location=torch.device('cpu'))
         os.remove('model.pt')
-        for c in callbacks:
-            c.on_train_epoch_end(None, model)
+        self.on_fit_end(None,model)
         losses = pd.read_csv('epoch_losses.csv', index_col=0)
         model.loss_history = [i[0] for i in losses.values.tolist()]
-        print('FIT ON END DOESNT WORK')
 
 def distributed_training(rank: int, world_size, model, train_dataset, callbacks, args):
     """

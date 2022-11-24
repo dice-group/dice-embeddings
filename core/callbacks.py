@@ -121,7 +121,7 @@ class PolyakCallback(Callback):
         for i in os.listdir(self.path):
             if '.pt' in i:
                 counter += 1
-                for k, v in torch.load(f'{self.path}/{i}').items():
+                for k, v in torch.load(f'{self.path}/{i}', map_location=torch.device('cpu')).items():
                     last_state[k] += v
         # (3) Average (2)
         for k, v in last_state.items():
