@@ -103,7 +103,7 @@ class PolyakCallback(Callback):
     def on_fit_start(self, *args, **kwargs):
         pass
 
-    def on_epoch_end(self, trainer, model):
+    def on_train_epoch_end(self, trainer, model):
         # (1) Polyak Save Condition
         if self.epoch_counter > self.polyak_starts:
             torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_{str(self.epoch_counter)}.pt")

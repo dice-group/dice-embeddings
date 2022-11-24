@@ -94,7 +94,6 @@ class Trainer:
             self.loss_history.append(epoch_loss)
             if self.gpu_id == 0:
                 for c in self.callbacks:
-                    print('Entered:\t',c)
                     c.on_train_epoch_end(None, self.model.module)
 
 
