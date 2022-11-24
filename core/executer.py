@@ -19,7 +19,7 @@ from core.evaluator import Evaluator
 from core.typings import *
 from core.static_funcs import *
 from core.sanity_checkers import *
-from core.trainers import DICE_Trainer
+from core.trainer import DICE_Trainer
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.simplefilter(action="ignore", category=UserWarning)
@@ -63,6 +63,7 @@ class Execute:
         self.evaluator = None  # e.g. Evaluator(self)
         # (9) Create an object to carry out training
         self.trainer = None  # e.g. DICE_Trainer(self)
+        self.trained_model = None
 
     def read_preprocess_index_serialize_data(self) -> None:
         """ Read & Preprocess & Index & Serialize Input Data """
@@ -91,6 +92,8 @@ class Execute:
         # (1) Send model to the eval mode
         trained_model.eval()
         trained_model.to('cpu')
+        # Save the epoch loss
+        pd.Series(trained_model.loss_history).to_csv(f'{self.storage_path}/epoch_losses.csv')
         # (2) Store NumParam and EstimatedSizeMB
         self.report.update(extract_model_summary(trained_model.summarize()))
         # (3) Store/Serialize Model for further use.
@@ -134,11 +137,11 @@ class Execute:
         # (3) Create a trainer object.
         self.trainer = DICE_Trainer(self, self.evaluator)
         # (4) Start the training
-        trained_model, form_of_labelling = self.trainer.start()
+        self.trained_model, form_of_labelling = self.trainer.start()
         # (5) Store trained model.
-        self.save_trained_model(trained_model, start_time)
+        self.save_trained_model(self.trained_model, start_time)
         # (6) Eval model.
-        self.evaluator.eval(trained_model, form_of_labelling)
+        self.evaluator.eval(self.trained_model, form_of_labelling)
         # (7) Return the report of the training process.
         return {**self.report, **self.evaluator.report}
 

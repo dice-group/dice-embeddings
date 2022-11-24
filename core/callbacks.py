@@ -42,13 +42,13 @@ class KGESaveCallback(Callback):
         if self.every_x_epoch is None:
             self.every_x_epoch = max(self.max_epochs // 2, 1)
 
-    def on_fit_start(self, *args, **kwargs):
+    def on_fit_start(self, trainer, pl_module):
         pass
 
-    def on_epoch_end(self, trainer, model):
+    def on_epoch_end(self, trainer, pl_module):
         if self.epoch_counter % self.every_x_epoch == 0 and self.epoch_counter > 1:
             print(f'\nStoring model {self.epoch_counter}...')
-            store_kge(model,
+            store_kge(pl_module,
                       path=self.path + f'/model_at_{str(self.epoch_counter)}_epoch_{str(str(datetime.datetime.now()))}.pt')
         self.epoch_counter += 1
 
@@ -100,10 +100,10 @@ class PolyakCallback(Callback):
         self.polyak_starts = int(max_epochs * polyak_start_ratio)
         self.path = path
 
-    def on_fit_start(self, *args, **kwargs):
+    def on_fit_start(self, trainer, pl_module):
         pass
 
-    def on_epoch_end(self, trainer, model):
+    def on_train_epoch_end(self, trainer, model):
         # (1) Polyak Save Condition
         if self.epoch_counter > self.polyak_starts:
             torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_{str(self.epoch_counter)}.pt")
@@ -114,13 +114,14 @@ class PolyakCallback(Callback):
         print('Perform Polyak on weights stored in disk')
         # (1) Set in eval model
         model.eval()
+        model.to('cpu')
         last_state = model.state_dict()
         counter = 1.0
         # (2) Accumulate weights
         for i in os.listdir(self.path):
             if '.pt' in i:
                 counter += 1
-                for k, v in torch.load(f'{self.path}/{i}').items():
+                for k, v in torch.load(f'{self.path}/{i}', map_location=torch.device('cpu')).items():
                     last_state[k] += v
         # (3) Average (2)
         for k, v in last_state.items():

@@ -30,9 +30,10 @@ class BaseKGE(pl.LightningModule):
         self.loss = torch.nn.BCEWithLogitsLoss()
         self.selected_optimizer = None
         self.normalizer_class = None
-        self.normalize_head_entity_embeddings = lambda x: x
-        self.normalize_relation_embeddings = lambda x: x
-        self.normalize_tail_entity_embeddings = lambda x: x
+        self.normalize_head_entity_embeddings = self.identity  # lambda x: x
+        self.normalize_relation_embeddings = self.identity  # lambda x: x
+        self.normalize_tail_entity_embeddings = self.identity  # lambda x: x
+        self.hidden_normalizer = self.identity
         self.init_params_with_sanity_checking()
 
         self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
@@ -43,6 +44,12 @@ class BaseKGE(pl.LightningModule):
         self.input_dp_ent_real = torch.nn.Dropout(self.input_dropout_rate)
         self.input_dp_rel_real = torch.nn.Dropout(self.input_dropout_rate)
         self.hidden_dropout = torch.nn.Dropout(self.input_dropout_rate)
+        # average minibatch loss per epoch
+        self.loss_history = []
+
+    @staticmethod
+    def identity(x):
+        return x
 
     def init_params_with_sanity_checking(self):
         assert self.args['model'] in ['CLf', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO',
@@ -235,6 +242,11 @@ class BaseKGE(pl.LightningModule):
             raise ValueError('Unexpected batch shape..')
         train_loss = self.loss_function(yhat_batch=yhat_batch, y_batch=y_batch)
         return train_loss
+
+    def training_epoch_end(self, training_step_outputs):
+        batch_losses = [i['loss'].item() for i in training_step_outputs]
+        avg = sum(batch_losses) / len(batch_losses)
+        self.loss_history.append(avg)
 
     def validation_step(self, batch, batch_idx):
         if len(batch) == 4:

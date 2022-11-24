@@ -10,7 +10,7 @@ def argparse_default(description=None):
     # Dataset and storage related
     parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
                         help="The path of a folder containing input data")
-    parser.add_argument("--save_embeddings_as_csv", type=bool, default=True,
+    parser.add_argument("--save_embeddings_as_csv", type=bool, default=False,
                         help='A flag for saving embeddings in csv file.')
     parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="Embeddings, model, and any other related data will be stored therein.")
@@ -33,8 +33,8 @@ def argparse_default(description=None):
     parser.add_argument("--backend", type=str, default='pandas',
                         help='Select [modin, pandas]')
 
-    parser.add_argument("--torch_trainer", type=str, default=None,
-                        help='None, DistributedDataParallelTrainer or DataParallelTrainer')
+    parser.add_argument("--trainer", type=str, default='torchDDP',
+                        help='None (pytorch lightning trainer), torchDDP (custom ddp) ,torchCPUTrainer (custom cpu only)')
     # Hyperparameters for training.
     parser.add_argument('--scoring_technique', default='KvsAll', help="KvsSample, 1vsAll, KvsAll, NegSample")
     parser.add_argument('--neg_ratio', type=int, default=0,
@@ -48,7 +48,7 @@ def argparse_default(description=None):
     # Flags for computation
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
                                                                         'If >2 ,no evaluation scenario is applied implies no evaluation.')
-    parser.add_argument("--eval", type=str, default="train_val_test",
+    parser.add_argument("--eval_model", type=str, default="val_test",
                         help='train, val, test, constraint, combine them anyway you want, e.g. '
                              'train_val,train_val_test, val_test, val_test_constraint ')
     # Additional training params

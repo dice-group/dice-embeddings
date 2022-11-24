@@ -19,12 +19,12 @@ class TestPolyak:
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'KvsAll'
-        args.eval = 'train_val_test'
+        args.eval_model = 'train_val_test'
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.callbacks=['Polyak']
+        args.callbacks = ['Polyak']
         args.normalization = 'LayerNorm'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 1.00 >= result['Train']['H@1'] >= 0.82
         assert 0.80 >= result['Val']['H@1'] >= 0.71

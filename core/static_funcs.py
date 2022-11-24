@@ -158,7 +158,6 @@ def model_fitting(trainer, model, train_dataloaders) -> None:
     print(f'Model fitting is done!')
 
 
-
 def preprocess_modin_dataframe_of_kg(df, read_only_few: int = None, sample_triples_ratio: float = None):
     """ Preprocess a modin dataframe to pandas dataframe """
     # df <class 'modin.pandas.dataframe.DataFrame'>
@@ -262,6 +261,7 @@ def preprocess_dataframe_of_kg(df, read_only_few: int = None,
         df = df[df["object"].str.startswith('<', na=False)]
         print('Done !\n')
     return df
+
 
 def load_data_parallel(data_path, read_only_few: int = None,
                        sample_triples_ratio: float = None, backend=None):
@@ -456,7 +456,7 @@ def read_preprocess_index_serialize_kg(args, cls):
     kg = cls(data_dir=args.path_dataset_folder,
              num_core=args.num_core,
              add_reciprical=args.apply_reciprical_or_noise,
-             eval_model=args.eval,
+             eval_model=args.eval_model,
              read_only_few=args.read_only_few,
              sample_triples_ratio=args.sample_triples_ratio,
              path_for_serialization=args.full_storage_path,
@@ -475,7 +475,7 @@ def reload_input_data(args: str = None, cls=None):
     kg = cls(data_dir=args.path_dataset_folder,
              num_core=args.num_core,
              add_reciprical=args.apply_reciprical_or_noise,
-             eval_model=args.eval,
+             eval_model=args.eval_model,
              read_only_few=args.read_only_few,
              sample_triples_ratio=args.sample_triples_ratio,
              path_for_serialization=args.full_storage_path,
@@ -514,15 +514,15 @@ def preprocesses_input_args(arg):
     arg.learning_rate = arg.lr
     arg.deterministic = True
     if arg.num_core <= 0:
-        arg.num_core = os.cpu_count()
+        arg.num_core = os.cpu_count() // 2
 
     # Below part will be investigated
     arg.check_val_every_n_epoch = 10 ** 6  # ,i.e., no eval
     arg.logger = False
     try:
-        assert arg.eval in [None, 'train', 'val', 'test', 'train_val', 'train_test', 'val_test', 'train_val_test']
+        assert arg.eval_model in [None, 'train', 'val', 'test', 'train_val', 'train_test', 'val_test', 'train_val_test']
     except KeyError as e:
-        print(arg.eval)
+        print(arg.eval_model)
         exit(1)
     # reciprocal checking
     # @TODO We need better way for using apply_reciprical_or_noise.
