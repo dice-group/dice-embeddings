@@ -35,18 +35,57 @@ class TorchDDPTrainer(AbstractTrainer):
             print('#' * 10)
             return
 
-        # TODO: Maybe distributed_training can be defined as a static func of DDTrainer?
         mp.spawn(fn=distributed_training,
-                 args=(world_size, self.model, train_dataset, self.callbacks, self.attributes),
+                 args=(world_size, model, train_dataset, self.callbacks, self.attributes),
                  nprocs=world_size,
                  join=True,  # ?
                  )
+        # Load the saved model
         model = model.load_state_dict(torch.load('model.pt'))
         os.remove('model.pt')
+        for c in callbacks:
+            c.on_train_epoch_end(None, model)
         losses = pd.read_csv('epoch_losses.csv', index_col=0)
         model.loss_history = [i[0] for i in losses.values.tolist()]
         print('FIT ON END DOESNT WORK')
 
+def distributed_training(rank: int, world_size, model, train_dataset, callbacks, args):
+    """
+    distributed_training is called as the entrypoint of the spawned process.
+    This function must be defined at the top level of a module so it can be pickled and spawned.
+    This is a requirement imposed by multiprocessing.
+
+    args: dictionary
+    callbacks:list of callback objects
+    The function is called as ``fn(i, *args)``, where ``i`` is the process index and ``args`` is the passed through tuple of arguments.
+    """
+    # CD: take callbacks as params ?
+    ddp_setup(rank, world_size)
+
+    print(f"Running basic DDP example on rank {rank}.")
+    print(f"torch.utils.data.get_worker_info():{torch.utils.data.get_worker_info()}")
+    print(f"torch.initial_seed():{torch.initial_seed()}")
+    # (1) Create DATA LOADER.
+    train_dataset_loader = DataLoader(train_dataset, batch_size=args['batch_size'],
+                                      pin_memory=True, shuffle=False,
+                                      sampler=torch.utils.data.distributed.DistributedSampler(train_dataset))
+
+    # (2) Initialize OPTIMIZER.
+    optimizer = model.configure_optimizers()
+    # (3) Create a static DDB Trainer.
+    trainer = Trainer(model, train_dataset_loader, optimizer, rank, callbacks)
+    trainer.train(args['num_epochs'])
+    if rank == 0:
+        trainer.model.loss_history = trainer.loss_history
+        torch.save(trainer.model.module.state_dict(), "model.pt")
+    dist.destroy_process_group()
+    """
+    # Move the model to GPU with id rank
+    # https://pytorch.org/tutorials/recipes/zero_redundancy_optimizer.html
+    # Note: ZeroRedundancy Increases the computation time quite a bit. DBpedia/10 => 3mins
+    # Without ZeroReundancy optimizer we have 0.770 minutes
+    # optimizer = ZeroRedundancyOptimizer(ddp_model.parameters(),optimizer_class=torch.optim.SGD, lr=lr )
+    """
 
 class Trainer:
     def __init__(self,
@@ -110,38 +149,3 @@ def ddp_setup(rank: int, world_size: int):
                             world_size=world_size)
 
 
-def distributed_training(rank: int, world_size, model, train_dataset, callbacks, args):
-    """
-    distributed_training is called as the entrypoint of the spawned process.
-    This function must be defined at the top level of a module so it can be pickled and spawned.
-    This is a requirement imposed by multiprocessing.
-
-    The function is called as ``fn(i, *args)``, where ``i`` is the process index and ``args`` is the passed through tuple of arguments.
-    """
-    # CD: take callbacks as params ?
-    ddp_setup(rank, world_size)
-
-    print(f"Running basic DDP example on rank {rank}.")
-    print(f"torch.utils.data.get_worker_info():{torch.utils.data.get_worker_info()}")
-    print(f"torch.initial_seed():{torch.initial_seed()}")
-    # (1) Create DATA LOADER.
-    train_dataset_loader = DataLoader(train_dataset, batch_size=args['batch_size'],
-                                      pin_memory=True, shuffle=False,
-                                      sampler=torch.utils.data.distributed.DistributedSampler(train_dataset))
-
-    # (2) Initialize OPTIMIZER.
-    optimizer = model.configure_optimizers()
-    # (3) Create a static DDB Trainer.
-    trainer = Trainer(model, train_dataset_loader, optimizer, rank, callbacks)
-    trainer.train(args['num_epochs'])
-    if rank == 0:
-        trainer.model.loss_history = trainer.loss_history
-        torch.save(trainer.model.module.state_dict(), "model.pt")
-    dist.destroy_process_group()
-    """
-    # Move the model to GPU with id rank
-    # https://pytorch.org/tutorials/recipes/zero_redundancy_optimizer.html
-    # Note: ZeroRedundancy Increases the computation time quite a bit. DBpedia/10 => 3mins
-    # Without ZeroReundancy optimizer we have 0.770 minutes
-    # optimizer = ZeroRedundancyOptimizer(ddp_model.parameters(),optimizer_class=torch.optim.SGD, lr=lr )
-    """
