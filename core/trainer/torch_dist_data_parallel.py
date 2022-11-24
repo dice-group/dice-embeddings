@@ -19,10 +19,6 @@ class TorchDDPTrainer(AbstractTrainer):
 
     def __init__(self, args, callbacks):
         super().__init__(args, callbacks)
-        self.callbacks = callbacks
-        self.model = None
-        torch.manual_seed(self.seed_for_computation)
-        torch.cuda.manual_seed_all(self.seed_for_computation)
 
     def fit(self, *args, **kwargs):
         """ Train model        """
@@ -41,7 +37,7 @@ class TorchDDPTrainer(AbstractTrainer):
 
         # TODO: Maybe distributed_training can be defined as a static func of DDTrainer?
         mp.spawn(fn=distributed_training,
-                 args=(world_size, self.model, train_dataset, self.args),
+                 args=(world_size, self.model, train_dataset, self.callbacks, self.attributes),
                  nprocs=world_size,
                  join=True,  # ?
                  )
@@ -58,12 +54,13 @@ class Trainer:
                  model: torch.nn.Module,
                  train_dataset_loader: DataLoader,
                  optimizer: torch.optim.Optimizer,
-                 gpu_id: int) -> None:
+                 gpu_id: int, callbacks) -> None:
         self.gpu_id = gpu_id
         self.model = model.to(gpu_id)
         self.train_dataset_loader = train_dataset_loader
         self.loss_func = torch.nn.BCEWithLogitsLoss()
         self.optimizer = optimizer
+        self.callbacks = callbacks
         self.model = DDP(model, device_ids=[gpu_id])
         self.loss_history = []
 
@@ -95,8 +92,10 @@ class Trainer:
             print(
                 f"{epoch + 1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} mins\tEpoch loss: {epoch_loss:.8f}")
             self.loss_history.append(epoch_loss)
-            # TODO: CD: How to use callbacks?
-            # self.on_train_epoch_end(self, model)
+            if self.gpu_id == 0:
+                for c in self.callbacks:
+                    print('Entered:\t',c)
+                    c.on_train_epoch_end(None, self.model.module)
 
 
 def ddp_setup(rank: int, world_size: int):
@@ -113,7 +112,7 @@ def ddp_setup(rank: int, world_size: int):
                             world_size=world_size)
 
 
-def distributed_training(rank: int, world_size, model, train_dataset, args):
+def distributed_training(rank: int, world_size, model, train_dataset, callbacks, args):
     """
     distributed_training is called as the entrypoint of the spawned process.
     This function must be defined at the top level of a module so it can be pickled and spawned.
@@ -128,14 +127,15 @@ def distributed_training(rank: int, world_size, model, train_dataset, args):
     print(f"torch.utils.data.get_worker_info():{torch.utils.data.get_worker_info()}")
     print(f"torch.initial_seed():{torch.initial_seed()}")
     # (1) Create DATA LOADER.
-    train_dataset_loader = DataLoader(train_dataset, batch_size=args.batch_size, pin_memory=True, shuffle=False,
+    train_dataset_loader = DataLoader(train_dataset, batch_size=args['batch_size'],
+                                      pin_memory=True, shuffle=False,
                                       sampler=torch.utils.data.distributed.DistributedSampler(train_dataset))
 
     # (2) Initialize OPTIMIZER.
     optimizer = model.configure_optimizers()
     # (3) Create a static DDB Trainer.
-    trainer = Trainer(model, train_dataset_loader, optimizer, rank)
-    trainer.train(args.num_epochs)
+    trainer = Trainer(model, train_dataset_loader, optimizer, rank, callbacks)
+    trainer.train(args['num_epochs'])
     if rank == 0:
         trainer.model.loss_history = trainer.loss_history
         torch.save(trainer.model.module.state_dict(), "model.pt")
