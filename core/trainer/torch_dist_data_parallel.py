@@ -40,7 +40,7 @@ class TorchDDPTrainer(AbstractTrainer):
                  nprocs=world_size,
                  join=True,  # ?
                  )
-        model = torch.load("model.pt", map_location=torch.device('cpu'))
+        model.load_state_dict(torch.load("model.pt", map_location=torch.device('cpu')))
         os.remove('model.pt')
         self.on_fit_end(None,model)
         losses = pd.read_csv('epoch_losses.csv', index_col=0)
@@ -56,7 +56,6 @@ def distributed_training(rank: int, world_size, model, train_dataset, callbacks,
     callbacks:list of callback objects
     The function is called as ``fn(i, *args)``, where ``i`` is the process index and ``args`` is the passed through tuple of arguments.
     """
-    # CD: take callbacks as params ?
     ddp_setup(rank, world_size)
 
     print(f"Running basic DDP example on rank {rank}.")
@@ -83,6 +82,7 @@ def distributed_training(rank: int, world_size, model, train_dataset, callbacks,
     # Without ZeroReundancy optimizer we have 0.770 minutes
     # optimizer = ZeroRedundancyOptimizer(ddp_model.parameters(),optimizer_class=torch.optim.SGD, lr=lr )
     """
+
 
 class Trainer:
     def __init__(self,
@@ -144,5 +144,3 @@ def ddp_setup(rank: int, world_size: int):
     dist.init_process_group(backend='nccl',  # NVIDIA Collection Communication Library
                             rank=rank,
                             world_size=world_size)
-
-
