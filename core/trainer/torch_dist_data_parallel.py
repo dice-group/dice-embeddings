@@ -29,12 +29,6 @@ class TorchDDPTrainer(AbstractTrainer):
         # nodes * gpus
         world_size = self.num_nodes * torch.cuda.device_count()
         train_dataset = kwargs['train_dataloaders'].dataset
-        if world_size == 0:
-            print('#' * 10)
-            print('Can not compute distributed computing')
-            print('#' * 10)
-            return
-
         mp.spawn(fn=distributed_training,
                  args=(world_size, model, train_dataset, self.callbacks, self.attributes),
                  nprocs=world_size,
@@ -42,9 +36,10 @@ class TorchDDPTrainer(AbstractTrainer):
                  )
         model.load_state_dict(torch.load("model.pt", map_location=torch.device('cpu')))
         os.remove('model.pt')
-        self.on_fit_end(None,model)
+        self.on_fit_end(None, model)
         losses = pd.read_csv('epoch_losses.csv', index_col=0)
         model.loss_history = [i[0] for i in losses.values.tolist()]
+
 
 def distributed_training(rank: int, world_size, model, train_dataset, callbacks, args):
     """

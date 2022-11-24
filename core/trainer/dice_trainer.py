@@ -21,10 +21,15 @@ from sklearn.model_selection import KFold
 def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     """ Initialize Trainer from input arguments """
     if args.trainer == 'torchCPUTrainer':
-        print('Initialize DataParallelTrainer Trainer')
+        print('Initialize TorchTrainer CPU Trainer')
         return TorchTrainer(args, callbacks=callbacks)
     elif args.trainer == 'torchDDP':
-        return TorchDDPTrainer(args, callbacks=callbacks)
+        if torch.cuda.is_available():
+            print('Initialize TorchDDPTrainer GPU')
+            return TorchDDPTrainer(args, callbacks=callbacks)
+        else:
+            print('Initialize TorchTrainer CPU Trainer')
+            return TorchTrainer(args, callbacks=callbacks)
     else:
         print('Initialize Pytorch-lightning Trainer')
         # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
