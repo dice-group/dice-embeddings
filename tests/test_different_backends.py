@@ -10,4 +10,5 @@ class TestPolyak:
         args = argparse_default([])
         args.path_dataset_folder = 'KGs/UMLS'
         args.backend = 'pandas'
+        args.trainer = 'torchCPUTrainer'
         Execute(args).start()

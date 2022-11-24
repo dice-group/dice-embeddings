@@ -18,17 +18,16 @@ class TestRegressionConvO:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.eval = 'train_val_test'
+        args.eval_model = 'train_val_test'
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
-        args.normalization='LayerNorm'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.normalization = 'LayerNorm'
+        args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 1.0 >= result['Train']['H@1'] >= 0.01
         assert 0.75 >= result['Val']['H@1'] >= 0.01
         assert 0.75 >= result['Test']['H@1'] >= 0.01
-
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
@@ -42,12 +41,12 @@ class TestRegressionConvO:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.eval = 'train_val_test'
+        args.eval_model = 'train_val_test'
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
-        args.normalization='LayerNorm'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.normalization = 'LayerNorm'
+        args.trainer = 'torchCPUTrainer'
         args.scoring_technique = '1vsAll'
         result = Execute(args).start()
         assert 1.0 >= result['Train']['H@1'] >= 0.70
@@ -61,7 +60,7 @@ class TestRegressionConvO:
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 50
         args.batch_size = 1024
-        args.eval = 'train_val_test'
+        args.eval_model = 'train_val_test'
         args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
@@ -71,10 +70,9 @@ class TestRegressionConvO:
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
-        args.normalization='LayerNorm'
-        args.torch_trainer = 'DataParallelTrainer'
+        args.normalization = 'LayerNorm'
+        args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 1.0 >= result['Train']['H@1'] >= 0.01
         assert 0.75 >= result['Val']['H@1'] >= 0.01
         assert 0.75 >= result['Test']['H@1'] >= 0.01
-

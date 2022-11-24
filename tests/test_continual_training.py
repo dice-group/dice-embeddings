@@ -26,7 +26,7 @@ class TestRegressionCL:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert os.path.isdir(result['path_experiment_folder'])
         pre_trained_kge = KGE(path_of_pretrained_model_dir=result['path_experiment_folder'])
@@ -51,7 +51,7 @@ class TestRegressionCL:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert os.path.isdir(result['path_experiment_folder'])
         pre_trained_kge = KGE(path_of_pretrained_model_dir=result['path_experiment_folder'])
@@ -76,7 +76,7 @@ class TestRegressionCL:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
-        args.torch_trainer = 'DataParallelTrainer'
+        args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert os.path.isdir(result['path_experiment_folder'])
         pre_trained_kge = KGE(path_of_pretrained_model_dir=result['path_experiment_folder'])

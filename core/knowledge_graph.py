@@ -13,6 +13,7 @@ from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_
 from .sanity_checkers import dataset_sanity_checking
 import glob
 import pyarrow.parquet as pq
+import concurrent.futures
 
 
 class KG:
@@ -79,8 +80,7 @@ class KG:
                 print('[9 / 14] Obtaining relation to integer index mapping from pandas dataframe...')
                 self.relation_to_idx = self.relation_to_idx.to_dict()['relation']
                 print('Done !\n')
-                self.num_entities = len(self.entity_to_idx)
-                self.num_relations = len(self.relation_to_idx)
+                self.num_entities, self.num_relations = len(self.entity_to_idx), len(self.relation_to_idx)
                 print('[10 / 14] Mapping training data into integers for training...')
                 start_time = time.time()
                 # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
@@ -97,6 +97,7 @@ class KG:
                 assert isinstance(self.train_set, pd.core.frame.DataFrame)
                 # 11. Convert data from pandas dataframe to numpy ndarray.
                 print('[12 / 14] Mapping from pandas data frame to numpy ndarray to reduce memory usage...')
+                # CD: Maybe to list?
                 self.train_set = self.train_set.values
                 print('Done !\n')
             else:
@@ -167,12 +168,15 @@ class KG:
                     data = np.concatenate([self.train_set, self.valid_set, self.test_set])
                 else:
                     data = self.train_set
+                # @TODO: Takes too much time
+                # We need to parallelise the next four steps.
                 print('Final: Creating Vocab...')
-                self.er_vocab = get_er_vocab(data)
-                self.re_vocab = get_re_vocab(data)
-                # 17. Create a bijection mapping from subject-object pairs to relations.
-                self.ee_vocab = get_ee_vocab(data)
-                self.domain_constraints_per_rel, self.range_constraints_per_rel = create_constraints(self.train_set)
+                executor = concurrent.futures.ProcessPoolExecutor()
+                self.er_vocab = executor.submit(get_er_vocab, data)  # get_er_vocab(data)
+                self.re_vocab = executor.submit(get_re_vocab, data)  # get_re_vocab(data)
+                self.ee_vocab = executor.submit(get_ee_vocab, data)  # get_ee_vocab(data)
+                self.constraints = executor.submit(create_constraints, self.train_set)
+                self.domain_constraints_per_rel, self.range_constraints_per_rel = None, None  # create_constraints(self.train_set)
         else:
             self.deserialize(deserialize_flag)
 
