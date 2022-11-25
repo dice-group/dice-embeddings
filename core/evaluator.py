@@ -9,13 +9,8 @@ class Evaluator:
         self.executor = executor
         self.report = dict()
 
-    def eval(self, trained_model, form_of_labelling) -> None:
-        """
-        Evaluate model with Standard
-        :param form_of_labelling:
-        :param trained_model:
-        :return:
-        """
+    def __vocab_preparation(self):
+
         if isinstance(self.executor.dataset.er_vocab, dict):
             pass
         else:
@@ -36,13 +31,22 @@ class Evaluator:
         else:
             try:
                 self.executor.dataset.domain_constraints_per_rel, self.executor.dataset.range_constraints_per_rel = self.executor.dataset.constraints.result()
-            except:
+            except RuntimeError:
                 print('Domain constraint exception occurred')
-                pass
 
-        print('Evaluation Starts.')
+    def eval(self, trained_model, form_of_labelling) -> None:
+        """
+        Evaluate model with Standard
+        :param form_of_labelling:
+        :param trained_model:
+        :return:
+        """
+        # (1) Exit, if the flag is not set
         if self.executor.args.eval_model is None:
             return
+
+        self.__vocab_preparation()
+        print('Evaluation Starts.')
         if self.executor.args.num_folds_for_cv > 1:
             # the evaluation must have done in the training part
             return

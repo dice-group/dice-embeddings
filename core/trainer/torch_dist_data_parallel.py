@@ -92,6 +92,7 @@ class Trainer:
         self.optimizer = optimizer
         self.callbacks = callbacks
         self.model = DDP(model, device_ids=[gpu_id])
+        print(self.model)
         self.loss_history = []
 
     def _run_batch(self, source, targets):
@@ -108,19 +109,23 @@ class Trainer:
         # print(f"[GPU {self.gpu_id}] Epoch {epoch} | Batchsize: {b_sz} | Number of Batches per Epoch:{len(self.train_dataset_loader)}")
         self.train_dataset_loader.sampler.set_epoch(epoch)
         epoch_loss = 0
+        print_period = max(len(train_dataset_loader) // 10, 1)
         for i, (source, targets) in (pbar := tqdm(enumerate(self.train_dataset_loader))):
             source, targets = source.to(self.gpu_id, non_blocking=True), targets.to(self.gpu_id, non_blocking=True)
             batch_loss = self._run_batch(source, targets)
-            pbar.set_description_str(f"{epoch + 1}. epoch | {i + 1}.batch | Loss: {batch_loss:.8f}")
+            if i % print_period == 0:
+                pbar.set_description_str(f"{epoch + 1}. epoch | {i + 1}.batch | Loss: {batch_loss:.8f}")
             epoch_loss += batch_loss
         return epoch_loss / len(self.train_dataset_loader)
 
     def train(self, max_epochs: int):
+        print_period = max(max_epochs // 10, 1)
         for epoch in range(max_epochs):
             start_time = time.time()
             epoch_loss = self._run_epoch(epoch)
-            print(
-                f"{epoch + 1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} mins\tEpoch loss: {epoch_loss:.8f}")
+            if epoch % print_period == 0:
+                print(
+                    f"{epoch + 1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} mins\tEpoch loss: {epoch_loss:.8f}")
             self.loss_history.append(epoch_loss)
             if self.gpu_id == 0:
                 for c in self.callbacks:
