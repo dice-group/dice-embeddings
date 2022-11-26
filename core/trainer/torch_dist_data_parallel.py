@@ -108,12 +108,12 @@ class Trainer:
         # print(f"[GPU {self.gpu_id}] Epoch {epoch} | Batchsize: {b_sz} | Number of Batches per Epoch:{len(self.train_dataset_loader)}")
         self.train_dataset_loader.sampler.set_epoch(epoch)
         epoch_loss = 0
-        print_period = max(len(train_dataset_loader) // 10, 1)
-        for i, (source, targets) in (pbar := tqdm(enumerate(self.train_dataset_loader))):
+        print_period = max(len(self.train_dataset_loader) // 10, 1)
+        for i, (source, targets) in enumerate(self.train_dataset_loader):
             source, targets = source.to(self.gpu_id, non_blocking=True), targets.to(self.gpu_id, non_blocking=True)
             batch_loss = self._run_batch(source, targets)
-            if i % print_period == 0:
-                pbar.set_description_str(f"{epoch + 1}. epoch | {i + 1}.batch | Loss: {batch_loss:.8f}")
+            #if i % print_period == 0:
+            #    pbar.set_description_str(f"{epoch + 1}. epoch | {i + 1}.batch | Loss: {batch_loss:.8f}")
             epoch_loss += batch_loss
         return epoch_loss / len(self.train_dataset_loader)
 
