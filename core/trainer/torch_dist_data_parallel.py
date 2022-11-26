@@ -37,9 +37,8 @@ class TorchDDPTrainer(AbstractTrainer):
         model.load_state_dict(torch.load("model.pt", map_location=torch.device('cpu')))
         os.remove('model.pt')
         self.on_fit_end(None, model)
-        losses = pd.read_csv('epoch_losses.csv', index_col=0)
-        model.loss_history = [i[0] for i in losses.values.tolist()]
-
+        #losses = pd.read_csv('epoch_losses.csv', index_col=0)
+        #model.loss_history = [i[0] for i in losses.values.tolist()]
 
 def distributed_training(rank: int, world_size, model, train_dataset, callbacks, args):
     """
