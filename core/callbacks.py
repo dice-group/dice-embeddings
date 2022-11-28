@@ -7,7 +7,17 @@ from pytorch_lightning.callbacks import Callback
 from .static_funcs import store_kge
 from typing import Optional
 import os
+import pandas as pd
 
+
+class AccumulateEpochLossCallback(Callback):
+    def __init__(self, path: str):
+        super().__init__()
+        self.path = path
+
+    def on_fit_end(self, trainer, model):
+        # Store into disk
+        pd.DataFrame(model.loss_history, columns=['EpochLoss']).to_csv(f'{self.path}/epoch_losses.csv')
 
 class PrintCallback(Callback):
     def __init__(self):
@@ -104,6 +114,11 @@ class PolyakCallback(Callback):
         pass
 
     def on_train_epoch_end(self, trainer, model):
+        # @TODO: Store each epoch loss
+        # Compute a moving average of epochs losses in 5, 10 and 20 epochs, e_5, e_10, e_20
+        # If a input epoch loss is e_5 == e_10 == e_20 almost equailities
+        # Then we can assume that a model is convergned in a minima
+        # Then start averagining.
         # (1) Polyak Save Condition
         if self.epoch_counter > self.polyak_starts:
             torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_{str(self.epoch_counter)}.pt")

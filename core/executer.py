@@ -93,7 +93,7 @@ class Execute:
         trained_model.eval()
         trained_model.to('cpu')
         # Save the epoch loss
-        pd.Series(trained_model.loss_history).to_csv(f'{self.storage_path}/epoch_losses.csv')
+        #pd.Series(trained_model.loss_history).to_csv(f'{self.storage_path}/epoch_losses.csv')
         # (2) Store NumParam and EstimatedSizeMB
         self.report.update(extract_model_summary(trained_model.summarize()))
         # (3) Store/Serialize Model for further use.

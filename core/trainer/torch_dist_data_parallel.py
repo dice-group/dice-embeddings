@@ -112,12 +112,11 @@ class Trainer:
         for i, (source, targets) in enumerate(self.train_dataset_loader):
             source, targets = source.to(self.gpu_id, non_blocking=True), targets.to(self.gpu_id, non_blocking=True)
             batch_loss = self._run_batch(source, targets)
-            #if i % print_period == 0:
-            #    pbar.set_description_str(f"{epoch + 1}. epoch | {i + 1}.batch | Loss: {batch_loss:.8f}")
             epoch_loss += batch_loss
         return epoch_loss / len(self.train_dataset_loader)
 
     def train(self, max_epochs: int):
+        # @TODO: Uset tqdm
         print_period = max(max_epochs // 10, 1)
         for epoch in range(max_epochs):
             start_time = time.time()

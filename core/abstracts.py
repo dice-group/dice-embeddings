@@ -14,7 +14,6 @@ class AbstractTrainer:
         # Set True to use Model summary callback of pl.
         torch.manual_seed(self.seed_for_computation)
         torch.cuda.manual_seed_all(self.seed_for_computation)
-        print(self.attributes)
 
     def __getattr__(self, attr):
         return self.attributes[attr]

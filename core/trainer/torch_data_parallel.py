@@ -6,6 +6,7 @@ from core.custom_opt.adam_sls import AdamSLS
 from tqdm import tqdm
 import time
 
+
 class TorchTrainer(AbstractTrainer):
     def __init__(self, args, callbacks):
         super().__init__(args, callbacks)
@@ -49,6 +50,7 @@ class TorchTrainer(AbstractTrainer):
             start_time = time.time()
             i: int
             batch: list
+            batch_loss = -1
             for i, batch in enumerate(data_loader):
                 # (1) Zero the gradients.
                 self.optimizer.zero_grad()
@@ -56,17 +58,19 @@ class TorchTrainer(AbstractTrainer):
                 x_batch, y_batch = self.extract_input_outputs(batch)
                 # (3) Loss Forward and Backward w.r.t the batch.
                 batch_loss = self.compute_forward_loss_backward(x_batch, y_batch)
-                pbar.set_description_str(f"{epoch + 1}. epoch: {i + 1}.batch")
+                # (4) Accumulate a batch loss.
                 epoch_loss += batch_loss.item()
+            # (5) Average (4).
             epoch_loss /= num_total_batches
+            # (6) Print a info.
+            pbar.set_description(f'Epoch {epoch + 1}')
             pbar.set_postfix_str(
-                f"{epoch + 1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} mins \tEpoch loss: {epoch_loss:.8f}")
+                f"runtime:{(time.time() - start_time) / 60:.3f}mins, loss={epoch_loss:.8f}")
+            # (7) Store epoch losses
             self.model.loss_history.append(epoch_loss)
-            # Fit on epochs e
             self.on_train_epoch_end(self, self.model)
             # Write a callback to store
             # print(self.optimizer.state['step_size'])
-
         self.on_fit_end(self, self.model)
 
     def compute_forward_loss_backward(self, x_batch: torch.Tensor, y_batch: torch.Tensor) -> torch.Tensor:

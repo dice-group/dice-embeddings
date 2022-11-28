@@ -3,7 +3,8 @@ import pytorch_lightning as pl
 
 from core.models.base_model import BaseKGE
 from core.static_funcs import select_model, model_fitting
-from core.callbacks import PrintCallback, KGESaveCallback, PseudoLabellingCallback, PolyakCallback
+from core.callbacks import PrintCallback, KGESaveCallback, PseudoLabellingCallback, PolyakCallback, \
+    AccumulateEpochLossCallback
 from core.dataset_classes import StandardDataModule
 from .torch_data_parallel import TorchTrainer
 from .torch_dist_data_parallel import TorchDDPTrainer
@@ -30,13 +31,15 @@ def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
         else:
             print('Initialize TorchTrainer CPU Trainer')
             return TorchTrainer(args, callbacks=callbacks)
-    else:
+    elif args.trainer == 'PL':
         print('Initialize Pytorch-lightning Trainer')
         # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
         return pl.Trainer.from_argparse_args(args,
                                              strategy=DDPStrategy(find_unused_parameters=False),
                                              plugins=plugins, callbacks=callbacks)
-
+    else:
+        print('Initialize TorchTrainer CPU Trainer')
+        return TorchTrainer(args, callbacks=callbacks)
 
 # @TODO: Move the static
 def get_callbacks(args):
@@ -44,7 +47,9 @@ def get_callbacks(args):
                  KGESaveCallback(every_x_epoch=args.save_model_at_every_epoch,
                                  max_epochs=args.max_epochs,
                                  path=args.full_storage_path),
-                 pl.callbacks.ModelSummary(max_depth=-1)]
+                 pl.callbacks.ModelSummary(max_depth=-1),
+                 AccumulateEpochLossCallback(path=args.full_storage_path)
+                 ]
     for i in args.callbacks:
         if i == 'Polyak':
             callbacks.append(PolyakCallback(max_epochs=args.max_epochs, path=args.full_storage_path))
