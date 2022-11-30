@@ -41,7 +41,6 @@ def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
         print('Initialize TorchTrainer CPU Trainer')
         return TorchTrainer(args, callbacks=callbacks)
 
-# @TODO: Move the static
 def get_callbacks(args):
     callbacks = [PrintCallback(),
                  KGESaveCallback(every_x_epoch=args.save_model_at_every_epoch,
