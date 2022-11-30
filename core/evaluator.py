@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import json
 from tqdm import tqdm
-
+import sys
 
 class Evaluator:
     def __init__(self, executor):
@@ -150,7 +150,7 @@ class Evaluator:
         else:
             # TODO: Why do not we use Pytorch Dataset ? for multiprocessing
             # Iterate over integer indexed triples in mini batch fashion
-            for i in (pbar := tqdm(range(0, len(triple_idx), self.executor.args.batch_size))):
+            for i in (pbar := tqdm(range(0, len(triple_idx), self.executor.args.batch_size),file=sys.stdout)):
                 data_batch = triple_idx[i:i + self.executor.args.batch_size]
                 e1_idx_r_idx, e2_idx = torch.LongTensor(data_batch[:, [0, 1]]), torch.tensor(data_batch[:, 2])
                 with torch.no_grad():

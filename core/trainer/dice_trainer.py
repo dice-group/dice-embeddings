@@ -8,7 +8,6 @@ from core.callbacks import PrintCallback, KGESaveCallback, PseudoLabellingCallba
 from core.dataset_classes import StandardDataModule
 from .torch_data_parallel import TorchTrainer
 from .torch_dist_data_parallel import TorchDDPTrainer
-
 import os
 import torch
 import numpy as np
@@ -73,6 +72,9 @@ class DICE_Trainer:
         self.storage_path = self.executor.storage_path
         # Required for CV.
         self.evaluator = evaluator
+        print(f'Number of available CPUs:{os.cpu_count()} \tGPUs:{torch.cuda.device_count()}')
+        for i in range(torch.cuda.device_count()):
+            print(torch.cuda.get_device_name(i))
 
     def training_process(self) -> BaseKGE:
         """

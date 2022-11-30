@@ -37,8 +37,6 @@ class TorchDDPTrainer(AbstractTrainer):
         model.load_state_dict(torch.load("model.pt", map_location=torch.device('cpu')))
         os.remove('model.pt')
         self.on_fit_end(None, model)
-        #losses = pd.read_csv('epoch_losses.csv', index_col=0)
-        #model.loss_history = [i[0] for i in losses.values.tolist()]
 
 def distributed_training(rank: int, world_size, model, train_dataset, callbacks, args):
     """
@@ -108,7 +106,6 @@ class Trainer:
         # print(f"[GPU {self.gpu_id}] Epoch {epoch} | Batchsize: {b_sz} | Number of Batches per Epoch:{len(self.train_dataset_loader)}")
         self.train_dataset_loader.sampler.set_epoch(epoch)
         epoch_loss = 0
-        print_period = max(len(self.train_dataset_loader) // 10, 1)
         for i, (source, targets) in enumerate(self.train_dataset_loader):
             source, targets = source.to(self.gpu_id, non_blocking=True), targets.to(self.gpu_id, non_blocking=True)
             batch_loss = self._run_batch(source, targets)
@@ -116,14 +113,11 @@ class Trainer:
         return epoch_loss / len(self.train_dataset_loader)
 
     def train(self, max_epochs: int):
-        # @TODO: Uset tqdm
-        print_period = max(max_epochs // 10, 1)
+        #         for epoch in (pbar := tqdm(range(self.attributes['max_epochs']), file=sys.stdout)):
         for epoch in range(max_epochs):
             start_time = time.time()
             epoch_loss = self._run_epoch(epoch)
-            if epoch % print_period == 0:
-                print(
-                    f"{epoch + 1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} mins\tEpoch loss: {epoch_loss:.8f}")
+            print(f"{epoch + 1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} min\tEpoch loss: {epoch_loss:.8f}")
             self.loss_history.append(epoch_loss)
             if self.gpu_id == 0:
                 for c in self.callbacks:
