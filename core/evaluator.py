@@ -181,6 +181,7 @@ class Evaluator:
 
         results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10, 'MRR': mean_reciprocal_rank}
         if info:
+            print(info)
             print(results)
         return results
 
