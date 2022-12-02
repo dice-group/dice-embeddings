@@ -151,9 +151,7 @@ def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
 def model_fitting(trainer, model, train_dataloaders) -> None:
     """ Standard Pytorch Lightning model fitting """
     assert trainer.max_epochs == trainer.min_epochs
-    print(f'Number of epochs:{trainer.max_epochs}')
-    print(f'Number of mini-batches to compute for a single epoch: {len(train_dataloaders)}')
-    print(f'Learning rate:{model.learning_rate}\n')
+    print(f'NumOfEpochs:{trainer.max_epochs} | LearningRate:{model.learning_rate} | BatchSize:{trainer.batch_size} | EpochBatchsize:{len(train_dataloaders)}')
     trainer.fit(model, train_dataloaders=train_dataloaders)
     print(f'Model fitting is done!')
 
@@ -521,7 +519,7 @@ def preprocesses_input_args(arg):
     arg.logger = False
     try:
         assert arg.eval_model in [None, 'train', 'val', 'test', 'train_val', 'train_test', 'val_test', 'train_val_test']
-    except KeyError as e:
+    except KeyError:
         print(arg.eval_model)
         exit(1)
     # reciprocal checking
@@ -608,9 +606,7 @@ def create_experiment_folder(folder_name='Experiments'):
 
 
 def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
-    print('Initializing the selected model...', end=' ')
     # @TODO: Apply construct_krone as callback? or use KronE_QMult as a prefix.
-    start_time = time.time()
     model_name = args['model']
     if model_name == 'KronELinear':
         model = KronELinear(args=args)
@@ -661,7 +657,6 @@ def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     # elif for PYKEEN https://github.com/dice-group/dice-embeddings/issues/54
     else:
         raise ValueError
-    print(f'Done! {time.time() - start_time:.3f}')
     return model, form_of_labelling
 
 
