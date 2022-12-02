@@ -72,7 +72,8 @@ class DICE_Trainer:
         self.storage_path = self.executor.storage_path
         # Required for CV.
         self.evaluator = evaluator
-        print(f'Number of available CPUs:{os.cpu_count()} \tGPUs:{torch.cuda.device_count()}')
+        print(f'# of CPUs:{os.cpu_count()} | # of GPUs:{torch.cuda.device_count()} | # of CPUs for dataloader:{self.args.num_core}')
+
         for i in range(torch.cuda.device_count()):
             print(torch.cuda.get_device_name(i))
 
@@ -102,7 +103,6 @@ class DICE_Trainer:
 
     def train(self):  # -> Tuple[BaseKGE, str]:
         """ Train selected model via the selected training strategy """
-        print("Train selected model via the selected training strategy ")
         if self.args.num_folds_for_cv >= 2:
             return self.k_fold_cross_validation()
         else:
@@ -134,7 +134,7 @@ class DICE_Trainer:
         # (1) Select model and labelling : Entity Prediction or Relation Prediction.
         model, form_of_labelling = select_model(vars(self.args), self.executor.is_continual_training,
                                                 self.executor.storage_path)
-        print(f'KvsAll training starts: {model.name}')  # -labeling:{form_of_labelling}')
+        print(f'KvsAll training starts: {model.name}')
         # (2) Create training data.
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,

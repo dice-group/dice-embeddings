@@ -16,19 +16,19 @@ def argparse_default(description=None):
                         help="Embeddings, model, and any other related data will be stored therein.")
     # Model and Training Parameters
     parser.add_argument("--model", type=str,
-                        default="QMult",
+                        default="DistMult",
                         help="Available models: ConEx, ConvQ, ConvO,  QMult, OMult, "
                              "Shallom, ConEx, ComplEx, DistMult, TransE, CLf")
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[Adan,NAdam, Adam, SGD, Sls, AdamSLS]')
-    parser.add_argument('--embedding_dim', type=int, default=100, help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. ')
+    parser.add_argument('--embedding_dim', type=int, default=256, help='Number of dimensions for an embedding vector. ')
+    parser.add_argument("--num_epochs", type=int, default=200, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
-    parser.add_argument("--lr", type=float, default=0.01)
+    parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument('--callbacks',
                         '--list',
                         nargs='+',
-                        default=[],  # ['Polyak'],
+                        default=[],#['Polyak'],
                         help='List of tuples representing a callback and values')
     parser.add_argument("--backend", type=str, default='pandas',
                         help='Select [modin, pandas]')
@@ -48,7 +48,7 @@ def argparse_default(description=None):
     # Flags for computation
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
                                                                         'If >2 ,no evaluation scenario is applied implies no evaluation.')
-    parser.add_argument("--eval_model", type=str, default="val_test",
+    parser.add_argument("--eval_model", type=str, default="train_val_test",
                         help='train, val, test, constraint, combine them anyway you want, e.g. '
                              'train_val,train_val_test, val_test, val_test_constraint ')
     # Additional training params
@@ -65,7 +65,7 @@ def argparse_default(description=None):
     parser.add_argument("--dnf_predicates", type=list, default=None,
                         help="Predicates in Disjunctive normal form to select only valid triples on the fly."
                              "[('relation', '=','<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>')]")
-    parser.add_argument("--num_core", type=int, default=0, help='Number of cores to be used. 0=> use all cpus')
+    parser.add_argument("--num_core", type=int, default=1, help='Number of cores to be used. 0=> use all cpus')
 
     parser.add_argument("--seed_for_computation", type=int, default=0, help='Seed for all, see pl seed_everything().')
     parser.add_argument("--sample_triples_ratio", type=float, default=None, help='Sample input data.')

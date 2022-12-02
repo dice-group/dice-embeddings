@@ -14,7 +14,7 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
     """ Data Class for creating train/val/test datasets depending on the training strategy chosen """
 
     def __init__(self, train_set_idx, entity_to_idx, relation_to_idx, batch_size, form,
-                 num_workers=32, valid_set_idx=None, test_set_idx=None, neg_sample_ratio=None,
+                 num_workers=None, valid_set_idx=None, test_set_idx=None, neg_sample_ratio=None,
                  label_smoothing_rate=None):
         super().__init__()
         assert isinstance(train_set_idx, np.ndarray)
@@ -40,7 +40,6 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
         self.batch_size = batch_size
         self.num_workers = num_workers
 
-        print('Number of workers will be used at batching:', self.num_workers)
         self.neg_sample_ratio = neg_sample_ratio
         self.label_smoothing_rate = label_smoothing_rate
 

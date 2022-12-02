@@ -40,8 +40,6 @@ class TorchTrainer(AbstractTrainer):
                                                   collate_fn=dataset.collate_fn)
 
         num_total_batches = len(data_loader)
-        print_period = max(num_total_batches // 10, 1)
-        print(f'Number of batches for an epoch:{num_total_batches}\t printing period:{print_period}')
         for epoch in (pbar := tqdm(range(self.attributes['max_epochs']), file=sys.stdout)):
             epoch_loss = 0
             start_time = time.time()
