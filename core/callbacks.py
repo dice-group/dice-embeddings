@@ -7,6 +7,17 @@ from pytorch_lightning.callbacks import Callback
 from .static_funcs import store_kge
 from typing import Optional
 import os
+import pandas as pd
+
+
+class AccumulateEpochLossCallback(Callback):
+    def __init__(self, path: str):
+        super().__init__()
+        self.path = path
+
+    def on_fit_end(self, trainer, model):
+        # Store into disk
+        pd.DataFrame(model.loss_history, columns=['EpochLoss']).to_csv(f'{self.path}/epoch_losses.csv')
 
 
 class PrintCallback(Callback):
@@ -104,10 +115,26 @@ class PolyakCallback(Callback):
         pass
 
     def on_train_epoch_end(self, trainer, model):
-        # (1) Polyak Save Condition
-        if self.epoch_counter > self.polyak_starts:
-            torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_{str(self.epoch_counter)}.pt")
-        self.epoch_counter += 1
+        if len(model.loss_history) < 20:
+            return
+        else:
+            mva_20 = np.mean(model.loss_history[-20:])
+            mva_10 = np.mean(model.loss_history[-10:])
+            mva_5 = np.mean(model.loss_history[-5:])
+            last = model.loss_history[-1]
+
+            if mva_5 - last < mva_10 - last < mva_20 - last:
+                # We are still going down in the hill
+                pass
+            else:
+                # We see to converge. Start taking snapshots
+                print('SAVE...')
+                torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_{str(self.epoch_counter)}.pt")
+                self.epoch_counter += 1
+            # (1) Polyak Save Condition
+            # if self.epoch_counter > self.polyak_starts:
+            #    torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_{str(self.epoch_counter)}.pt")
+            # self.epoch_counter += 1
 
     def on_fit_end(self, trainer, model):
         """ END:Called """

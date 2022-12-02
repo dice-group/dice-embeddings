@@ -3,11 +3,11 @@ import pytorch_lightning as pl
 
 from core.models.base_model import BaseKGE
 from core.static_funcs import select_model, model_fitting
-from core.callbacks import PrintCallback, KGESaveCallback, PseudoLabellingCallback, PolyakCallback
+from core.callbacks import PrintCallback, KGESaveCallback, PseudoLabellingCallback, PolyakCallback, \
+    AccumulateEpochLossCallback
 from core.dataset_classes import StandardDataModule
 from .torch_data_parallel import TorchTrainer
 from .torch_dist_data_parallel import TorchDDPTrainer
-
 import os
 import torch
 import numpy as np
@@ -30,21 +30,24 @@ def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
         else:
             print('Initialize TorchTrainer CPU Trainer')
             return TorchTrainer(args, callbacks=callbacks)
-    else:
+    elif args.trainer == 'PL':
         print('Initialize Pytorch-lightning Trainer')
         # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
         return pl.Trainer.from_argparse_args(args,
                                              strategy=DDPStrategy(find_unused_parameters=False),
                                              plugins=plugins, callbacks=callbacks)
+    else:
+        print('Initialize TorchTrainer CPU Trainer')
+        return TorchTrainer(args, callbacks=callbacks)
 
-
-# @TODO: Move the static
 def get_callbacks(args):
     callbacks = [PrintCallback(),
                  KGESaveCallback(every_x_epoch=args.save_model_at_every_epoch,
                                  max_epochs=args.max_epochs,
                                  path=args.full_storage_path),
-                 pl.callbacks.ModelSummary(max_depth=-1)]
+                 pl.callbacks.ModelSummary(max_depth=-1),
+                 AccumulateEpochLossCallback(path=args.full_storage_path)
+                 ]
     for i in args.callbacks:
         if i == 'Polyak':
             callbacks.append(PolyakCallback(max_epochs=args.max_epochs, path=args.full_storage_path))
@@ -69,6 +72,10 @@ class DICE_Trainer:
         self.storage_path = self.executor.storage_path
         # Required for CV.
         self.evaluator = evaluator
+        print(f'# of CPUs:{os.cpu_count()} | # of GPUs:{torch.cuda.device_count()} | # of CPUs for dataloader:{self.args.num_core}')
+
+        for i in range(torch.cuda.device_count()):
+            print(torch.cuda.get_device_name(i))
 
     def training_process(self) -> BaseKGE:
         """
@@ -96,7 +103,6 @@ class DICE_Trainer:
 
     def train(self):  # -> Tuple[BaseKGE, str]:
         """ Train selected model via the selected training strategy """
-        print("Train selected model via the selected training strategy ")
         if self.args.num_folds_for_cv >= 2:
             return self.k_fold_cross_validation()
         else:
@@ -128,7 +134,7 @@ class DICE_Trainer:
         # (1) Select model and labelling : Entity Prediction or Relation Prediction.
         model, form_of_labelling = select_model(vars(self.args), self.executor.is_continual_training,
                                                 self.executor.storage_path)
-        print(f'KvsAll training starts: {model.name}')  # -labeling:{form_of_labelling}')
+        print(f'KvsAll training starts: {model.name}')
         # (2) Create training data.
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,

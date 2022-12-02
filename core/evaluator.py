@@ -2,20 +2,15 @@ import torch
 import numpy as np
 import json
 from tqdm import tqdm
-
+import sys
 
 class Evaluator:
     def __init__(self, executor):
         self.executor = executor
         self.report = dict()
 
-    def eval(self, trained_model, form_of_labelling) -> None:
-        """
-        Evaluate model with Standard
-        :param form_of_labelling:
-        :param trained_model:
-        :return:
-        """
+    def __vocab_preparation(self):
+
         if isinstance(self.executor.dataset.er_vocab, dict):
             pass
         else:
@@ -36,13 +31,22 @@ class Evaluator:
         else:
             try:
                 self.executor.dataset.domain_constraints_per_rel, self.executor.dataset.range_constraints_per_rel = self.executor.dataset.constraints.result()
-            except:
+            except RuntimeError:
                 print('Domain constraint exception occurred')
-                pass
 
-        print('Evaluation Starts.')
+    def eval(self, trained_model, form_of_labelling) -> None:
+        """
+        Evaluate model with Standard
+        :param form_of_labelling:
+        :param trained_model:
+        :return:
+        """
+        # (1) Exit, if the flag is not set
         if self.executor.args.eval_model is None:
             return
+
+        self.__vocab_preparation()
+        print('Evaluation Starts.')
         if self.executor.args.num_folds_for_cv > 1:
             # the evaluation must have done in the training part
             return
@@ -146,7 +150,7 @@ class Evaluator:
         else:
             # TODO: Why do not we use Pytorch Dataset ? for multiprocessing
             # Iterate over integer indexed triples in mini batch fashion
-            for i in (pbar := tqdm(range(0, len(triple_idx), self.executor.args.batch_size))):
+            for i in (pbar := tqdm(range(0, len(triple_idx), self.executor.args.batch_size),file=sys.stdout)):
                 data_batch = triple_idx[i:i + self.executor.args.batch_size]
                 e1_idx_r_idx, e2_idx = torch.LongTensor(data_batch[:, [0, 1]]), torch.tensor(data_batch[:, 2])
                 with torch.no_grad():
@@ -177,6 +181,7 @@ class Evaluator:
 
         results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10, 'MRR': mean_reciprocal_rank}
         if info:
+            print(info)
             print(results)
         return results
 
