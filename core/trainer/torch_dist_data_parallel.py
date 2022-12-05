@@ -126,6 +126,7 @@ class Trainer:
             pbar.update(1)
 
             if self.gpu_id == 0:
+                self.model.module.loss_history.append(epoch_loss)
                 for c in self.callbacks:
                     c.on_train_epoch_end(None, self.model.module)
 
