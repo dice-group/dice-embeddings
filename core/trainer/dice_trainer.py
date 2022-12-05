@@ -16,6 +16,7 @@ from pytorch_lightning.strategies import DDPStrategy
 from core.helper_classes import LabelRelaxationLoss, BatchRelaxedvsAllLoss
 import pandas as pd
 from sklearn.model_selection import KFold
+import copy
 
 
 def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
@@ -39,6 +40,7 @@ def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     else:
         print('Initialize TorchTrainer CPU Trainer')
         return TorchTrainer(args, callbacks=callbacks)
+
 
 def get_callbacks(args):
     callbacks = [PrintCallback(),
@@ -72,7 +74,8 @@ class DICE_Trainer:
         self.storage_path = self.executor.storage_path
         # Required for CV.
         self.evaluator = evaluator
-        print(f'# of CPUs:{os.cpu_count()} | # of GPUs:{torch.cuda.device_count()} | # of CPUs for dataloader:{self.args.num_core}')
+        print(
+            f'# of CPUs:{os.cpu_count()} | # of GPUs:{torch.cuda.device_count()} | # of CPUs for dataloader:{self.args.num_core}')
 
         for i in range(torch.cuda.device_count()):
             print(torch.cuda.get_device_name(i))
@@ -91,8 +94,8 @@ class DICE_Trainer:
         self.executor.report['num_entities'] = self.executor.dataset.num_entities
         self.executor.report['num_relations'] = self.executor.dataset.num_relations
         print('------------------- Train & Eval -------------------')
-        # (2) Initialize trainer
-        self.trainer = initialize_trainer(self.args, callbacks=get_callbacks(self.args), plugins=[])
+        ## (2) Initialize trainer
+        # self.trainer = initialize_trainer(self.args, callbacks=get_callbacks(self.args), plugins=[])
         # (3) Use (2) to train a KGE model
         trained_model, form_of_labelling = self.train()
         # (5) Return trained model
@@ -106,6 +109,7 @@ class DICE_Trainer:
         if self.args.num_folds_for_cv >= 2:
             return self.k_fold_cross_validation()
         else:
+            self.trainer = initialize_trainer(self.args, callbacks=get_callbacks(self.args), plugins=[])
             if self.args.scoring_technique == 'NegSample':
                 return self.training_negative_sampling()
             elif self.args.scoring_technique == 'KvsAll':
@@ -321,11 +325,13 @@ class DICE_Trainer:
         kf = KFold(n_splits=self.args.num_folds_for_cv, shuffle=True, random_state=1)
         model = None
         eval_folds = []
+
         for (ith, (train_index, test_index)) in enumerate(kf.split(self.dataset.train_set)):
-            # trainer = pl.Trainer.from_argparse_args(self.args)
-            trainer = initialize_trainer(self.args, get_callbacks(self.args), plugins=[])
-            model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
-            print(f'{form_of_labelling} training starts: {model.name}')  # -labeling:{form_of_labelling}')
+            # Need to create a new copy for the callbacks
+            args = copy.copy(self.args)
+            trainer = initialize_trainer(args, get_callbacks(args), plugins=[])
+            model, form_of_labelling = select_model(vars(args), self.is_continual_training, self.storage_path)
+            print(f'{form_of_labelling} training starts: {model.name}')
 
             train_set_for_i_th_fold, test_set_for_i_th_fold = self.dataset.train_set[train_index], \
                                                               self.dataset.train_set[
