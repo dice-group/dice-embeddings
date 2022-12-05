@@ -28,7 +28,7 @@ def argparse_default(description=None):
     parser.add_argument('--callbacks',
                         '--list',
                         nargs='+',
-                        default=[],#['Polyak'],
+                        default=['Polyak'],
                         help='List of tuples representing a callback and values')
     parser.add_argument("--backend", type=str, default='pandas',
                         help='Select [modin, pandas]')
@@ -56,20 +56,25 @@ def argparse_default(description=None):
                         help='At every X number of epochs model will be saved. If None, we save 4 times.')
     parser.add_argument("--label_smoothing_rate", type=float, default=None, help='None for not using it.')
     parser.add_argument("--label_relaxation_rate", type=float, default=None, help='None for not using it.')
-    parser.add_argument("--add_noise_rate", type=float, default=None, help='None for not using it. '
-                                                                           '.1 means extend train data by adding 10% random data')
 
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
     parser.add_argument("--num_of_output_channels", type=int, default=3, help="# of output channels in convolution")
 
+    # @TODO: Do we still need it
     parser.add_argument("--dnf_predicates", type=list, default=None,
                         help="Predicates in Disjunctive normal form to select only valid triples on the fly."
                              "[('relation', '=','<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>')]")
-    parser.add_argument("--num_core", type=int, default=1, help='Number of cores to be used. 0=> use all cpus')
+    # @TODO: Do we still need it
+    parser.add_argument("--add_noise_rate", type=float, default=None, help='None for not using it. '
+                                                                           '.1 means extend train data by adding 10% random data')
+
+    parser.add_argument("--num_core", type=int, default=0, help='Number of cores to be used. 0=> use all cpus')
 
     parser.add_argument("--seed_for_computation", type=int, default=0, help='Seed for all, see pl seed_everything().')
+    # @TODO: Do we still need it
     parser.add_argument("--sample_triples_ratio", type=float, default=None, help='Sample input data.')
     parser.add_argument("--read_only_few", type=int, default=None, help='READ only first N triples. If 0, read all.')
+    # @TODO: Do we still need it
     parser.add_argument("--min_freq_for_vocab", type=int, default=None,
                         help='Min number of triples for a vocab term to be considered')
 
