@@ -3,11 +3,10 @@ import pytorch_lightning as pl
 
 from core.models.base_model import BaseKGE
 from core.static_funcs import select_model, model_fitting
-from core.callbacks import PrintCallback, KGESaveCallback, PseudoLabellingCallback, PolyakCallback, \
-    AccumulateEpochLossCallback
+from core.callbacks import *
 from core.dataset_classes import StandardDataModule
-from .torch_data_parallel import TorchTrainer
-from .torch_dist_data_parallel import TorchDDPTrainer
+from .torch_trainer import TorchTrainer
+from .torch_trainer_ddp import TorchDDPTrainer
 import os
 import torch
 import numpy as np
@@ -22,6 +21,7 @@ import copy
 def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     """ Initialize Trainer from input arguments """
     if args.trainer == 'torchCPUTrainer':
+        # @TODO: rename torchCPUTrainer to torchTrainer
         print('Initialize TorchTrainer CPU Trainer')
         return TorchTrainer(args, callbacks=callbacks)
     elif args.trainer == 'torchDDP':
@@ -53,6 +53,10 @@ def get_callbacks(args):
     for i in args.callbacks:
         if i == 'Polyak':
             callbacks.append(PolyakCallback(max_epochs=args.max_epochs, path=args.full_storage_path))
+        elif i == 'Relax':
+            callbacks.append(RelaxCallback(max_epochs=args.max_epochs, path=args.full_storage_path))
+        elif i == 'DropIn':
+            callbacks.append(DropIn(args=args))
     return callbacks
 
 

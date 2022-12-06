@@ -7,17 +7,22 @@ from tqdm import tqdm
 import time
 import sys
 
+
 class TorchTrainer(AbstractTrainer):
     def __init__(self, args, callbacks):
         super().__init__(args, callbacks)
         self.use_closure = None
-        self.device = torch.device("cpu")
         self.loss_function = None
         self.optimizer = None
         self.model = None
         self.is_global_zero = True
         torch.manual_seed(self.attributes.seed_for_computation)
         torch.cuda.manual_seed_all(self.attributes.seed_for_computation)
+
+        if self.attributes.gpus:
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        else:
+            self.device = 'cpu'
 
     def fit(self, *args, **kwargs):
         assert len(args) == 1
@@ -28,7 +33,7 @@ class TorchTrainer(AbstractTrainer):
         dataset = kwargs['train_dataloaders'].dataset
         self.loss_function = model.loss_function
         self.optimizer = self.model.configure_optimizers()
-        self.on_fit_start(self,self.model)
+        self.on_fit_start(self, self.model)
 
         if isinstance(self.optimizer, Sls) or isinstance(self.optimizer, AdamSLS):
             self.use_closure = True
