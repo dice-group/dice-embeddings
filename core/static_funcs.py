@@ -150,8 +150,9 @@ def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
 
 def model_fitting(trainer, model, train_dataloaders) -> None:
     """ Standard Pytorch Lightning model fitting """
-    assert trainer.max_epochs == trainer.min_epochs
-    print(f'NumOfEpochs:{trainer.max_epochs} | LearningRate:{model.learning_rate} | BatchSize:{trainer.batch_size} | EpochBatchsize:{len(train_dataloaders)}')
+    assert trainer.attributes.max_epochs == trainer.attributes.min_epochs
+    print(
+        f'NumOfEpochs:{trainer.attributes.max_epochs} | LearningRate:{model.learning_rate} | BatchSize:{trainer.attributes.batch_size} | EpochBatchsize:{len(train_dataloaders)}')
     trainer.fit(model, train_dataloaders=train_dataloaders)
     print(f'Model fitting is done!')
 
@@ -502,6 +503,9 @@ def performance_debugger(func_name):
 
 def preprocesses_input_args(arg):
     """ Sanity Checking in input arguments """
+    if len(arg.callbacks) > 0:
+        for i in arg.callbacks:
+            assert i in ['DropIn', 'Polyak', 'Relax']
     # To update the default value of Trainer in pytorch-lightnings
     arg.max_epochs = arg.num_epochs
     arg.min_epochs = arg.num_epochs

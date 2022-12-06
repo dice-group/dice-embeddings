@@ -8,7 +8,7 @@ def argparse_default(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Dataset and storage related
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Family',
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/KINSHIP',
                         help="The path of a folder containing input data")
     parser.add_argument("--save_embeddings_as_csv", type=bool, default=False,
                         help='A flag for saving embeddings in csv file.')
@@ -21,14 +21,14 @@ def argparse_default(description=None):
                              "Shallom, ConEx, ComplEx, DistMult, TransE, CLf")
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[Adan,NAdam, Adam, SGD, Sls, AdamSLS]')
-    parser.add_argument('--embedding_dim', type=int, default=256, help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
+    parser.add_argument('--embedding_dim', type=int, default=64, help='Number of dimensions for an embedding vector. ')
+    parser.add_argument("--num_epochs", type=int, default=200, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument('--callbacks',
                         '--list',
                         nargs='+',
-                        default=[], #['Polyak'],
+                        default=[],  # ['Relax'],  # ['Polyak']
                         help='List of tuples representing a callback and values')
     parser.add_argument("--backend", type=str, default='pandas',
                         help='Select [modin, pandas]')
@@ -47,7 +47,7 @@ def argparse_default(description=None):
     parser.add_argument("--normalization", type=str, default="BatchNorm1d", help="LayerNorm, BatchNorm1d")
     # Flags for computation
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
-                                                                         'If >2 ,no evaluation scenario is applied implies no evaluation.')
+                                                                        'If >2 ,no evaluation scenario is applied implies no evaluation.')
     parser.add_argument("--eval_model", type=str, default="train_val_test",
                         help='train, val, test, constraint, combine them anyway you want, e.g. '
                              'train_val,train_val_test, val_test, val_test_constraint ')

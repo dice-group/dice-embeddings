@@ -1,10 +1,11 @@
 # 1. Create Pytorch-lightning Trainer object from input configuration
+import copy
 import datetime
 import time
 import numpy as np
 import torch
 from pytorch_lightning.callbacks import Callback
-from .static_funcs import store_kge
+from .static_funcs import store_kge, intialize_model
 from typing import Optional
 import os
 import pandas as pd
@@ -104,6 +105,84 @@ class PseudoLabellingCallback(Callback):
         model.train()
 
 
+def estimate_q(eps):
+    """
+    estimate rate of convergence q from sequence esp
+    """
+    x = np.arange(len(eps) - 1)
+    y = np.log(np.abs(np.diff(np.log(eps))))
+    line = np.polyfit(x, y, 1)  # fit degree 1 polynomial
+    q = np.exp(line[0])  # find q
+    return q
+
+
+def compute_convergence(seq, i):
+    assert len(seq) >= i > 0
+
+    return estimate_q(seq[-i:] / (np.arange(i) + 1))
+
+
+class RelaxCallback(Callback):
+    def __init__(self, *, path: str, max_epochs: int):
+        super().__init__()
+        self.epoch_counter = 0
+        self.max_epochs = max_epochs
+        self.start_epoch = max_epochs // 2
+        self.ma_start_limit = 20
+        self.path = path
+        self.epoch_losses = []
+
+    def on_fit_start(self, trainer, pl_module):
+        pass
+
+    def on_train_epoch_end(self, trainer, model):
+        self.epoch_counter += 1
+        # (1) Start recording epoch losses
+        self.epoch_losses.append(model.loss_history[-1])
+        # (3) Check whether we can compute ma 20
+        if len(self.epoch_losses) < self.ma_start_limit:
+            return
+        mva_20 = np.mean(self.epoch_losses[-self.ma_start_limit:])
+        mva_10 = np.mean(self.epoch_losses[-self.ma_start_limit//2:])
+        mva_5 = np.mean(self.epoch_losses[-self.ma_start_limit//4:])
+        last = model.loss_history[-1]
+
+        if mva_5 - last < mva_10 - last < mva_20 - last:
+            # We are still going down in the hill
+            pass
+        else:
+            # We see to converge. Start taking snapshots
+            print(
+                f'SAVE...\t mva_5 - last {mva_5 - last}\tmva_10 - last {mva_10 - last}\tmva_20 - last {mva_20 - last}')
+            torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_{str(self.epoch_counter)}.pt")
+            # Forget the first epoch loss
+            self.epoch_losses.pop()
+
+    def on_fit_end(self, trainer, model):
+        """ END:Called """
+        print('Perform Averaged on', end='')
+        # (1) Set in eval model
+        model.eval()
+        model.to('cpu')
+        last_state = model.state_dict()
+        counter = 1.0
+        num_models = 0
+        # (2) Accumulate weights
+        for i in os.listdir(self.path):
+            if '.pt' in i:
+                num_models += 1
+                counter += 1
+                for k, v in torch.load(f'{self.path}/{i}', map_location=torch.device('cpu')).items():
+                    last_state[k] += v
+        # (3) Average (2)
+        for k, v in last_state.items():
+            if v.dtype != torch.int64:
+                last_state[k] /= counter
+        # (4) Set (3)
+        model.load_state_dict(last_state)
+        print(f' {num_models} number of models')
+
+
 class PolyakCallback(Callback):
     def __init__(self, *, path: str, max_epochs: int, polyak_start_ratio=0.75):
         super().__init__()
@@ -138,15 +217,17 @@ class PolyakCallback(Callback):
 
     def on_fit_end(self, trainer, model):
         """ END:Called """
-        print('Perform Polyak on weights stored in disk')
+        print('Perform Polyak Averaged on', end='')
         # (1) Set in eval model
         model.eval()
         model.to('cpu')
         last_state = model.state_dict()
         counter = 1.0
+        num_models = 0
         # (2) Accumulate weights
         for i in os.listdir(self.path):
             if '.pt' in i:
+                num_models += 1
                 counter += 1
                 for k, v in torch.load(f'{self.path}/{i}', map_location=torch.device('cpu')).items():
                     last_state[k] += v
@@ -156,6 +237,7 @@ class PolyakCallback(Callback):
                 last_state[k] /= counter
         # (4) Set (3)
         model.load_state_dict(last_state)
+        print(f' {num_models} number of models')
 
 
 # https://pytorch-lightning.readthedocs.io/en/stable/extensions/callbacks.html#persisting-state
