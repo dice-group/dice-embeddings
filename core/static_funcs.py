@@ -522,7 +522,7 @@ def preprocesses_input_args(arg):
     arg.check_val_every_n_epoch = 10 ** 6  # ,i.e., no eval
     arg.logger = False
     try:
-        assert arg.eval_model in [None, 'train', 'val', 'test', 'train_val', 'train_test', 'val_test', 'train_val_test']
+        assert arg.eval_model in ['None', 'train', 'val', 'test', 'train_val', 'train_test', 'val_test', 'train_val_test']
     except KeyError:
         print(arg.eval_model)
         exit(1)
@@ -945,45 +945,3 @@ def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
     print(print_into)
     vocab_to_idx.to_parquet(path_for_serialization + f'/{name}', compression='gzip', engine='pyarrow')
     print('Done !\n')
-
-
-def dask_remove_triples_with_condition(dask_kg_dataframe,  # ,: dask.dataframe.core.DataFrame,
-                                       min_freq_for_vocab: int = None):  # -> dask.dataframe.core.DataFrame:
-    """
-    Remove rows/triples from an input dataframe
-    """
-    raise NotImplementedError
-    """
-    assert isinstance(dask_kg_dataframe, dask.dataframe.core.DataFrame)
-    if min_freq_for_vocab is not None:
-        assert isinstance(min_freq_for_vocab, int)
-        assert min_freq_for_vocab > 0
-        print(
-            f'Dropping triples having infrequent entities or relations (>{min_freq_for_vocab})...',
-            end=' ')
-        num_triples = dask_kg_dataframe.size.compute()
-        print('Total num triples:', num_triples, end=' ')
-        # Compute entity frequency: index is URI, val is number of occurrences.
-        entity_frequency = dd.concat([dask_kg_dataframe['subject'], dask_kg_dataframe['object']],
-                                     ignore_index=True).value_counts().compute()
-        relation_frequency = dask_kg_dataframe['relation'].value_counts().compute()
-        # low_frequency_entities index and values are the same URIs: dask.dataframe.core.DataFrame
-        low_frequency_entities = entity_frequency[
-            entity_frequency <= min_freq_for_vocab].index.values
-        low_frequency_relation = relation_frequency[
-            relation_frequency <= min_freq_for_vocab].index.values
-
-        # If triple contains subject that is in low_freq, set False do not select
-        dask_kg_dataframe = dask_kg_dataframe[~dask_kg_dataframe['subject'].isin(low_frequency_entities)]
-        # If triple contains object that is in low_freq, set False do not select
-        dask_kg_dataframe = dask_kg_dataframe[~dask_kg_dataframe['object'].isin(low_frequency_entities)]
-        # If triple contains relation that is in low_freq, set False do not select
-        dask_kg_dataframe = dask_kg_dataframe[~dask_kg_dataframe['relation'].isin(low_frequency_relation)]
-        # print('\t after dropping:', df_str_kg.size.compute(scheduler=scheduler_flag))
-        print('\t after dropping:', dask_kg_dataframe.size.compute())
-        print('Done !')
-        return dask_kg_dataframe
-    else:
-        return dask_kg_dataframe
-    """
-    return None
