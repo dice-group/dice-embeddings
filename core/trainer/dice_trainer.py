@@ -53,10 +53,19 @@ def get_callbacks(args):
     for i in args.callbacks:
         if i == 'Polyak':
             callbacks.append(PolyakCallback(max_epochs=args.max_epochs, path=args.full_storage_path))
-        elif i == 'Relax':
-            callbacks.append(RelaxCallback(max_epochs=args.max_epochs, path=args.full_storage_path))
-        elif i == 'WA':
-            callbacks.append(WA(num_epochs=args.num_epochs, path=args.full_storage_path))
+        elif 'WA' in i:
+
+            if "WA" == i:
+                callbacks.append(WA(num_epochs=args.num_epochs, path=args.full_storage_path))
+            elif len(i) > 3:
+                name, param = i[:2], i[2:]
+                assert name=='WA'
+                assert int(param)
+                callbacks.append(PWA(num_epochs=args.num_epochs,
+                                     path=args.full_storage_path,
+                                     last_percent_to_consider=int(param)))
+            else:
+                raise KeyError
     return callbacks
 
 

@@ -11,11 +11,11 @@ do
   kg_path="$main_wd/KGs/$kgname"
   for model in "DistMult"
   do
-    for epoch in 20
+    for epoch in 1
     do
       for dim in 256
       do
-        for callback in "Polyak"
+        for callback in "" "Polyak"
           do
           # shellcheck disable=SC2154
           config_name="$kgname-$model-$epoch-$dim-$callback"

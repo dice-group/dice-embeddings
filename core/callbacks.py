@@ -106,9 +106,7 @@ class PseudoLabellingCallback(Callback):
 
 
 def estimate_q(eps):
-    """
-    estimate rate of convergence q from sequence esp
-    """
+    """ estimate rate of convergence q from sequence esp"""
     x = np.arange(len(eps) - 1)
     y = np.log(np.abs(np.diff(np.log(eps))))
     line = np.polyfit(x, y, 1)  # fit degree 1 polynomial
@@ -118,73 +116,46 @@ def estimate_q(eps):
 
 def compute_convergence(seq, i):
     assert len(seq) >= i > 0
-
     return estimate_q(seq[-i:] / (np.arange(i) + 1))
 
 
-class RelaxCallback(Callback):
-    def __init__(self, *, path: str, max_epochs: int):
-        super().__init__()
-        self.epoch_counter = 0
-        self.max_epochs = max_epochs
-        self.start_epoch = max_epochs // 2
-        self.ma_start_limit = 20
-        self.path = path
-        self.epoch_losses = []
+class PWA(Callback):
+    """ A callback for maintaining a parametrized running average of parameters"""
 
-    def on_fit_start(self, trainer, pl_module):
-        pass
+    def __init__(self, num_epochs, path, last_percent_to_consider):
+        super().__init__()
+        self.num_epochs = num_epochs
+        self.path = path
+        self.epoch_counter = 0
+        self.sample_counter = 0
+        # e.g. Average only last 10 percent
+        self.epoch_to_start = self.num_epochs - int(self.num_epochs / last_percent_to_consider)
+
+    def on_fit_start(self, trainer, model):
+        torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_main.pt")
 
     def on_train_epoch_end(self, trainer, model):
         self.epoch_counter += 1
-        # (1) Start recording epoch losses
-        self.epoch_losses.append(model.loss_history[-1])
-        # (3) Check whether we can compute ma 20
-        if len(self.epoch_losses) < self.ma_start_limit:
-            return
-        mva_20 = np.mean(self.epoch_losses[-self.ma_start_limit:])
-        mva_10 = np.mean(self.epoch_losses[-self.ma_start_limit // 2:])
-        mva_5 = np.mean(self.epoch_losses[-self.ma_start_limit // 4:])
-        last = model.loss_history[-1]
-
-        if mva_5 - last < mva_10 - last < mva_20 - last:
-            # We are still going down in the hill
-            pass
-        else:
-            # We see to converge. Start taking snapshots
-            print(
-                f'SAVE...\t mva_5 - last {mva_5 - last}\tmva_10 - last {mva_10 - last}\tmva_20 - last {mva_20 - last}')
-            torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_{str(self.epoch_counter)}.pt")
-            # Forget the first epoch loss
-            self.epoch_losses.pop()
+        if self.epoch_to_start < self.epoch_counter:
+            # Load averaged model
+            x = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device('cpu'))
+            device_of_training = model.device
+            model.to('cpu')
+            # Update the model
+            for k, v in model.state_dict().items():
+                x[k] = (x[k] * self.sample_counter + v) / (self.sample_counter + 1)
+            # Store the model
+            torch.save(x, f=f"{self.path}/trainer_checkpoint_main.pt")
+            model.to(device_of_training)
+            self.sample_counter += 1
 
     def on_fit_end(self, trainer, model):
         """ END:Called """
-        print('Perform Averaged on', end='')
-        # (1) Set in eval model
-        model.eval()
-        model.to('cpu')
-        last_state = model.state_dict()
-        counter = 1.0
-        num_models = 0
-        # (2) Accumulate weights
-        for i in os.listdir(self.path):
-            if '.pt' in i:
-                num_models += 1
-                counter += 1
-                for k, v in torch.load(f'{self.path}/{i}', map_location=torch.device('cpu')).items():
-                    last_state[k] += v
-        # (3) Average (2)
-        for k, v in last_state.items():
-            if v.dtype != torch.int64:
-                last_state[k] /= counter
-        # (4) Set (3)
-        model.load_state_dict(last_state)
-        print(f' {num_models} number of models')
+        model.load_state_dict(torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device('cpu')))
 
 
 class WA(Callback):
-    """ Running weight averaging"""
+    """ A callback for maintaining a running average of parameters"""
 
     def __init__(self, num_epochs, path):
         super().__init__()
@@ -199,7 +170,7 @@ class WA(Callback):
         self.epoch_counter += 1
         # Load averaged model
         x = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device('cpu'))
-        device_of_training=model.get_device()
+        device_of_training = model.device
         model.to('cpu')
         # Update the model
         for k, v in model.state_dict().items():
