@@ -9,7 +9,7 @@ import pandas
 import pandas as pd
 from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_re_vocab, \
     create_recipriocal_triples, add_noisy_triples, index_triples, load_data_parallel, create_constraints, \
-    numpy_data_type_changer, vocab_to_parquet, preprocess_dataframe_of_kg, dask_remove_triples_with_condition
+    numpy_data_type_changer, vocab_to_parquet, preprocess_dataframe_of_kg
 from .sanity_checkers import dataset_sanity_checking
 import glob
 import pyarrow.parquet as pq

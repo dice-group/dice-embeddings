@@ -22,6 +22,7 @@ class TestRegressionDistMult:
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.seed_for_computation = 1
+        args.num_folds_for_cv = 0
         args.min_freq_for_vocab = None
         args.trainer = 'torchCPUTrainer'
         args.normalization = 'LayerNorm'
@@ -47,6 +48,7 @@ class TestRegressionDistMult:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.seed_for_computation = 1
+        args.num_folds_for_cv = 0
         args.min_freq_for_vocab = None
         args.normalization = 'LayerNorm'
         args.trainer = 'torchCPUTrainer'

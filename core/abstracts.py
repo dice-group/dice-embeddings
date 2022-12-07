@@ -8,15 +8,15 @@ import pandas as pd
 
 class AbstractTrainer:
     def __init__(self, args, callbacks):
-        self.attributes = vars(args)
-        self.attributes['callbacks'] = callbacks
-        self.attributes['is_global_zero'] = True
+        self.attributes = args
+        self.callbacks = callbacks
+        self.is_global_zero = True
         # Set True to use Model summary callback of pl.
-        torch.manual_seed(self.seed_for_computation)
-        torch.cuda.manual_seed_all(self.seed_for_computation)
+        torch.manual_seed(self.attributes.seed_for_computation)
+        torch.cuda.manual_seed_all(self.attributes.seed_for_computation)
 
-    def __getattr__(self, attr):
-        return self.attributes[attr]
+    #def __getattr__(self, attr):
+    #    return self.attributes[attr]
 
     def on_fit_start(self, *args, **kwargs):
         """ """
