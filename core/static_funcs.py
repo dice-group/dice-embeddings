@@ -505,7 +505,7 @@ def preprocesses_input_args(arg):
     """ Sanity Checking in input arguments """
     if len(arg.callbacks) > 0:
         for i in arg.callbacks:
-            assert i in ['DropIn', 'Polyak', 'Relax']
+            assert i in ['WA', 'Polyak', 'Relax']
     # To update the default value of Trainer in pytorch-lightnings
     arg.max_epochs = arg.num_epochs
     arg.min_epochs = arg.num_epochs

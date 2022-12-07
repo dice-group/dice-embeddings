@@ -143,8 +143,8 @@ class RelaxCallback(Callback):
         if len(self.epoch_losses) < self.ma_start_limit:
             return
         mva_20 = np.mean(self.epoch_losses[-self.ma_start_limit:])
-        mva_10 = np.mean(self.epoch_losses[-self.ma_start_limit//2:])
-        mva_5 = np.mean(self.epoch_losses[-self.ma_start_limit//4:])
+        mva_10 = np.mean(self.epoch_losses[-self.ma_start_limit // 2:])
+        mva_5 = np.mean(self.epoch_losses[-self.ma_start_limit // 4:])
         last = model.loss_history[-1]
 
         if mva_5 - last < mva_10 - last < mva_20 - last:
@@ -183,6 +183,36 @@ class RelaxCallback(Callback):
         print(f' {num_models} number of models')
 
 
+class WA(Callback):
+    """ Running weight averaging"""
+
+    def __init__(self, num_epochs, path):
+        super().__init__()
+        self.num_epochs = num_epochs
+        self.path = path
+        self.epoch_counter = 0
+
+    def on_fit_start(self, trainer, model):
+        torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_main.pt")
+
+    def on_train_epoch_end(self, trainer, model):
+        self.epoch_counter += 1
+        # Load averaged model
+        x = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device('cpu'))
+        device_of_training=model.get_device()
+        model.to('cpu')
+        # Update the model
+        for k, v in model.state_dict().items():
+            x[k] = (x[k] * self.epoch_counter + v) / (self.epoch_counter + 1)
+        # Store the model
+        torch.save(x, f=f"{self.path}/trainer_checkpoint_main.pt")
+        model.to(device_of_training)
+
+    def on_fit_end(self, trainer, model):
+        """ END:Called """
+        model.load_state_dict(torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device('cpu')))
+
+
 class PolyakCallback(Callback):
     def __init__(self, *, path: str, max_epochs: int, polyak_start_ratio=0.75):
         super().__init__()
@@ -210,10 +240,6 @@ class PolyakCallback(Callback):
                 print('SAVE...')
                 torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_{str(self.epoch_counter)}.pt")
                 self.epoch_counter += 1
-            # (1) Polyak Save Condition
-            # if self.epoch_counter > self.polyak_starts:
-            #    torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_{str(self.epoch_counter)}.pt")
-            # self.epoch_counter += 1
 
     def on_fit_end(self, trainer, model):
         """ END:Called """

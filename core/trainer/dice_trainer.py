@@ -55,8 +55,8 @@ def get_callbacks(args):
             callbacks.append(PolyakCallback(max_epochs=args.max_epochs, path=args.full_storage_path))
         elif i == 'Relax':
             callbacks.append(RelaxCallback(max_epochs=args.max_epochs, path=args.full_storage_path))
-        elif i == 'DropIn':
-            callbacks.append(DropIn(args=args))
+        elif i == 'WA':
+            callbacks.append(WA(num_epochs=args.num_epochs, path=args.full_storage_path))
     return callbacks
 
 
