@@ -20,10 +20,16 @@ class DistMult(BaseKGE):
         # (2) Compute the score
         return (self.hidden_dropout(self.hidden_normalizer(head_ent_emb * rel_ent_emb)) * tail_ent_emb).sum(dim=1)
 
-    def forward_k_vs_all(self, x: torch.Tensor):
+    def forward_k_vs_all(self, x: torch.LongTensor):
         emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
         return torch.mm(self.hidden_dropout(self.hidden_normalizer(emb_head_real * emb_rel_real)),
                         self.entity_embeddings.weight.transpose(1, 0))
+
+    def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor):
+        emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
+        hr = self.hidden_dropout(self.hidden_normalizer(emb_head_real * emb_rel_real)).unsqueeze(1)
+        t = self.entity_embeddings(target_entity_idx).transpose(1, 2)
+        return torch.bmm(hr, t).squeeze(1)
 
 
 class TransE(BaseKGE):
@@ -107,6 +113,7 @@ class CLf(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'CLf'
+
     def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)

@@ -7,40 +7,46 @@ from tqdm import tqdm
 import time
 import sys
 
+
 class TorchTrainer(AbstractTrainer):
     def __init__(self, args, callbacks):
         super().__init__(args, callbacks)
         self.use_closure = None
-        self.device = torch.device("cpu")
         self.loss_function = None
         self.optimizer = None
         self.model = None
         self.is_global_zero = True
-        torch.manual_seed(self.seed_for_computation)
-        torch.cuda.manual_seed_all(self.seed_for_computation)
+        torch.manual_seed(self.attributes.seed_for_computation)
+        torch.cuda.manual_seed_all(self.attributes.seed_for_computation)
+
+        if self.attributes.gpus:
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        else:
+            self.device = 'cpu'
 
     def fit(self, *args, **kwargs):
         assert len(args) == 1
         model, = args
         self.model = model
         self.model.to(self.device)
-        self.on_fit_start(trainer=self, pl_module=self.model)
+
         dataset = kwargs['train_dataloaders'].dataset
         self.loss_function = model.loss_function
         self.optimizer = self.model.configure_optimizers()
+        self.on_fit_start(self, self.model)
 
         if isinstance(self.optimizer, Sls) or isinstance(self.optimizer, AdamSLS):
             self.use_closure = True
         else:
             self.use_closure = False
 
-        data_loader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size,
+        data_loader = torch.utils.data.DataLoader(dataset, batch_size=self.attributes.batch_size,
                                                   shuffle=True,
-                                                  num_workers=self.num_core,
+                                                  num_workers=self.attributes.num_core,
                                                   collate_fn=dataset.collate_fn)
 
         num_total_batches = len(data_loader)
-        for epoch in (pbar := tqdm(range(self.attributes['max_epochs']), file=sys.stdout)):
+        for epoch in (pbar := tqdm(range(self.attributes.max_epochs), file=sys.stdout)):
             epoch_loss = 0
             start_time = time.time()
             i: int

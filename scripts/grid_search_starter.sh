@@ -6,22 +6,21 @@ main_wd="$(cd "$PWD"; cd ..; pwd)"
 python_script_path="$main_wd/main.py"
 
 # shellcheck disable=SC2043
-for kgname in "UMLS" "KINSHIP"
+for kgname in "Family"
 do
   kg_path="$main_wd/KGs/$kgname"
-  for model in "QMult"
+  for model in "DistMult"
   do
-    for epoch in 100
+    for epoch in 1
     do
       for dim in 256
       do
-        for scoring_technique in 'PvsAll' 'CCvsAll'
+        for callback in "" "Polyak"
           do
           # shellcheck disable=SC2154
-          config_name="$kgname-$model-$epoch-$dim-$scoring_technique"
+          config_name="$kgname-$model-$epoch-$dim-$callback"
           echo "Running $config_name.log"
-          #/bin/bash "$PWD/config_runner.sh" "$python_script_path" "$kg_path" "$model" "$epoch" "$dim" > "$config_name.log"
-          python -u "$python_script_path" --path_dataset_folder "$kg_path" --model "$model" --num_epochs "$epoch" --embedding_dim "$dim" --scoring_technique "$scoring_technique" > "$config_name.log"
+          python -u "$python_script_path" --num_folds_for_cv 10 --callback "$callback" --path_dataset_folder "$kg_path" --model "$model" --num_epochs "$epoch" --embedding_dim "$dim" > "$config_name.log"
           echo "Done!"
           done
       done

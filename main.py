@@ -21,20 +21,20 @@ def argparse_default(description=None):
                              "Shallom, ConEx, ComplEx, DistMult, TransE, CLf")
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[Adan,NAdam, Adam, SGD, Sls, AdamSLS]')
-    parser.add_argument('--embedding_dim', type=int, default=256, help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=200, help='Number of epochs for training. ')
+    parser.add_argument('--embedding_dim', type=int, default=64, help='Number of dimensions for an embedding vector. ')
+    parser.add_argument("--num_epochs", type=int, default=400, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument('--callbacks',
                         '--list',
                         nargs='+',
-                        default=[],#['Polyak'],
+                        default=[],  # WA10, ["WA"],  # ['Polyak']
                         help='List of tuples representing a callback and values')
     parser.add_argument("--backend", type=str, default='pandas',
                         help='Select [modin, pandas]')
 
     parser.add_argument("--trainer", type=str, default='torchDDP',
-                        help='PL (pytorch lightning trainer), torchDDP (custom ddp) ,torchCPUTrainer (custom cpu only)')
+                        help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
     # Hyperparameters for training.
     parser.add_argument('--scoring_technique', default='KvsAll', help="KvsSample, 1vsAll, KvsAll, NegSample")
     parser.add_argument('--neg_ratio', type=int, default=0,
@@ -56,20 +56,25 @@ def argparse_default(description=None):
                         help='At every X number of epochs model will be saved. If None, we save 4 times.')
     parser.add_argument("--label_smoothing_rate", type=float, default=None, help='None for not using it.')
     parser.add_argument("--label_relaxation_rate", type=float, default=None, help='None for not using it.')
-    parser.add_argument("--add_noise_rate", type=float, default=None, help='None for not using it. '
-                                                                           '.1 means extend train data by adding 10% random data')
 
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
     parser.add_argument("--num_of_output_channels", type=int, default=3, help="# of output channels in convolution")
 
+    # @TODO: Do we still need it
     parser.add_argument("--dnf_predicates", type=list, default=None,
                         help="Predicates in Disjunctive normal form to select only valid triples on the fly."
                              "[('relation', '=','<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>')]")
-    parser.add_argument("--num_core", type=int, default=1, help='Number of cores to be used. 0=> use all cpus')
+    # @TODO: Do we still need it
+    parser.add_argument("--add_noise_rate", type=float, default=None, help='None for not using it. '
+                                                                           '.1 means extend train data by adding 10% random data')
+
+    parser.add_argument("--num_core", type=int, default=0, help='Number of cores to be used. 0=> use all cpus')
 
     parser.add_argument("--seed_for_computation", type=int, default=0, help='Seed for all, see pl seed_everything().')
+    # @TODO: Do we still need it
     parser.add_argument("--sample_triples_ratio", type=float, default=None, help='Sample input data.')
     parser.add_argument("--read_only_few", type=int, default=None, help='READ only first N triples. If 0, read all.')
+    # @TODO: Do we still need it
     parser.add_argument("--min_freq_for_vocab", type=int, default=None,
                         help='Min number of triples for a vocab term to be considered')
 
