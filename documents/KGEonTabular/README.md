@@ -22,15 +22,61 @@ python vectograph/main.py --tabularpath "california_wo_labels.csv" --kg_name "ca
 mkdir Example && mv california_wo_labels.nt Example/train.txt
 # (5) Generate Embeddings
 python dice-embeddings/main.py --path_dataset_folder "Example" --model "QMult" --embedding_dim 4 --num_epochs 1 --save_embeddings_as_csv True
-# e.g. 2022-12-06 16:27:18.133871 folder created
+# e.g. see Experiments folder
 # (6)
 python  regression.py --path_kg "Example/train.txt" --path_tabular_csv "california.csv" --path_entity_embeddings "Experiments/2022-12-06 16:27:18.133871/QMult_entity_embeddings.csv"
 ```
 ## Benchmarking
 
-#### 10FOLD CV results on California housing dataset (regression). ####
-|               |      MSE |
-|---------------|---------:|
-| Tabular       | 1090+-47 |
-| KGE           | 1653+-51 |
-| Tabular & KGE |  898+-22 | 
+### 10FOLD CV results on California housing dataset (regression). ####
+| Linear Regression | Mean Squared Error |
+|-------------------|-------------------:|
+| Tabular           |           1090+-47 |
+| KGE               |           1653+-51 |
+| Tabular & KGE     |            898+-22 | 
+
+#### Tabular 10Fold Detailed
+Tabular data:	X:(20640, 8) | y:(20640,)
+Linear Regression: results of 10 splits
+count      10.000000
+mean     1090.287544
+std        47.823181
+min      1023.775281
+25%      1063.200679
+50%      1093.047391
+75%      1107.809817
+max      1190.704755
+dtype: float64
+
+#### KGE 10Fold Detailed
+
+Tabular data:	X:(20640, 32) | y:(20640,)
+Linear Regression: results of 10 splits
+count      10.000000
+mean     1653.883685
+std        51.896592
+min      1571.634447
+25%      1627.806948
+50%      1656.219531
+75%      1666.211732
+max      1746.601478
+dtype: float64
+#### TABULAR & KGE 10Fold Detailed
+Tabular data:	X:(20640, 40) | y:(20640,)
+Linear Regression: results of 10 splits
+count     10.000000
+mean     898.226317
+std       22.614693
+min      866.631540
+25%      879.495965
+50%      896.230564
+75%      915.368515
+max      929.895093
+dtype: float64
+
+## 10FOLD CV results on TODO (binary classification). ####
+| Logistic Regression | Accuracy |
+|---------------------|---------:|
+| Tabular             |        ? |
+| KGE                 |        ? |
+| Tabular & KGE       |        ? | 
