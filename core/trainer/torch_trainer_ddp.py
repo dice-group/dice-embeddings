@@ -25,7 +25,7 @@ class TorchDDPTrainer(AbstractTrainer):
         assert len(args) == 1
         model, = args
         # (1) Fit start.
-        self.on_fit_start(trainer=self, pl_module=model)
+        self.on_fit_start(self,model)
         # nodes * gpus
         world_size = self.attributes.num_nodes * torch.cuda.device_count()
         train_dataset = kwargs['train_dataloaders'].dataset
@@ -36,7 +36,7 @@ class TorchDDPTrainer(AbstractTrainer):
                  )
         model.load_state_dict(torch.load("model.pt", map_location=torch.device('cpu')))
         os.remove('model.pt')
-        self.on_fit_end(None, model)
+        self.on_fit_end(self, model)
 
 def distributed_training(rank: int, world_size, model, train_dataset, callbacks, args):
     """

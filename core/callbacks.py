@@ -138,15 +138,15 @@ class PWA(Callback):
         self.epoch_counter += 1
         if self.epoch_to_start < self.epoch_counter:
             # Load averaged model
-            x = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device('cpu'))
             device_of_training = model.device
-            model.to('cpu')
-            # Update the model
-            for k, v in model.state_dict().items():
-                x[k] = (x[k] * self.sample_counter + v) / (self.sample_counter + 1)
+            x = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device(model.device))
+            
+            with torch.no_grad():
+                # Update the model
+                for k, v in model.state_dict().items():
+                    x[k] = (x[k] * self.sample_counter + v) / (self.sample_counter + 1)
             # Store the model
             torch.save(x, f=f"{self.path}/trainer_checkpoint_main.pt")
-            model.to(device_of_training)
             self.sample_counter += 1
 
     def on_fit_end(self, trainer, model):
