@@ -19,6 +19,36 @@ class KGE(BaseInteractiveKGE):
         super().__init__(path_of_pretrained_model_dir, construct_ensemble=construct_ensemble, model_name=model_name,
                          apply_semantic_constraint=apply_semantic_constraint)
 
+    def predict_conjunctive_query(self, entity: str, relations: list, k):
+        """ Return m given (a,r,b) \land (b,r_i,c) ... (c,r_k,m)  """
+        assert isinstance(entity, str)
+        assert isinstance(relations, list)
+        assert len(entity) >= 1
+        assert len(relations) >= 1
+
+        #print(entity)
+        #print(relations)
+        results = {entity}
+        # Iterate over relations
+        while relations:
+            r = relations.pop(0)
+
+            tail_entities = set()
+            # Iterative over entities
+            while results:
+                e = results.pop()
+                # answers =: topK(f(e,r,?))
+                _, str_tail_entities = self.predict_topk(head_entity=[e], relation=[r], k=k)
+
+                if isinstance(str_tail_entities,str):
+                    tail_entities.add(str_tail_entities)
+                else:
+                    tail_entities.update(set(str_tail_entities))
+            # Accumulate results
+            results.update(tail_entities)
+
+        return results
+
     def find_missing_triples(self, confidence: float, top: int = 10) -> set:
         assert 1.0 >= confidence >= 0.0
         assert top >= 1
