@@ -4,6 +4,7 @@ import json
 from tqdm import tqdm
 import sys
 
+
 class Evaluator:
     def __init__(self, executor):
         self.executor = executor
@@ -115,12 +116,11 @@ class Evaluator:
         """
         # (1) set model to eval model
         model.eval()
-        hits = []
         ranks = []
+        hits_range = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        hits = {i: [] for i in hits_range}
         if info:
             print(info + ':', end=' ')
-        for i in range(10):
-            hits.append([])
 
         # (2) Evaluation mode
         if form_of_labelling == 'RelationPrediction':
@@ -143,40 +143,51 @@ class Evaluator:
                     rank = torch.where(sort_idxs[j] == r_idx[j])[0].item()
                     ranks.append(rank + 1)
 
-                    for hits_level in range(10):
+                    for hits_level in hits_range:
                         if rank <= hits_level:
                             hits[hits_level].append(1.0)
 
         else:
             # TODO: Why do not we use Pytorch Dataset ? for multiprocessing
             # Iterate over integer indexed triples in mini batch fashion
-            for i in (pbar := tqdm(range(0, len(triple_idx), self.executor.args.batch_size),file=sys.stdout)):
+            for i in (pbar := tqdm(range(0, len(triple_idx), self.executor.args.batch_size), file=sys.stdout)):
+                # (1) Get a batch of data.
                 data_batch = triple_idx[i:i + self.executor.args.batch_size]
+                # (2) Extract entities and relations.
                 e1_idx_r_idx, e2_idx = torch.LongTensor(data_batch[:, [0, 1]]), torch.tensor(data_batch[:, 2])
+                # (3) Predict missing entities, i.e., assign probs to all entities.
                 with torch.no_grad():
                     predictions = model(e1_idx_r_idx)
-                # Filter entities except the target entity
+                # (4) Filter entities except the target entity
                 for j in range(data_batch.shape[0]):
-                    filt = self.executor.dataset.er_vocab[(data_batch[j][0], data_batch[j][1])]
-                    target_value = predictions[j, e2_idx[j]].item()
+                    # 4.1. Get the ids of the head entity, the relation and the target tail entity in the j.th triple.
+                    id_e, id_r, id_e_target = data_batch[j]
+                    # 4.2. Get all ids of all entities occurring with the head entity and relation extracted in 4.1.
+                    filt = self.executor.dataset.er_vocab[(id_e, id_r)]
+                    # 4.3. Store the assigned score of the target tail entity extracted in 4.1.
+                    target_value = predictions[j, id_e_target].item()
+                    # 4.4.1 Filter all assigned scores for entities.
                     predictions[j, filt] = -np.Inf
-                    # 3.3.1 Filter entities outside of the range
+                    # 4.4.2 Filter entities based on the range of a relation as well.
                     if 'constraint' in self.executor.args.eval_model:
                         predictions[j, self.executor.dataset.range_constraints_per_rel[data_batch[j, 1]]] = -np.Inf
-                    predictions[j, e2_idx[j]] = target_value
-                # Sort predictions.
+                    # 4.5 Insert 4.3.
+                    predictions[j, id_e_target] = target_value
+                # (5) Sort predictions.
                 sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
-                # This can be also done in paralel
+                # (6) Compute the ranks
                 for j in range(data_batch.shape[0]):
-                    rank = torch.where(sort_idxs[j] == e2_idx[j])[0].item()
-                    ranks.append(rank + 1)
-
-                    for hits_level in range(10):
+                    # index between 0 and \inf
+                    rank = torch.where(sort_idxs[j] == e2_idx[j])[0].item() + 1
+                    ranks.append(rank)
+                    for hits_level in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
                         if rank <= hits_level:
                             hits[hits_level].append(1.0)
-        hit_1 = sum(hits[0]) / (float(len(triple_idx)))
-        hit_3 = sum(hits[2]) / (float(len(triple_idx)))
-        hit_10 = sum(hits[9]) / (float(len(triple_idx)))
+
+
+        hit_1 = sum(hits[1]) / (float(len(triple_idx)))
+        hit_3 = sum(hits[3]) / (float(len(triple_idx)))
+        hit_10 = sum(hits[10]) / (float(len(triple_idx)))
         mean_reciprocal_rank = np.mean(1. / np.array(ranks))
 
         results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10, 'MRR': mean_reciprocal_rank}
