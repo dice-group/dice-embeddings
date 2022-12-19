@@ -6,20 +6,20 @@ Yet, using these frameworks in real-world applications becomes more challenging 
 
 We developed the DICE Embeddings framework to compute embeddings for large-scale knowledge graphs in a hardware-agnostic manner.
 To achieve this goal, we rely on
-1. [Pandas](https://pandas.pydata.org/) to use parallelism at preprocessing a large knowledge graph,
-2. [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/) to learn knowledge graph embeddings via multi-CPUs, GPUs, TPUs or computing cluster, and
-3. [Gradio](https://gradio.app/) to ease the deployment of pre-trained models.
+1. **[Pandas](https://pandas.pydata.org/) & Co.** to use parallelism at preprocessing a large knowledge graph,
+2. **[PyTorch](https://pytorch.org/) & Co.** to learn knowledge graph embeddings via multi-CPUs, GPUs, TPUs or computing cluster, and
+3. **[Huggingface](https://huggingface.co/)** to ease the deployment of pre-trained models.
 
 **Why [Pandas](https://pandas.pydata.org/) & Co. ?**
 Pandas allows us to read, preprocess (e.g. removing literals) and index an input knowledge graph in parallel.
 Through parquet within pandas, a billion of triples can be read in parallel fashion. 
 Importantly, using frameworks based on Pandas (modin, vaex or polars) allow us to perform all necessary computations on a single CPU as well as a cluster of computers.
 
-**Why [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/) ?**
+**Why [PyTorch](https://pytorch.org/) & Co. ?**
 PyTorch is one of the most popular machine learning frameworks available at the time of writing. 
 PytorchLightning facilitates scaling the training procedure of PyTorch without boilerplate.
 In our framework, we combine [PyTorch](https://pytorch.org/) & [PytorchLightning](https://www.pytorchlightning.ai/).
-By this, we are able to train large knowledge graph embedding models with billions of parameters.
+Users can choose the trainer class (e.g., DDP by Pytorch) to train large knowledge graph embedding models with billions of parameters.
 PytorchLightning allows us to use state-of-the-art model parallelism techniques (e.g. Fully Sharded Training, FairScale, or DeepSpeed)
 without extra effort.
 With our framework, practitioners can directly use PytorchLightning for model parallelism to train gigantic embedding models.

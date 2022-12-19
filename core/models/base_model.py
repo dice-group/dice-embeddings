@@ -53,7 +53,7 @@ class BaseKGE(pl.LightningModule):
 
     def init_params_with_sanity_checking(self):
         assert self.args['model'] in ['CLf', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO',
-                                      'ConEx', 'Shallom', 'TransE']
+                                      'ConEx', 'Shallom', 'TransE','Pyke']
         if self.args.get('weight_decay'):
             self.weight_decay = self.args['weight_decay']
         else:
@@ -228,7 +228,7 @@ class BaseKGE(pl.LightningModule):
                 # Note that y can be relation or tail entity.
                 return self.forward_k_vs_all(x=x)
             else:
-                raise ValueError('Not valid input')
+                return self.forward_sequence(x=x)
 
     def training_step(self, batch, batch_idx):
         if len(batch) == 2:

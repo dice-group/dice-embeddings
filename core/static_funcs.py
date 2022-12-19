@@ -519,7 +519,8 @@ def preprocesses_input_args(arg):
     arg.check_val_every_n_epoch = 10 ** 6  # ,i.e., no eval
     arg.logger = False
     try:
-        assert arg.eval_model in ['None', 'train', 'val', 'test', 'train_val', 'train_test', 'val_test', 'train_val_test']
+        assert arg.eval_model in [None, 'None', 'train', 'val', 'test', 'train_val', 'train_test', 'val_test',
+                                  'train_val_test']
     except KeyError:
         print(arg.eval_model)
         exit(1)
@@ -608,6 +609,7 @@ def create_experiment_folder(folder_name='Experiments'):
 
 def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     # @TODO: Apply construct_krone as callback? or use KronE_QMult as a prefix.
+    # @TODO: Remove form_of_labelling
     model_name = args['model']
     if model_name == 'KronELinear':
         model = KronELinear(args=args)
@@ -652,6 +654,9 @@ def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     elif model_name == 'TransE':
         model = TransE(args=args)
         form_of_labelling = 'EntityPrediction'
+    elif model_name == 'Pyke':
+        model = Pyke(args=args)
+        form_of_labelling = 'Pyke'
     elif model_name == 'CLf':
         model = CLf(args=args)
         form_of_labelling = 'EntityPrediction'

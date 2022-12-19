@@ -104,9 +104,38 @@ class Shallom(BaseKGE):
         return scores_for_all_relations[:, x[:, 1]].flatten()
 
 
+class Pyke(BaseKGE):
+    """ A Physical Embedding Model for Knowledge Graphs """
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = 'Pyke'
+        self.loss = nn.TripletMarginLoss(margin=1.0, p=2)
+
+    def get_embeddings(self) -> Tuple[np.ndarray, Union[np.ndarray, None]]:
+        return self.entity_embeddings.weight.data.data.detach(), None
+
+    def loss_function(self, x: torch.FloatTensor, y=None) -> torch.FloatTensor:
+        anchor, positive, negative = x
+        return self.loss(anchor, positive, negative)
+
+    def forward_sequence(self, x: torch.LongTensor):
+        # (1) Anchor node Embedding: N, D
+        anchor = self.entity_embeddings(x[:, 0])
+        # (2) Positives and Negatives
+        pos, neg = torch.hsplit(x[:, 1:], 2)
+        # (3) Embeddings for Pos N, K, D
+        pos_emb = self.entity_embeddings(pos)
+        # (4) Embeddings for Negs N, K, D
+        neg_emb = self.entity_embeddings(neg)
+        # (5) Mean.
+        # N, D
+        mean_pos_emb = pos_emb.mean(dim=1)
+        mean_neg_emb = neg_emb.mean(dim=1)
+        return anchor, mean_pos_emb, mean_neg_emb
+
+
 """ On going works"""
-
-
 class CLf(BaseKGE):
     """Clifford:Embedding Space Search in Clifford Algebras"""
 
