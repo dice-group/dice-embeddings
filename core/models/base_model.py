@@ -30,9 +30,9 @@ class BaseKGE(pl.LightningModule):
         self.loss = torch.nn.BCEWithLogitsLoss()
         self.selected_optimizer = None
         self.normalizer_class = None
-        self.normalize_head_entity_embeddings = self.identity  # lambda x: x
-        self.normalize_relation_embeddings = self.identity  # lambda x: x
-        self.normalize_tail_entity_embeddings = self.identity  # lambda x: x
+        self.normalize_head_entity_embeddings = IdentityClass()#self.identity  # lambda x: x
+        self.normalize_relation_embeddings = IdentityClass()#self.identity  # lambda x: x
+        self.normalize_tail_entity_embeddings = IdentityClass()#self.identity  # lambda x: x
         self.hidden_normalizer = self.identity
         self.init_params_with_sanity_checking()
 
@@ -53,7 +53,7 @@ class BaseKGE(pl.LightningModule):
 
     def init_params_with_sanity_checking(self):
         assert self.args['model'] in ['CLf', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO',
-                                      'ConEx', 'Shallom', 'TransE','Pyke']
+                                      'ConEx', 'Shallom', 'TransE', 'Pyke']
         if self.args.get('weight_decay'):
             self.weight_decay = self.args['weight_decay']
         else:
@@ -122,6 +122,8 @@ class BaseKGE(pl.LightningModule):
             self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
             if self.args['scoring_technique'] in ['NegSample', 'KvsSample']:
                 self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
+        elif self.args.get("normalization") is None:
+            self.normalizer_class = IdentityClass
         else:
             raise NotImplementedError()
         if self.args.get("optim") in ['Adan', 'NAdam', 'Adam', 'SGD', 'ASGD', 'Sls', 'AdamSLS']:
@@ -311,3 +313,13 @@ class BaseKGE(pl.LightningModule):
             self.input_dp_ent_real(self.entity_embeddings(idx_head_entity)))
         rel_ent_emb = self.normalize_relation_embeddings(self.input_dp_rel_real(self.relation_embeddings(idx_relation)))
         return head_ent_emb, rel_ent_emb
+
+
+class IdentityClass(torch.nn.Module):
+    def __init__(self, args=None):
+        super().__init__()
+        self.args = args
+
+    @staticmethod
+    def forward(x):
+        return x
