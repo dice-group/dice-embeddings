@@ -294,12 +294,6 @@ class KG:
         """
         # (1) Check whether a path leading to a directory is a parquet formatted file
         self.train_set, self.valid_set, self.test_set = None, None, None
-        # (CD) Removed
-        if self.dnf_predicates:
-            # https://arrow.apache.org/docs/python/generated/pyarrow.parquet.read_table.html
-            # pq.read_table(self.data_dir,columns=['subject', 'relation', 'object'],filters=self.dnf_predicates)
-            raise NotImplementedError
-
         for i in glob.glob(self.data_dir + '/*'):
             if 'train' in i:
                 # 1. LOAD Data. (First pass on data)
@@ -387,7 +381,7 @@ class KG:
         print(f'Deserialization Path Path: {storage_path}\n')
         start_time = time.time()
         print('[1 / 4] Deserializing compressed entity integer mapping...')
-        self.entity_to_idx = pd.read_parquet(storage_path + '/entity_to_idx.gzip')  # .compute()
+        self.entity_to_idx = pd.read_parquet(storage_path + '/entity_to_idx.gzip')
         print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
         self.num_entities = len(self.entity_to_idx)
 
@@ -407,11 +401,11 @@ class KG:
         # 10. Serialize (9).
         print('[4 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
         start_time = time.time()
-        self.train_set = ddf.read_parquet(storage_path + '/idx_train_df.gzip').values.compute()
+        self.train_set = pd.read_parquet(storage_path + '/idx_train_df.gzip').values
         print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
         try:
             print('[5 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
-            self.valid_set = ddf.read_parquet(storage_path + '/idx_valid_df.gzip').values.compute()
+            self.valid_set = pd.read_parquet(storage_path + '/idx_valid_df.gzip').values
             print('Done!\n')
         except FileNotFoundError:
             print('No valid data found!\n')
@@ -419,7 +413,7 @@ class KG:
 
         try:
             print('[6 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
-            self.test_set = ddf.read_parquet(storage_path + '/idx_test_df.gzip').values.compute()
+            self.test_set = pd.read_parquet(storage_path + '/idx_test_df.gzip').values#.compute()
             print('Done!\n')
         except FileNotFoundError:
             print('No test data found\n')
