@@ -124,6 +124,8 @@ Type:<class 'vaex.dataframe.DataFrameLocal'>
   9  <http://embedding.cc/entity/Q31>  <http://embedding.cc/prop/direct/P2852>  <http://embedding.cc/entity/Q25648798>
 
 #### Polar
+# Most computation takes place at dataframe conversion:
+# Polar is fast see https://www.pola.rs/benchmarks.html
 Reading with Polar 0.14.26...	Took 143.62675404548645 seconds
 Shape: (686412283, 3)
 Type:<class 'pandas.core.frame.DataFrame'>
