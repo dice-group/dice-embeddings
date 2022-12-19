@@ -299,6 +299,10 @@ def load_data_parallel(data_path, read_only_few: int = None,
             else:
                 df = pd.read_parquet(data_path, engine='pyarrow')
             return preprocess_dataframe_of_kg(df, read_only_few, sample_triples_ratio)
+        elif backend == 'polars':
+            import polars as pl
+            df = pl.read_parquet(data_path, n_rows=read_only_few).to_pandas()
+            return df
         else:
             raise NotImplementedError
 
@@ -541,7 +545,7 @@ def preprocesses_input_args(arg):
     sanity_checking_with_arguments(arg)
     if arg.model == 'Shallom':
         arg.scoring_technique = 'KvsAll'
-    assert arg.normalization in ['LayerNorm', 'BatchNorm1d']
+    assert arg.normalization in [None, 'LayerNorm', 'BatchNorm1d']
     return arg
 
 
