@@ -464,7 +464,7 @@ class TriplePredictionDataset(Dataset):
         # corrupt head, tail or rel ?!
 
         # (1) Corrupted Entities:
-        corr = torch.randint(0, self.num_entities, (size_of_batch * self.neg_sample_ratio, 2))
+        corr = torch.randint(0, high=self.num_entities, size=(size_of_batch * self.neg_sample_ratio, 2))
         # (2) Head Corrupt:
         h_head_corr = corr[:, 0]
         r_head_corr = r.repeat(self.neg_sample_ratio, )

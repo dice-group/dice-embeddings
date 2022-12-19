@@ -17,6 +17,7 @@ import json
 import glob
 import pandas
 from .sanity_checkers import sanity_checking_with_arguments
+import polars
 
 
 # @TODO: Could these funcs can be merged?
@@ -157,8 +158,18 @@ def model_fitting(trainer, model, train_dataloaders) -> None:
     print(f'Model fitting is done!')
 
 
-def preprocess_modin_dataframe_of_kg(df, read_only_few: int = None, sample_triples_ratio: float = None):
-    """ Preprocess a modin dataframe to pandas dataframe """
+def read_process_modin(data_path, read_only_few: int = None, sample_triples_ratio: float = None):
+    import modin.pandas as pd
+    if data_path[-3:] in ['txt', 'csv']:
+        df = pd.read_csv(data_path,
+                         delim_whitespace=True,
+                         header=None,
+                         usecols=[0, 1, 2],
+                         names=['subject', 'relation', 'object'],
+                         dtype=str)
+    else:
+        df = pd.read_parquet(data_path, engine='pyarrow')
+
     # df <class 'modin.pandas.dataframe.DataFrame'>
     # return pandas DataFrame
     # (2)a Read only few if it is asked.
@@ -185,62 +196,47 @@ def preprocess_modin_dataframe_of_kg(df, read_only_few: int = None, sample_tripl
         print('Done !\n')
     return df._to_pandas()
 
+def read_process_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None) -> polars.DataFrame:
+    """
+    Load and Preprocess via Polars
+    """
+    # (1) Load the data
+    if data_path[-3:] in ['txt', 'csv']:
+        df = polars.read_csv(data_path,
+                             has_header=False,
+                             low_memory=False,
+                             n_rows=None if read_only_few is None else read_only_few,
+                             columns=[0, 1, 2],
+                             new_columns=['subject', 'relation', 'object'],
+                             sep="\t")
+    else:
+        df = polars.read_parquet(data_path)
 
-def old_preprocess_dataframe_of_kg(df, read_only_few: int = None,
-                                   sample_triples_ratio: float = None):
-    """ Preprocess lazy loaded dask dataframe
-    (1) Read only few triples
-    (2) Sample few triples
-    (3) Remove **<>** if exists.
-    """
-    """
-    try:
-        assert isinstance(df, dask.dataframe.core.DataFrame) or isinstance(df, pandas.DataFrame)
-    except AssertionError:
-        raise AssertionError(type(df))
-    """
-
-    # (2)a Read only few if it is asked.
-    if isinstance(read_only_few, int):
-        if read_only_few > 0:
-            print(f'Reading only few input data {read_only_few}...')
-            df = df.head(read_only_few)
-            print('Done !\n')
-    # (3) Read only sample
+    # (2) Sample from (1)
     if sample_triples_ratio:
         print(f'Subsampling {sample_triples_ratio} of input data...')
         df = df.sample(frac=sample_triples_ratio)
         print('Done !\n')
-    if sum(df.head()["subject"].str.startswith('<')) + sum(df.head()["relation"].str.startswith('<')) > 2:
-        # (4) Drop Rows/triples with double or boolean: Example preprocessing
-        # Drop of object does not start with **<**.
-        # Specifying na to be False instead of NaN.
+
+    # (3) Type heuristic prediction: If KG is an RDF KG, remove all triples where subject is not <?>.
+    h = df.head().to_pandas()
+    if sum(h["subject"].str.startswith('<')) + sum(h["relation"].str.startswith('<')) > 2:
         print('Removing triples with literal values...')
-        df = df[df["object"].str.startswith('<', na=False)]
-        print('Done !\n')
-        # (5) Remove **<** and **>**
-        print('Removing brackets **<** and **>**...')
-        # Dask does not have transform implemented.
-        # df = df.transform(lambda x: x.str.removeprefix("<").str.removesuffix(">"))
-        df = df.apply(lambda x: x.str.removeprefix("<").str.removesuffix(">"), axis=1)
+        df = df.filter(polars.col("object").str.starts_with('<'))
         print('Done !\n')
     return df
 
-
-def preprocess_dataframe_of_kg(df, read_only_few: int = None,
-                               sample_triples_ratio: float = None):
-    """ Preprocess lazy loaded dask dataframe
-    (1) Read only few triples
-    (2) Sample few triples
-    (3) Remove **<>** if exists.
-    """
-    """
-    try:
-        assert isinstance(df, dask.dataframe.core.DataFrame) or isinstance(df, pandas.DataFrame)
-    except AssertionError:
-        raise AssertionError(type(df))
-    """
-
+def read_process_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None):
+    import pandas as pd
+    if data_path[-3:] in ['txt', 'csv']:
+        df = pd.read_csv(data_path,
+                         delim_whitespace=True,
+                         header=None,
+                         usecols=[0, 1, 2],
+                         names=['subject', 'relation', 'object'],
+                         dtype=str)
+    else:
+        df = pd.read_parquet(data_path, engine='pyarrow')
     # (2)a Read only few if it is asked.
     if isinstance(read_only_few, int):
         if read_only_few > 0:
@@ -260,56 +256,19 @@ def preprocess_dataframe_of_kg(df, read_only_few: int = None,
         df = df[df["object"].str.startswith('<', na=False)]
         print('Done !\n')
     return df
-
-
 def load_data_parallel(data_path, read_only_few: int = None,
                        sample_triples_ratio: float = None, backend=None):
-    """
-    Parse KG via DASK.
-    :param read_only_few:
-    :param data_path:
-    :param sample_triples_ratio:
-    :param backend:
-    :return:
-    """
     assert backend
     # If path exits
     if glob.glob(data_path):
         if backend == 'modin':
-            import modin.pandas as pd
-            if data_path[-3:] in ['txt', 'csv']:
-                df = pd.read_csv(data_path,
-                                 delim_whitespace=True,
-                                 header=None,
-                                 usecols=[0, 1, 2],
-                                 names=['subject', 'relation', 'object'],
-                                 dtype=str)
-            else:
-                df = pd.read_parquet(data_path, engine='pyarrow')
-            return preprocess_modin_dataframe_of_kg(df, read_only_few, sample_triples_ratio)
+            return read_process_modin(data_path, read_only_few, sample_triples_ratio)
         elif backend == 'pandas':
-            import pandas as pd
-            if data_path[-3:] in ['txt', 'csv']:
-                df = pd.read_csv(data_path,
-                                 delim_whitespace=True,
-                                 header=None,
-                                 usecols=[0, 1, 2],
-                                 names=['subject', 'relation', 'object'],
-                                 dtype=str)
-            else:
-                df = pd.read_parquet(data_path, engine='pyarrow')
-            return preprocess_dataframe_of_kg(df, read_only_few, sample_triples_ratio)
+            return read_process_pandas(data_path, read_only_few, sample_triples_ratio)
         elif backend == 'polars':
-            import polars as pl
-            if data_path[-3:] in ['txt', 'csv']:
-                df = pl.read_csv(data_path, has_header=False, low_memory=False,
-                                 new_columns=['subject', 'relation', 'object'],
-                                 sep="\t").to_pandas()
-            else:
-                df = pl.read_parquet(data_path).to_pandas()
-            return df
+            return read_process_polars(data_path, read_only_few, sample_triples_ratio)
         else:
-            raise NotImplementedError
+            raise NotImplementedError(f'{backend} not found')
 
     else:
         print(f'{data_path} could not found!')
@@ -470,7 +429,6 @@ def read_preprocess_index_serialize_kg(args, cls):
              path_for_serialization=args.full_storage_path,
              add_noise_rate=args.add_noise_rate,
              min_freq_for_vocab=args.min_freq_for_vocab,
-             dnf_predicates=args.dnf_predicates,
              backend=args.backend)
     print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
     print(kg.description_of_input)
@@ -489,7 +447,6 @@ def reload_input_data(args: str = None, cls=None):
              path_for_serialization=args.full_storage_path,
              add_noise_rate=args.add_noise_rate,
              min_freq_for_vocab=args.min_freq_for_vocab,
-             dnf_predicates=args.dnf_predicates,
              deserialize_flag=args.path_experiment_folder)
     print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
     print(kg.description_of_input)
