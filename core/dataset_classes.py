@@ -489,17 +489,6 @@ class TriplePredictionDataset(Dataset):
         return x, label
 
 
-class NotusedTripleClassificationDataSet(Dataset):
-    def __init__(self, X, y):
-        self.X = X
-        self.y = y
-
-    def __len__(self):
-        return len(self.X)
-
-    def __getitem__(self, idx):
-        return self.X[idx], self.y[idx]
-
 
 class PykeDataset(Dataset):
     def __init__(self, triples_idx, entity_idxs, relation_idxs, form, store=None, neg_sample_ratio: int = None,
@@ -553,3 +542,17 @@ class PykeDataset(Dataset):
         select_negative_idx = torch.LongTensor(random.sample(self.entity_vocab.keys(), len(select_positives_idx)))
         x = torch.cat((torch.LongTensor([anchor]), select_positives_idx, select_negative_idx), dim=0)
         return x, torch.LongTensor([0])
+
+"""
+
+class NotusedTripleClassificationDataSet(Dataset):
+    def __init__(self, X, y):
+        self.X = X
+        self.y = y
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        return self.X[idx], self.y[idx]
+"""

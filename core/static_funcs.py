@@ -301,7 +301,12 @@ def load_data_parallel(data_path, read_only_few: int = None,
             return preprocess_dataframe_of_kg(df, read_only_few, sample_triples_ratio)
         elif backend == 'polars':
             import polars as pl
-            df = pl.read_parquet(data_path, n_rows=read_only_few).to_pandas()
+            if data_path[-3:] in ['txt', 'csv']:
+                df = pl.read_csv(data_path, has_header=False, low_memory=False,
+                                 new_columns=['subject', 'relation', 'object'],
+                                 sep="\t").to_pandas()
+            else:
+                df = pl.read_parquet(data_path).to_pandas()
             return df
         else:
             raise NotImplementedError
