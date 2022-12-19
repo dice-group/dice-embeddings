@@ -77,6 +77,12 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
                                             relation_idxs=self.relation_to_idx, form=self.form,
                                             neg_sample_ratio=self.neg_sample_ratio,
                                             label_smoothing_rate=self.label_smoothing_rate)
+        elif self.form == 'Pyke':
+            self.dataset = PykeDataset(self.train_set_idx,
+                                       entity_idxs=self.entity_to_idx,
+                                       relation_idxs=self.relation_to_idx,
+                                       form=self.form,
+                                       neg_sample_ratio=self.neg_sample_ratio)
         else:
             raise ValueError(f'Invalid input : {self.form}')
 
@@ -94,7 +100,8 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
                                relation_idxs=self.relation_to_idx, form=self.form,
                                label_smoothing_rate=self.label_smoothing_rate)
             return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
-        elif self.form in ['KvsSample', 'PvsAll', 'CCvsAll', '1VsAll', 'BatchRelaxedKvsAll', 'BatchRelaxed1vsAll']:
+        elif self.form in ['KvsSample', 'PvsAll', 'CCvsAll', '1VsAll', 'BatchRelaxedKvsAll', 'BatchRelaxed1vsAll',
+                           'Pyke']:
             return DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
         else:
             raise KeyError(f'{self.form} illegal input.')
@@ -482,7 +489,7 @@ class TriplePredictionDataset(Dataset):
         return x, label
 
 
-class TripleClassificationDataSet(Dataset):
+class NotusedTripleClassificationDataSet(Dataset):
     def __init__(self, X, y):
         self.X = X
         self.y = y
@@ -492,3 +499,57 @@ class TripleClassificationDataSet(Dataset):
 
     def __getitem__(self, idx):
         return self.X[idx], self.y[idx]
+
+
+class PykeDataset(Dataset):
+    def __init__(self, triples_idx, entity_idxs, relation_idxs, form, store=None, neg_sample_ratio: int = None,
+                 label_smoothing_rate=None):
+        super().__init__()
+        self.entity_vocab = dict()
+        self.collate_fn = None
+        print('Creating mapping..')
+        for i in triples_idx:
+            s, p, o = i
+            self.entity_vocab.setdefault(s, []).extend([o])
+        del triples_idx
+        # There are KGs therein some entities may not occur  in the training data split
+        # To alleviate our of vocab, those entities are also index.
+        self.int_to_data_point = dict()
+        for ith, (k, v) in enumerate(self.entity_vocab.items()):
+            self.int_to_data_point[ith] = k
+
+        n = 0
+        for k, v in self.entity_vocab.items():
+            n += len(v)
+        self.avg_triple_per_vocab = max(n // len(self.entity_vocab), 10)
+        # Default
+        # (1) Size of the dataset will be the number of unique vocabulary terms (|Entity \lor Rels|)
+        # (2) For each term, at most K terms are stored as positives
+        # (3) For each term, at most K terms stored as negatives
+        # (4) Update: each term should be pulled by K terms and push by K terms
+
+        # Update:
+        # (1) (4) implies that a single data point must be (x, Px, Nx).
+        # (2) Loss can be defined as should be large x-mean(Nx) x-mean(Px)
+
+        # Keys in store correspond to integer representation (index) of subject and predicate
+        # Values correspond to a list of integer representations of entities.
+        self.positives = list(self.entity_vocab.values())
+        self.num_of_vocabs = len(self.int_to_data_point)
+
+    def __len__(self):
+        return self.num_of_vocabs
+
+    def __getitem__(self, idx):
+        anchor = self.int_to_data_point[idx]
+        positives = self.entity_vocab[anchor]
+        # sample 10
+        if len(positives) < self.avg_triple_per_vocab:
+            # Upsampling
+            select_positives_idx = torch.LongTensor(random.choices(positives, k=self.avg_triple_per_vocab))
+        else:
+            # Subsample
+            select_positives_idx = torch.LongTensor(random.sample(positives, self.avg_triple_per_vocab))
+        select_negative_idx = torch.LongTensor(random.sample(self.entity_vocab.keys(), len(select_positives_idx)))
+        x = torch.cat((torch.LongTensor([anchor]), select_positives_idx, select_negative_idx), dim=0)
+        return x, torch.LongTensor([0])
