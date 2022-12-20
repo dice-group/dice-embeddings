@@ -46,7 +46,6 @@ class TorchTrainer(AbstractTrainer):
                                                   collate_fn=dataset.collate_fn)
 
         num_total_batches = len(data_loader)
-        batch_print_period = max(num_total_batches // 4, 1)
         # Creates once at the beginning of training
         for epoch in range(self.attributes.max_epochs):
             epoch_loss = 0
@@ -64,9 +63,8 @@ class TorchTrainer(AbstractTrainer):
                 batch_loss = self.compute_forward_loss_backward(x_batch, y_batch)
                 # (4) Accumulate a batch loss.
                 epoch_loss += batch_loss.item()
-                if i % batch_print_period == 0:
-                    # (6) Print a info.
-                    print(f"Epoch:{epoch + 1} | Batch:{i + 1} | Runtime:{(time.time() - s_time) / 60:.4f}mins")
+                # (6) Print a info.
+                print(f"Epoch:{epoch + 1} | Batch:{i + 1} | Runtime:{(time.time() - s_time) / 60:.4f}mins")
             # (5) Average (4).
             epoch_loss /= num_total_batches
             # (6) Print a info.
@@ -84,12 +82,8 @@ class TorchTrainer(AbstractTrainer):
             batch_loss = self.optimizer.step(closure=lambda: self.loss_function(self.model(x_batch), y_batch))
             return batch_loss
         else:
-            if self.flag_autocast:
-                with torch.autocast(device_type=self.device):
-                    # (4) Backpropagate the gradient of (3) w.r.t. parameters.
-                    batch_loss = self.loss_function(self.model(x_batch), y_batch)
-            else:
-                batch_loss = self.loss_function(self.model(x_batch), y_batch)
+            # (4) Backpropagate the gradient of (3) w.r.t. parameters.
+            batch_loss = self.loss_function(self.model(x_batch), y_batch)
             # Backward pass
             batch_loss.backward()
             # Adjust learning weights
