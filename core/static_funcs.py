@@ -18,26 +18,29 @@ import glob
 import pandas
 from .sanity_checkers import sanity_checking_with_arguments
 import polars
-from functools import wraps
+import functools
+
+enable_log = False
 
 
 def timeit(func):
-    @wraps(func)
+    @functools.wraps(func)
     def timeit_wrapper(*args, **kwargs):
         start_time = time.perf_counter()
         result = func(*args, **kwargs)
         end_time = time.perf_counter()
         total_time = end_time - start_time
-        if args is not None:
-            s_args = [type(i) for i in args]
-        else:
-            s_args = args
-        if kwargs is not None:
-            s_kwargs = {k: type(v) for k, v in kwargs.items()}
-        else:
-            s_kwargs = kwargs
-        print(
-            f'Function {func.__name__} with  Args:{s_args} | Kwargs:{s_kwargs} took {total_time:.4f} seconds')
+        if enable_log:
+            if args is not None:
+                s_args = [type(i) for i in args]
+            else:
+                s_args = args
+            if kwargs is not None:
+                s_kwargs = {k: type(v) for k, v in kwargs.items()}
+            else:
+                s_kwargs = kwargs
+            print(
+                f'Function {func.__name__} with  Args:{s_args} | Kwargs:{s_kwargs} took {total_time:.4f} seconds')
         return result
 
     return timeit_wrapper
@@ -231,6 +234,7 @@ def read_process_polars(data_path, read_only_few: int = None, sample_triples_rat
                              low_memory=False,
                              n_rows=None if read_only_few is None else read_only_few,
                              columns=[0, 1, 2],
+                             dtypes=[polars.Utf8], # str
                              new_columns=['subject', 'relation', 'object'],
                              sep="\t")  # \s+ doesn't work for polars
     else:
@@ -283,6 +287,7 @@ def read_process_pandas(data_path, read_only_few: int = None, sample_triples_rat
     return df
 
 
+@timeit
 def load_data(data_path, read_only_few: int = None,
               sample_triples_ratio: float = None, backend=None):
     """Load Datasets"""

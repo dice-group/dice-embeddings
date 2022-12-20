@@ -46,13 +46,16 @@ class TorchTrainer(AbstractTrainer):
                                                   collate_fn=dataset.collate_fn)
 
         num_total_batches = len(data_loader)
-        for epoch in (pbar := tqdm(range(self.attributes.max_epochs), file=sys.stdout)):
+        batch_print_period = max(num_total_batches // 4, 1)
+        # Creates once at the beginning of training
+        for epoch in range(self.attributes.max_epochs):
             epoch_loss = 0
             start_time = time.time()
             i: int
             batch: list
             batch_loss = -1
             for i, batch in enumerate(data_loader):
+                s_time = time.time()
                 # (1) Zero the gradients.
                 self.optimizer.zero_grad()
                 # (2) Extract Input and Outputs.
@@ -61,13 +64,13 @@ class TorchTrainer(AbstractTrainer):
                 batch_loss = self.compute_forward_loss_backward(x_batch, y_batch)
                 # (4) Accumulate a batch loss.
                 epoch_loss += batch_loss.item()
+                if i % batch_print_period == 0:
+                    # (6) Print a info.
+                    print(f"Epoch:{epoch + 1} | Batch:{i + 1} | Runtime:{(time.time() - s_time) / 60:.4f}mins")
             # (5) Average (4).
             epoch_loss /= num_total_batches
             # (6) Print a info.
-            pbar.set_description(f'Epoch {epoch + 1}')
-            pbar.set_postfix_str(
-                f"runtime:{(time.time() - start_time) / 60:.3f}mins, loss={epoch_loss:.8f}")
-            pbar.update(1)
+            print(f"Epoch:{epoch + 1} | Loss:{epoch_loss:.8f} | Runtime:{(time.time() - start_time) / 60:.3f}mins")
             # (7) Store epoch losses
             self.model.loss_history.append(epoch_loss)
             self.on_train_epoch_end(self, self.model)
@@ -81,8 +84,12 @@ class TorchTrainer(AbstractTrainer):
             batch_loss = self.optimizer.step(closure=lambda: self.loss_function(self.model(x_batch), y_batch))
             return batch_loss
         else:
-            # (4) Backpropagate the gradient of (3) w.r.t. parameters.
-            batch_loss = self.loss_function(self.model(x_batch), y_batch)
+            if self.flag_autocast:
+                with torch.autocast(device_type=self.device):
+                    # (4) Backpropagate the gradient of (3) w.r.t. parameters.
+                    batch_loss = self.loss_function(self.model(x_batch), y_batch)
+            else:
+                batch_loss = self.loss_function(self.model(x_batch), y_batch)
             # Backward pass
             batch_loss.backward()
             # Adjust learning weights

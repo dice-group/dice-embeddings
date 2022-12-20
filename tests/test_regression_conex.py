@@ -23,7 +23,7 @@ class TestRegressionConEx:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
-        args.normalization = 'LayerNorm'
+        args.normalization = 'LayerNorm' #LayerNorm is not compatiable with float16
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 0.46 >= result['Train']['H@1'] >= 0.33

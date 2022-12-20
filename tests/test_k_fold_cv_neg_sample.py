@@ -16,9 +16,7 @@ class TestCV_NegSample:
         args.batch_size = 1024
         args.lr = 0.01
         args.embedding_dim = 32
-        args.input_dropout_rate = 0.0
-        args.hidden_dropout_rate = 0.0
-        args.feature_map_dropout_rate = 0.0
+        args.backend = 'pandas'  #  Error with polars becasue sep="\s" should be a single byte character, but is 2 bytes long.
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.eval_model = 'train'
@@ -37,11 +35,7 @@ class TestCV_NegSample:
         args.batch_size = 1024
         args.lr = 0.01
         args.embedding_dim = 32
-        args.input_dropout_rate = 0.0
-        args.hidden_dropout_rate = 0.0
-        args.feature_map_dropout_rate = 0.0
-        args.read_only_few = None
-        args.sample_triples_ratio = None
+        args.backend = 'pandas'  #  Error with polars becasue sep="\s" should be a single byte character, but is 2 bytes long.
         args.eval_model = 'train'
         args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
@@ -58,11 +52,7 @@ class TestCV_NegSample:
         args.batch_size = 1024
         args.lr = 0.01
         args.embedding_dim = 32
-        args.input_dropout_rate = 0.0
-        args.hidden_dropout_rate = 0.0
-        args.feature_map_dropout_rate = 0.0
-        args.read_only_few = None
-        args.sample_triples_ratio = None
+        args.backend = 'pandas'  #  Error with polars becasue sep="\s" should be a single byte character, but is 2 bytes long.
         args.eval_model = 'train'
         args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
@@ -79,11 +69,7 @@ class TestCV_NegSample:
         args.batch_size = 1024
         args.lr = 0.01
         args.embedding_dim = 32
-        args.input_dropout_rate = 0.0
-        args.hidden_dropout_rate = 0.0
-        args.feature_map_dropout_rate = 0.0
-        args.read_only_few = None
-        args.sample_triples_ratio = None
+        args.backend = 'pandas'  #  Error with polars becasue sep="\s" should be a single byte character, but is 2 bytes long.
         args.eval_model = 'train'
         args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
@@ -100,11 +86,7 @@ class TestCV_NegSample:
         args.batch_size = 1024
         args.lr = 0.01
         args.embedding_dim = 32
-        args.input_dropout_rate = 0.0
-        args.hidden_dropout_rate = 0.0
-        args.feature_map_dropout_rate = 0.0
-        args.read_only_few = None
-        args.sample_triples_ratio = None
+        args.backend = 'pandas'  #  Error with polars becasue sep="\s" should be a single byte character, but is 2 bytes long.
         args.eval_model = 'train'
         args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
@@ -120,11 +102,7 @@ class TestCV_NegSample:
         args.batch_size = 1024
         args.lr = 0.01
         args.embedding_dim = 32
-        args.input_dropout_rate = 0.0
-        args.hidden_dropout_rate = 0.0
-        args.feature_map_dropout_rate = 0.0
-        args.read_only_few = None
-        args.sample_triples_ratio = None
+        args.backend = 'pandas'  #  Error with polars becasue sep="\s" should be a single byte character, but is 2 bytes long.
         args.eval_model = 'train'
         args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
@@ -140,11 +118,7 @@ class TestCV_NegSample:
         args.batch_size = 1024
         args.lr = 0.01
         args.embedding_dim = 32
-        args.input_dropout_rate = 0.0
-        args.hidden_dropout_rate = 0.0
-        args.feature_map_dropout_rate = 0.0
-        args.read_only_few = None
-        args.sample_triples_ratio = None
+        args.backend = 'pandas'  #  Error with polars becasue sep="\s" should be a single byte character, but is 2 bytes long.
         args.eval_model = 'train'
         args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
@@ -160,11 +134,7 @@ class TestCV_NegSample:
         args.batch_size = 1024
         args.lr = 0.01
         args.embedding_dim = 32
-        args.input_dropout_rate = 0.0
-        args.hidden_dropout_rate = 0.0
-        args.feature_map_dropout_rate = 0.0
-        args.read_only_few = None
-        args.sample_triples_ratio = None
+        args.backend = 'pandas'  #  Error with polars becasue sep="\s" should be a single byte character, but is 2 bytes long.
         args.eval_model = 'train'
         args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3

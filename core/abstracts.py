@@ -11,6 +11,11 @@ class AbstractTrainer:
         self.attributes = args
         self.callbacks = callbacks
         self.is_global_zero = True
+        if self.attributes.normalization=='LayerNorm':
+            self.flag_autocast=False
+        else:
+            self.flag_autocast=True
+
         # Set True to use Model summary callback of pl.
         torch.manual_seed(self.attributes.seed_for_computation)
         torch.cuda.manual_seed_all(self.attributes.seed_for_computation)
