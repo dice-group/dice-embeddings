@@ -16,9 +16,6 @@ import pyarrow.parquet as pq
 import concurrent.futures
 import polars
 
-show_all = True
-
-
 class KG:
     """ Knowledge Graph """
 
@@ -340,6 +337,7 @@ class Preprocess:
     @timeit
     def __preprocess_polars(self):
         print('Preprocessing with Polars...')
+        print('Data:',self.kg.train_set.shape)
         # (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
         if self.kg.add_reciprical and self.kg.eval_model:
             @timeit
@@ -364,7 +362,7 @@ class Preprocess:
                         polars.col("relation").apply(lambda x: x + '_inverse'),
                         polars.col("subject").alias('object')
                     ]))
-
+            print('Adding Reciprocal Triples...')
             adding_reciprocal_triples()
 
         # (2) Type checking
@@ -385,7 +383,7 @@ class Preprocess:
             if test is not None:
                 x.append(test)
             return polars.concat(x)
-
+        print('Concat Splits...')
         df_str_kg = concat_splits(self.kg.train_set, self.kg.valid_set, self.kg.test_set)
 
         @timeit
@@ -393,13 +391,12 @@ class Preprocess:
             # Entity Index: {'a':1, 'b':2} :
             self.kg.entity_to_idx = polars.concat((df_str_kg['subject'], df_str_kg['object'])).unique(
                 maintain_order=True).rename('entity')
-
+            print('Saving entity index into disk...')
             self.kg.entity_to_idx.to_frame().write_parquet(file=self.kg.path_for_serialization + f'/entity_to_idx',
                                                            use_pyarrow=True)
-            # self.kg.entity_to_idx.to_frame().to_pandas().to_parquet(
-            #    self.kg.path_for_serialization + f'/entity_to_idx.gzip', compression='gzip', engine='pyarrow')
+            print('Polars DataFrame to python dictionary conversion.')
             self.kg.entity_to_idx = dict(zip(self.kg.entity_to_idx.to_list(), list(range(len(self.kg.entity_to_idx)))))
-
+        print('Entity Indexing')
         entity_index()
 
         @timeit
@@ -413,7 +410,7 @@ class Preprocess:
             #    self.kg.path_for_serialization + f'/relation_to_idx.gzip', compression='gzip', engine='pyarrow')
             self.kg.relation_to_idx = dict(
                 zip(self.kg.relation_to_idx.to_list(), list(range(len(self.kg.relation_to_idx)))))
-
+        print('Relation Indexing')
         relation_index()
         self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
 

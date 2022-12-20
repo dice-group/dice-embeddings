@@ -227,6 +227,7 @@ def read_process_modin(data_path, read_only_few: int = None, sample_triples_rati
 @timeit
 def read_process_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None) -> polars.DataFrame:
     """ Load and Preprocess via Polars """
+    print('Loading and Preprocessing with Polars')
     # (1) Load the data
     if data_path[-3:] in ['txt', 'csv']:
         df = polars.read_csv(data_path,
@@ -238,7 +239,7 @@ def read_process_polars(data_path, read_only_few: int = None, sample_triples_rat
                              new_columns=['subject', 'relation', 'object'],
                              sep="\t")  # \s+ doesn't work for polars
     else:
-        df = polars.read_parquet(data_path)
+        df = polars.read_parquet(data_path,n_rows=None if read_only_few is None else read_only_few)
 
     # (2) Sample from (1)
     if sample_triples_ratio:
