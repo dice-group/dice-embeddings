@@ -18,6 +18,29 @@ import glob
 import pandas
 from .sanity_checkers import sanity_checking_with_arguments
 import polars
+from functools import wraps
+
+
+def timeit(func):
+    @wraps(func)
+    def timeit_wrapper(*args, **kwargs):
+        start_time = time.perf_counter()
+        result = func(*args, **kwargs)
+        end_time = time.perf_counter()
+        total_time = end_time - start_time
+        if args is not None:
+            s_args = [type(i) for i in args]
+        else:
+            s_args = args
+        if kwargs is not None:
+            s_kwargs = {k: type(v) for k, v in kwargs.items()}
+        else:
+            s_kwargs = kwargs
+        print(
+            f'Function {func.__name__} with  Args:{s_args} | Kwargs:{s_kwargs} took {total_time:.4f} seconds')
+        return result
+
+    return timeit_wrapper
 
 
 # @TODO: Could these funcs can be merged?
@@ -158,6 +181,7 @@ def model_fitting(trainer, model, train_dataloaders) -> None:
     print(f'Model fitting is done!')
 
 
+@timeit
 def read_process_modin(data_path, read_only_few: int = None, sample_triples_ratio: float = None):
     import modin.pandas as pd
     if data_path[-3:] in ['txt', 'csv']:
@@ -196,10 +220,10 @@ def read_process_modin(data_path, read_only_few: int = None, sample_triples_rati
         print('Done !\n')
     return df._to_pandas()
 
+
+@timeit
 def read_process_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None) -> polars.DataFrame:
-    """
-    Load and Preprocess via Polars
-    """
+    """ Load and Preprocess via Polars """
     # (1) Load the data
     if data_path[-3:] in ['txt', 'csv']:
         df = polars.read_csv(data_path,
@@ -208,7 +232,7 @@ def read_process_polars(data_path, read_only_few: int = None, sample_triples_rat
                              n_rows=None if read_only_few is None else read_only_few,
                              columns=[0, 1, 2],
                              new_columns=['subject', 'relation', 'object'],
-                             sep="\t")
+                             sep="\t")  # \s+ doesn't work for polars
     else:
         df = polars.read_parquet(data_path)
 
@@ -226,8 +250,9 @@ def read_process_polars(data_path, read_only_few: int = None, sample_triples_rat
         print('Done !\n')
     return df
 
+
+@timeit
 def read_process_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None):
-    import pandas as pd
     if data_path[-3:] in ['txt', 'csv']:
         df = pd.read_csv(data_path,
                          delim_whitespace=True,
@@ -256,8 +281,11 @@ def read_process_pandas(data_path, read_only_few: int = None, sample_triples_rat
         df = df[df["object"].str.startswith('<', na=False)]
         print('Done !\n')
     return df
-def load_data_parallel(data_path, read_only_few: int = None,
-                       sample_triples_ratio: float = None, backend=None):
+
+
+def load_data(data_path, read_only_few: int = None,
+              sample_triples_ratio: float = None, backend=None):
+    """Load Datasets"""
     assert backend
     # If path exits
     if glob.glob(data_path):
@@ -269,7 +297,6 @@ def load_data_parallel(data_path, read_only_few: int = None,
             return read_process_polars(data_path, read_only_few, sample_triples_ratio)
         else:
             raise NotImplementedError(f'{backend} not found')
-
     else:
         print(f'{data_path} could not found!')
         return None
@@ -427,7 +454,6 @@ def read_preprocess_index_serialize_kg(args, cls):
              read_only_few=args.read_only_few,
              sample_triples_ratio=args.sample_triples_ratio,
              path_for_serialization=args.full_storage_path,
-             add_noise_rate=args.add_noise_rate,
              min_freq_for_vocab=args.min_freq_for_vocab,
              backend=args.backend)
     print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
@@ -445,7 +471,6 @@ def reload_input_data(args: str = None, cls=None):
              read_only_few=args.read_only_few,
              sample_triples_ratio=args.sample_triples_ratio,
              path_for_serialization=args.full_storage_path,
-             add_noise_rate=args.add_noise_rate,
              min_freq_for_vocab=args.min_freq_for_vocab,
              deserialize_flag=args.path_experiment_folder)
     print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
@@ -472,9 +497,6 @@ def preprocesses_input_args(arg):
     # To update the default value of Trainer in pytorch-lightnings
     arg.max_epochs = arg.num_epochs
     arg.min_epochs = arg.num_epochs
-    if arg.add_noise_rate is not None:
-        assert 1. >= arg.add_noise_rate > 0.
-
     assert arg.weight_decay >= 0.0
     arg.learning_rate = arg.lr
     arg.deterministic = True
@@ -908,6 +930,7 @@ def non_conformity_score_diff(predictions, targets) -> torch.Tensor:
     return torch.max(selected_predictions - class_val, dim=-1).values
 
 
+@timeit
 def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
     # @TODO: This function should take any DASK/Pandas DataFrame or Series.
     print(print_into)

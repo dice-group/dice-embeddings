@@ -8,13 +8,309 @@ import os
 import pandas
 import pandas as pd
 from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_re_vocab, \
-    create_recipriocal_triples, add_noisy_triples, index_triples, load_data_parallel, create_constraints, \
-    numpy_data_type_changer, vocab_to_parquet
+    create_recipriocal_triples, add_noisy_triples, index_triples, load_data, create_constraints, \
+    numpy_data_type_changer, vocab_to_parquet, timeit
 from .sanity_checkers import dataset_sanity_checking
 import glob
 import pyarrow.parquet as pq
 import concurrent.futures
 import polars
+
+
+class LoadFromDisk:
+    """Load the data into memory"""
+
+    def __init__(self, kg):
+        self.kg = kg
+
+    def __load(self) -> None:
+        """ Deserialize data """
+        print(f'Deserialization Path Path: {self.kg.deserialize_flag}\n')
+        start_time = time.time()
+        print('[1 / 4] Deserializing compressed entity integer mapping...')
+        self.kg.entity_to_idx = pd.read_parquet(self.kg.deserialize_flag + '/entity_to_idx.gzip')
+        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+        self.kg.num_entities = len(self.kg.entity_to_idx)
+
+        print('[2 / ] Deserializing compressed relation integer mapping...')
+        start_time = time.time()
+        self.kg.relation_to_idx = pd.read_parquet(self.kg.deserialize_flag + '/relation_to_idx.gzip')
+        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+
+        self.kg.num_relations = len(self.kg.relation_to_idx)
+        print(
+            '[3 / 4] Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...',
+        )
+        start_time = time.time()
+        self.kg.entity_to_idx = self.kg.entity_to_idx.to_dict()['entity']
+        self.kg.relation_to_idx = self.kg.relation_to_idx.to_dict()['relation']
+        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+        # 10. Serialize (9).
+        print('[4 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
+        start_time = time.time()
+        self.kg.train_set = pd.read_parquet(self.kg.deserialize_flag + '/idx_train_df.gzip').values
+        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+        try:
+            print('[5 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
+            self.kg.valid_set = pd.read_parquet(self.kg.deserialize_flag + '/idx_valid_df.gzip').values
+            print('Done!\n')
+        except FileNotFoundError:
+            print('No valid data found!\n')
+            self.kg.valid_set = None  # pd.DataFrame()
+
+        try:
+            print('[6 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
+            self.kg.test_set = pd.read_parquet(self.kg.deserialize_flag + '/idx_test_df.gzip').values  # .compute()
+            print('Done!\n')
+        except FileNotFoundError:
+            print('No test data found\n')
+            self.kg.test_set = None
+
+        if self.kg.eval_model:
+            if self.kg.valid_set is not None and self.kg.test_set is not None:
+                # 16. Create a bijection mapping from subject-relation pairs to tail entities.
+                data = np.concatenate([self.kg.train_set, self.kg.valid_set, self.kg.test_set])
+            else:
+                data = self.kg.train_set
+            print('[7 / 4] Creating er,re, and ee type vocabulary for evaluation...')
+            start_time = time.time()
+            self.kg.er_vocab = get_er_vocab(data)
+            self.kg.re_vocab = get_re_vocab(data)
+            # 17. Create a bijection mapping from subject-object pairs to relations.
+            self.kg.ee_vocab = get_ee_vocab(data)
+            self.kg.domain_constraints_per_rel, self.range_constraints_per_rel = create_constraints(self.kg.train_set)
+            print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+
+    @timeit
+    def __read(self) -> None:
+        """ Read the data into memory """
+        for i in glob.glob(self.kg.data_dir + '/*'):
+            if 'train' in i:
+                # 1. LOAD Data. (First pass on data)
+                print(f'Loading Training Data...')
+                self.kg.train_set = load_data(i, self.kg.read_only_few, self.kg.sample_triples_ratio,
+                                              backend=self.kg.backend)
+            elif 'test' in i:
+                print(f'Loading Test Data...')
+                self.kg.test_set = load_data(i, backend=self.kg.backend)
+            elif 'valid' in i:
+                print(f'Loading Validation Data...')
+                self.kg.valid_set = load_data(i, backend=self.kg.backend)
+            else:
+                print(f'Unrecognized data {i}')
+
+    def __preprocess_pandas(self) -> None:
+        """ Preprocess data stored in pandas/modin DataFrame"""
+        assert self.kg.backend in ['pandas', 'modin']
+        # (1.2) Update (1.1).
+        self.kg.apply_reciprical_or_noise()
+        # (1.3) Construct integer indexing for entities and relations.
+        if self.kg.entity_to_idx is None and self.kg.relation_to_idx is None:
+            self.kg.sequential_vocabulary_construction()
+            print('[9 / 14] Obtaining entity to integer index mapping from pandas dataframe...')
+            # CD: <> brackets are not removed anymore <http://embedding.cc/resource/Karim_Fegrouch>
+            self.kg.entity_to_idx = self.kg.entity_to_idx.to_dict()['entity']
+            print('Done !\n')
+            print('[9 / 14] Obtaining relation to integer index mapping from pandas dataframe...')
+            self.kg.relation_to_idx = self.kg.relation_to_idx.to_dict()['relation']
+            print('Done !\n')
+            self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
+            print('[10 / 14] Mapping training data into integers for training...')
+            start_time = time.time()
+            # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
+            self.kg.train_set = index_triples(self.kg.train_set,
+                                              self.kg.entity_to_idx,
+                                              self.kg.relation_to_idx)
+            print(f'Done ! {time.time() - start_time:.3f} seconds\n')
+            if self.kg.path_for_serialization is not None:
+                # 10. Serialize (9).
+                print('[11 / 14] Serializing integer mapped data...')
+                self.kg.train_set.to_parquet(self.kg.path_for_serialization + '/idx_train_df.gzip', compression='gzip',
+                                             engine='pyarrow')
+                print('Done !\n')
+            assert isinstance(self.kg.train_set, pd.core.frame.DataFrame)
+            # 11. Convert data from pandas dataframe to numpy ndarray.
+            print('[12 / 14] Mapping from pandas data frame to numpy ndarray to reduce memory usage...')
+            # CD: Maybe to list?
+            self.kg.train_set = self.kg.train_set.values
+            print('Done !\n')
+        else:
+            print(
+                '[4 / 14] Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...',
+            )
+            self.kg.entity_to_idx = self.kg.entity_to_idx.to_dict()['entity']
+            self.kg.relation_to_idx = self.kg.relation_to_idx.to_dict()['relation']
+            self.kg.num_entities = len(self.kg.entity_to_idx)
+            self.kg.num_relations = len(self.kg.relation_to_idx)
+            print('Done !\n')
+            print('[10 / 14] Mapping training data into integers for training...')
+            # 9. Use bijection mappings obtained in (4) and (5) to create training data for models.
+            self.kg.train_set = index_triples(self.kg.train_set, self.kg.entity_to_idx, self.kg.relation_to_idx)
+            print('Done !\n')
+            self.kg.train_set = self.kg.train_set
+            assert isinstance(self.kg.train_set, pd.core.frame.DataFrame)
+            # 11. Convert data from pandas dataframe to numpy ndarray.
+            print('[12 / 14] Mapping from pandas data frame to numpy ndarray to reduce memory usage...')
+            self.kg.train_set = self.kg.train_set.values
+            print('Done !\n')
+
+        self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
+                                                    num=max(self.kg.num_entities, self.kg.num_relations))
+        print('[13 / 14 ] Sanity checking...')
+        # 12. Sanity checking: indexed training set can not have an indexed entity assigned with larger indexed than the number of entities.
+        dataset_sanity_checking(self.kg.train_set, self.kg.num_entities, self.kg.num_relations)
+        print('Done !\n')
+        if self.kg.valid_set is not None:
+            if self.kg.path_for_serialization is not None:
+                print('[14 / 14 ] Serializing validation data for Continual Learning...')
+                self.kg.valid_set.to_parquet(
+                    self.kg.path_for_serialization + '/valid_df.gzip', compression='gzip', engine='pyarrow')
+                print('Done !\n')
+            print('[14 / 14 ] Indexing validation dataset...')
+            self.kg.valid_set = index_triples(self.kg.valid_set, self.kg.entity_to_idx, self.kg.relation_to_idx)
+            print('Done !\n')
+            if self.kg.path_for_serialization is not None:
+                print('[15 / 14 ] Serializing indexed validation dataset...')
+                self.kg.valid_set.to_parquet(
+                    self.kg.path_for_serialization + '/idx_valid_df.gzip', compression='gzip', engine='pyarrow')
+                print('Done !\n')
+            # To numpy
+            self.kg.valid_set = self.kg.valid_set.values
+            dataset_sanity_checking(self.kg.valid_set, self.kg.num_entities, self.kg.num_relations)
+            self.kg.valid_set = numpy_data_type_changer(self.kg.valid_set,
+                                                        num=max(self.kg.num_entities, self.kg.num_relations))
+        if self.kg.test_set is not None:
+            if self.kg.path_for_serialization is not None:
+                print('[16 / 14 ] Serializing test data for Continual Learning...')
+                self.kg.test_set.to_parquet(
+                    self.kg.path_for_serialization + '/test_df.gzip', compression='gzip', engine='pyarrow')
+                print('Done !\n')
+            print('[17 / 14 ] Indexing test dataset...')
+            self.kg.test_set = index_triples(self.kg.test_set, self.kg.entity_to_idx, self.kg.relation_to_idx)
+            print('Done !\n')
+            if self.kg.path_for_serialization is not None:
+                print('[18 / 14 ] Serializing indexed test dataset...')
+                self.kg.test_set.to_parquet(
+                    self.kg.path_for_serialization + '/idx_test_df.gzip', compression='gzip', engine='pyarrow')
+            # To numpy
+            self.kg.test_set = self.kg.test_set.values
+            dataset_sanity_checking(self.kg.test_set, self.kg.num_entities, self.kg.num_relations)
+            self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
+                                                       num=max(self.kg.num_entities, self.kg.num_relations))
+            print('Done !\n')
+
+    def __preprocess_polars(self):
+        # (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
+        if self.kg.add_reciprical and self.kg.eval_model:
+            print('NOOO RECIPROLCAL')
+            # @TODO:This logic needs to be implemented
+            # pd.concat([x, x['object'].to_frame(name='subject').join(
+            #    x['relation'].map(lambda x: x + '_inverse').to_frame(name='relation')).join(
+            #    x['subject'].to_frame(name='object'))], ignore_index=True)
+
+        # (2) Type checking
+        try:
+            assert isinstance(self.kg.train_set, polars.DataFrame)
+        except TypeError:
+            raise TypeError(f"{type(kg.train_set)}")
+        assert isinstance(self.kg.valid_set, polars.DataFrame) or self.kg.valid_set is None
+        assert isinstance(self.kg.test_set, polars.DataFrame) or self.kg.test_set is None
+        if self.kg.min_freq_for_vocab is not None:
+            raise NotImplementedError('With using Polars')
+
+        @timeit
+        def concat_splits(train, val, test):
+            print('\nConcatenating data to obtain index...')
+            x = [train]
+            if val is not None:
+                x.append(val)
+            if test is not None:
+                x.append(test)
+            return polars.concat(x)
+
+        df_str_kg = concat_splits(self.kg.train_set, self.kg.valid_set, self.kg.test_set)
+        # Entity Index: {'a':1, 'b':2} :
+        self.kg.entity_to_idx = polars.concat((df_str_kg['subject'], df_str_kg['object'])).unique(
+            maintain_order=True).rename('entity')
+        # @TODO: Maybe store as python dictionary?
+
+        vocab_to_parquet(self.kg.entity_to_idx.to_frame().to_pandas(), 'entity_to_idx.gzip',
+                         self.kg.path_for_serialization,
+                         print_into='Serializing compressed entity integer mapping...')
+
+        self.kg.entity_to_idx = dict(zip(self.kg.entity_to_idx.to_list(), list(range(len(self.kg.entity_to_idx)))))
+
+        # Relation Index: {'r1':1, 'r2:'2}
+        self.kg.relation_to_idx = df_str_kg['relation'].unique(maintain_order=True)
+        vocab_to_parquet(self.kg.relation_to_idx.to_frame().to_pandas(), 'relation_to_idx.gzip',
+                         self.kg.path_for_serialization,
+                         '[8 / 14] Serializing compressed relation integer mapping...')
+
+        self.kg.relation_to_idx = dict(
+            zip(self.kg.relation_to_idx.to_list(), list(range(len(self.kg.relation_to_idx)))))
+
+        self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
+
+        @timeit
+        def indexer(data):
+            return data.with_columns(
+                [polars.col("subject").apply(lambda x: self.kg.entity_to_idx[x]).alias("subject"),
+                 polars.col("relation").apply(lambda x: self.kg.relation_to_idx[x]).alias("relation"),
+                 polars.col("object").apply(lambda x: self.kg.entity_to_idx[x]).alias("object")]
+            )
+
+        # From str to int
+        self.kg.train_set = indexer(self.kg.train_set).to_pandas()
+        if self.kg.path_for_serialization is not None:
+            self.kg.train_set.to_parquet(self.kg.path_for_serialization + '/idx_train_df.gzip', compression='gzip',
+                                         engine='pyarrow')
+        self.kg.train_set = self.kg.train_set.values
+        print('Done !\n')
+
+        if self.kg.valid_set is not None:
+            self.kg.valid_set = indexer(self.kg.valid_set).to_pandas()
+            self.kg.valid_set.to_parquet(self.kg.path_for_serialization + '/idx_valid_df.gzip', compression='gzip',
+                                         engine='pyarrow')
+            self.kg.valid_set = self.kg.valid_set.values
+        if self.kg.test_set is not None:
+            self.kg.test_set = indexer(self.kg.test_set).to_pandas()
+            self.kg.test_set.to_parquet(self.kg.path_for_serialization + '/idx_test_df.gzip', compression='gzip',
+                                        engine='pyarrow')
+            self.kg.test_set = self.kg.test_set.values
+
+    def __preprocess(self) -> None:
+        """ Preprocess the read data """
+        if self.kg.backend == 'polars':
+            self.__preprocess_polars()
+        elif self.kg.backend in ['pandas', 'modin']:
+            self.__preprocess_pandas()
+        else:
+            raise KeyError(f'{self.kg.backend} not found')
+
+        if self.kg.eval_model:  # and len(self.valid_set) > 0 and len(self.test_set) > 0:
+            if self.kg.valid_set is not None and self.kg.test_set is not None:
+                assert isinstance(self.kg.valid_set, np.ndarray) and isinstance(self.kg.test_set, np.ndarray)
+                # 16. Create a bijection mapping from subject-relation pairs to tail entities.
+                data = np.concatenate([self.kg.train_set, self.kg.valid_set, self.kg.test_set])
+            else:
+                data = self.kg.train_set
+            # We need to parallelise the next four steps.
+            print('Final: Creating Vocab...')
+            executor = concurrent.futures.ProcessPoolExecutor()
+            self.kg.er_vocab = executor.submit(get_er_vocab, data)  # get_er_vocab(data)
+            self.kg.re_vocab = executor.submit(get_re_vocab, data)  # get_re_vocab(data)
+            self.kg.ee_vocab = executor.submit(get_ee_vocab, data)  # get_ee_vocab(data)
+            self.kg.constraints = executor.submit(create_constraints, self.kg.train_set)
+            self.kg.domain_constraints_per_rel, self.kg.range_constraints_per_rel = None, None  # create_constraints(self.train_set)
+
+    def start(self) -> None:
+        """Load and Preprocess train, valid, and test datasets"""
+        # (1) Read or load the data into memory, otherwise load it
+        if self.kg.deserialize_flag:
+            self.__load()
+        else:
+            self.__read()
+            self.__preprocess()
 
 
 class KG:
@@ -33,7 +329,7 @@ class KG:
                  read_only_few: int = None, sample_triples_ratio: float = None,
                  path_for_serialization: str = None, add_noise_rate: float = None,
                  min_freq_for_vocab: int = None,
-                 entity_to_idx=None, relation_to_idx=None, dnf_predicates=None, backend=None):
+                 entity_to_idx=None, relation_to_idx=None, backend=None):
         """
 
         :param data_dir: A path of a folder containing the input knowledge graph
@@ -64,15 +360,20 @@ class KG:
         self.backend = 'pandas' if backend is None else backend
         self.train_set, self.valid_set, self.test_set = None, None, None
 
-        if deserialize_flag is None:
+        LoadFromDisk(kg=self).start()
+
+        """
+        
+        if self.deserialize_flag is None:
             # (1) Load + Preprocess input data.
-            if self.backend == 'polars':
-                self.read_parallel()
-            else:
-                self.read()
+            self.train_set, self.valid_set, self.test_set = self.loader.start()
+            self.preprocess()
+            self.eval_data_process()
 
         else:
-            self.deserialize(deserialize_flag)
+            self.deserialize(self.deserialize_flag)
+        """
+
         # 4. Display info
         self.description_of_input = f'\n------------------- Description of Dataset {data_dir} -------------------'
         self.description_of_input += f'\nNumber of entities: {self.num_entities}' \
@@ -81,10 +382,29 @@ class KG:
                                      f'\nNumber of triples on valid set: {len(self.valid_set) if self.valid_set is not None else 0}' \
                                      f'\nNumber of triples on test set: {len(self.test_set) if self.test_set is not None else 0}\n'
 
-    def read(self):
+    def eval_data_process(self):
+        if self.eval_model:  # and len(self.valid_set) > 0 and len(self.test_set) > 0:
+            if self.valid_set is not None and self.test_set is not None:
+                assert isinstance(self.valid_set, np.ndarray) and isinstance(self.test_set, np.ndarray)
+                # 16. Create a bijection mapping from subject-relation pairs to tail entities.
+                data = np.concatenate([self.train_set, self.valid_set, self.test_set])
+            else:
+                data = self.train_set
+            # @TODO: Takes too much time
+            # We need to parallelise the next four steps.
+            print('Final: Creating Vocab...')
+            executor = concurrent.futures.ProcessPoolExecutor()
+            self.er_vocab = executor.submit(get_er_vocab, data)  # get_er_vocab(data)
+            self.re_vocab = executor.submit(get_re_vocab, data)  # get_re_vocab(data)
+            self.ee_vocab = executor.submit(get_ee_vocab, data)  # get_ee_vocab(data)
+            self.constraints = executor.submit(create_constraints, self.train_set)
+            self.domain_constraints_per_rel, self.range_constraints_per_rel = None, None  # create_constraints(self.train_set)
+
+    def preprocess(self):
+        if self.backend == 'polars':
+            return self.preprocess_polars()
+
         assert self.backend in ['pandas', 'modin']
-        # (1.1) Load and Preprocess the data.
-        self.train_set, self.valid_set, self.test_set = self.load_read_process()
         # (1.2) Update (1.1).
         self.apply_reciprical_or_noise()
         # (1.3) Construct integer indexing for entities and relations.
@@ -178,28 +498,9 @@ class KG:
             dataset_sanity_checking(self.test_set, self.num_entities, self.num_relations)
             self.test_set = numpy_data_type_changer(self.test_set, num=max(self.num_entities, self.num_relations))
             print('Done !\n')
-        if self.eval_model:  # and len(self.valid_set) > 0 and len(self.test_set) > 0:
-            if self.valid_set is not None and self.test_set is not None:
-                assert isinstance(self.valid_set, np.ndarray) and isinstance(self.test_set, np.ndarray)
-                # 16. Create a bijection mapping from subject-relation pairs to tail entities.
-                data = np.concatenate([self.train_set, self.valid_set, self.test_set])
-            else:
-                data = self.train_set
-            # @TODO: Takes too much time
-            # We need to parallelise the next four steps.
-            print('Final: Creating Vocab...')
-            executor = concurrent.futures.ProcessPoolExecutor()
-            self.er_vocab = executor.submit(get_er_vocab, data)  # get_er_vocab(data)
-            self.re_vocab = executor.submit(get_re_vocab, data)  # get_re_vocab(data)
-            self.ee_vocab = executor.submit(get_ee_vocab, data)  # get_ee_vocab(data)
-            self.constraints = executor.submit(create_constraints, self.train_set)
-            self.domain_constraints_per_rel, self.range_constraints_per_rel = None, None  # create_constraints(self.train_set)
 
-    def read_parallel(self):
+    def preprocess_polars(self):
         import polars
-        # (1) Load and Preprocess the data.
-        self.train_set, self.valid_set, self.test_set = self.load_read_process()
-        # (1.2) Update (1.1).
         # (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
         if self.add_reciprical and self.eval_model:
             print('NOOO RECIPROLCAL')
@@ -212,9 +513,6 @@ class KG:
             raise NotImplementedError()
 
         # (2)
-        self.vocabulary_construction()
-
-    def vocabulary_construction(self) -> None:
         try:
             assert isinstance(self.train_set, polars.DataFrame)
         except TypeError:
@@ -278,23 +576,6 @@ class KG:
             self.test_set.to_parquet(self.path_for_serialization + '/idx_test_df.gzip', compression='gzip',
                                      engine='pyarrow')
             self.test_set = self.test_set.values
-
-        if self.eval_model:  # and len(self.valid_set) > 0 and len(self.test_set) > 0:
-            if self.valid_set is not None and self.test_set is not None:
-                assert isinstance(self.valid_set, np.ndarray) and isinstance(self.test_set, np.ndarray)
-                # 16. Create a bijection mapping from subject-relation pairs to tail entities.
-                data = np.concatenate([self.train_set, self.valid_set, self.test_set])
-            else:
-                data = self.train_set
-            # @TODO: Takes too much time
-            # We need to parallelise the next four steps.
-            print('Final: Creating Vocab...')
-            executor = concurrent.futures.ProcessPoolExecutor()
-            self.er_vocab = executor.submit(get_er_vocab, data)  # get_er_vocab(data)
-            self.re_vocab = executor.submit(get_re_vocab, data)  # get_re_vocab(data)
-            self.ee_vocab = executor.submit(get_ee_vocab, data)  # get_ee_vocab(data)
-            self.constraints = executor.submit(create_constraints, self.train_set)
-            self.domain_constraints_per_rel, self.range_constraints_per_rel = None, None  # create_constraints(self.train_set)
 
     def sequential_vocabulary_construction(self) -> None:
         """
@@ -376,31 +657,6 @@ class KG:
             print('\t after dropping:', self.train_set.size)  # .compute(scheduler=scheduler_flag))
             del low_frequency_entities
             print('Done !\n')
-
-    def load_read_process(self):
-        """Load and preprocess train, valid, and test datasets
-
-        A data written in the disk (a csv, parquet or text format) is read into memory and preprocessed
-
-        return:
-        """
-        # (1) Check whether a path leading to a directory is a parquet formatted file
-        for i in glob.glob(self.data_dir + '/*'):
-            if 'train' in i:
-                # 1. LOAD Data. (First pass on data)
-                print(
-                    f'[1 / 14] Loading and Preprocessing Training Data: read_only_few: {self.read_only_few} , sample_triples_ratio: {self.sample_triples_ratio}...')
-                self.train_set = load_data_parallel(i, self.read_only_few, self.sample_triples_ratio,
-                                                    backend=self.backend)
-            elif 'test' in i:
-                print(f'[1 / 14] Loading and Preprocessing Test Data:')
-                self.test_set = load_data_parallel(i, backend=self.backend)
-            elif 'valid' in i:
-                print(f'[1 / 14] Loading and Preprocessing Valid Data:')
-                self.valid_set = load_data_parallel(i, backend=self.backend)
-            else:
-                print(f'Unrecognized data {i}')
-        return self.train_set, self.valid_set, self.test_set
 
     def apply_reciprical_or_noise(self) -> None:
         """ (1) Add reciprocal triples (2) Add noisy triples """
