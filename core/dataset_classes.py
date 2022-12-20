@@ -464,7 +464,7 @@ class TriplePredictionDataset(Dataset):
         # corrupt head, tail or rel ?!
 
         # (1) Corrupted Entities:
-        corr = torch.randint(0, self.num_entities, (size_of_batch * self.neg_sample_ratio, 2))
+        corr = torch.randint(0, high=self.num_entities, size=(size_of_batch * self.neg_sample_ratio, 2))
         # (2) Head Corrupt:
         h_head_corr = corr[:, 0]
         r_head_corr = r.repeat(self.neg_sample_ratio, )
@@ -488,17 +488,6 @@ class TriplePredictionDataset(Dataset):
         label = torch.cat((label, label_head_corr, label_tail_corr, label_rel_corr), 0)
         return x, label
 
-
-class NotusedTripleClassificationDataSet(Dataset):
-    def __init__(self, X, y):
-        self.X = X
-        self.y = y
-
-    def __len__(self):
-        return len(self.X)
-
-    def __getitem__(self, idx):
-        return self.X[idx], self.y[idx]
 
 
 class PykeDataset(Dataset):
@@ -553,3 +542,17 @@ class PykeDataset(Dataset):
         select_negative_idx = torch.LongTensor(random.sample(self.entity_vocab.keys(), len(select_positives_idx)))
         x = torch.cat((torch.LongTensor([anchor]), select_positives_idx, select_negative_idx), dim=0)
         return x, torch.LongTensor([0])
+
+"""
+
+class NotusedTripleClassificationDataSet(Dataset):
+    def __init__(self, X, y):
+        self.X = X
+        self.y = y
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        return self.X[idx], self.y[idx]
+"""
