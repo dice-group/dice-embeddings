@@ -147,6 +147,49 @@ class Read_Load_Data_From_Disk:
             self.kg.domain_constraints_per_rel, self.range_constraints_per_rel = create_constraints(self.kg.train_set)
             print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
 
+    def __load_polars(self):
+        print(f'Deserialization Path: {self.kg.deserialize_flag}\n')
+        self.kg.entity_to_idx = polars.read_parquet(self.kg.deserialize_flag + '/entity_to_idx')
+        self.kg.num_entities = len(self.kg.entity_to_idx)
+        self.kg.relation_to_idx = polars.read_parquet(self.kg.deserialize_flag + '/relation_to_idx')
+        self.kg.num_relations = len(self.kg.relation_to_idx)
+
+        self.kg.entity_to_idx = dict(zip(self.kg.entity_to_idx['entity'].to_list(), list(range(len(self.kg.entity_to_idx)))))
+        self.kg.relation_to_idx = dict(zip(self.kg.relation_to_idx['relation'].to_list(), list(range(len(self.kg.relation_to_idx)))))
+
+        self.kg.train_set = polars.read_parquet(self.kg.deserialize_flag + '/idx_train_df').to_numpy()
+
+        try:
+            print('[5 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
+            self.kg.valid_set = polars.read_parquet(self.kg.deserialize_flag + '/idx_valid_df').to_numpy()
+            print('Done!\n')
+        except FileNotFoundError:
+            print('No valid data found!\n')
+            self.kg.valid_set = None  # pd.DataFrame()
+
+        try:
+            print('[6 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
+            self.kg.test_set = polars.read_parquet(self.kg.deserialize_flag + '/idx_test_df').to_numpy()  # .compute()
+            print('Done!\n')
+        except FileNotFoundError:
+            print('No test data found\n')
+            self.kg.test_set = None
+
+        if self.kg.eval_model:
+            if self.kg.valid_set is not None and self.kg.test_set is not None:
+                # 16. Create a bijection mapping from subject-relation pairs to tail entities.
+                data = np.concatenate([self.kg.train_set, self.kg.valid_set, self.kg.test_set])
+            else:
+                data = self.kg.train_set
+            print('[7 / 4] Creating er,re, and ee type vocabulary for evaluation...')
+            start_time = time.time()
+            self.kg.er_vocab = get_er_vocab(data)
+            self.kg.re_vocab = get_re_vocab(data)
+            # 17. Create a bijection mapping from subject-object pairs to relations.
+            self.kg.ee_vocab = get_ee_vocab(data)
+            self.kg.domain_constraints_per_rel, self.range_constraints_per_rel = create_constraints(self.kg.train_set)
+            print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
+
     @timeit
     def __read(self) -> None:
         """ Read the data into memory """
@@ -170,7 +213,10 @@ class Read_Load_Data_From_Disk:
         """Read or Load the train, valid, and test datasets"""
         # (1) Read or load the data into memory, otherwise load it
         if self.kg.deserialize_flag:
-            self.__load()
+            if self.kg.backend in ['pandas', 'modin']:
+                self.__load()
+            else:
+                self.__load_polars()
         else:
             self.__read()
 
@@ -347,8 +393,11 @@ class Preprocess:
             # Entity Index: {'a':1, 'b':2} :
             self.kg.entity_to_idx = polars.concat((df_str_kg['subject'], df_str_kg['object'])).unique(
                 maintain_order=True).rename('entity')
-            self.kg.entity_to_idx.to_frame().to_pandas().to_parquet(
-                self.kg.path_for_serialization + f'/entity_to_idx.gzip', compression='gzip', engine='pyarrow')
+
+            self.kg.entity_to_idx.to_frame().write_parquet(file=self.kg.path_for_serialization + f'/entity_to_idx',
+                                                           use_pyarrow=True)
+            # self.kg.entity_to_idx.to_frame().to_pandas().to_parquet(
+            #    self.kg.path_for_serialization + f'/entity_to_idx.gzip', compression='gzip', engine='pyarrow')
             self.kg.entity_to_idx = dict(zip(self.kg.entity_to_idx.to_list(), list(range(len(self.kg.entity_to_idx)))))
 
         entity_index()
@@ -357,8 +406,11 @@ class Preprocess:
         def relation_index():
             # Relation Index: {'r1':1, 'r2:'2}
             self.kg.relation_to_idx = df_str_kg['relation'].unique(maintain_order=True)
-            self.kg.relation_to_idx.to_frame().to_pandas().to_parquet(
-                self.kg.path_for_serialization + f'/relation_to_idx.gzip', compression='gzip', engine='pyarrow')
+            self.kg.relation_to_idx.to_frame().write_parquet(file=self.kg.path_for_serialization + f'/relation_to_idx',
+                                                             use_pyarrow=True)
+
+            # self.kg.relation_to_idx.to_frame().to_pandas().to_parquet(
+            #    self.kg.path_for_serialization + f'/relation_to_idx.gzip', compression='gzip', engine='pyarrow')
             self.kg.relation_to_idx = dict(
                 zip(self.kg.relation_to_idx.to_list(), list(range(len(self.kg.relation_to_idx)))))
 
@@ -374,35 +426,19 @@ class Preprocess:
             )
 
         @timeit
-        def index_train():
-            # From str to int
-            self.kg.train_set = indexer(self.kg.train_set).to_pandas()
+        def index_triples(df, name):
+            df = indexer(df)  # .to_pandas()
             if self.kg.path_for_serialization is not None:
-                self.kg.train_set.to_parquet(self.kg.path_for_serialization + '/idx_train_df.gzip', compression='gzip',
-                                             engine='pyarrow')
-            self.kg.train_set = self.kg.train_set.values
+                df.write_parquet(
+                    file=self.kg.path_for_serialization + f'/{name}',
+                    use_pyarrow=True)
+            return df.to_numpy()
 
-        index_train()
-
-        @timeit
-        def index_val():
-            self.kg.valid_set = indexer(self.kg.valid_set).to_pandas()
-            self.kg.valid_set.to_parquet(self.kg.path_for_serialization + '/idx_valid_df.gzip', compression='gzip',
-                                         engine='pyarrow')
-            self.kg.valid_set = self.kg.valid_set.values
-
+        self.kg.train_set = index_triples(self.kg.train_set, name='idx_train_df')
         if self.kg.valid_set is not None:
-            index_val()
-
-        @timeit
-        def index_test():
-            self.kg.test_set = indexer(self.kg.test_set).to_pandas()
-            self.kg.test_set.to_parquet(self.kg.path_for_serialization + '/idx_test_df.gzip', compression='gzip',
-                                        engine='pyarrow')
-            self.kg.test_set = self.kg.test_set.values
-
+            self.kg.valid_set = index_triples(self.kg.valid_set, name='idx_valid_df')
         if self.kg.test_set is not None:
-            index_test()
+            self.kg.test_set = index_triples(self.kg.test_set, name='idx_test_df')
 
     @timeit
     def __preprocess(self) -> None:

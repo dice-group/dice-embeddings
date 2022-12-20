@@ -477,7 +477,8 @@ def reload_input_data(args: str = None, cls=None):
              sample_triples_ratio=args.sample_triples_ratio,
              path_for_serialization=args.full_storage_path,
              min_freq_for_vocab=args.min_freq_for_vocab,
-             deserialize_flag=args.path_experiment_folder)
+             deserialize_flag=args.path_experiment_folder,
+             backend=args.backend)
     print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
     print(kg.description_of_input)
     return kg
