@@ -15,6 +15,11 @@ import pandas as pd
 import sys
 
 
+def print_peak_memory(prefix, device):
+    if device == 0:
+        print(f"{prefix}: {torch.cuda.max_memory_allocated(device) // 1e6}MB ")
+
+
 class TorchDDPTrainer(AbstractTrainer):
     """ A Trainer based on torch.nn.parallel.DistributedDataParallel (https://pytorch.org/docs/stable/notes/ddp.html#ddp)"""
 
@@ -39,6 +44,7 @@ class TorchDDPTrainer(AbstractTrainer):
         os.remove('model.pt')
         self.on_fit_end(self, model)
 
+
 def distributed_training(rank: int, world_size, model, train_dataset, callbacks, args):
     """
     distributed_training is called as the entrypoint of the spawned process.
@@ -54,6 +60,7 @@ def distributed_training(rank: int, world_size, model, train_dataset, callbacks,
     print(f"Running basic DDP example on rank {rank}.")
     print(f"torch.utils.data.get_worker_info():{torch.utils.data.get_worker_info()}")
     print(f"torch.initial_seed():{torch.initial_seed()}")
+    print_peak_memory("Max memory allocated distributed_training:", rank)
     # (1) Create DATA LOADER.
     train_dataset_loader = DataLoader(train_dataset, batch_size=args.batch_size,
                                       pin_memory=True, shuffle=False,
@@ -62,6 +69,8 @@ def distributed_training(rank: int, world_size, model, train_dataset, callbacks,
 
     # (2) Initialize OPTIMIZER.
     optimizer = model.configure_optimizers()
+    # or
+    # optimizer_class = model.get_optimizer_class()
     # (3) Create a static DDB Trainer.
     trainer = Trainer(model, train_dataset_loader, optimizer, rank, callbacks)
     trainer.train(args.num_epochs)
@@ -69,13 +78,6 @@ def distributed_training(rank: int, world_size, model, train_dataset, callbacks,
         trainer.model.loss_history = trainer.loss_history
         torch.save(trainer.model.module.state_dict(), "model.pt")
     dist.destroy_process_group()
-    """
-    # Move the model to GPU with id rank
-    # https://pytorch.org/tutorials/recipes/zero_redundancy_optimizer.html
-    # Note: ZeroRedundancy Increases the computation time quite a bit. DBpedia/10 => 3mins
-    # Without ZeroReundancy optimizer we have 0.770 minutes
-    # optimizer = ZeroRedundancyOptimizer(ddp_model.parameters(),optimizer_class=torch.optim.SGD, lr=lr )
-    """
 
 
 class Trainer:
@@ -91,6 +93,15 @@ class Trainer:
         self.optimizer = optimizer
         self.callbacks = callbacks
         self.model = DDP(model, device_ids=[gpu_id])
+        print_peak_memory("Max memory allocated after creating DDP:", rank)
+        """
+        # Move the model to GPU with id rank
+        # https://pytorch.org/tutorials/recipes/zero_redundancy_optimizer.html
+        # Note: ZeroRedundancy Increases the computation time quite a bit. DBpedia/10 => 3mins
+        # Without ZeroReundancy optimizer we have 0.770 minutes
+        # optimizer = ZeroRedundancyOptimizer(ddp_model.parameters(),optimizer_class=torch.optim.SGD, lr=lr )
+        """
+
         print(self.model)
         self.loss_history = []
 
@@ -120,6 +131,9 @@ class Trainer:
             epoch_loss = self._run_epoch(epoch)
             print(
                 f"{epoch + 1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} min\tEpoch loss: {epoch_loss:.8f}")
+
+            if epoch == 0:
+                print_peak_memory("Max memory allocated after the fist epoch:", rank)
             self.loss_history.append(epoch_loss)
             if self.gpu_id == 0:
                 self.model.module.loss_history.append(epoch_loss)

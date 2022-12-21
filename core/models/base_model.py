@@ -30,10 +30,10 @@ class BaseKGE(pl.LightningModule):
         self.loss = torch.nn.BCEWithLogitsLoss()
         self.selected_optimizer = None
         self.normalizer_class = None
-        self.normalize_head_entity_embeddings = IdentityClass()#self.identity  # lambda x: x
-        self.normalize_relation_embeddings = IdentityClass()#self.identity  # lambda x: x
-        self.normalize_tail_entity_embeddings = IdentityClass()#self.identity  # lambda x: x
-        self.hidden_normalizer = self.identity
+        self.normalize_head_entity_embeddings = IdentityClass()
+        self.normalize_relation_embeddings = IdentityClass()
+        self.normalize_tail_entity_embeddings = IdentityClass()
+        self.hidden_normalizer = IdentityClass()
         self.init_params_with_sanity_checking()
 
         self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
@@ -46,10 +46,6 @@ class BaseKGE(pl.LightningModule):
         self.hidden_dropout = torch.nn.Dropout(self.input_dropout_rate)
         # average minibatch loss per epoch
         self.loss_history = []
-
-    @staticmethod
-    def identity(x):
-        return x
 
     def init_params_with_sanity_checking(self):
         assert self.args['model'] in ['CLf', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO',
@@ -197,6 +193,15 @@ class BaseKGE(pl.LightningModule):
         else:
             raise KeyError()
         return self.selected_optimizer
+
+    def get_optimizer_class(self):
+        # default params in pytorch.
+        if self.optimizer_name == 'SGD':
+            return torch.optim.SGD
+        elif self.optimizer_name == 'Adam':
+            return torch.optim.Adam
+        else:
+            raise KeyError()
 
     def loss_function(self, yhat_batch, y_batch):
         return self.loss(input=yhat_batch, target=y_batch)
