@@ -49,13 +49,11 @@ class BaseKGE(pl.LightningModule):
         """ Size of model in MB and number of params"""
         # https://discuss.pytorch.org/t/finding-model-size/130275/2
         # (2) Store NumParam and EstimatedSizeMB
-        param_size = 0
-        for param in self.parameters():
-            param_size += param.nelement() * param.element_size()
+        num_params=sum(p.numel() for p in self.parameters())
         buffer_size = 0
         for buffer in self.buffers():
             buffer_size += buffer.nelement() * buffer.element_size()
-        return {'EstimatedSizeMB': (param_size + buffer_size) / 1024 ** 2, 'NumParam': param_size}
+        return {'EstimatedSizeMB': (num_params + buffer_size) / 1024 ** 2, 'NumParam': num_params}
 
     def init_params_with_sanity_checking(self):
         assert self.args['model'] in ['CLf', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO',

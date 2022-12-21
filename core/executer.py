@@ -63,15 +63,17 @@ class Execute:
     def load_indexed_data(self) -> None:
         """ Load Indexed Data"""
         self.dataset = read_or_load_kg(self.args, cls=KG)
-
+    
+    @timeit
     def save_trained_model(self, start_time: float) -> None:
         """ Save a knowledge graph embedding model (an instance of BaseKGE class) """
-
+        print('*** Save Trained Model ***')
         self.trained_model.eval()
         self.trained_model.to('cpu')
         # Save the epoch loss
         # (2) Store NumParam and EstimatedSizeMB
         self.report.update(self.trained_model.mem_of_model())
+        print(f"Number of parameters:{self.report['NumParam']}")
         # (3) Store/Serialize Model for further use.
         if self.is_continual_training is False:
             store(trainer=self.trainer,
@@ -95,8 +97,6 @@ class Execute:
             message = f'{total_runtime / (60 ** 2):.3f} hours'
         self.report['Runtime'] = message
         self.report['path_experiment_folder'] = self.storage_path
-        print(f'Total computation time: {message}')
-        print(f'Number of parameters in {self.trained_model.name}:', self.report["NumParam"])
         # (4) Store the report of training.
         with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
             json.dump(self.report, file_descriptor, indent=4)
@@ -124,6 +124,7 @@ class Execute:
         self.save_trained_model(start_time)
         # (6) Eval model.
         self.evaluator.eval(self.trained_model, form_of_labelling)
+        print(f"Total computation time: {self.report['Runtime']}")
         # (7) Return the report of the training process.
         return {**self.report, **self.evaluator.report}
 

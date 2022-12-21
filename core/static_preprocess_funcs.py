@@ -197,6 +197,10 @@ def preprocesses_input_args(arg):
     except KeyError:
         print(arg.eval_model)
         exit(1)
+    
+    if arg.eval_model=='None':
+        args.eval_model=None
+
     # reciprocal checking
     # @TODO We need better way for using apply_reciprical_or_noise.
     if arg.scoring_technique in ['KvsSample', 'PvsAll', 'CCvsAll', 'KvsAll', '1vsAll', 'BatchRelaxed1vsAll',

@@ -115,27 +115,23 @@ class Trainer:
         return batch_loss
 
     def _run_epoch(self, epoch):
-        # b_sz = len(next(iter(self.train_dataset_loader))[0])
-        # print(f"[GPU {self.gpu_id}] Epoch {epoch} | Batchsize: {b_sz} | Number of Batches per Epoch:{len(self.train_dataset_loader)}")
         self.train_dataset_loader.sampler.set_epoch(epoch)
         epoch_loss = 0
         for i, (source, targets) in enumerate(self.train_dataset_loader):
+            start_time=time.time()
             source, targets = source.to(self.gpu_id, non_blocking=True), targets.to(self.gpu_id, non_blocking=True)
             batch_loss = self._run_batch(source, targets)
             epoch_loss += batch_loss
-        return epoch_loss / len(self.train_dataset_loader)
+            if self.gpu_id==0:
+                print(f"Epoch:{epoch + 1} | Batch:{i + 1} | Runtime:{(time.time() - start_time):.2f} | Loss:{batch_loss:.8f}")
+        return epoch_loss/(i+1)
 
     def train(self, max_epochs: int):
         for epoch in range(max_epochs):
             start_time = time.time()
             epoch_loss = self._run_epoch(epoch)
-            print(
-                f"{epoch + 1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} min\tEpoch loss: {epoch_loss:.8f}")
-
-            if epoch == 0:
-                print_peak_memory("Max memory allocated after the fist epoch:", self.gpu_id)
-            self.loss_history.append(epoch_loss)
             if self.gpu_id == 0:
+                print(f"Epoch:{epoch + 1} | Loss:{epoch_loss:.8f} | Runtime:{(time.time() - start_time) / 60:.3f}mins")
                 self.model.module.loss_history.append(epoch_loss)
                 for c in self.callbacks:
                     c.on_train_epoch_end(None, self.model.module)
@@ -147,7 +143,7 @@ def ddp_setup(rank: int, world_size: int):
     rank is a unique identifier assigned to each process
     """
     os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12355'
+    os.environ['MASTER_PORT'] = '1234'
     # initialize the process group, nccl
     # gloo, mpi or ncclhttps://pytorch.org/docs/stable/distributed.html#torch.distributed.init_process_group
     dist.init_process_group(backend='nccl',  # NVIDIA Collection Communication Library

@@ -190,6 +190,8 @@ def save_checkpoint_model(trainer, model, path: str) -> None:
         print(e)
         print(model.name)
         print('Could not save the model correctly')
+
+@timeit
 def store(trainer,
           trained_model, model_name: str = 'model', full_storage_path: str = None,
           dataset=None, save_as_csv=False) -> None:
