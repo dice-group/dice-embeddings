@@ -101,8 +101,9 @@ class Trainer:
         # Without ZeroReundancy optimizer we have 0.770 minutes
         # optimizer = ZeroRedundancyOptimizer(ddp_model.parameters(),optimizer_class=torch.optim.SGD, lr=lr )
         """
-
-        print(self.model)
+        if self.gpu_id==0:
+            print(self.model)
+            print(self.optimizer)
         self.loss_history = []
 
     def _run_batch(self, source, targets):
