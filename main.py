@@ -22,7 +22,7 @@ def argparse_default(description=None):
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[Adan,NAdam, Adam, SGD, Sls, AdamSLS]')
     parser.add_argument('--embedding_dim', type=int, default=32, help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument('--callbacks',
@@ -48,7 +48,7 @@ def argparse_default(description=None):
     # Flags for computation
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
                                                                         'If >2 ,no evaluation scenario is applied implies no evaluation.')
-    parser.add_argument("--eval_model", type=str, default=None,#"train_val_test",
+    parser.add_argument("--eval_model", type=str, default="train_val_test",
                         help='train, val, test, constraint, combine them anyway you want, e.g. '
                              'train_val,train_val_test, val_test, val_test_constraint ')
     # Additional training params
@@ -60,8 +60,7 @@ def argparse_default(description=None):
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
     parser.add_argument("--num_of_output_channels", type=int, default=3, help="# of output channels in convolution")
 
-    parser.add_argument("--num_core", type=int, default=0, help='Number of cores to be used. 0=> use all cpus')
-
+    parser.add_argument("--num_core", type=int, default=0, help='Number of cores to be used. 0 implies using single CPU')
     parser.add_argument("--seed_for_computation", type=int, default=0, help='Seed for all, see pl seed_everything().')
     # @TODO: Do we still need it
     parser.add_argument("--sample_triples_ratio", type=float, default=None, help='Sample input data.')

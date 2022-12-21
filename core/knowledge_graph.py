@@ -7,7 +7,7 @@ import json
 import os
 import pandas
 import pandas as pd
-from .static_funcs import performance_debugger, get_er_vocab, get_ee_vocab, get_re_vocab, \
+from .static_funcs import get_er_vocab, get_ee_vocab, get_re_vocab, \
     create_recipriocal_triples, add_noisy_triples, index_triples, load_data, create_constraints, \
     numpy_data_type_changer, vocab_to_parquet, timeit
 from .sanity_checkers import dataset_sanity_checking
@@ -20,17 +20,16 @@ class KG:
     """ Knowledge Graph """
 
     def __init__(self, data_dir: str = None, deserialize_flag: str = None,
-                 num_core: int = 1,
+                 num_core: int = 0,
                  add_reciprical: bool = None, eval_model: str = None,
                  read_only_few: int = None, sample_triples_ratio: float = None,
                  path_for_serialization: str = None, add_noise_rate: float = None,
                  min_freq_for_vocab: int = None,
                  entity_to_idx=None, relation_to_idx=None, backend=None):
         """
-
         :param data_dir: A path of a folder containing the input knowledge graph
         :param deserialize_flag: A path of a folder containing previously parsed data
-        :param large_kg_parse: A flag for using all cores to parse input knowledge graph
+        :param num_core: Number of subprocesses used for data loading
         :param add_reciprical: A flag for applying reciprocal data augmentation technique
         :param eval_model: A flag indicating whether evaluation will be applied. If no eval, then entity relation mappings will be deleted to free memory.
         :param add_noise_rate: Add say 10% noise in the input data
@@ -59,7 +58,6 @@ class KG:
         Read_Load_Data_From_Disk(kg=self).start()
         # (2) Preprocess (1).
         Preprocess(kg=self).start()
-
         self.__describe()
 
     def __describe(self) -> None:
@@ -190,25 +188,19 @@ class Read_Load_Data_From_Disk:
             self.kg.domain_constraints_per_rel, self.range_constraints_per_rel = create_constraints(self.kg.train_set)
             print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
 
-    @timeit
     def __read(self) -> None:
         """ Read the data into memory """
         for i in glob.glob(self.kg.data_dir + '/*'):
             if 'train' in i:
-                # 1. LOAD Data. (First pass on data)
-                print(f'Loading Training Data...')
                 self.kg.train_set = load_data(i, self.kg.read_only_few, self.kg.sample_triples_ratio,
                                               backend=self.kg.backend)
             elif 'test' in i:
-                print(f'Loading Test Data...')
                 self.kg.test_set = load_data(i, backend=self.kg.backend)
             elif 'valid' in i:
-                print(f'Loading Validation Data...')
                 self.kg.valid_set = load_data(i, backend=self.kg.backend)
             else:
                 print(f'Unrecognized data {i}')
 
-    @timeit
     def start(self) -> None:
         """Read or Load the train, valid, and test datasets"""
         # (1) Read or load the data into memory, otherwise load it
@@ -227,7 +219,6 @@ class Preprocess:
     def __init__(self, kg: KG):
         self.kg = kg
 
-    @timeit
     def start(self) -> None:
         """Preprocess train, valid, and test datasets"""
         # (1) PrRead or load the data into memory, otherwise load it
@@ -339,11 +330,9 @@ class Preprocess:
 
     @timeit
     def __preprocess_polars(self):
-        print('Preprocessing with Polars...')
-        print('Train Data:', self.kg.train_set.shape)
+        print(f'*** Preprocessing Train Data:{self.kg.train_set.shape} with Polars ***')
         # (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
         if self.kg.add_reciprical and self.kg.eval_model:
-            @timeit
             def adding_reciprocal_triples():
                 """ Add reciprocal triples """
                 # (1.1) Add reciprocal triples into training set
@@ -366,7 +355,8 @@ class Preprocess:
                         polars.col("relation").apply(lambda x: x + '_inverse'),
                         polars.col("subject").alias('object')
                     ]))
-            print('Adding Reciprocal Triples...')
+
+            print('Adding Reciprocal Triples...', end=' ')
             adding_reciprocal_triples()
 
         # (2) Type checking
@@ -379,7 +369,6 @@ class Preprocess:
         if self.kg.min_freq_for_vocab is not None:
             raise NotImplementedError('With using Polars')
 
-        @timeit
         def concat_splits(train, val, test):
             x = [train]
             if val is not None:
@@ -388,7 +377,7 @@ class Preprocess:
                 x.append(test)
             return polars.concat(x)
 
-        print('Concat Splits...')
+        print('Concat Splits...', end=' ')
         df_str_kg = concat_splits(self.kg.train_set, self.kg.valid_set, self.kg.test_set)
 
         @timeit
@@ -397,13 +386,13 @@ class Preprocess:
             # Entity Index: {'a':1, 'b':2} :
             self.kg.entity_to_idx = polars.concat((df_str_kg['subject'], df_str_kg['object'])).unique(
                 maintain_order=True).rename('entity')
-            print('Saving entity index into disk...')
+            print('Saving entity index into disk...', end=' ')
             self.kg.entity_to_idx.to_frame().write_parquet(file=self.kg.path_for_serialization + f'/entity_to_idx',
                                                            use_pyarrow=True)
-            print('Polars DataFrame to python dictionary conversion.')
+            print('Polars DataFrame to python dictionary conversion...')
             self.kg.entity_to_idx = dict(zip(self.kg.entity_to_idx.to_list(), list(range(len(self.kg.entity_to_idx)))))
 
-        print('Entity Indexing...')
+        print('Entity Indexing...', end=' ')
         entity_index()
 
         @timeit
@@ -411,42 +400,47 @@ class Preprocess:
             """ Create a mapping from str representation of relations/edges to integers"""
             # Relation Index: {'r1':1, 'r2:'2}
             self.kg.relation_to_idx = df_str_kg['relation'].unique(maintain_order=True)
+            print('Saving relation index into disk...', end=' ')
             self.kg.relation_to_idx.to_frame().write_parquet(file=self.kg.path_for_serialization + f'/relation_to_idx',
                                                              use_pyarrow=True)
+            print('Polars DataFrame to python dictionary conversion...')
             self.kg.relation_to_idx = dict(
                 zip(self.kg.relation_to_idx.to_list(), list(range(len(self.kg.relation_to_idx)))))
 
-        print('Relation Indexing')
+        print('Relation Indexing...', end=' ')
         relation_index()
         self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
 
-        @timeit
         def indexer(data):
             """ Apply str to int mapping on an input data"""
+            # These column assignments are executed in parallel
             return data.with_columns(
                 [polars.col("subject").apply(lambda x: self.kg.entity_to_idx[x]).alias("subject"),
                  polars.col("relation").apply(lambda x: self.kg.relation_to_idx[x]).alias("relation"),
                  polars.col("object").apply(lambda x: self.kg.entity_to_idx[x]).alias("object")])
 
         @timeit
-        def index_triples(df, name):
-            df = indexer(df)  # .to_pandas()
+        def index_triples(df: polars.DataFrame, name):
+            """ Map str stored in a polars Dataframe to int"""
+            df = indexer(df)
             if self.kg.path_for_serialization is not None:
                 df.write_parquet(
                     file=self.kg.path_for_serialization + f'/{name}',
                     use_pyarrow=True)
             return df.to_numpy()
 
+        print(f'Indexing Training Data {self.kg.train_set.shape}...')
         self.kg.train_set = index_triples(self.kg.train_set, name='idx_train_df')
         if self.kg.valid_set is not None:
+            print(f'Indexing Val Data {self.kg.valid_set.shape}...')
             self.kg.valid_set = index_triples(self.kg.valid_set, name='idx_valid_df')
         if self.kg.test_set is not None:
+            print(f'Indexing Test Data {self.kg.test_set.shape}...')
             self.kg.test_set = index_triples(self.kg.test_set, name='idx_test_df')
+        print(f'*** Preprocessing Train Data:{self.kg.train_set.shape} with Polars DONE ***')
 
-    @timeit
     def __preprocess(self) -> None:
         """ Preprocess the read data """
-        print('Preprocessing...')
         if self.kg.backend == 'polars':
             self.__preprocess_polars()
         elif self.kg.backend in ['pandas', 'modin']:

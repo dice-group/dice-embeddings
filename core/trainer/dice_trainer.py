@@ -93,36 +93,24 @@ class DICE_Trainer:
         for i in range(torch.cuda.device_count()):
             print(torch.cuda.get_device_name(i))
 
-    def training_process(self) -> BaseKGE:
-        """
-        Training and evaluation procedure
-
-        (1) Collect Callbacks to be used during training
-        (2) Initialize Pytorch-lightning Trainer
-        (3) Train a KGE modal via (2)
-        (4) Eval trained model
-        (5) Return trained model
-        """
+    def start(self) -> Tuple[BaseKGE,str]:
+        """ Start training process"""
         self.executor.report['num_train_triples'] = len(self.executor.dataset.train_set)
         self.executor.report['num_entities'] = self.executor.dataset.num_entities
         self.executor.report['num_relations'] = self.executor.dataset.num_relations
-        print('------------------- Train & Eval -------------------')
-        ## (2) Initialize trainer
-        # self.trainer = initialize_trainer(self.args, callbacks=get_callbacks(self.args), plugins=[])
-        # (3) Use (2) to train a KGE model
-        trained_model, form_of_labelling = self.train()
-        # (5) Return trained model
-        return trained_model, form_of_labelling
+        print('------------------- Train -------------------')
+        return self.train()
 
-    def start(self):
-        return self.training_process()
 
-    def train(self):  # -> Tuple[BaseKGE, str]:
+    def train(self) -> Tuple[BaseKGE, str]:
         """ Train selected model via the selected training strategy """
+        # (1) Perform K-fold CV
         if self.args.num_folds_for_cv >= 2:
             return self.k_fold_cross_validation()
         else:
+            # (2) Initialize Trainer.
             self.trainer = initialize_trainer(self.args, callbacks=get_callbacks(self.args), plugins=[])
+            # (3) Select the training strategy.
             if self.args.scoring_technique == 'NegSample':
                 return self.training_negative_sampling()
             elif self.args.scoring_technique == 'KvsAll':
