@@ -7,7 +7,6 @@ import os
 import datetime
 
 import numpy as np
-# import pandas as pd
 import torch
 import torch.nn.functional as F
 from pytorch_lightning import seed_everything
@@ -20,10 +19,6 @@ from core.static_funcs import *
 from core.sanity_checkers import *
 from core.trainer import DICE_Trainer
 
-logging.getLogger('pytorch_lightning').setLevel(0)
-warnings.simplefilter(action="ignore", category=UserWarning)
-warnings.filterwarnings(action="ignore", category=DeprecationWarning)
-warnings.filterwarnings(action="ignore", category=FutureWarning)
 
 
 class Execute:
@@ -73,7 +68,7 @@ class Execute:
         self.trained_model.to('cpu')
         # Save the epoch loss
         # (2) Store NumParam and EstimatedSizeMB
-        self.report.update(extract_model_summary(self.trained_model.summarize()))
+        self.report.update(self.trained_model.mem_of_model())
         # (3) Store/Serialize Model for further use.
         if self.is_continual_training is False:
             store(trainer=self.trainer,

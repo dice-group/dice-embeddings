@@ -4,14 +4,12 @@ from pytorch_lightning.utilities.types import TRAIN_DATALOADERS, EVAL_DATALOADER
 from torch import nn
 from torch.nn import functional as F
 from torchmetrics import Accuracy as accuracy
-from typing import List, Any, Tuple, Union
+from typing import List, Any, Tuple, Union, Dict
 from torch.nn.init import xavier_normal_
 import numpy as np
 from core.custom_opt import Sls, AdamSLS, Adan
 
-
 class BaseKGE(pl.LightningModule):
-
     def __init__(self, args: dict):
         super().__init__()
         self.args = args
@@ -46,6 +44,18 @@ class BaseKGE(pl.LightningModule):
         self.hidden_dropout = torch.nn.Dropout(self.input_dropout_rate)
         # average minibatch loss per epoch
         self.loss_history = []
+
+    def mem_of_model(self) -> Dict:
+        """ Size of model in MB and number of params"""
+        # https://discuss.pytorch.org/t/finding-model-size/130275/2
+        # (2) Store NumParam and EstimatedSizeMB
+        param_size = 0
+        for param in self.parameters():
+            param_size += param.nelement() * param.element_size()
+        buffer_size = 0
+        for buffer in self.buffers():
+            buffer_size += buffer.nelement() * buffer.element_size()
+        return {'EstimatedSizeMB': (param_size + buffer_size) / 1024 ** 2, 'NumParam': param_size}
 
     def init_params_with_sanity_checking(self):
         assert self.args['model'] in ['CLf', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO',
