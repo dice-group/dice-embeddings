@@ -144,6 +144,7 @@ class Read_Load_Data_From_Disk:
             self.kg.domain_constraints_per_rel, self.range_constraints_per_rel = create_constraints(self.kg.train_set)
             print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
 
+    @timeit
     def __load_polars(self):
         print(f'Deserialization Path: {self.kg.deserialize_flag}\n')
         self.kg.entity_to_idx = polars.read_parquet(self.kg.deserialize_flag + '/entity_to_idx')
@@ -151,8 +152,10 @@ class Read_Load_Data_From_Disk:
         self.kg.relation_to_idx = polars.read_parquet(self.kg.deserialize_flag + '/relation_to_idx')
         self.kg.num_relations = len(self.kg.relation_to_idx)
 
-        self.kg.entity_to_idx = dict(zip(self.kg.entity_to_idx['entity'].to_list(), list(range(len(self.kg.entity_to_idx)))))
-        self.kg.relation_to_idx = dict(zip(self.kg.relation_to_idx['relation'].to_list(), list(range(len(self.kg.relation_to_idx)))))
+        self.kg.entity_to_idx = dict(
+            zip(self.kg.entity_to_idx['entity'].to_list(), list(range(len(self.kg.entity_to_idx)))))
+        self.kg.relation_to_idx = dict(
+            zip(self.kg.relation_to_idx['relation'].to_list(), list(range(len(self.kg.relation_to_idx)))))
 
         self.kg.train_set = polars.read_parquet(self.kg.deserialize_flag + '/idx_train_df').to_numpy()
 
@@ -162,11 +165,11 @@ class Read_Load_Data_From_Disk:
             print('Done!\n')
         except FileNotFoundError:
             print('No valid data found!\n')
-            self.kg.valid_set = None  # pd.DataFrame()
+            self.kg.valid_set = None
 
         try:
             print('[6 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
-            self.kg.test_set = polars.read_parquet(self.kg.deserialize_flag + '/idx_test_df').to_numpy()  # .compute()
+            self.kg.test_set = polars.read_parquet(self.kg.deserialize_flag + '/idx_test_df').to_numpy()
             print('Done!\n')
         except FileNotFoundError:
             print('No test data found\n')
@@ -337,11 +340,12 @@ class Preprocess:
     @timeit
     def __preprocess_polars(self):
         print('Preprocessing with Polars...')
-        print('Data:',self.kg.train_set.shape)
+        print('Train Data:', self.kg.train_set.shape)
         # (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
         if self.kg.add_reciprical and self.kg.eval_model:
             @timeit
             def adding_reciprocal_triples():
+                """ Add reciprocal triples """
                 # (1.1) Add reciprocal triples into training set
                 self.kg.train_set.extend(self.kg.train_set.select([
                     polars.col("object").alias('subject'),
@@ -383,11 +387,13 @@ class Preprocess:
             if test is not None:
                 x.append(test)
             return polars.concat(x)
+
         print('Concat Splits...')
         df_str_kg = concat_splits(self.kg.train_set, self.kg.valid_set, self.kg.test_set)
 
         @timeit
         def entity_index():
+            """ Create a mapping from str representation of entities/nodes to integers"""
             # Entity Index: {'a':1, 'b':2} :
             self.kg.entity_to_idx = polars.concat((df_str_kg['subject'], df_str_kg['object'])).unique(
                 maintain_order=True).rename('entity')
@@ -396,31 +402,31 @@ class Preprocess:
                                                            use_pyarrow=True)
             print('Polars DataFrame to python dictionary conversion.')
             self.kg.entity_to_idx = dict(zip(self.kg.entity_to_idx.to_list(), list(range(len(self.kg.entity_to_idx)))))
-        print('Entity Indexing')
+
+        print('Entity Indexing...')
         entity_index()
 
         @timeit
         def relation_index():
+            """ Create a mapping from str representation of relations/edges to integers"""
             # Relation Index: {'r1':1, 'r2:'2}
             self.kg.relation_to_idx = df_str_kg['relation'].unique(maintain_order=True)
             self.kg.relation_to_idx.to_frame().write_parquet(file=self.kg.path_for_serialization + f'/relation_to_idx',
                                                              use_pyarrow=True)
-
-            # self.kg.relation_to_idx.to_frame().to_pandas().to_parquet(
-            #    self.kg.path_for_serialization + f'/relation_to_idx.gzip', compression='gzip', engine='pyarrow')
             self.kg.relation_to_idx = dict(
                 zip(self.kg.relation_to_idx.to_list(), list(range(len(self.kg.relation_to_idx)))))
+
         print('Relation Indexing')
         relation_index()
         self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
 
         @timeit
         def indexer(data):
+            """ Apply str to int mapping on an input data"""
             return data.with_columns(
                 [polars.col("subject").apply(lambda x: self.kg.entity_to_idx[x]).alias("subject"),
                  polars.col("relation").apply(lambda x: self.kg.relation_to_idx[x]).alias("relation"),
-                 polars.col("object").apply(lambda x: self.kg.entity_to_idx[x]).alias("object")]
-            )
+                 polars.col("object").apply(lambda x: self.kg.entity_to_idx[x]).alias("object")])
 
         @timeit
         def index_triples(df, name):

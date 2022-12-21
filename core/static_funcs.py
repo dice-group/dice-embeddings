@@ -292,6 +292,7 @@ def read_process_pandas(data_path, read_only_few: int = None, sample_triples_rat
 def load_data(data_path, read_only_few: int = None,
               sample_triples_ratio: float = None, backend=None):
     """Load Datasets"""
+    #@TODO read_data
     assert backend
     # If path exits
     if glob.glob(data_path):
@@ -447,7 +448,7 @@ def create_recipriocal_triples(x):
         x['relation'].map(lambda x: x + '_inverse').to_frame(name='relation')).join(
         x['subject'].to_frame(name='object'))], ignore_index=True)
 
-
+#@TODO: MERGE read_preprocess_index_serialize_kg with reload_input_data
 def read_preprocess_index_serialize_kg(args, cls):
     """ Read & Parse input data for training and testing"""
     print('*** Read, Parse, and Serialize Knowledge Graph  ***')

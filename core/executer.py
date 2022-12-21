@@ -162,9 +162,12 @@ class ContinuousExecute(Execute):
                 del dargs[k]
         # (2) Update (1) with new input
         previous_args.update(dargs)
-        report = load_json(dargs['path_experiment_folder'] + '/report.json')
-        previous_args['num_entities'] = report['num_entities']
-        previous_args['num_relations'] = report['num_relations']
+        try:
+            report = load_json(dargs['path_experiment_folder'] + '/report.json')
+            previous_args['num_entities'] = report['num_entities']
+            previous_args['num_relations'] = report['num_relations']
+        except AssertionError:
+            print("Couldn't find report.json.")
         previous_args = SimpleNamespace(**previous_args)
         previous_args.full_storage_path = previous_args.path_experiment_folder
         print('ContinuousExecute starting...')

@@ -20,7 +20,7 @@ def argparse_default(description=None):
     parser.add_argument('--optim', type=str, default=None, help='[NAdam, Adam, SGD]')
     parser.add_argument('--batch_size', type=int, default=None, help='Mini batch size')
     parser.add_argument("--seed_for_computation", type=int, default=0, help='Seed for all, see pl seed_everything().')
-    parser.add_argument("--trainer", type=str, default='torchDDP',
+    parser.add_argument("--trainer", type=str, default=None,
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
     if description is None:
         return parser.parse_args()
