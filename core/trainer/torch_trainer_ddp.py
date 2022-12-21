@@ -14,6 +14,7 @@ from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 import sys
 
+
 class TorchDDPTrainer(AbstractTrainer):
     """ A Trainer based on torch.nn.parallel.DistributedDataParallel (https://pytorch.org/docs/stable/notes/ddp.html#ddp)"""
 
@@ -25,7 +26,7 @@ class TorchDDPTrainer(AbstractTrainer):
         assert len(args) == 1
         model, = args
         # (1) Fit start.
-        self.on_fit_start(self,model)
+        self.on_fit_start(self, model)
         # nodes * gpus
         world_size = self.attributes.num_nodes * torch.cuda.device_count()
         train_dataset = kwargs['train_dataloaders'].dataset
@@ -114,18 +115,12 @@ class Trainer:
         return epoch_loss / len(self.train_dataset_loader)
 
     def train(self, max_epochs: int):
-        #         for epoch in (pbar := tqdm(range(self.attributes['max_epochs']), file=sys.stdout)):
-        for epoch in (pbar := tqdm(range(max_epochs),file=sys.stdout)):
+        for epoch in range(max_epochs):
             start_time = time.time()
             epoch_loss = self._run_epoch(epoch)
-            #print(f"{epoch + 1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} min\tEpoch loss: {epoch_loss:.8f}")
+            print(
+                f"{epoch + 1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} min\tEpoch loss: {epoch_loss:.8f}")
             self.loss_history.append(epoch_loss)
-            
-            pbar.set_description(f'Epoch {epoch + 1}')
-            pbar.set_postfix_str(
-                f"runtime:{(time.time() - start_time) / 60:.3f}mins, loss={epoch_loss:.8f}")
-            pbar.update(1)
-
             if self.gpu_id == 0:
                 self.model.module.loss_history.append(epoch_loss)
                 for c in self.callbacks:

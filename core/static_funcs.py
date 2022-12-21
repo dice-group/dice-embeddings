@@ -47,6 +47,8 @@ def timeit(func):
         return result
 
     return timeit_wrapper
+
+
 # @TODO: Deprecated
 def performance_debugger(func_name):
     def func_decorator(func):
@@ -56,8 +58,12 @@ def performance_debugger(func_name):
             r = func(*args, **kwargs)
             print(f' took  {time.time() - starT:.3f}  seconds')
             return r
+
         return debug
+
     return func_decorator
+
+
 # @TODO: Could these funcs can be merged?
 def select_model(args: dict, is_continual_training: bool = None, storage_path: str = None):
     isinstance(args, dict)
@@ -78,6 +84,8 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
         return model, _
     else:
         return intialize_model(args)
+
+
 def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
     """ Load weights and initialize pytorch module from namespace arguments"""
     print(f'Loading model {model_name}...', end=' ')
@@ -105,6 +113,8 @@ def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[BaseKG
     relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')
     print(f'Done! It took {time.time() - start_time:.4f}')
     return model, entity_to_idx, relation_to_idx
+
+
 def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
     """ Construct Ensemble Of weights and initialize pytorch module from namespace arguments
 
@@ -159,6 +169,8 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, pd.Dat
     relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')
     print(f'Done! It took {time.time() - start_time:.4f} seconds')
     return model, entity_to_idx, relation_to_idx
+
+
 def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
     """
     Detect most efficient data type for a given triples
@@ -179,6 +191,7 @@ def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
     else:
         pass
     return train_set
+
 
 def model_fitting(trainer, model, train_dataloaders) -> None:
     """ Standard Pytorch Lightning model fitting """
@@ -314,26 +327,22 @@ def load_data(data_path, read_only_few: int = None,
         return None
 
 
-def store_kge(trained_model, path: str) -> None:
-    """
-    Save parameters of model into path via torch
-    :param trained_model: an instance of BaseKGE(pl.LightningModule) see core.models.base_model .
-    :param path:
-    :return:
-    """
+def save_checkpoint_model(trainer, model, path: str) -> None:
+    """ Store Pytorch model into disk"""
     try:
-        torch.save(trained_model.state_dict(), path)
+        torch.save(model.state_dict(), path)
     except ReferenceError as e:
         print(e)
-        print(trained_model.name)
+        print(model.name)
         print('Could not save the model correctly')
 
 
-def store(trained_model, model_name: str = 'model', full_storage_path: str = None,
+def store(trainer,
+          trained_model, model_name: str = 'model', full_storage_path: str = None,
           dataset=None, save_as_csv=False) -> None:
     """
     Store trained_model model and save embeddings into csv file.
-
+    :param trainer: an instance of trainer class
     :param dataset: an instance of KG see core.knowledge_graph.
     :param full_storage_path: path to save parameters.
     :param model_name: string representation of the name of the model.
@@ -348,7 +357,8 @@ def store(trained_model, model_name: str = 'model', full_storage_path: str = Non
     assert len(model_name) > 1
 
     # (1) Save pytorch model in trained_model .
-    store_kge(trained_model, path=full_storage_path + f'/{model_name}.pt')
+    save_checkpoint_model(trainer=trainer,
+                          model=trained_model, path=full_storage_path + f'/{model_name}.pt')
     if save_as_csv:
         # (2.1) Get embeddings.
         entity_emb, relation_ebm = trained_model.get_embeddings()
@@ -361,31 +371,6 @@ def store(trained_model, model_name: str = 'model', full_storage_path: str = Non
             del relation_ebm
         else:
             pass
-    else:
-        """
-        # (2) See available memory and decide whether embeddings are stored separately or not.
-        available_memory = [i.split() for i in os.popen('free -h').read().splitlines()][1][-1]  # ,e.g., 10Gi
-        available_memory_mb = float(available_memory[:-2]) * 1000
-        # Decision: model size in MB should be at most 1 percent of the available memory.
-        if available_memory_mb * .01 > extract_model_summary(trained_model.summarize())['EstimatedSizeMB']:
-            # (2.1) Get embeddings.
-            entity_emb, relation_ebm = trained_model.get_embeddings()
-            # (2.2) If we have less than 1000 rows total save it as csv.
-            if len(entity_emb) < 1000:
-                save_embeddings(entity_emb.numpy(), indexes=dataset.entities_str,
-                                path=full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
-                del entity_emb
-                if relation_ebm is not None:
-                    save_embeddings(relation_ebm.numpy(), indexes=dataset.relations_str,
-                                    path=full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
-                    del relation_ebm
-            else:
-                torch.save(entity_emb, full_storage_path + '/' + trained_model.name + '_entity_embeddings.pt')
-                if relation_ebm is not None:
-                    torch.save(relation_ebm, full_storage_path + '/' + trained_model.name + '_relation_embeddings.pt')
-        else:
-            print('There is not enough memory to store embeddings separately.')
-        """
 
 
 def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict) -> pd.core.frame.DataFrame:
@@ -412,7 +397,8 @@ def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict) -> pd.c
         raise KeyError('Wrong type training data')
     return train_set
 
-#@TODO Deprecated
+
+# @TODO Deprecated
 def add_noisy_triples(train_set: pd.DataFrame, add_noise_rate: float) -> pd.DataFrame:
     """
     Add randomly constructed triples
@@ -455,8 +441,8 @@ def create_recipriocal_triples(x):
 
 
 # @TODO: MERGE read_preprocess_index_serialize_kg with reload_input_data
-def read_preprocess_index_serialize_kg(args, cls):
-    return read_or_reaload_kg(args, cls)
+def old_read_preprocess_index_serialize_kg(args, cls):
+    return read_or_load_kg(args, cls)
     """ Read & Parse input data for training and testing"""
     print('*** Read, Parse, and Serialize Knowledge Graph  ***')
     start_time = time.time()
@@ -474,9 +460,8 @@ def read_preprocess_index_serialize_kg(args, cls):
     print(kg.description_of_input)
     return kg
 
-
-def read_or_reaload_kg(args, cls):
-    print('*** Reload Knowledge Graph  ***')
+def read_or_load_kg(args, cls):
+    print('*** Read or Load Knowledge Graph  ***')
     start_time = time.time()
     kg = cls(data_dir=args.path_dataset_folder,
              num_core=args.num_core,
@@ -493,8 +478,8 @@ def read_or_reaload_kg(args, cls):
     return kg
 
 
-def reload_input_data(args: str = None, cls=None):
-    return read_or_reaload_kg(args, cls)
+def old_reload_input_data(args: str = None, cls=None):
+    return read_or_load_kg(args, cls)
     print('*** Reload Knowledge Graph  ***')
     start_time = time.time()
     kg = cls(data_dir=args.path_dataset_folder,
@@ -510,9 +495,6 @@ def reload_input_data(args: str = None, cls=None):
     print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
     print(kg.description_of_input)
     return kg
-
-
-
 
 
 def preprocesses_input_args(arg):
@@ -584,6 +566,7 @@ def create_constraints(triples: np.ndarray) -> Tuple[dict, dict]:
         domain_constraints_per_rel[rel] = list(set_of_entities - domain_constraints_per_rel[rel])
 
     return domain_constraints_per_rel, range_constraints_per_rel
+
 
 # @TODO: Deprecated?
 def create_logger(*, name, p):
