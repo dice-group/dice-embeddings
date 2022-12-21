@@ -7,14 +7,16 @@ import json
 import os
 import pandas
 import pandas as pd
-from .static_funcs import get_er_vocab, get_ee_vocab, get_re_vocab, \
-    create_recipriocal_triples, add_noisy_triples, index_triples, load_data, create_constraints, \
+from .static_funcs import create_recipriocal_triples, add_noisy_triples, \
     numpy_data_type_changer, vocab_to_parquet, timeit
 from .sanity_checkers import dataset_sanity_checking
+from .static_preprocess_funcs import get_er_vocab, get_ee_vocab, get_re_vocab, index_triples, create_constraints, \
+    load_data
 import glob
 import pyarrow.parquet as pq
 import concurrent.futures
 import polars
+
 
 class KG:
     """ Knowledge Graph """
@@ -329,7 +331,7 @@ class Preprocess:
             print('Done !\n')
 
     @timeit
-    def __preprocess_polars(self):
+    def __preprocess_polars(self) -> None:
         print(f'*** Preprocessing Train Data:{self.kg.train_set.shape} with Polars ***')
         # (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
         if self.kg.add_reciprical and self.kg.eval_model:
@@ -420,7 +422,7 @@ class Preprocess:
                  polars.col("object").apply(lambda x: self.kg.entity_to_idx[x]).alias("object")])
 
         @timeit
-        def index_triples(df: polars.DataFrame, name):
+        def index_datasets(df: polars.DataFrame, name):
             """ Map str stored in a polars Dataframe to int"""
             df = indexer(df)
             if self.kg.path_for_serialization is not None:
@@ -430,13 +432,13 @@ class Preprocess:
             return df.to_numpy()
 
         print(f'Indexing Training Data {self.kg.train_set.shape}...')
-        self.kg.train_set = index_triples(self.kg.train_set, name='idx_train_df')
+        self.kg.train_set = index_datasets(df=self.kg.train_set, name='idx_train_df')
         if self.kg.valid_set is not None:
             print(f'Indexing Val Data {self.kg.valid_set.shape}...')
-            self.kg.valid_set = index_triples(self.kg.valid_set, name='idx_valid_df')
+            self.kg.valid_set = index_datasets(df=self.kg.valid_set, name='idx_valid_df')
         if self.kg.test_set is not None:
             print(f'Indexing Test Data {self.kg.test_set.shape}...')
-            self.kg.test_set = index_triples(self.kg.test_set, name='idx_test_df')
+            self.kg.test_set = index_datasets(df=self.kg.test_set, name='idx_test_df')
         print(f'*** Preprocessing Train Data:{self.kg.train_set.shape} with Polars DONE ***')
 
     def __preprocess(self) -> None:
@@ -447,8 +449,11 @@ class Preprocess:
             self.__preprocess_pandas()
         else:
             raise KeyError(f'{self.kg.backend} not found')
-
-        if self.kg.eval_model:  # and len(self.valid_set) > 0 and len(self.test_set) > 0:
+        # (1) Storing indexes in more integer efficient types.
+        self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
+                                                    num=max(self.kg.num_entities, self.kg.num_relations))
+        # (2) Create vocabularies for the evaluation
+        if self.kg.eval_model:
             if self.kg.valid_set is not None and self.kg.test_set is not None:
                 assert isinstance(self.kg.valid_set, np.ndarray) and isinstance(self.kg.test_set, np.ndarray)
                 # 16. Create a bijection mapping from subject-relation pairs to tail entities.

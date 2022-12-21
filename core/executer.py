@@ -16,8 +16,11 @@ from core.models.base_model import BaseKGE
 from core.evaluator import Evaluator
 from core.typings import *
 from core.static_funcs import *
+from core.static_preprocess_funcs import preprocesses_input_args
 from core.sanity_checkers import *
 from core.trainer import DICE_Trainer
+logging.getLogger('pytorch_lightning').setLevel(0)
+warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 
 
 

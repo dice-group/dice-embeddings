@@ -448,21 +448,22 @@ class TriplePredictionDataset(Dataset):
         self.num_relations = num_relations
         print(f'Done ! {time.time() - start_time:.3f} seconds\n')
 
+        assert isinstance(self.triples_idx, np.ndarray)
+        assert isinstance(self.triples_idx[0], np.ndarray)
+
     def __len__(self):
         return self.length
 
     def __getitem__(self, idx):
         return self.triples_idx[idx]
 
-    def collate_fn(self, batch):
-        batch = torch.LongTensor(batch)
+    def collate_fn(self, batch: List[np.ndarray]):
+        batch = torch.LongTensor(np.array(batch))
         h, r, t = batch[:, 0], batch[:, 1], batch[:, 2]
         size_of_batch, _ = batch.shape
         assert size_of_batch > 0
         label = torch.ones((size_of_batch,), ) - self.soft_confidence_rate
-
         # corrupt head, tail or rel ?!
-
         # (1) Corrupted Entities:
         corr = torch.randint(0, high=self.num_entities, size=(size_of_batch * self.neg_sample_ratio, 2))
         # (2) Head Corrupt:
@@ -487,7 +488,6 @@ class TriplePredictionDataset(Dataset):
         x = torch.stack((h, r, t), dim=1)
         label = torch.cat((label, label_head_corr, label_tail_corr, label_rel_corr), 0)
         return x, label
-
 
 
 class PykeDataset(Dataset):
@@ -542,6 +542,7 @@ class PykeDataset(Dataset):
         select_negative_idx = torch.LongTensor(random.sample(self.entity_vocab.keys(), len(select_positives_idx)))
         x = torch.cat((torch.LongTensor([anchor]), select_positives_idx, select_negative_idx), dim=0)
         return x, torch.LongTensor([0])
+
 
 """
 

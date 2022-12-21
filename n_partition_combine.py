@@ -1,21 +1,10 @@
-"""
-@ TODO: We may not needed it
-For x in Configuration:
-    dataset
-    select model
-    train
-    save
-
-Merge = ensemble all model
-"""
-
 import itertools
 from argparse import ArgumentParser
 from glob import glob
 import torch
 from core.executer import Execute
 from core import load_json
-from core.static_funcs import load_model, intialize_model, create_experiment_folder, store_kge
+from core.static_funcs import load_model, intialize_model, create_experiment_folder
 import pandas as pd
 import numpy as np
 import os
@@ -123,21 +112,22 @@ class Merger:
         # Average overlapping indexes.
         self.entity_embeddings = self.entity_embeddings.groupby(self.entity_embeddings.index).mean()
         self.relation_embeddings = self.relation_embeddings.groupby(self.relation_embeddings.index).mean()
-
-        self.entity_embeddings.to_parquet(self.args.full_storage_path + f'/{self.model_name}_entity_embeddings.gzip',
-                                          compression='gzip')
+        # Write into disk
+        self.entity_embeddings.to_parquet(self.args.full_storage_path + f'/{self.model_name}_entity_embeddings',
+                                          compression='gzip', engine='pyarrow')
         pd.DataFrame(data=np.arange(len(self.entity_embeddings)),
                      columns=['entity'],
-                     index=self.entity_embeddings.index).to_parquet(self.args.full_storage_path + '/entity_to_idx.gzip',
-                                                                    compression='gzip')
+                     index=self.entity_embeddings.index).to_parquet(self.args.full_storage_path + '/entity_to_idx',
+                                                                    compression='gzip', engine='pyarrow')
 
         self.relation_embeddings.to_parquet(
-            self.args.full_storage_path + f'/{self.model_name}_relation_embeddings.gzip', compression='gzip')
+            self.args.full_storage_path + f'/{self.model_name}_relation_embeddings', compression='gzip',
+            engine='pyarrow')
 
         pd.DataFrame(data=np.arange(len(self.relation_embeddings)),
                      columns=['relation'],
                      index=self.relation_embeddings.index).to_parquet(
-            self.args.full_storage_path + '/relation_to_idx.gzip', compression='gzip')
+            self.args.full_storage_path + '/relation_to_idx', compression='gzip', engine='pyarrow')
 
     def weights_averaging(self):
         """
@@ -167,7 +157,6 @@ class Merger:
             previous_args['num_entities'] = previous_report['num_entities']
             previous_args['num_relations'] = previous_report['num_relations']
 
-
             i_th_pretrained, _, __ = load_model(path_of_experiment_folder=previous_args['path_of_experiment_folder'])
             i_th_state_dict = i_th_pretrained.state_dict()
 
@@ -189,7 +178,8 @@ class Merger:
                     non_embedding_weights_state_dict[key] /= num_models
             else:
                 embdding_keys.append(key)
-
+        print(embdding_keys)
+        exit(1)
         embedding_entity_keys, embedding_relation_keys = embdding_keys[:len(embdding_keys) // 2], embdding_keys[
                                                                                                   len(embdding_keys) // 2:]
 
@@ -214,6 +204,8 @@ class Merger:
         self.args.num_relations = self.relation_embeddings.shape[0]
         self.args.num_entities = self.entity_embeddings.shape[0]
 
+        print(non_embedding_weights_state_dict)
+        exit(1)
         final_model, _ = intialize_model(self.configuration)
         final_model.load_state_dict(non_embedding_weights_state_dict)
         final_model.eval()
@@ -259,5 +251,5 @@ if __name__ == '__main__':
                         default=[],  # default if nothing is provided
                         # default=[],  # If empty, work on all data
                         )
-
+    raise NotImplementedError()
     Merger(parser.parse_args()).start()

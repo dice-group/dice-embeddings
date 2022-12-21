@@ -1,10 +1,10 @@
 import os
 import datetime
-from .static_funcs import load_model_ensemble, load_model, save_checkpoint_model, create_constraints
+from .static_funcs import load_model_ensemble, load_model, save_checkpoint_model
+from .static_preprocess_funcs import create_constraints
 import torch
 from typing import List, Tuple, Generator
 import pandas as pd
-
 
 class AbstractTrainer:
     def __init__(self, args, callbacks):

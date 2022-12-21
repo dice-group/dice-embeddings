@@ -56,10 +56,10 @@ class ConEx(BaseKGE):
         emb_tail_real, emb_tail_imag = torch.hsplit(self.entity_embeddings.weight, 2)
         emb_tail_real, emb_tail_imag = emb_tail_real.transpose(1, 0), emb_tail_imag.transpose(1, 0)
         # (4)
-        real_real_real = torch.mm(a + emb_head_real * emb_rel_real, emb_tail_real)
-        real_imag_imag = torch.mm(a + emb_head_real * emb_rel_imag, emb_tail_imag)
-        imag_real_imag = torch.mm(b + emb_head_imag * emb_rel_real, emb_tail_imag)
-        imag_imag_real = torch.mm(b + emb_head_imag * emb_rel_imag, emb_tail_real)
+        real_real_real = torch.mm(a * emb_head_real * emb_rel_real, emb_tail_real)
+        real_imag_imag = torch.mm(a * emb_head_real * emb_rel_imag, emb_tail_imag)
+        imag_real_imag = torch.mm(b * emb_head_imag * emb_rel_real, emb_tail_imag)
+        imag_imag_real = torch.mm(b * emb_head_imag * emb_rel_imag, emb_tail_real)
         return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
 
     def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
@@ -73,16 +73,12 @@ class ConEx(BaseKGE):
         # (2) Apply convolution operation on (1).
         C_3 = self.residual_convolution(C_1=(emb_head_real, emb_head_imag),
                                         C_2=(emb_rel_real, emb_rel_imag))
-        # This can be decomposed into 4 as well
         a, b = C_3
-
         # (3) Compute hermitian inner product.
-
         real_real_real = (a * emb_head_real * emb_rel_real * emb_tail_real).sum(dim=1)
         real_imag_imag = (a * emb_head_real * emb_rel_imag * emb_tail_imag).sum(dim=1)
         imag_real_imag = (b * emb_head_imag * emb_rel_real * emb_tail_imag).sum(dim=1)
         imag_imag_real = (b * emb_head_imag * emb_rel_imag * emb_tail_real).sum(dim=1)
-
         return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
 
 

@@ -10,13 +10,13 @@ def argparse_default(description=None):
     # Dataset and storage related
     parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
                         help="The path of a folder containing input data")
-    parser.add_argument("--save_embeddings_as_csv", type=bool, default=False,
+    parser.add_argument("--save_embeddings_as_csv", type=bool, default=True,
                         help='A flag for saving embeddings in csv file.')
     parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="Embeddings, model, and any other related data will be stored therein.")
     # Model and Training Parameters
     parser.add_argument("--model", type=str,
-                        default="QMult",
+                        default="ConEx",
                         help="Available models: ConEx, ConvQ, ConvO, DistMult, QMult, OMult, "
                              "Shallom, ConEx, ComplEx, DistMult, TransE, CLf")
     parser.add_argument('--optim', type=str, default='Adam',
@@ -62,7 +62,6 @@ def argparse_default(description=None):
 
     parser.add_argument("--num_core", type=int, default=0, help='Number of cores to be used. 0 implies using single CPU')
     parser.add_argument("--seed_for_computation", type=int, default=0, help='Seed for all, see pl seed_everything().')
-    # @TODO: Do we still need it
     parser.add_argument("--sample_triples_ratio", type=float, default=None, help='Sample input data.')
     parser.add_argument("--read_only_few", type=int, default=None, help='READ only first N triples. If 0, read all.')
     # @TODO: Do we still need it
