@@ -93,7 +93,7 @@ class Trainer:
         self.optimizer = optimizer
         self.callbacks = callbacks
         self.model = DDP(model, device_ids=[gpu_id])
-        print_peak_memory("Max memory allocated after creating DDP:", rank)
+        print_peak_memory("Max memory allocated after creating DDP:", gpu_id)
         """
         # Move the model to GPU with id rank
         # https://pytorch.org/tutorials/recipes/zero_redundancy_optimizer.html
@@ -133,7 +133,7 @@ class Trainer:
                 f"{epoch + 1} epoch: Runtime: {(time.time() - start_time) / 60:.3f} min\tEpoch loss: {epoch_loss:.8f}")
 
             if epoch == 0:
-                print_peak_memory("Max memory allocated after the fist epoch:", rank)
+                print_peak_memory("Max memory allocated after the fist epoch:", self.gpu_id)
             self.loss_history.append(epoch_loss)
             if self.gpu_id == 0:
                 self.model.module.loss_history.append(epoch_loss)
