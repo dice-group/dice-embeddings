@@ -1,5 +1,4 @@
 import os
-
 import core
 from core.typings import *
 import numpy as np
@@ -19,6 +18,10 @@ import pandas
 from .sanity_checkers import sanity_checking_with_arguments
 import polars
 import functools
+
+# @TODO: static_preprocess_func.py
+# @TODO: static_postprocess_func.py
+#  store, store_kge, load_data, read_process_modin,read_process_polars,read_or_reaload_kg
 
 enable_log = False
 
@@ -44,8 +47,17 @@ def timeit(func):
         return result
 
     return timeit_wrapper
-
-
+# @TODO: Deprecated
+def performance_debugger(func_name):
+    def func_decorator(func):
+        def debug(*args, **kwargs):
+            starT = time.time()
+            print('\n######', func_name, ' ', end='')
+            r = func(*args, **kwargs)
+            print(f' took  {time.time() - starT:.3f}  seconds')
+            return r
+        return debug
+    return func_decorator
 # @TODO: Could these funcs can be merged?
 def select_model(args: dict, is_continual_training: bool = None, storage_path: str = None):
     isinstance(args, dict)
@@ -66,8 +78,6 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
         return model, _
     else:
         return intialize_model(args)
-
-
 def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
     """ Load weights and initialize pytorch module from namespace arguments"""
     print(f'Loading model {model_name}...', end=' ')
@@ -95,8 +105,6 @@ def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[BaseKG
     relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')
     print(f'Done! It took {time.time() - start_time:.4f}')
     return model, entity_to_idx, relation_to_idx
-
-
 def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
     """ Construct Ensemble Of weights and initialize pytorch module from namespace arguments
 
@@ -151,8 +159,6 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, pd.Dat
     relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')
     print(f'Done! It took {time.time() - start_time:.4f} seconds')
     return model, entity_to_idx, relation_to_idx
-
-
 def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
     """
     Detect most efficient data type for a given triples
@@ -173,7 +179,6 @@ def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
     else:
         pass
     return train_set
-
 
 def model_fitting(trainer, model, train_dataloaders) -> None:
     """ Standard Pytorch Lightning model fitting """
@@ -235,11 +240,11 @@ def read_process_polars(data_path, read_only_few: int = None, sample_triples_rat
                              low_memory=False,
                              n_rows=None if read_only_few is None else read_only_few,
                              columns=[0, 1, 2],
-                             dtypes=[polars.Utf8], # str
+                             dtypes=[polars.Utf8],  # str
                              new_columns=['subject', 'relation', 'object'],
                              sep="\t")  # \s+ doesn't work for polars
     else:
-        df = polars.read_parquet(data_path,n_rows=None if read_only_few is None else read_only_few)
+        df = polars.read_parquet(data_path, n_rows=None if read_only_few is None else read_only_few)
 
     # (2) Sample from (1)
     if sample_triples_ratio:
@@ -292,7 +297,7 @@ def read_process_pandas(data_path, read_only_few: int = None, sample_triples_rat
 def load_data(data_path, read_only_few: int = None,
               sample_triples_ratio: float = None, backend=None):
     """Load Datasets"""
-    #@TODO read_data
+    # @TODO read_data
     assert backend
     # If path exits
     if glob.glob(data_path):
@@ -407,7 +412,7 @@ def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict) -> pd.c
         raise KeyError('Wrong type training data')
     return train_set
 
-
+#@TODO Deprecated
 def add_noisy_triples(train_set: pd.DataFrame, add_noise_rate: float) -> pd.DataFrame:
     """
     Add randomly constructed triples
@@ -448,8 +453,10 @@ def create_recipriocal_triples(x):
         x['relation'].map(lambda x: x + '_inverse').to_frame(name='relation')).join(
         x['subject'].to_frame(name='object'))], ignore_index=True)
 
-#@TODO: MERGE read_preprocess_index_serialize_kg with reload_input_data
+
+# @TODO: MERGE read_preprocess_index_serialize_kg with reload_input_data
 def read_preprocess_index_serialize_kg(args, cls):
+    return read_or_reaload_kg(args, cls)
     """ Read & Parse input data for training and testing"""
     print('*** Read, Parse, and Serialize Knowledge Graph  ***')
     start_time = time.time()
@@ -468,7 +475,26 @@ def read_preprocess_index_serialize_kg(args, cls):
     return kg
 
 
+def read_or_reaload_kg(args, cls):
+    print('*** Reload Knowledge Graph  ***')
+    start_time = time.time()
+    kg = cls(data_dir=args.path_dataset_folder,
+             num_core=args.num_core,
+             add_reciprical=args.apply_reciprical_or_noise,
+             eval_model=args.eval_model,
+             read_only_few=args.read_only_few,
+             sample_triples_ratio=args.sample_triples_ratio,
+             path_for_serialization=args.full_storage_path,
+             min_freq_for_vocab=args.min_freq_for_vocab,
+             deserialize_flag=args.path_experiment_folder if hasattr(args, 'path_experiment_folder') else None,
+             backend=args.backend)
+    print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
+    print(kg.description_of_input)
+    return kg
+
+
 def reload_input_data(args: str = None, cls=None):
+    return read_or_reaload_kg(args, cls)
     print('*** Reload Knowledge Graph  ***')
     start_time = time.time()
     kg = cls(data_dir=args.path_dataset_folder,
@@ -486,18 +512,7 @@ def reload_input_data(args: str = None, cls=None):
     return kg
 
 
-def performance_debugger(func_name):
-    def func_decorator(func):
-        def debug(*args, **kwargs):
-            starT = time.time()
-            print('\n######', func_name, ' ', end='')
-            r = func(*args, **kwargs)
-            print(f' took  {time.time() - starT:.3f}  seconds')
-            return r
 
-        return debug
-
-    return func_decorator
 
 
 def preprocesses_input_args(arg):
@@ -570,7 +585,7 @@ def create_constraints(triples: np.ndarray) -> Tuple[dict, dict]:
 
     return domain_constraints_per_rel, range_constraints_per_rel
 
-
+# @TODO: Deprecated?
 def create_logger(*, name, p):
     logger = logging.getLogger(name)
 
@@ -944,3 +959,16 @@ def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
     print(print_into)
     vocab_to_idx.to_parquet(path_for_serialization + f'/{name}', compression='gzip', engine='pyarrow')
     print('Done !\n')
+
+
+def continual_training_setup_executor(executor):
+    if executor.is_continual_training:
+        # (4.1) If it is continual, then store new models on previous path.
+        executor.storage_path = executor.args.full_storage_path
+    else:
+        # (4.2) Create a folder for the experiments.
+        executor.args.full_storage_path = create_experiment_folder(folder_name=executor.args.storage_path)
+        executor.storage_path = executor.args.full_storage_path
+        with open(executor.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
+            temp = vars(executor.args)
+            json.dump(temp, file_descriptor, indent=3)

@@ -43,16 +43,7 @@ class Execute:
         # (3) Set the continual training flag
         self.is_continual_training = continuous_training
         # (4) Create an experiment folder or use the previous one
-        if self.is_continual_training:
-            # (4.1) If it is continual, then store new models on previous path.
-            self.storage_path = self.args.full_storage_path
-        else:
-            # (4.2) Create a folder for the experiments.
-            self.args.full_storage_path = create_experiment_folder(folder_name=self.args.storage_path)
-            self.storage_path = self.args.full_storage_path
-            with open(self.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
-                temp = vars(self.args)
-                json.dump(temp, file_descriptor, indent=3)
+        continual_training_setup_executor(self)
         # (5) A variable is initialized for pytorch lightning trainer.
         self.trainer = None
         # (6) A variable is initialized for storing input data.
