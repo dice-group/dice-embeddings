@@ -294,10 +294,18 @@ class KvsAll(Dataset):
 
 class KvsSampleDataset(Dataset):
     """
-    For entitiy or relation prediciton
+    D:= {(x,y)_i}_i ^N, where
+    1. x is a unique head entity and a relation and
+    2. y \in [0,1]^{|E|} is a binary label.
+
+    At each mini-batch construction, we subsample(y), hence n
+    |new_y| << |E|
+    new_y contains all 1's if sum(y)< neg_sample ratio
+    new_y contains
     """
 
-    def __init__(self, triples_idx:torch.Tensor, entity_idxs, relation_idxs, form, store=None, neg_sample_ratio: int = None,
+    def __init__(self, triples_idx: torch.Tensor, entity_idxs, relation_idxs, form, store=None,
+                 neg_sample_ratio: int = None,
                  label_smoothing_rate=None):
         super().__init__()
         self.train_data = None
@@ -306,31 +314,25 @@ class KvsSampleDataset(Dataset):
         self.neg_sample_ratio = neg_sample_ratio
         self.collate_fn = None
         if self.neg_sample_ratio == 0:
-            print(f'neg_sample_ratio is {neg_sample_ratio}')
-            self.neg_sample_ratio = 100
+            print(f'neg_sample_ratio is {neg_sample_ratio}. It will be set to 10.')
+            self.neg_sample_ratio = 10
         store = dict()
+        print('Constructing training data...')
         self.num_entities = len(entity_idxs)
         for s_idx, p_idx, o_idx in triples_idx.numpy():
             store.setdefault((s_idx, p_idx), list()).append(o_idx)
 
         assert len(store) > 0
+        print(print(type(triples_idx)))
         # Keys in store correspond to integer representation (index) of subject and predicate
         # Values correspond to a list of integer representations of entities.
+        # Infer its type
         self.train_data = torch.LongTensor(list(store.keys()))
 
-        if sum([len(i) for i in store.values()]) == len(store):
-            # if each s,p pair contains at most 1 entity
-            self.train_target = np.array(list(store.values()), dtype=np.int64)
-            try:
-                assert isinstance(self.train_target[0], np.ndarray)
-            except IndexError or AssertionError:
-                print(self.train_target)
-                exit(1)
-            assert isinstance(self.train_target[0][0], np.int64)
-        else:
-            self.train_target = list(store.values())
-            assert isinstance(self.train_target[0], list)
-        del store
+        self.train_target = list(store.values())
+        assert isinstance(self.train_target[0], list)
+
+        del store, triples_idx, entity_idxs
 
     def __len__(self):
         assert len(self.train_data) == len(self.train_target)
@@ -344,21 +346,23 @@ class KvsSampleDataset(Dataset):
         num_positives = len(positives_idx)
         # (3) Subsample positive examples to generate a batch of same sized inputs
         if num_positives < self.neg_sample_ratio:
-            # (3.1) Upsampling positives.
-            positives_idx = torch.LongTensor(random.choices(positives_idx, k=self.neg_sample_ratio))
+            # (3.1)
+            positives_idx = torch.LongTensor(positives_idx)
+            # (4) Generate random entities
+            negative_idx = torch.randint(low=0, high=self.num_entities,
+                                         size=(self.neg_sample_ratio + self.neg_sample_ratio - num_positives,))
         else:
-            # (3.1) Subsample positives.
+            # (3.1) Subsample positives without replacement
+            # https://docs.python.org/3/library/random.html#random.sample
             positives_idx = torch.LongTensor(random.sample(positives_idx, self.neg_sample_ratio))
-        # (4) Generate random entities
-        negative_idx = torch.randint(low=0, high=self.num_entities, size=(self.neg_sample_ratio,))
+            # (4) Generate random entities
+            negative_idx = torch.randint(low=0, high=self.num_entities, size=(self.neg_sample_ratio,))
         # (5) Create selected indexes
         y_idx = torch.cat((positives_idx, negative_idx), 0)
         # (6) Create binary labels.
-        y_vec = torch.cat((torch.ones(self.neg_sample_ratio), torch.zeros(self.neg_sample_ratio)), 0)
+        y_vec = torch.cat((torch.ones(len(positives_idx)), torch.zeros(len(negative_idx))), 0)
+
         return x, y_idx, y_vec
-
-
-
 
 
 class TriplePredictionDataset(Dataset):
@@ -379,7 +383,7 @@ class TriplePredictionDataset(Dataset):
         :param neg_sample_ratio:
         :param soft_confidence_rate:  Target/Label should be little but larger than 0 and lower than 1
         """
-        assert isinstance(triples_idx,torch.Tensor)
+        assert isinstance(triples_idx, torch.Tensor)
         self.soft_confidence_rate = soft_confidence_rate
         self.neg_sample_ratio = neg_sample_ratio  # 0 Implies that we do not add negative samples. This is needed during testing and validation
         self.triples_idx = triples_idx
@@ -482,4 +486,3 @@ class PykeDataset(Dataset):
         select_negative_idx = torch.LongTensor(random.sample(self.entity_vocab.keys(), len(select_positives_idx)))
         x = torch.cat((torch.LongTensor([anchor]), select_positives_idx, select_negative_idx), dim=0)
         return x, torch.LongTensor([0])
-
