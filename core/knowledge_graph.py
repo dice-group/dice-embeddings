@@ -60,6 +60,13 @@ class KG:
         Read_Load_Data_From_Disk(kg=self).start()
         # (2) Preprocess (1).
         Preprocess(kg=self).start()
+
+
+        assert len(self.train_set)>0
+        assert len(self.train_set[0])>0
+        assert isinstance(self.train_set,np.ndarray)
+        assert isinstance(self.train_set[0], np.ndarray)
+
         self.__describe()
 
     def __describe(self) -> None:
@@ -452,6 +459,13 @@ class Preprocess:
         # (1) Storing indexes in more integer efficient types.
         self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
                                                     num=max(self.kg.num_entities, self.kg.num_relations))
+
+        if self.kg.valid_set is not None:
+            self.kg.valid_set = numpy_data_type_changer(self.kg.valid_set,
+                                                        num=max(self.kg.num_entities, self.kg.num_relations))
+        if self.kg.test_set is not None:
+            self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
+                                                        num=max(self.kg.num_entities, self.kg.num_relations))
         # (2) Create vocabularies for the evaluation
         if self.kg.eval_model:
             if self.kg.valid_set is not None and self.kg.test_set is not None:
