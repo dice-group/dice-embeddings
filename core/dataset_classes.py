@@ -323,7 +323,6 @@ class KvsSampleDataset(Dataset):
             store.setdefault((s_idx, p_idx), list()).append(o_idx)
 
         assert len(store) > 0
-        print(print(type(triples_idx)))
         # Keys in store correspond to integer representation (index) of subject and predicate
         # Values correspond to a list of integer representations of entities.
         # Infer its type
@@ -331,7 +330,7 @@ class KvsSampleDataset(Dataset):
         self.train_target = list(store.values())
         assert isinstance(self.train_target[0], list)
         del store, triples_idx, entity_idxs
-
+        
     def __len__(self):
         assert len(self.train_data) == len(self.train_target)
         return len(self.train_data)
