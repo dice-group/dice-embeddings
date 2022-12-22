@@ -172,7 +172,7 @@ def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
         # print(f'Setting int32,\t {np.iinfo(np.int32).max}')
         train_set = train_set.astype(np.int32)
     else:
-        pass
+        raise TypeError('Int64?')
     return train_set
 def model_fitting(trainer, model, train_dataloaders) -> None:
     """ Standard Pytorch Lightning model fitting """
