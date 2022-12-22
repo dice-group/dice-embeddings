@@ -118,17 +118,29 @@ class Trainer:
         loss.backward()
         self.optimizer.step()
         return batch_loss
+    def extract_input_outputs(self,z:list):
+        if len(z) == 2:
+            x_batch, y_batch = z
+            return x_batch.to(self.gpu_id), y_batch.to(self.gpu_id)
+        elif len(z) == 3:
+            x_batch, y_idx_batch, y_batch, = z
+            x_batch, y_idx_batch, y_batch = x_batch.to(self.gpu_id), y_idx_batch.to(self.gpu_id), y_batch.to(self.gpu_id)
+            return (x_batch, y_idx_batch), y_batch
+        else:
+            print(len(batch))
+            raise ValueError('Unexpected batch shape..')
+
 
     def _run_epoch(self, epoch):
         self.train_dataset_loader.sampler.set_epoch(epoch)
         epoch_loss = 0
         i = 0
         construct_mini_batch_time = None
-        for i, (source, targets) in enumerate(self.train_dataset_loader):
+        for i, z in enumerate(self.train_dataset_loader):
+            source, targets = self.extract_input_outputs(z)
             start_time = time.time()
             if construct_mini_batch_time:
                 construct_mini_batch_time = start_time - construct_mini_batch_time
-            source, targets = source.to(self.gpu_id, non_blocking=True), targets.to(self.gpu_id, non_blocking=True)
             batch_loss = self._run_batch(source, targets)
             epoch_loss += batch_loss
             if self.gpu_id == 0:

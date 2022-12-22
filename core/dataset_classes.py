@@ -328,10 +328,8 @@ class KvsSampleDataset(Dataset):
         # Values correspond to a list of integer representations of entities.
         # Infer its type
         self.train_data = torch.LongTensor(list(store.keys()))
-
         self.train_target = list(store.values())
         assert isinstance(self.train_target[0], list)
-
         del store, triples_idx, entity_idxs
 
     def __len__(self):
