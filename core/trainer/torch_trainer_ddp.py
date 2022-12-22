@@ -107,7 +107,11 @@ class Trainer:
         self.loss_history = []
 
     def _run_batch(self, source, targets):
-        self.optimizer.zero_grad()
+        # (1) Zero the gradients.
+        #self.optimizer.zero_grad()
+        # https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html#use-parameter-grad-none-instead-of-model-zero-grad-or-optimizer-zero-grad
+        for param in self.model.parameters():
+            param.grad = None
         output = self.model(source)
         loss = self.loss_func(output, targets)
         batch_loss = loss.item()
