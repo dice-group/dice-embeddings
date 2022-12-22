@@ -199,7 +199,7 @@ def preprocesses_input_args(arg):
         exit(1)
     
     if arg.eval_model=='None':
-        args.eval_model=None
+        arg.eval_model=None
 
     # reciprocal checking
     # @TODO We need better way for using apply_reciprical_or_noise.

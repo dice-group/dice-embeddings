@@ -129,9 +129,9 @@ class Trainer:
             epoch_loss += batch_loss
             if self.gpu_id == 0:
                 if construct_mini_batch_time:
-                    print(f"Epoch:{epoch + 1} | Batch:{i + 1} | Runtime:{(time.time() - s_time):.2f}sec | BatchConst.:{construct_mini_batch_time:.2f}sec")
+                    print(f"Epoch:{epoch + 1} | Batch:{i + 1} | ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec | BatchConst.:{construct_mini_batch_time:.2f}sec")
                 else:
-                    print(f"Epoch:{epoch + 1} | Batch:{i + 1} | Runtime:{(time.time() - s_time):.2f}secs")
+                    print(f"Epoch:{epoch + 1} | Batch:{i + 1} | ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
             construct_mini_batch_time = time.time()
         return epoch_loss / (i + 1)
 
