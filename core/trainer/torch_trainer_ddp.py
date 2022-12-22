@@ -101,7 +101,7 @@ class Trainer:
         # Without ZeroReundancy optimizer we have 0.770 minutes
         # optimizer = ZeroRedundancyOptimizer(ddp_model.parameters(),optimizer_class=torch.optim.SGD, lr=lr )
         """
-        if self.gpu_id==0:
+        if self.gpu_id == 0:
             print(self.model)
             print(self.optimizer)
         self.loss_history = []
@@ -118,14 +118,22 @@ class Trainer:
     def _run_epoch(self, epoch):
         self.train_dataset_loader.sampler.set_epoch(epoch)
         epoch_loss = 0
+        i = 0
+        construct_mini_batch_time = None
         for i, (source, targets) in enumerate(self.train_dataset_loader):
-            start_time=time.time()
+            start_time = time.time()
+            if construct_mini_batch_time:
+                construct_mini_batch_time = start_time - construct_mini_batch_time
             source, targets = source.to(self.gpu_id, non_blocking=True), targets.to(self.gpu_id, non_blocking=True)
             batch_loss = self._run_batch(source, targets)
             epoch_loss += batch_loss
-            if self.gpu_id==0:
-                print(f"Epoch:{epoch + 1} | Batch:{i + 1} | Runtime:{(time.time() - start_time):.2f} | Loss:{batch_loss:.8f}")
-        return epoch_loss/(i+1)
+            if self.gpu_id == 0:
+                if construct_mini_batch_time:
+                    print(f"Epoch:{epoch + 1} | Batch:{i + 1} | Runtime:{(time.time() - s_time):.2f}sec | BatchConst.:{construct_mini_batch_time:.2f}sec")
+                else:
+                    print(f"Epoch:{epoch + 1} | Batch:{i + 1} | Runtime:{(time.time() - s_time):.2f}secs")
+            construct_mini_batch_time = time.time()
+        return epoch_loss / (i + 1)
 
     def train(self, max_epochs: int):
         for epoch in range(max_epochs):

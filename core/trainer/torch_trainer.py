@@ -53,8 +53,11 @@ class TorchTrainer(AbstractTrainer):
             i: int
             batch: list
             batch_loss = -1
+            construct_mini_batch_time = None
             for i, batch in enumerate(data_loader):
                 s_time = time.time()
+                if construct_mini_batch_time:
+                    construct_mini_batch_time = s_time - construct_mini_batch_time
                 # (1) Zero the gradients.
                 self.optimizer.zero_grad()
                 # (2) Extract Input and Outputs.
@@ -64,7 +67,11 @@ class TorchTrainer(AbstractTrainer):
                 # (4) Accumulate a batch loss.
                 epoch_loss += batch_loss.item()
                 # (6) Print a info.
-                print(f"Epoch:{epoch + 1} | Batch:{i + 1} | Runtime:{(time.time() - s_time) / 60:.4f}mins")
+                if construct_mini_batch_time:
+                    print(f"Epoch:{epoch + 1} | Batch:{i + 1} | Runtime:{(time.time() - s_time):.2f}sec | BatchConst.: {construct_mini_batch_time:.2f}sec")
+                else:
+                    print(f"Epoch:{epoch + 1} | Batch:{i + 1} | Runtime:{(time.time() - s_time):.4f}secs")
+                construct_mini_batch_time = time.time()
             # (5) Average (4).
             epoch_loss /= num_total_batches
             # (6) Print a info.

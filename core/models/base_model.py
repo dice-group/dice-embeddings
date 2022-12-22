@@ -9,6 +9,7 @@ from torch.nn.init import xavier_normal_
 import numpy as np
 from core.custom_opt import Sls, AdamSLS, Adan
 
+
 class BaseKGE(pl.LightningModule):
     def __init__(self, args: dict):
         super().__init__()
@@ -49,7 +50,8 @@ class BaseKGE(pl.LightningModule):
         """ Size of model in MB and number of params"""
         # https://discuss.pytorch.org/t/finding-model-size/130275/2
         # (2) Store NumParam and EstimatedSizeMB
-        num_params=sum(p.numel() for p in self.parameters())
+        num_params = sum(p.numel() for p in self.parameters())
+        # Not quite sure about EstimatedSizeMB ?
         buffer_size = 0
         for buffer in self.buffers():
             buffer_size += buffer.nelement() * buffer.element_size()

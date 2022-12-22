@@ -417,6 +417,9 @@ class BatchRelaxed1vsAllDataset(Dataset):
         return x, y_vec
 
 
+import itertools
+
+
 class TriplePredictionDataset(Dataset):
     """ Negative Sampling Class
     (1) \forall (h,r,t) \in G obtain,
@@ -435,8 +438,6 @@ class TriplePredictionDataset(Dataset):
         :param neg_sample_ratio:
         :param soft_confidence_rate:  Target/Label should be little but larger than 0 and lower than 1
         """
-        start_time = time.time()
-        print('Initializing negative sampling dataset batching...', end='\t')
         self.soft_confidence_rate = soft_confidence_rate
         self.neg_sample_ratio = neg_sample_ratio  # 0 Implies that we do not add negative samples. This is needed during testing and validation
         self.triples_idx = triples_idx
@@ -446,14 +447,56 @@ class TriplePredictionDataset(Dataset):
         self.length = len(self.triples_idx)
         self.num_entities = num_entities
         self.num_relations = num_relations
-        print(f'Done ! {time.time() - start_time:.3f} seconds\n')
 
         assert isinstance(self.triples_idx, np.ndarray)
         assert isinstance(self.triples_idx[0], np.ndarray)
+        self.triples_idx = torch.LongTensor(self.triples_idx)
 
     def __len__(self):
         return self.length
 
+    def __getitem__(self, idx):
+        # (1) Triple
+        h, r, t = self.triples_idx[idx].hsplit(3)
+        label = torch.ones((1,), ) - self.soft_confidence_rate
+        # corrupt head, tail or rel ?!
+        # (1) Corrupted Entities:
+        corr = torch.randint(0, high=self.num_entities, size=(self.neg_sample_ratio, 2))
+        # (2) Head Corrupt:
+        h_head_corr = corr[:, 0]
+        r_head_corr = r.repeat(self.neg_sample_ratio, )
+        t_head_corr = t.repeat(self.neg_sample_ratio, )
+        label_head_corr = torch.zeros(len(t_head_corr), ) + self.soft_confidence_rate
+        # (3) Tail Corrupt:
+        h_tail_corr = h.repeat(self.neg_sample_ratio, )
+        r_tail_corr = r.repeat(self.neg_sample_ratio, )
+        t_tail_corr = corr[:, 1]
+        label_tail_corr = torch.zeros(len(t_tail_corr), ) + self.soft_confidence_rate
+        # (4) Relations Corrupt:
+        h_rel_corr = h.repeat(self.neg_sample_ratio, )
+        r_rel_corr = torch.randint(0, self.num_relations, (self.neg_sample_ratio, 1))[:, 0]
+        t_rel_corr = t.repeat(self.neg_sample_ratio, )
+        label_rel_corr = torch.zeros(len(t_rel_corr), ) + self.soft_confidence_rate
+        # (5) Stack True and Corrupted Triples
+        h = torch.cat((h, h_head_corr, h_tail_corr, h_rel_corr), 0)
+        r = torch.cat((r, r_head_corr, r_tail_corr, r_rel_corr), 0)
+        t = torch.cat((t, t_head_corr, t_tail_corr, t_rel_corr), 0)
+        x = torch.stack((h, r, t), dim=1)
+        label = torch.cat((label, label_head_corr, label_tail_corr, label_rel_corr), 0)
+
+        return x, label
+
+    @staticmethod
+    def collate_fn(batch: List):
+        x_batch, y_batch = [], []
+        for x, y in batch:
+            x_batch.extend(x)
+            y_batch.extend(y)
+        x = torch.stack(x_batch, dim=0)
+        y = torch.stack(y_batch, dim=0)
+        return x, y
+
+    """
     def __getitem__(self, idx):
         return self.triples_idx[idx]
 
@@ -483,11 +526,36 @@ class TriplePredictionDataset(Dataset):
         label_rel_corr = torch.zeros(len(t_rel_corr), ) + self.soft_confidence_rate
         # (5) Stack True and Corrupted Triples
         h = torch.cat((h, h_head_corr, h_tail_corr, h_rel_corr), 0)
+        r = torch.cat((r, r_head_corr, r_tail_corr, r_rel_corr), 0)        # corrupt head, tail or rel ?!
+        # (1) Corrupted Entities:
+        corr = torch.randint(0, high=self.num_entities, size=(size_of_batch * self.neg_sample_ratio, 2))
+        # (2) Head Corrupt:
+        h_head_corr = corr[:, 0]
+        r_head_corr = r.repeat(self.neg_sample_ratio, )
+        t_head_corr = t.repeat(self.neg_sample_ratio, )
+        label_head_corr = torch.zeros(len(t_head_corr), ) + self.soft_confidence_rate
+        # (3) Tail Corrupt:
+        h_tail_corr = h.repeat(self.neg_sample_ratio, )
+        r_tail_corr = r.repeat(self.neg_sample_ratio, )
+        t_tail_corr = corr[:, 1]
+        label_tail_corr = torch.zeros(len(t_tail_corr), ) + self.soft_confidence_rate
+        # (4) Relations Corrupt:
+        h_rel_corr = h.repeat(self.neg_sample_ratio, )
+        r_rel_corr = torch.randint(0, self.num_relations, (size_of_batch * self.neg_sample_ratio, 1))[:, 0]
+        t_rel_corr = t.repeat(self.neg_sample_ratio, )
+        label_rel_corr = torch.zeros(len(t_rel_corr), ) + self.soft_confidence_rate
+        # (5) Stack True and Corrupted Triples
+        h = torch.cat((h, h_head_corr, h_tail_corr, h_rel_corr), 0)
         r = torch.cat((r, r_head_corr, r_tail_corr, r_rel_corr), 0)
         t = torch.cat((t, t_head_corr, t_tail_corr, t_rel_corr), 0)
         x = torch.stack((h, r, t), dim=1)
         label = torch.cat((label, label_head_corr, label_tail_corr, label_rel_corr), 0)
         return x, label
+        t = torch.cat((t, t_head_corr, t_tail_corr, t_rel_corr), 0)
+        x = torch.stack((h, r, t), dim=1)
+        label = torch.cat((label, label_head_corr, label_tail_corr, label_rel_corr), 0)
+        return x, label
+    """
 
 
 class PykeDataset(Dataset):
