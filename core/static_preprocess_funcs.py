@@ -7,8 +7,13 @@ import glob
 import time
 from collections import defaultdict
 from .sanity_checkers import sanity_checking_with_arguments
+import os
+import multiprocessing
+import concurrent
 
 enable_log = False
+
+
 def timeit(func):
     @functools.wraps(func)
     def timeit_wrapper(*args, **kwargs):
@@ -32,6 +37,7 @@ def timeit(func):
         return result
 
     return timeit_wrapper
+
 
 @timeit
 def read_process_modin(data_path, read_only_few: int = None, sample_triples_ratio: float = None):
@@ -74,6 +80,8 @@ def read_process_modin(data_path, read_only_few: int = None, sample_triples_rati
         df = df.apply(lambda x: x.str.removeprefix("<").str.removesuffix(">"), axis=1)
         print('Done !\n')
     return df._to_pandas()
+
+
 @timeit
 def read_process_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None) -> polars.DataFrame:
     """ Load and Preprocess via Polars """
@@ -106,6 +114,8 @@ def read_process_polars(data_path, read_only_few: int = None, sample_triples_rat
         df = df.filter(polars.col("object").str.starts_with('<'))
         print('Done !\n')
     return df
+
+
 @timeit
 def read_process_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None):
     print(f'*** Reading {data_path} with Pandas ***')
@@ -139,6 +149,7 @@ def read_process_pandas(data_path, read_only_few: int = None, sample_triples_rat
         print('Done !\n')
     return df
 
+
 def load_data(data_path, read_only_few: int = None,
               sample_triples_ratio: float = None, backend=None):
     assert backend
@@ -155,6 +166,7 @@ def load_data(data_path, read_only_few: int = None,
     else:
         print(f'{data_path} could not found!')
         return None
+
 
 def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict) -> pd.core.frame.DataFrame:
     """
@@ -180,6 +192,7 @@ def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict) -> pd.c
         raise KeyError('Wrong type training data')
     return train_set
 
+
 def preprocesses_input_args(arg):
     """ Sanity Checking in input arguments """
     # To update the default value of Trainer in pytorch-lightnings
@@ -200,9 +213,9 @@ def preprocesses_input_args(arg):
     except KeyError:
         print(arg.eval_model)
         exit(1)
-    
-    if arg.eval_model=='None':
-        arg.eval_model=None
+
+    if arg.eval_model == 'None':
+        arg.eval_model = None
 
     # reciprocal checking
     # @TODO We need better way for using apply_reciprical_or_noise.
@@ -223,6 +236,7 @@ def preprocesses_input_args(arg):
         arg.scoring_technique = 'KvsAll'
     assert arg.normalization in [None, 'LayerNorm', 'BatchNorm1d']
     return arg
+
 
 def create_constraints(triples: np.ndarray) -> Tuple[dict, dict]:
     """
@@ -253,18 +267,23 @@ def create_constraints(triples: np.ndarray) -> Tuple[dict, dict]:
 
     return domain_constraints_per_rel, range_constraints_per_rel
 
+
 def get_er_vocab(data):
     # head entity and relation
     er_vocab = defaultdict(list)
     for triple in data:
         er_vocab[(triple[0], triple[1])].append(triple[2])
     return er_vocab
+
+
 def get_re_vocab(data):
     # head entity and relation
     re_vocab = defaultdict(list)
     for triple in data:
         re_vocab[(triple[1], triple[2])].append(triple[0])
     return re_vocab
+
+
 def get_ee_vocab(data):
     # head entity and relation
     ee_vocab = defaultdict(list)
@@ -272,3 +291,40 @@ def get_ee_vocab(data):
         ee_vocab[(triple[0], triple[2])].append(triple[1])
     return ee_vocab
 
+
+demir = None
+
+
+def f(start, stop):
+    store = dict()
+    for s_idx, p_idx, o_idx in demir[start:stop]:
+        store.setdefault((s_idx, p_idx), list()).append(o_idx)
+    return store
+
+
+@timeit
+def parallel_mapping_from_first_two_cols_to_third(train_set_idx) -> dict:
+    global demir
+    demir = train_set_idx
+    NUM_WORKERS = os.cpu_count()
+    chunk_size = int(len(train_set_idx) / NUM_WORKERS)
+    futures = []
+    with concurrent.futures.process.ProcessPoolExecutor(max_workers=NUM_WORKERS) as executor:
+        for i in range(0, NUM_WORKERS):
+            start = i + chunk_size if i == 0 else 0
+            futures.append(executor.submit(f, start, i + chunk_size))
+    futures, _ = concurrent.futures.wait(futures)
+    result = dict()
+    for i in futures:
+        d = i.result()
+        result = result | d
+    del demir
+    return result
+
+
+@timeit
+def mapping_from_first_two_cols_to_third(train_set_idx):
+    store = dict()
+    for s_idx, p_idx, o_idx in train_set_idx:
+        store.setdefault((s_idx, p_idx), list()).append(o_idx)
+    return store
