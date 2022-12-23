@@ -1,15 +1,12 @@
 import time
 from abc import ABCMeta
 
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import torch
 import pytorch_lightning as pl
-from torch.utils.data import DataLoader
-from typing import List
 import random
-
-from .typings import Dict
+from .typings import Dict, List
 
 
 def input_data_type_checking(train_set_idx, valid_set_idx, test_set_idx, entity_to_idx: Dict, relation_to_idx: Dict):
@@ -41,9 +38,40 @@ def create_tensor(x: np.ndarray):
 
 
 class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
-    """ Data Class for creating train/val/test datasets depending on the training strategy chosen """
+    """
+    Creat a Dataset for KGE
 
-    def __init__(self, train_set_idx, entity_to_idx, relation_to_idx, batch_size, form,
+    Parameters
+    ----------
+    train_set_idx
+        Indexed triples for the training.
+    entity_to_idx
+        entity to index mapping.
+    relation_to_idx
+        relation to index mapping.
+    batch_size
+        int
+    form
+        ?
+    num_workers
+        int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
+    valid_set_idx
+        Indexed triples for the validation.
+    test_set_idx
+        Indexed triples for the testing.
+    neg_sample_ratio
+        int negative triples per a training data
+    label_smoothing_rate
+    ?
+
+
+
+    Returns
+    -------
+    ?
+    """
+
+    def __init__(self, train_set_idx: np.ndarray, entity_to_idx, relation_to_idx, batch_size, form,
                  num_workers=None, valid_set_idx=None, test_set_idx=None, neg_sample_ratio=None,
                  label_smoothing_rate=None):
         super().__init__()
@@ -53,9 +81,9 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
                                  entity_to_idx=entity_to_idx,
                                  relation_to_idx=relation_to_idx)
 
-        self.train_set_idx = create_tensor(train_set_idx)
-        self.valid_set_idx = create_tensor(valid_set_idx) if valid_set_idx is not None else valid_set_idx
-        self.test_set_idx = create_tensor(test_set_idx) if test_set_idx is not None else test_set_idx
+        self.train_set_idx = train_set_idx  # create_tensor(train_set_idx)
+        self.valid_set_idx = valid_set_idx  # create_tensor(valid_set_idx) if valid_set_idx is not None else valid_set_idx
+        self.test_set_idx = test_set_idx  # create_tensor(test_set_idx) if test_set_idx is not None else test_set_idx
 
         self.entity_to_idx = entity_to_idx
         self.relation_to_idx = relation_to_idx
@@ -180,12 +208,34 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
 
 class CVDataModule(pl.LightningDataModule):
     """
-    train, valid and test sets are available.
-    """
+       Create a Dataset for cross validation
 
-    def __init__(self, train_set, num_entities, num_relations, neg_sample_ratio, batch_size, num_workers):
+       Parameters
+       ----------
+       train_set_idx
+           Indexed triples for the training.
+       num_entities
+           entity to index mapping.
+       num_relations
+           relation to index mapping.
+       batch_size
+           int
+       form
+           ?
+       num_workers
+           int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
+
+
+
+       Returns
+       -------
+       ?
+       """
+    def __init__(self, train_set_idx: np.ndarray, num_entities, num_relations, neg_sample_ratio, batch_size,
+                 num_workers):
         super().__init__()
-        self.train_set = train_set
+        assert isinstance(train_set_idx, np.ndarray)
+        self.train_set_idx = train_set_idx
         self.num_entities = num_entities
         self.num_relations = num_relations
         self.neg_sample_ratio = neg_sample_ratio
@@ -193,7 +243,7 @@ class CVDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
 
     def train_dataloader(self) -> DataLoader:
-        train_set = TriplePredictionDataset(self.train_set,
+        train_set = TriplePredictionDataset(self.train_set_idx,
                                             num_entities=self.num_entities,
                                             num_relations=self.num_relations,
                                             neg_sample_ratio=self.neg_sample_ratio)
@@ -214,8 +264,31 @@ class CVDataModule(pl.LightningDataModule):
 
 
 class OnevsAllDataset(Dataset):
-    def __init__(self, train_set_idx, entity_idxs, relation_idxs, form):
+    """
+       1 vs ALL a Dataset
+
+       Parameters
+       ----------
+       train_set_idx
+           Indexed triples for the training.
+       entity_idxs
+           mapping.
+       relation_idxs
+           mapping.
+       form
+           ?
+       num_workers
+           int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
+
+
+
+       Returns
+       -------
+       torch.utils.data.Dataset
+       """
+    def __init__(self, train_set_idx: np.ndarray, entity_idxs, relation_idxs, form):
         super().__init__()
+        assert isinstance(train_set_idx, np.ndarray)
         assert len(train_set_idx) > 0
         self.train_data = train_set_idx
         self.target_dim = len(entity_idxs)
@@ -232,12 +305,38 @@ class OnevsAllDataset(Dataset):
 
 class KvsAll(Dataset):
     """
-    For entitiy or relation prediciton
-    """
+    KvsAll a Dataset:
 
-    def __init__(self, triples_idx, entity_idxs, relation_idxs, form, store=None, label_smoothing_rate=None):
+        D:= {(x,y)_i}_i ^N, where
+            . x:(h,r) is a unique h \in E and a relation r \in R and
+            . y \in [0,1]^{|E|} is a binary label. \forall y_i =1 s.t. (h r E_i) \in KG
+
+       Parameters
+       ----------
+       train_set_idx
+           Indexed triples for the training.
+       entity_idxs
+           mapping.
+       relation_idxs
+           mapping.
+       form
+           ?
+       store
+            ?
+       label_smoothing_rate
+           ?
+
+
+
+       Returns
+       -------
+       torch.utils.data.Dataset
+       """
+    def __init__(self, train_set_idx: np.ndarray, entity_idxs, relation_idxs, form, store=None,
+                 label_smoothing_rate=None):
         super().__init__()
-        assert len(triples_idx) > 0
+        assert len(train_set_idx) > 0
+        assert isinstance(train_set_idx, np.ndarray)
         self.train_data = None
         self.train_target = None
         self.label_smoothing_rate = label_smoothing_rate
@@ -249,11 +348,11 @@ class KvsAll(Dataset):
             store = dict()
             if form == 'RelationPrediction':
                 self.target_dim = len(relation_idxs)
-                for s_idx, p_idx, o_idx in triples_idx.numpy():
+                for s_idx, p_idx, o_idx in train_set_idx:
                     store.setdefault((s_idx, o_idx), list()).append(p_idx)
             elif form == 'EntityPrediction':
                 self.target_dim = len(entity_idxs)
-                for s_idx, p_idx, o_idx in triples_idx.numpy():
+                for s_idx, p_idx, o_idx in train_set_idx:
                     store.setdefault((s_idx, p_idx), list()).append(o_idx)
             else:
                 raise NotImplementedError
@@ -294,20 +393,44 @@ class KvsAll(Dataset):
 
 class KvsSampleDataset(Dataset):
     """
-    D:= {(x,y)_i}_i ^N, where
-    1. x is a unique head entity and a relation and
-    2. y \in [0,1]^{|E|} is a binary label.
+    KvsSample a Dataset:
 
-    At each mini-batch construction, we subsample(y), hence n
-    |new_y| << |E|
-    new_y contains all 1's if sum(y)< neg_sample ratio
-    new_y contains
-    """
+        D:= {(x,y)_i}_i ^N, where
+            . x:(h,r) is a unique h \in E and a relation r \in R and
+            . y \in [0,1]^{|E|} is a binary label. \forall y_i =1 s.t. (h r E_i) \in KG
 
-    def __init__(self, triples_idx: torch.Tensor, entity_idxs, relation_idxs, form, store=None,
+           At each mini-batch construction, we subsample(y), hence n
+            |new_y| << |E|
+            new_y contains all 1's if sum(y)< neg_sample ratio
+            new_y contains
+
+       Parameters
+       ----------
+       train_set_idx
+           Indexed triples for the training.
+       entity_idxs
+           mapping.
+       relation_idxs
+           mapping.
+       form
+           ?
+       store
+            ?
+       label_smoothing_rate
+           ?
+
+
+
+       Returns
+       -------
+       torch.utils.data.Dataset
+       """
+
+    def __init__(self, train_set_idx: np.ndarray, entity_idxs, relation_idxs, form, store=None,
                  neg_sample_ratio: int = None,
                  label_smoothing_rate=None):
         super().__init__()
+        assert isinstance(train_set_idx, np.ndarray)
         self.train_data = None
         self.train_target = None
         self.label_smoothing_rate = label_smoothing_rate
@@ -319,7 +442,7 @@ class KvsSampleDataset(Dataset):
         store = dict()
         print('Constructing training data...')
         self.num_entities = len(entity_idxs)
-        for s_idx, p_idx, o_idx in triples_idx.numpy():
+        for s_idx, p_idx, o_idx in train_set_idx:
             store.setdefault((s_idx, p_idx), list()).append(o_idx)
 
         assert len(store) > 0
@@ -329,8 +452,8 @@ class KvsSampleDataset(Dataset):
         self.train_data = torch.LongTensor(list(store.keys()))
         self.train_target = list(store.values())
         assert isinstance(self.train_target[0], list)
-        del store, triples_idx, entity_idxs
-        
+        del store, train_set_idx, entity_idxs
+
     def __len__(self):
         assert len(self.train_data) == len(self.train_target)
         return len(self.train_data)
@@ -363,14 +486,38 @@ class KvsSampleDataset(Dataset):
 
 
 class TriplePredictionDataset(Dataset):
-    """ Negative Sampling Class
-    (1) \forall (h,r,t) \in G obtain,
-    create negative triples{(h,r,x),(,r,t),(h,m,t)}
+    """
+    Triple Dataset
 
-    (2) Targets
-    Using hard targets (0,1) drives weights to infinity. An outlier produces enormous gradients. """
+        D:= {(x)_i}_i ^N, where
+            . x:(h,r, t) \in KG is a unique h \in E and a relation r \in R and
+            . collact_fn => Generates negative triples
 
-    def __init__(self, triples_idx: torch.Tensor, num_entities: int, num_relations: int, neg_sample_ratio: int = 1,
+        collect_fn:  \forall (h,r,t) \in G obtain, create negative triples{(h,r,x),(,r,t),(h,m,t)}
+
+       Parameters
+       ----------
+       train_set_idx
+           Indexed triples for the training.
+       entity_idxs
+           mapping.
+       relation_idxs
+           mapping.
+       form
+           ?
+       store
+            ?
+       label_smoothing_rate
+            Using hard targets (0,1) drives weights to infinity.
+            An outlier produces enormous gradients.
+
+       Returns
+       -------
+       torch.utils.data.Dataset
+       """
+
+
+    def __init__(self, train_set_idx: np.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1,
                  soft_confidence_rate: float = 0.001):
         """
 
@@ -380,12 +527,12 @@ class TriplePredictionDataset(Dataset):
         :param neg_sample_ratio:
         :param soft_confidence_rate:  Target/Label should be little but larger than 0 and lower than 1
         """
-        assert isinstance(triples_idx, torch.Tensor)
+        assert isinstance(train_set_idx, np.ndarray)
         self.soft_confidence_rate = soft_confidence_rate
         self.neg_sample_ratio = neg_sample_ratio  # 0 Implies that we do not add negative samples. This is needed during testing and validation
-        self.triples_idx = triples_idx
+        self.triples_idx = torch.IntTensor(train_set_idx)
 
-        assert num_entities >= max(triples_idx[:, 0]) and num_entities >= max(triples_idx[:, 2])
+        assert num_entities >= max(self.triples_idx[:, 0]) and num_entities >= max(self.triples_idx[:, 2])
         # assert num_relations > max(self.rel_idx)
         self.length = len(self.triples_idx)
         self.num_entities = num_entities
@@ -432,16 +579,18 @@ class TriplePredictionDataset(Dataset):
 
 
 class PykeDataset(Dataset):
-    def __init__(self, triples_idx, entity_idxs, relation_idxs, form, store=None, neg_sample_ratio: int = None,
+    def __init__(self, train_set_idx: np.ndarray, entity_idxs, relation_idxs, form, store=None,
+                 neg_sample_ratio: int = None,
                  label_smoothing_rate=None):
         super().__init__()
+        assert isinstance(train_set_idx, np.ndarray)
         self.entity_vocab = dict()
         self.collate_fn = None
         print('Creating mapping..')
-        for i in triples_idx:
+        for i in train_set_idx:
             s, p, o = i
             self.entity_vocab.setdefault(s, []).extend([o])
-        del triples_idx
+        del train_set_idx
         # There are KGs therein some entities may not occur  in the training data split
         # To alleviate our of vocab, those entities are also index.
         self.int_to_data_point = dict()
