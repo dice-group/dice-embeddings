@@ -98,19 +98,21 @@ class TorchTrainer(AbstractTrainer):
                 s_time = time.time()
                 if construct_mini_batch_time:
                     construct_mini_batch_time = s_time - construct_mini_batch_time
-                epoch_loss += self.run_batch(step, batch)
+                batch_loss = self.run_batch(step, batch)
+                epoch_loss += batch_loss
                 # (4) Accumulate a batch loss.
                 # (6) Print a info.
                 if construct_mini_batch_time:
                     print(
-                        f"\tEpoch:{epoch + 1} | Batch:{step + 1} | Runtime:{(time.time() - s_time):.2f}sec | BatchConst.: {construct_mini_batch_time:.2f}sec")
+                        f"\tEpoch:{epoch + 1} | Batch {step + 1} Loss:{batch_loss} | Runtime:{(time.time() - s_time):.2f}sec | BatchConst.: {construct_mini_batch_time:.2f}sec")
                 else:
-                    print(f"\tEpoch:{epoch + 1} | Batch:{step + 1} | Runtime:{(time.time() - s_time):.4f}sec")
+                    print(
+                        f"\tEpoch:{epoch + 1} | Batch:{step + 1} Loss:{batch_loss} | Runtime:{(time.time() - s_time):.4f}sec")
                 construct_mini_batch_time = time.time()
             # (5) Average (4).
             epoch_loss /= num_total_batches
             # (6) Print a info.
-            print(f"Epoch:{epoch + 1} | Loss:{epoch_loss:.8f} | Runtime:{(time.time() - start_time):.3f}sec")
+            print(f"Epoch:{epoch + 1} | Loss:{epoch_loss} | Runtime:{(time.time() - start_time):.3f}sec")
             # (7) Store epoch losses
             self.model.loss_history.append(epoch_loss)
             self.on_train_epoch_end(self, self.model)

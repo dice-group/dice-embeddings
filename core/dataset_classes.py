@@ -331,7 +331,7 @@ class KvsAll(Dataset):
         assert isinstance(train_set_idx, np.ndarray)
         self.train_data = None
         self.train_target = None
-        self.label_smoothing_rate = torch.tensor(label_smoothing_rate, dtype=torch.float16)
+        self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.collate_fn = None
 
         # (1) Create a dictionary of training data pints
@@ -374,7 +374,7 @@ class KvsAll(Dataset):
 
     def __getitem__(self, idx):
         # 1. Initialize a vector of output.
-        y_vec = torch.zeros(self.target_dim, dtype=torch.float16)
+        y_vec = torch.zeros(self.target_dim)
         y_vec[self.train_target[idx]] = 1.0
 
         if self.label_smoothing_rate:
@@ -423,7 +423,7 @@ class KvsSampleDataset(Dataset):
         super().__init__()
         assert isinstance(train_set_idx, np.ndarray)
         self.train_data = None
-        self.label_smoothing_rate = torch.tensor(label_smoothing_rate, dtype=torch.float16)
+        self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.neg_sample_ratio = neg_sample_ratio
         self.collate_fn = None
         if self.neg_sample_ratio == 0:
@@ -470,7 +470,7 @@ class KvsSampleDataset(Dataset):
         y_idx = torch.cat((positives_idx, negative_idx), 0)
         # (6) Create binary labels.
         y_vec = torch.cat(
-            (torch.ones(len(positives_idx), dtype=torch.float16), torch.zeros(len(negative_idx), dtype=torch.float16)),
+            (torch.ones(len(positives_idx)), torch.zeros(len(negative_idx))),
             0)
         return x, y_idx, y_vec
 
@@ -510,7 +510,7 @@ class TriplePredictionDataset(Dataset):
     def __init__(self, train_set_idx: np.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1,
                  label_smoothing_rate: float = 0.0):
         assert isinstance(train_set_idx, np.ndarray)
-        self.label_smoothing_rate = torch.tensor(label_smoothing_rate, dtype=torch.float16)
+        self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.neg_sample_ratio = neg_sample_ratio  # 0 Implies that we do not add negative samples. This is needed during testing and validation
         self.triples_idx = torch.IntTensor(train_set_idx)
 
