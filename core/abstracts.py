@@ -15,9 +15,6 @@ class AbstractTrainer:
         torch.manual_seed(self.attributes.seed_for_computation)
         torch.cuda.manual_seed_all(self.attributes.seed_for_computation)
 
-    # def __getattr__(self, attr):
-    #    return self.attributes[attr]
-
     def on_fit_start(self, *args, **kwargs):
         """ """
         for c in self.callbacks:

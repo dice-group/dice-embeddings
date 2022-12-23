@@ -7,7 +7,7 @@ import torch
 import pytorch_lightning as pl
 import random
 from .typings import Dict, List
-
+# LongTensor or IntTensor
 
 def input_data_type_checking(train_set_idx, valid_set_idx, test_set_idx, entity_to_idx: Dict, relation_to_idx: Dict):
     """ Type checking for efficient memory usage"""
@@ -62,7 +62,7 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
     neg_sample_ratio
         int negative triples per a training data
     label_smoothing_rate
-    ?
+    Smoothing binary labels None
 
 
 
@@ -72,8 +72,9 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
     """
 
     def __init__(self, train_set_idx: np.ndarray, entity_to_idx, relation_to_idx, batch_size, form,
-                 num_workers=None, valid_set_idx=None, test_set_idx=None, neg_sample_ratio=None,
-                 label_smoothing_rate=None):
+                 num_workers=None, valid_set_idx=None,
+                 test_set_idx=None, neg_sample_ratio=None,
+                 label_smoothing_rate: int = 0.0):
         super().__init__()
         input_data_type_checking(train_set_idx=train_set_idx,
                                  valid_set_idx=valid_set_idx,
@@ -84,46 +85,31 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
         self.train_set_idx = train_set_idx  # create_tensor(train_set_idx)
         self.valid_set_idx = valid_set_idx  # create_tensor(valid_set_idx) if valid_set_idx is not None else valid_set_idx
         self.test_set_idx = test_set_idx  # create_tensor(test_set_idx) if test_set_idx is not None else test_set_idx
-
         self.entity_to_idx = entity_to_idx
         self.relation_to_idx = relation_to_idx
-
+        self.target_dim = None
         self.form = form
         self.batch_size = batch_size
         self.num_workers = num_workers
-
         self.neg_sample_ratio = neg_sample_ratio
         self.label_smoothing_rate = label_smoothing_rate
+        self.construct_dataset()
 
+    def construct_dataset(self):
+        # @TODO: Proof the logic behind
         if self.form == 'RelationPrediction':
             self.target_dim = len(self.relation_to_idx)
         elif self.form == 'EntityPrediction':
             self.target_dim = len(self.entity_to_idx)
         elif self.form == 'NegativeSampling':  # we can name it as TriplePrediction
-            self.dataset_type_class = TriplePredictionDataset
-            self.target_dim = 1
-            self.neg_sample_ratio = neg_sample_ratio
-
+            # self.dataset_type_class = TriplePredictionDataset
+            # self.target_dim = 1
+            # self.neg_sample_ratio = neg_sample_ratio
+            pass
         elif self.form == '1VsAll':
             # Multi-class
             self.dataset = OnevsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
                                            relation_idxs=self.relation_to_idx, form=self.form)
-        elif self.form == 'CCvsAll':
-            # Multi-class
-            self.dataset = OnevsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
-                                           relation_idxs=self.relation_to_idx, form=self.form)
-        elif self.form == 'PvsAll':
-            # Multi-class
-            self.dataset = OnevsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
-                                           relation_idxs=self.relation_to_idx, form=self.form)
-        elif self.form == 'BatchRelaxedKvsAll':
-            # ?
-            self.dataset = BatchRelaxedKvsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
-                                                     relation_idxs=self.relation_to_idx, form=self.form)
-        elif self.form == 'BatchRelaxed1vsAll':
-            # ?
-            self.dataset = BatchRelaxed1vsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
-                                                     relation_idxs=self.relation_to_idx, form=self.form)
         elif self.form == 'KvsSample':
             self.dataset = KvsSampleDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
                                             relation_idxs=self.relation_to_idx, form=self.form,
@@ -134,7 +120,8 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
                                        entity_idxs=self.entity_to_idx,
                                        relation_idxs=self.relation_to_idx,
                                        form=self.form,
-                                       neg_sample_ratio=self.neg_sample_ratio)
+                                       neg_sample_ratio=self.neg_sample_ratio,
+                                       label_smoothing_rate=self.label_smoothing_rate)
         else:
             raise ValueError(f'Invalid input : {self.form}')
 
@@ -144,7 +131,8 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
             train_set = TriplePredictionDataset(self.train_set_idx,
                                                 num_entities=len(self.entity_to_idx),
                                                 num_relations=len(self.relation_to_idx),
-                                                neg_sample_ratio=self.neg_sample_ratio)
+                                                neg_sample_ratio=self.neg_sample_ratio,
+                                                label_smoothing_rate=self.label_smoothing_rate)
             return DataLoader(train_set, batch_size=self.batch_size, shuffle=True,
                               num_workers=self.num_workers, collate_fn=train_set.collate_fn)
         elif self.form == 'EntityPrediction' or self.form == 'RelationPrediction':
@@ -231,6 +219,7 @@ class CVDataModule(pl.LightningDataModule):
        -------
        ?
        """
+
     def __init__(self, train_set_idx: np.ndarray, num_entities, num_relations, neg_sample_ratio, batch_size,
                  num_workers):
         super().__init__()
@@ -265,7 +254,7 @@ class CVDataModule(pl.LightningDataModule):
 
 class OnevsAllDataset(Dataset):
     """
-       1 vs ALL a Dataset
+       Dataset for the 1vsALL training strategy
 
        Parameters
        ----------
@@ -286,6 +275,7 @@ class OnevsAllDataset(Dataset):
        -------
        torch.utils.data.Dataset
        """
+
     def __init__(self, train_set_idx: np.ndarray, entity_idxs, relation_idxs, form):
         super().__init__()
         assert isinstance(train_set_idx, np.ndarray)
@@ -332,14 +322,15 @@ class KvsAll(Dataset):
        -------
        torch.utils.data.Dataset
        """
+
     def __init__(self, train_set_idx: np.ndarray, entity_idxs, relation_idxs, form, store=None,
-                 label_smoothing_rate=None):
+                 label_smoothing_rate=0.0):
         super().__init__()
         assert len(train_set_idx) > 0
         assert isinstance(train_set_idx, np.ndarray)
         self.train_data = None
         self.train_target = None
-        self.label_smoothing_rate = label_smoothing_rate
+        self.label_smoothing_rate = torch.tensor(label_smoothing_rate, dtype=torch.float16)
         self.collate_fn = None
 
         # (1) Create a dictionary of training data pints
@@ -428,12 +419,11 @@ class KvsSampleDataset(Dataset):
 
     def __init__(self, train_set_idx: np.ndarray, entity_idxs, relation_idxs, form, store=None,
                  neg_sample_ratio: int = None,
-                 label_smoothing_rate=None):
+                 label_smoothing_rate: float = 0.0):
         super().__init__()
         assert isinstance(train_set_idx, np.ndarray)
         self.train_data = None
-        self.train_target = None
-        self.label_smoothing_rate = label_smoothing_rate
+        self.label_smoothing_rate = torch.tensor(label_smoothing_rate, dtype=torch.float16)
         self.neg_sample_ratio = neg_sample_ratio
         self.collate_fn = None
         if self.neg_sample_ratio == 0:
@@ -495,6 +485,7 @@ class TriplePredictionDataset(Dataset):
 
         collect_fn:  \forall (h,r,t) \in G obtain, create negative triples{(h,r,x),(,r,t),(h,m,t)}
 
+        y:labels are represented in torch.float16
        Parameters
        ----------
        train_set_idx
@@ -516,24 +507,14 @@ class TriplePredictionDataset(Dataset):
        torch.utils.data.Dataset
        """
 
-
     def __init__(self, train_set_idx: np.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1,
-                 soft_confidence_rate: float = 0.001):
-        """
-
-        :param triples_idx: Pytorch Tensor containing index triples (torch.int16 or torch.int32)
-        :param num_entities:
-        :param num_relations:
-        :param neg_sample_ratio:
-        :param soft_confidence_rate:  Target/Label should be little but larger than 0 and lower than 1
-        """
+                 label_smoothing_rate: float = 0.0):
         assert isinstance(train_set_idx, np.ndarray)
-        self.soft_confidence_rate = soft_confidence_rate
+        self.label_smoothing_rate = torch.tensor(label_smoothing_rate, dtype=torch.float16)
         self.neg_sample_ratio = neg_sample_ratio  # 0 Implies that we do not add negative samples. This is needed during testing and validation
         self.triples_idx = torch.IntTensor(train_set_idx)
 
         assert num_entities >= max(self.triples_idx[:, 0]) and num_entities >= max(self.triples_idx[:, 2])
-        # assert num_relations > max(self.rel_idx)
         self.length = len(self.triples_idx)
         self.num_entities = num_entities
         self.num_relations = num_relations
@@ -550,7 +531,7 @@ class TriplePredictionDataset(Dataset):
         h, r, t = batch[:, 0], batch[:, 1], batch[:, 2]
         size_of_batch, _ = batch.shape
         assert size_of_batch > 0
-        label = torch.ones((size_of_batch,), ) - self.soft_confidence_rate
+        label = torch.ones((size_of_batch,), dtype=torch.int16) - self.label_smoothing_rate
         # corrupt head, tail or rel ?!
         # (1) Corrupted Entities:
         corr = torch.randint(0, high=self.num_entities, size=(size_of_batch * self.neg_sample_ratio, 2))
@@ -558,17 +539,17 @@ class TriplePredictionDataset(Dataset):
         h_head_corr = corr[:, 0]
         r_head_corr = r.repeat(self.neg_sample_ratio, )
         t_head_corr = t.repeat(self.neg_sample_ratio, )
-        label_head_corr = torch.zeros(len(t_head_corr), ) + self.soft_confidence_rate
+        label_head_corr = torch.zeros(len(t_head_corr), dtype=torch.int16) + self.label_smoothing_rate
         # (3) Tail Corrupt:
         h_tail_corr = h.repeat(self.neg_sample_ratio, )
         r_tail_corr = r.repeat(self.neg_sample_ratio, )
         t_tail_corr = corr[:, 1]
-        label_tail_corr = torch.zeros(len(t_tail_corr), ) + self.soft_confidence_rate
+        label_tail_corr = torch.zeros(len(t_tail_corr), dtype=torch.int16) + self.label_smoothing_rate
         # (4) Relations Corrupt:
         h_rel_corr = h.repeat(self.neg_sample_ratio, )
         r_rel_corr = torch.randint(0, self.num_relations, (size_of_batch * self.neg_sample_ratio, 1))[:, 0]
         t_rel_corr = t.repeat(self.neg_sample_ratio, )
-        label_rel_corr = torch.zeros(len(t_rel_corr), ) + self.soft_confidence_rate
+        label_rel_corr = torch.zeros(len(t_rel_corr), dtype=torch.int16) + self.label_smoothing_rate
         # (5) Stack True and Corrupted Triples
         h = torch.cat((h, h_head_corr, h_tail_corr, h_rel_corr), 0)
         r = torch.cat((r, r_head_corr, r_tail_corr, r_rel_corr), 0)

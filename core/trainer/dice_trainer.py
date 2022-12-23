@@ -59,7 +59,7 @@ def get_callbacks(args):
                 callbacks.append(WA(num_epochs=args.num_epochs, path=args.full_storage_path))
             elif len(i) > 3:
                 name, param = i[:2], i[2:]
-                assert name=='WA'
+                assert name == 'WA'
                 assert int(param)
                 callbacks.append(PWA(num_epochs=args.num_epochs,
                                      path=args.full_storage_path,
@@ -93,14 +93,13 @@ class DICE_Trainer:
         for i in range(torch.cuda.device_count()):
             print(torch.cuda.get_device_name(i))
 
-    def start(self) -> Tuple[BaseKGE,str]:
+    def start(self) -> Tuple[BaseKGE, str]:
         """ Start training process"""
         self.executor.report['num_train_triples'] = len(self.executor.dataset.train_set)
         self.executor.report['num_entities'] = self.executor.dataset.num_entities
         self.executor.report['num_relations'] = self.executor.dataset.num_relations
         print('------------------- Train -------------------')
         return self.train()
-
 
     def train(self) -> Tuple[BaseKGE, str]:
         """ Train selected model via the selected training strategy """
@@ -117,14 +116,8 @@ class DICE_Trainer:
                 return self.training_kvsall()
             elif self.args.scoring_technique == 'KvsSample':
                 return self.training_KvsSample()
-            elif self.args.scoring_technique == 'PvsAll':
-                return self.training_PvsAll()
-            elif self.args.scoring_technique == 'CCvsAll':
-                return self.training_CCvsAll()
             elif self.args.scoring_technique == '1vsAll':
                 return self.training_1vsall()
-            elif self.args.scoring_technique == "BatchRelaxedKvsAll" or self.args.scoring_technique == "BatchRelaxed1vsAll":
-                return self.train_relaxed_k_vs_all()
             else:
                 raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
 
@@ -195,10 +188,7 @@ class DICE_Trainer:
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_core)
-        if self.args.label_relaxation_rate:
-            model.loss = LabelRelaxationLoss(alpha=self.args.label_relaxation_rate)
-            # model.loss=LabelSmoothingLossCanonical()
-        elif self.args.label_smoothing_rate:
+        if self.args.label_smoothing_rate:
             model.loss = torch.nn.CrossEntropyLoss(label_smoothing=self.args.label_smoothing_rate)
         else:
             model.loss = torch.nn.CrossEntropyLoss()
@@ -232,7 +222,8 @@ class DICE_Trainer:
                                      form=form_of_labelling,
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_core)
+                                     num_workers=self.args.num_core,
+                                     label_smoothing_rate=self.args.label_smoothing_rate)
         print(f'Done ! {time.time() - start_time:.3f} seconds\n')
         # 3. Train model
         train_dataloaders = dataset.train_dataloader()
@@ -344,7 +335,8 @@ class DICE_Trainer:
                                          form=form_of_labelling,
                                          neg_sample_ratio=self.args.neg_ratio,
                                          batch_size=self.args.batch_size,
-                                         num_workers=self.args.num_core)
+                                         num_workers=self.args.num_core,
+                                         label_smoothing_rate=self.args.label_smoothing_rate)
             # 3. Train model
             train_dataloaders = dataset.train_dataloader()
             del dataset

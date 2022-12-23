@@ -13,7 +13,7 @@ from core.abstracts import AbstractTrainer
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 import sys
-
+# DDP with gradiant accumulation https://gist.github.com/mcarilli/bf013d2d2f4b4dd21ade30c9b52d5e2e
 
 def print_peak_memory(prefix, device):
     if device == 0:
@@ -21,7 +21,30 @@ def print_peak_memory(prefix, device):
 
 
 class TorchDDPTrainer(AbstractTrainer):
-    """ A Trainer based on torch.nn.parallel.DistributedDataParallel (https://pytorch.org/docs/stable/notes/ddp.html#ddp)"""
+    """
+        A Trainer based on torch.nn.parallel.DistributedDataParallel
+
+        Arguments
+       ----------
+       train_set_idx
+           Indexed triples for the training.
+       entity_idxs
+           mapping.
+       relation_idxs
+           mapping.
+       form
+           ?
+       store
+            ?
+       label_smoothing_rate
+            Using hard targets (0,1) drives weights to infinity.
+            An outlier produces enormous gradients.
+
+       Returns
+       -------
+       torch.utils.data.Dataset
+       """
+
 
     def __init__(self, args, callbacks):
         super().__init__(args, callbacks)

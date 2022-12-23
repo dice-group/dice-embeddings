@@ -41,7 +41,6 @@ class TransE(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'TransE'
-        self.loss = torch.nn.BCELoss()
         self._norm = 2
         self.margin = 4
 
@@ -52,16 +51,14 @@ class TransE(BaseKGE):
         # if d =0 sigma(5-0) => 1
         # if d =5 sigma(5-5) => 0.5
         # Update: sigmoid( \gamma - d)
-        distance = torch.nn.functional.pairwise_distance(head_ent_emb + rel_ent_emb, tail_ent_emb, p=self._norm)
-        scores = torch.sigmoid(self.margin - distance)
-        return scores
+        distance = self.margin - torch.nn.functional.pairwise_distance(head_ent_emb + rel_ent_emb, tail_ent_emb, p=self._norm)
+        return distance
 
     def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
         emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
         distance = torch.nn.functional.pairwise_distance(torch.unsqueeze(emb_head_real + emb_rel_real, 1),
                                                          self.entity_embeddings.weight, p=self._norm)
-        scores = torch.sigmoid(self.margin - distance)
-        return scores
+        return self.margin - distance
 
 
 class Shallom(BaseKGE):

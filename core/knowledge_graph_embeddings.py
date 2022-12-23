@@ -26,8 +26,6 @@ class KGE(BaseInteractiveKGE):
         assert len(entity) >= 1
         assert len(relations) >= 1
 
-        #print(entity)
-        #print(relations)
         results = {entity}
         # Iterate over relations
         while relations:
@@ -143,7 +141,7 @@ class KGE(BaseInteractiveKGE):
         if batch_size is None:
             batch_size = max(len(triples) // 10, 1)
 
-        train_set = TriplePredictionDataset(torch.LongTensor(triples),
+        train_set = TriplePredictionDataset(triples,
                                             num_entities=self.num_entities,
                                             num_relations=self.num_relations, neg_sample_ratio=neg_sample_ratio)
         del triples
@@ -255,7 +253,7 @@ class KGE(BaseInteractiveKGE):
         """ Retrained a pretrain model on an input KG via negative sampling."""
         # (1) Create Negative Sampling Setting for training
         print('Creating Dataset...')
-        train_set = TriplePredictionDataset(torch.LongTensor(kg.train_set),
+        train_set = TriplePredictionDataset(kg.train_set,
                                             num_entities=len(kg.entity_to_idx),
                                             num_relations=len(kg.relation_to_idx),
                                             neg_sample_ratio=neg_sample_ratio)

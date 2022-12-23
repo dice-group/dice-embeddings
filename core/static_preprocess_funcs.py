@@ -39,8 +39,9 @@ def read_process_modin(data_path, read_only_few: int = None, sample_triples_rati
 
     import modin.pandas as pd
     if data_path[-3:] in ['txt', 'csv']:
+        print('Reading with modin.read_csv with sep ** s+ ** ...')
         df = pd.read_csv(data_path,
-                         delim_whitespace=True,
+                         sep='\s+',
                          header=None,
                          usecols=[0, 1, 2],
                          names=['subject', 'relation', 'object'],
@@ -79,6 +80,7 @@ def read_process_polars(data_path, read_only_few: int = None, sample_triples_rat
     print(f'*** Reading {data_path} with Polars ***')
     # (1) Load the data
     if data_path[-3:] in ['txt', 'csv']:
+        print('Reading with polars.read_csv with sep **t** ...')
         df = polars.read_csv(data_path,
                              has_header=False,
                              low_memory=False,
@@ -108,8 +110,9 @@ def read_process_polars(data_path, read_only_few: int = None, sample_triples_rat
 def read_process_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None):
     print(f'*** Reading {data_path} with Pandas ***')
     if data_path[-3:] in ['txt', 'csv']:
+        print('Reading with pandas.read_csv with sep ** s+ ** ...')
         df = pd.read_csv(data_path,
-                         delim_whitespace=True,
+                         sep="\s+",
                          header=None,
                          usecols=[0, 1, 2],
                          names=['subject', 'relation', 'object'],
