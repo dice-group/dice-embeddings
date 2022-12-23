@@ -8,7 +8,7 @@ def argparse_default(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Dataset and storage related
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/YAGO3-10',
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
                         help="The path of a folder containing input data")
     parser.add_argument("--save_embeddings_as_csv", type=bool, default=False,
                         help='A flag for saving embeddings in csv file.')
@@ -16,27 +16,27 @@ def argparse_default(description=None):
                         help="Embeddings, model, and any other related data will be stored therein.")
     # Model and Training Parameters
     parser.add_argument("--model", type=str,
-                        default="ConEx",
+                        default="QMult",
                         help="Available models: ConEx, ConvQ, ConvO, DistMult, QMult, OMult, "
                              "Shallom, ConEx, ComplEx, DistMult, TransE, CLf")
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[Adan, NAdam, Adam, SGD, Sls, AdamSLS]')
     parser.add_argument('--embedding_dim', type=int, default=32, help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=0, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument('--callbacks',
                         '--list',
                         nargs='+',
-                        default=[],  # WA10, WA
+                        default=[],  # WA10 ,WA10 or WA
                         help='List of tuples representing a callback and values')
     parser.add_argument("--backend", type=str, default='polars',
                         help='Select [polars(seperator: \t), modin(seperator: \s+ ), pandas(seperator: \s+)]')
     parser.add_argument("--trainer", type=str, default='torchDDP',
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
     # Hyperparameters for training.
-    parser.add_argument('--scoring_technique', default='KvsSample', help="KvsSample, 1vsAll, KvsAll, NegSample")
-    parser.add_argument('--neg_ratio', type=int, default=10,
+    parser.add_argument('--scoring_technique', default='KvsAll', help="KvsSample, 1vsAll, KvsAll, NegSample")
+    parser.add_argument('--neg_ratio', type=int, default=0,
                         help='The number of negative triples generated per positive triple.')
     # Optimization related hyperparameters
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
