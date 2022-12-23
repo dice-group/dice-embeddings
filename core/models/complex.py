@@ -42,7 +42,7 @@ class ConEx(BaseKGE):
         x = F.relu(self.norm_fc1(self.fc1(x)))
         return torch.chunk(x, 2, dim=1)
 
-    def forward_k_vs_all(self, x: torch.LongTensor) -> torch.FloatTensor:
+    def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
         # (2) Split (1) into real and imaginary parts.
@@ -62,7 +62,7 @@ class ConEx(BaseKGE):
         imag_imag_real = torch.mm(b * emb_head_imag * emb_rel_imag, emb_tail_real)
         return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
 
-    def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
+    def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
         # (2) Split (1) into real and imaginary parts.
@@ -81,7 +81,35 @@ class ConEx(BaseKGE):
         imag_imag_real = (b * emb_head_imag * emb_rel_imag * emb_tail_real).sum(dim=1)
         return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
 
+    def forward_k_vs_sample(self, x:torch.Tensor, target_entity_idx:torch.Tensor):
+        # @OTOD: Double check later.
+        # (1) Retrieve embeddings & Apply Dropout & Normalization.
+        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
+        # (2) Split (1) into real and imaginary parts.
+        emb_head_real, emb_head_imag = torch.hsplit(head_ent_emb, 2)
+        emb_rel_real, emb_rel_imag = torch.hsplit(rel_ent_emb, 2)
+        # (3) Apply convolution operation on (2).
+        C_3 = self.residual_convolution(C_1=(emb_head_real, emb_head_imag),
+                                        C_2=(emb_rel_real, emb_rel_imag))
+        a, b = C_3
 
+
+        # (batch size, num. selected entity, dimension)
+        # tail_entity_emb = self.normalize_tail_entity_embeddings(self.entity_embeddings(target_entity_idx))
+        tail_entity_emb = self.entity_embeddings(target_entity_idx)
+        # complex vectors
+        emb_tail_real, emb_tail_i = torch.tensor_split(tail_entity_emb, 2, dim=2)
+
+        emb_tail_real = emb_tail_real.transpose(1, 2)
+        emb_tail_i = emb_tail_i.transpose(1, 2)
+
+
+        real_real_real = torch.bmm((a * emb_head_real * emb_rel_real).unsqueeze(1), emb_tail_real)
+        real_imag_imag = torch.bmm((a * emb_head_real * emb_rel_imag).unsqueeze(1), emb_tail_i)
+        imag_real_imag = torch.bmm((b * emb_head_imag * emb_rel_real).unsqueeze(1), emb_tail_i)
+        imag_imag_real = torch.bmm((b * emb_head_imag * emb_rel_imag).unsqueeze(1), emb_tail_real)
+        score=real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
+        return score.squeeze(1)
 class ComplEx(BaseKGE):
     def __init__(self, args):
         super().__init__(args)

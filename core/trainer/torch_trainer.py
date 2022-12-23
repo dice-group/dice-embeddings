@@ -3,6 +3,7 @@ from core.typings import Tuple
 from core.abstracts import AbstractTrainer
 from core.custom_opt.sls import Sls
 from core.custom_opt.adam_sls import AdamSLS
+from core.static_funcs_training import efficient_zero_grad
 import time
 
 
@@ -39,12 +40,14 @@ class TorchTrainer(AbstractTrainer):
         # (1) Extract Input and Outputs.
         x_batch, y_batch = self.extract_input_outputs(batch)
 
-        if self.attributes.gradient_accumulation_steps > 1 and step % self.attributes.gradient_accumulation_steps == 0:
-            # (2) Accumulate gradients.
-            pass
+        if self.attributes.gradient_accumulation_steps > 1:
+            # Update parameters every gradient_accumulation_steps mini-batch
+            if step % self.attributes.gradient_accumulation_steps == 0:
+                self.optimizer.zero_grad()
+                efficient_zero_grad(self.model)
         else:
-            # (2) Zero the gradients.
-            self.optimizer.zero_grad()
+            # (2) Do not accumulate gradient, zero the gradients per batch.
+            efficient_zero_grad(self.model)
         # (3) Loss Forward and Backward w.r.t the batch.
         return self.compute_forward_loss_backward(x_batch, y_batch).item()
 

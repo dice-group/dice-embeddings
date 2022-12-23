@@ -1,5 +1,4 @@
 import torch
-from tqdm import tqdm
 import time
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -7,12 +6,12 @@ from torch.distributed.optim import ZeroRedundancyOptimizer
 import torch.distributed as dist
 import os
 import numpy as np
-import pytorch_lightning as pl
 from core.typings import *
 from core.abstracts import AbstractTrainer
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 import sys
+from core.static_funcs_training import efficient_zero_grad
 # DDP with gradiant accumulation https://gist.github.com/mcarilli/bf013d2d2f4b4dd21ade30c9b52d5e2e
 
 def print_peak_memory(prefix, device):
@@ -133,8 +132,7 @@ class Trainer:
         # (1) Zero the gradients.
         #self.optimizer.zero_grad()
         # https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html#use-parameter-grad-none-instead-of-model-zero-grad-or-optimizer-zero-grad
-        for param in self.model.parameters():
-            param.grad = None
+        efficient_zero_grad(self.model)
         output = self.model(source)
         loss = self.loss_func(output, targets)
         batch_loss = loss.item()
