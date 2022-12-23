@@ -11,7 +11,7 @@ class TestRegressionQmult:
         args.model = 'QMult'
         args.path_dataset_folder = 'KGs/UMLS'
         args.optim = 'Adam'
-        args.num_epochs = 50
+        args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
         args.embedding_dim = 32
@@ -38,7 +38,7 @@ class TestRegressionQmult:
         args.model = 'QMult'
         args.path_dataset_folder = 'KGs/UMLS'
         args.optim = 'Adam'
-        args.num_epochs = 20
+        args.num_epochs = 2
         args.batch_size = 1024
         args.lr = 0.01
         args.embedding_dim = 16
@@ -48,8 +48,6 @@ class TestRegressionQmult:
         args.scoring_technique = 'KvsSample'
         # size of entity vocabulary
         args.neg_ratio = 135
-        args.label_smoothing_rate = None
-        args.label_relaxation_rate = None
         args.add_noise_rate = None
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0

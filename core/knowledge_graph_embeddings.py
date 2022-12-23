@@ -26,8 +26,6 @@ class KGE(BaseInteractiveKGE):
         assert len(entity) >= 1
         assert len(relations) >= 1
 
-        #print(entity)
-        #print(relations)
         results = {entity}
         # Iterate over relations
         while relations:

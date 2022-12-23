@@ -1,10 +1,10 @@
 import os
 import datetime
-from .static_funcs import load_model_ensemble, load_model, store_kge, create_constraints
+from .static_funcs import load_model_ensemble, load_model, save_checkpoint_model
+from .static_preprocess_funcs import create_constraints
 import torch
 from typing import List, Tuple, Generator
 import pandas as pd
-
 
 class AbstractTrainer:
     def __init__(self, args, callbacks):
@@ -14,9 +14,6 @@ class AbstractTrainer:
         # Set True to use Model summary callback of pl.
         torch.manual_seed(self.attributes.seed_for_computation)
         torch.cuda.manual_seed_all(self.attributes.seed_for_computation)
-
-    # def __getattr__(self, attr):
-    #    return self.attributes[attr]
 
     def on_fit_start(self, *args, **kwargs):
         """ """
@@ -226,9 +223,9 @@ class BaseInteractiveKGE:
     def save(self) -> None:
         t = str(datetime.datetime.now())
         if self.construct_ensemble:
-            store_kge(self.model, path=self.path + f'/model_ensemble_interactive_{str(t)}.pt')
+            save_checkpoint_model(self.model, path=self.path + f'/model_ensemble_interactive_{str(t)}.pt')
         else:
-            store_kge(self.model, path=self.path + f'/model_interactive_{str(t)}.pt')
+            save_checkpoint_model(self.model, path=self.path + f'/model_interactive_{str(t)}.pt')
 
     def index_triple(self, head_entity: List[str], relation: List[str], tail_entity: List[str]):
         """

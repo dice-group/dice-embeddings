@@ -5,6 +5,7 @@ import pytest
 from core import KGE
 from core.static_funcs import random_prediction
 
+
 class TestDefaultParams:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult(self):
@@ -23,6 +24,7 @@ class TestDefaultParams:
         args.feature_map_dropout_rate = 0.0
         args.sample_triples_ratio = None
         args.read_only_few = None
+        args.backend = 'pandas'
         args.sample_triples_ratio = None
         args.trainer = 'torchCPUTrainer'
         executor = Execute(args)

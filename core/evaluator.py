@@ -11,7 +11,7 @@ class Evaluator:
         self.report = dict()
 
     def __vocab_preparation(self):
-
+        print("** VOCAB Prep **")
         if isinstance(self.executor.dataset.er_vocab, dict):
             pass
         else:
@@ -42,10 +42,10 @@ class Evaluator:
         :param trained_model:
         :return:
         """
+        print("** EVAL **")
         # (1) Exit, if the flag is not set
         if self.executor.args.eval_model is None:
             return
-
         self.__vocab_preparation()
         print('Evaluation Starts.')
         if self.executor.args.num_folds_for_cv > 1:

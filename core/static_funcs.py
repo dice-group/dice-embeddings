@@ -1,5 +1,4 @@
 import os
-
 import core
 from core.typings import *
 import numpy as np
@@ -18,26 +17,29 @@ import glob
 import pandas
 from .sanity_checkers import sanity_checking_with_arguments
 import polars
-from functools import wraps
+import functools
 
-
+enable_log = False
 def timeit(func):
-    @wraps(func)
+    @functools.wraps(func)
     def timeit_wrapper(*args, **kwargs):
         start_time = time.perf_counter()
         result = func(*args, **kwargs)
         end_time = time.perf_counter()
         total_time = end_time - start_time
-        if args is not None:
-            s_args = [type(i) for i in args]
+        if enable_log:
+            if args is not None:
+                s_args = [type(i) for i in args]
+            else:
+                s_args = args
+            if kwargs is not None:
+                s_kwargs = {k: type(v) for k, v in kwargs.items()}
+            else:
+                s_kwargs = kwargs
+            print(f'Function {func.__name__} with  Args:{s_args} | Kwargs:{s_kwargs} took {total_time:.4f} seconds')
         else:
-            s_args = args
-        if kwargs is not None:
-            s_kwargs = {k: type(v) for k, v in kwargs.items()}
-        else:
-            s_kwargs = kwargs
-        print(
-            f'Function {func.__name__} with  Args:{s_args} | Kwargs:{s_kwargs} took {total_time:.4f} seconds')
+            print(f'Took {total_time:.4f} seconds')
+
         return result
 
     return timeit_wrapper
@@ -63,8 +65,6 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
         return model, _
     else:
         return intialize_model(args)
-
-
 def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
     """ Load weights and initialize pytorch module from namespace arguments"""
     print(f'Loading model {model_name}...', end=' ')
@@ -88,12 +88,18 @@ def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[BaseKG
     model.eval()
     start_time = time.time()
     print('Loading entity and relation indexes...', end=' ')
-    entity_to_idx = pd.read_parquet(path_of_experiment_folder + '/entity_to_idx.gzip')
-    relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')
+    try:
+        entity_to_idx = pd.read_parquet(path_of_experiment_folder + '/entity_to_idx.gzip')
+        relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')
+    except FileNotFoundError:
+        print('.gzip not found')
+    try:
+        entity_to_idx = pd.read_parquet(path_of_experiment_folder + '/entity_to_idx')
+        relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx')
+    except FileNotFoundError:
+        pass
     print(f'Done! It took {time.time() - start_time:.4f}')
     return model, entity_to_idx, relation_to_idx
-
-
 def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
     """ Construct Ensemble Of weights and initialize pytorch module from namespace arguments
 
@@ -148,8 +154,6 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, pd.Dat
     relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')
     print(f'Done! It took {time.time() - start_time:.4f} seconds')
     return model, entity_to_idx, relation_to_idx
-
-
 def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
     """
     Detect most efficient data type for a given triples
@@ -168,160 +172,31 @@ def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
         # print(f'Setting int32,\t {np.iinfo(np.int32).max}')
         train_set = train_set.astype(np.int32)
     else:
-        pass
+        raise TypeError('Int64?')
     return train_set
-
-
 def model_fitting(trainer, model, train_dataloaders) -> None:
     """ Standard Pytorch Lightning model fitting """
     assert trainer.attributes.max_epochs == trainer.attributes.min_epochs
-    print(
-        f'NumOfEpochs:{trainer.attributes.max_epochs} | LearningRate:{model.learning_rate} | BatchSize:{trainer.attributes.batch_size} | EpochBatchsize:{len(train_dataloaders)}')
+    print(f'NumOfDataPoints:{len(train_dataloaders.dataset)} | NumOfEpochs:{trainer.attributes.max_epochs} | LearningRate:{model.learning_rate} | BatchSize:{trainer.attributes.batch_size} | EpochBatchsize:{len(train_dataloaders)}')
     trainer.fit(model, train_dataloaders=train_dataloaders)
     print(f'Model fitting is done!')
 
-
-@timeit
-def read_process_modin(data_path, read_only_few: int = None, sample_triples_ratio: float = None):
-    import modin.pandas as pd
-    if data_path[-3:] in ['txt', 'csv']:
-        df = pd.read_csv(data_path,
-                         delim_whitespace=True,
-                         header=None,
-                         usecols=[0, 1, 2],
-                         names=['subject', 'relation', 'object'],
-                         dtype=str)
-    else:
-        df = pd.read_parquet(data_path, engine='pyarrow')
-
-    # df <class 'modin.pandas.dataframe.DataFrame'>
-    # return pandas DataFrame
-    # (2)a Read only few if it is asked.
-    if isinstance(read_only_few, int):
-        if read_only_few > 0:
-            print(f'Reading only few input data {read_only_few}...')
-            df = df.head(read_only_few)
-            print('Done !\n')
-    # (3) Read only sample
-    if sample_triples_ratio:
-        print(f'Subsampling {sample_triples_ratio} of input data...')
-        df = df.sample(frac=sample_triples_ratio)
-        print('Done !\n')
-    if sum(df.head()["subject"].str.startswith('<')) + sum(df.head()["relation"].str.startswith('<')) > 2:
-        # (4) Drop Rows/triples with double or boolean: Example preprocessing
-        # Drop of object does not start with **<**.
-        # Specifying na to be False instead of NaN.
-        print('Removing triples with literal values...')
-        df = df[df["object"].str.startswith('<', na=False)]
-        print('Done !\n')
-        # (5) Remove **<** and **>**
-        print('Removing brackets **<** and **>**...')
-        df = df.apply(lambda x: x.str.removeprefix("<").str.removesuffix(">"), axis=1)
-        print('Done !\n')
-    return df._to_pandas()
-
-
-@timeit
-def read_process_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None) -> polars.DataFrame:
-    """ Load and Preprocess via Polars """
-    # (1) Load the data
-    if data_path[-3:] in ['txt', 'csv']:
-        df = polars.read_csv(data_path,
-                             has_header=False,
-                             low_memory=False,
-                             n_rows=None if read_only_few is None else read_only_few,
-                             columns=[0, 1, 2],
-                             new_columns=['subject', 'relation', 'object'],
-                             sep="\t")  # \s+ doesn't work for polars
-    else:
-        df = polars.read_parquet(data_path)
-
-    # (2) Sample from (1)
-    if sample_triples_ratio:
-        print(f'Subsampling {sample_triples_ratio} of input data...')
-        df = df.sample(frac=sample_triples_ratio)
-        print('Done !\n')
-
-    # (3) Type heuristic prediction: If KG is an RDF KG, remove all triples where subject is not <?>.
-    h = df.head().to_pandas()
-    if sum(h["subject"].str.startswith('<')) + sum(h["relation"].str.startswith('<')) > 2:
-        print('Removing triples with literal values...')
-        df = df.filter(polars.col("object").str.starts_with('<'))
-        print('Done !\n')
-    return df
-
-
-@timeit
-def read_process_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None):
-    if data_path[-3:] in ['txt', 'csv']:
-        df = pd.read_csv(data_path,
-                         delim_whitespace=True,
-                         header=None,
-                         usecols=[0, 1, 2],
-                         names=['subject', 'relation', 'object'],
-                         dtype=str)
-    else:
-        df = pd.read_parquet(data_path, engine='pyarrow')
-    # (2)a Read only few if it is asked.
-    if isinstance(read_only_few, int):
-        if read_only_few > 0:
-            print(f'Reading only few input data {read_only_few}...')
-            df = df.head(read_only_few)
-            print('Done !\n')
-    # (3) Read only sample
-    if sample_triples_ratio:
-        print(f'Subsampling {sample_triples_ratio} of input data...')
-        df = df.sample(frac=sample_triples_ratio)
-        print('Done !\n')
-    if sum(df.head()["subject"].str.startswith('<')) + sum(df.head()["relation"].str.startswith('<')) > 2:
-        # (4) Drop Rows/triples with double or boolean: Example preprocessing
-        # Drop of object does not start with **<**.
-        # Specifying na to be False instead of NaN.
-        print('Removing triples with literal values...')
-        df = df[df["object"].str.startswith('<', na=False)]
-        print('Done !\n')
-    return df
-
-
-def load_data(data_path, read_only_few: int = None,
-              sample_triples_ratio: float = None, backend=None):
-    """Load Datasets"""
-    assert backend
-    # If path exits
-    if glob.glob(data_path):
-        if backend == 'modin':
-            return read_process_modin(data_path, read_only_few, sample_triples_ratio)
-        elif backend == 'pandas':
-            return read_process_pandas(data_path, read_only_few, sample_triples_ratio)
-        elif backend == 'polars':
-            return read_process_polars(data_path, read_only_few, sample_triples_ratio)
-        else:
-            raise NotImplementedError(f'{backend} not found')
-    else:
-        print(f'{data_path} could not found!')
-        return None
-
-
-def store_kge(trained_model, path: str) -> None:
-    """
-    Save parameters of model into path via torch
-    :param trained_model: an instance of BaseKGE(pl.LightningModule) see core.models.base_model .
-    :param path:
-    :return:
-    """
+def save_checkpoint_model(trainer, model, path: str) -> None:
+    """ Store Pytorch model into disk"""
     try:
-        torch.save(trained_model.state_dict(), path)
+        torch.save(model.state_dict(), path)
     except ReferenceError as e:
         print(e)
-        print(trained_model.name)
+        print(model.name)
         print('Could not save the model correctly')
 
-
-def store(trained_model, model_name: str = 'model', full_storage_path: str = None,
+@timeit
+def store(trainer,
+          trained_model, model_name: str = 'model', full_storage_path: str = None,
           dataset=None, save_as_csv=False) -> None:
     """
     Store trained_model model and save embeddings into csv file.
-
+    :param trainer: an instance of trainer class
     :param dataset: an instance of KG see core.knowledge_graph.
     :param full_storage_path: path to save parameters.
     :param model_name: string representation of the name of the model.
@@ -336,7 +211,8 @@ def store(trained_model, model_name: str = 'model', full_storage_path: str = Non
     assert len(model_name) > 1
 
     # (1) Save pytorch model in trained_model .
-    store_kge(trained_model, path=full_storage_path + f'/{model_name}.pt')
+    save_checkpoint_model(trainer=trainer,
+                          model=trained_model, path=full_storage_path + f'/{model_name}.pt')
     if save_as_csv:
         # (2.1) Get embeddings.
         entity_emb, relation_ebm = trained_model.get_embeddings()
@@ -349,57 +225,6 @@ def store(trained_model, model_name: str = 'model', full_storage_path: str = Non
             del relation_ebm
         else:
             pass
-    else:
-        """
-        # (2) See available memory and decide whether embeddings are stored separately or not.
-        available_memory = [i.split() for i in os.popen('free -h').read().splitlines()][1][-1]  # ,e.g., 10Gi
-        available_memory_mb = float(available_memory[:-2]) * 1000
-        # Decision: model size in MB should be at most 1 percent of the available memory.
-        if available_memory_mb * .01 > extract_model_summary(trained_model.summarize())['EstimatedSizeMB']:
-            # (2.1) Get embeddings.
-            entity_emb, relation_ebm = trained_model.get_embeddings()
-            # (2.2) If we have less than 1000 rows total save it as csv.
-            if len(entity_emb) < 1000:
-                save_embeddings(entity_emb.numpy(), indexes=dataset.entities_str,
-                                path=full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
-                del entity_emb
-                if relation_ebm is not None:
-                    save_embeddings(relation_ebm.numpy(), indexes=dataset.relations_str,
-                                    path=full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
-                    del relation_ebm
-            else:
-                torch.save(entity_emb, full_storage_path + '/' + trained_model.name + '_entity_embeddings.pt')
-                if relation_ebm is not None:
-                    torch.save(relation_ebm, full_storage_path + '/' + trained_model.name + '_relation_embeddings.pt')
-        else:
-            print('There is not enough memory to store embeddings separately.')
-        """
-
-
-def index_triples(train_set, entity_to_idx: dict, relation_to_idx: dict) -> pd.core.frame.DataFrame:
-    """
-    :param train_set: pandas dataframe
-    :param entity_to_idx: a mapping from str to integer index
-    :param relation_to_idx: a mapping from str to integer index
-    :param num_core: number of cores to be used
-    :return: indexed triples, i.e., pandas dataframe
-    """
-    n, d = train_set.shape
-    train_set['subject'] = train_set['subject'].apply(lambda x: entity_to_idx.get(x))
-    train_set['relation'] = train_set['relation'].apply(lambda x: relation_to_idx.get(x))
-    train_set['object'] = train_set['object'].apply(lambda x: entity_to_idx.get(x))
-    # train_set = train_set.dropna(inplace=True)
-    if isinstance(train_set, pd.core.frame.DataFrame):
-        assert (n, d) == train_set.shape
-    elif isinstance(train_set, dask.dataframe.core.DataFrame):
-        nn, dd = train_set.shape
-        assert isinstance(dd, int)
-        if isinstance(nn, int):
-            assert n == nn and d == dd
-    else:
-        raise KeyError('Wrong type training data')
-    return train_set
-
 
 def add_noisy_triples(train_set: pd.DataFrame, add_noise_rate: float) -> pd.DataFrame:
     """
@@ -429,8 +254,6 @@ def add_noisy_triples(train_set: pd.DataFrame, add_noise_rate: float) -> pd.Data
 
     assert num_triples + num_noisy_triples == len(train_set)
     return train_set
-
-
 def create_recipriocal_triples(x):
     """
     Add inverse triples into dask dataframe
@@ -440,13 +263,9 @@ def create_recipriocal_triples(x):
     return pd.concat([x, x['object'].to_frame(name='subject').join(
         x['relation'].map(lambda x: x + '_inverse').to_frame(name='relation')).join(
         x['subject'].to_frame(name='object'))], ignore_index=True)
-
-
-def read_preprocess_index_serialize_kg(args, cls):
-    """ Read & Parse input data for training and testing"""
-    print('*** Read, Parse, and Serialize Knowledge Graph  ***')
+def read_or_load_kg(args, cls):
+    print('*** Read or Load Knowledge Graph  ***')
     start_time = time.time()
-    # 1. Read & Parse input data
     kg = cls(data_dir=args.path_dataset_folder,
              num_core=args.num_core,
              add_reciprical=args.apply_reciprical_or_noise,
@@ -455,145 +274,11 @@ def read_preprocess_index_serialize_kg(args, cls):
              sample_triples_ratio=args.sample_triples_ratio,
              path_for_serialization=args.full_storage_path,
              min_freq_for_vocab=args.min_freq_for_vocab,
+             deserialize_flag=args.path_experiment_folder if hasattr(args, 'path_experiment_folder') else None,
              backend=args.backend)
     print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
     print(kg.description_of_input)
     return kg
-
-
-def reload_input_data(args: str = None, cls=None):
-    print('*** Reload Knowledge Graph  ***')
-    start_time = time.time()
-    kg = cls(data_dir=args.path_dataset_folder,
-             num_core=args.num_core,
-             add_reciprical=args.apply_reciprical_or_noise,
-             eval_model=args.eval_model,
-             read_only_few=args.read_only_few,
-             sample_triples_ratio=args.sample_triples_ratio,
-             path_for_serialization=args.full_storage_path,
-             min_freq_for_vocab=args.min_freq_for_vocab,
-             deserialize_flag=args.path_experiment_folder)
-    print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
-    print(kg.description_of_input)
-    return kg
-
-
-def performance_debugger(func_name):
-    def func_decorator(func):
-        def debug(*args, **kwargs):
-            starT = time.time()
-            print('\n######', func_name, ' ', end='')
-            r = func(*args, **kwargs)
-            print(f' took  {time.time() - starT:.3f}  seconds')
-            return r
-
-        return debug
-
-    return func_decorator
-
-
-def preprocesses_input_args(arg):
-    """ Sanity Checking in input arguments """
-    # To update the default value of Trainer in pytorch-lightnings
-    arg.max_epochs = arg.num_epochs
-    arg.min_epochs = arg.num_epochs
-    assert arg.weight_decay >= 0.0
-    arg.learning_rate = arg.lr
-    arg.deterministic = True
-    if arg.num_core <= 0:
-        arg.num_core = os.cpu_count() // 2
-
-    # Below part will be investigated
-    arg.check_val_every_n_epoch = 10 ** 6  # ,i.e., no eval
-    arg.logger = False
-    try:
-        assert arg.eval_model in [None, 'None', 'train', 'val', 'test', 'train_val', 'train_test', 'val_test',
-                                  'train_val_test']
-    except KeyError:
-        print(arg.eval_model)
-        exit(1)
-    # reciprocal checking
-    # @TODO We need better way for using apply_reciprical_or_noise.
-    if arg.scoring_technique in ['KvsSample', 'PvsAll', 'CCvsAll', 'KvsAll', '1vsAll', 'BatchRelaxed1vsAll',
-                                 'BatchRelaxedKvsAll']:
-        arg.apply_reciprical_or_noise = True
-    elif arg.scoring_technique == 'NegSample':
-        arg.apply_reciprical_or_noise = False
-    else:
-        raise KeyError(f'Unexpected input for scoring_technique.\t{arg.scoring_technique}')
-
-    if arg.sample_triples_ratio is not None:
-        assert 1.0 >= arg.sample_triples_ratio >= 0.0
-
-    assert arg.backend in ["modin", "pandas", "vaex", "polars"]
-    sanity_checking_with_arguments(arg)
-    if arg.model == 'Shallom':
-        arg.scoring_technique = 'KvsAll'
-    assert arg.normalization in [None, 'LayerNorm', 'BatchNorm1d']
-    return arg
-
-
-def create_constraints(triples: np.ndarray) -> Tuple[dict, dict]:
-    """
-    (1) Extract domains and ranges of relations
-    (2) Store a mapping from relations to entities that are outside of the domain and range.
-    Crete constrainted entities based on the range of relations
-    :param triples:
-    :return:
-    """
-    assert isinstance(triples, np.ndarray)
-    assert triples.shape[1] == 3
-
-    # (1) Compute the range and domain of each relation
-    range_constraints_per_rel = dict()
-    domain_constraints_per_rel = dict()
-    set_of_entities = set()
-    set_of_relations = set()
-    for (e1, p, e2) in triples:
-        range_constraints_per_rel.setdefault(p, set()).add(e2)
-        domain_constraints_per_rel.setdefault(p, set()).add(e1)
-        set_of_entities.add(e1)
-        set_of_relations.add(p)
-        set_of_entities.add(e2)
-
-    for rel in set_of_relations:
-        range_constraints_per_rel[rel] = list(set_of_entities - range_constraints_per_rel[rel])
-        domain_constraints_per_rel[rel] = list(set_of_entities - domain_constraints_per_rel[rel])
-
-    return domain_constraints_per_rel, range_constraints_per_rel
-
-
-def create_logger(*, name, p):
-    logger = logging.getLogger(name)
-
-    logger.setLevel(logging.INFO)
-    # create file handler which logs even debug messages
-    fh = logging.FileHandler(p + '/info.log')
-    fh.setLevel(logging.INFO)
-
-    # create console handler with a higher log level
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-
-    # create formatter and add it to the handlers
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    ch.setFormatter(formatter)
-    fh.setFormatter(formatter)
-
-    # add the handlers to logger
-    logger.addHandler(ch)
-    logger.addHandler(fh)
-
-    return logger
-
-
-def create_experiment_folder(folder_name='Experiments'):
-    directory = os.getcwd() + '/' + folder_name + '/'
-    folder_name = str(datetime.datetime.now())
-    path_of_folder = directory + folder_name
-    os.makedirs(path_of_folder)
-    return path_of_folder
-
 
 def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     # @TODO: Apply construct_krone as callback? or use KronE_QMult as a prefix.
@@ -652,43 +337,17 @@ def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     else:
         raise ValueError
     return model, form_of_labelling
-
+"""
 
 def extract_model_summary(s):
     return {'NumParam': s.total_parameters, 'EstimatedSizeMB': s.model_size}
-
-
-def get_er_vocab(data):
-    # head entity and relation
-    er_vocab = defaultdict(list)
-    for triple in data:
-        er_vocab[(triple[0], triple[1])].append(triple[2])
-    return er_vocab
-
-
-def get_re_vocab(data):
-    # head entity and relation
-    re_vocab = defaultdict(list)
-    for triple in data:
-        re_vocab[(triple[1], triple[2])].append(triple[0])
-    return re_vocab
-
-
-def get_ee_vocab(data):
-    # head entity and relation
-    ee_vocab = defaultdict(list)
-    for triple in data:
-        ee_vocab[(triple[0], triple[2])].append(triple[1])
-    return ee_vocab
-
+"""
 
 def load_json(p: str) -> dict:
     assert os.path.isfile(p)
     with open(p, 'r') as r:
         args = json.load(r)
     return args
-
-
 def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
     """
     Save it as CSV if memory allows.
@@ -712,8 +371,6 @@ def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
         print('Exception occurred at saving entity embeddings. Computation will continue')
         print(e)
     del df
-
-
 def random_prediction(pre_trained_kge):
     head_entity: List[str]
     relation: List[str]
@@ -725,23 +382,17 @@ def random_prediction(pre_trained_kge):
                                                 relation=relation,
                                                 tail_entity=tail_entity)
     return f'( {head_entity[0]},{relation[0]}, {tail_entity[0]} )', pd.DataFrame({'Score': triple_score})
-
-
 def deploy_triple_prediction(pre_trained_kge, str_subject, str_predicate, str_object):
     triple_score = pre_trained_kge.predict_topk(head_entity=[str_subject],
                                                 relation=[str_predicate],
                                                 tail_entity=[str_object])
     return f'( {str_subject}, {str_predicate}, {str_object} )', pd.DataFrame({'Score': triple_score})
-
-
 def deploy_tail_entity_prediction(pre_trained_kge, str_subject, str_predicate, top_k):
     if pre_trained_kge.model.name == 'Shallom':
         print('Tail entity prediction is not available for Shallom')
         raise NotImplementedError
     scores, entity = pre_trained_kge.predict_topk(head_entity=[str_subject], relation=[str_predicate], k=top_k)
     return f'(  {str_subject},  {str_predicate}, ? )', pd.DataFrame({'Entity': entity, 'Score': scores})
-
-
 def deploy_head_entity_prediction(pre_trained_kge, str_object, str_predicate, top_k):
     if pre_trained_kge.model.name == 'Shallom':
         print('Head entity prediction is not available for Shallom')
@@ -749,13 +400,9 @@ def deploy_head_entity_prediction(pre_trained_kge, str_object, str_predicate, to
 
     scores, entity = pre_trained_kge.predict_topk(tail_entity=[str_object], relation=[str_predicate], k=top_k)
     return f'(  ?,  {str_predicate}, {str_object} )', pd.DataFrame({'Entity': entity, 'Score': scores})
-
-
 def deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k):
     scores, relations = pre_trained_kge.predict_topk(head_entity=[str_subject], tail_entity=[str_object], k=top_k)
     return f'(  {str_subject}, ?, {str_object} )', pd.DataFrame({'Relations': relations, 'Score': scores})
-
-
 def semi_supervised_split(train_set: np.ndarray, train_split_ratio=None, calibration_split_ratio=None):
     """
     Split input triples into three splits
@@ -774,16 +421,12 @@ def semi_supervised_split(train_set: np.ndarray, train_split_ratio=None, calibra
     unlabelled = train_set[-len(train) - len(calibration):]
     print(f'Shapes:\tTrain{train.shape}\tCalib:{calibration.shape}\tUnlabelled:{unlabelled.shape}')
     return train, calibration, unlabelled
-
-
 def p_value(non_conf_scores, act_score):
     if len(act_score.shape) < 2:
         act_score = act_score.unsqueeze(-1)
 
     # return (torch.sum(non_conf_scores >= act_score) + 1) / (len(non_conf_scores) + 1)
     return (torch.sum(non_conf_scores >= act_score, dim=-1) + 1) / (len(non_conf_scores) + 1)
-
-
 def norm_p_value(p_values, variant):
     if len(p_values.shape) < 2:
         p_values = p_values.unsqueeze(0)
@@ -794,8 +437,6 @@ def norm_p_value(p_values, variant):
         norm_p_values = p_values.scatter_(1, torch.max(p_values, dim=-1).indices.unsqueeze(-1),
                                           torch.ones_like(p_values))
     return norm_p_values
-
-
 def is_in_credal_set(p_hat, pi):
     if len(p_hat.shape) == 1:
         p_hat = p_hat.unsqueeze(0)
@@ -805,8 +446,6 @@ def is_in_credal_set(p_hat, pi):
     c = torch.cumsum(torch.flip(p_hat, dims=[-1]), dim=-1)
     rev_pi = torch.flip(pi, dims=[-1])
     return torch.all(c <= rev_pi, dim=-1)
-
-
 def gen_lr(p_hat, pi):
     if len(p_hat.shape) < 2:
         p_hat = p_hat.unsqueeze(0)
@@ -861,8 +500,6 @@ def gen_lr(p_hat, pi):
     result = torch.where(is_c_set, torch.zeros_like(divergence), divergence)
 
     return torch.mean(result)
-
-
 def det_lookahead(p_hat, pi, ref_idx, proj, precision=1e-5):
     for i in range(ref_idx):
         prop = p_hat[i:ref_idx + 1] / torch.sum(p_hat[i:ref_idx + 1])
@@ -880,8 +517,6 @@ def det_lookahead(p_hat, pi, ref_idx, proj, precision=1e-5):
             return i
 
     return ref_idx
-
-
 def construct_p_values(non_conf_scores, preds, non_conf_score_fn):
     num_class = preds.shape[1]
     tmp_non_conf = torch.zeros([preds.shape[0], num_class]).detach()
@@ -890,8 +525,6 @@ def construct_p_values(non_conf_scores, preds, non_conf_score_fn):
         tmp_non_conf[:, clz] = non_conf_score_fn(preds, torch.tensor(clz).repeat(preds.shape[0]))
         p_values[:, clz] = p_value(non_conf_scores, tmp_non_conf[:, clz])
     return p_values
-
-
 def non_conformity_score_prop(predictions, targets) -> torch.Tensor:
     if len(predictions.shape) == 1:
         predictions = predictions.unsqueeze(0)
@@ -910,8 +543,6 @@ def non_conformity_score_prop(predictions, targets) -> torch.Tensor:
 
     return torch.max(selected_predictions, dim=-1).values.squeeze() / (
             class_val.squeeze() + args.non_conf_score_prop_gamma + 1e-5)
-
-
 def non_conformity_score_diff(predictions, targets) -> torch.Tensor:
     if len(predictions.shape) == 1:
         predictions = predictions.unsqueeze(0)
@@ -928,11 +559,28 @@ def non_conformity_score_diff(predictions, targets) -> torch.Tensor:
     selected_predictions = predictions[~mask].view(-1, num_class - 1)
 
     return torch.max(selected_predictions - class_val, dim=-1).values
-
-
 @timeit
 def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
     # @TODO: This function should take any DASK/Pandas DataFrame or Series.
     print(print_into)
     vocab_to_idx.to_parquet(path_for_serialization + f'/{name}', compression='gzip', engine='pyarrow')
     print('Done !\n')
+
+def create_experiment_folder(folder_name='Experiments'):
+    directory = os.getcwd() + '/' + folder_name + '/'
+    folder_name = str(datetime.datetime.now())
+    path_of_folder = directory + folder_name
+    os.makedirs(path_of_folder)
+    return path_of_folder
+
+def continual_training_setup_executor(executor):
+    if executor.is_continual_training:
+        # (4.1) If it is continual, then store new models on previous path.
+        executor.storage_path = executor.args.full_storage_path
+    else:
+        # (4.2) Create a folder for the experiments.
+        executor.args.full_storage_path = create_experiment_folder(folder_name=executor.args.storage_path)
+        executor.storage_path = executor.args.full_storage_path
+        with open(executor.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
+            temp = vars(executor.args)
+            json.dump(temp, file_descriptor, indent=3)
