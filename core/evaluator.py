@@ -3,14 +3,34 @@ import numpy as np
 import json
 from tqdm import tqdm
 import sys
+from .static_funcs import timeit
 
 
 class Evaluator:
+    """
+        Evaluator class to evaluate KGE models in various downstream tasks
+
+        Arguments
+       ----------
+       executor: Executor class instance
+   """
+
     def __init__(self, executor):
         self.executor = executor
         self.report = dict()
 
-    def __vocab_preparation(self):
+    def __vocab_preparation(self) -> None:
+        """
+        A function to wait future objects for the attributes of executor
+
+        Arguments
+        ----------
+
+        Return
+        ----------
+        None
+        """
+
         print("** VOCAB Prep **")
         if isinstance(self.executor.dataset.er_vocab, dict):
             pass
@@ -35,6 +55,7 @@ class Evaluator:
             except RuntimeError:
                 print('Domain constraint exception occurred')
 
+    @timeit
     def eval(self, trained_model, form_of_labelling) -> None:
         """
         Evaluate model with Standard
@@ -42,10 +63,10 @@ class Evaluator:
         :param trained_model:
         :return:
         """
-        print("** EVAL **")
         # (1) Exit, if the flag is not set
         if self.executor.args.eval_model is None:
             return
+        print("** EVAL **")
         self.__vocab_preparation()
         print('Evaluation Starts.')
         if self.executor.args.num_folds_for_cv > 1:
@@ -65,7 +86,6 @@ class Evaluator:
             raise ValueError(f'Invalid argument: {self.executor.args.scoring_technique}')
         with open(self.executor.args.full_storage_path + '/eval_report.json', 'w') as file_descriptor:
             json.dump(self.report, file_descriptor, indent=4)
-        print('Evaluation Ends.')
 
     def eval_rank_of_head_and_tail_entity(self, trained_model):
         # 4. Test model on the training dataset if it is needed.

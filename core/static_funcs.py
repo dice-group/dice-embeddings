@@ -190,7 +190,6 @@ def save_checkpoint_model(trainer, model, path: str) -> None:
         print(model.name)
         print('Could not save the model correctly')
 
-@timeit
 def store(trainer,
           trained_model, model_name: str = 'model', full_storage_path: str = None,
           dataset=None, save_as_csv=False) -> None:
@@ -204,7 +203,6 @@ def store(trainer,
     :param save_as_csv: for easy access of embeddings.
     :return:
     """
-    print('------------------- Store -------------------')
     assert full_storage_path is not None
     assert dataset is not None
     assert isinstance(model_name, str)

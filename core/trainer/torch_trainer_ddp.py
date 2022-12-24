@@ -12,6 +12,8 @@ from torch.utils.data import Dataset, DataLoader
 import pandas as pd
 import sys
 from core.static_funcs_training import efficient_zero_grad
+
+
 # DDP with gradiant accumulation https://gist.github.com/mcarilli/bf013d2d2f4b4dd21ade30c9b52d5e2e
 
 def print_peak_memory(prefix, device):
@@ -43,7 +45,6 @@ class TorchDDPTrainer(AbstractTrainer):
        -------
        torch.utils.data.Dataset
        """
-
 
     def __init__(self, args, callbacks):
         super().__init__(args, callbacks)
@@ -111,6 +112,7 @@ class Trainer:
         self.gpu_id = gpu_id
         self.model = model.to(gpu_id)
         self.train_dataset_loader = train_dataset_loader
+        # self.loss_func= self.model.loss
         self.loss_func = torch.nn.BCEWithLogitsLoss()
         self.optimizer = optimizer
         self.callbacks = callbacks
@@ -130,7 +132,7 @@ class Trainer:
 
     def _run_batch(self, source, targets):
         # (1) Zero the gradients.
-        #self.optimizer.zero_grad()
+        # self.optimizer.zero_grad()
         # https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html#use-parameter-grad-none-instead-of-model-zero-grad-or-optimizer-zero-grad
         efficient_zero_grad(self.model)
         output = self.model(source)
@@ -139,18 +141,19 @@ class Trainer:
         loss.backward()
         self.optimizer.step()
         return batch_loss
-    def extract_input_outputs(self,z:list):
+
+    def extract_input_outputs(self, z: list):
         if len(z) == 2:
             x_batch, y_batch = z
             return x_batch.to(self.gpu_id), y_batch.to(self.gpu_id)
         elif len(z) == 3:
             x_batch, y_idx_batch, y_batch, = z
-            x_batch, y_idx_batch, y_batch = x_batch.to(self.gpu_id), y_idx_batch.to(self.gpu_id), y_batch.to(self.gpu_id)
+            x_batch, y_idx_batch, y_batch = x_batch.to(self.gpu_id), y_idx_batch.to(self.gpu_id), y_batch.to(
+                self.gpu_id)
             return (x_batch, y_idx_batch), y_batch
         else:
             print(len(batch))
             raise ValueError('Unexpected batch shape..')
-
 
     def _run_epoch(self, epoch):
         self.train_dataset_loader.sampler.set_epoch(epoch)
@@ -166,9 +169,11 @@ class Trainer:
             epoch_loss += batch_loss
             if self.gpu_id == 0:
                 if construct_mini_batch_time:
-                    print(f"Epoch:{epoch + 1} | Batch:{i + 1} | ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec | BatchConst.:{construct_mini_batch_time:.2f}sec")
+                    print(
+                        f"Epoch:{epoch + 1} | Batch:{i + 1} | ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec | BatchConst.:{construct_mini_batch_time:.2f}sec")
                 else:
-                    print(f"Epoch:{epoch + 1} | Batch:{i + 1} | ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
+                    print(
+                        f"Epoch:{epoch + 1} | Batch:{i + 1} | ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
             construct_mini_batch_time = time.time()
         return epoch_loss / (i + 1)
 
