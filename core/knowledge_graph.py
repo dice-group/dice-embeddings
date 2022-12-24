@@ -164,10 +164,14 @@ class Read_Load_Data_From_Disk:
             zip(self.kg.relation_to_idx['relation'].to_list(), list(range(len(self.kg.relation_to_idx)))))
 
         self.kg.train_set = polars.read_parquet(self.kg.deserialize_flag + '/idx_train_df').to_numpy()
+        self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
+                                                    num=max(self.kg.num_entities, self.kg.num_relations))
 
         try:
             print('[5 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
             self.kg.valid_set = polars.read_parquet(self.kg.deserialize_flag + '/idx_valid_df').to_numpy()
+            self.kg.valid_set = numpy_data_type_changer(self.kg.valid_set,num=max(self.kg.num_entities, self.kg.num_relations))
+
             print('Done!\n')
         except FileNotFoundError:
             print('No valid data found!\n')
@@ -176,6 +180,8 @@ class Read_Load_Data_From_Disk:
         try:
             print('[6 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
             self.kg.test_set = polars.read_parquet(self.kg.deserialize_flag + '/idx_test_df').to_numpy()
+            self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
+                                                       num=max(self.kg.num_entities, self.kg.num_relations))
             print('Done!\n')
         except FileNotFoundError:
             print('No test data found\n')
