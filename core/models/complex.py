@@ -110,7 +110,7 @@ class ConEx(BaseKGE):
         return score.squeeze(1)
 
 
-class AddConEx(BaseKGE):
+class AConEx(BaseKGE):
     """ Additive Convolutional ComplEx Knowledge Graph Embeddings
         As opposed to ConEx, AddConEx constructs a triple score by distributing the output of conv into Hermitian inner product.
         in additive fashion.
@@ -118,7 +118,7 @@ class AddConEx(BaseKGE):
 
     def __init__(self, args):
         super().__init__(args)
-        self.name = 'AddConEx'
+        self.name = 'AConEx'
         # Convolution
         self.conv2d = torch.nn.Conv2d(in_channels=1, out_channels=self.num_of_output_channels,
                                       kernel_size=(self.kernel_size, self.kernel_size), stride=1, padding=1, bias=True)

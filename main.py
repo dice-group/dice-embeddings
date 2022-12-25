@@ -8,7 +8,7 @@ def argparse_default(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Dataset and storage related
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/KINSHIP',
                         help="The path of a folder containing input data")
     parser.add_argument("--save_embeddings_as_csv", type=bool, default=False,
                         help='A flag for saving embeddings in csv file.')
@@ -16,13 +16,13 @@ def argparse_default(description=None):
                         help="Embeddings, model, and any other related data will be stored therein.")
     # Model and Training Parameters
     parser.add_argument("--model", type=str,
-                        default="QMult",
+                        default="AConEx",
                         help="Available models: ConEx, ConvQ, ConvO, DistMult, QMult, OMult, "
-                             "Shallom, ConEx, ComplEx, DistMult, TransE, CLf")
+                             "Shallom, AConEx, ConEx, ComplEx, DistMult, TransE, CLf")
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[Adan, NAdam, Adam, SGD, Sls, AdamSLS]')
     parser.add_argument('--embedding_dim', type=int, default=32, help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=50, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument('--callbacks',
@@ -58,7 +58,7 @@ def argparse_default(description=None):
     parser.add_argument("--label_smoothing_rate", type=float, default=0.0, help='None for not using it.')
 
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
-    parser.add_argument("--num_of_output_channels", type=int, default=3, help="# of output channels in convolution")
+    parser.add_argument("--num_of_output_channels", type=int, default=32, help="# of output channels in convolution")
 
     parser.add_argument("--num_core", type=int, default=0, help='Number of cores to be used. 0 implies using single CPU')
     parser.add_argument("--seed_for_computation", type=int, default=0, help='Seed for all, see pl seed_everything().')

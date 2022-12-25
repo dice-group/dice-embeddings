@@ -330,8 +330,8 @@ def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     elif model_name == 'ConEx':
         model = ConEx(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif model_name == 'AddConEx':
-        model = AddConEx(args=args)
+    elif model_name == 'AConEx':
+        model = AConEx(args=args)
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'QMult':
         model = QMult(args=args)
