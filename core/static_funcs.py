@@ -1,3 +1,4 @@
+import copy
 import os
 import core
 from core.typings import *
@@ -20,6 +21,7 @@ import polars
 import functools
 
 enable_log = False
+
 def timeit(func):
     @functools.wraps(func)
     def timeit_wrapper(*args, **kwargs):
@@ -65,6 +67,8 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
         return model, _
     else:
         return intialize_model(args)
+
+
 def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
     """ Load weights and initialize pytorch module from namespace arguments"""
     print(f'Loading model {model_name}...', end=' ')
@@ -100,6 +104,8 @@ def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[BaseKG
         pass
     print(f'Done! It took {time.time() - start_time:.4f}')
     return model, entity_to_idx, relation_to_idx
+
+
 def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
     """ Construct Ensemble Of weights and initialize pytorch module from namespace arguments
 
@@ -154,6 +160,8 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, pd.Dat
     relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')
     print(f'Done! It took {time.time() - start_time:.4f} seconds')
     return model, entity_to_idx, relation_to_idx
+
+
 def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
     """
     Detect most efficient data type for a given triples
@@ -174,12 +182,16 @@ def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
     else:
         raise TypeError('Int64?')
     return train_set
+
+
 def model_fitting(trainer, model, train_dataloaders) -> None:
     """ Standard Pytorch Lightning model fitting """
     assert trainer.attributes.max_epochs == trainer.attributes.min_epochs
-    print(f'NumOfDataPoints:{len(train_dataloaders.dataset)} | NumOfEpochs:{trainer.attributes.max_epochs} | LearningRate:{model.learning_rate} | BatchSize:{trainer.attributes.batch_size} | EpochBatchsize:{len(train_dataloaders)}')
+    print(
+        f'NumOfDataPoints:{len(train_dataloaders.dataset)} | NumOfEpochs:{trainer.attributes.max_epochs} | LearningRate:{model.learning_rate} | BatchSize:{trainer.attributes.batch_size} | EpochBatchsize:{len(train_dataloaders)}')
     trainer.fit(model, train_dataloaders=train_dataloaders)
     print(f'Model fitting is done!')
+
 
 def save_checkpoint_model(trainer, model, path: str) -> None:
     """ Store Pytorch model into disk"""
@@ -189,6 +201,7 @@ def save_checkpoint_model(trainer, model, path: str) -> None:
         print(e)
         print(model.name)
         print('Could not save the model correctly')
+
 
 def store(trainer,
           trained_model, model_name: str = 'model', full_storage_path: str = None,
@@ -224,6 +237,7 @@ def store(trainer,
         else:
             pass
 
+
 def add_noisy_triples(train_set: pd.DataFrame, add_noise_rate: float) -> pd.DataFrame:
     """
     Add randomly constructed triples
@@ -252,6 +266,8 @@ def add_noisy_triples(train_set: pd.DataFrame, add_noise_rate: float) -> pd.Data
 
     assert num_triples + num_noisy_triples == len(train_set)
     return train_set
+
+
 def create_recipriocal_triples(x):
     """
     Add inverse triples into dask dataframe
@@ -261,6 +277,8 @@ def create_recipriocal_triples(x):
     return pd.concat([x, x['object'].to_frame(name='subject').join(
         x['relation'].map(lambda x: x + '_inverse').to_frame(name='relation')).join(
         x['subject'].to_frame(name='object'))], ignore_index=True)
+
+
 def read_or_load_kg(args, cls):
     print('*** Read or Load Knowledge Graph  ***')
     start_time = time.time()
@@ -278,10 +296,18 @@ def read_or_load_kg(args, cls):
     print(kg.description_of_input)
     return kg
 
+
 def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     # @TODO: Apply construct_krone as callback? or use KronE_QMult as a prefix.
     # @TODO: Remove form_of_labelling
     model_name = args['model']
+    if 'Barlow_' in model_name[:7]:
+        d = copy.copy(args)
+        d['model'] = d['model'][7:]
+        model, form_of_labelling = intialize_model(d)
+        model = BarlowTwins(model)
+        return model, form_of_labelling
+
     if model_name == 'KronELinear':
         model = KronELinear(args=args)
         form_of_labelling = 'EntityPrediction'
@@ -303,6 +329,9 @@ def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
         form_of_labelling = 'RelationPrediction'
     elif model_name == 'ConEx':
         model = ConEx(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'AddConEx':
+        model = AddConEx(args=args)
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'QMult':
         model = QMult(args=args)
@@ -335,17 +364,22 @@ def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     else:
         raise ValueError
     return model, form_of_labelling
+
+
 """
 
 def extract_model_summary(s):
     return {'NumParam': s.total_parameters, 'EstimatedSizeMB': s.model_size}
 """
 
+
 def load_json(p: str) -> dict:
     assert os.path.isfile(p)
     with open(p, 'r') as r:
         args = json.load(r)
     return args
+
+
 def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
     """
     Save it as CSV if memory allows.
@@ -369,6 +403,8 @@ def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
         print('Exception occurred at saving entity embeddings. Computation will continue')
         print(e)
     del df
+
+
 def random_prediction(pre_trained_kge):
     head_entity: List[str]
     relation: List[str]
@@ -380,17 +416,23 @@ def random_prediction(pre_trained_kge):
                                                 relation=relation,
                                                 tail_entity=tail_entity)
     return f'( {head_entity[0]},{relation[0]}, {tail_entity[0]} )', pd.DataFrame({'Score': triple_score})
+
+
 def deploy_triple_prediction(pre_trained_kge, str_subject, str_predicate, str_object):
     triple_score = pre_trained_kge.predict_topk(head_entity=[str_subject],
                                                 relation=[str_predicate],
                                                 tail_entity=[str_object])
     return f'( {str_subject}, {str_predicate}, {str_object} )', pd.DataFrame({'Score': triple_score})
+
+
 def deploy_tail_entity_prediction(pre_trained_kge, str_subject, str_predicate, top_k):
     if pre_trained_kge.model.name == 'Shallom':
         print('Tail entity prediction is not available for Shallom')
         raise NotImplementedError
     scores, entity = pre_trained_kge.predict_topk(head_entity=[str_subject], relation=[str_predicate], k=top_k)
     return f'(  {str_subject},  {str_predicate}, ? )', pd.DataFrame({'Entity': entity, 'Score': scores})
+
+
 def deploy_head_entity_prediction(pre_trained_kge, str_object, str_predicate, top_k):
     if pre_trained_kge.model.name == 'Shallom':
         print('Head entity prediction is not available for Shallom')
@@ -398,9 +440,13 @@ def deploy_head_entity_prediction(pre_trained_kge, str_object, str_predicate, to
 
     scores, entity = pre_trained_kge.predict_topk(tail_entity=[str_object], relation=[str_predicate], k=top_k)
     return f'(  ?,  {str_predicate}, {str_object} )', pd.DataFrame({'Entity': entity, 'Score': scores})
+
+
 def deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k):
     scores, relations = pre_trained_kge.predict_topk(head_entity=[str_subject], tail_entity=[str_object], k=top_k)
     return f'(  {str_subject}, ?, {str_object} )', pd.DataFrame({'Relations': relations, 'Score': scores})
+
+
 def semi_supervised_split(train_set: np.ndarray, train_split_ratio=None, calibration_split_ratio=None):
     """
     Split input triples into three splits
@@ -419,12 +465,16 @@ def semi_supervised_split(train_set: np.ndarray, train_split_ratio=None, calibra
     unlabelled = train_set[-len(train) - len(calibration):]
     print(f'Shapes:\tTrain{train.shape}\tCalib:{calibration.shape}\tUnlabelled:{unlabelled.shape}')
     return train, calibration, unlabelled
+
+
 def p_value(non_conf_scores, act_score):
     if len(act_score.shape) < 2:
         act_score = act_score.unsqueeze(-1)
 
     # return (torch.sum(non_conf_scores >= act_score) + 1) / (len(non_conf_scores) + 1)
     return (torch.sum(non_conf_scores >= act_score, dim=-1) + 1) / (len(non_conf_scores) + 1)
+
+
 def norm_p_value(p_values, variant):
     if len(p_values.shape) < 2:
         p_values = p_values.unsqueeze(0)
@@ -435,6 +485,8 @@ def norm_p_value(p_values, variant):
         norm_p_values = p_values.scatter_(1, torch.max(p_values, dim=-1).indices.unsqueeze(-1),
                                           torch.ones_like(p_values))
     return norm_p_values
+
+
 def is_in_credal_set(p_hat, pi):
     if len(p_hat.shape) == 1:
         p_hat = p_hat.unsqueeze(0)
@@ -444,6 +496,8 @@ def is_in_credal_set(p_hat, pi):
     c = torch.cumsum(torch.flip(p_hat, dims=[-1]), dim=-1)
     rev_pi = torch.flip(pi, dims=[-1])
     return torch.all(c <= rev_pi, dim=-1)
+
+
 def gen_lr(p_hat, pi):
     if len(p_hat.shape) < 2:
         p_hat = p_hat.unsqueeze(0)
@@ -498,6 +552,8 @@ def gen_lr(p_hat, pi):
     result = torch.where(is_c_set, torch.zeros_like(divergence), divergence)
 
     return torch.mean(result)
+
+
 def det_lookahead(p_hat, pi, ref_idx, proj, precision=1e-5):
     for i in range(ref_idx):
         prop = p_hat[i:ref_idx + 1] / torch.sum(p_hat[i:ref_idx + 1])
@@ -515,6 +571,8 @@ def det_lookahead(p_hat, pi, ref_idx, proj, precision=1e-5):
             return i
 
     return ref_idx
+
+
 def construct_p_values(non_conf_scores, preds, non_conf_score_fn):
     num_class = preds.shape[1]
     tmp_non_conf = torch.zeros([preds.shape[0], num_class]).detach()
@@ -523,6 +581,8 @@ def construct_p_values(non_conf_scores, preds, non_conf_score_fn):
         tmp_non_conf[:, clz] = non_conf_score_fn(preds, torch.tensor(clz).repeat(preds.shape[0]))
         p_values[:, clz] = p_value(non_conf_scores, tmp_non_conf[:, clz])
     return p_values
+
+
 def non_conformity_score_prop(predictions, targets) -> torch.Tensor:
     if len(predictions.shape) == 1:
         predictions = predictions.unsqueeze(0)
@@ -541,6 +601,8 @@ def non_conformity_score_prop(predictions, targets) -> torch.Tensor:
 
     return torch.max(selected_predictions, dim=-1).values.squeeze() / (
             class_val.squeeze() + args.non_conf_score_prop_gamma + 1e-5)
+
+
 def non_conformity_score_diff(predictions, targets) -> torch.Tensor:
     if len(predictions.shape) == 1:
         predictions = predictions.unsqueeze(0)
@@ -557,6 +619,8 @@ def non_conformity_score_diff(predictions, targets) -> torch.Tensor:
     selected_predictions = predictions[~mask].view(-1, num_class - 1)
 
     return torch.max(selected_predictions - class_val, dim=-1).values
+
+
 @timeit
 def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
     # @TODO: This function should take any DASK/Pandas DataFrame or Series.
@@ -564,12 +628,14 @@ def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
     vocab_to_idx.to_parquet(path_for_serialization + f'/{name}', compression='gzip', engine='pyarrow')
     print('Done !\n')
 
+
 def create_experiment_folder(folder_name='Experiments'):
     directory = os.getcwd() + '/' + folder_name + '/'
     folder_name = str(datetime.datetime.now())
     path_of_folder = directory + folder_name
     os.makedirs(path_of_folder)
     return path_of_folder
+
 
 def continual_training_setup_executor(executor):
     if executor.is_continual_training:
