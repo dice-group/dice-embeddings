@@ -6,7 +6,21 @@ import torch
 from typing import List, Tuple, Generator
 import pandas as pd
 
+
 class AbstractTrainer:
+    """
+    Abstract class for Trainer class for knowledge graph embedding models
+
+
+    Parameter
+    ---------
+    args : str
+        ?
+
+    callbacks: list
+            ?
+    """
+
     def __init__(self, args, callbacks):
         self.attributes = args
         self.callbacks = callbacks
@@ -16,30 +30,97 @@ class AbstractTrainer:
         torch.cuda.manual_seed_all(self.attributes.seed_for_computation)
 
     def on_fit_start(self, *args, **kwargs):
-        """ """
+        """
+        A function to call callbacks before the training starts.
+
+        Parameter
+        ---------
+        args
+
+        kwargs
+
+
+        Returns
+        -------
+        None
+        """
         for c in self.callbacks:
             c.on_fit_start(*args, **kwargs)
 
     def on_fit_end(self, *args, **kwargs):
-        """ """
+        """
+        A function to call callbacks at the ned of the training.
+
+        Parameter
+        ---------
+        args
+
+        kwargs
+
+
+        Returns
+        -------
+        None
+        """
         for c in self.callbacks:
             c.on_fit_end(*args, **kwargs)
 
     def on_train_epoch_end(self, *args, **kwargs):
-        """ """
+        """
+        A function to call callbacks at the end of an epoch.
+
+        Parameter
+        ---------
+        args
+
+        kwargs
+
+
+        Returns
+        -------
+        None
+        """
         for c in self.callbacks:
             c.on_train_epoch_end(*args, **kwargs)
 
     @staticmethod
-    def save_checkpoint(full_path, model):
+    def save_checkpoint(full_path: str, model) -> None:
+        """
+        A static function to save a model into disk
+
+        Parameter
+        ---------
+        full_path : str
+
+        model:
+
+
+        Returns
+        -------
+        None
+        """
         torch.save(model.state_dict(), full_path)
 
 
 class BaseInteractiveKGE:
-    """ Base class for interactive KGE """
+    """
+    Abstract/base class for using knowledge graph embedding models interactively.
 
-    def __init__(self, path_of_pretrained_model_dir, construct_ensemble=False, model_name=None,
-                 apply_semantic_constraint=False):
+
+    Parameter
+    ---------
+    path_of_pretrained_model_dir : str
+        ?
+
+    construct_ensemble: boolean
+            ?
+
+    model_name: str
+    apply_semantic_constraint : boolean
+    """
+
+    def __init__(self, path_of_pretrained_model_dir: str, construct_ensemble: bool = False, model_name: str = None,
+                 apply_semantic_constraint: bool = False):
         try:
             assert os.path.isdir(path_of_pretrained_model_dir)
         except AssertionError:
@@ -67,12 +148,33 @@ class BaseInteractiveKGE:
                 self.train_set.to_numpy())
             # TODO 3 Use 2 at predicting scores.
 
-    def set_model_train_mode(self):
+    def set_model_train_mode(self) -> None:
+        """
+        Setting the model into training mode
+
+
+        Parameter
+        ---------
+
+        Returns
+        ---------
+        """
         self.model.train()
         for parameter in self.model.parameters():
             parameter.requires_grad = True
 
-    def set_model_eval_mode(self):
+    def set_model_eval_mode(self) -> None:
+        """
+        Setting the model into eval mode
+
+
+        Parameter
+        ---------
+
+        Returns
+        ---------
+        """
+
         self.model.eval()
         for parameter in self.model.parameters():
             parameter.requires_grad = False
@@ -279,9 +381,27 @@ class BaseInteractiveKGE:
         return self.relation_to_idx.iloc[idx_relations].index.values.tolist()
 
     def get_entity_embeddings(self, uri: List[str]):
-        """ Return embedding of an URI"""
+        """
+        Return embedding of a entity given its string representation
+
+
+        Parameter
+        ---------
+
+        Returns
+        ---------
+        """
         return self.model.entity_embeddings(torch.LongTensor(self.entity_to_idx.loc[uri]['entity'].values))
 
     def get_relation_embeddings(self, uri: List[str]):
-        """ Return embedding of an URI"""
+        """
+        Return embedding of a relation given its string representation
+
+
+        Parameter
+        ---------
+
+        Returns
+        ---------
+        """
         return self.model.relation_to_idx(torch.LongTensor(self.relation_to_idx.loc[uri]['relation'].values))
