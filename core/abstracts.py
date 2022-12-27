@@ -140,7 +140,10 @@ class BaseInteractiveKGE:
         self.num_entities = len(self.entity_to_idx)
         self.num_relations = len(self.relation_to_idx)
         print('Loading indexed training data...')
-        self.train_set = pd.read_parquet(self.path + '/idx_train_df.gzip')
+        self.train_set = pd.read_parquet(self.path + '/idx_train_df.gzip') \
+            if os.path.isfile(self.path + '/idx_train_df.gzip') else pd.read_parquet(self.path + '/idx_train_df')
+
+
         if apply_semantic_constraint:
             # TODO: 1 Obtain a mapping from a relation to its ranges
             # TODO: 2 Convert 2 into a mapping from relations to entities outside of their ranges
@@ -180,11 +183,30 @@ class BaseInteractiveKGE:
             parameter.requires_grad = False
 
     def __predict_missing_head_entity(self, relation: List[str], tail_entity: List[str], k: int) -> Tuple:
-        """ f(? r t) for all entities.
-        :param k:
-        :param relation: list of URIs
-        :param tail_entity: list of URIs
-        :return:
+        """
+        Given a relation and a tail entity, return top k ranked head entity.
+
+        argmax_{e \in E } f(e,r,t), where r \in R, t \in E.
+
+        Parameter
+        ---------
+        relation: List[str]
+
+        String representation of selected relations.
+
+        tail_entity: List[str]
+
+        String representation of selected entities.
+
+
+        k: int
+
+        Highest ranked k entities.
+
+        Returns: Tuple
+        ---------
+
+        Highest K scores and entities
         """
         assert k >= 0
 
@@ -196,11 +218,37 @@ class BaseInteractiveKGE:
                          tail_entity.repeat(self.num_entities, )), dim=1)
         scores = self.model(x)
         entities = self.entity_to_idx.index.values
-        # sort_scores, sort_idxs = torch.sort(scores, descending=True)
         sort_scores, sort_idxs = torch.topk(scores, k)
         return sort_scores, entities[sort_idxs]
 
     def __predict_missing_relations(self, head_entity: List[str], tail_entity: List[str], k: int = 3) -> Tuple:
+        """
+        Given a head entity and a tail entity, return top k ranked relations.
+
+        argmax_{r \in R } f(h,r,t), where h, t \in E.
+
+
+        Parameter
+        ---------
+        head_entity: List[str]
+
+        String representation of selected entities.
+
+        tail_entity: List[str]
+
+        String representation of selected entities.
+
+
+        k: int
+
+        Highest ranked k entities.
+
+        Returns: Tuple
+        ---------
+
+        Highest K scores and entities
+        """
+
         assert k >= 0
 
         head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values.tolist())
@@ -211,11 +259,37 @@ class BaseInteractiveKGE:
                          tail_entity.repeat(self.num_relations, )), dim=1)
         scores = self.model(x)
         relations = self.relation_to_idx.index.values
-        # sort_scores, sort_idxs = torch.sort(scores, descending=True)
         sort_scores, sort_idxs = torch.topk(scores, k)
         return sort_scores, relations[sort_idxs]
 
     def __predict_missing_tail_entity(self, head_entity: List[str], relation: List[str], k: int = 3) -> Tuple:
+        """
+        Given a head entity and a relation, return top k ranked entities
+
+        argmax_{e \in E } f(h,r,e), where h \in E and r \in R.
+
+
+        Parameter
+        ---------
+        head_entity: List[str]
+
+        String representation of selected entities.
+
+        tail_entity: List[str]
+
+        String representation of selected entities.
+
+
+        k: int
+
+        Highest ranked k entities.
+
+        Returns: Tuple
+        ---------
+
+        Highest K scores and entities
+        """
+
         assert k >= 0
         # Get index of head entity
         head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values.tolist())
@@ -236,14 +310,35 @@ class BaseInteractiveKGE:
     def predict_topk(self, *, head_entity: List[str] = None, relation: List[str] = None, tail_entity: List[str] = None,
                      k: int = 10) -> Generator:
         """
-        Predict missing triples
+        Predict missing item in a given triple.
 
-        :param k: top k prediction
-        :param head_entity:
-        :param relation:
-        :param tail_entity:
-        :return:
+
+
+        Parameter
+        ---------
+        head_entity: List[str]
+
+        String representation of selected entities.
+
+        relation: List[str]
+
+        String representation of selected relations.
+
+        tail_entity: List[str]
+
+        String representation of selected entities.
+
+
+        k: int
+
+        Highest ranked k item.
+
+        Returns: Tuple
+        ---------
+
+        Highest K scores and items
         """
+
         # (1) Sanity checking.
         if head_entity is not None:
             assert isinstance(head_entity, list)
@@ -382,7 +477,7 @@ class BaseInteractiveKGE:
 
     def get_entity_embeddings(self, uri: List[str]):
         """
-        Return embedding of a entity given its string representation
+        Return embedding of an entity given its string representation
 
 
         Parameter
