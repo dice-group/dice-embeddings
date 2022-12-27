@@ -10,13 +10,12 @@ from .torch_trainer_ddp import TorchDDPTrainer
 import os
 import torch
 import numpy as np
-from core.typings import *
 from pytorch_lightning.strategies import DDPStrategy
 from core.helper_classes import LabelRelaxationLoss, BatchRelaxedvsAllLoss
 import pandas as pd
 from sklearn.model_selection import KFold
 import copy
-
+from typing import List, Tuple
 
 def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     """ Initialize Trainer from input arguments """
@@ -59,7 +58,7 @@ def get_callbacks(args):
                 callbacks.append(WA(num_epochs=args.num_epochs, path=args.full_storage_path))
             elif len(i) > 3:
                 name, param = i[:2], i[2:]
-                assert name=='WA'
+                assert name == 'WA'
                 assert int(param)
                 callbacks.append(PWA(num_epochs=args.num_epochs,
                                      path=args.full_storage_path,
@@ -93,50 +92,31 @@ class DICE_Trainer:
         for i in range(torch.cuda.device_count()):
             print(torch.cuda.get_device_name(i))
 
-    def training_process(self) -> BaseKGE:
-        """
-        Training and evaluation procedure
-
-        (1) Collect Callbacks to be used during training
-        (2) Initialize Pytorch-lightning Trainer
-        (3) Train a KGE modal via (2)
-        (4) Eval trained model
-        (5) Return trained model
-        """
+    def start(self) -> Tuple[BaseKGE, str]:
+        """ Start training process"""
         self.executor.report['num_train_triples'] = len(self.executor.dataset.train_set)
         self.executor.report['num_entities'] = self.executor.dataset.num_entities
         self.executor.report['num_relations'] = self.executor.dataset.num_relations
-        print('------------------- Train & Eval -------------------')
-        ## (2) Initialize trainer
-        # self.trainer = initialize_trainer(self.args, callbacks=get_callbacks(self.args), plugins=[])
-        # (3) Use (2) to train a KGE model
-        trained_model, form_of_labelling = self.train()
-        # (5) Return trained model
-        return trained_model, form_of_labelling
+        print('------------------- Train -------------------')
+        return self.train()
 
-    def start(self):
-        return self.training_process()
-
-    def train(self):  # -> Tuple[BaseKGE, str]:
+    def train(self) -> Tuple[BaseKGE, str]:
         """ Train selected model via the selected training strategy """
+        # (1) Perform K-fold CV
         if self.args.num_folds_for_cv >= 2:
             return self.k_fold_cross_validation()
         else:
+            # (2) Initialize Trainer.
             self.trainer = initialize_trainer(self.args, callbacks=get_callbacks(self.args), plugins=[])
+            # (3) Select the training strategy.
             if self.args.scoring_technique == 'NegSample':
                 return self.training_negative_sampling()
             elif self.args.scoring_technique == 'KvsAll':
                 return self.training_kvsall()
             elif self.args.scoring_technique == 'KvsSample':
                 return self.training_KvsSample()
-            elif self.args.scoring_technique == 'PvsAll':
-                return self.training_PvsAll()
-            elif self.args.scoring_technique == 'CCvsAll':
-                return self.training_CCvsAll()
             elif self.args.scoring_technique == '1vsAll':
                 return self.training_1vsall()
-            elif self.args.scoring_technique == "BatchRelaxedKvsAll" or self.args.scoring_technique == "BatchRelaxed1vsAll":
-                return self.train_relaxed_k_vs_all()
             else:
                 raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
 
@@ -207,10 +187,7 @@ class DICE_Trainer:
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
                                      num_workers=self.args.num_core)
-        if self.args.label_relaxation_rate:
-            model.loss = LabelRelaxationLoss(alpha=self.args.label_relaxation_rate)
-            # model.loss=LabelSmoothingLossCanonical()
-        elif self.args.label_smoothing_rate:
+        if self.args.label_smoothing_rate:
             model.loss = torch.nn.CrossEntropyLoss(label_smoothing=self.args.label_smoothing_rate)
         else:
             model.loss = torch.nn.CrossEntropyLoss()
@@ -244,7 +221,8 @@ class DICE_Trainer:
                                      form=form_of_labelling,
                                      neg_sample_ratio=self.args.neg_ratio,
                                      batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_core)
+                                     num_workers=self.args.num_core,
+                                     label_smoothing_rate=self.args.label_smoothing_rate)
         print(f'Done ! {time.time() - start_time:.3f} seconds\n')
         # 3. Train model
         train_dataloaders = dataset.train_dataloader()
@@ -356,7 +334,8 @@ class DICE_Trainer:
                                          form=form_of_labelling,
                                          neg_sample_ratio=self.args.neg_ratio,
                                          batch_size=self.args.batch_size,
-                                         num_workers=self.args.num_core)
+                                         num_workers=self.args.num_core,
+                                         label_smoothing_rate=self.args.label_smoothing_rate)
             # 3. Train model
             train_dataloaders = dataset.train_dataloader()
             del dataset

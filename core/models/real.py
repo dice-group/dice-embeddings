@@ -41,7 +41,6 @@ class TransE(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'TransE'
-        self.loss = torch.nn.BCELoss()
         self._norm = 2
         self.margin = 4
 
@@ -52,16 +51,14 @@ class TransE(BaseKGE):
         # if d =0 sigma(5-0) => 1
         # if d =5 sigma(5-5) => 0.5
         # Update: sigmoid( \gamma - d)
-        distance = torch.nn.functional.pairwise_distance(head_ent_emb + rel_ent_emb, tail_ent_emb, p=self._norm)
-        scores = torch.sigmoid(self.margin - distance)
-        return scores
+        distance = self.margin - torch.nn.functional.pairwise_distance(head_ent_emb + rel_ent_emb, tail_ent_emb, p=self._norm)
+        return distance
 
     def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
         emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
         distance = torch.nn.functional.pairwise_distance(torch.unsqueeze(emb_head_real + emb_rel_real, 1),
                                                          self.entity_embeddings.weight, p=self._norm)
-        scores = torch.sigmoid(self.margin - distance)
-        return scores
+        return self.margin - distance
 
 
 class Shallom(BaseKGE):
@@ -104,9 +101,38 @@ class Shallom(BaseKGE):
         return scores_for_all_relations[:, x[:, 1]].flatten()
 
 
+class Pyke(BaseKGE):
+    """ A Physical Embedding Model for Knowledge Graphs """
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = 'Pyke'
+        self.loss = nn.TripletMarginLoss(margin=1.0, p=2)
+
+    def get_embeddings(self) -> Tuple[np.ndarray, Union[np.ndarray, None]]:
+        return self.entity_embeddings.weight.data.data.detach(), None
+
+    def loss_function(self, x: torch.FloatTensor, y=None) -> torch.FloatTensor:
+        anchor, positive, negative = x
+        return self.loss(anchor, positive, negative)
+
+    def forward_sequence(self, x: torch.LongTensor):
+        # (1) Anchor node Embedding: N, D
+        anchor = self.entity_embeddings(x[:, 0])
+        # (2) Positives and Negatives
+        pos, neg = torch.hsplit(x[:, 1:], 2)
+        # (3) Embeddings for Pos N, K, D
+        pos_emb = self.entity_embeddings(pos)
+        # (4) Embeddings for Negs N, K, D
+        neg_emb = self.entity_embeddings(neg)
+        # (5) Mean.
+        # N, D
+        mean_pos_emb = pos_emb.mean(dim=1)
+        mean_neg_emb = neg_emb.mean(dim=1)
+        return anchor, mean_pos_emb, mean_neg_emb
+
+
 """ On going works"""
-
-
 class CLf(BaseKGE):
     """Clifford:Embedding Space Search in Clifford Algebras"""
 

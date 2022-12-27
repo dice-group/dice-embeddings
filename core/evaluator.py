@@ -1,16 +1,36 @@
 import torch
 import numpy as np
 import json
-from tqdm import tqdm
 import sys
+from .static_funcs import timeit
+
 
 class Evaluator:
+    """
+        Evaluator class to evaluate KGE models in various downstream tasks
+
+        Arguments
+       ----------
+       executor: Executor class instance
+   """
+
     def __init__(self, executor):
         self.executor = executor
         self.report = dict()
 
-    def __vocab_preparation(self):
+    def __vocab_preparation(self) -> None:
+        """
+        A function to wait future objects for the attributes of executor
 
+        Arguments
+        ----------
+
+        Return
+        ----------
+        None
+        """
+
+        print("** VOCAB Prep **")
         if isinstance(self.executor.dataset.er_vocab, dict):
             pass
         else:
@@ -34,6 +54,7 @@ class Evaluator:
             except RuntimeError:
                 print('Domain constraint exception occurred')
 
+    @timeit
     def eval(self, trained_model, form_of_labelling) -> None:
         """
         Evaluate model with Standard
@@ -44,7 +65,7 @@ class Evaluator:
         # (1) Exit, if the flag is not set
         if self.executor.args.eval_model is None:
             return
-
+        print("** EVAL **")
         self.__vocab_preparation()
         print('Evaluation Starts.')
         if self.executor.args.num_folds_for_cv > 1:
@@ -64,7 +85,6 @@ class Evaluator:
             raise ValueError(f'Invalid argument: {self.executor.args.scoring_technique}')
         with open(self.executor.args.full_storage_path + '/eval_report.json', 'w') as file_descriptor:
             json.dump(self.report, file_descriptor, indent=4)
-        print('Evaluation Ends.')
 
     def eval_rank_of_head_and_tail_entity(self, trained_model):
         # 4. Test model on the training dataset if it is needed.
@@ -115,17 +135,16 @@ class Evaluator:
         """
         # (1) set model to eval model
         model.eval()
-        hits = []
+        num_triples = len(triple_idx)
         ranks = []
+        # Hit range
+        hits_range = [i for i in range(1, 11)]
+        hits = {i: [] for i in hits_range}
         if info:
             print(info + ':', end=' ')
-        for i in range(10):
-            hits.append([])
-
-        # (2) Evaluation mode
         if form_of_labelling == 'RelationPrediction':
             # Iterate over integer indexed triples in mini batch fashion
-            for i in (pbar := tqdm(range(0, len(triple_idx), self.executor.args.batch_size))):
+            for i in range(0, num_triples, self.executor.args.batch_size):
                 data_batch = triple_idx[i:i + self.executor.args.batch_size]
                 e1_idx_e2_idx, r_idx = torch.LongTensor(data_batch[:, [0, 2]]), torch.LongTensor(data_batch[:, 1])
                 # Generate predictions
@@ -140,43 +159,52 @@ class Evaluator:
                 sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
                 # This can be also done in parallel
                 for j in range(data_batch.shape[0]):
-                    rank = torch.where(sort_idxs[j] == r_idx[j])[0].item()
-                    ranks.append(rank + 1)
-
-                    for hits_level in range(10):
+                    rank = torch.where(sort_idxs[j] == r_idx[j])[0].item() + 1
+                    ranks.append(rank)
+                    for hits_level in hits_range:
                         if rank <= hits_level:
                             hits[hits_level].append(1.0)
-
         else:
             # TODO: Why do not we use Pytorch Dataset ? for multiprocessing
             # Iterate over integer indexed triples in mini batch fashion
-            for i in (pbar := tqdm(range(0, len(triple_idx), self.executor.args.batch_size),file=sys.stdout)):
+            for i in range(0, num_triples, self.executor.args.batch_size):
+                # (1) Get a batch of data.
                 data_batch = triple_idx[i:i + self.executor.args.batch_size]
+                # (2) Extract entities and relations.
                 e1_idx_r_idx, e2_idx = torch.LongTensor(data_batch[:, [0, 1]]), torch.tensor(data_batch[:, 2])
+                # (3) Predict missing entities, i.e., assign probs to all entities.
                 with torch.no_grad():
                     predictions = model(e1_idx_r_idx)
-                # Filter entities except the target entity
+                # (4) Filter entities except the target entity
                 for j in range(data_batch.shape[0]):
-                    filt = self.executor.dataset.er_vocab[(data_batch[j][0], data_batch[j][1])]
-                    target_value = predictions[j, e2_idx[j]].item()
+                    # (4.1) Get the ids of the head entity, the relation and the target tail entity in the j.th triple.
+                    id_e, id_r, id_e_target = data_batch[j]
+                    # (4.2) Get all ids of all entities occurring with the head entity and relation extracted in 4.1.
+                    filt = self.executor.dataset.er_vocab[(id_e, id_r)]
+                    # (4.3) Store the assigned score of the target tail entity extracted in 4.1.
+                    target_value = predictions[j, id_e_target].item()
+                    # (4.4.1) Filter all assigned scores for entities.
                     predictions[j, filt] = -np.Inf
-                    # 3.3.1 Filter entities outside of the range
+                    # (4.4.2) Filter entities based on the range of a relation as well.
                     if 'constraint' in self.executor.args.eval_model:
                         predictions[j, self.executor.dataset.range_constraints_per_rel[data_batch[j, 1]]] = -np.Inf
-                    predictions[j, e2_idx[j]] = target_value
-                # Sort predictions.
+                    # (4.5) Insert 4.3. after filtering.
+                    predictions[j, id_e_target] = target_value
+                # (5) Sort predictions.
                 sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
-                # This can be also done in paralel
+                # (6) Compute the filtered ranks.
                 for j in range(data_batch.shape[0]):
-                    rank = torch.where(sort_idxs[j] == e2_idx[j])[0].item()
-                    ranks.append(rank + 1)
-
-                    for hits_level in range(10):
+                    # index between 0 and \inf
+                    rank = torch.where(sort_idxs[j] == e2_idx[j])[0].item() + 1
+                    ranks.append(rank)
+                    for hits_level in hits_range:
                         if rank <= hits_level:
                             hits[hits_level].append(1.0)
-        hit_1 = sum(hits[0]) / (float(len(triple_idx)))
-        hit_3 = sum(hits[2]) / (float(len(triple_idx)))
-        hit_10 = sum(hits[9]) / (float(len(triple_idx)))
+        # (7) Sanity checking: a rank for a triple
+        assert len(triple_idx) == len(ranks) == num_triples
+        hit_1 = sum(hits[1]) / num_triples
+        hit_3 = sum(hits[3]) / num_triples
+        hit_10 = sum(hits[10]) / num_triples
         mean_reciprocal_rank = np.mean(1. / np.array(ranks))
 
         results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10, 'MRR': mean_reciprocal_rank}
@@ -207,7 +235,7 @@ class Evaluator:
         all_entities = torch.arange(0, self.executor.dataset.num_entities).long()
         all_entities = all_entities.reshape(len(all_entities), )
         # Iterating one by one is not good when you are using batch norm
-        for i in (pbar := tqdm(range(0, len(triple_idx)))):
+        for i in range(0, len(triple_idx)):
             # 1. Get a triple
             data_point = triple_idx[i]
             s, p, o = data_point[0], data_point[1], data_point[2]

@@ -26,9 +26,9 @@ class TestPolyak:
         args.normalization = 'LayerNorm'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
-        assert 1.00 >= result['Train']['H@1'] >= 0.82
+        assert 1.00 >= result['Train']['H@1'] >= 0.77
         assert 0.80 >= result['Val']['H@1'] >= 0.71
-        assert 0.80 >= result['Test']['H@1'] >= 0.72
+        assert 0.80 >= result['Test']['H@1'] >= 0.69
 
         assert result['Train']['H@10'] >= result['Train']['H@3'] >= result['Train']['H@1']
         assert result['Val']['H@10'] >= result['Val']['H@3'] >= result['Val']['H@1']

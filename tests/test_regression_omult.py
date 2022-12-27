@@ -27,7 +27,7 @@ class TestRegressionOmult:
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 0.90 >= result['Train']['H@1'] >= 0.65
-        assert 0.75 >= result['Val']['H@1'] >= 0.65
+        assert 0.76 >= result['Val']['H@1'] >= 0.70
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
@@ -52,7 +52,7 @@ class TestRegressionOmult:
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 0.75 >= result['Test']['H@1'] >= 0.72
-        assert 0.77 >= result['Val']['H@1'] >= 0.70
+        assert 0.78 >= result['Val']['H@1'] >= 0.75
         assert 0.92 >= result['Train']['H@1'] >= 0.86
 
     @pytest.mark.filterwarnings('ignore::UserWarning')

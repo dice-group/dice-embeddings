@@ -29,6 +29,7 @@ class TestEnsembleConstruction:
         args.num_folds_for_cv = None
         args.save_model_at_every_epoch = 3
         args.normalization = 'LayerNorm'
+        args.backend='pandas'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 0.71 >= result['Train']['H@1'] >= 0.03

@@ -1,11 +1,9 @@
-# 1. Create Pytorch-lightning Trainer object from input configuration
-import copy
 import datetime
 import time
 import numpy as np
 import torch
 from pytorch_lightning.callbacks import Callback
-from .static_funcs import store_kge, intialize_model
+from .static_funcs import save_checkpoint_model
 from typing import Optional
 import os
 import pandas as pd
@@ -60,8 +58,8 @@ class KGESaveCallback(Callback):
     def on_epoch_end(self, trainer, pl_module):
         if self.epoch_counter % self.every_x_epoch == 0 and self.epoch_counter > 1:
             print(f'\nStoring model {self.epoch_counter}...')
-            store_kge(pl_module,
-                      path=self.path + f'/model_at_{str(self.epoch_counter)}_epoch_{str(str(datetime.datetime.now()))}.pt')
+            save_checkpoint_model(pl_module,
+                                  path=self.path + f'/model_at_{str(self.epoch_counter)}_epoch_{str(str(datetime.datetime.now()))}.pt')
         self.epoch_counter += 1
 
 
