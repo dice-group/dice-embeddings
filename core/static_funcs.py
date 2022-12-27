@@ -19,8 +19,10 @@ import pandas
 from .sanity_checkers import sanity_checking_with_arguments
 import polars
 import functools
+import pickle
 
 enable_log = False
+
 
 def timeit(func):
     @functools.wraps(func)
@@ -92,16 +94,12 @@ def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[BaseKG
     model.eval()
     start_time = time.time()
     print('Loading entity and relation indexes...', end=' ')
-    try:
-        entity_to_idx = pd.read_parquet(path_of_experiment_folder + '/entity_to_idx.gzip')
-        relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')
-    except FileNotFoundError:
-        print('.gzip not found')
-    try:
-        entity_to_idx = pd.read_parquet(path_of_experiment_folder + '/entity_to_idx')
-        relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx')
-    except FileNotFoundError:
-        pass
+    with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
+        entity_to_idx = pickle.load(f)
+    with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
+        relation_to_idx = pickle.load(f)
+    assert isinstance(entity_to_idx, dict)
+    assert isinstance(relation_to_idx, dict)
     print(f'Done! It took {time.time() - start_time:.4f}')
     return model, entity_to_idx, relation_to_idx
 
@@ -156,9 +154,13 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, pd.Dat
     model.eval()
     start_time = time.time()
     print('Loading entity and relation indexes...', end=' ')
-    entity_to_idx = pd.read_parquet(path_of_experiment_folder + '/entity_to_idx.gzip')
-    relation_to_idx = pd.read_parquet(path_of_experiment_folder + '/relation_to_idx.gzip')
-    print(f'Done! It took {time.time() - start_time:.4f} seconds')
+    with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
+        entity_to_idx = pickle.load(f)
+    with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
+        relation_to_idx = pickle.load(f)
+    assert isinstance(entity_to_idx, dict)
+    assert isinstance(relation_to_idx, dict)
+    print(f'Done! It took {time.time() - start_time:.4f}')
     return model, entity_to_idx, relation_to_idx
 
 
@@ -268,17 +270,6 @@ def add_noisy_triples(train_set: pd.DataFrame, add_noise_rate: float) -> pd.Data
     return train_set
 
 
-def create_recipriocal_triples(x):
-    """
-    Add inverse triples into dask dataframe
-    :param x:
-    :return:
-    """
-    return pd.concat([x, x['object'].to_frame(name='subject').join(
-        x['relation'].map(lambda x: x + '_inverse').to_frame(name='relation')).join(
-        x['subject'].to_frame(name='object'))], ignore_index=True)
-
-
 def read_or_load_kg(args, cls):
     print('*** Read or Load Knowledge Graph  ***')
     start_time = time.time()
@@ -290,7 +281,7 @@ def read_or_load_kg(args, cls):
              sample_triples_ratio=args.sample_triples_ratio,
              path_for_serialization=args.full_storage_path,
              min_freq_for_vocab=args.min_freq_for_vocab,
-             deserialize_flag=args.path_experiment_folder if hasattr(args, 'path_experiment_folder') else None,
+             path_for_deserialization=args.path_experiment_folder if hasattr(args, 'path_experiment_folder') else None,
              backend=args.backend)
     print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
     print(kg.description_of_input)

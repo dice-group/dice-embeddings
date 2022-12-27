@@ -1,10 +1,13 @@
 import os
 import datetime
+import pandas.core.indexes.range
 from .static_funcs import load_model_ensemble, load_model, save_checkpoint_model
 from .static_preprocess_funcs import create_constraints
 import torch
 from typing import List, Tuple, Generator
 import pandas as pd
+import numpy as np
+import random
 
 
 class AbstractTrainer:
@@ -128,6 +131,7 @@ class BaseInteractiveKGE:
         self.path = path_of_pretrained_model_dir
         # (1) Load model...
         self.construct_ensemble = construct_ensemble
+        self.apply_semantic_constraint = apply_semantic_constraint
         if construct_ensemble:
             self.model, self.entity_to_idx, self.relation_to_idx = load_model_ensemble(self.path + '/')
         else:
@@ -140,11 +144,11 @@ class BaseInteractiveKGE:
         self.num_entities = len(self.entity_to_idx)
         self.num_relations = len(self.relation_to_idx)
         print('Loading indexed training data...')
-        self.train_set = pd.read_parquet(self.path + '/idx_train_df.gzip') \
-            if os.path.isfile(self.path + '/idx_train_df.gzip') else pd.read_parquet(self.path + '/idx_train_df')
+        with open(self.path + '/train_set.npy', 'rb') as f:
+            self.train_set = np.load(f)
 
-
-        if apply_semantic_constraint:
+        if self.apply_semantic_constraint:
+            # TODO: LOAD constrants from disk
             # TODO: 1 Obtain a mapping from a relation to its ranges
             # TODO: 2 Convert 2 into a mapping from relations to entities outside of their ranges
             self.domain_constraints_per_rel, self.range_constraints_per_rel = create_constraints(
@@ -210,9 +214,9 @@ class BaseInteractiveKGE:
         """
         assert k >= 0
 
-        head_entity = torch.LongTensor(self.entity_to_idx['entity'].values.tolist())
-        relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values.tolist())
-        tail_entity = torch.LongTensor(self.entity_to_idx.loc[tail_entity]['entity'].values.tolist())
+        head_entity = torch.LongTensor(list(self.entity_to_idx.values()))
+        relation = torch.LongTensor([self.relation_to_idx[i] for i in relation])
+        tail_entity = torch.LongTensor([self.entity_to_idx[i] for i in tail_entity])
         x = torch.stack((head_entity,
                          relation.repeat(self.num_entities, ),
                          tail_entity.repeat(self.num_entities, )), dim=1)
@@ -251,9 +255,9 @@ class BaseInteractiveKGE:
 
         assert k >= 0
 
-        head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values.tolist())
-        relation = torch.LongTensor(self.relation_to_idx['relation'].values.tolist())
-        tail_entity = torch.LongTensor(self.entity_to_idx.loc[tail_entity]['entity'].values.tolist())
+        head_entity = torch.LongTensor([self.entity_to_idx[i] for i in head_entity])
+        relation = torch.LongTensor(list(self.relation_to_idx.values()))
+        tail_entity = torch.LongTensor([self.entity_to_idx[i] for i in tail_entity])
         x = torch.stack((head_entity.repeat(self.num_relations, ),
                          relation,
                          tail_entity.repeat(self.num_relations, )), dim=1)
@@ -371,10 +375,10 @@ class BaseInteractiveKGE:
 
             assert len(head_entity) == len(relation) == len(tail_entity)
         # @TODO:replace with triple_score
-        head = self.entity_to_idx.loc[head_entity]['entity'].values.tolist()
-        relation = self.relation_to_idx.loc[relation]['relation'].values.tolist()
-        tail = self.entity_to_idx.loc[tail_entity]['entity'].values.tolist()
-        x = torch.tensor((head, relation, tail)).reshape(len(head), 3)
+        head = [self.entity_to_idx[i] for i in head_entity]
+        relation = [self.relation_to_idx[i] for i in relation]
+        tail = [self.entity_to_idx[i] for i in tail_entity]
+        x = torch.LongTensor((head, relation, tail)).reshape(len(head), 3)
         return torch.sigmoid(self.model(x))
 
     def triple_score(self, *, head_entity: List[str] = None, relation: List[str] = None,
@@ -384,18 +388,24 @@ class BaseInteractiveKGE:
         relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values).reshape(len(relation), 1)
         tail_entity = torch.LongTensor(self.entity_to_idx.loc[tail_entity]['entity'].values).reshape(len(tail_entity),
                                                                                                      1)
-        x = torch.hstack((head_entity, relation, tail_entity))
-        # @ TODO: Apply semantic filtering
-        with torch.no_grad():
-            if without_norm:
-                out = self.model.forward_without_norm(x)
-            else:
-                out = self.model(x)
+        head_entity = torch.LongTensor([self.entity_to_idx[i] for i in head_entity]).reshape(len(head_entity), 1)
+        relation = torch.LongTensor([self.relation_to_idx[i] for i in relation]).reshape(len(relation), 1)
+        tail_entity = torch.LongTensor([self.entity_to_idx[i] for i in tail_entity]).reshape(len(tail_entity), 1)
 
-            if logits:
-                return out
-            else:
-                return torch.sigmoid(out)
+        x = torch.hstack((head_entity, relation, tail_entity))
+        if self.apply_semantic_constraint:
+            raise NotImplementedError()
+        else:
+            with torch.no_grad():
+                if without_norm:
+                    out = self.model.forward_without_norm(x)
+                else:
+                    out = self.model(x)
+
+                if logits:
+                    return out
+                else:
+                    return torch.sigmoid(out)
 
     @property
     def name(self):
@@ -404,18 +414,18 @@ class BaseInteractiveKGE:
     def sample_entity(self, n: int) -> List[str]:
         assert isinstance(n, int)
         assert n >= 0
-        return self.entity_to_idx.sample(n=n).index.to_list()
+        return random.sample(self.entity_to_idx.keys(), n)
 
     def sample_relation(self, n: int) -> List[str]:
         assert isinstance(n, int)
         assert n >= 0
-        return self.relation_to_idx.sample(n=n).index.to_list()
+        return random.sample(self.relation_to_idx.keys(), n)
 
     def is_seen(self, entity: str = None, relation: str = None) -> bool:
         if entity is not None:
-            return True if entity in self.entity_to_idx.index else False
+            return True if self.entity_to_idx.get(entity) else False
         if relation is not None:
-            return True if relation in self.relation_to_idx.index else False
+            return True if self.relation_to_idx.get(relation) else False
 
     def save(self) -> None:
         t = str(datetime.datetime.now())
@@ -475,28 +485,47 @@ class BaseInteractiveKGE:
         # => relation_to_idx must be a dataframe with monotonically increasing
         return self.relation_to_idx.iloc[idx_relations].index.values.tolist()
 
-    def get_entity_embeddings(self, uri: List[str]):
+    def get_entity_embeddings(self, items: List[str]):
         """
         Return embedding of an entity given its string representation
 
 
         Parameter
         ---------
+        items:
+            entities
 
         Returns
         ---------
         """
-        return self.model.entity_embeddings(torch.LongTensor(self.entity_to_idx.loc[uri]['entity'].values))
+        return self.model.entity_embeddings(torch.LongTensor([self.entity_to_idx[i] for i in items]))
 
-    def get_relation_embeddings(self, uri: List[str]):
+    def get_relation_embeddings(self, items: List[str]):
         """
         Return embedding of a relation given its string representation
 
 
         Parameter
         ---------
+        items:
+            relations
 
         Returns
         ---------
         """
-        return self.model.relation_to_idx(torch.LongTensor(self.relation_to_idx.loc[uri]['relation'].values))
+        return self.model.relation_embeddings(torch.LongTensor([self.relation_to_idx[i] for i in items]))
+
+    def construct_input_and_output(self, head_entity: List[str], relation: List[str], tail_entity: List[str], labels):
+        """
+        Construct a data point
+        :param head_entity:
+        :param relation:
+        :param tail_entity:
+        :param labels:
+        :return:
+        """
+        idx_head_entity, idx_relation, idx_tail_entity = self.index_triple(head_entity, relation, tail_entity)
+        x = torch.hstack((idx_head_entity, idx_relation, idx_tail_entity))
+        # Hard Labels
+        labels: object = torch.FloatTensor(labels)
+        return x, labels

@@ -127,7 +127,6 @@ class ContinuousExecute(Execute):
 
     def __init__(self, args):
         assert os.path.exists(args.path_experiment_folder)
-        assert os.path.isfile(args.path_experiment_folder + '/idx_train_df')
         assert os.path.isfile(args.path_experiment_folder + '/configuration.json')
         # (1) Load Previous input configuration
         previous_args = load_json(args.path_experiment_folder + '/configuration.json')
