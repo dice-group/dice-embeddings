@@ -1,13 +1,11 @@
 import torch
-from core.typings import Tuple
+from typing import Tuple
 from core.abstracts import AbstractTrainer
 from core.custom_opt.sls import Sls
 from core.custom_opt.adam_sls import AdamSLS
-from tqdm import tqdm
+from core.static_funcs_training import efficient_zero_grad
 import time
-import sys
 
-# Consider using https://github.com/huggingface/accelerate ?
 
 class TorchTrainer(AbstractTrainer):
     def __init__(self, args, callbacks):
@@ -37,22 +35,36 @@ class TorchTrainer(AbstractTrainer):
                a batch of datapoints.
            Returns
            -------
-           float
-           """
+           batch loss (float)
+       """
         # (1) Extract Input and Outputs.
         x_batch, y_batch = self.extract_input_outputs(batch)
 
-        if self.attributes.gradient_accumulation_steps > 1 and step % self.attributes.gradient_accumulation_steps == 0:
-            # (2) Accumulate gradients.
-            pass
+        if self.attributes.gradient_accumulation_steps > 1:
+            # Update parameters every gradient_accumulation_steps mini-batch
+            if step % self.attributes.gradient_accumulation_steps == 0:
+                self.optimizer.zero_grad()
+                efficient_zero_grad(self.model)
         else:
-            # (2) Zero the gradients.
-            self.optimizer.zero_grad()
+            # (2) Do not accumulate gradient, zero the gradients per batch.
+            efficient_zero_grad(self.model)
         # (3) Loss Forward and Backward w.r.t the batch.
-        batch_loss = self.compute_forward_loss_backward(x_batch, y_batch).item()
-        return batch_loss
+        return self.compute_forward_loss_backward(x_batch, y_batch).item()
 
-    def fit(self, *args, **kwargs):
+    def fit(self, *args, **kwargs) -> None:
+        """
+            Training starts
+
+            Arguments
+           ----------
+           args:tuple
+           (BASEKGE,)
+           kwargs:Tuple
+               empty dictionary
+           Returns
+           -------
+           batch loss (float)
+       """
         assert len(args) == 1
         model, = args
         self.model = model
@@ -86,19 +98,21 @@ class TorchTrainer(AbstractTrainer):
                 s_time = time.time()
                 if construct_mini_batch_time:
                     construct_mini_batch_time = s_time - construct_mini_batch_time
-                epoch_loss += self.run_batch(step, batch)
+                batch_loss = self.run_batch(step, batch)
+                epoch_loss += batch_loss
                 # (4) Accumulate a batch loss.
                 # (6) Print a info.
                 if construct_mini_batch_time:
                     print(
-                        f"\tEpoch:{epoch + 1} | Batch:{step + 1} | Runtime:{(time.time() - s_time):.2f}sec | BatchConst.: {construct_mini_batch_time:.2f}sec")
+                        f"\tEpoch:{epoch + 1} | Batch {step + 1} Loss:{batch_loss} | Runtime:{(time.time() - s_time):.2f}sec | BatchConst.: {construct_mini_batch_time:.2f}sec")
                 else:
-                    print(f"\tEpoch:{epoch + 1} | Batch:{step + 1} | Runtime:{(time.time() - s_time):.4f}sec")
+                    print(
+                        f"\tEpoch:{epoch + 1} | Batch:{step + 1} Loss:{batch_loss} | Runtime:{(time.time() - s_time):.4f}sec")
                 construct_mini_batch_time = time.time()
             # (5) Average (4).
             epoch_loss /= num_total_batches
             # (6) Print a info.
-            print(f"Epoch:{epoch + 1} | Loss:{epoch_loss:.8f} | Runtime:{(time.time() - start_time):.3f}sec")
+            print(f"Epoch:{epoch + 1} | Loss:{epoch_loss} | Runtime:{(time.time() - start_time):.3f}sec")
             # (7) Store epoch losses
             self.model.loss_history.append(epoch_loss)
             self.on_train_epoch_end(self, self.model)
@@ -107,7 +121,18 @@ class TorchTrainer(AbstractTrainer):
         self.on_fit_end(self, self.model)
 
     def compute_forward_loss_backward(self, x_batch: torch.Tensor, y_batch: torch.Tensor) -> torch.Tensor:
-        """ Compute the forward, loss and backward """
+        """
+            Compute forward, loss, backward, and parameter update
+
+            Arguments
+           ----------
+           x_batch:(torch.Tensor) mini-batch inputs
+           y_batch:(torch.Tensor) mini-batch outputs
+
+           Returns
+           -------
+           batch loss (float)
+       """
         if self.use_closure:
             batch_loss = self.optimizer.step(closure=lambda: self.loss_function(self.model(x_batch), y_batch))
             return batch_loss
@@ -121,6 +146,17 @@ class TorchTrainer(AbstractTrainer):
             return batch_loss
 
     def extract_input_outputs(self, z: list) -> tuple:
+        """
+            Construct inputs and outputs from a batch of inputs with outputs From a batch of inputs and put
+
+            Arguments
+           ----------
+           z: (list) mini-batch inputs on CPU
+
+           Returns
+           -------
+           (tuple) mini-batch on select device
+       """
         """ Construct inputs and outputs from a batch of inputs with outputs From a batch of inputs and put """
         if len(z) == 2:
             x_batch, y_batch = z

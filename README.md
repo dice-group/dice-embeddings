@@ -11,9 +11,9 @@ To achieve this goal, we rely on
 3. **[Huggingface](https://huggingface.co/)** to ease the deployment of pre-trained models.
 
 **Why [Pandas](https://pandas.pydata.org/) & Co. ?**
-Pandas allows us to read, preprocess (e.g. removing literals) and index an input knowledge graph in parallel.
-Through parquet within pandas, a billion of triples can be read in parallel fashion. 
-Importantly, using frameworks based on Pandas (modin, vaex or polars) allow us to perform all necessary computations on a single CPU as well as a cluster of computers.
+A large knowledge graph can be read and preprocessed (e.g. removing literals) by pandas, modin, or polars in parallel.
+Through polars, a knowledge graph having more than 1 billion triples can be read in parallel fashion. 
+Importantly, using these frameworks allow us to perform all necessary computations on a single CPU as well as a cluster of computers.
 
 **Why [PyTorch](https://pytorch.org/) & Co. ?**
 PyTorch is one of the most popular machine learning frameworks available at the time of writing. 
@@ -38,7 +38,7 @@ To install dependencies:
 conda create -n dice python=3.9.12
 conda activate dice
 # Choose a backend
-pip3 install pandas==1.5.1 modin==0.16.2 vaex==4.14.0 polars==0.14.26 
+pip3 install pandas==1.5.1 modin==0.16.2 polars==0.14.26 
 pip3 install torch==1.13.0 
 pip3 install pytorch-lightning==1.6.4
 pip3 install scikit-learn==1.1.1
@@ -54,8 +54,8 @@ pytest -p no:warnings -x # it takes circa 15 minutes
 pytest -p no:warnings --lf # run only the last failed test
 pytest -p no:warnings --ff # to run the failures first and then the rest of the tests.
 ```
-
-## Conjunctive Query/Question Answering
+## Applications
+### Conjunctive Query/Question Answering
 ```python
 from core import KGE
 # (1) Load a pretrained KGE model on KGs/Family
@@ -68,7 +68,7 @@ pre_trained_kge.predict_conjunctive_query(entity='<http://www.benchmark.org/fami
                                           relations=['<http://www.benchmark.org/family#hasSibling>',
                                                      '<http://www.benchmark.org/family#married>'], k=1)
 ```
-## Triple Classification
+### Triple Classification
 #### Using pre-trained ConEx on DBpedia 03-2022
 ```bash
 # To download a pretrained ConEx
@@ -86,20 +86,20 @@ pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Ei
 pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/France"]) # very low
 pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Italy"]) # very low
 ```
-## Relation Prediction
+### Relation Prediction
 ```python
 from core import KGE
 pre_trained_kge = KGE(path_of_pretrained_model_dir='ConEx')
 pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],tail_entity=["http://dbpedia.org/resource/Ulm"])
 ```
-## Entity Prediction
+### Entity Prediction
 ```python
 from core import KGE
 pre_trained_kge = KGE(path_of_pretrained_model_dir='ConEx')
 pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"]) 
 pre_trained_kge.predict_topk(relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Albert_Einstein"]) 
 ```
-## Finding Missing Triples
+### Finding Missing Triples
 ```python
 from core import KGE
 pre_trained_kge = KGE(path_of_pretrained_model_dir='ConEx')

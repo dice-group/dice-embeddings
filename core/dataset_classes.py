@@ -6,8 +6,8 @@ import numpy as np
 import torch
 import pytorch_lightning as pl
 import random
-from .typings import Dict, List
-# LongTensor or IntTensor
+from typing import Dict, List
+from .static_preprocess_funcs import mapping_from_first_two_cols_to_third
 
 def input_data_type_checking(train_set_idx, valid_set_idx, test_set_idx, entity_to_idx: Dict, relation_to_idx: Dict):
     """ Type checking for efficient memory usage"""
@@ -330,7 +330,7 @@ class KvsAll(Dataset):
         assert isinstance(train_set_idx, np.ndarray)
         self.train_data = None
         self.train_target = None
-        self.label_smoothing_rate = torch.tensor(label_smoothing_rate, dtype=torch.float16)
+        self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.collate_fn = None
 
         # (1) Create a dictionary of training data pints
@@ -343,8 +343,7 @@ class KvsAll(Dataset):
                     store.setdefault((s_idx, o_idx), list()).append(p_idx)
             elif form == 'EntityPrediction':
                 self.target_dim = len(entity_idxs)
-                for s_idx, p_idx, o_idx in train_set_idx:
-                    store.setdefault((s_idx, p_idx), list()).append(o_idx)
+                store = mapping_from_first_two_cols_to_third(train_set_idx)
             else:
                 raise NotImplementedError
         else:
@@ -352,7 +351,7 @@ class KvsAll(Dataset):
         assert len(store) > 0
         # Keys in store correspond to integer representation (index) of subject and predicate
         # Values correspond to a list of integer representations of entities.
-        self.train_data = torch.torch.LongTensor(list(store.keys()))
+        self.train_data = torch.IntTensor(list(store.keys()))
 
         if sum([len(i) for i in store.values()]) == len(store):
             # if each s,p pair contains at most 1 entity
@@ -375,7 +374,7 @@ class KvsAll(Dataset):
     def __getitem__(self, idx):
         # 1. Initialize a vector of output.
         y_vec = torch.zeros(self.target_dim)
-        y_vec[self.train_target[idx]] = 1
+        y_vec[self.train_target[idx]] = 1.0
 
         if self.label_smoothing_rate:
             y_vec = y_vec * (1 - self.label_smoothing_rate) + (1 / y_vec.size(0))
@@ -423,23 +422,20 @@ class KvsSampleDataset(Dataset):
         super().__init__()
         assert isinstance(train_set_idx, np.ndarray)
         self.train_data = None
-        self.label_smoothing_rate = torch.tensor(label_smoothing_rate, dtype=torch.float16)
+        self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.neg_sample_ratio = neg_sample_ratio
         self.collate_fn = None
         if self.neg_sample_ratio == 0:
             print(f'neg_sample_ratio is {neg_sample_ratio}. It will be set to 10.')
             self.neg_sample_ratio = 10
-        store = dict()
         print('Constructing training data...')
         self.num_entities = len(entity_idxs)
-        for s_idx, p_idx, o_idx in train_set_idx:
-            store.setdefault((s_idx, p_idx), list()).append(o_idx)
-
+        store = mapping_from_first_two_cols_to_third(train_set_idx)
         assert len(store) > 0
         # Keys in store correspond to integer representation (index) of subject and predicate
         # Values correspond to a list of integer representations of entities.
         # Infer its type
-        self.train_data = torch.LongTensor(list(store.keys()))
+        self.train_data = torch.IntTensor(list(store.keys()))
         self.train_target = list(store.values())
         assert isinstance(self.train_target[0], list)
         del store, train_set_idx, entity_idxs
@@ -457,21 +453,24 @@ class KvsSampleDataset(Dataset):
         # (3) Subsample positive examples to generate a batch of same sized inputs
         if num_positives < self.neg_sample_ratio:
             # (3.1)
-            positives_idx = torch.LongTensor(positives_idx)
+            positives_idx = torch.IntTensor(positives_idx)
             # (4) Generate random entities
             negative_idx = torch.randint(low=0, high=self.num_entities,
-                                         size=(self.neg_sample_ratio + self.neg_sample_ratio - num_positives,))
+                                         size=(self.neg_sample_ratio + self.neg_sample_ratio - num_positives,),
+                                         dtype=torch.int32)
         else:
             # (3.1) Subsample positives without replacement
             # https://docs.python.org/3/library/random.html#random.sample
-            positives_idx = torch.LongTensor(random.sample(positives_idx, self.neg_sample_ratio))
+            positives_idx = torch.IntTensor(random.sample(positives_idx, self.neg_sample_ratio))
             # (4) Generate random entities
-            negative_idx = torch.randint(low=0, high=self.num_entities, size=(self.neg_sample_ratio,))
+            negative_idx = torch.randint(low=0, high=self.num_entities, size=(self.neg_sample_ratio,),
+                                         dtype=torch.int32)
         # (5) Create selected indexes
         y_idx = torch.cat((positives_idx, negative_idx), 0)
         # (6) Create binary labels.
-        y_vec = torch.cat((torch.ones(len(positives_idx)), torch.zeros(len(negative_idx))), 0)
-
+        y_vec = torch.cat(
+            (torch.ones(len(positives_idx)), torch.zeros(len(negative_idx))),
+            0)
         return x, y_idx, y_vec
 
 
@@ -499,9 +498,9 @@ class TriplePredictionDataset(Dataset):
        store
             ?
        label_smoothing_rate
-            Using hard targets (0,1) drives weights to infinity.
-            An outlier produces enormous gradients.
 
+
+       collate_fn: batch:List[torch.IntTensor]
        Returns
        -------
        torch.utils.data.Dataset
@@ -510,7 +509,7 @@ class TriplePredictionDataset(Dataset):
     def __init__(self, train_set_idx: np.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1,
                  label_smoothing_rate: float = 0.0):
         assert isinstance(train_set_idx, np.ndarray)
-        self.label_smoothing_rate = torch.tensor(label_smoothing_rate, dtype=torch.float16)
+        self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.neg_sample_ratio = neg_sample_ratio  # 0 Implies that we do not add negative samples. This is needed during testing and validation
         self.triples_idx = torch.IntTensor(train_set_idx)
 
@@ -525,8 +524,7 @@ class TriplePredictionDataset(Dataset):
     def __getitem__(self, idx):
         return self.triples_idx[idx]
 
-    def collate_fn(self, batch):
-        # batch = torch.LongTensor(batch)
+    def collate_fn(self, batch: List[torch.IntTensor]):
         batch = torch.stack(batch, dim=0)
         h, r, t = batch[:, 0], batch[:, 1], batch[:, 2]
         size_of_batch, _ = batch.shape
@@ -534,7 +532,8 @@ class TriplePredictionDataset(Dataset):
         label = torch.ones((size_of_batch,), dtype=torch.int16) - self.label_smoothing_rate
         # corrupt head, tail or rel ?!
         # (1) Corrupted Entities:
-        corr = torch.randint(0, high=self.num_entities, size=(size_of_batch * self.neg_sample_ratio, 2))
+        corr = torch.randint(0, high=self.num_entities, size=(size_of_batch * self.neg_sample_ratio, 2),
+                             dtype=torch.int32)
         # (2) Head Corrupt:
         h_head_corr = corr[:, 0]
         r_head_corr = r.repeat(self.neg_sample_ratio, )
@@ -547,7 +546,8 @@ class TriplePredictionDataset(Dataset):
         label_tail_corr = torch.zeros(len(t_tail_corr), dtype=torch.int16) + self.label_smoothing_rate
         # (4) Relations Corrupt:
         h_rel_corr = h.repeat(self.neg_sample_ratio, )
-        r_rel_corr = torch.randint(0, self.num_relations, (size_of_batch * self.neg_sample_ratio, 1))[:, 0]
+        r_rel_corr = torch.randint(0, self.num_relations, (size_of_batch * self.neg_sample_ratio, 1),
+                                   dtype=torch.int32)[:, 0]
         t_rel_corr = t.repeat(self.neg_sample_ratio, )
         label_rel_corr = torch.zeros(len(t_rel_corr), dtype=torch.int16) + self.label_smoothing_rate
         # (5) Stack True and Corrupted Triples

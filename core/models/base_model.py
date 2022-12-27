@@ -59,7 +59,7 @@ class BaseKGE(pl.LightningModule):
 
     def init_params_with_sanity_checking(self):
         assert self.args['model'] in ['CLf', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO',
-                                      'ConEx', 'Shallom', 'TransE', 'Pyke']
+                                      'AConEx', 'ConEx', 'Shallom', 'TransE', 'Pyke']
         if self.args.get('weight_decay'):
             self.weight_decay = self.args['weight_decay']
         else:
@@ -100,7 +100,7 @@ class BaseKGE(pl.LightningModule):
             else:
                 self.apply_unit_norm = False
 
-        if self.args['model'] in ['ConvQ', 'ConvO', 'ConEx']:
+        if self.args['model'] in ['ConvQ', 'ConvO', 'ConEx', 'AConEx']:
             if self.args.get("kernel_size"):
                 self.kernel_size = self.args['kernel_size']
             else:

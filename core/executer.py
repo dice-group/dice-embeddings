@@ -14,15 +14,12 @@ from pytorch_lightning import seed_everything
 from core.knowledge_graph import KG
 from core.models.base_model import BaseKGE
 from core.evaluator import Evaluator
-from core.typings import *
 from core.static_funcs import *
 from core.static_preprocess_funcs import preprocesses_input_args
 from core.sanity_checkers import *
 from core.trainer import DICE_Trainer
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
-
-
 
 class Execute:
     """ A class for Training, Retraining and Evaluation a model.
@@ -73,7 +70,6 @@ class Execute:
         # Save the epoch loss
         # (2) Store NumParam and EstimatedSizeMB
         self.report.update(self.trained_model.mem_of_model())
-        print(f"Number of parameters:{self.report['NumParam']}")
         # (3) Store/Serialize Model for further use.
         if self.is_continual_training is False:
             store(trainer=self.trainer,
@@ -88,14 +84,6 @@ class Execute:
                   model_name='model_' + str(datetime.datetime.now()),
                   dataset=self.dataset,
                   full_storage_path=self.storage_path, save_as_csv=self.args.save_embeddings_as_csv)
-
-        # (4) Store total runtime.
-        total_runtime = time.time() - start_time
-        if 60 * 60 > total_runtime:
-            message = f'{total_runtime / 60:.3f} minutes'
-        else:
-            message = f'{total_runtime / (60 ** 2):.3f} hours'
-        self.report['Runtime'] = message
         self.report['path_experiment_folder'] = self.storage_path
         # (4) Store the report of training.
         with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
@@ -124,7 +112,9 @@ class Execute:
         self.save_trained_model(start_time)
         # (6) Eval model.
         self.evaluator.eval(self.trained_model, form_of_labelling)
-        print(f"Total computation time: {self.report['Runtime']}")
+        # Save Total time
+        self.report['Runtime'] = time.time()-start_time
+        print(f"Total computation time: {self.report['Runtime']:.3f} seconds")
         # (7) Return the report of the training process.
         return {**self.report, **self.evaluator.report}
 
@@ -134,7 +124,6 @@ class ContinuousExecute(Execute):
 
     def __init__(self, args):
         assert os.path.exists(args.path_experiment_folder)
-        assert os.path.isfile(args.path_experiment_folder + '/idx_train_df')
         assert os.path.isfile(args.path_experiment_folder + '/configuration.json')
         # (1) Load Previous input configuration
         previous_args = load_json(args.path_experiment_folder + '/configuration.json')

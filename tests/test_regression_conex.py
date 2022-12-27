@@ -26,9 +26,9 @@ class TestRegressionConEx:
         args.normalization = 'LayerNorm' #LayerNorm is not compatiable with float16
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
-        assert 0.46 >= result['Train']['H@1'] >= 0.33
-        assert 0.46 >= result['Val']['H@1'] >= 0.33
-        assert 0.46 >= result['Test']['H@1'] >= 0.31
+        assert 0.46 >= result['Train']['H@1'] >= 0.32
+        assert 0.46 >= result['Val']['H@1'] >= 0.32
+        assert 0.46 >= result['Test']['H@1'] >= 0.30
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
