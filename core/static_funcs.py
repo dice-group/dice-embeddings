@@ -1,22 +1,14 @@
-import copy
 import os
-import core
-from core.typings import *
 import numpy as np
 import torch
 import datetime
-import logging
-from collections import defaultdict
 import pytorch_lightning as pl
-import sys
-from .helper_classes import CustomArg
 from .models import *
 import time
 import pandas as pd
 import json
 import glob
 import pandas
-from .sanity_checkers import sanity_checking_with_arguments
 import polars
 import functools
 import pickle
@@ -288,17 +280,10 @@ def read_or_load_kg(args, cls):
     return kg
 
 
-def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
+def intialize_model(args: dict) -> Tuple[pl.LightningModule, str]:
     # @TODO: Apply construct_krone as callback? or use KronE_QMult as a prefix.
     # @TODO: Remove form_of_labelling
     model_name = args['model']
-    if 'Barlow_' in model_name[:7]:
-        d = copy.copy(args)
-        d['model'] = d['model'][7:]
-        model, form_of_labelling = intialize_model(d)
-        model = BarlowTwins(model)
-        return model, form_of_labelling
-
     if model_name == 'KronELinear':
         model = KronELinear(args=args)
         form_of_labelling = 'EntityPrediction'
@@ -355,13 +340,6 @@ def intialize_model(args: dict) -> Tuple[pl.LightningModule, AnyStr]:
     else:
         raise ValueError
     return model, form_of_labelling
-
-
-"""
-
-def extract_model_summary(s):
-    return {'NumParam': s.total_parameters, 'EstimatedSizeMB': s.model_size}
-"""
 
 
 def load_json(p: str) -> dict:

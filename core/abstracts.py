@@ -4,7 +4,7 @@ import pandas.core.indexes.range
 from .static_funcs import load_model_ensemble, load_model, save_checkpoint_model
 from .static_preprocess_funcs import create_constraints
 import torch
-from typing import List, Tuple, Generator
+from typing import List, Tuple
 import pandas as pd
 import numpy as np
 import random
@@ -311,8 +311,7 @@ class BaseInteractiveKGE:
         sort_scores, sort_idxs = torch.topk(scores, k)
         return sort_scores, entities[sort_idxs]
 
-    def predict_topk(self, *, head_entity: List[str] = None, relation: List[str] = None, tail_entity: List[str] = None,
-                     k: int = 10) -> Generator:
+    def predict_topk(self, *, head_entity: List[str] = None, relation: List[str] = None, tail_entity: List[str] = None, k: int = 10):
         """
         Predict missing item in a given triple.
 

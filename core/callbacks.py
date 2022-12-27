@@ -1,11 +1,9 @@
-# 1. Create Pytorch-lightning Trainer object from input configuration
-import copy
 import datetime
 import time
 import numpy as np
 import torch
 from pytorch_lightning.callbacks import Callback
-from .static_funcs import save_checkpoint_model, intialize_model
+from .static_funcs import save_checkpoint_model
 from typing import Optional
 import os
 import pandas as pd

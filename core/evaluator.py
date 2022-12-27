@@ -1,7 +1,6 @@
 import torch
 import numpy as np
 import json
-from tqdm import tqdm
 import sys
 from .static_funcs import timeit
 
@@ -145,7 +144,7 @@ class Evaluator:
             print(info + ':', end=' ')
         if form_of_labelling == 'RelationPrediction':
             # Iterate over integer indexed triples in mini batch fashion
-            for i in (pbar := tqdm(range(0, num_triples, self.executor.args.batch_size))):
+            for i in range(0, num_triples, self.executor.args.batch_size):
                 data_batch = triple_idx[i:i + self.executor.args.batch_size]
                 e1_idx_e2_idx, r_idx = torch.LongTensor(data_batch[:, [0, 2]]), torch.LongTensor(data_batch[:, 1])
                 # Generate predictions
@@ -168,7 +167,7 @@ class Evaluator:
         else:
             # TODO: Why do not we use Pytorch Dataset ? for multiprocessing
             # Iterate over integer indexed triples in mini batch fashion
-            for i in (pbar := tqdm(range(0, num_triples, self.executor.args.batch_size), file=sys.stdout)):
+            for i in range(0, num_triples, self.executor.args.batch_size):
                 # (1) Get a batch of data.
                 data_batch = triple_idx[i:i + self.executor.args.batch_size]
                 # (2) Extract entities and relations.
@@ -236,7 +235,7 @@ class Evaluator:
         all_entities = torch.arange(0, self.executor.dataset.num_entities).long()
         all_entities = all_entities.reshape(len(all_entities), )
         # Iterating one by one is not good when you are using batch norm
-        for i in (pbar := tqdm(range(0, len(triple_idx)))):
+        for i in range(0, len(triple_idx)):
             # 1. Get a triple
             data_point = triple_idx[i]
             s, p, o = data_point[0], data_point[1], data_point[2]

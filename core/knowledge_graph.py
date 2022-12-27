@@ -1,13 +1,6 @@
-import time
 from typing import Dict, List, Tuple, Union
-from collections import defaultdict
 import numpy as np
-import pickle
-import json
-import os
-import pandas as pd
 from .read_preprocess_save_load_kg import ReadFromDisk, PreprocessKG, LoadSaveToDisk
-
 
 class KG:
     """ Knowledge Graph """

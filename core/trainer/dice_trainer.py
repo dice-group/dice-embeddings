@@ -10,13 +10,12 @@ from .torch_trainer_ddp import TorchDDPTrainer
 import os
 import torch
 import numpy as np
-from core.typings import *
 from pytorch_lightning.strategies import DDPStrategy
 from core.helper_classes import LabelRelaxationLoss, BatchRelaxedvsAllLoss
 import pandas as pd
 from sklearn.model_selection import KFold
 import copy
-
+from typing import List, Tuple
 
 def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     """ Initialize Trainer from input arguments """

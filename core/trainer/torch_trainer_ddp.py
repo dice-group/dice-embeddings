@@ -6,7 +6,6 @@ from torch.distributed.optim import ZeroRedundancyOptimizer
 import torch.distributed as dist
 import os
 import numpy as np
-from core.typings import *
 from core.abstracts import AbstractTrainer
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd

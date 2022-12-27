@@ -6,9 +6,8 @@ import numpy as np
 import torch
 import pytorch_lightning as pl
 import random
-from .typings import Dict, List
-from .static_preprocess_funcs import mapping_from_first_two_cols_to_third, parallel_mapping_from_first_two_cols_to_third
-# LongTensor or IntTensor
+from typing import Dict, List
+from .static_preprocess_funcs import mapping_from_first_two_cols_to_third
 
 def input_data_type_checking(train_set_idx, valid_set_idx, test_set_idx, entity_to_idx: Dict, relation_to_idx: Dict):
     """ Type checking for efficient memory usage"""

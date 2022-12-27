@@ -1,5 +1,5 @@
 import torch
-from core.typings import Tuple
+from typing import Tuple
 from core.abstracts import AbstractTrainer
 from core.custom_opt.sls import Sls
 from core.custom_opt.adam_sls import AdamSLS

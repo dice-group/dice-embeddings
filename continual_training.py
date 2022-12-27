@@ -1,11 +1,5 @@
 from core.executer import ContinuousExecute
 import argparse
-import dask.dataframe as dd
-import os
-import json
-from types import SimpleNamespace
-
-
 def argparse_default(description=None):
     parser = argparse.ArgumentParser(add_help=False)
     # Dataset and storage related
