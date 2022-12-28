@@ -47,7 +47,6 @@ def get_callbacks(args):
                  KGESaveCallback(every_x_epoch=args.save_model_at_every_epoch,
                                  max_epochs=args.max_epochs,
                                  path=args.full_storage_path),
-                 pl.callbacks.ModelSummary(max_depth=-1),
                  AccumulateEpochLossCallback(path=args.full_storage_path)
                  ]
     for i in args.callbacks:
@@ -130,7 +129,6 @@ class DICE_Trainer:
         # (1) Select model and labelling : Entity Prediction or Relation Prediction.
         model, form_of_labelling = select_model(vars(self.args), self.executor.is_continual_training,
                                                 self.executor.storage_path)
-        print(f'KvsAll training starts: {model.name}')
         # (2) Create training data.
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,
@@ -151,24 +149,6 @@ class DICE_Trainer:
             self.dataset.valid_set = None
             self.dataset.test_set = None
         model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
-        """
-        # @TODO Model Calibration
-        from laplace import Laplace
-        from laplace.utils.subnetmask import ModuleNameSubnetMask
-        from laplace.utils import ModuleNameSubnetMask
-        from laplace import Laplace
-        # No change in link prediciton results
-        subnetwork_mask = ModuleNameSubnetMask(model, module_names=['emb_ent_real'])
-        subnetwork_mask.select()
-        subnetwork_indices = subnetwork_mask.indices
-        la = Laplace(model, 'classification',
-                     subset_of_weights='subnetwork',
-                     hessian_structure='full',
-                     subnetwork_indices=subnetwork_indices)
-        # la.fit(dataset.train_dataloader())
-        # la.optimize_prior_precision(method='CV', val_loader=dataset.val_dataloader())
-        """
-
         return model, form_of_labelling
 
     def training_1vsall(self) -> BaseKGE:

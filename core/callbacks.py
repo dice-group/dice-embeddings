@@ -2,24 +2,37 @@ import datetime
 import time
 import numpy as np
 import torch
-from pytorch_lightning.callbacks import Callback
 from .static_funcs import save_checkpoint_model
+from .abstracts import AbstractCallback
 from typing import Optional
 import os
 import pandas as pd
 
 
-class AccumulateEpochLossCallback(Callback):
+class AccumulateEpochLossCallback(AbstractCallback):
     def __init__(self, path: str):
         super().__init__()
         self.path = path
 
-    def on_fit_end(self, trainer, model):
-        # Store into disk
+    def on_fit_end(self, trainer, model) -> None:
+        """
+        Store epoch loss
+
+
+        Parameter
+        ---------
+        trainer:
+
+        model:
+
+        Returns
+        ---------
+        None
+        """
         pd.DataFrame(model.loss_history, columns=['EpochLoss']).to_csv(f'{self.path}/epoch_losses.csv')
 
 
-class PrintCallback(Callback):
+class PrintCallback(AbstractCallback):
     def __init__(self):
         super().__init__()
         self.start_time = time.time()
@@ -41,8 +54,17 @@ class PrintCallback(Callback):
             message = f'{training_time:.3f} seconds.'
         print(f"Done ! It took {message}\n")
 
+    def on_train_batch_end(self, *args, **kwargs):
+        return
 
-class KGESaveCallback(Callback):
+    def on_train_epoch_end(self, *args, **kwargs):
+        return
+
+    def on_fit_end(self, *args, **kwargs):
+        pass
+
+
+class KGESaveCallback(AbstractCallback):
     def __init__(self, every_x_epoch: int, max_epochs: int, path: str):
         super().__init__()
         self.every_x_epoch = every_x_epoch
@@ -52,7 +74,16 @@ class KGESaveCallback(Callback):
         if self.every_x_epoch is None:
             self.every_x_epoch = max(self.max_epochs // 2, 1)
 
+    def on_train_batch_end(self, *args, **kwargs):
+        return
+
     def on_fit_start(self, trainer, pl_module):
+        pass
+
+    def on_train_epoch_end(self, *args, **kwargs):
+        pass
+
+    def on_fit_end(self, *args, **kwargs):
         pass
 
     def on_epoch_end(self, trainer, pl_module):
@@ -63,7 +94,7 @@ class KGESaveCallback(Callback):
         self.epoch_counter += 1
 
 
-class PseudoLabellingCallback(Callback):
+class PseudoLabellingCallback(AbstractCallback):
     def __init__(self, data_module, kg, batch_size):
         super().__init__()
         self.data_module = data_module
@@ -117,14 +148,13 @@ def compute_convergence(seq, i):
     return estimate_q(seq[-i:] / (np.arange(i) + 1))
 
 
-class PPE(Callback):
+class PPE:
     """ A callback for Polyak Parameter Ensemble Technique
 
         Maintains a running parameter average for all parameters requiring gradient signals
     """
 
     def __init__(self, num_epochs, path, last_percent_to_consider=None):
-        super().__init__()
         self.num_epochs = num_epochs
         self.path = path
         self.epoch_counter = 0
@@ -144,7 +174,7 @@ class PPE(Callback):
             # Load averaged model
             device_of_training = model.device
             x = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device(model.device))
-            
+
             with torch.no_grad():
                 # Update the model
                 for k, v in model.state_dict().items():
@@ -157,75 +187,5 @@ class PPE(Callback):
         """ END:Called """
         model.load_state_dict(torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device('cpu')))
 
-
-
-class old_PolyakCallback(Callback):
-    def __init__(self, *, path: str, max_epochs: int, polyak_start_ratio=0.75):
-        super().__init__()
-        self.epoch_counter = 0
-        self.polyak_starts = int(max_epochs * polyak_start_ratio)
-        self.path = path
-
-    def on_fit_start(self, trainer, pl_module):
-        pass
-
-    def on_train_epoch_end(self, trainer, model):
-        if len(model.loss_history) < 20:
-            return
-        else:
-            mva_20 = np.mean(model.loss_history[-20:])
-            mva_10 = np.mean(model.loss_history[-10:])
-            mva_5 = np.mean(model.loss_history[-5:])
-            last = model.loss_history[-1]
-
-            if mva_5 - last < mva_10 - last < mva_20 - last:
-                # We are still going down in the hill
-                pass
-            else:
-                # We see to converge. Start taking snapshots
-                print('SAVE...')
-                torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_{str(self.epoch_counter)}.pt")
-                self.epoch_counter += 1
-
-    def on_fit_end(self, trainer, model):
-        """ END:Called """
-        print('Perform Polyak Averaged on', end='')
-        # (1) Set in eval model
-        model.eval()
-        model.to('cpu')
-        last_state = model.state_dict()
-        counter = 1.0
-        num_models = 0
-        # (2) Accumulate weights
-        for i in os.listdir(self.path):
-            if '.pt' in i:
-                num_models += 1
-                counter += 1
-                for k, v in torch.load(f'{self.path}/{i}', map_location=torch.device('cpu')).items():
-                    last_state[k] += v
-        # (3) Average (2)
-        for k, v in last_state.items():
-            if v.dtype != torch.int64:
-                last_state[k] /= counter
-        # (4) Set (3)
-        model.load_state_dict(last_state)
-        print(f' {num_models} number of models')
-
-
-# https://pytorch-lightning.readthedocs.io/en/stable/extensions/callbacks.html#persisting-state
-# https://pytorch-lightning.readthedocs.io/en/stable/extensions/callbacks.html#teardown
-class AdaptiveKGECallback(Callback):
-    def __init__(self):
-        super().__init__()
-
-    def setup(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule", stage: Optional[str] = None) -> None:
-        pass
-
-    def teardown(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule", stage: Optional[str] = None) -> None:
-        pass
-
-    def on_batch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
-        pass
-
-    def on_epoch_end(self, trainer, model):
-        print(trainer.callback_metrics)
+    def on_train_batch_end(self, *args, **kwargs):
+        return

@@ -43,7 +43,6 @@ class TorchTrainer(AbstractTrainer):
         if self.attributes.gradient_accumulation_steps > 1:
             # Update parameters every gradient_accumulation_steps mini-batch
             if step % self.attributes.gradient_accumulation_steps == 0:
-                self.optimizer.zero_grad()
                 efficient_zero_grad(self.model)
         else:
             # (2) Do not accumulate gradient, zero the gradients per batch.
@@ -73,13 +72,14 @@ class TorchTrainer(AbstractTrainer):
         dataset = kwargs['train_dataloaders'].dataset
         self.loss_function = model.loss_function
         self.optimizer = self.model.configure_optimizers()
+        # (1) Start running callbacks
         self.on_fit_start(self, self.model)
 
         if isinstance(self.optimizer, Sls) or isinstance(self.optimizer, AdamSLS):
             self.use_closure = True
         else:
             self.use_closure = False
-
+        # (2) Creat Data loader.
         data_loader = torch.utils.data.DataLoader(dataset, batch_size=self.attributes.batch_size,
                                                   shuffle=True,
                                                   num_workers=self.attributes.num_core,
@@ -100,6 +100,8 @@ class TorchTrainer(AbstractTrainer):
                     construct_mini_batch_time = s_time - construct_mini_batch_time
                 batch_loss = self.run_batch(step, batch)
                 epoch_loss += batch_loss
+                # (1) Start running callbacks
+                self.on_train_batch_end(self, self.model)
                 # (4) Accumulate a batch loss.
                 # (6) Print a info.
                 if construct_mini_batch_time:
@@ -137,6 +139,7 @@ class TorchTrainer(AbstractTrainer):
             batch_loss = self.optimizer.step(closure=lambda: self.loss_function(self.model(x_batch), y_batch))
             return batch_loss
         else:
+            #with torch.autocast(device_type=self.device,dtype=torch.bfloat16):
             # (4) Backpropagate the gradient of (3) w.r.t. parameters.
             batch_loss = self.loss_function(self.model(x_batch), y_batch)
             # Backward pass
