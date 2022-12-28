@@ -117,17 +117,23 @@ def compute_convergence(seq, i):
     return estimate_q(seq[-i:] / (np.arange(i) + 1))
 
 
-class PWA(Callback):
-    """ A callback for maintaining a parametrized running average of parameters"""
+class PPE(Callback):
+    """ A callback for Polyak Parameter Ensemble Technique
 
-    def __init__(self, num_epochs, path, last_percent_to_consider):
+        Maintains a running parameter average for all parameters requiring gradient signals
+    """
+
+    def __init__(self, num_epochs, path, last_percent_to_consider=None):
         super().__init__()
         self.num_epochs = num_epochs
         self.path = path
         self.epoch_counter = 0
         self.sample_counter = 0
-        # e.g. Average only last 10 percent
-        self.epoch_to_start = self.num_epochs - int(self.num_epochs / last_percent_to_consider)
+        if last_percent_to_consider is None:
+            self.epoch_to_start = 1
+        else:
+            # e.g. Average only last 10 percent
+            self.epoch_to_start = self.num_epochs - int(self.num_epochs / last_percent_to_consider)
 
     def on_fit_start(self, trainer, model):
         torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_main.pt")
@@ -152,37 +158,8 @@ class PWA(Callback):
         model.load_state_dict(torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device('cpu')))
 
 
-class WA(Callback):
-    """ A callback for maintaining a running average of parameters"""
 
-    def __init__(self, num_epochs, path):
-        super().__init__()
-        self.num_epochs = num_epochs
-        self.path = path
-        self.epoch_counter = 0
-
-    def on_fit_start(self, trainer, model):
-        torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_main.pt")
-
-    def on_train_epoch_end(self, trainer, model):
-        self.epoch_counter += 1
-        # Load averaged model
-        x = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device('cpu'))
-        device_of_training = model.device
-        model.to('cpu')
-        # Update the model
-        for k, v in model.state_dict().items():
-            x[k] = (x[k] * self.epoch_counter + v) / (self.epoch_counter + 1)
-        # Store the model
-        torch.save(x, f=f"{self.path}/trainer_checkpoint_main.pt")
-        model.to(device_of_training)
-
-    def on_fit_end(self, trainer, model):
-        """ END:Called """
-        model.load_state_dict(torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device('cpu')))
-
-
-class PolyakCallback(Callback):
+class old_PolyakCallback(Callback):
     def __init__(self, *, path: str, max_epochs: int, polyak_start_ratio=0.75):
         super().__init__()
         self.epoch_counter = 0

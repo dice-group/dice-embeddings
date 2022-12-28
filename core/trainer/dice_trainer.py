@@ -17,6 +17,7 @@ from sklearn.model_selection import KFold
 import copy
 from typing import List, Tuple
 
+
 def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     """ Initialize Trainer from input arguments """
     if args.trainer == 'torchCPUTrainer':
@@ -50,21 +51,19 @@ def get_callbacks(args):
                  AccumulateEpochLossCallback(path=args.full_storage_path)
                  ]
     for i in args.callbacks:
-        if i == 'Polyak':
-            callbacks.append(PolyakCallback(max_epochs=args.max_epochs, path=args.full_storage_path))
-        elif 'WA' in i:
-
-            if "WA" == i:
-                callbacks.append(WA(num_epochs=args.num_epochs, path=args.full_storage_path))
+        if 'PPE' in i:
+            if "PPE" == i:
+                callbacks.append(
+                    PPE(num_epochs=args.num_epochs, path=args.full_storage_path, last_percent_to_consider=None))
             elif len(i) > 3:
-                name, param = i[:2], i[2:]
-                assert name == 'WA'
+                name, param = i[:3], i[3:]
+                assert name == 'PPE'
                 assert int(param)
-                callbacks.append(PWA(num_epochs=args.num_epochs,
+                callbacks.append(PPE(num_epochs=args.num_epochs,
                                      path=args.full_storage_path,
                                      last_percent_to_consider=int(param)))
             else:
-                raise KeyError
+                raise KeyError(f'Unexpected input for callbacks ***\t{i}\t***')
     return callbacks
 
 
