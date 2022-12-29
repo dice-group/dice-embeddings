@@ -25,6 +25,7 @@ class TestRegressionAConEx:
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
         args.normalization = 'BatchNorm1d'
+        args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 0.70 >= result['Train']['MRR'] >= 0.69

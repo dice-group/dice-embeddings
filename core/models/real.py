@@ -13,6 +13,9 @@ class DistMult(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'DistMult'
+        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
+        self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
+        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
     def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
@@ -43,7 +46,9 @@ class TransE(BaseKGE):
         self.name = 'TransE'
         self._norm = 2
         self.margin = 4
-
+        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
+        self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
+        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
     def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
@@ -70,7 +75,7 @@ class Shallom(BaseKGE):
         # Fixed
         shallom_width = int(2 * self.embedding_dim)
         self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
-        xavier_normal_(self.entity_embeddings.weight.data)
+        self.param_init(self.entity_embeddings.weight.data)
         self.shallom = nn.Sequential(nn.Dropout(self.input_dropout_rate),
                                      torch.nn.Linear(self.embedding_dim * 2, shallom_width),
                                      self.normalizer_class(shallom_width),
@@ -107,6 +112,9 @@ class Pyke(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'Pyke'
+        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
+        self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
+        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
         self.loss = nn.TripletMarginLoss(margin=1.0, p=2)
 
     def get_embeddings(self) -> Tuple[np.ndarray, Union[np.ndarray, None]]:
@@ -139,6 +147,9 @@ class CLf(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'CLf'
+        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
+        self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
+        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
     def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
@@ -162,83 +173,7 @@ class CLf(BaseKGE):
         print('Hello')
         raise NotImplementedError('Implement scoring function for KvsAll')
 
-
-class DimAdaptiveDistMult(BaseKGE):
-
-    def __init__(self, args):
-        super().__init__(args)
-        self.name = 'AdaptiveDistMult'
-        # Init Embeddings
-        self.current_embedding_dim = 1
-        self.emb_ent_real = nn.Embedding(self.num_entities, self.current_embedding_dim)
-        self.emb_rel_real = nn.Embedding(self.num_relations, self.current_embedding_dim)
-        xavier_normal_(self.emb_ent_real.weight.data), xavier_normal_(self.emb_rel_real.weight.data)
-
-        self.losses = []
-        self.moving_average = 0
-        self.moving_average_interval = 10
-        self.add_dim_size = 1
-
-    def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
-        return self.emb_ent_real.weight.data.data.detach(), self.emb_rel_real.weight.data.detach()
-
-    def forward_k_vs_all(self, x: torch.Tensor):
-        e1_idx: torch.Tensor
-        rel_idx: torch.Tensor
-        e1_idx, rel_idx = x[:, 0], x[:, 1]
-        # (1)
-        # (1.1) Real embeddings of head entities
-        emb_head_real = self.emb_ent_real(e1_idx)
-        # (1.2) Real embeddings of relations
-        emb_rel_real = self.emb_rel_real(rel_idx)
-        return torch.mm(emb_head_real * emb_rel_real, self.emb_ent_real.weight.transpose(1, 0))
-
-    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
-        e1_idx: torch.Tensor
-        rel_idx: torch.Tensor
-        e2_idx: torch.Tensor
-        e1_idx, rel_idx, e2_idx = x[:, 0], x[:, 1], x[:, 2]
-        # (1)
-        emb_head_real = self.emb_ent_real(e1_idx)
-        emb_rel_real = self.emb_rel_real(rel_idx)
-        emb_tail_real = self.emb_ent_real(e2_idx)
-        return (emb_head_real * emb_rel_real * emb_tail_real).sum(dim=1)
-
-    def training_epoch_end(self, training_step_outputs):
-
-        if self.current_embedding_dim + self.add_dim_size < self.embedding_dim:
-            epoch_loss = float(training_step_outputs[0]['loss'].detach())
-            self.losses.append(epoch_loss)
-            if len(self.losses) % self.moving_average_interval == 0:
-                moving_average = sum(self.losses) / len(self.losses)
-                self.losses.clear()
-                diff = abs(moving_average - epoch_loss)
-
-                if diff > epoch_loss * .1:
-                    # do nothing
-                    pass
-                else:
-
-                    """
-
-                    # Either increase the embedding size or the multiplication
-                    print('\nDouble the embedding size') 
-                    # Leads to inferious results
-                    x = nn.Embedding(self.num_entities, self.add_dim_size)
-                    xavier_normal_(x.weight.data)
-                    self.emb_ent_real.weight = nn.Parameter(
-                        torch.cat((self.emb_ent_real.weight.detach(), x.weight.detach()), dim=1).data,
-                        requires_grad=True)
-                    x = nn.Embedding(self.num_relations, self.add_dim_size)
-                    xavier_normal_(x.weight.data)
-                    self.emb_rel_real.weight = nn.Parameter(
-                        torch.cat((self.emb_rel_real.weight.detach(), x.weight.detach()), dim=1).data,
-                        requires_grad=True)
-                    del x
-                    self.current_embedding_dim += self.add_dim_size
-                    """
-
-
+# TODO: need refactoring
 class KPDistMult(BaseKGE):
     """
     Named as KD-Rel-DistMult  in our paper

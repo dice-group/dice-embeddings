@@ -139,12 +139,13 @@ class TorchTrainer(AbstractTrainer):
             batch_loss = self.optimizer.step(closure=lambda: self.loss_function(self.model(x_batch), y_batch))
             return batch_loss
         else:
-            #with torch.autocast(device_type=self.device,dtype=torch.bfloat16):
-            # (4) Backpropagate the gradient of (3) w.r.t. parameters.
-            batch_loss = self.loss_function(self.model(x_batch), y_batch)
-            # Backward pass
+            # (1) Forward and Backpropagate the gradient of (3) w.r.t. parameters.
+            yhat_batch = self.model(x_batch)
+            # (2) Compute the batch loss
+            batch_loss = self.loss_function(yhat_batch, y_batch)
+            # (3) Backward pass
             batch_loss.backward()
-            # Adjust learning weights
+            # (4) Parameter update
             self.optimizer.step()
             return batch_loss
 

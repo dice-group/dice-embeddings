@@ -51,6 +51,7 @@ def preprocesses_input_args(arg):
     if arg.num_core < 0:
         arg.num_core = 0
 
+    assert arg.init_param in ['xavier_normal', None]
     for i in arg.callbacks:
         try:
             assert 'PPE' in i

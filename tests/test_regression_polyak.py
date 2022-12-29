@@ -24,6 +24,7 @@ class TestPolyak:
         args.sample_triples_ratio = None
         args.callbacks = ['PPE']
         args.normalization = 'LayerNorm'
+        args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert .70 >= result['Train']['H@1'] >= 0.68

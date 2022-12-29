@@ -1,11 +1,9 @@
 import pytorch_lightning as pl
 import torch
-from pytorch_lightning.utilities.types import TRAIN_DATALOADERS, EVAL_DATALOADERS
 from torch import nn
 from torch.nn import functional as F
 from torchmetrics import Accuracy as accuracy
 from typing import List, Any, Tuple, Union, Dict
-from torch.nn.init import xavier_normal_
 import numpy as np
 from core.custom_opt import Sls, AdamSLS, Adan
 
@@ -33,11 +31,8 @@ class BaseKGE(pl.LightningModule):
         self.normalize_relation_embeddings = IdentityClass()
         self.normalize_tail_entity_embeddings = IdentityClass()
         self.hidden_normalizer = IdentityClass()
+        self.param_init = None
         self.init_params_with_sanity_checking()
-
-        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
-        xavier_normal_(self.entity_embeddings.weight.data), xavier_normal_(self.relation_embeddings.weight.data)
 
         # Dropouts
         self.input_dp_ent_real = torch.nn.Dropout(self.input_dropout_rate)
@@ -93,13 +88,6 @@ class BaseKGE(pl.LightningModule):
         else:
             self.hidden_dropout_rate = 0.0
 
-        if self.args['model'] in ['QMult', 'OMult', 'ConvQ', 'ConvO']:
-            # @TODO: We should remove this unit norm part
-            if self.args.get("apply_unit_norm"):
-                self.apply_unit_norm = self.args['apply_unit_norm']
-            else:
-                self.apply_unit_norm = False
-
         if self.args['model'] in ['ConvQ', 'ConvO', 'ConEx', 'AConEx']:
             if self.args.get("kernel_size"):
                 self.kernel_size = self.args['kernel_size']
@@ -121,8 +109,6 @@ class BaseKGE(pl.LightningModule):
             if self.args['scoring_technique'] in ['NegSample', 'KvsSample']:
                 self.normalize_tail_entity_embeddings = self.normalizer_class(self.embedding_dim)
         elif self.args.get("normalization") == 'BatchNorm1d':
-            # https://twitter.com/karpathy/status/1299921324333170689/photo/1
-            # Andrej Karpathy => affine to False to decrease the memory usage.
             self.normalizer_class = torch.nn.BatchNorm1d
             self.normalize_head_entity_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
             self.normalize_relation_embeddings = self.normalizer_class(self.embedding_dim, affine=False)
@@ -137,6 +123,13 @@ class BaseKGE(pl.LightningModule):
         else:
             print(self.args)
             raise KeyError(f'--optim (***{self.args.get("optim")}***) not found')
+
+        if self.args['init_param'] is None:
+            self.param_init = IdentityClass
+        elif self.args['init_param'] == 'xavier_normal':
+            self.param_init = torch.nn.init.xavier_normal_
+        else:
+            raise KeyError(f'--init_param (***{self.args.get("init_param")}***) not found')
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
         return self.entity_embeddings.weight.data.data.detach(), self.relation_embeddings.weight.data.detach()
@@ -297,16 +290,16 @@ class BaseKGE(pl.LightningModule):
         avg_test_accuracy = torch.stack([x['test_accuracy'] for x in outputs]).mean()
         self.log('avg_test_accuracy', avg_test_accuracy, on_epoch=True, prog_bar=True)
 
-    def test_dataloader(self) -> EVAL_DATALOADERS:
+    def test_dataloader(self) -> None:
         pass
 
-    def val_dataloader(self) -> EVAL_DATALOADERS:
+    def val_dataloader(self) -> None:
         pass
 
-    def predict_dataloader(self) -> EVAL_DATALOADERS:
+    def predict_dataloader(self) -> None:
         pass
 
-    def train_dataloader(self) -> TRAIN_DATALOADERS:
+    def train_dataloader(self) -> None:
         pass
 
     def get_triple_representation(self, indexed_triple):

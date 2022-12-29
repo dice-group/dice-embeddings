@@ -23,8 +23,9 @@ class TestRegressionConEx:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
-        args.normalization = 'LayerNorm' #LayerNorm is not compatiable with float16
+        args.normalization = 'LayerNorm'
         args.trainer = 'torchCPUTrainer'
+        args.init_param = 'xavier_normal'
         result = Execute(args).start()
         assert 0.46 >= result['Train']['H@1'] >= 0.32
         assert 0.46 >= result['Val']['H@1'] >= 0.32
@@ -49,6 +50,7 @@ class TestRegressionConEx:
         args.normalization = 'LayerNorm'
         args.scoring_technique = '1vsAll'
         args.trainer = 'torchCPUTrainer'
+        args.init_param = 'xavier_normal'
         result = Execute(args).start()
         assert 0.75 >= result['Train']['H@1'] > 0.20
         assert 0.75 >= result['Val']['H@1'] >= 0.20
@@ -74,6 +76,7 @@ class TestRegressionConEx:
         args.neg_ratio = 1
         args.normalization = 'LayerNorm'
         args.trainer = 'torchCPUTrainer'
+        args.init_param = 'xavier_normal'
         result = Execute(args).start()
         assert 0.77 >= result['Train']['H@1'] >= .20
         assert 0.70 >= result['Val']['H@1'] >= .20

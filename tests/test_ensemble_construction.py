@@ -18,7 +18,7 @@ class TestEnsembleConstruction:
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
-        args.lr = 0.01
+        args.lr = 0.1
         args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
@@ -29,7 +29,7 @@ class TestEnsembleConstruction:
         args.num_folds_for_cv = None
         args.save_model_at_every_epoch = 3
         args.normalization = 'LayerNorm'
-        args.backend='pandas'
+        args.backend = 'pandas'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 0.71 >= result['Train']['H@1'] >= 0.03
