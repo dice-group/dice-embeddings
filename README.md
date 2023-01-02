@@ -38,13 +38,12 @@ To install dependencies:
 conda create -n dice python=3.9.12
 conda activate dice
 # Choose a backend
-pip3 install pandas==1.5.1 modin==0.16.2 polars==0.14.26 
+pip3 install pandas==1.5.1 modin==0.16.2 polars==0.14.26 pyarrow==8.0.0
 pip3 install torch==1.13.0 
 pip3 install pytorch-lightning==1.6.4
 pip3 install scikit-learn==1.1.1
 pip3 install pytest==6.2.5
 pip3 install gradio==3.0.17
-pip3 install pyarrow==8.0.0
 ```
 To test the Installation
 ```

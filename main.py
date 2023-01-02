@@ -22,16 +22,16 @@ def argparse_default(description=None):
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[Adan, NAdam, Adam, SGD, Sls, AdamSLS]')
     parser.add_argument('--embedding_dim', type=int, default=32, help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=50, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=200, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument('--callbacks',
                         '--list',
                         nargs='+',
-                        default=[],  # WA10 ,WA10 or WA
+                        default=[],  # PPE10 ,PPE20 or PPE
                         help='List of tuples representing a callback and values')
     parser.add_argument("--backend", type=str, default='polars',
-                        help='Select [polars(seperator: \t), modin(seperator: \s+ ), pandas(seperator: \s+)]')
+                        help='Select [polars(seperator: \t), modin(seperator: \s+), pandas(seperator: \s+)]')
     parser.add_argument("--trainer", type=str, default='torchDDP',
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
     # Hyperparameters for training.
@@ -43,9 +43,12 @@ def argparse_default(description=None):
     parser.add_argument('--input_dropout_rate', type=float, default=0.0)
     parser.add_argument('--hidden_dropout_rate', type=float, default=0.0)
     parser.add_argument("--feature_map_dropout_rate", type=int, default=0.0)
-    parser.add_argument("--normalization", type=str, default="BatchNorm1d", help="[LayerNorm, BatchNorm1d, None]")
+    parser.add_argument("--normalization", type=str, default="LayerNorm", help="[LayerNorm, BatchNorm1d, None]")
+    parser.add_argument("--init_param", type=str, default=None, help="[xavier_normal]")
+
     parser.add_argument("--gradient_accumulation_steps", type=int, default=0,
                         help="e.g. gradient_accumulation_steps=2 implies that gradients are accumulated at every second mini-batch")
+
     # Flags for computation
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
                                                                         'If >2 ,no evaluation scenario is applied implies no evaluation.')
