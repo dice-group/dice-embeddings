@@ -48,6 +48,9 @@ class OMult(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'QMult'
+        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
+        self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
+        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
     def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
@@ -129,11 +132,12 @@ class OMult(BaseKGE):
 
 
 class ConvO(BaseKGE):
-    """     @TODO: Implement ConvQ via integration residual connection with addition to distributed the gradients. """
     def __init__(self, args: dict):
         super().__init__(args=args)
         self.name = 'ConvO'
-
+        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
+        self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
+        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
         # Convolution
         self.conv2d = torch.nn.Conv2d(in_channels=1, out_channels=self.num_of_output_channels,
                                       kernel_size=(self.kernel_size, self.kernel_size), stride=1, padding=1, bias=True)
@@ -266,88 +270,3 @@ class ConvO(BaseKGE):
         e7_score = torch.mm(conv_e7 * e7, emb_tail_e7)
         return e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
 
-    def old_forward_k_vs_all(self, x: torch.Tensor):
-        raise NotImplementedError()
-        e1_idx: torch.Tensor
-        rel_idx: torch.Tensor
-        e1_idx, rel_idx = x[:, 0], x[:, 1]
-
-        # (1)
-        # (1.1) Octonion embeddings of head entities
-        emb_head_e0 = self.emb_ent_e0(e1_idx)
-        emb_head_e1 = self.emb_ent_e1(e1_idx)
-        emb_head_e2 = self.emb_ent_e2(e1_idx)
-        emb_head_e3 = self.emb_ent_e3(e1_idx)
-        emb_head_e4 = self.emb_ent_e4(e1_idx)
-        emb_head_e5 = self.emb_ent_e5(e1_idx)
-        emb_head_e6 = self.emb_ent_e6(e1_idx)
-        emb_head_e7 = self.emb_ent_e7(e1_idx)
-        # (1.2) Octonion embeddings of relations
-        emb_rel_e0 = self.emb_rel_e0(rel_idx)
-        emb_rel_e1 = self.emb_rel_e1(rel_idx)
-        emb_rel_e2 = self.emb_rel_e2(rel_idx)
-        emb_rel_e3 = self.emb_rel_e3(rel_idx)
-        emb_rel_e4 = self.emb_rel_e4(rel_idx)
-        emb_rel_e5 = self.emb_rel_e5(rel_idx)
-        emb_rel_e6 = self.emb_rel_e6(rel_idx)
-        emb_rel_e7 = self.emb_rel_e7(rel_idx)
-        # (2) Apply convolution operation on (1.1) and (1.2).
-        O_3 = self.residual_convolution(O_1=(emb_head_e0, emb_head_e1, emb_head_e2, emb_head_e3,
-                                             emb_head_e4, emb_head_e5, emb_head_e6, emb_head_e7),
-                                        O_2=(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3,
-                                             emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7))
-        conv_e0, conv_e1, conv_e2, conv_e3, conv_e4, conv_e5, conv_e6, conv_e7 = O_3
-
-        if self.apply_unit_norm:
-            # (3) Octonion multiplication of (1.1) and unit normalized (1.2).
-            e0, e1, e2, e3, e4, e5, e6, e7 = octonion_mul_norm(
-                O_1=(emb_head_e0, emb_head_e1, emb_head_e2, emb_head_e3,
-                     emb_head_e4, emb_head_e5, emb_head_e6, emb_head_e7),
-                O_2=(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3,
-                     emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7))
-            # (4)
-            # (4.1) Hadamard product of (2) with (3).
-            # (4.2) Inner product of (4.1) with ALL entities.
-            e0_score = torch.mm(conv_e0 * e0, self.emb_ent_e0.weight.transpose(1, 0))
-            e1_score = torch.mm(conv_e1 * e1, self.emb_ent_e1.weight.transpose(1, 0))
-            e2_score = torch.mm(conv_e2 * e2, self.emb_ent_e2.weight.transpose(1, 0))
-            e3_score = torch.mm(conv_e3 * e3, self.emb_ent_e3.weight.transpose(1, 0))
-            e4_score = torch.mm(conv_e4 * e4, self.emb_ent_e4.weight.transpose(1, 0))
-            e5_score = torch.mm(conv_e5 * e5, self.emb_ent_e5.weight.transpose(1, 0))
-            e6_score = torch.mm(conv_e6 * e6, self.emb_ent_e6.weight.transpose(1, 0))
-            e7_score = torch.mm(conv_e7 * e7, self.emb_ent_e7.weight.transpose(1, 0))
-        else:
-            # (3)
-            # (3.1) Apply BN + Dropout on (1.2)-relations.
-            # (3.2) Apply quaternion multiplication on (1.1) and (3.1).
-            e0, e1, e2, e3, e4, e5, e6, e7 = octonion_mul(
-                O_1=(self.input_dp_ent_e0(self.bn_ent_e0(emb_head_e0)),
-                     self.input_dp_ent_e1(self.bn_ent_e1(emb_head_e1)),
-                     self.input_dp_ent_e2(self.bn_ent_e2(emb_head_e2)),
-                     self.input_dp_ent_e3(self.bn_ent_e3(emb_head_e3)),
-                     self.input_dp_ent_e4(self.bn_ent_e0(emb_head_e4)),
-                     self.input_dp_ent_e5(self.bn_ent_e0(emb_head_e5)),
-                     self.input_dp_ent_e6(self.bn_ent_e0(emb_head_e6)),
-                     self.input_dp_ent_e7(self.bn_ent_e0(emb_head_e7))),
-                O_2=(self.input_dp_rel_e0(self.bn_rel_e0(emb_rel_e0)),
-                     self.input_dp_rel_e1(self.bn_rel_e1(emb_rel_e1)),
-                     self.input_dp_rel_e2(self.bn_rel_e2(emb_rel_e2)),
-                     self.input_dp_rel_e3(self.bn_rel_e3(emb_rel_e3)),
-                     self.input_dp_rel_e4(self.bn_rel_e4(emb_rel_e4)),
-                     self.input_dp_rel_e5(self.bn_rel_e5(emb_rel_e5)),
-                     self.input_dp_rel_e6(self.bn_rel_e6(emb_rel_e6)),
-                     self.input_dp_rel_e7(self.bn_rel_e7(emb_rel_e7))))
-            # (4)
-            # (4.1) Hadamard product of (2) with (3).
-            # (4.2) Dropout on (4.1).
-            # (4.3) Apply BN + DP on ALL entities.
-            # (4.4) Inner product
-            e0_score = torch.mm(self.hidden_dp_e0(conv_e0 * e0), self.emb_ent_e0.weight.transpose(1, 0))
-            e1_score = torch.mm(self.hidden_dp_e1(conv_e1 * e1), self.emb_ent_e1.weight.transpose(1, 0))
-            e2_score = torch.mm(self.hidden_dp_e2(conv_e2 * e2), self.emb_ent_e2.weight.transpose(1, 0))
-            e3_score = torch.mm(self.hidden_dp_e3(conv_e3 * e3), self.emb_ent_e3.weight.transpose(1, 0))
-            e4_score = torch.mm(self.hidden_dp_e4(conv_e4 * e4), self.emb_ent_e4.weight.transpose(1, 0))
-            e5_score = torch.mm(self.hidden_dp_e5(conv_e5 * e5), self.emb_ent_e5.weight.transpose(1, 0))
-            e6_score = torch.mm(self.hidden_dp_e6(conv_e6 * e6), self.emb_ent_e6.weight.transpose(1, 0))
-            e7_score = torch.mm(self.hidden_dp_e7(conv_e7 * e7), self.emb_ent_e7.weight.transpose(1, 0))
-        return e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
