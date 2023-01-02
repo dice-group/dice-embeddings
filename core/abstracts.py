@@ -8,6 +8,7 @@ from typing import List, Tuple
 import pandas as pd
 import numpy as np
 import random
+from abc import ABC, abstractmethod
 
 
 class AbstractTrainer:
@@ -85,6 +86,24 @@ class AbstractTrainer:
         """
         for c in self.callbacks:
             c.on_train_epoch_end(*args, **kwargs)
+
+    def on_train_batch_end(self, *args, **kwargs):
+        """
+        A function to call callbacks at the end of each mini-batch during training.
+
+        Parameter
+        ---------
+        args
+
+        kwargs
+
+
+        Returns
+        -------
+        None
+        """
+        for c in self.callbacks:
+            c.on_train_batch_end(*args, **kwargs)
 
     @staticmethod
     def save_checkpoint(full_path: str, model) -> None:
@@ -311,7 +330,8 @@ class BaseInteractiveKGE:
         sort_scores, sort_idxs = torch.topk(scores, k)
         return sort_scores, entities[sort_idxs]
 
-    def predict_topk(self, *, head_entity: List[str] = None, relation: List[str] = None, tail_entity: List[str] = None, k: int = 10):
+    def predict_topk(self, *, head_entity: List[str] = None, relation: List[str] = None, tail_entity: List[str] = None,
+                     k: int = 10):
         """
         Predict missing item in a given triple.
 
@@ -528,3 +548,81 @@ class BaseInteractiveKGE:
         # Hard Labels
         labels: object = torch.FloatTensor(labels)
         return x, labels
+
+class AbstractCallback(ABC):
+    """
+    Abstract class for Callback class for knowledge graph embedding models
+
+
+    Parameter
+    ---------
+
+    """
+
+    def __init__(self):
+        pass
+
+    def on_fit_start(self, trainer, model):
+        """
+        Call at the beginning of the training.
+
+        Parameter
+        ---------
+        trainer:
+
+        model:
+
+        Returns
+        ---------
+        None
+        """
+        return
+
+    def on_train_epoch_end(self, trainer, model):
+        """
+        Call at the end of each epoch during training.
+
+        Parameter
+        ---------
+        trainer:
+
+        model:
+
+        Returns
+        ---------
+        None
+        """
+        pass
+
+    def on_train_batch_end(self, trainer, model):
+        """
+        Call at the end of each mini-batch during the training.
+
+
+        Parameter
+        ---------
+        trainer:
+
+        model:
+
+        Returns
+        ---------
+        None
+        """
+        pass
+
+    def on_fit_end(self, trainer, model):
+        """
+        Call at the end of the training.
+
+        Parameter
+        ---------
+        trainer:
+
+        model:
+
+        Returns
+        ---------
+        None
+        """
+        pass

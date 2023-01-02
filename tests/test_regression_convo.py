@@ -23,6 +23,7 @@ class TestRegressionConvO:
         args.read_only_few = None
         args.num_folds_for_cv = None
         args.normalization = 'LayerNorm'
+        args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 1.0 >= result['Train']['H@1'] >= 0.01
@@ -46,6 +47,7 @@ class TestRegressionConvO:
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
         args.normalization = 'LayerNorm'
+        args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
         args.scoring_technique = '1vsAll'
         result = Execute(args).start()
@@ -71,6 +73,7 @@ class TestRegressionConvO:
         args.read_only_few = None
         args.num_folds_for_cv = None
         args.normalization = 'LayerNorm'
+        args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 1.0 >= result['Train']['H@1'] >= 0.01

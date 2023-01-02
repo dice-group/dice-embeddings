@@ -51,23 +51,27 @@ def preprocesses_input_args(arg):
     if arg.num_core < 0:
         arg.num_core = 0
 
+    assert arg.init_param in ['xavier_normal', None]
+    for i in arg.callbacks:
+        try:
+            assert 'PPE' in i
+        except AssertionError:
+            raise AssertionError(f'Unexpected input for callbacks ***\t{i}\t***')
+
     # Below part will be investigated
     arg.check_val_every_n_epoch = 10 ** 6  # ,i.e., no eval
     arg.logger = False
     try:
         assert arg.eval_model in [None, 'None', 'train', 'val', 'test', 'train_val', 'train_test', 'val_test',
                                   'train_val_test']
-    except KeyError:
-        print(arg.eval_model)
-        exit(1)
+    except AssertionError:
+        raise AssertionError(f'Unexpected input for eval_model ***\t{i}\t***')
 
     if arg.eval_model == 'None':
         arg.eval_model = None
 
     # reciprocal checking
-    # @TODO We need better way for using apply_reciprical_or_noise.
-    if arg.scoring_technique in ['KvsSample', 'PvsAll', 'CCvsAll', 'KvsAll', '1vsAll', 'BatchRelaxed1vsAll',
-                                 'BatchRelaxedKvsAll']:
+    if arg.scoring_technique in ['KvsSample', 'PvsAll', 'CCvsAll', 'KvsAll', '1vsAll']:
         arg.apply_reciprical_or_noise = True
     elif arg.scoring_technique == 'NegSample':
         arg.apply_reciprical_or_noise = False
@@ -77,7 +81,7 @@ def preprocesses_input_args(arg):
     if arg.sample_triples_ratio is not None:
         assert 1.0 >= arg.sample_triples_ratio >= 0.0
 
-    assert arg.backend in ["modin", "pandas", "vaex", "polars"]
+    assert arg.backend in ["modin", "pandas", "polars"]
     sanity_checking_with_arguments(arg)
     if arg.model == 'Shallom':
         arg.scoring_technique = 'KvsAll'

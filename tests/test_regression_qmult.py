@@ -23,6 +23,7 @@ class TestRegressionQmult:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.normalization = 'LayerNorm'
+        args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert 1.00 >= result['Train']['H@1'] >= 0.83
@@ -51,6 +52,7 @@ class TestRegressionQmult:
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.trainer = 'torchCPUTrainer'
+        args.init_param = 'xavier_normal'
         result = Execute(args).start()
         assert 0.92 >= result['Train']['H@1'] >= 0.86
         assert 0.75 >= result['Test']['H@1'] >= 0.71
@@ -81,6 +83,7 @@ class TestRegressionQmult:
         args.sample_triples_ratio = None
         args.trainer = 'torchCPUTrainer'
         args.normalization = 'LayerNorm'
+        args.init_param = 'xavier_normal'
         result = Execute(args).start()
         assert 0.70 >= result['Train']['H@1'] >= .60
         assert 0.78 >= result['Test']['H@1'] >= .49
@@ -110,6 +113,7 @@ class TestRegressionQmult:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.trainer = 'torchCPUTrainer'
+        args.init_param = 'xavier_normal'
         result = Execute(args).start()
         assert 0.76 >= result['Train']['H@1'] >= .68
         assert 0.64 >= result['Test']['H@1'] >= .56

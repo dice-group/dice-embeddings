@@ -17,6 +17,7 @@ from sklearn.model_selection import KFold
 import copy
 from typing import List, Tuple
 
+
 def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     """ Initialize Trainer from input arguments """
     if args.trainer == 'torchCPUTrainer':
@@ -46,25 +47,22 @@ def get_callbacks(args):
                  KGESaveCallback(every_x_epoch=args.save_model_at_every_epoch,
                                  max_epochs=args.max_epochs,
                                  path=args.full_storage_path),
-                 pl.callbacks.ModelSummary(max_depth=-1),
                  AccumulateEpochLossCallback(path=args.full_storage_path)
                  ]
     for i in args.callbacks:
-        if i == 'Polyak':
-            callbacks.append(PolyakCallback(max_epochs=args.max_epochs, path=args.full_storage_path))
-        elif 'WA' in i:
-
-            if "WA" == i:
-                callbacks.append(WA(num_epochs=args.num_epochs, path=args.full_storage_path))
+        if 'PPE' in i:
+            if "PPE" == i:
+                callbacks.append(
+                    PPE(num_epochs=args.num_epochs, path=args.full_storage_path, last_percent_to_consider=None))
             elif len(i) > 3:
-                name, param = i[:2], i[2:]
-                assert name == 'WA'
+                name, param = i[:3], i[3:]
+                assert name == 'PPE'
                 assert int(param)
-                callbacks.append(PWA(num_epochs=args.num_epochs,
+                callbacks.append(PPE(num_epochs=args.num_epochs,
                                      path=args.full_storage_path,
                                      last_percent_to_consider=int(param)))
             else:
-                raise KeyError
+                raise KeyError(f'Unexpected input for callbacks ***\t{i}\t***')
     return callbacks
 
 
@@ -131,7 +129,6 @@ class DICE_Trainer:
         # (1) Select model and labelling : Entity Prediction or Relation Prediction.
         model, form_of_labelling = select_model(vars(self.args), self.executor.is_continual_training,
                                                 self.executor.storage_path)
-        print(f'KvsAll training starts: {model.name}')
         # (2) Create training data.
         dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
                                      valid_set_idx=self.dataset.valid_set,
@@ -152,24 +149,6 @@ class DICE_Trainer:
             self.dataset.valid_set = None
             self.dataset.test_set = None
         model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
-        """
-        # @TODO Model Calibration
-        from laplace import Laplace
-        from laplace.utils.subnetmask import ModuleNameSubnetMask
-        from laplace.utils import ModuleNameSubnetMask
-        from laplace import Laplace
-        # No change in link prediciton results
-        subnetwork_mask = ModuleNameSubnetMask(model, module_names=['emb_ent_real'])
-        subnetwork_mask.select()
-        subnetwork_indices = subnetwork_mask.indices
-        la = Laplace(model, 'classification',
-                     subset_of_weights='subnetwork',
-                     hessian_structure='full',
-                     subnetwork_indices=subnetwork_indices)
-        # la.fit(dataset.train_dataloader())
-        # la.optimize_prior_precision(method='CV', val_loader=dataset.val_dataloader())
-        """
-
         return model, form_of_labelling
 
     def training_1vsall(self) -> BaseKGE:

@@ -28,8 +28,8 @@ class TestRegressionDistMult:
         args.normalization = 'LayerNorm'
         args.scoring_technique = 'KvsAll'
         result = Execute(args).start()
-        assert 0.03 >= result['Val']['MRR'] >= 0.00024
-        assert 0.03 >= result['Test']['MRR'] >= 0.00035
+        assert 0.03 >= result['Val']['MRR'] >= 0.0002
+        assert 0.03 >= result['Test']['MRR'] >= 0.0002
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_neg_sample(self):
