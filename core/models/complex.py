@@ -114,10 +114,7 @@ class ConEx(BaseKGE):
 
 
 class AConEx(BaseKGE):
-    """ Additive Convolutional ComplEx Knowledge Graph Embeddings
-        As opposed to ConEx, AddConEx constructs a triple score by distributing the output of conv into Hermitian inner product.
-        in additive fashion.
-    """
+    """ Additive Convolutional ComplEx Knowledge Graph Embeddings """
 
     def __init__(self, args):
         super().__init__(args)
