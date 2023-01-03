@@ -39,7 +39,6 @@ def timeit(func):
     return timeit_wrapper
 
 
-
 def preprocesses_input_args(arg):
     """ Sanity Checking in input arguments """
     # To update the default value of Trainer in pytorch-lightnings
@@ -85,7 +84,10 @@ def preprocesses_input_args(arg):
     sanity_checking_with_arguments(arg)
     if arg.model == 'Shallom':
         arg.scoring_technique = 'KvsAll'
+    if arg.normalization == 'None':
+        arg.normalization = None
     assert arg.normalization in [None, 'LayerNorm', 'BatchNorm1d']
+
     return arg
 
 
