@@ -20,6 +20,7 @@ from core.sanity_checkers import *
 from core.trainer import DICE_Trainer
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
+os.environ["TORCH_DISTRIBUTED_DEBUG"] = "INFO"
 
 class Execute:
     """ A class for Training, Retraining and Evaluation a model.
