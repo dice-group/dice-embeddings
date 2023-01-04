@@ -2,7 +2,7 @@ import time
 import pytorch_lightning as pl
 
 from core.models.base_model import BaseKGE
-from core.static_funcs import select_model, model_fitting
+from core.static_funcs import select_model
 from core.callbacks import *
 from core.dataset_classes import StandardDataModule
 from .torch_trainer import TorchTrainer
@@ -34,8 +34,7 @@ def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
         print('Initialize Pytorch-lightning Trainer')
         # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
         return pl.Trainer.from_argparse_args(args,
-                                             strategy=DDPStrategy(find_unused_parameters=False),
-                                             plugins=plugins, callbacks=callbacks)
+                                             strategy=DDPStrategy(find_unused_parameters=False))
     else:
         print('Initialize TorchTrainer CPU Trainer')
         return TorchTrainer(args, callbacks=callbacks)
@@ -147,7 +146,7 @@ class DICE_Trainer:
             self.dataset.train_set = None
             self.dataset.valid_set = None
             self.dataset.test_set = None
-        model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
+        self.trainer.fit(model, train_dataloaders=train_dataloaders)
         return model, form_of_labelling
 
     def training_1vsall(self) -> BaseKGE:
@@ -177,7 +176,7 @@ class DICE_Trainer:
             self.dataset.train_set = None
             self.dataset.valid_set = None
             self.dataset.test_set = None
-        model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
+        self.trainer.fit(model, train_dataloaders=train_dataloaders)
         return model, form_of_labelling
 
     def training_negative_sampling(self):
@@ -210,10 +209,10 @@ class DICE_Trainer:
             self.dataset.train_set = None
             self.dataset.valid_set = None
             self.dataset.test_set = None
-        model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
+        self.trainer.fit(model, train_dataloaders=train_dataloaders)
         return model, form_of_labelling
 
-    def train_relaxed_k_vs_all(self):
+    def deprecated_train_relaxed_k_vs_all(self):
         model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         print(f'{self.args.scoring_technique}training starts: {model.name}')  # -labeling:{form_of_labelling}')
         # 2. Create training data.)
@@ -237,7 +236,7 @@ class DICE_Trainer:
             self.dataset.test_set = None
 
         model.loss = BatchRelaxedvsAllLoss()
-        model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
+        self.trainer.fit(model, train_dataloaders=train_dataloaders)
         return model, form_of_labelling
 
     def training_KvsSample(self) -> BaseKGE:
@@ -273,7 +272,7 @@ class DICE_Trainer:
             self.dataset.train_set = None
             self.dataset.valid_set = None
             self.dataset.test_set = None
-        model_fitting(trainer=self.trainer, model=model, train_dataloaders=train_dataloaders)
+        self.trainer.fit(model, train_dataloaders=train_dataloaders)
         return model, form_of_labelling
 
     def k_fold_cross_validation(self) -> Tuple[BaseKGE, str]:
@@ -317,7 +316,7 @@ class DICE_Trainer:
             # 3. Train model
             train_dataloaders = dataset.train_dataloader()
             del dataset
-            model_fitting(trainer=trainer, model=model, train_dataloaders=train_dataloaders)
+            trainer.fit(model, train_dataloaders=train_dataloaders)
 
             res = self.evaluator.eval_with_data(model, test_set_for_i_th_fold, form_of_labelling=form_of_labelling)
             # res = self.evaluator.evaluate_lp_k_vs_all(model, test_set_for_i_th_fold, form_of_labelling=form_of_labelling)

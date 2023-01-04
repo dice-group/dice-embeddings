@@ -94,8 +94,8 @@ def distributed_training(rank: int, world_size, model, train_dataset, callbacks,
     # or
     # optimizer_class = model.get_optimizer_class()
     # (3) Create a static DDB Trainer.
-    trainer = Trainer(model, train_dataset_loader, optimizer, rank, callbacks)
-    trainer.train(args.num_epochs)
+    trainer = Trainer(model, train_dataset_loader, optimizer, rank, callbacks, args.num_epochs)
+    trainer.train()
     if rank == 0:
         trainer.model.loss_history = trainer.loss_history
         torch.save(trainer.model.module.state_dict(), "model.pt")
@@ -107,7 +107,7 @@ class Trainer:
                  model: torch.nn.Module,
                  train_dataset_loader: DataLoader,
                  optimizer: torch.optim.Optimizer,
-                 gpu_id: int, callbacks) -> None:
+                 gpu_id: int, callbacks, num_epochs) -> None:
         self.gpu_id = gpu_id
         self.model = model.to(gpu_id)
         self.train_dataset_loader = train_dataset_loader
@@ -116,6 +116,7 @@ class Trainer:
         self.optimizer = optimizer
         self.callbacks = callbacks
         self.model = DDP(model, device_ids=[gpu_id])
+        self.num_epochs = num_epochs
         print_peak_memory("Max memory allocated after creating DDP:", gpu_id)
         """
         # Move the model to GPU with id rank
@@ -127,6 +128,8 @@ class Trainer:
         if self.gpu_id == 0:
             print(self.model)
             print(self.optimizer)
+            print(f'NumOfDataPoints:{len(self.train_dataset_loader.dataset)} | NumOfEpochs:{self.num_epochs} | LearningRate:{self.model.module.learning_rate} | BatchSize:{self.train_dataset_loader.batch_size} | EpochBatchsize:{len(self.train_dataset_loader)}')
+
         self.loss_history = []
 
     def _run_batch(self, source, targets):

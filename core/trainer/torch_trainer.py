@@ -86,6 +86,7 @@ class TorchTrainer(AbstractTrainer):
                                                   collate_fn=dataset.collate_fn)
 
         num_total_batches = len(data_loader)
+        print(f'NumOfDataPoints:{len(data_loader.dataset)} | NumOfEpochs:{self.attributes.max_epochs} | LearningRate:{model.learning_rate} | BatchSize:{self.attributes.batch_size} | EpochBatchsize:{len(data_loader)}')
         # Creates once at the beginning of training
         for epoch in range(self.attributes.max_epochs):
             epoch_loss = 0
