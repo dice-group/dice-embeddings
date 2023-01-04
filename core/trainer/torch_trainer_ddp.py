@@ -57,6 +57,7 @@ class TorchDDPTrainer(AbstractTrainer):
         # nodes * gpus
         world_size = self.attributes.num_nodes * torch.cuda.device_count()
         train_dataset = kwargs['train_dataloaders'].dataset
+        print('Spawn distributed data parallel...')
         mp.spawn(fn=distributed_training,
                  args=(world_size, model, train_dataset, self.callbacks, self.attributes),
                  nprocs=world_size,
@@ -179,8 +180,8 @@ class Trainer:
             construct_mini_batch_time = time.time()
         return epoch_loss / (i + 1)
 
-    def train(self, max_epochs: int):
-        for epoch in range(max_epochs):
+    def train(self):
+        for epoch in range(self.num_epochs):
             start_time = time.time()
             epoch_loss = self._run_epoch(epoch)
             if self.gpu_id == 0:

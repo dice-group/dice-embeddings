@@ -88,7 +88,7 @@ class DICE_Trainer:
         for i in range(torch.cuda.device_count()):
             print(torch.cuda.get_device_name(i))
 
-    def start(self) -> Tuple[BaseKGE, str]:
+    def old_start(self) -> Tuple[BaseKGE, str]:
         """ Start training process"""
         self.executor.report['num_train_triples'] = len(self.executor.dataset.train_set)
         self.executor.report['num_entities'] = self.executor.dataset.num_entities
@@ -96,8 +96,13 @@ class DICE_Trainer:
         print('------------------- Train -------------------')
         return self.train()
 
-    def train(self) -> Tuple[BaseKGE, str]:
+    def start(self) -> Tuple[BaseKGE, str]:
         """ Train selected model via the selected training strategy """
+        self.executor.report['num_train_triples'] = len(self.executor.dataset.train_set)
+        self.executor.report['num_entities'] = self.executor.dataset.num_entities
+        self.executor.report['num_relations'] = self.executor.dataset.num_relations
+        print('------------------- Train -------------------')
+
         # (1) Perform K-fold CV
         if self.args.num_folds_for_cv >= 2:
             return self.k_fold_cross_validation()
