@@ -445,32 +445,30 @@ class KvsSampleDataset(Dataset):
         return len(self.train_data)
 
     def __getitem__(self, idx):
-        # (1) Get ith unique (head,relation) pair
+        # (1) Get i.th unique (head,relation) pair.
         x = self.train_data[idx]
-        # (2) Get tail entities given (1)
+        # (2) Get tail entities given (1).
         positives_idx = self.train_target[idx]
         num_positives = len(positives_idx)
-        # (3) Subsample positive examples to generate a batch of same sized inputs
+        # (3) Do we need to subsample (2) to create training data points of same size.
         if num_positives < self.neg_sample_ratio:
-            # (3.1)
+            # (3.1) Take all tail entities as positive examples
             positives_idx = torch.IntTensor(positives_idx)
-            # (4) Generate random entities
+            # (3.2) Generate more negative entities
             negative_idx = torch.randint(low=0, high=self.num_entities,
                                          size=(self.neg_sample_ratio + self.neg_sample_ratio - num_positives,),
                                          dtype=torch.int32)
         else:
-            # (3.1) Subsample positives without replacement
+            # (3.1) Subsample positives without replacement.
             # https://docs.python.org/3/library/random.html#random.sample
             positives_idx = torch.IntTensor(random.sample(positives_idx, self.neg_sample_ratio))
-            # (4) Generate random entities
+            # (3.2) Generate random entities.
             negative_idx = torch.randint(low=0, high=self.num_entities, size=(self.neg_sample_ratio,),
                                          dtype=torch.int32)
-        # (5) Create selected indexes
+        # (5) Create selected indexes.
         y_idx = torch.cat((positives_idx, negative_idx), 0)
         # (6) Create binary labels.
-        y_vec = torch.cat(
-            (torch.ones(len(positives_idx)), torch.zeros(len(negative_idx))),
-            0)
+        y_vec = torch.cat((torch.ones(len(positives_idx)), torch.zeros(len(negative_idx))),0)
         return x, y_idx, y_vec
 
 

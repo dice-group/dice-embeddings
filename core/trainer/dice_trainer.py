@@ -21,7 +21,6 @@ from typing import List, Tuple
 def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     """ Initialize Trainer from input arguments """
     if args.trainer == 'torchCPUTrainer':
-        # @TODO: rename torchCPUTrainer to torchTrainer
         print('Initialize TorchTrainer CPU Trainer')
         return TorchTrainer(args, callbacks=callbacks)
     elif args.trainer == 'torchDDP':
