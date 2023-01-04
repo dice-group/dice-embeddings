@@ -178,15 +178,6 @@ def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
     return train_set
 
 
-def model_fitting(trainer, model, train_dataloaders) -> None:
-    """ Standard Pytorch Lightning model fitting """
-    assert trainer.attributes.max_epochs == trainer.attributes.min_epochs
-    print(
-        f'NumOfDataPoints:{len(train_dataloaders.dataset)} | NumOfEpochs:{trainer.attributes.max_epochs} | LearningRate:{model.learning_rate} | BatchSize:{trainer.attributes.batch_size} | EpochBatchsize:{len(train_dataloaders)}')
-    trainer.fit(model, train_dataloaders=train_dataloaders)
-    print(f'Model fitting is done!')
-
-
 def save_checkpoint_model(trainer, model, path: str) -> None:
     """ Store Pytorch model into disk"""
     try:
