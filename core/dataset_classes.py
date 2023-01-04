@@ -9,6 +9,7 @@ import random
 from typing import Dict, List
 from .static_preprocess_funcs import mapping_from_first_two_cols_to_third
 
+
 def input_data_type_checking(train_set_idx, valid_set_idx, test_set_idx, entity_to_idx: Dict, relation_to_idx: Dict):
     """ Type checking for efficient memory usage"""
     assert isinstance(train_set_idx, np.ndarray)
@@ -134,15 +135,17 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
                                                 neg_sample_ratio=self.neg_sample_ratio,
                                                 label_smoothing_rate=self.label_smoothing_rate)
             return DataLoader(train_set, batch_size=self.batch_size, shuffle=True,
-                              num_workers=self.num_workers, collate_fn=train_set.collate_fn)
+                              num_workers=self.num_workers, collate_fn=train_set.collate_fn, persistent_workers=True)
         elif self.form == 'EntityPrediction' or self.form == 'RelationPrediction':
             train_set = KvsAll(self.train_set_idx, entity_idxs=self.entity_to_idx,
                                relation_idxs=self.relation_to_idx, form=self.form,
                                label_smoothing_rate=self.label_smoothing_rate)
-            return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
+            return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers,
+                              persistent_workers=True)
         elif self.form in ['KvsSample', 'PvsAll', 'CCvsAll', '1VsAll', 'BatchRelaxedKvsAll', 'BatchRelaxed1vsAll',
                            'Pyke']:
-            return DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
+            return DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers,
+                              persistent_workers=True)
         else:
             raise KeyError(f'{self.form} illegal input.')
 
@@ -468,7 +471,7 @@ class KvsSampleDataset(Dataset):
         # (5) Create selected indexes.
         y_idx = torch.cat((positives_idx, negative_idx), 0)
         # (6) Create binary labels.
-        y_vec = torch.cat((torch.ones(len(positives_idx)), torch.zeros(len(negative_idx))),0)
+        y_vec = torch.cat((torch.ones(len(positives_idx)), torch.zeros(len(negative_idx))), 0)
         return x, y_idx, y_vec
 
 
