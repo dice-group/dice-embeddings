@@ -53,20 +53,27 @@ class TorchDDPTrainer(AbstractTrainer):
         assert len(args) == 1
         model, = args
         # (1) Fit start.
-        self.on_fit_start(self, model)
+        if int(os.environ["LOCAL_RANK"])==0:    
+            self.on_fit_start(self, model)
         # nodes * gpus
-        world_size = self.attributes.num_nodes * torch.cuda.device_count()
+        #world_size = self.attributes.num_nodes * torch.cuda.device_count()
         train_dataset = kwargs['train_dataloaders'].dataset
-        print('Spawn distributed data parallel...')
-        mp.spawn(fn=distributed_training,
-                 args=(world_size, model, train_dataset, self.callbacks, self.attributes),
-                 nprocs=world_size,
-                 join=True,  # ?
-                 )
-        model.load_state_dict(torch.load("model.pt", map_location=torch.device('cpu')))
-        os.remove('model.pt')
-        self.on_fit_end(self, model)
 
+        torch.distributed.init_process_group(backend="nccl")
+        
+        # (1) Create DATA LOADER.
+        train_dataset_loader = DataLoader(train_dataset, batch_size=self.attributes.batch_size,
+                                      pin_memory=True, num_workers=self.attributes.num_core,shuffle=False,
+                                      collate_fn=train_dataset.collate_fn,
+                                      persistent_workers=True,sampler=torch.utils.data.distributed.DistributedSampler(train_dataset))
+
+
+
+        optimizer = model.configure_optimizers()
+        trainer = Trainer(model, train_dataset_loader, optimizer, self.callbacks,snapshot_path="snapshot.pt")
+        trainer.train(self.attributes.num_epochs)
+        self.on_fit_end(self, model)
+        torch.distributed.destroy_process_group()
 
 def distributed_training(rank: int, world_size, model, train_dataset, callbacks, args):
     """
@@ -86,57 +93,57 @@ def distributed_training(rank: int, world_size, model, train_dataset, callbacks,
     print_peak_memory("Max memory allocated distributed_training:", rank)
     # (1) Create DATA LOADER.
     train_dataset_loader = DataLoader(train_dataset, batch_size=args.batch_size,
-                                      pin_memory=True, shuffle=False,
+                                      pin_memory=True, num_workers=args.num_core,shuffle=False,
                                       collate_fn=train_dataset.collate_fn,
-                                      sampler=torch.utils.data.distributed.DistributedSampler(train_dataset))
+                                      persistent_workers=True,sampler=torch.utils.data.distributed.DistributedSampler(train_dataset))
 
     # (2) Initialize OPTIMIZER.
     optimizer = model.configure_optimizers()
-    # or
-    # optimizer_class = model.get_optimizer_class()
     # (3) Create a static DDB Trainer.
     trainer = Trainer(model, train_dataset_loader, optimizer, rank, callbacks, args.num_epochs)
     trainer.train()
     if rank == 0:
         trainer.model.loss_history = trainer.loss_history
+        print('SAVING')
         torch.save(trainer.model.module.state_dict(), "model.pt")
-    dist.destroy_process_group()
+    #dist.destroy_process_group()
 
 
 class Trainer:
     def __init__(self,
                  model: torch.nn.Module,
                  train_dataset_loader: DataLoader,
-                 optimizer: torch.optim.Optimizer,
-                 gpu_id: int, callbacks, num_epochs) -> None:
-        self.gpu_id = gpu_id
-        self.model = model.to(gpu_id)
+                 optimizer: torch.optim.Optimizer, callbacks,snapshot_path:str,save_every:int=20) -> None:
+        self.gpu_id = int(os.environ["LOCAL_RANK"])
+        self.model = model.to(self.gpu_id)
         self.train_dataset_loader = train_dataset_loader
-        # self.loss_func= self.model.loss
         self.loss_func = torch.nn.BCEWithLogitsLoss()
         self.optimizer = optimizer
         self.callbacks = callbacks
-        self.model = DDP(model, device_ids=[gpu_id])
-        self.num_epochs = num_epochs
-        print_peak_memory("Max memory allocated after creating DDP:", gpu_id)
-        """
-        # Move the model to GPU with id rank
-        # https://pytorch.org/tutorials/recipes/zero_redundancy_optimizer.html
-        # Note: ZeroRedundancy Increases the computation time quite a bit. DBpedia/10 => 3mins
-        # Without ZeroReundancy optimizer we have 0.770 minutes
-        # optimizer = ZeroRedundancyOptimizer(ddp_model.parameters(),optimizer_class=torch.optim.SGD, lr=lr )
-        """
-        if self.gpu_id == 0:
-            print(self.model)
-            print(self.optimizer)
-            print(f'NumOfDataPoints:{len(self.train_dataset_loader.dataset)} | NumOfEpochs:{self.num_epochs} | LearningRate:{self.model.module.learning_rate} | BatchSize:{self.train_dataset_loader.batch_size} | EpochBatchsize:{len(self.train_dataset_loader)}')
-
+        self.model = DDP(model, device_ids=[self.gpu_id])
+        
+        self.save_every = save_every
+        self.epochs_run = 0
+        self.snapshot_path = snapshot_path
+        if os.path.exists(snapshot_path):
+            print("Loading snapshot")
+            self._load_snapshot(snapshot_path)
         self.loss_history = []
+    def _load_snapshot(self, snapshot_path):
+        loc = f"cuda:{self.gpu_id}"
+        snapshot = torch.load(snapshot_path, map_location=loc)
+        self.model.load_state_dict(snapshot["MODEL_STATE"])
+        self.epochs_run = snapshot["EPOCHS_RUN"]
+        print(f"Resuming training from snapshot at Epoch {self.epochs_run}")
+    def _save_snapshot(self, epoch):
+        snapshot = {
+            "MODEL_STATE": self.model.module.state_dict(),
+            "EPOCHS_RUN": epoch,
+        }
+        torch.save(snapshot, self.snapshot_path)
+        print(f"Epoch {epoch} | Training snapshot saved at {self.snapshot_path}")
 
     def _run_batch(self, source, targets):
-        # (1) Zero the gradients.
-        # self.optimizer.zero_grad()
-        # https://pytorch.org/tutorials/recipes/recipes/tuning_guide.html#use-parameter-grad-none-instead-of-model-zero-grad-or-optimizer-zero-grad
         efficient_zero_grad(self.model)
         output = self.model(source)
         loss = self.loss_func(output, targets)
@@ -170,36 +177,21 @@ class Trainer:
                 construct_mini_batch_time = start_time - construct_mini_batch_time
             batch_loss = self._run_batch(source, targets)
             epoch_loss += batch_loss
-            if self.gpu_id == 0:
-                if construct_mini_batch_time:
-                    print(
-                        f"Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec | BatchConst.:{construct_mini_batch_time:.2f}sec")
-                else:
-                    print(
-                        f"Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
+            if construct_mini_batch_time:
+                print(f"Epoch:{epoch + 1} | GPU:{self.gpu_id} |Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec | BatchConst.:{construct_mini_batch_time:.2f}sec")
+            else:
+                print(f"Epoch:{epoch + 1} | GPU:{self.gpu_id} |Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
             construct_mini_batch_time = time.time()
         return epoch_loss / (i + 1)
 
-    def train(self):
-        for epoch in range(self.num_epochs):
+    def train(self,num_epochs):
+        for epoch in range(self.epochs_run, num_epochs):
             start_time = time.time()
             epoch_loss = self._run_epoch(epoch)
-            if self.gpu_id == 0:
-                print(f"Epoch:{epoch + 1} | Loss:{epoch_loss:.8f} | Runtime:{(time.time() - start_time) / 60:.3f}mins")
+            print(f"Epoch:{epoch + 1} | GPU:{self.gpu_id} |Loss:{epoch_loss:.8f} | Runtime:{(time.time() - start_time) / 60:.3f}mins")
+
+            if self.gpu_id==0 and epoch % self.save_every==0:
                 self.model.module.loss_history.append(epoch_loss)
+                self._save_snapshot(epoch)
                 for c in self.callbacks:
                     c.on_train_epoch_end(None, self.model.module)
-
-
-def ddp_setup(rank: int, world_size: int):
-    """ Setup for Distributed  Data Parallel
-    world size total number of process in a group.
-    rank is a unique identifier assigned to each process
-    """
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '1234'
-    # initialize the process group, nccl
-    # gloo, mpi or ncclhttps://pytorch.org/docs/stable/distributed.html#torch.distributed.init_process_group
-    dist.init_process_group(backend='nccl',  # NVIDIA Collection Communication Library
-                            rank=rank,
-                            world_size=world_size)
