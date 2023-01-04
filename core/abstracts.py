@@ -10,7 +10,6 @@ import numpy as np
 import random
 from abc import ABC, abstractmethod
 
-
 class AbstractTrainer:
     """
     Abstract class for Trainer class for knowledge graph embedding models
@@ -560,6 +559,37 @@ class AbstractCallback(ABC):
     """
 
     def __init__(self):
+        pass
+
+    def on_init_start(self, *args, **kwargs):
+        """
+
+        Parameter
+        ---------
+        trainer:
+
+        model:
+
+        Returns
+        ---------
+        None
+        """
+        pass
+
+    def on_init_end(self, *args, **kwargs):
+        """
+        Call at the beginning of the training.
+
+        Parameter
+        ---------
+        trainer:
+
+        model:
+
+        Returns
+        ---------
+        None
+        """
         pass
 
     def on_fit_start(self, trainer, model):

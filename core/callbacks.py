@@ -37,9 +37,6 @@ class PrintCallback(AbstractCallback):
         super().__init__()
         self.start_time = time.time()
 
-    def on_init_start(self, *args, **kwargs):
-        pass
-
     def on_fit_start(self, trainer, pl_module):
         print(pl_module)
         print(pl_module.summarize())
