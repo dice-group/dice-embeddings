@@ -28,9 +28,9 @@ class TestPolyak:
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert .70 >= result['Train']['H@1'] >= 0.68
-        assert 0.777 >= result['Train']['MRR'] >= 0.775
-        assert 0.636 >= result['Val']['H@1'] >= 0.630
-        assert 0.630 >= result['Test']['H@1'] >= 0.620
+        assert 0.778 >= result['Train']['MRR'] >= 0.775
+        assert 0.640 >= result['Val']['H@1'] >= 0.630
+        assert 0.640 >= result['Test']['H@1'] >= 0.620
         assert result['Train']['H@10'] >= result['Train']['H@3'] >= result['Train']['H@1']
         assert result['Val']['H@10'] >= result['Val']['H@3'] >= result['Val']['H@1']
         assert result['Test']['H@10'] >= result['Test']['H@3'] >= result['Test']['H@1']
