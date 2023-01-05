@@ -56,15 +56,14 @@ class TorchDDPTrainer(AbstractTrainer):
         self.on_fit_start(self, model)
         # nodes * gpus
         world_size = self.attributes.num_nodes * torch.cuda.device_count()
-        train_dataset = kwargs['train_dataloaders'].dataset
         mp.spawn(fn=distributed_training,
-                 args=(world_size, model, train_dataset, self.callbacks, self.attributes), nprocs=world_size,
+                 args=(world_size, model, kwargs['train_dataloaders'], self.callbacks, self.attributes), nprocs=world_size,
                  join=True, )
         model.load_state_dict(torch.load("model.pt", map_location=torch.device('cpu')))
         os.remove('model.pt')
         self.on_fit_end(self, model)
 
-def distributed_training(rank: int, world_size, model, train_dataset, callbacks, args):
+def distributed_training(rank: int, world_size, model, train_dataset_loader, callbacks, args):
     """
     distributed_training is called as the entrypoint of the spawned process.
     This function must be defined at the top level of a module so it can be pickled and spawned.
@@ -77,11 +76,12 @@ def distributed_training(rank: int, world_size, model, train_dataset, callbacks,
     os.environ['MASTER_PORT'] = '1234'
     dist.init_process_group(backend='nccl', rank=rank, world_size=world_size)
     # (1) Create DATA LOADER.
-    # @TODO: Do not create a new loader but use already created one.
-    train_dataset_loader = DataLoader(train_dataset, batch_size=args.batch_size,
-                                      pin_memory=True, shuffle=False,
-                                      persistent_workers=True, collate_fn=train_dataset.collate_fn,
-                                      sampler=torch.utils.data.distributed.DistributedSampler(train_dataset))
+    #train_dataset_loader.sampler=torch.utils.data.distributed.DistributedSampler
+    train_dataset_loader = DataLoader(train_dataset_loader.dataset, batch_size=args.batch_size,
+                                      pin_memory=True, shuffle=False,num_workers=args.num_core,
+                                      persistent_workers=True, collate_fn=train_dataset_loader.dataset.collate_fn,
+                                      sampler=torch.utils.data.distributed.DistributedSampler(train_dataset_loader.dataset))
+
     # (2) Initialize OPTIMIZER.
     optimizer = model.configure_optimizers()
     # (3) Create a static DDB Trainer.
@@ -107,11 +107,10 @@ class Trainer:
         self.model = DDP(model, device_ids=[gpu_id])
         self.num_epochs = num_epochs
         print_peak_memory("Max memory allocated after creating DDP:", gpu_id)
-        if self.gpu_id == 0:
-            print(self.model)
-            print(self.optimizer)
-            print(
-                f'NumOfDataPoints:{len(self.train_dataset_loader.dataset)} | NumOfEpochs:{self.num_epochs} | LearningRate:{self.model.module.learning_rate} | BatchSize:{self.train_dataset_loader.batch_size} | EpochBatchsize:{len(self.train_dataset_loader)}')
+        print('GPU:{self.gpu_id')
+        print(self.model)
+        print(self.optimizer)
+        print(f'NumOfDataPoints:{len(self.train_dataset_loader.dataset)} | NumOfEpochs:{self.num_epochs} | LearningRate:{self.model.module.learning_rate} | BatchSize:{self.train_dataset_loader.batch_size} | EpochBatchsize:{len(self.train_dataset_loader)}')
 
         self.loss_history = []
 
