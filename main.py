@@ -44,7 +44,7 @@ def argparse_default(description=None):
     parser.add_argument('--hidden_dropout_rate', type=float, default=0.0)
     parser.add_argument("--feature_map_dropout_rate", type=int, default=0.0)
     parser.add_argument("--normalization", type=str, default="LayerNorm", help="[LayerNorm, BatchNorm1d, None]")
-    parser.add_argument("--init_param", type=str, default=None, help="[xavier_normal]")
+    parser.add_argument("--init_param", type=str, default=None, help="[xavier_normal, None]")
 
     parser.add_argument("--gradient_accumulation_steps", type=int, default=0,
                         help="e.g. gradient_accumulation_steps=2 implies that gradients are accumulated at every second mini-batch")

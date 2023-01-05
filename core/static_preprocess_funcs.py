@@ -47,8 +47,8 @@ def preprocesses_input_args(arg):
     assert arg.weight_decay >= 0.0
     arg.learning_rate = arg.lr
     arg.deterministic = True
-    if arg.num_core < 0:
-        arg.num_core = 0
+    if arg.num_core <= 0:
+        arg.num_core = 1
 
     assert arg.init_param in ['xavier_normal', None]
     for i in arg.callbacks:
@@ -64,7 +64,7 @@ def preprocesses_input_args(arg):
         assert arg.eval_model in [None, 'None', 'train', 'val', 'test', 'train_val', 'train_test', 'val_test',
                                   'train_val_test']
     except AssertionError:
-        raise AssertionError(f'Unexpected input for eval_model ***\t{i}\t***')
+        raise AssertionError(f'Unexpected input for eval_model ***\t{arg.eval_model}\t***')
 
     if arg.eval_model == 'None':
         arg.eval_model = None

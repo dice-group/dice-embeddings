@@ -122,7 +122,6 @@ class AbstractTrainer:
         """
         torch.save(model.state_dict(), full_path)
 
-
 class BaseInteractiveKGE:
     """
     Abstract/base class for using knowledge graph embedding models interactively.
@@ -400,12 +399,33 @@ class BaseInteractiveKGE:
         return torch.sigmoid(self.model(x))
 
     def triple_score(self, *, head_entity: List[str] = None, relation: List[str] = None,
-                     tail_entity: List[str] = None, logits=False, without_norm=False) -> torch.tensor:
-        head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values).reshape(len(head_entity),
-                                                                                                     1)
-        relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values).reshape(len(relation), 1)
-        tail_entity = torch.LongTensor(self.entity_to_idx.loc[tail_entity]['entity'].values).reshape(len(tail_entity),
-                                                                                                     1)
+                     tail_entity: List[str] = None, logits=False) -> torch.FloatTensor:
+        """
+        Predict triple score
+
+        Parameter
+        ---------
+        head_entity: List[str]
+
+        String representation of selected entities.
+
+        relation: List[str]
+
+        String representation of selected relations.
+
+        tail_entity: List[str]
+
+        String representation of selected entities.
+
+        logits: bool
+
+        If logits is True, unnormalized score returned
+
+        Returns: Tuple
+        ---------
+
+        pytorch tensor of triple score
+        """
         head_entity = torch.LongTensor([self.entity_to_idx[i] for i in head_entity]).reshape(len(head_entity), 1)
         relation = torch.LongTensor([self.relation_to_idx[i] for i in relation]).reshape(len(relation), 1)
         tail_entity = torch.LongTensor([self.entity_to_idx[i] for i in tail_entity]).reshape(len(tail_entity), 1)
@@ -415,11 +435,7 @@ class BaseInteractiveKGE:
             raise NotImplementedError()
         else:
             with torch.no_grad():
-                if without_norm:
-                    out = self.model.forward_without_norm(x)
-                else:
-                    out = self.model(x)
-
+                out = self.model(x)
                 if logits:
                     return out
                 else:
@@ -452,15 +468,30 @@ class BaseInteractiveKGE:
         else:
             save_checkpoint_model(self.model, path=self.path + f'/model_interactive_{str(t)}.pt')
 
-    def index_triple(self, head_entity: List[str], relation: List[str], tail_entity: List[str]):
+    def index_triple(self, head_entity: List[str], relation: List[str], tail_entity: List[str]) -> Tuple[
+        LongTensor, LongTensor, LongTensor]:
         """
+        Index Triple
 
-        :param head_entity:
-        :param relation:
-        :param tail_entity:
-        :return:
+        Parameter
+        ---------
+        head_entity: List[str]
+
+        String representation of selected entities.
+
+        relation: List[str]
+
+        String representation of selected relations.
+
+        tail_entity: List[str]
+
+        String representation of selected entities.
+
+        Returns: Tuple
+        ---------
+
+        pytorch tensor of triple score
         """
-        print('Index inputs...')
         n = len(head_entity)
         assert n == len(relation) == len(tail_entity)
         idx_head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values).reshape(n, 1)
