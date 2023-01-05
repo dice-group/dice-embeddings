@@ -96,7 +96,7 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
                              new_columns=['subject', 'relation', 'object'],
                              sep="\t")  # \s+ doesn't work for polars
     else:
-        df = polars.read_parquet(data_path, n_rows=None if read_only_few is None else read_only_few)
+        df = polars.read_parquet(data_path, use_pyarrow=True, n_rows=None if read_only_few is None else read_only_few)
 
     # (2) Sample from (1)
     if sample_triples_ratio:
