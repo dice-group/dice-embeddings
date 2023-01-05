@@ -333,7 +333,7 @@ class BaseInteractiveKGE:
         return sort_scores, [self.idx_to_entity[i] for i in sort_idxs.tolist()]
 
     def predict_topk(self, *, head_entity: List[str] = None, relation: List[str] = None, tail_entity: List[str] = None,
-                     k: int = 10):
+                     topk: int = 10):
         """
         Predict missing item in a given triple.
 
@@ -376,21 +376,21 @@ class BaseInteractiveKGE:
             assert relation is not None
             assert tail_entity is not None
             # ? r, t
-            scores, entities = self.__predict_missing_head_entity(relation, tail_entity, k)
+            scores, entities = self.__predict_missing_head_entity(relation, tail_entity, topk)
             return torch.sigmoid(scores), entities
         # (3) Predict missing relation given a head entity and a tail entity.
         elif relation is None:
             assert head_entity is not None
             assert tail_entity is not None
             # h ? t
-            scores, relations = self.__predict_missing_relations(head_entity, tail_entity, k)
+            scores, relations = self.__predict_missing_relations(head_entity, tail_entity, topk)
             return torch.sigmoid(scores), relations
         # (4) Predict missing tail entity given a head entity and a relation
         elif tail_entity is None:
             assert head_entity is not None
             assert relation is not None
             # h r ?t
-            scores, entities = self.__predict_missing_tail_entity(head_entity, relation, k)
+            scores, entities = self.__predict_missing_tail_entity(head_entity, relation, topk)
             return torch.sigmoid(scores), entities
         else:
 
