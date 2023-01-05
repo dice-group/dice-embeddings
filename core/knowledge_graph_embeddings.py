@@ -7,8 +7,8 @@ from torch import optim
 from torch.utils.data import DataLoader
 from .abstracts import BaseInteractiveKGE
 from .dataset_classes import TriplePredictionDataset
-from tqdm import tqdm
-
+import numpy as np
+import sys
 
 class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
@@ -73,7 +73,7 @@ class KGE(BaseInteractiveKGE):
 
         return results
 
-    def find_missing_triples(self, confidence: float, k: int = 10) -> Set:
+    def find_missing_triples(self, confidence: float, topk: int = 10, at_most: int = sys.maxsize) -> Set:
         """
          Find missing triples
 
@@ -86,9 +86,13 @@ class KGE(BaseInteractiveKGE):
 
         A threshold for an output of a sigmoid function given a triple.
 
-        k: int
+        topk: int
 
         Highest ranked k item to select triples with f(e,r,x) > confidence .
+
+        at_most: int
+
+        Stop after finding at_most missing triples
 
         Returns: Set
         ---------
@@ -97,51 +101,38 @@ class KGE(BaseInteractiveKGE):
         """
 
         assert 1.0 >= confidence >= 0.0
-        assert top >= 1
-
-        # (2) Get entities
-        entities = self.entity_to_idx.index.to_list()
-        # (3) Get relations
-        relations = self.relation_to_idx.index.to_list()
-        # (4) A set of inferred triples
+        assert topk >= 1
         extended_triples = set()
-        print(f'Number of entities:{len(entities)} \t Number of relations:{len(relations)}')
+        print(f'Number of entities:{len(self.entity_to_idx)} \t Number of relations:{len(self.relation_to_idx)}')
         # (5) Cartesian Product over entities and relations
         # (5.1) Iterate over entities
         print('Finding missing triples..')
-        for str_head_entity in (pbar := tqdm(entities)):
-            idx_entity = entities.index(str_head_entity)
+        for str_head_entity, idx_entity in self.entity_to_idx.items():
             # (5.1) Iterate over relations
-            for str_relation in relations:
+            for str_relation, idx_relation in self.relation_to_idx.items():
                 # (5.2) \forall e \in Entities store a tuple of scoring_func(head,relation,e) and e
                 # (5.3.) Sort (5.2) and return top  tuples
                 predicted_scores, str_tail_entities = self.predict_topk(head_entity=[str_head_entity],
-                                                                        relation=[str_relation],
-                                                                        k=k)
+                                                                        relation=[str_relation],topk=topk)
                 # (5.4) Iterate over 5.3
                 for predicted_score, str_entity in zip(predicted_scores, str_tail_entities):
                     # (5.5) If score is less than 99% ignore it
                     if predicted_score < confidence:
                         break
                     else:
-                        # (5.6) Check whether this triple exists in KG
-                        idx_relation = relations.index(str_relation)
-                        # False if 0, otherwise 1
-                        is_in = bool(
-                            len(self.train_set[(self.train_set["subject"] == idx_entity) &
-                                               (self.train_set["relation"] == idx_relation) &
-                                               (self.train_set["object"] == entities.index(
-                                                   str_entity))]))
+                        # /5.6) False if 0, otherwise 1
+                        is_in = np.any(
+                            np.all(self.train_set == [idx_entity, idx_relation, self.entity_to_idx[str_entity]],
+                                   axis=1))
                         # (5.7) If (5.6) is true, ignore it
                         if is_in:
                             continue
                         else:
                             # (5.8) Remember it
-                            # n_triple = f"<{str_head_entity}>\t<{str_relation}>\t<{str_entity}>\t.\n"
-                            # print(n_triple)
                             extended_triples.add((str_head_entity, str_relation, str_entity))
-                            pbar.set_description_str(f'Number of found missing triples: {len(extended_triples)}')
-
+                            print(f'Number of found missing triples: {len(extended_triples)}')
+                            if len(extended_triples) == at_most:
+                                return extended_triples
         return extended_triples
 
     def train_triples(self, head_entity: List[str], relation: List[str], tail_entity: List[str], labels: List[float],
