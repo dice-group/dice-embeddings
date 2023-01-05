@@ -22,7 +22,7 @@ class KGE(BaseInteractiveKGE):
     def __str__(self):
         return 'KGE | ' + str(self.model)
 
-    def predict_conjunctive_query(self, entity: str, relations: List[str], k: int = 1) -> Set[str]:
+    def predict_conjunctive_query(self, entity: str, relations: List[str], topk: int = 1) -> Set[str]:
         """
          Find an answer set for a conjunctive query
 
@@ -37,7 +37,7 @@ class KGE(BaseInteractiveKGE):
 
         String representations of selected relations.
 
-        k: int
+        topk: int
 
         Highest ranked k item.
 
@@ -62,7 +62,7 @@ class KGE(BaseInteractiveKGE):
             while results:
                 e = results.pop()
                 # answers =: topK(f(e,r,?))
-                _, str_tail_entities = self.predict_topk(head_entity=[e], relation=[r], k=k)
+                _, str_tail_entities = self.predict_topk(head_entity=[e], relation=[r], topk=topk)
 
                 if isinstance(str_tail_entities, str):
                     tail_entities.add(str_tail_entities)
