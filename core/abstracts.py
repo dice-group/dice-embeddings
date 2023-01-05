@@ -10,6 +10,7 @@ import numpy as np
 import random
 from abc import ABC, abstractmethod
 
+
 class AbstractTrainer:
     """
     Abstract class for Trainer class for knowledge graph embedding models
@@ -122,6 +123,7 @@ class AbstractTrainer:
         """
         torch.save(model.state_dict(), full_path)
 
+
 class BaseInteractiveKGE:
     """
     Abstract/base class for using knowledge graph embedding models interactively.
@@ -160,6 +162,13 @@ class BaseInteractiveKGE:
 
         self.num_entities = len(self.entity_to_idx)
         self.num_relations = len(self.relation_to_idx)
+
+        assert list(self.entity_to_idx.values()) == list(range(0, len(self.entity_to_idx)))
+        assert list(self.relation_to_idx.values()) == list(range(0, len(self.relation_to_idx)))
+
+        self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
+        self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
+
         print('Loading indexed training data...')
         with open(self.path + '/train_set.npy', 'rb') as f:
             self.train_set = np.load(f)
@@ -231,16 +240,15 @@ class BaseInteractiveKGE:
         """
         assert k >= 0
 
-        head_entity = torch.LongTensor(list(self.entity_to_idx.values()))
+        head_entity = torch.arange(0, len(self.entity_to_idx))
         relation = torch.LongTensor([self.relation_to_idx[i] for i in relation])
         tail_entity = torch.LongTensor([self.entity_to_idx[i] for i in tail_entity])
         x = torch.stack((head_entity,
                          relation.repeat(self.num_entities, ),
                          tail_entity.repeat(self.num_entities, )), dim=1)
         scores = self.model(x)
-        entities = self.entity_to_idx.index.values
         sort_scores, sort_idxs = torch.topk(scores, k)
-        return sort_scores, entities[sort_idxs]
+        return sort_scores, [self.idx_to_entity[i] for i in sort_idxs.tolist()]
 
     def __predict_missing_relations(self, head_entity: List[str], tail_entity: List[str], k: int = 3) -> Tuple:
         """
@@ -273,15 +281,15 @@ class BaseInteractiveKGE:
         assert k >= 0
 
         head_entity = torch.LongTensor([self.entity_to_idx[i] for i in head_entity])
-        relation = torch.LongTensor(list(self.relation_to_idx.values()))
+        relation = torch.arange(0, len(self.relation_to_idx))
         tail_entity = torch.LongTensor([self.entity_to_idx[i] for i in tail_entity])
+
         x = torch.stack((head_entity.repeat(self.num_relations, ),
                          relation,
                          tail_entity.repeat(self.num_relations, )), dim=1)
         scores = self.model(x)
-        relations = self.relation_to_idx.index.values
         sort_scores, sort_idxs = torch.topk(scores, k)
-        return sort_scores, relations[sort_idxs]
+        return sort_scores, [self.idx_to_relations[i] for i in sort_idxs.tolist()]
 
     def __predict_missing_tail_entity(self, head_entity: List[str], relation: List[str], k: int = 3) -> Tuple:
         """
@@ -313,20 +321,16 @@ class BaseInteractiveKGE:
 
         assert k >= 0
         # Get index of head entity
-        head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values.tolist())
+        head_entity = torch.LongTensor([self.entity_to_idx[i] for i in head_entity])
         # Get index of relation
-        relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values.tolist())
+        relation = torch.LongTensor([self.relation_to_idx[i] for i in relation])
         # Get all entity indexes.
-        tail_entity = torch.LongTensor(self.entity_to_idx['entity'].values.tolist())
-
-        x = torch.stack((head_entity.repeat(self.num_entities, ),
-                         relation.repeat(self.num_entities, ),
-                         tail_entity), dim=1)
+        tail_entity = torch.arange(0, len(self.entity_to_idx))
+        x = torch.stack((head_entity.repeat(self.num_entities, ), relation.repeat(self.num_entities, ), tail_entity),
+                        dim=1)
         scores = self.model(x)
-        entities = self.entity_to_idx.index.values
-        # sort_scores, sort_idxs = torch.sort(scores, descending=True)
         sort_scores, sort_idxs = torch.topk(scores, k)
-        return sort_scores, entities[sort_idxs]
+        return sort_scores, [self.idx_to_entity[i] for i in sort_idxs.tolist()]
 
     def predict_topk(self, *, head_entity: List[str] = None, relation: List[str] = None, tail_entity: List[str] = None,
                      k: int = 10):
@@ -469,7 +473,7 @@ class BaseInteractiveKGE:
             save_checkpoint_model(self.model, path=self.path + f'/model_interactive_{str(t)}.pt')
 
     def index_triple(self, head_entity: List[str], relation: List[str], tail_entity: List[str]) -> Tuple[
-        LongTensor, LongTensor, LongTensor]:
+        torch.LongTensor, torch.LongTensor, torch.LongTensor]:
         """
         Index Triple
 
@@ -578,6 +582,7 @@ class BaseInteractiveKGE:
         # Hard Labels
         labels: object = torch.FloatTensor(labels)
         return x, labels
+
 
 class AbstractCallback(ABC):
     """

@@ -23,6 +23,7 @@ def print_peak_memory(prefix, device):
 class TorchDDPTrainer(AbstractTrainer):
     """
         A Trainer based on torch.nn.parallel.DistributedDataParallel
+
         Arguments
        ----------
        train_set_idx
@@ -38,6 +39,7 @@ class TorchDDPTrainer(AbstractTrainer):
        label_smoothing_rate
             Using hard targets (0,1) drives weights to infinity.
             An outlier produces enormous gradients.
+
        Returns
        -------
        torch.utils.data.Dataset
@@ -56,7 +58,8 @@ class TorchDDPTrainer(AbstractTrainer):
         world_size = self.attributes.num_nodes * torch.cuda.device_count()
         train_dataset = kwargs['train_dataloaders'].dataset
         mp.spawn(fn=distributed_training,
-                 args=(world_size, model, train_dataset, self.callbacks, self.attributes),nprocs=world_size,join=True,)
+                 args=(world_size, model, train_dataset, self.callbacks, self.attributes), nprocs=world_size,
+                 join=True, )
         model.load_state_dict(torch.load("model.pt", map_location=torch.device('cpu')))
         os.remove('model.pt')
         self.on_fit_end(self, model)
@@ -74,6 +77,7 @@ def distributed_training(rank: int, world_size, model, train_dataset, callbacks,
     os.environ['MASTER_PORT'] = '1234'
     dist.init_process_group(backend='nccl', rank=rank, world_size=world_size)
     # (1) Create DATA LOADER.
+    # @TODO: Do not create a new loader but use already created one.
     train_dataset_loader = DataLoader(train_dataset, batch_size=args.batch_size,
                                       pin_memory=True, shuffle=False,
                                       persistent_workers=True, collate_fn=train_dataset.collate_fn,
@@ -97,7 +101,7 @@ class Trainer:
         self.gpu_id = gpu_id
         self.model = model.to(gpu_id)
         self.train_dataset_loader = train_dataset_loader
-        self.loss_func= self.model.loss
+        self.loss_func = self.model.loss
         self.optimizer = optimizer
         self.callbacks = callbacks
         self.model = DDP(model, device_ids=[gpu_id])
@@ -157,8 +161,8 @@ class Trainer:
             construct_mini_batch_time = time.time()
         return epoch_loss / (i + 1)
 
-    def train(self, max_epochs: int):
-        for epoch in range(max_epochs):
+    def train(self):
+        for epoch in range(self.num_epochs):
             start_time = time.time()
             epoch_loss = self._run_epoch(epoch)
             if self.gpu_id == 0:
