@@ -44,7 +44,7 @@ def argparse_default(description=None):
     parser.add_argument('--hidden_dropout_rate', type=float, default=0.0)
     parser.add_argument("--feature_map_dropout_rate", type=int, default=0.0)
     parser.add_argument("--normalization", type=str, default="LayerNorm", help="[LayerNorm, BatchNorm1d, None]")
-    parser.add_argument("--init_param", type=str, default=None, help="[xavier_normal]")
+    parser.add_argument("--init_param", type=str, default=None, help="[xavier_normal, None]")
 
     parser.add_argument("--gradient_accumulation_steps", type=int, default=0,
                         help="e.g. gradient_accumulation_steps=2 implies that gradients are accumulated at every second mini-batch")
@@ -63,7 +63,7 @@ def argparse_default(description=None):
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
     parser.add_argument("--num_of_output_channels", type=int, default=32, help="# of output channels in convolution")
 
-    parser.add_argument("--num_core", type=int, default=0, help='Number of cores to be used. 0 implies using single CPU')
+    parser.add_argument("--num_core", type=int, default=1, help='Number of cores to be used. 0 implies using single CPU')
     parser.add_argument("--seed_for_computation", type=int, default=0, help='Seed for all, see pl seed_everything().')
     parser.add_argument("--sample_triples_ratio", type=float, default=None, help='Sample input data.')
     parser.add_argument("--read_only_few", type=int, default=None, help='READ only first N triples. If 0, read all.')
