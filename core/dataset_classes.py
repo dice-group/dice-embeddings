@@ -8,7 +8,7 @@ import pytorch_lightning as pl
 import random
 from typing import Dict, List
 from .static_preprocess_funcs import mapping_from_first_two_cols_to_third
-
+from .static_funcs import timeit
 
 def input_data_type_checking(train_set_idx, valid_set_idx, test_set_idx, entity_to_idx: Dict, relation_to_idx: Dict):
     """ Type checking for efficient memory usage"""
@@ -126,7 +126,6 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
         else:
             raise ValueError(f'Invalid input : {self.form}')
 
-    # Train, Valid, TestDATALOADERs
     def train_dataloader(self) -> DataLoader:
         if self.form == 'NegativeSampling':
             train_set = TriplePredictionDataset(self.train_set_idx,

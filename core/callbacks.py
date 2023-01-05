@@ -40,7 +40,7 @@ class PrintCallback(AbstractCallback):
     def on_fit_start(self, trainer, pl_module):
         print(pl_module)
         print(pl_module.summarize())
-        print("\n[1 / 1] Training is started..")
+        print("\nTraining is starting...")
 
     def on_fit_end(self, trainer, pl_module):
         training_time = time.time() - self.start_time
@@ -59,9 +59,6 @@ class PrintCallback(AbstractCallback):
 
     def on_train_epoch_end(self, *args, **kwargs):
         return
-
-    def on_fit_end(self, *args, **kwargs):
-        pass
 
 
 class KGESaveCallback(AbstractCallback):

@@ -33,12 +33,13 @@ class TorchTrainer(AbstractTrainer):
         else:
             self.device = 'cpu'
 
-    def _run_batch(self, x_batch, y_batch) -> float:
+    def _run_batch(self, i:int,x_batch, y_batch) -> float:
         """
             Forward anc Backward according to a mini-batch
 
             Arguments
            ----------
+           i : index of a batch
            x_batch: torch.Tensor on selected device
            y_batch: torch.Tensor on selected device
            Returns
@@ -47,7 +48,7 @@ class TorchTrainer(AbstractTrainer):
        """
         if self.attributes.gradient_accumulation_steps > 1:
             # (1) Update parameters every gradient_accumulation_steps mini-batch.
-            if step % self.attributes.gradient_accumulation_steps == 0:
+            if i % self.attributes.gradient_accumulation_steps == 0:
                 efficient_zero_grad(self.model)
         else:
             # (2) Do not accumulate gradient, zero the gradients per batch.
@@ -75,7 +76,7 @@ class TorchTrainer(AbstractTrainer):
             if construct_mini_batch_time:
                 construct_mini_batch_time = start_time - construct_mini_batch_time
             # (2) Forward-Backward-Update.
-            batch_loss = self._run_batch(x_batch, y_batch)
+            batch_loss = self._run_batch(i,x_batch, y_batch)
             epoch_loss += batch_loss
             if construct_mini_batch_time:
                 print(
@@ -115,8 +116,7 @@ class TorchTrainer(AbstractTrainer):
         else:
             self.use_closure = False
 
-        print(
-            f'NumOfDataPoints:{len(self.train_dataloaders.dataset)} | NumOfEpochs:{self.attributes.max_epochs} | LearningRate:{self.model.learning_rate} | BatchSize:{self.train_dataloaders.batch_size} | EpochBatchsize:{len(train_dataloaders)}')
+        print(f'NumOfDataPoints:{len(self.train_dataloaders.dataset)} | NumOfEpochs:{self.attributes.max_epochs} | LearningRate:{self.model.learning_rate} | BatchSize:{self.train_dataloaders.batch_size} | EpochBatchsize:{len(train_dataloaders)}')
         for epoch in range(self.attributes.max_epochs):
             start_time = time.time()
             # (1)

@@ -192,22 +192,18 @@ class DICE_Trainer:
         del _
         form_of_labelling = 'NegativeSampling'
         print(f'Training starts: {model.name}-labeling:{form_of_labelling}')
-        print('Creating training data...', end='\t')
-        start_time = time.time()
-        dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
-                                     valid_set_idx=self.dataset.valid_set,
-                                     test_set_idx=self.dataset.test_set,
-                                     entity_to_idx=self.dataset.entity_to_idx,
-                                     relation_to_idx=self.dataset.relation_to_idx,
-                                     form=form_of_labelling,
-                                     neg_sample_ratio=self.args.neg_ratio,
-                                     batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_core,
-                                     label_smoothing_rate=self.args.label_smoothing_rate)
-        print(f'Done ! {time.time() - start_time:.3f} seconds\n')
         # 3. Train model
-        train_dataloaders = dataset.train_dataloader()
-        del dataset
+        train_dataloaders = StandardDataModule(train_set_idx=self.dataset.train_set,
+                                               valid_set_idx=self.dataset.valid_set,
+                                               test_set_idx=self.dataset.test_set,
+                                               entity_to_idx=self.dataset.entity_to_idx,
+                                               relation_to_idx=self.dataset.relation_to_idx,
+                                               form=form_of_labelling,
+                                               neg_sample_ratio=self.args.neg_ratio,
+                                               batch_size=self.args.batch_size,
+                                               num_workers=self.args.num_core,
+                                               label_smoothing_rate=self.args.label_smoothing_rate).train_dataloader()
+
         self.release_mem()
         self.trainer.fit(model, train_dataloaders=train_dataloaders)
         return model, form_of_labelling
