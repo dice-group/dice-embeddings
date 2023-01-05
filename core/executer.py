@@ -77,13 +77,11 @@ class Execute:
                   trained_model=self.trained_model,
                   model_name='model',
                   full_storage_path=self.storage_path,
-                  dataset=self.dataset,
                   save_as_csv=self.args.save_embeddings_as_csv)
         else:
             store(trainer=self.trainer,
                   trained_model=self.trained_model,
                   model_name='model_' + str(datetime.datetime.now()),
-                  dataset=self.dataset,
                   full_storage_path=self.storage_path, save_as_csv=self.args.save_embeddings_as_csv)
         self.report['path_experiment_folder'] = self.storage_path
         # (4) Store the report of training.
@@ -111,13 +109,14 @@ class Execute:
         self.trained_model, form_of_labelling = self.trainer.start()
         # (5) Store trained model.
         self.save_trained_model(start_time)
-        # (6) Eval model.
-        self.evaluator.eval(self.trained_model, form_of_labelling)
-        # Save Total time
-        self.report['Runtime'] = time.time()-start_time
+        self.report['Runtime'] = time.time() - start_time
         print(f"Total computation time: {self.report['Runtime']:.3f} seconds")
-        # (7) Return the report of the training process.
-        return {**self.report, **self.evaluator.report}
+        # (6) Eval model.
+        if self.args.eval_model is None:
+            return self.report
+        else:
+            self.evaluator.eval(self.trained_model, form_of_labelling)
+            return {**self.report, **self.evaluator.report}
 
 
 class ContinuousExecute(Execute):

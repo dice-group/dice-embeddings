@@ -1,6 +1,6 @@
 import time
 import pytorch_lightning as pl
-
+import gc
 from core.models.base_model import BaseKGE
 from core.static_funcs import select_model
 from core.callbacks import *
@@ -145,14 +145,16 @@ class DICE_Trainer:
                                      label_smoothing_rate=self.args.label_smoothing_rate)
         # (3) Train model.
         train_dataloaders = dataset.train_dataloader()
-        # Release some memory
         del dataset
-        if self.args.eval_model is False:
-            self.dataset.train_set = None
-            self.dataset.valid_set = None
-            self.dataset.test_set = None
+        self.release_mem()
         self.trainer.fit(model, train_dataloaders=train_dataloaders)
         return model, form_of_labelling
+
+    def release_mem(self):
+        if self.args.eval_model is None:
+            del self.dataset, self.executor.dataset
+            del self.evaluator, self.executor.evaluator
+        gc.collect()
 
     def training_1vsall(self) -> BaseKGE:
         # (1) Select model and labelling : Entity Prediction or Relation Prediction.
@@ -175,12 +177,8 @@ class DICE_Trainer:
             model.loss = torch.nn.CrossEntropyLoss()
         # (3) Train model
         train_dataloaders = dataset.train_dataloader()
-        # Release some memory
         del dataset
-        if self.args.eval_model is False:
-            self.dataset.train_set = None
-            self.dataset.valid_set = None
-            self.dataset.test_set = None
+        self.release_mem()
         self.trainer.fit(model, train_dataloaders=train_dataloaders)
         return model, form_of_labelling
 
@@ -191,6 +189,7 @@ class DICE_Trainer:
         assert self.args.neg_ratio > 0
         # (1) Select the model
         model, _ = select_model(vars(self.args), self.is_continual_training, self.storage_path)
+        del _
         form_of_labelling = 'NegativeSampling'
         print(f'Training starts: {model.name}-labeling:{form_of_labelling}')
         print('Creating training data...', end='\t')
@@ -208,39 +207,8 @@ class DICE_Trainer:
         print(f'Done ! {time.time() - start_time:.3f} seconds\n')
         # 3. Train model
         train_dataloaders = dataset.train_dataloader()
-        # Release some memory
         del dataset
-        if self.args.eval_model is False:
-            self.dataset.train_set = None
-            self.dataset.valid_set = None
-            self.dataset.test_set = None
-        self.trainer.fit(model, train_dataloaders=train_dataloaders)
-        return model, form_of_labelling
-
-    def deprecated_train_relaxed_k_vs_all(self):
-        model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
-        print(f'{self.args.scoring_technique}training starts: {model.name}')  # -labeling:{form_of_labelling}')
-        # 2. Create training data.)
-        dataset = StandardDataModule(train_set_idx=self.dataset.train_set,
-                                     valid_set_idx=self.dataset.valid_set,
-                                     test_set_idx=self.dataset.test_set,
-                                     entity_to_idx=self.dataset.entity_to_idx,
-                                     relation_to_idx=self.dataset.relation_to_idx,
-                                     form=self.args.scoring_technique,
-                                     neg_sample_ratio=self.args.neg_ratio,
-                                     batch_size=self.args.batch_size,
-                                     num_workers=self.args.num_core,
-                                     label_smoothing_rate=self.args.label_smoothing_rate)
-        # 3. Train model.
-        train_dataloaders = dataset.train_dataloader()
-        # Release some memory
-        del dataset
-        if self.args.eval_model is False:
-            self.dataset.train_set = None
-            self.dataset.valid_set = None
-            self.dataset.test_set = None
-
-        model.loss = BatchRelaxedvsAllLoss()
+        self.release_mem()
         self.trainer.fit(model, train_dataloaders=train_dataloaders)
         return model, form_of_labelling
 
@@ -273,10 +241,7 @@ class DICE_Trainer:
         train_dataloaders = dataset.train_dataloader()
         # Release some memory
         del dataset
-        if self.args.eval_model is False:
-            self.dataset.train_set = None
-            self.dataset.valid_set = None
-            self.dataset.test_set = None
+        self.release_mem()
         self.trainer.fit(model, train_dataloaders=train_dataloaders)
         return model, form_of_labelling
 

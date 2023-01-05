@@ -202,7 +202,6 @@ def store(trainer,
     :return:
     """
     assert full_storage_path is not None
-    assert dataset is not None
     assert isinstance(model_name, str)
     assert len(model_name) > 1
 
@@ -210,6 +209,7 @@ def store(trainer,
     save_checkpoint_model(trainer=trainer,
                           model=trained_model, path=full_storage_path + f'/{model_name}.pt')
     if save_as_csv:
+        raise NotImplementedError('Should be done in post processing')
         # (2.1) Get embeddings.
         entity_emb, relation_ebm = trained_model.get_embeddings()
         save_embeddings(entity_emb.numpy(), indexes=dataset.entities_str,
