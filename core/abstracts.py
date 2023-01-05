@@ -469,7 +469,7 @@ class BaseInteractiveKGE:
             save_checkpoint_model(self.model, path=self.path + f'/model_interactive_{str(t)}.pt')
 
     def index_triple(self, head_entity: List[str], relation: List[str], tail_entity: List[str]) -> Tuple[
-        LongTensor, LongTensor, LongTensor]:
+        torch.LongTensor, torch.LongTensor, torch.LongTensor]:
         """
         Index Triple
 

@@ -22,7 +22,7 @@ def argparse_default(description=None):
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[Adan, NAdam, Adam, SGD, Sls, AdamSLS]')
     parser.add_argument('--embedding_dim', type=int, default=32, help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=200, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument('--callbacks',
