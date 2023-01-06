@@ -494,8 +494,8 @@ class TriplePredictionDataset(Dataset):
         assert isinstance(train_set_idx, np.ndarray)
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.neg_sample_ratio = neg_sample_ratio  # 0 Implies that we do not add negative samples. This is needed during testing and validation
-        self.triples_idx = torch.LongTensor(train_set_idx)
-
+        # torch.IntTensor(x) or torch.from_numpy(a)
+        self.triples_idx = torch.from_numpy(train_set_idx)
         assert num_entities >= max(self.triples_idx[:, 0]) and num_entities >= max(self.triples_idx[:, 2])
         self.length = len(self.triples_idx)
         self.num_entities = num_entities
