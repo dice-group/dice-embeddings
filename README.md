@@ -40,7 +40,7 @@ conda activate dice
 # Choose a backend
 pip3 install pandas==1.5.1 
 pip3 install modin[ray]==0.16.2 or pip3 install modin[dask]==0.16.2
-pip3 install polars==0.14.26 
+pip3 install polars==0.15.13 
 pip3 install pyarrow==8.0.0
 pip3 install torch==1.13.0 
 pip3 install pytorch-lightning==1.6.4

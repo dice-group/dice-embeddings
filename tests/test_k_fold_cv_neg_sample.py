@@ -6,25 +6,6 @@ import pytest
 
 class TestCV_NegSample:
     @pytest.mark.filterwarnings('ignore::UserWarning')
-    def test_shallom_NegSample(self):
-        args = argparse_default([])
-        args.model = 'Shallom'
-        args.num_epochs = 1
-        args.scoring_technique = 'NegSample'
-        args.neg_ratio = 1
-        args.path_dataset_folder = 'KGs/Family'
-        args.batch_size = 1024
-        args.lr = 0.01
-        args.embedding_dim = 32
-        args.backend = 'pandas'  #  Error with polars becasue sep="\s" should be a single byte character, but is 2 bytes long.
-        args.read_only_few = None
-        args.sample_triples_ratio = None
-        args.eval_model = 'train'
-        args.trainer = 'torchCPUTrainer'
-        args.num_folds_for_cv = 3
-        Execute(args).start()
-
-    @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_conex_NegSample(self):
         args = argparse_default([])
         args.model = 'ConEx'

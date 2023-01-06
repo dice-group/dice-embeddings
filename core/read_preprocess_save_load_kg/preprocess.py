@@ -171,15 +171,15 @@ class PreprocessKG:
         # print(f'Estimated size of relation_to_idx in Python dict:{sys.getsizeof(self.kg.relation_to_idx) / 1000000 :.5f} in MB')
         self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
 
+        # using this requires more time and more mem. Maybe there is a bug somewhere in polars.
         def indexer(data):
             """ Apply str to int mapping on an input data"""
             # These column assignments are executed in parallel
             # with_colums allows you to create new columns for you analyses.
             # https://pola-rs.github.io/polars-book/user-guide/quickstart/quick-exploration-guide.html#with_columns
-            return data.with_columns([polars.col("subject").apply(lambda x: self.kg.entity_to_idx[x]).alias("subject"),
-                                      polars.col("relation").apply(lambda x: self.kg.relation_to_idx[x]).alias(
-                                          "relation"),
-                                      polars.col("object").apply(lambda x: self.kg.entity_to_idx[x]).alias("object")])
+            return data.with_columns([polars.col("subject").apply(lambda x: self.kg.entity_to_idx[x]),
+                                      polars.col("relation").apply(lambda x: self.kg.relation_to_idx[x]),
+                                      polars.col("object").apply(lambda x: self.kg.entity_to_idx[x])])
 
         @timeit
         def index_datasets():
@@ -190,28 +190,30 @@ class PreprocessKG:
                  polars.col("object").apply(lambda x: self.kg.entity_to_idx[x])]).to_numpy()
 
         @timeit
-        def from_pandas_to_numpy():
+        def from_pandas_to_numpy(df):
             # Index pandas dataframe?
-            print(f'Convering data to Pandas {self.kg.train_set.shape}...')
-            self.kg.train_set = self.kg.train_set.to_pandas()
+            print(f'Convering data to Pandas {df.shape}...')
+            df = df.to_pandas()
             # Index pandas dataframe?
-            print(f'Indexing Training Data {self.kg.train_set.shape}...')
-            self.kg.train_set = index_triples_with_pandas(self.kg.train_set, entity_to_idx=self.kg.entity_to_idx,
-                                                          relation_to_idx=self.kg.relation_to_idx).to_numpy()
+            print(f'Indexing Training Data {df.shape}...')
+            return index_triples_with_pandas(df, entity_to_idx=self.kg.entity_to_idx,
+                                             relation_to_idx=self.kg.relation_to_idx).to_numpy()
 
         print(f'Indexing Training Data {self.kg.train_set.shape}...')
-        from_pandas_to_numpy()
+        self.kg.train_set = from_pandas_to_numpy(self.kg.train_set)
         # index_datasets(df=self.kg.train_set)
+        # we may try vaex to speed up pandas
+        # https://stackoverflow.com/questions/69971992/vaex-apply-does-not-work-when-using-dataframe-columns
 
-        print(f'Estimated size of train_set in Numpy: {self.kg.train_set.nbytes / 1000000 :.5f} in MB')
+        print(f'Estimated size of train_set in Numpy: {self.kg.train_set.nbytes / 1_000_000_000 :.5f} in GB')
         if self.kg.valid_set is not None:
             print(f'Indexing Val Data {self.kg.valid_set.shape}...')
-            self.kg.valid_set = index_datasets(df=self.kg.valid_set).to_numpy()
-            print(f'Estimated size of valid_set in Numpy: {self.kg.valid_set.nbytes / 1000000:.5f} in MB')
+            self.kg.valid_set = from_pandas_to_numpy(self.kg.valid_set)
+            print(f'Estimated size of valid_set in Numpy: {self.kg.valid_set.nbytes / 1_000_000_000:.5f} in GB')
         if self.kg.test_set is not None:
             print(f'Indexing Test Data {self.kg.test_set.shape}...')
-            self.kg.test_set = index_datasets(df=self.kg.test_set).to_numpy()
-            print(f'Estimated size of test_set in Numpy: {self.kg.test_set.nbytes / 1000000:.5f} in MB')
+            self.kg.test_set = from_pandas_to_numpy(self.kg.test_set)
+            print(f'Estimated size of test_set in Numpy: {self.kg.test_set.nbytes / 1_000_000_000:.5f} in GB')
         print(f'*** Preprocessing Train Data:{self.kg.train_set.shape} with Polars DONE ***')
 
     def sequential_vocabulary_construction(self) -> None:

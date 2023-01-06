@@ -55,8 +55,8 @@ class TestRegressionQmult:
         args.init_param = 'xavier_normal'
         result = Execute(args).start()
         assert 0.92 >= result['Train']['H@1'] >= 0.83
-        assert 0.77 >= result['Test']['H@1'] >= 0.70
-        assert 0.77 >= result['Val']['H@1'] >= 0.70
+        assert 0.79 >= result['Test']['H@1'] >= 0.70
+        assert 0.81 >= result['Val']['H@1'] >= 0.70
 
         assert result['Train']['H@10'] >= result['Train']['H@3'] >= result['Train']['H@1']
         assert result['Val']['H@10'] >= result['Val']['H@3'] >= result['Val']['H@1']

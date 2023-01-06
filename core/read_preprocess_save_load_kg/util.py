@@ -97,14 +97,12 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
         print(f'Subsampling {sample_triples_ratio} of input data {df.shape}...')
         df = df.sample(frac=sample_triples_ratio)
         print(df.shape)
-        print('Done !\n')
 
     # (3) Type heuristic prediction: If KG is an RDF KG, remove all triples where subject is not <?>.
     h = df.head().to_pandas()
     if sum(h["subject"].str.startswith('<')) + sum(h["relation"].str.startswith('<')) > 2:
         print('Removing triples with literal values...')
         df = df.filter(polars.col("object").str.starts_with('<'))
-        print('Done !\n')
     return df
 
 
