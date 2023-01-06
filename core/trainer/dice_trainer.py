@@ -22,17 +22,17 @@ from typing import List, Tuple
 def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     """ Initialize Trainer from input arguments """
     if args.trainer == 'torchCPUTrainer':
-        print('Initialize TorchTrainer CPU Trainer')
+        print('Initializing TorchTrainer CPU Trainer...')
         return TorchTrainer(args, callbacks=callbacks)
     elif args.trainer == 'torchDDP':
         if torch.cuda.is_available():
-            print('Initialize TorchDDPTrainer GPU')
+            print('Initializing TorchDDPTrainer GPU')
             return TorchDDPTrainer(args, callbacks=callbacks)
         else:
-            print('Initialize TorchTrainer CPU Trainer')
+            print('Initializing TorchTrainer CPU Trainer')
             return TorchTrainer(args, callbacks=callbacks)
     elif args.trainer == 'PL':
-        print('Initialize Pytorch-lightning Trainer')
+        print('Initializing Pytorch-lightning Trainer')
         # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
         return pl.Trainer.from_argparse_args(args,
                                              strategy=DDPStrategy(find_unused_parameters=False))
@@ -93,17 +93,19 @@ class DICE_Trainer:
 
     def initialize_dataloader(self, dataset, form_of_labelling) -> torch.utils.data.DataLoader:
         # (2) Create training data.
-        return StandardDataModule(train_set_idx=dataset.train_set,
-                                  valid_set_idx=dataset.valid_set,
-                                  test_set_idx=dataset.test_set,
-                                  entity_to_idx=dataset.entity_to_idx,
-                                  relation_to_idx=dataset.relation_to_idx,
-                                  form=form_of_labelling,
-                                  scoring_technique=self.args.scoring_technique,
-                                  neg_sample_ratio=self.args.neg_ratio,
-                                  batch_size=self.args.batch_size,
-                                  num_workers=self.args.num_core,
-                                  label_smoothing_rate=self.args.label_smoothing_rate).train_dataloader()
+        print('initializing Data Module...')
+        data_module = StandardDataModule(train_set_idx=dataset.train_set,
+                                         valid_set_idx=dataset.valid_set,
+                                         test_set_idx=dataset.test_set,
+                                         entity_to_idx=dataset.entity_to_idx,
+                                         relation_to_idx=dataset.relation_to_idx,
+                                         form=form_of_labelling,
+                                         scoring_technique=self.args.scoring_technique,
+                                         neg_sample_ratio=self.args.neg_ratio,
+                                         batch_size=self.args.batch_size,
+                                         num_workers=self.args.num_core,
+                                         label_smoothing_rate=self.args.label_smoothing_rate)
+        return data_module.train_dataloader()
 
     def start(self, dataset) -> Tuple[BaseKGE, str]:
         """ Train selected model via the selected training strategy """
@@ -121,6 +123,7 @@ class DICE_Trainer:
             train_loader = self.initialize_dataloader(dataset, form_of_labelling)
             if self.args.eval_model is None:
                 del dataset
+            print('Fitting start...')
             self.trainer.fit(model, train_dataloaders=train_loader)
             return model, form_of_labelling
 

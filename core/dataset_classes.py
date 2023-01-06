@@ -98,7 +98,7 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
         self.label_smoothing_rate = label_smoothing_rate
 
     def train_dataloader(self) -> DataLoader:
-
+        print('Initializing Dataset...')
         if self.scoring_technique == 'NegSample':
             train_set = TriplePredictionDataset(self.train_set_idx,
                                                 num_entities=len(self.entity_to_idx),
@@ -127,7 +127,7 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
             train_set = PykeDataset(self.train_set_idx)
         else:
             raise KeyError(f'{self.form} illegal input.')
-
+        print('Initializing Dataloader...')
         return DataLoader(dataset=train_set, batch_size=self.batch_size,
                           shuffle=True, collate_fn=train_set.collate_fn,
                           num_workers=self.num_workers, persistent_workers=True)
