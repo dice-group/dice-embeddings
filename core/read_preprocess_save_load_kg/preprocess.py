@@ -29,20 +29,13 @@ class PreprocessKG:
         print('Data Type conversion...')
         self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
                                                     num=max(self.kg.num_entities, self.kg.num_relations))
-        total_nb_for_dataset += self.kg.train_set.nbytes / 1000000
-
         if self.kg.valid_set is not None:
             self.kg.valid_set = numpy_data_type_changer(self.kg.valid_set,
                                                         num=max(self.kg.num_entities, self.kg.num_relations))
-            total_nb_for_dataset += self.kg.valid_set.nbytes / 1000000
 
         if self.kg.test_set is not None:
             self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
                                                        num=max(self.kg.num_entities, self.kg.num_relations))
-            total_nb_for_dataset += self.kg.test_set.nbytes / 1000000
-
-        print(f'Total Estimated Memory {total_nb_for_dataset} in MB')
-        exit(1)
 
     @timeit
     def preprocess_with_pandas(self) -> None:
@@ -168,21 +161,15 @@ class PreprocessKG:
 
         print('Relation Indexing...', end=' ')
         self.kg.relation_to_idx = relation_index()
-
-        print(f'Estimated size of entity_to_idx in Polars:{self.kg.entity_to_idx.estimated_size(unit="mb"):.5f} in MB')
-        print(
-            f'Estimated size of relation_to_idx in Polars:{self.kg.relation_to_idx.estimated_size(unit="mb"):.5f} in MB')
-        # Python dictionary is too expensive
-        # self.kg.entity_to_idx = polars.DataFrame([polars.Series(val, [i]) for i, val in enumerate(self.kg.entity_to_idx.to_list())])
-        print('Polars DataFrame to python dictionary conversion...')
+        # On YAGO3-10     # 2.90427 and 0.00065 MB,
+        # print(f'Est. size of entity_to_idx in Polars:{self.kg.entity_to_idx.estimated_size(unit="mb"):.5f} in MB')
+        # print(f'Est. of relation_to_idx in Polars:{self.kg.relation_to_idx.estimated_size(unit="mb"):.5f} in MB')
         self.kg.entity_to_idx = dict(zip(self.kg.entity_to_idx.to_list(), list(range(len(self.kg.entity_to_idx)))))
-        print(
-            f'Estimated size of entity_to_idx in Python dict:{sys.getsizeof(self.kg.entity_to_idx) / 1000000 :.5f} in MB')
         self.kg.relation_to_idx = dict(
             zip(self.kg.relation_to_idx.to_list(), list(range(len(self.kg.relation_to_idx)))))
-        print(
-            f'Estimated size of relation_to_idx in Python dict:{sys.getsizeof(self.kg.relation_to_idx) / 1000000 :.5f} in MB')
-
+        # On YAGO3-10, 5.24297 in MB and 0.00118 in MB
+        # print(f'Estimated size of entity_to_idx in Python dict:{sys.getsizeof(self.kg.entity_to_idx) / 1000000 :.5f} in MB')
+        # print(f'Estimated size of relation_to_idx in Python dict:{sys.getsizeof(self.kg.relation_to_idx) / 1000000 :.5f} in MB')
         self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
 
         def indexer(data):
@@ -198,10 +185,8 @@ class PreprocessKG:
         @timeit
         def index_datasets(df: polars.DataFrame):
             """ Map str stored in a polars Dataframe to int"""
-            x = indexer(df)
-            print(f'Estimated size of Polars Dataframe: {x.estimated_size(unit="mb"):.5f} in MB')
-            return x
-
+            return indexer(df)
+        # Index pandas dataframe?
         print(f'Indexing Training Data {self.kg.train_set.shape}...')
         self.kg.train_set = index_datasets(df=self.kg.train_set).to_numpy()
         print(f'Estimated size of train_set in Numpy: {self.kg.train_set.nbytes / 1000000 :.5f} in MB')

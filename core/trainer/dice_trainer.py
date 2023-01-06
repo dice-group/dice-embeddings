@@ -231,7 +231,7 @@ class DICE_Trainer:
                                                    label_smoothing_rate=self.args.label_smoothing_rate).train_dataloader()
             trainer.fit(model, train_dataloaders=train_dataloaders)
 
-            res = self.evaluator.eval_with_data(model, test_set_for_i_th_fold, form_of_labelling=form_of_labelling)
+            res = self.evaluator.eval_with_data(dataset=dataset,trained_model=model, triple_idx=test_set_for_i_th_fold, form_of_labelling=form_of_labelling)
             # res = self.evaluator.evaluate_lp_k_vs_all(model, test_set_for_i_th_fold, form_of_labelling=form_of_labelling)
             eval_folds.append([res['MRR'], res['H@1'], res['H@3'], res['H@10']])
         eval_folds = pd.DataFrame(eval_folds, columns=['MRR', 'H@1', 'H@3', 'H@10'])

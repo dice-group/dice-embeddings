@@ -267,6 +267,8 @@ def read_or_load_kg(args, cls):
              path_for_deserialization=args.path_experiment_folder if hasattr(args, 'path_experiment_folder') else None,
              backend=args.backend)
     print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
+    # (2) Share some info about data for easy access.
+    args.num_entities, args.num_relations = kg.num_entities, kg.num_relations
     print(kg.description_of_input)
     return kg
 

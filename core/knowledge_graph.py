@@ -1,7 +1,7 @@
 from typing import Dict, List, Tuple, Union
 import numpy as np
 from .read_preprocess_save_load_kg import ReadFromDisk, PreprocessKG, LoadSaveToDisk
-
+import sys
 class KG:
     """ Knowledge Graph """
 
@@ -56,11 +56,11 @@ class KG:
 
     def _describe(self) -> None:
         self.description_of_input = f'\n------------------- Description of Dataset {self.data_dir} -------------------'
-        self.description_of_input += f'\nNumber of entities: {self.num_entities}' \
-                                     f'\nNumber of relations: {self.num_relations}' \
-                                     f'\nNumber of triples on train set: {len(self.train_set)}' \
-                                     f'\nNumber of triples on valid set: {len(self.valid_set) if self.valid_set is not None else 0}' \
-                                     f'\nNumber of triples on test set: {len(self.test_set) if self.test_set is not None else 0}\n'
+        self.description_of_input += f'\nNumber of entities:{self.num_entities}\t\t\t\tMemory Usage in MB:{sys.getsizeof(self.entity_to_idx)/1000000:.5f}' \
+                                     f'\nNumber of relations:{self.num_relations}\t\t\t\t\tMemory Usage in MB:{sys.getsizeof(self.relation_to_idx)/1000000:.5f}' \
+                                     f'\nNumber of triples on train set:{len(self.train_set)}  Memory Usage in MB:{self.train_set.nbytes/1000000:.5f}' \
+                                     f'\nNumber of triples on valid set:{len(self.valid_set) if self.valid_set is not None else 0}' \
+                                     f'\nNumber of triples on test set:{len(self.test_set) if self.test_set is not None else 0}\n'
 
     @property
     def entities_str(self) -> List:

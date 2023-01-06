@@ -55,8 +55,6 @@ class Execute:
         """ Read & Preprocess & Index & Serialize Input Data """
         # (1) Read & Preprocess & Index & Serialize Input Data.
         self.dataset = read_or_load_kg(self.args, cls=KG)
-        # (2) Share some info about data for easy access.
-        self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
         # (3) Sanity checking.
         self.args, self.dataset = config_kge_sanity_checking(self.args, self.dataset)
         self.report['num_train_triples'] = len(self.dataset.train_set)
@@ -107,7 +105,7 @@ class Execute:
         #  Load the indexed data from disk or read a raw data from disk.
         self.load_indexed_data() if self.is_continual_training else self.read_preprocess_index_serialize_data()
         # (2) Create an evaluator object.
-        self.evaluator = Evaluator(args=self.args, dataset=self.dataset)
+        self.evaluator = Evaluator(args=self.args)
         # (3) Create a trainer object.
         self.trainer = DICE_Trainer(args=self.args,
                                     is_continual_training=self.is_continual_training,
@@ -123,7 +121,7 @@ class Execute:
         if self.args.eval_model is None:
             return self.report
         else:
-            self.evaluator.eval(self.trained_model, form_of_labelling)
+            self.evaluator.eval(dataset=self.dataset, trained_model=self.trained_model, form_of_labelling=form_of_labelling)
             return {**self.report, **self.evaluator.report}
 
 
