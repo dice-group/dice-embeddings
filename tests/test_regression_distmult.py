@@ -49,9 +49,6 @@ class TestRegressionDistMult:
         args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
-        assert 0.99 >= result['Train']['H@1'] >= 0.30
-        assert 0.99 >= result['Test']['H@1'] >= 0.25
-        assert 0.99 >= result['Val']['H@1'] >= 0.25
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):

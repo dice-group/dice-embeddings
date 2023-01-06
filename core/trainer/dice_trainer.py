@@ -1,6 +1,7 @@
 import time
 import pytorch_lightning as pl
 import gc
+from typing import Union
 from core.models.base_model import BaseKGE
 from core.static_funcs import select_model
 from core.callbacks import *
@@ -88,108 +89,34 @@ class DICE_Trainer:
 
     def initialize_model(self):
         # (1) Select model and labelling : Entity Prediction or Relation Prediction.
-        model, form_of_labelling = select_model(vars(self.args), self.is_continual_training,
-                                                self.storage_path)
-        return model, form_of_labelling
+        return select_model(vars(self.args), self.is_continual_training, self.storage_path)
 
-    def initialize_dataloader(self, dataset, form_of_labelling):
+    def initialize_dataloader(self, dataset, form_of_labelling)->torch.utils.data.DataLoader:
         # (2) Create training data.
-        torchdataset = StandardDataModule(train_set_idx=dataset.train_set,
-                                          valid_set_idx=dataset.valid_set,
-                                          test_set_idx=dataset.test_set,
-                                          entity_to_idx=dataset.entity_to_idx,
-                                          relation_to_idx=dataset.relation_to_idx,
-                                          form=form_of_labelling,
-                                          neg_sample_ratio=self.args.neg_ratio,
-                                          batch_size=self.args.batch_size,
-                                          num_workers=self.args.num_core,
-                                          label_smoothing_rate=self.args.label_smoothing_rate)
-        # (3) Train model.
-        return torchdataset.train_dataloader()
+        return StandardDataModule(train_set_idx=dataset.train_set,
+                                  valid_set_idx=dataset.valid_set,
+                                  test_set_idx=dataset.test_set,
+                                  entity_to_idx=dataset.entity_to_idx,
+                                  relation_to_idx=dataset.relation_to_idx,
+                                  form=form_of_labelling,
+                                  neg_sample_ratio=self.args.neg_ratio,
+                                  batch_size=self.args.batch_size,
+                                  num_workers=self.args.num_core,
+                                  label_smoothing_rate=self.args.label_smoothing_rate).train_dataloader()
 
     def start(self, dataset) -> Tuple[BaseKGE, str]:
         """ Train selected model via the selected training strategy """
         print('------------------- Train -------------------')
-
         # (1) Perform K-fold CV
         if self.args.num_folds_for_cv >= 2:
             return self.k_fold_cross_validation(dataset)
         else:
+            self.trainer: Union[TorchTrainer, TorchDDPTrainer, pl.Trainer]
             self.trainer = initialize_trainer(self.args, callbacks=get_callbacks(self.args), plugins=[])
             model, form_of_labelling = self.initialize_model()
             self.trainer.fit(model, train_dataloaders=self.initialize_dataloader(dataset, form_of_labelling))
             return model, form_of_labelling
 
-            """
-            # (3) Select the training strategy.
-            if self.args.scoring_technique == 'NegSample':
-                return self.training_negative_sampling(dataset)
-            elif self.args.scoring_technique == 'KvsAll':
-                return self.training_kvsall(dataset)
-            elif self.args.scoring_technique == 'KvsSample':
-                return self.training_KvsSample(dataset)
-            elif self.args.scoring_technique == '1vsAll':
-                return self.training_1vsall(dataset)
-            else:
-                raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
-            """
-
-    def training_kvsall(self, dataset) -> BaseKGE:
-        """
-        Train models with KvsAll
-        D= {(x,y)_i }_i ^n where
-        1. x denotes a tuple of indexes of a head entity and a relation
-        2. y denotes a vector of probabilities, y_j corresponds to probability of j.th indexed entity
-        :return: trained BASEKGE
-        """
-        model, form_of_labelling = self.initialize_model()
-        train_dataloaders = self.intialize_dataloader(dataset, form_of_labelling)
-        self.trainer.fit(model, train_dataloaders=train_dataloaders)
-        return model, form_of_labelling
-
-    def training_1vsall(self, dataset) -> BaseKGE:
-        # (1) Select model and labelling : Entity Prediction or Relation Prediction.
-        model, form_of_labelling = self.initialize_model()
-        print(f'1vsAll training starts: {model.name}')
-        if self.args.label_smoothing_rate:
-            model.loss = torch.nn.CrossEntropyLoss(label_smoothing=self.args.label_smoothing_rate)
-        else:
-            model.loss = torch.nn.CrossEntropyLoss()
-        train_dataloaders = self.intialize_dataloader(dataset, form_of_labelling)
-        self.trainer.fit(model, train_dataloaders=train_dataloaders)
-        return model, form_of_labelling
-
-    def training_negative_sampling(self, dataset):
-        """
-        Train models with Negative Sampling
-        """
-        assert self.args.neg_ratio > 0
-        # (1) Select the model
-        model, _ = self.initialize_model()
-        form_of_labelling = 'NegativeSampling'
-        print(f'Training starts: {model.name}-labeling:{form_of_labelling}')
-        train_dataloaders = self.intialize_dataloader(dataset, form_of_labelling)
-        self.trainer.fit(model, train_dataloaders=train_dataloaders)
-        return model, form_of_labelling
-
-    def training_KvsSample(self, dataset) -> BaseKGE:
-        """ A memory efficient variant of KvsAll training regime.
-
-        Let D= {(x_i,y_i) }_i ^n where
-        1. x denotes a tuple of indexes of a head entity and a relation
-        2. y\in {0,1}^neg_sample_ratio
-
-        Compared to KvsAll, KvsSample uses a subset of entities instead of using all entities.
-        :return: trained BASEKGE
-        """
-        assert self.args.neg_ratio > 0
-        # (1) Select the model
-        model, _ = self.initialize_model()
-        form_of_labelling = 'KvsSample'
-        print(f'KvsSample training starts: {model.name}')
-        train_dataloaders = self.intialize_dataloader(dataset, form_of_labelling)
-        self.trainer.fit(model, train_dataloaders=train_dataloaders)
-        return model, form_of_labelling
 
     def k_fold_cross_validation(self, dataset) -> Tuple[BaseKGE, str]:
         """
@@ -231,7 +158,8 @@ class DICE_Trainer:
                                                    label_smoothing_rate=self.args.label_smoothing_rate).train_dataloader()
             trainer.fit(model, train_dataloaders=train_dataloaders)
 
-            res = self.evaluator.eval_with_data(dataset=dataset,trained_model=model, triple_idx=test_set_for_i_th_fold, form_of_labelling=form_of_labelling)
+            res = self.evaluator.eval_with_data(dataset=dataset, trained_model=model, triple_idx=test_set_for_i_th_fold,
+                                                form_of_labelling=form_of_labelling)
             # res = self.evaluator.evaluate_lp_k_vs_all(model, test_set_for_i_th_fold, form_of_labelling=form_of_labelling)
             eval_folds.append([res['MRR'], res['H@1'], res['H@3'], res['H@10']])
         eval_folds = pd.DataFrame(eval_folds, columns=['MRR', 'H@1', 'H@3', 'H@10'])

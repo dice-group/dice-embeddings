@@ -326,25 +326,8 @@ class Evaluator:
         return results
 
     def eval_with_data(self, dataset, trained_model, triple_idx: np.ndarray, form_of_labelling: str):
-        if isinstance(self.er_vocab, dict):
-            pass
-        else:
-            self.er_vocab = self.er_vocab.result()
+        self.vocab_preparation(dataset)
 
-        if isinstance(dataset.re_vocab, dict):
-            pass
-        else:
-            self.re_vocab = dataset.re_vocab.result()
-
-        if isinstance(dataset.ee_vocab, dict):
-            pass
-        else:
-            self.ee_vocab = dataset.ee_vocab.result()
-
-        if isinstance(dataset.domain_constraints_per_rel, dict):
-            pass
-        else:
-            self.domain_constraints_per_rel, self.range_constraints_per_rel = dataset.constraints.result()
         """ Evaluate a trained model on a given a dataset"""
         if self.args.scoring_technique == 'NegSample':
             return self.evaluate_lp(trained_model, triple_idx,

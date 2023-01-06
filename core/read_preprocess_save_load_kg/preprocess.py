@@ -25,7 +25,6 @@ class PreprocessKG:
         else:
             raise KeyError(f'{self.kg.backend} not found')
 
-        total_nb_for_dataset = 0
         print('Data Type conversion...')
         self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
                                                     num=max(self.kg.num_entities, self.kg.num_relations))
@@ -177,18 +176,33 @@ class PreprocessKG:
             # These column assignments are executed in parallel
             # with_colums allows you to create new columns for you analyses.
             # https://pola-rs.github.io/polars-book/user-guide/quickstart/quick-exploration-guide.html#with_columns
-            return data.with_columns(
-                [polars.col("subject").apply(lambda x: self.kg.entity_to_idx[x]).alias("subject"),
-                 polars.col("relation").apply(lambda x: self.kg.relation_to_idx[x]).alias("relation"),
-                 polars.col("object").apply(lambda x: self.kg.entity_to_idx[x]).alias("object")])
+            return data.with_columns([polars.col("subject").apply(lambda x: self.kg.entity_to_idx[x]).alias("subject"),
+                                      polars.col("relation").apply(lambda x: self.kg.relation_to_idx[x]).alias(
+                                          "relation"),
+                                      polars.col("object").apply(lambda x: self.kg.entity_to_idx[x]).alias("object")])
 
         @timeit
-        def index_datasets(df: polars.DataFrame):
+        def index_datasets():
             """ Map str stored in a polars Dataframe to int"""
-            return indexer(df)
-        # Index pandas dataframe?
+            self.kg.train_set = self.kg.train_set.select(
+                [polars.col("subject").apply(lambda x: self.kg.entity_to_idx[x]),
+                 polars.col("relation").apply(lambda x: self.kg.relation_to_idx[x]),
+                 polars.col("object").apply(lambda x: self.kg.entity_to_idx[x])]).to_numpy()
+
+        @timeit
+        def from_pandas_to_numpy():
+            # Index pandas dataframe?
+            print(f'Convering data to Pandas {self.kg.train_set.shape}...')
+            self.kg.train_set = self.kg.train_set.to_pandas()
+            # Index pandas dataframe?
+            print(f'Indexing Training Data {self.kg.train_set.shape}...')
+            self.kg.train_set = index_triples_with_pandas(self.kg.train_set, entity_to_idx=self.kg.entity_to_idx,
+                                                          relation_to_idx=self.kg.relation_to_idx).to_numpy()
+
         print(f'Indexing Training Data {self.kg.train_set.shape}...')
-        self.kg.train_set = index_datasets(df=self.kg.train_set).to_numpy()
+        from_pandas_to_numpy()
+        # index_datasets(df=self.kg.train_set)
+
         print(f'Estimated size of train_set in Numpy: {self.kg.train_set.nbytes / 1000000 :.5f} in MB')
         if self.kg.valid_set is not None:
             print(f'Indexing Val Data {self.kg.valid_set.shape}...')

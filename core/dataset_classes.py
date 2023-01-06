@@ -110,20 +110,13 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
         elif self.form in ['KvsSample', '1VsAll', 'Pyke']:
             if self.form == '1VsAll':
                 # Multi-class
-                train_set = OnevsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
-                                            relation_idxs=self.relation_to_idx, form=self.form)
+                train_set = OnevsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx)
             elif self.form == 'KvsSample':
                 train_set = KvsSampleDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
-                                             relation_idxs=self.relation_to_idx, form=self.form,
                                              neg_sample_ratio=self.neg_sample_ratio,
                                              label_smoothing_rate=self.label_smoothing_rate)
             elif self.form == 'Pyke':
-                train_set = PykeDataset(self.train_set_idx,
-                                        entity_idxs=self.entity_to_idx,
-                                        relation_idxs=self.relation_to_idx,
-                                        form=self.form,
-                                        neg_sample_ratio=self.neg_sample_ratio,
-                                        label_smoothing_rate=self.label_smoothing_rate)
+                train_set = PykeDataset(self.train_set_idx)
             else:
                 raise ValueError(f'Invalid input : {self.form}')
         else:
@@ -266,7 +259,7 @@ class OnevsAllDataset(Dataset):
        torch.utils.data.Dataset
        """
 
-    def __init__(self, train_set_idx: np.ndarray, entity_idxs, relation_idxs, form):
+    def __init__(self, train_set_idx: np.ndarray, entity_idxs):
         super().__init__()
         assert isinstance(train_set_idx, np.ndarray)
         assert len(train_set_idx) > 0
@@ -279,7 +272,6 @@ class OnevsAllDataset(Dataset):
     def __getitem__(self, idx):
         y_vec = torch.zeros(self.target_dim)
         y_vec[self.train_data[idx, 2]] = 1
-
         return self.train_data[idx, :2], y_vec
 
 
@@ -406,9 +398,7 @@ class KvsSampleDataset(Dataset):
        torch.utils.data.Dataset
        """
 
-    def __init__(self, train_set_idx: np.ndarray, entity_idxs, relation_idxs, form, store=None,
-                 neg_sample_ratio: int = None,
-                 label_smoothing_rate: float = 0.0):
+    def __init__(self, train_set_idx: np.ndarray, entity_idxs,neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0):
         super().__init__()
         assert isinstance(train_set_idx, np.ndarray)
         self.train_data = None
@@ -548,9 +538,7 @@ class TriplePredictionDataset(Dataset):
 
 
 class PykeDataset(Dataset):
-    def __init__(self, train_set_idx: np.ndarray, entity_idxs, relation_idxs, form, store=None,
-                 neg_sample_ratio: int = None,
-                 label_smoothing_rate=None):
+    def __init__(self, train_set_idx: np.ndarray):
         super().__init__()
         assert isinstance(train_set_idx, np.ndarray)
         self.entity_vocab = dict()

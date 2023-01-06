@@ -22,7 +22,7 @@ def argparse_default(description=None):
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[Adan, NAdam, Adam, SGD, Sls, AdamSLS]')
     parser.add_argument('--embedding_dim', type=int, default=32, help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=0, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument('--callbacks',
@@ -52,7 +52,7 @@ def argparse_default(description=None):
     # Flags for computation
     parser.add_argument('--num_folds_for_cv', type=int, default=0, help='Number of folds in k-fold cross validation.'
                                                                         'If >2 ,no evaluation scenario is applied implies no evaluation.')
-    parser.add_argument("--eval_model", type=str, default="train_val_test",
+    parser.add_argument("--eval_model", type=str, default=None,#"train_val_test",
                         help='train, val, test, constraint, combine them anyway you want, e.g. '
                              'train_val,train_val_test, val_test, val_test_constraint ')
     # Additional training params
