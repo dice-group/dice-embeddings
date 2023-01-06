@@ -130,7 +130,7 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
         print('Initializing Dataloader...')
         return DataLoader(dataset=train_set, batch_size=self.batch_size,
                           shuffle=True, collate_fn=train_set.collate_fn,
-                          num_workers=self.num_workers, persistent_workers=True)
+                          num_workers=self.num_workers, persistent_workers=False)
 
     def val_dataloader(self) -> DataLoader:
         raise NotImplementedError
