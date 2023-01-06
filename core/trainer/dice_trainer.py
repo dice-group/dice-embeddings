@@ -91,7 +91,7 @@ class DICE_Trainer:
         # (1) Select model and labelling : Entity Prediction or Relation Prediction.
         return select_model(vars(self.args), self.is_continual_training, self.storage_path)
 
-    def initialize_dataloader(self, dataset, form_of_labelling)->torch.utils.data.DataLoader:
+    def initialize_dataloader(self, dataset, form_of_labelling) -> torch.utils.data.DataLoader:
         # (2) Create training data.
         return StandardDataModule(train_set_idx=dataset.train_set,
                                   valid_set_idx=dataset.valid_set,
@@ -99,6 +99,7 @@ class DICE_Trainer:
                                   entity_to_idx=dataset.entity_to_idx,
                                   relation_to_idx=dataset.relation_to_idx,
                                   form=form_of_labelling,
+                                  scoring_technique=self.args.scoring_technique,
                                   neg_sample_ratio=self.args.neg_ratio,
                                   batch_size=self.args.batch_size,
                                   num_workers=self.args.num_core,
@@ -114,9 +115,14 @@ class DICE_Trainer:
             self.trainer: Union[TorchTrainer, TorchDDPTrainer, pl.Trainer]
             self.trainer = initialize_trainer(self.args, callbacks=get_callbacks(self.args), plugins=[])
             model, form_of_labelling = self.initialize_model()
-            self.trainer.fit(model, train_dataloaders=self.initialize_dataloader(dataset, form_of_labelling))
-            return model, form_of_labelling
+            assert form_of_labelling in ['EntityPrediction', 'RelationPrediction', 'Pyke']
+            assert self.args.scoring_technique in ['KvsSample', '1vsAll', 'KvsAll', 'NegSample']
 
+            train_loader = self.initialize_dataloader(dataset, form_of_labelling)
+            if self.args.eval_model is None:
+                del dataset
+            self.trainer.fit(model, train_dataloaders=train_loader)
+            return model, form_of_labelling
 
     def k_fold_cross_validation(self, dataset) -> Tuple[BaseKGE, str]:
         """
@@ -154,6 +160,7 @@ class DICE_Trainer:
                                                    form=form_of_labelling,
                                                    neg_sample_ratio=self.args.neg_ratio,
                                                    batch_size=self.args.batch_size,
+                                                   scoring_technique=self.args.scoring_technique,
                                                    num_workers=self.args.num_core,
                                                    label_smoothing_rate=self.args.label_smoothing_rate).train_dataloader()
             trainer.fit(model, train_dataloaders=train_dataloaders)
