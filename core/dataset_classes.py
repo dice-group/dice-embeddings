@@ -10,6 +10,7 @@ from typing import Dict, List
 from .static_preprocess_funcs import mapping_from_first_two_cols_to_third
 from .static_funcs import timeit
 
+
 def input_data_type_checking(train_set_idx, valid_set_idx, test_set_idx, entity_to_idx: Dict, relation_to_idx: Dict):
     """ Type checking for efficient memory usage"""
     assert isinstance(train_set_idx, np.ndarray)
@@ -83,9 +84,9 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
                                  entity_to_idx=entity_to_idx,
                                  relation_to_idx=relation_to_idx)
 
-        self.train_set_idx = train_set_idx  # create_tensor(train_set_idx)
-        self.valid_set_idx = valid_set_idx  # create_tensor(valid_set_idx) if valid_set_idx is not None else valid_set_idx
-        self.test_set_idx = test_set_idx  # create_tensor(test_set_idx) if test_set_idx is not None else test_set_idx
+        self.train_set_idx = train_set_idx
+        self.valid_set_idx = valid_set_idx
+        self.test_set_idx = test_set_idx
         self.entity_to_idx = entity_to_idx
         self.relation_to_idx = relation_to_idx
         self.target_dim = None
@@ -94,37 +95,6 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
         self.num_workers = num_workers
         self.neg_sample_ratio = neg_sample_ratio
         self.label_smoothing_rate = label_smoothing_rate
-        self.construct_dataset()
-
-    def construct_dataset(self):
-        # @TODO: Proof the logic behind
-        if self.form == 'RelationPrediction':
-            self.target_dim = len(self.relation_to_idx)
-        elif self.form == 'EntityPrediction':
-            self.target_dim = len(self.entity_to_idx)
-        elif self.form == 'NegativeSampling':  # we can name it as TriplePrediction
-            # self.dataset_type_class = TriplePredictionDataset
-            # self.target_dim = 1
-            # self.neg_sample_ratio = neg_sample_ratio
-            pass
-        elif self.form == '1VsAll':
-            # Multi-class
-            self.dataset = OnevsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
-                                           relation_idxs=self.relation_to_idx, form=self.form)
-        elif self.form == 'KvsSample':
-            self.dataset = KvsSampleDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
-                                            relation_idxs=self.relation_to_idx, form=self.form,
-                                            neg_sample_ratio=self.neg_sample_ratio,
-                                            label_smoothing_rate=self.label_smoothing_rate)
-        elif self.form == 'Pyke':
-            self.dataset = PykeDataset(self.train_set_idx,
-                                       entity_idxs=self.entity_to_idx,
-                                       relation_idxs=self.relation_to_idx,
-                                       form=self.form,
-                                       neg_sample_ratio=self.neg_sample_ratio,
-                                       label_smoothing_rate=self.label_smoothing_rate)
-        else:
-            raise ValueError(f'Invalid input : {self.form}')
 
     def train_dataloader(self) -> DataLoader:
         if self.form == 'NegativeSampling':
@@ -133,22 +103,38 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
                                                 num_relations=len(self.relation_to_idx),
                                                 neg_sample_ratio=self.neg_sample_ratio,
                                                 label_smoothing_rate=self.label_smoothing_rate)
-            return DataLoader(train_set, batch_size=self.batch_size, shuffle=True,
-                              num_workers=self.num_workers, collate_fn=train_set.collate_fn, persistent_workers=True)
         elif self.form == 'EntityPrediction' or self.form == 'RelationPrediction':
             train_set = KvsAll(self.train_set_idx, entity_idxs=self.entity_to_idx,
                                relation_idxs=self.relation_to_idx, form=self.form,
                                label_smoothing_rate=self.label_smoothing_rate)
-            return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers,
-                              persistent_workers=True)
-        elif self.form in ['KvsSample', 'PvsAll', 'CCvsAll', '1VsAll', 'BatchRelaxedKvsAll', 'BatchRelaxed1vsAll',
-                           'Pyke']:
-            return DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers,
-                              persistent_workers=True)
+        elif self.form in ['KvsSample', '1VsAll', 'Pyke']:
+            if self.form == '1VsAll':
+                # Multi-class
+                train_set = OnevsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
+                                            relation_idxs=self.relation_to_idx, form=self.form)
+            elif self.form == 'KvsSample':
+                train_set = KvsSampleDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
+                                             relation_idxs=self.relation_to_idx, form=self.form,
+                                             neg_sample_ratio=self.neg_sample_ratio,
+                                             label_smoothing_rate=self.label_smoothing_rate)
+            elif self.form == 'Pyke':
+                train_set = PykeDataset(self.train_set_idx,
+                                        entity_idxs=self.entity_to_idx,
+                                        relation_idxs=self.relation_to_idx,
+                                        form=self.form,
+                                        neg_sample_ratio=self.neg_sample_ratio,
+                                        label_smoothing_rate=self.label_smoothing_rate)
+            else:
+                raise ValueError(f'Invalid input : {self.form}')
         else:
             raise KeyError(f'{self.form} illegal input.')
 
+        return DataLoader(dataset=train_set, batch_size=self.batch_size,
+                          shuffle=True, collate_fn=train_set.collate_fn,
+                          num_workers=self.num_workers, persistent_workers=True)
+
     def val_dataloader(self) -> DataLoader:
+        raise NotImplementedError
         if self.form == 'NegativeSampling':
             valid_set = TriplePredictionDataset(self.valid_set_idx,
                                                 num_entities=len(self.entity_to_idx),
@@ -172,6 +158,8 @@ class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
             raise KeyError(f'{self.form} illegal input.')
 
     def test_dataloader(self) -> DataLoader:
+        raise NotImplementedError
+
         if self.form == 'NegativeSampling':
             test_set = TriplePredictionDataset(self.test_set_idx,
                                                num_entities=len(self.entity_to_idx),

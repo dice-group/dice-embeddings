@@ -18,9 +18,11 @@ from core.static_funcs import *
 from core.static_preprocess_funcs import preprocesses_input_args
 from core.sanity_checkers import *
 from core.trainer import DICE_Trainer
+
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 os.environ["TORCH_DISTRIBUTED_DEBUG"] = "INFO"
+
 
 class Execute:
     """ A class for Training, Retraining and Evaluation a model.
@@ -57,13 +59,16 @@ class Execute:
         self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
         # (3) Sanity checking.
         self.args, self.dataset = config_kge_sanity_checking(self.args, self.dataset)
+        self.report['num_train_triples'] = len(self.dataset.train_set)
+        self.report['num_entities'] = self.args.num_entities
+        self.report['num_relations'] = self.args.num_relations
 
     def load_indexed_data(self) -> None:
         """ Load Indexed Data"""
         self.dataset = read_or_load_kg(self.args, cls=KG)
-    
+
     @timeit
-    def save_trained_model(self, start_time: float) -> None:
+    def save_trained_model(self) -> None:
         """ Save a knowledge graph embedding model (an instance of BaseKGE class) """
         print('*** Save Trained Model ***')
         self.trained_model.eval()
@@ -102,13 +107,16 @@ class Execute:
         #  Load the indexed data from disk or read a raw data from disk.
         self.load_indexed_data() if self.is_continual_training else self.read_preprocess_index_serialize_data()
         # (2) Create an evaluator object.
-        self.evaluator = Evaluator(self)
+        self.evaluator = Evaluator(args=self.args, dataset=self.dataset)
         # (3) Create a trainer object.
-        self.trainer = DICE_Trainer(self, self.evaluator)
+        self.trainer = DICE_Trainer(args=self.args,
+                                    is_continual_training=self.is_continual_training,
+                                    storage_path=self.storage_path,
+                                    evaluator=self.evaluator)
         # (4) Start the training
-        self.trained_model, form_of_labelling = self.trainer.start()
+        self.trained_model, form_of_labelling = self.trainer.start(dataset=self.dataset)
         # (5) Store trained model.
-        self.save_trained_model(start_time)
+        self.save_trained_model()
         self.report['Runtime'] = time.time() - start_time
         print(f"Total computation time: {self.report['Runtime']:.3f} seconds")
         # (6) Eval model.

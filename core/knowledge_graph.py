@@ -52,10 +52,9 @@ class KG:
         assert len(self.train_set[0]) > 0
         assert isinstance(self.train_set, np.ndarray)
         assert isinstance(self.train_set[0], np.ndarray)
+        self._describe()
 
-        self.__describe()
-
-    def __describe(self) -> None:
+    def _describe(self) -> None:
         self.description_of_input = f'\n------------------- Description of Dataset {self.data_dir} -------------------'
         self.description_of_input += f'\nNumber of entities: {self.num_entities}' \
                                      f'\nNumber of relations: {self.num_relations}' \

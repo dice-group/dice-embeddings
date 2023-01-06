@@ -24,16 +24,25 @@ class PreprocessKG:
             self.preprocess_with_pandas()
         else:
             raise KeyError(f'{self.kg.backend} not found')
-        # (1) Storing indexes in more integer efficient types.
+
+        total_nb_for_dataset = 0
+        print('Data Type conversion...')
         self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
                                                     num=max(self.kg.num_entities, self.kg.num_relations))
+        total_nb_for_dataset += self.kg.train_set.nbytes / 1000000
 
         if self.kg.valid_set is not None:
             self.kg.valid_set = numpy_data_type_changer(self.kg.valid_set,
                                                         num=max(self.kg.num_entities, self.kg.num_relations))
+            total_nb_for_dataset += self.kg.valid_set.nbytes / 1000000
+
         if self.kg.test_set is not None:
             self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
                                                        num=max(self.kg.num_entities, self.kg.num_relations))
+            total_nb_for_dataset += self.kg.test_set.nbytes / 1000000
+
+        print(f'Total Estimated Memory {total_nb_for_dataset} in MB')
+        exit(1)
 
     @timeit
     def preprocess_with_pandas(self) -> None:
@@ -145,31 +154,42 @@ class PreprocessKG:
         def entity_index():
             """ Create a mapping from str representation of entities/nodes to integers"""
             # Entity Index: {'a':1, 'b':2} :
-            self.kg.entity_to_idx = polars.concat((df_str_kg['subject'], df_str_kg['object'])).unique(
-                maintain_order=True).rename('entity')
-
-            print('Polars DataFrame to python dictionary conversion...')
-            self.kg.entity_to_idx = dict(zip(self.kg.entity_to_idx.to_list(), list(range(len(self.kg.entity_to_idx)))))
+            return polars.concat((df_str_kg['subject'], df_str_kg['object'])).unique(maintain_order=True).rename(
+                'entity')
 
         print('Entity Indexing...', end=' ')
-        entity_index()
+        self.kg.entity_to_idx = entity_index()
 
         @timeit
         def relation_index():
             """ Create a mapping from str representation of relations/edges to integers"""
             # Relation Index: {'r1':1, 'r2:'2}
-            self.kg.relation_to_idx = df_str_kg['relation'].unique(maintain_order=True)
-            print('Polars DataFrame to python dictionary conversion...')
-            self.kg.relation_to_idx = dict(
-                zip(self.kg.relation_to_idx.to_list(), list(range(len(self.kg.relation_to_idx)))))
+            return df_str_kg['relation'].unique(maintain_order=True)
 
         print('Relation Indexing...', end=' ')
-        relation_index()
+        self.kg.relation_to_idx = relation_index()
+
+        print(f'Estimated size of entity_to_idx in Polars:{self.kg.entity_to_idx.estimated_size(unit="mb"):.5f} in MB')
+        print(
+            f'Estimated size of relation_to_idx in Polars:{self.kg.relation_to_idx.estimated_size(unit="mb"):.5f} in MB')
+        # Python dictionary is too expensive
+        # self.kg.entity_to_idx = polars.DataFrame([polars.Series(val, [i]) for i, val in enumerate(self.kg.entity_to_idx.to_list())])
+        print('Polars DataFrame to python dictionary conversion...')
+        self.kg.entity_to_idx = dict(zip(self.kg.entity_to_idx.to_list(), list(range(len(self.kg.entity_to_idx)))))
+        print(
+            f'Estimated size of entity_to_idx in Python dict:{sys.getsizeof(self.kg.entity_to_idx) / 1000000 :.5f} in MB')
+        self.kg.relation_to_idx = dict(
+            zip(self.kg.relation_to_idx.to_list(), list(range(len(self.kg.relation_to_idx)))))
+        print(
+            f'Estimated size of relation_to_idx in Python dict:{sys.getsizeof(self.kg.relation_to_idx) / 1000000 :.5f} in MB')
+
         self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
 
         def indexer(data):
             """ Apply str to int mapping on an input data"""
             # These column assignments are executed in parallel
+            # with_colums allows you to create new columns for you analyses.
+            # https://pola-rs.github.io/polars-book/user-guide/quickstart/quick-exploration-guide.html#with_columns
             return data.with_columns(
                 [polars.col("subject").apply(lambda x: self.kg.entity_to_idx[x]).alias("subject"),
                  polars.col("relation").apply(lambda x: self.kg.relation_to_idx[x]).alias("relation"),
@@ -178,17 +198,21 @@ class PreprocessKG:
         @timeit
         def index_datasets(df: polars.DataFrame):
             """ Map str stored in a polars Dataframe to int"""
-            df = indexer(df)
-            return df.to_numpy()
+            x = indexer(df)
+            print(f'Estimated size of Polars Dataframe: {x.estimated_size(unit="mb"):.5f} in MB')
+            return x
 
         print(f'Indexing Training Data {self.kg.train_set.shape}...')
-        self.kg.train_set = index_datasets(df=self.kg.train_set)
+        self.kg.train_set = index_datasets(df=self.kg.train_set).to_numpy()
+        print(f'Estimated size of train_set in Numpy: {self.kg.train_set.nbytes / 1000000 :.5f} in MB')
         if self.kg.valid_set is not None:
             print(f'Indexing Val Data {self.kg.valid_set.shape}...')
-            self.kg.valid_set = index_datasets(df=self.kg.valid_set)
+            self.kg.valid_set = index_datasets(df=self.kg.valid_set).to_numpy()
+            print(f'Estimated size of valid_set in Numpy: {self.kg.valid_set.nbytes / 1000000:.5f} in MB')
         if self.kg.test_set is not None:
             print(f'Indexing Test Data {self.kg.test_set.shape}...')
-            self.kg.test_set = index_datasets(df=self.kg.test_set)
+            self.kg.test_set = index_datasets(df=self.kg.test_set).to_numpy()
+            print(f'Estimated size of test_set in Numpy: {self.kg.test_set.nbytes / 1000000:.5f} in MB')
         print(f'*** Preprocessing Train Data:{self.kg.train_set.shape} with Polars DONE ***')
 
     def sequential_vocabulary_construction(self) -> None:
