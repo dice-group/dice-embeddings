@@ -35,26 +35,25 @@ class TestRegressionQmult:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_sample_regression(self):
         args = argparse_default([])
-        args.model = 'QMult'
+        args.model = 'AConEx'
         args.path_dataset_folder = 'KGs/UMLS'
         args.optim = 'Adam'
-        args.num_epochs = 2
+        args.num_epochs = 10
         args.batch_size = 1024
-        args.lr = 0.01
-        args.embedding_dim = 16
+        args.lr = 0.1
+        args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'KvsSample'
         # size of entity vocabulary
-        args.neg_ratio = 135
-        args.add_noise_rate = None
-        args.input_dropout_rate = 0.0
-        args.hidden_dropout_rate = 0.0
-        args.normalization = 'LayerNorm'
+        args.neg_ratio = 10
         args.weight_decay = 0.0
         args.eval_model = 'train_val_test'
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.trainer = 'torchCPUTrainer'
-        Execute(args).start()
+        result = Execute(args).start()
+        assert result['Train']['MRR'] >= 0.220
+        assert result['Val']['MRR'] >= 0.220
+        assert result['Test']['MRR'] >= 0.220
