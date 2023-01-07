@@ -88,7 +88,12 @@ class Execute:
                   trained_model=self.trained_model,
                   model_name='model_' + str(datetime.datetime.now()),
                   full_storage_path=self.storage_path, save_as_csv=self.args.save_embeddings_as_csv)
+
         self.report['path_experiment_folder'] = self.storage_path
+        self.report['num_entities'] = self.args.num_entities
+        self.report['num_relations'] = self.args.num_relations
+        self.report['path_experiment_folder'] = self.storage_path
+
         # (4) Store the report of training.
         with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
             json.dump(self.report, file_descriptor, indent=4)
@@ -154,3 +159,32 @@ class ContinuousExecute(Execute):
         print('ContinuousExecute starting...')
         print(previous_args)
         super().__init__(previous_args, continuous_training=True)
+
+    def continual_start(self) -> dict:
+        """
+        (1) Initialize training.
+        (2) Start continual training.
+        (3) Save trained model.
+
+        Parameter
+        ---------
+
+        Returns
+        -------
+        report:dict
+        """
+        # (1)
+        self.trainer = DICE_Trainer(args=self.args, is_continual_training=True,
+                                    storage_path=self.args.path_experiment_folder)
+        # (2)
+        self.trained_model, form_of_labelling = self.trainer.continual_start()
+
+        # (5) Store trained model.
+        self.save_trained_model()
+        # (6) Eval model.
+        if self.args.eval_model is None:
+            return self.report
+        else:
+            self.evaluator = Evaluator(args=self.args, is_continual_training=True)
+            self.evaluator.dummy_eval(self.trained_model, form_of_labelling)
+            return {**self.report, **self.evaluator.report}

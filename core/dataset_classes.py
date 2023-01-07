@@ -251,9 +251,7 @@ class KvsSampleDataset(Dataset):
        torch.utils.data.Dataset
        """
 
-    def __init__(self, train_set: np.ndarray, num_entities, num_relations,
-                 neg_sample_ratio: int = None,
-                 label_smoothing_rate: float = 0.0):
+    def __init__(self, train_set: np.ndarray, num_entities, num_relations, neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0):
         super().__init__()
         assert isinstance(train_set, np.ndarray)
         # https://pytorch.org/docs/stable/data.html#multi-process-data-loading

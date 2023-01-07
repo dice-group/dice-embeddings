@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import json
 import sys
-from .static_funcs import timeit
+from .static_funcs import timeit, pickle
 
 
 class Evaluator:
@@ -14,7 +14,14 @@ class Evaluator:
        executor: Executor class instance
    """
 
-    def __init__(self, args):
+    def __init__(self, args, is_continual_training=None):
+        self.re_vocab = None
+        self.er_vocab = None
+        self.ee_vocab = None
+        self.is_continual_training = is_continual_training
+        self.num_entities = None
+        self.num_relations = None
+        self.domain_constraints_per_rel, self.range_constraints_per_rel = None, None
         self.args = args
         self.report = dict()
 
@@ -29,7 +36,6 @@ class Evaluator:
         ----------
         None
         """
-
         print("** VOCAB Prep **")
         if isinstance(dataset.er_vocab, dict):
             self.er_vocab = dataset.er_vocab
@@ -57,6 +63,10 @@ class Evaluator:
         self.num_entities = dataset.num_entities
         self.num_relations = dataset.num_relations
 
+        pickle.dump(self.er_vocab, open(self.args.full_storage_path + "/er_vocab.p", "wb"))
+        pickle.dump(self.re_vocab, open(self.args.full_storage_path + "/re_vocab.p", "wb"))
+        pickle.dump(self.ee_vocab, open(self.args.full_storage_path + "/ee_vocab.p", "wb"))
+
     @timeit
     def eval(self, dataset, trained_model, form_of_labelling) -> None:
         # (1) Exit, if the flag is not set
@@ -73,50 +83,91 @@ class Evaluator:
             self.args.eval_model = 'train_val_test'
 
         if self.args.scoring_technique == 'NegSample':
-            self.eval_rank_of_head_and_tail_entity(dataset, trained_model)
+            self.eval_rank_of_head_and_tail_entity(train_set=dataset.train_set,
+                                                   valid_set=dataset.valid_set,
+                                                   test_set=dataset.test_set,
+                                                   trained_model=trained_model)
         elif self.args.scoring_technique in ['KvsAll', 'KvsSample', '1vsAll', 'PvsAll', 'CCvsAll']:
-            self.eval_with_vs_all(dataset, trained_model, form_of_labelling)
-        elif self.args.scoring_technique in ['BatchRelaxedKvsAll', 'BatchRelaxed1vsAll']:
-            self.eval_with_vs_all(dataset, trained_model, form_of_labelling)
+            self.eval_with_vs_all(train_set=dataset.train_set,
+                                  valid_set=dataset.valid_set,
+                                  test_set=dataset.test_set,
+                                  trained_model=trained_model,
+                                  form_of_labelling=form_of_labelling)
         else:
             raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
         with open(self.args.full_storage_path + '/eval_report.json', 'w') as file_descriptor:
             json.dump(self.report, file_descriptor, indent=4)
 
-    def eval_rank_of_head_and_tail_entity(self, dataset, trained_model):
+    def dummy_eval(self, trained_model,form_of_labelling):
+
+        if self.is_continual_training:
+            self.er_vocab = pickle.load(open(self.args.full_storage_path + "/er_vocab.p", "rb"))
+            self.re_vocab = pickle.load(open(self.args.full_storage_path + "/re_vocab.p", "rb"))
+            self.ee_vocab = pickle.load(open(self.args.full_storage_path + "/ee_vocab.p", "rb"))
+
+        if 'train' in self.args.eval_model:
+            train_set=np.load(self.args.full_storage_path + "/train_set.npy")
+        else:
+            train_set=None
+        if 'val' in self.args.eval_model:
+            valid_set = np.load(self.args.full_storage_path + "/valid_set.npy")
+        else:
+            valid_set = None
+
+        if 'test' in self.args.eval_model:
+            test_set = np.load(self.args.full_storage_path + "/test_set.npy")
+        else:
+            test_set = None
+
+        if self.args.scoring_technique == 'NegSample':
+            self.eval_rank_of_head_and_tail_entity(train_set=train_set,
+                                                   valid_set=valid_set,
+                                                   test_set=test_set,
+                                                   trained_model=trained_model)
+        elif self.args.scoring_technique in ['KvsAll', 'KvsSample', '1vsAll', 'PvsAll', 'CCvsAll']:
+            self.eval_with_vs_all(train_set=train_set,
+                                  valid_set=valid_set,
+                                  test_set=test_set,
+                                  trained_model=trained_model, form_of_labelling=form_of_labelling)
+        else:
+            raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
+        with open(self.args.full_storage_path + '/eval_report.json', 'w') as file_descriptor:
+            json.dump(self.report, file_descriptor, indent=4)
+
+    def eval_rank_of_head_and_tail_entity(self, *, train_set, valid_set=None, test_set=None, trained_model):
         # 4. Test model on the training dataset if it is needed.
         if 'train' in self.args.eval_model:
-            res = self.evaluate_lp(trained_model, dataset.train_set,
+            res = self.evaluate_lp(trained_model, train_set,
                                    f'Evaluate {trained_model.name} on Train set')
             self.report['Train'] = res
         # 5. Test model on the validation and test dataset if it is needed.
         if 'val' in self.args.eval_model:
-            if dataset.valid_set is not None:
-                self.report['Val'] = self.evaluate_lp(trained_model, dataset.valid_set,
+            if valid_set is not None:
+                self.report['Val'] = self.evaluate_lp(trained_model, valid_set,
                                                       f'Evaluate {trained_model.name} of Validation set')
 
-        if dataset.test_set is not None and 'test' in self.args.eval_model:
-            self.report['Test'] = self.evaluate_lp(trained_model, dataset.test_set,
+        if test_set is not None and 'test' in self.args.eval_model:
+            self.report['Test'] = self.evaluate_lp(trained_model, test_set,
                                                    f'Evaluate {trained_model.name} of Test set')
 
-    def eval_with_vs_all(self, dataset, trained_model, form_of_labelling) -> None:
+    def eval_with_vs_all(self, *, train_set, valid_set=None, test_set=None, trained_model, form_of_labelling) -> None:
         """ Evaluate model after reciprocal triples are added """
         # 4. Test model on the training dataset if it is needed.
         if 'train' in self.args.eval_model:
-            res = self.evaluate_lp_k_vs_all(trained_model, dataset.train_set,
+            res = self.evaluate_lp_k_vs_all(trained_model, train_set,
                                             info=f'Evaluate {trained_model.name} on Train set',
                                             form_of_labelling=form_of_labelling)
             self.report['Train'] = res
 
         # 5. Test model on the validation and test dataset if it is needed.
         if 'val' in self.args.eval_model:
-            if dataset.valid_set is not None:
-                res = self.evaluate_lp_k_vs_all(trained_model, dataset.valid_set,
+            if valid_set is not None:
+                res = self.evaluate_lp_k_vs_all(trained_model, valid_set,
                                                 f'Evaluate {trained_model.name} on Validation set',
                                                 form_of_labelling=form_of_labelling)
                 self.report['Val'] = res
-        if dataset.test_set is not None and 'test' in self.args.eval_model:
-            res = self.evaluate_lp_k_vs_all(trained_model, dataset.test_set,
+        if test_set is not None and 'test' in self.args.eval_model:
+            res = self.evaluate_lp_k_vs_all(trained_model, test_set,
                                             f'Evaluate {trained_model.name} on Test set',
                                             form_of_labelling=form_of_labelling)
             self.report['Test'] = res

@@ -19,9 +19,7 @@ import copy
 from typing import List, Tuple
 
 
-@timeit
-def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
-    """ Initialize Trainer from input arguments """
+def initialize_trainer(args, callbacks):
     if args.trainer == 'torchCPUTrainer':
         print('Initializing TorchTrainer CPU Trainer...', end='\t')
         return TorchTrainer(args, callbacks=callbacks)
@@ -68,10 +66,24 @@ def get_callbacks(args):
 
 class DICE_Trainer:
     """
-    DICE_Trainer implement
+   DICE_Trainer implement
     1- Pytorch Lightning trainer (https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html)
     2- Multi-GPU Trainer(https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html)
     3- CPU Trainer
+
+    Parameter
+    ---------
+    args
+
+    is_continual_training:bool
+
+    storage_path:str
+
+    evaluator:
+
+    Returns
+    -------
+    report:dict
     """
 
     def __init__(self, args, is_continual_training, storage_path, evaluator=None):
@@ -88,10 +100,43 @@ class DICE_Trainer:
         for i in range(torch.cuda.device_count()):
             print(torch.cuda.get_device_name(i))
 
+    def continual_start(self):
+        """
+        (1) Initialize training.
+        (2) Load model
+        (3) Load trainer
+        (3) Fit model
+
+        Parameter
+        ---------
+
+        Returns
+        -------
+        model:
+        form_of_labelling: str
+        """
+
+        self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args), plugins=[])
+        model, form_of_labelling = self.initialize_or_load_model()
+        assert form_of_labelling in ['EntityPrediction', 'RelationPrediction', 'Pyke']
+        assert self.args.scoring_technique in ['KvsSample', '1vsAll', 'KvsAll', 'NegSample']
+        # Load the training data
+        train_loader = torch.load(self.storage_path + '/TrainDataloader.pth')
+        self.trainer.fit(model, train_dataloaders=train_loader)
+        return model, form_of_labelling
+
     @timeit
-    def initialize_model(self):
+    def initialize_trainer(self, callbacks: List, plugins: List) -> pl.Trainer:
+        """ Initialize Trainer from input arguments """
+        return initialize_trainer(self.args, callbacks)
+
+    @timeit
+    def initialize_or_load_model(self):
         print('Initializing model...', end='\t')
-        return select_model(vars(self.args), self.is_continual_training, self.storage_path)
+        model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
+        self.report['form_of_labelling'] = form_of_labelling
+        assert form_of_labelling in ['EntityPrediction', 'RelationPrediction', 'Pyke']
+        return model, form_of_labelling
 
     def initialize_dataloader(self, dataset, form_of_labelling) -> torch.utils.data.DataLoader:
         train_loader = construct_train_dataloader(train_set=dataset.train_set,
@@ -118,11 +163,11 @@ class DICE_Trainer:
             return self.k_fold_cross_validation(dataset)
         else:
             self.trainer: Union[TorchTrainer, TorchDDPTrainer, pl.Trainer]
-            self.trainer = initialize_trainer(self.args, callbacks=get_callbacks(self.args), plugins=[])
-            model, form_of_labelling = self.initialize_model()
-            assert form_of_labelling in ['EntityPrediction', 'RelationPrediction', 'Pyke']
+            self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args), plugins=[])
+            model, form_of_labelling = self.initialize_or_load_model()
             assert self.args.scoring_technique in ['KvsSample', '1vsAll', 'KvsAll', 'NegSample']
             train_loader = self.initialize_dataloader(dataset, form_of_labelling)
+            torch.save(train_loader, self.storage_path + '/TrainDataloader.pth')
             self.trainer.fit(model, train_dataloaders=train_loader)
             return model, form_of_labelling
 
@@ -149,7 +194,7 @@ class DICE_Trainer:
         for (ith, (train_index, test_index)) in enumerate(kf.split(dataset.train_set)):
             # Need to create a new copy for the callbacks
             args = copy.copy(self.args)
-            trainer = initialize_trainer(args, get_callbacks(args), plugins=[])
+            trainer = initialize_trainer(args, get_callbacks(args))
             model, form_of_labelling = select_model(vars(args), self.is_continual_training, self.storage_path)
             print(f'{form_of_labelling} training starts: {model.name}')
 
