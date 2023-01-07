@@ -6,6 +6,7 @@ from core.custom_opt.adam_sls import AdamSLS
 from core.static_funcs_training import efficient_zero_grad
 import time
 
+
 class TorchTrainer(AbstractTrainer):
     """
         TorchTrainer for using single GPU or multi CPUs on a single node
@@ -33,7 +34,7 @@ class TorchTrainer(AbstractTrainer):
         else:
             self.device = 'cpu'
 
-    def _run_batch(self, i:int,x_batch, y_batch) -> float:
+    def _run_batch(self, i: int, x_batch, y_batch) -> float:
         """
             Forward anc Backward according to a mini-batch
 
@@ -76,7 +77,7 @@ class TorchTrainer(AbstractTrainer):
             if construct_mini_batch_time:
                 construct_mini_batch_time = start_time - construct_mini_batch_time
             # (2) Forward-Backward-Update.
-            batch_loss = self._run_batch(i,x_batch, y_batch)
+            batch_loss = self._run_batch(i, x_batch, y_batch)
             epoch_loss += batch_loss
             if construct_mini_batch_time:
                 print(
@@ -116,7 +117,8 @@ class TorchTrainer(AbstractTrainer):
         else:
             self.use_closure = False
 
-        print(f'NumOfDataPoints:{len(self.train_dataloaders.dataset)} | NumOfEpochs:{self.attributes.max_epochs} | LearningRate:{self.model.learning_rate} | BatchSize:{self.train_dataloaders.batch_size} | EpochBatchsize:{len(train_dataloaders)}')
+        print(
+            f'NumOfDataPoints:{len(self.train_dataloaders.dataset)} | NumOfEpochs:{self.attributes.max_epochs} | LearningRate:{self.model.learning_rate} | BatchSize:{self.train_dataloaders.batch_size} | EpochBatchsize:{len(train_dataloaders)}')
         for epoch in range(self.attributes.max_epochs):
             start_time = time.time()
             # (1)

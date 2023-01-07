@@ -5,39 +5,40 @@ from typing import Union
 from core.models.base_model import BaseKGE
 from core.static_funcs import select_model
 from core.callbacks import *
-from core.dataset_classes import StandardDataModule
+from core.dataset_classes import construct_train_dataloader
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
+from ..static_funcs import timeit
 import os
 import torch
 import numpy as np
 from pytorch_lightning.strategies import DDPStrategy
-from core.helper_classes import LabelRelaxationLoss, BatchRelaxedvsAllLoss
 import pandas as pd
 from sklearn.model_selection import KFold
 import copy
 from typing import List, Tuple
 
 
+@timeit
 def initialize_trainer(args, callbacks: List, plugins: List) -> pl.Trainer:
     """ Initialize Trainer from input arguments """
     if args.trainer == 'torchCPUTrainer':
-        print('Initializing TorchTrainer CPU Trainer...')
+        print('Initializing TorchTrainer CPU Trainer...', end='\t')
         return TorchTrainer(args, callbacks=callbacks)
     elif args.trainer == 'torchDDP':
         if torch.cuda.is_available():
-            print('Initializing TorchDDPTrainer GPU')
+            print('Initializing TorchDDPTrainer GPU', end='\t')
             return TorchDDPTrainer(args, callbacks=callbacks)
         else:
-            print('Initializing TorchTrainer CPU Trainer')
+            print('Initializing TorchTrainer CPU Trainer', end='\t')
             return TorchTrainer(args, callbacks=callbacks)
     elif args.trainer == 'PL':
-        print('Initializing Pytorch-lightning Trainer')
+        print('Initializing Pytorch-lightning Trainer', end='\t')
         # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
         return pl.Trainer.from_argparse_args(args,
                                              strategy=DDPStrategy(find_unused_parameters=False))
     else:
-        print('Initialize TorchTrainer CPU Trainer')
+        print('Initialize TorchTrainer CPU Trainer', end='\t')
         return TorchTrainer(args, callbacks=callbacks)
 
 
@@ -87,25 +88,30 @@ class DICE_Trainer:
         for i in range(torch.cuda.device_count()):
             print(torch.cuda.get_device_name(i))
 
+    @timeit
     def initialize_model(self):
-        # (1) Select model and labelling : Entity Prediction or Relation Prediction.
+        print('Initializing model...', end='\t')
         return select_model(vars(self.args), self.is_continual_training, self.storage_path)
 
+    @timeit
     def initialize_dataloader(self, dataset, form_of_labelling) -> torch.utils.data.DataLoader:
-        # (2) Create training data.
-        print('initializing Data Module...')
-        data_module = StandardDataModule(train_set_idx=dataset.train_set,
-                                         valid_set_idx=dataset.valid_set,
-                                         test_set_idx=dataset.test_set,
-                                         entity_to_idx=dataset.entity_to_idx,
-                                         relation_to_idx=dataset.relation_to_idx,
-                                         form=form_of_labelling,
-                                         scoring_technique=self.args.scoring_technique,
-                                         neg_sample_ratio=self.args.neg_ratio,
-                                         batch_size=self.args.batch_size,
-                                         num_workers=self.args.num_core,
-                                         label_smoothing_rate=self.args.label_smoothing_rate)
-        return data_module.train_dataloader()
+        print('Initializing Pytorch Dataset & Dataloader...', end='\t')
+        train_loader = construct_train_dataloader(train_set=dataset.train_set,
+                                                  valid_set=dataset.valid_set,
+                                                  test_set=dataset.test_set,
+                                                  entity_to_idx=dataset.entity_to_idx,
+                                                  relation_to_idx=dataset.relation_to_idx,
+                                                  form_of_labelling=form_of_labelling,
+                                                  scoring_technique=self.args.scoring_technique,
+                                                  neg_ratio=self.args.neg_ratio,
+                                                  batch_size=self.args.batch_size,
+                                                  num_core=self.args.num_core,
+                                                  label_smoothing_rate=self.args.label_smoothing_rate)
+        if self.args.eval_model is None:
+            del dataset.train_set
+            gc.collect()
+
+        return train_loader
 
     def start(self, dataset) -> Tuple[BaseKGE, str]:
         """ Train selected model via the selected training strategy """
@@ -119,11 +125,7 @@ class DICE_Trainer:
             model, form_of_labelling = self.initialize_model()
             assert form_of_labelling in ['EntityPrediction', 'RelationPrediction', 'Pyke']
             assert self.args.scoring_technique in ['KvsSample', '1vsAll', 'KvsAll', 'NegSample']
-
             train_loader = self.initialize_dataloader(dataset, form_of_labelling)
-            if self.args.eval_model is None:
-                del dataset
-            print('Fitting start...')
             self.trainer.fit(model, train_dataloaders=train_loader)
             return model, form_of_labelling
 
@@ -157,15 +159,16 @@ class DICE_Trainer:
             train_set_for_i_th_fold, test_set_for_i_th_fold = dataset.train_set[train_index], dataset.train_set[
                 test_index]
 
-            train_dataloaders = StandardDataModule(train_set_idx=train_set_for_i_th_fold,
-                                                   entity_to_idx=dataset.entity_to_idx,
-                                                   relation_to_idx=dataset.relation_to_idx,
-                                                   form=form_of_labelling,
-                                                   neg_sample_ratio=self.args.neg_ratio,
-                                                   batch_size=self.args.batch_size,
-                                                   scoring_technique=self.args.scoring_technique,
-                                                   num_workers=self.args.num_core,
-                                                   label_smoothing_rate=self.args.label_smoothing_rate).train_dataloader()
+            train_dataloaders = construct_train_dataloader(train_set=train_set_for_i_th_fold,
+                                                           entity_to_idx=dataset.entity_to_idx,
+                                                           relation_to_idx=dataset.relation_to_idx,
+                                                           form_of_labelling=form_of_labelling,
+                                                           scoring_technique=self.args.scoring_technique,
+                                                           neg_ratio=self.args.neg_ratio,
+                                                           batch_size=self.args.batch_size,
+                                                           num_core=self.args.num_core,
+                                                           label_smoothing_rate=self.args.label_smoothing_rate)
+
             trainer.fit(model, train_dataloaders=train_dataloaders)
 
             res = self.evaluator.eval_with_data(dataset=dataset, trained_model=model, triple_idx=test_set_for_i_th_fold,
