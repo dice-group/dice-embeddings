@@ -24,6 +24,7 @@ class TestPickle:
         args = argparse_default([])
         args.path_dataset_folder = 'KGs/UMLS'
         args.model = 'TransE'
+        args.scoring_technique = 'NegSample'
         executor = Execute(args)
         args.trainer = 'torchCPUTrainer'
         executor.start()
