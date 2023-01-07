@@ -5,7 +5,7 @@ from typing import Union
 from core.models.base_model import BaseKGE
 from core.static_funcs import select_model
 from core.callbacks import *
-from core.dataset_classes import construct_train_dataloader
+from core.dataset_classes import construct_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
 from ..static_funcs import timeit
@@ -132,28 +132,37 @@ class DICE_Trainer:
 
     @timeit
     def initialize_or_load_model(self):
-        print('Initializing model...', end='\t')
+        print('Initializing Model...', end='\t')
         model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         self.report['form_of_labelling'] = form_of_labelling
         assert form_of_labelling in ['EntityPrediction', 'RelationPrediction', 'Pyke']
         return model, form_of_labelling
 
-    def initialize_dataloader(self, dataset, form_of_labelling) -> torch.utils.data.DataLoader:
-        train_loader = construct_train_dataloader(train_set=dataset.train_set,
-                                                  valid_set=dataset.valid_set,
-                                                  test_set=dataset.test_set,
-                                                  entity_to_idx=dataset.entity_to_idx,
-                                                  relation_to_idx=dataset.relation_to_idx,
-                                                  form_of_labelling=form_of_labelling,
-                                                  scoring_technique=self.args.scoring_technique,
-                                                  neg_ratio=self.args.neg_ratio,
-                                                  batch_size=self.args.batch_size,
-                                                  num_core=self.args.num_core,
-                                                  label_smoothing_rate=self.args.label_smoothing_rate)
+    @timeit
+    def initialize_dataloader(self, dataset: torch.utils.data.Dataset) -> torch.utils.data.DataLoader:
+        print('Initializing Dataloader...', end='\t')
+        # https://pytorch.org/docs/stable/data.html#multi-process-data-loading
+        # https://github.com/pytorch/pytorch/issues/13246#issuecomment-905703662
+        return torch.utils.data.DataLoader(dataset=dataset, batch_size=self.args.batch_size,
+                                           shuffle=True, collate_fn=dataset.collate_fn,
+                                           num_workers=self.args.num_core, persistent_workers=False)
+
+    @timeit
+    def initialize_dataset(self, dataset, form_of_labelling) -> torch.utils.data.Dataset:
+        print('Initializing Dataset...', end='\t')
+        train_dataset = construct_dataset(train_set=dataset.train_set,
+                                          valid_set=dataset.valid_set,
+                                          test_set=dataset.test_set,
+                                          entity_to_idx=dataset.entity_to_idx,
+                                          relation_to_idx=dataset.relation_to_idx,
+                                          form_of_labelling=form_of_labelling,
+                                          scoring_technique=self.args.scoring_technique,
+                                          neg_ratio=self.args.neg_ratio,
+                                          label_smoothing_rate=self.args.label_smoothing_rate)
         if self.args.eval_model is None:
             del dataset.train_set
             gc.collect()
-        return train_loader
+        return train_dataset
 
     def start(self, dataset) -> Tuple[BaseKGE, str]:
         """ Train selected model via the selected training strategy """
@@ -166,7 +175,7 @@ class DICE_Trainer:
             self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args), plugins=[])
             model, form_of_labelling = self.initialize_or_load_model()
             assert self.args.scoring_technique in ['KvsSample', '1vsAll', 'KvsAll', 'NegSample']
-            train_loader = self.initialize_dataloader(dataset, form_of_labelling)
+            train_loader = self.initialize_dataloader(self.initialize_dataset(dataset, form_of_labelling))
             torch.save(train_loader, self.storage_path + '/TrainDataloader.pth')
             self.trainer.fit(model, train_dataloaders=train_loader)
             return model, form_of_labelling
@@ -201,17 +210,14 @@ class DICE_Trainer:
             train_set_for_i_th_fold, test_set_for_i_th_fold = dataset.train_set[train_index], dataset.train_set[
                 test_index]
 
-            train_dataloaders = construct_train_dataloader(train_set=train_set_for_i_th_fold,
-                                                           entity_to_idx=dataset.entity_to_idx,
-                                                           relation_to_idx=dataset.relation_to_idx,
-                                                           form_of_labelling=form_of_labelling,
-                                                           scoring_technique=self.args.scoring_technique,
-                                                           neg_ratio=self.args.neg_ratio,
-                                                           batch_size=self.args.batch_size,
-                                                           num_core=self.args.num_core,
-                                                           label_smoothing_rate=self.args.label_smoothing_rate)
-
-            trainer.fit(model, train_dataloaders=train_dataloaders)
+            trainer.fit(model, train_dataloaders=self.initialize_dataloader(
+                construct_dataset(train_set=train_set_for_i_th_fold,
+                                  entity_to_idx=dataset.entity_to_idx,
+                                  relation_to_idx=dataset.relation_to_idx,
+                                  form_of_labelling=form_of_labelling,
+                                  scoring_technique=self.args.scoring_technique,
+                                  neg_ratio=self.args.neg_ratio,
+                                  label_smoothing_rate=self.args.label_smoothing_rate)))
 
             res = self.evaluator.eval_with_data(dataset=dataset, trained_model=model, triple_idx=test_set_for_i_th_fold,
                                                 form_of_labelling=form_of_labelling)
