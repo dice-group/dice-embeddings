@@ -93,9 +93,7 @@ class DICE_Trainer:
         print('Initializing model...', end='\t')
         return select_model(vars(self.args), self.is_continual_training, self.storage_path)
 
-    @timeit
     def initialize_dataloader(self, dataset, form_of_labelling) -> torch.utils.data.DataLoader:
-        print('Initializing Pytorch Dataset & Dataloader...', end='\t')
         train_loader = construct_train_dataloader(train_set=dataset.train_set,
                                                   valid_set=dataset.valid_set,
                                                   test_set=dataset.test_set,
@@ -110,7 +108,6 @@ class DICE_Trainer:
         if self.args.eval_model is None:
             del dataset.train_set
             gc.collect()
-
         return train_loader
 
     def start(self, dataset) -> Tuple[BaseKGE, str]:

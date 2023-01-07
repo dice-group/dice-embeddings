@@ -5,6 +5,8 @@ from core.custom_opt.sls import Sls
 from core.custom_opt.adam_sls import AdamSLS
 from core.static_funcs_training import efficient_zero_grad
 import time
+import os
+import psutil
 
 
 class TorchTrainer(AbstractTrainer):
@@ -33,6 +35,8 @@ class TorchTrainer(AbstractTrainer):
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         else:
             self.device = 'cpu'
+        # https://psutil.readthedocs.io/en/latest/#psutil.Process
+        self.process = psutil.Process(os.getpid())
 
     def _run_batch(self, i: int, x_batch, y_batch) -> float:
         """
@@ -81,10 +85,10 @@ class TorchTrainer(AbstractTrainer):
             epoch_loss += batch_loss
             if construct_mini_batch_time:
                 print(
-                    f"Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec | BatchConst.:{construct_mini_batch_time:.2f}sec")
+                    f"Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss:.10f} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec | BatchConst.:{construct_mini_batch_time:.2f}sec | Mem. Usage {self.process.memory_info().rss / 1000000: .5}MB")
             else:
                 print(
-                    f"Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
+                    f"Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs | Mem. Usage {self.process.memory_info().rss / 1000000: .5}MB")
             construct_mini_batch_time = time.time()
         return epoch_loss / (i + 1)
 

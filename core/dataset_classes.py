@@ -1,6 +1,5 @@
 import time
 from abc import ABCMeta
-
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import torch
@@ -38,6 +37,7 @@ def create_tensor(x: np.ndarray):
     else:
         raise TypeError(f'x has a type of {str_type}.')
 
+
 @timeit
 def construct_train_dataloader(*, train_set: np.ndarray,
                                valid_set=None,
@@ -50,7 +50,7 @@ def construct_train_dataloader(*, train_set: np.ndarray,
                                batch_size: int,
                                num_core: int,
                                label_smoothing_rate: float) -> DataLoader:
-    print('Initializing Dataset...')
+    print('Initializing Dataset...', end='\t')
     if scoring_technique == 'NegSample':
         # Binary-class.
         train_set = TriplePredictionDataset(train_set=train_set,
@@ -64,8 +64,9 @@ def construct_train_dataloader(*, train_set: np.ndarray,
             train_set = OnevsAllDataset(train_set, entity_idxs=entity_to_idx)
         elif scoring_technique == 'KvsSample':
             # Multi-label.
-            train_set = KvsSampleDataset(train_set,
-                                         entity_idxs=entity_to_idx,
+            train_set = KvsSampleDataset(train_set=train_set,
+                                         num_entities=len(entity_to_idx),
+                                         num_relations=len(relation_to_idx),
                                          neg_sample_ratio=neg_ratio,
                                          label_smoothing_rate=label_smoothing_rate)
         elif scoring_technique == 'KvsAll':
@@ -85,7 +86,7 @@ def construct_train_dataloader(*, train_set: np.ndarray,
         train_set = PykeDataset(train_set)
     else:
         raise KeyError(f'{form} illegal input.')
-    print('Initializing Dataloader...')
+    print('Initializing Dataloader...', end='\t')
     # https://pytorch.org/docs/stable/data.html#multi-process-data-loading
     # https://github.com/pytorch/pytorch/issues/13246#issuecomment-905703662
     return DataLoader(dataset=train_set, batch_size=batch_size,
@@ -224,16 +225,13 @@ class KvsAll(Dataset):
 class KvsSampleDataset(Dataset):
     """
     KvsSample a Dataset:
-
         D:= {(x,y)_i}_i ^N, where
             . x:(h,r) is a unique h \in E and a relation r \in R and
             . y \in [0,1]^{|E|} is a binary label. \forall y_i =1 s.t. (h r E_i) \in KG
-
            At each mini-batch construction, we subsample(y), hence n
             |new_y| << |E|
             new_y contains all 1's if sum(y)< neg_sample ratio
             new_y contains
-
        Parameters
        ----------
        train_set_idx
@@ -248,36 +246,33 @@ class KvsSampleDataset(Dataset):
             ?
        label_smoothing_rate
            ?
-
-
-
        Returns
        -------
        torch.utils.data.Dataset
        """
 
-    def __init__(self, train_set_idx: np.ndarray, entity_idxs, neg_sample_ratio: int = None,
+    def __init__(self, train_set: np.ndarray, num_entities, num_relations,
+                 neg_sample_ratio: int = None,
                  label_smoothing_rate: float = 0.0):
         super().__init__()
-        assert isinstance(train_set_idx, np.ndarray)
-        self.train_data = None
-        self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
+        assert isinstance(train_set, np.ndarray)
+        # https://pytorch.org/docs/stable/data.html#multi-process-data-loading
+        # TLDL; replace Python objects with non-refcounted representations such as Pandas, Numpy or PyArrow objects
+        self.train_data = train_set
+        self.num_entities = num_entities
+        self.num_relations = num_relations
         self.neg_sample_ratio = neg_sample_ratio
+        self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.collate_fn = None
+
         if self.neg_sample_ratio == 0:
             print(f'neg_sample_ratio is {neg_sample_ratio}. It will be set to 10.')
             self.neg_sample_ratio = 10
+
         print('Constructing training data...')
-        self.num_entities = len(entity_idxs)
-        store = mapping_from_first_two_cols_to_third(train_set_idx)
-        assert len(store) > 0
-        # Keys in store correspond to integer representation (index) of subject and predicate
-        # Values correspond to a list of integer representations of entities.
-        # Infer its type
+        store = mapping_from_first_two_cols_to_third(train_set)
         self.train_data = torch.IntTensor(list(store.keys()))
         self.train_target = list(store.values())
-        assert isinstance(self.train_target[0], list)
-        del store, train_set_idx, entity_idxs
 
     def __len__(self):
         assert len(self.train_data) == len(self.train_target)
@@ -287,21 +282,22 @@ class KvsSampleDataset(Dataset):
         # (1) Get i.th unique (head,relation) pair.
         x = self.train_data[idx]
         # (2) Get tail entities given (1).
-        positives_idx = self.train_target[idx]
+        positives_idx = np.array(self.train_target[idx])
         num_positives = len(positives_idx)
         # (3) Do we need to subsample (2) to create training data points of same size.
         if num_positives < self.neg_sample_ratio:
             # (3.1) Take all tail entities as positive examples
-            positives_idx = torch.LongTensor(positives_idx)
+            positives_idx = torch.IntTensor(positives_idx)
             # (3.2) Generate more negative entities
             negative_idx = torch.randint(low=0, high=self.num_entities,
-                                         size=(self.neg_sample_ratio + self.neg_sample_ratio - num_positives,))
+                                         size=(self.neg_sample_ratio + self.neg_sample_ratio - num_positives,),
+                                         dtype=torch.int32)
         else:
             # (3.1) Subsample positives without replacement.
-            # https://docs.python.org/3/library/random.html#random.sample
-            positives_idx = torch.LongTensor(random.sample(positives_idx, self.neg_sample_ratio))
+            positives_idx = torch.IntTensor(np.random.choice(positives_idx, size=self.neg_sample_ratio, replace=False))
             # (3.2) Generate random entities.
-            negative_idx = torch.randint(low=0, high=self.num_entities, size=(self.neg_sample_ratio,))
+            negative_idx = torch.randint(low=0, high=self.num_entities, size=(self.neg_sample_ratio,),
+                                         dtype=torch.int32)
         # (5) Create selected indexes.
         y_idx = torch.cat((positives_idx, negative_idx), 0)
         # (6) Create binary labels.
@@ -340,13 +336,16 @@ class TriplePredictionDataset(Dataset):
        -------
        torch.utils.data.Dataset
        """
+
+    @timeit
     def __init__(self, train_set: np.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1,
                  label_smoothing_rate: float = 0.0):
         assert isinstance(train_set, np.ndarray)
         # https://pytorch.org/docs/stable/data.html#multi-process-data-loading
         # TLDL; replace Python objects with non-refcounted representations such as Pandas, Numpy or PyArrow objects
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
-        self.neg_sample_ratio = torch.tensor(neg_sample_ratio)  # 0 Implies that we do not add negative samples. This is needed during testing and validation
+        self.neg_sample_ratio = torch.tensor(
+            neg_sample_ratio)  # 0 Implies that we do not add negative samples. This is needed during testing and validation
         self.train_set = torch.from_numpy(train_set)
         assert num_entities >= max(self.train_set[:, 0]) and num_entities >= max(self.train_set[:, 2])
         self.length = len(self.train_set)
@@ -502,6 +501,7 @@ class CVDataModule(pl.LightningDataModule):
     def prepare_data(self, *args, **kwargs):
         # Nothing to be prepared for now.
         pass
+
 
 # @TODO: Deprecated
 class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
