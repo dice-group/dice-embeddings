@@ -57,9 +57,11 @@ class Execute:
         self.dataset = read_or_load_kg(self.args, cls=KG)
         # (3) Sanity checking.
         self.args, self.dataset = config_kge_sanity_checking(self.args, self.dataset)
+        self.args.num_entities = self.dataset.num_entities
+        self.args.num_relations = self.dataset.num_relations
         self.report['num_train_triples'] = len(self.dataset.train_set)
-        self.report['num_entities'] = self.args.num_entities
-        self.report['num_relations'] = self.args.num_relations
+        self.report['num_entities'] = self.dataset.num_entities
+        self.report['num_relations'] = self.dataset.num_relations
 
     def load_indexed_data(self) -> None:
         """ Load Indexed Data"""
@@ -121,7 +123,8 @@ class Execute:
         if self.args.eval_model is None:
             return self.report
         else:
-            self.evaluator.eval(dataset=self.dataset, trained_model=self.trained_model, form_of_labelling=form_of_labelling)
+            self.evaluator.eval(dataset=self.dataset, trained_model=self.trained_model,
+                                form_of_labelling=form_of_labelling)
             return {**self.report, **self.evaluator.report}
 
 
