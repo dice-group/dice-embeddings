@@ -3,9 +3,9 @@ import argparse
 def argparse_default(description=None):
     parser = argparse.ArgumentParser(add_help=False)
     # Dataset and storage related
-    parser.add_argument("--path_experiment_folder", type=str, default="Experiments/2022-12-19 19:57:59.547365",
+    parser.add_argument("--path_experiment_folder", type=str, default="Experiments/2023-01-07 18:44:47.703307",
                         help="The path of a folder containing pretrained model")
-    parser.add_argument("--num_epochs", type=int, default=None, help='Number of epochs for training.')
+    parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training.')
     parser.add_argument("--lr", type=float, default=None)
     parser.add_argument("--num_core", type=int, default=None, help='Number of cores to be used.')
     parser.add_argument('--scoring_technique', default=None, help="KvsSample, 1vsAll, KvsAll, NegSample")
@@ -23,4 +23,4 @@ def argparse_default(description=None):
 
 if __name__ == '__main__':
     args = argparse_default()
-    ContinuousExecute(args).start()
+    ContinuousExecute(args).continual_start()

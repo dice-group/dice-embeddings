@@ -56,6 +56,8 @@ class LoadSaveToDisk:
         self.kg.relation_to_idx = load_pickle(file_path=self.kg.path_for_deserialization + '/relation_to_idx.p')
         assert isinstance(self.kg.entity_to_idx, dict)
         assert isinstance(self.kg.relation_to_idx, dict)
+        self.kg.num_entities = len(self.kg.entity_to_idx)
+        self.kg.num_relations = len(self.kg.relation_to_idx)
 
         self.kg.train_set = load_numpy_ndarray(file_path=self.kg.path_for_deserialization + '/train_set.npy')
 
@@ -68,4 +70,5 @@ class LoadSaveToDisk:
             self.kg.er_vocab = load_pickle(file_path=self.kg.path_for_deserialization + '/er_vocab.p')
             self.kg.re_vocab = load_pickle(file_path=self.kg.path_for_deserialization + '/re_vocab.p')
             self.kg.ee_vocab = load_pickle(file_path=self.kg.path_for_deserialization + '/ee_vocab.p')
-            self.kg.domain_constraints_per_rel, self.kg.range_constraints_per_rel = load_pickle(file_path=self.kg.path_for_deserialization + '/constraints.p')
+            self.kg.domain_constraints_per_rel, self.kg.range_constraints_per_rel = load_pickle(
+                file_path=self.kg.path_for_deserialization + '/constraints.p')

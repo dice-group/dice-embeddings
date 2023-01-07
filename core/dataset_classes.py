@@ -6,7 +6,7 @@ import torch
 import pytorch_lightning as pl
 import random
 from typing import Dict, List
-from .static_preprocess_funcs import mapping_from_first_two_cols_to_third
+from .static_preprocess_funcs import mapping_from_first_two_cols_to_third,parallel_mapping_from_first_two_cols_to_third
 from .static_funcs import timeit
 
 
@@ -251,9 +251,7 @@ class KvsSampleDataset(Dataset):
        torch.utils.data.Dataset
        """
 
-    def __init__(self, train_set: np.ndarray, num_entities, num_relations,
-                 neg_sample_ratio: int = None,
-                 label_smoothing_rate: float = 0.0):
+    def __init__(self, train_set: np.ndarray, num_entities, num_relations, neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0):
         super().__init__()
         assert isinstance(train_set, np.ndarray)
         # https://pytorch.org/docs/stable/data.html#multi-process-data-loading
@@ -273,6 +271,7 @@ class KvsSampleDataset(Dataset):
         store = mapping_from_first_two_cols_to_third(train_set)
         self.train_data = torch.IntTensor(list(store.keys()))
         self.train_target = list(store.values())
+        del store
 
     def __len__(self):
         assert len(self.train_data) == len(self.train_target)
@@ -289,14 +288,17 @@ class KvsSampleDataset(Dataset):
             # (3.1) Take all tail entities as positive examples
             positives_idx = torch.IntTensor(positives_idx)
             # (3.2) Generate more negative entities
-            negative_idx = torch.randint(low=0, high=self.num_entities,
+            negative_idx = torch.randint(low=0,
+                                         high=self.num_entities,
                                          size=(self.neg_sample_ratio + self.neg_sample_ratio - num_positives,),
                                          dtype=torch.int32)
         else:
             # (3.1) Subsample positives without replacement.
             positives_idx = torch.IntTensor(np.random.choice(positives_idx, size=self.neg_sample_ratio, replace=False))
             # (3.2) Generate random entities.
-            negative_idx = torch.randint(low=0, high=self.num_entities, size=(self.neg_sample_ratio,),
+            negative_idx = torch.randint(low=0,
+                                         high=self.num_entities,
+                                         size=(self.neg_sample_ratio,),
                                          dtype=torch.int32)
         # (5) Create selected indexes.
         y_idx = torch.cat((positives_idx, negative_idx), 0)

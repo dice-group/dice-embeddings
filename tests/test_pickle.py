@@ -13,6 +13,7 @@ class TestPickle:
         args.path_dataset_folder = 'KGs/UMLS'
         args.model = 'DistMult'
         executor = Execute(args)
+        args.scoring_technique = 'NegSample'
         args.trainer = 'torchCPUTrainer'
         executor.start()
         pickle.dump(executor.trained_model, open("trained_model.p", "wb"))
@@ -24,6 +25,7 @@ class TestPickle:
         args = argparse_default([])
         args.path_dataset_folder = 'KGs/UMLS'
         args.model = 'TransE'
+        args.scoring_technique = 'NegSample'
         executor = Execute(args)
         args.trainer = 'torchCPUTrainer'
         executor.start()
@@ -36,6 +38,7 @@ class TestPickle:
         args = argparse_default([])
         args.path_dataset_folder = 'KGs/UMLS'
         args.model = 'QMult'
+        args.scoring_technique = 'NegSample'
         executor = Execute(args)
         args.trainer = 'torchCPUTrainer'
         executor.start()
@@ -48,6 +51,7 @@ class TestPickle:
         args = argparse_default([])
         args.path_dataset_folder = 'KGs/UMLS'
         args.model = 'ComplEx'
+        args.scoring_technique = 'NegSample'
         executor = Execute(args)
         args.trainer = 'torchCPUTrainer'
         executor.start()
@@ -60,6 +64,7 @@ class TestPickle:
         args = argparse_default([])
         args.path_dataset_folder = 'KGs/UMLS'
         args.model = 'ConEx'
+        args.scoring_technique = 'NegSample'
         executor = Execute(args)
         args.trainer = 'torchCPUTrainer'
         executor.start()
