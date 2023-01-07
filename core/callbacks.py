@@ -40,6 +40,7 @@ class PrintCallback(AbstractCallback):
     def on_fit_start(self, trainer, pl_module):
         print(pl_module)
         print(pl_module.summarize())
+        print(pl_module.selected_optimizer)
         print("\nTraining is starting...")
 
     def on_fit_end(self, trainer, pl_module):
