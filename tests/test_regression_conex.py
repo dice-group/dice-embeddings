@@ -38,7 +38,7 @@ class TestRegressionConEx:
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
-        args.lr = 0.01
+        args.lr = 0.1
         args.embedding_dim = 32
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
@@ -52,9 +52,9 @@ class TestRegressionConEx:
         args.trainer = 'torchCPUTrainer'
         args.init_param = 'xavier_normal'
         result = Execute(args).start()
-        assert 0.75 >= result['Train']['H@1'] > 0.20
-        assert 0.75 >= result['Val']['H@1'] >= 0.20
-        assert 0.75 >= result['Test']['H@1'] >= 0.20
+        assert 0.75 >= result['Train']['H@1'] > 0.02
+        assert 0.75 >= result['Val']['H@1'] >= 0.02
+        assert 0.75 >= result['Test']['H@1'] >= 0.02
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):

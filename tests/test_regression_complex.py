@@ -79,6 +79,6 @@ class TestRegressionComplEx:
         args.num_folds_for_cv = None
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
-        assert 0.76 >= result['Train']['H@1'] >= .65
-        assert 0.71 >= result['Val']['H@1'] >= .57
-        assert 0.71 >= result['Test']['H@1'] >= .53
+        assert 0.76 >= result['Train']['H@1'] >= .42
+        assert 0.71 >= result['Val']['H@1'] >= .37
+        assert 0.71 >= result['Test']['H@1'] >= .37

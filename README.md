@@ -40,7 +40,7 @@ conda activate dice
 # Choose a backend
 pip3 install pandas==1.5.1 
 pip3 install modin[ray]==0.16.2 or pip3 install modin[dask]==0.16.2
-pip3 install polars==0.14.26 
+pip3 install polars==0.15.13 
 pip3 install pyarrow==8.0.0
 pip3 install torch==1.13.0 
 pip3 install pytorch-lightning==1.6.4
@@ -68,7 +68,7 @@ pre_trained_kge = KGE(path_of_pretrained_model_dir='Experiments/2022-12-08 11:46
 # (3.2) To whom a results of (3.1) is married to ? {F9M142, F9F158}
 pre_trained_kge.predict_conjunctive_query(entity='<http://www.benchmark.org/family#F9M167>',
                                           relations=['<http://www.benchmark.org/family#hasSibling>',
-                                                     '<http://www.benchmark.org/family#married>'], k=1)
+                                                     '<http://www.benchmark.org/family#married>'], topk=1)
 ```
 ### Triple Classification
 #### Using pre-trained ConEx on DBpedia 03-2022

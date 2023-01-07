@@ -5,6 +5,9 @@ from core.custom_opt.sls import Sls
 from core.custom_opt.adam_sls import AdamSLS
 from core.static_funcs_training import efficient_zero_grad
 import time
+import os
+import psutil
+
 
 class TorchTrainer(AbstractTrainer):
     """
@@ -32,13 +35,16 @@ class TorchTrainer(AbstractTrainer):
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         else:
             self.device = 'cpu'
+        # https://psutil.readthedocs.io/en/latest/#psutil.Process
+        self.process = psutil.Process(os.getpid())
 
-    def _run_batch(self, x_batch, y_batch) -> float:
+    def _run_batch(self, i: int, x_batch, y_batch) -> float:
         """
             Forward anc Backward according to a mini-batch
 
             Arguments
            ----------
+           i : index of a batch
            x_batch: torch.Tensor on selected device
            y_batch: torch.Tensor on selected device
            Returns
@@ -47,7 +53,7 @@ class TorchTrainer(AbstractTrainer):
        """
         if self.attributes.gradient_accumulation_steps > 1:
             # (1) Update parameters every gradient_accumulation_steps mini-batch.
-            if step % self.attributes.gradient_accumulation_steps == 0:
+            if i % self.attributes.gradient_accumulation_steps == 0:
                 efficient_zero_grad(self.model)
         else:
             # (2) Do not accumulate gradient, zero the gradients per batch.
@@ -75,14 +81,14 @@ class TorchTrainer(AbstractTrainer):
             if construct_mini_batch_time:
                 construct_mini_batch_time = start_time - construct_mini_batch_time
             # (2) Forward-Backward-Update.
-            batch_loss = self._run_batch(x_batch, y_batch)
+            batch_loss = self._run_batch(i, x_batch, y_batch)
             epoch_loss += batch_loss
             if construct_mini_batch_time:
                 print(
-                    f"Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec | BatchConst.:{construct_mini_batch_time:.2f}sec")
+                    f"Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss:.10f} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec | BatchConst.:{construct_mini_batch_time:.2f}sec | Mem. Usage {self.process.memory_info().rss / 1000000: .5}MB")
             else:
                 print(
-                    f"Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
+                    f"Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs | Mem. Usage {self.process.memory_info().rss / 1000000: .5}MB")
             construct_mini_batch_time = time.time()
         return epoch_loss / (i + 1)
 

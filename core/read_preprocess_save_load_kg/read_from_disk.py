@@ -24,9 +24,9 @@ class ReadFromDisk:
             if 'train' in i:
                 self.kg.train_set = read_from_disk(i, self.kg.read_only_few, self.kg.sample_triples_ratio,
                                                    backend=self.kg.backend)
-            elif 'test' in i:
+            elif 'test' in i and self.kg.eval_model is not None:
                 self.kg.test_set = read_from_disk(i, backend=self.kg.backend)
-            elif 'valid' in i:
+            elif 'valid' in i and self.kg.eval_model is not None:
                 self.kg.valid_set = read_from_disk(i, backend=self.kg.backend)
             else:
                 print(f'Unrecognized data {i}')

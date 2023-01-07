@@ -123,6 +123,9 @@ class Trainer:
         batch_loss = loss.item()
         loss.backward()
         self.optimizer.step()
+        # @TODO: Tips to decrease mem usage
+        #  https://github.com/pytorch/pytorch/issues/13246#issuecomment-905703662
+        #  torch.cuda.empty_cache()
         return batch_loss
 
     def extract_input_outputs(self, z: list):
