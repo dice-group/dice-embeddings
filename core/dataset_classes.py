@@ -39,18 +39,15 @@ def create_tensor(x: np.ndarray):
 
 
 @timeit
-def construct_train_dataloader(*, train_set: np.ndarray,
-                               valid_set=None,
-                               test_set=None,
-                               entity_to_idx: dict,
-                               relation_to_idx: dict,
-                               form_of_labelling: str,
-                               scoring_technique: str,
-                               neg_ratio: int,
-                               batch_size: int,
-                               num_core: int,
-                               label_smoothing_rate: float) -> DataLoader:
-    print('Initializing Dataset...', end='\t')
+def construct_dataset(*, train_set: np.ndarray,
+                      valid_set=None,
+                      test_set=None,
+                      entity_to_idx: dict,
+                      relation_to_idx: dict,
+                      form_of_labelling: str,
+                      scoring_technique: str,
+                      neg_ratio: int,
+                      label_smoothing_rate: float) -> Dataset:
     if scoring_technique == 'NegSample':
         # Binary-class.
         train_set = TriplePredictionDataset(train_set=train_set,
@@ -86,12 +83,7 @@ def construct_train_dataloader(*, train_set: np.ndarray,
         train_set = PykeDataset(train_set)
     else:
         raise KeyError(f'{form} illegal input.')
-    print('Initializing Dataloader...', end='\t')
-    # https://pytorch.org/docs/stable/data.html#multi-process-data-loading
-    # https://github.com/pytorch/pytorch/issues/13246#issuecomment-905703662
-    return DataLoader(dataset=train_set, batch_size=batch_size,
-                      shuffle=True, collate_fn=train_set.collate_fn,
-                      num_workers=num_core, persistent_workers=False)
+    return train_set
 
 
 class OnevsAllDataset(Dataset):

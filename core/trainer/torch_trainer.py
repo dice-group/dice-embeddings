@@ -85,10 +85,10 @@ class TorchTrainer(AbstractTrainer):
             epoch_loss += batch_loss
             if construct_mini_batch_time:
                 print(
-                    f"Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss:.10f} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec | BatchConst.:{construct_mini_batch_time:.2f}sec | Mem. Usage {self.process.memory_info().rss / 1000000: .5}MB")
+                    f"Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss:.10f} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec | BatchConst.:{construct_mini_batch_time:.2f}sec | Mem. Usage {self.process.memory_info().rss / 1_000_000: .5}MB  avail. {psutil.virtual_memory().percent} %")
             else:
                 print(
-                    f"Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs | Mem. Usage {self.process.memory_info().rss / 1000000: .5}MB")
+                    f"Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs | Mem. Usage {self.process.memory_info().rss / 1_000_000: .5}MB")
             construct_mini_batch_time = time.time()
         return epoch_loss / (i + 1)
 
@@ -123,11 +123,23 @@ class TorchTrainer(AbstractTrainer):
 
         print(
             f'NumOfDataPoints:{len(self.train_dataloaders.dataset)} | NumOfEpochs:{self.attributes.max_epochs} | LearningRate:{self.model.learning_rate} | BatchSize:{self.train_dataloaders.batch_size} | EpochBatchsize:{len(train_dataloaders)}')
+
+        increment_ratio=0
         for epoch in range(self.attributes.max_epochs):
             start_time = time.time()
             # (1)
             avg_epoch_loss = self._run_epoch(epoch)
             print(f"Epoch:{epoch + 1} | Loss:{avg_epoch_loss:.8f} | Runtime:{(time.time() - start_time) / 60:.3f}mins")
+            # Autobatch Finder: Increase the batch size at each epoch's end if memory allows
+            #             mem=self.process.memory_info().rss
+            if increment_ratio>1:
+                self.train_dataloaders = torch.utils.data.DataLoader(dataset=self.train_dataloaders.dataset,
+                                                                     batch_size=self.train_dataloaders.batch_size +self.train_dataloaders.batch_size,
+                                                                     shuffle=True,
+                                                                     collate_fn=self.train_dataloaders.dataset.collate_fn,
+                                                                     num_workers=self.train_dataloaders.num_workers,
+                                                                     persistent_workers=False)
+
             self.model.loss_history.append(avg_epoch_loss)
             self.on_train_epoch_end(self, self.model)
         self.on_fit_end(self, self.model)
