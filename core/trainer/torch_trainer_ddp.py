@@ -79,7 +79,7 @@ def distributed_training(rank: int, world_size, model, train_dataset_loader, cal
     #train_dataset_loader.sampler=torch.utils.data.distributed.DistributedSampler
     train_dataset_loader = DataLoader(train_dataset_loader.dataset, batch_size=args.batch_size,
                                       pin_memory=True, shuffle=False,num_workers=args.num_core,
-                                      persistent_workers=True, collate_fn=train_dataset_loader.dataset.collate_fn,
+                                      persistent_workers=False, collate_fn=train_dataset_loader.dataset.collate_fn,
                                       sampler=torch.utils.data.distributed.DistributedSampler(train_dataset_loader.dataset))
 
     # (2) Initialize OPTIMIZER.
