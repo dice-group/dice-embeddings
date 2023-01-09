@@ -18,9 +18,11 @@ from core.static_funcs import *
 from core.static_preprocess_funcs import preprocesses_input_args
 from core.sanity_checkers import *
 from core.trainer import DICE_Trainer
+
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 os.environ["TORCH_DISTRIBUTED_DEBUG"] = "INFO"
+
 
 class Execute:
     """ A class for Training, Retraining and Evaluation a model.
@@ -53,17 +55,20 @@ class Execute:
         """ Read & Preprocess & Index & Serialize Input Data """
         # (1) Read & Preprocess & Index & Serialize Input Data.
         self.dataset = read_or_load_kg(self.args, cls=KG)
-        # (2) Share some info about data for easy access.
-        self.args.num_entities, self.args.num_relations = self.dataset.num_entities, self.dataset.num_relations
         # (3) Sanity checking.
         self.args, self.dataset = config_kge_sanity_checking(self.args, self.dataset)
+        self.args.num_entities = self.dataset.num_entities
+        self.args.num_relations = self.dataset.num_relations
+        self.report['num_train_triples'] = len(self.dataset.train_set)
+        self.report['num_entities'] = self.dataset.num_entities
+        self.report['num_relations'] = self.dataset.num_relations
 
     def load_indexed_data(self) -> None:
         """ Load Indexed Data"""
         self.dataset = read_or_load_kg(self.args, cls=KG)
-    
+
     @timeit
-    def save_trained_model(self, start_time: float) -> None:
+    def save_trained_model(self) -> None:
         """ Save a knowledge graph embedding model (an instance of BaseKGE class) """
         print('*** Save Trained Model ***')
         self.trained_model.eval()
@@ -77,15 +82,18 @@ class Execute:
                   trained_model=self.trained_model,
                   model_name='model',
                   full_storage_path=self.storage_path,
-                  dataset=self.dataset,
                   save_as_csv=self.args.save_embeddings_as_csv)
         else:
             store(trainer=self.trainer,
                   trained_model=self.trained_model,
                   model_name='model_' + str(datetime.datetime.now()),
-                  dataset=self.dataset,
                   full_storage_path=self.storage_path, save_as_csv=self.args.save_embeddings_as_csv)
+
         self.report['path_experiment_folder'] = self.storage_path
+        self.report['num_entities'] = self.args.num_entities
+        self.report['num_relations'] = self.args.num_relations
+        self.report['path_experiment_folder'] = self.storage_path
+
         # (4) Store the report of training.
         with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
             json.dump(self.report, file_descriptor, indent=4)
@@ -104,20 +112,25 @@ class Execute:
         #  Load the indexed data from disk or read a raw data from disk.
         self.load_indexed_data() if self.is_continual_training else self.read_preprocess_index_serialize_data()
         # (2) Create an evaluator object.
-        self.evaluator = Evaluator(self)
+        self.evaluator = Evaluator(args=self.args)
         # (3) Create a trainer object.
-        self.trainer = DICE_Trainer(self, self.evaluator)
+        self.trainer = DICE_Trainer(args=self.args,
+                                    is_continual_training=self.is_continual_training,
+                                    storage_path=self.storage_path,
+                                    evaluator=self.evaluator)
         # (4) Start the training
-        self.trained_model, form_of_labelling = self.trainer.start()
+        self.trained_model, form_of_labelling = self.trainer.start(dataset=self.dataset)
         # (5) Store trained model.
-        self.save_trained_model(start_time)
-        # (6) Eval model.
-        self.evaluator.eval(self.trained_model, form_of_labelling)
-        # Save Total time
-        self.report['Runtime'] = time.time()-start_time
+        self.save_trained_model()
+        self.report['Runtime'] = time.time() - start_time
         print(f"Total computation time: {self.report['Runtime']:.3f} seconds")
-        # (7) Return the report of the training process.
-        return {**self.report, **self.evaluator.report}
+        # (6) Eval model.
+        if self.args.eval_model is None:
+            return self.report
+        else:
+            self.evaluator.eval(dataset=self.dataset, trained_model=self.trained_model,
+                                form_of_labelling=form_of_labelling)
+            return {**self.report, **self.evaluator.report}
 
 
 class ContinuousExecute(Execute):
@@ -146,3 +159,32 @@ class ContinuousExecute(Execute):
         print('ContinuousExecute starting...')
         print(previous_args)
         super().__init__(previous_args, continuous_training=True)
+
+    def continual_start(self) -> dict:
+        """
+        (1) Initialize training.
+        (2) Start continual training.
+        (3) Save trained model.
+
+        Parameter
+        ---------
+
+        Returns
+        -------
+        report:dict
+        """
+        # (1)
+        self.trainer = DICE_Trainer(args=self.args, is_continual_training=True,
+                                    storage_path=self.args.path_experiment_folder)
+        # (2)
+        self.trained_model, form_of_labelling = self.trainer.continual_start()
+
+        # (5) Store trained model.
+        self.save_trained_model()
+        # (6) Eval model.
+        if self.args.eval_model is None:
+            return self.report
+        else:
+            self.evaluator = Evaluator(args=self.args, is_continual_training=True)
+            self.evaluator.dummy_eval(self.trained_model, form_of_labelling)
+            return {**self.report, **self.evaluator.report}

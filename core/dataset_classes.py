@@ -1,13 +1,13 @@
 import time
 from abc import ABCMeta
-
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import torch
 import pytorch_lightning as pl
 import random
 from typing import Dict, List
-from .static_preprocess_funcs import mapping_from_first_two_cols_to_third
+from .static_preprocess_funcs import mapping_from_first_two_cols_to_third,parallel_mapping_from_first_two_cols_to_third
+from .static_funcs import timeit
 
 
 def input_data_type_checking(train_set_idx, valid_set_idx, test_set_idx, entity_to_idx: Dict, relation_to_idx: Dict):
@@ -38,221 +38,52 @@ def create_tensor(x: np.ndarray):
         raise TypeError(f'x has a type of {str_type}.')
 
 
-class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
-    """
-    Creat a Dataset for KGE
-
-    Parameters
-    ----------
-    train_set_idx
-        Indexed triples for the training.
-    entity_to_idx
-        entity to index mapping.
-    relation_to_idx
-        relation to index mapping.
-    batch_size
-        int
-    form
-        ?
-    num_workers
-        int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
-    valid_set_idx
-        Indexed triples for the validation.
-    test_set_idx
-        Indexed triples for the testing.
-    neg_sample_ratio
-        int negative triples per a training data
-    label_smoothing_rate
-    Smoothing binary labels None
-
-
-
-    Returns
-    -------
-    ?
-    """
-
-    def __init__(self, train_set_idx: np.ndarray, entity_to_idx, relation_to_idx, batch_size, form,
-                 num_workers=None, valid_set_idx=None,
-                 test_set_idx=None, neg_sample_ratio=None,
-                 label_smoothing_rate: int = 0.0):
-        super().__init__()
-        input_data_type_checking(train_set_idx=train_set_idx,
-                                 valid_set_idx=valid_set_idx,
-                                 test_set_idx=test_set_idx,
-                                 entity_to_idx=entity_to_idx,
-                                 relation_to_idx=relation_to_idx)
-
-        self.train_set_idx = train_set_idx  # create_tensor(train_set_idx)
-        self.valid_set_idx = valid_set_idx  # create_tensor(valid_set_idx) if valid_set_idx is not None else valid_set_idx
-        self.test_set_idx = test_set_idx  # create_tensor(test_set_idx) if test_set_idx is not None else test_set_idx
-        self.entity_to_idx = entity_to_idx
-        self.relation_to_idx = relation_to_idx
-        self.target_dim = None
-        self.form = form
-        self.batch_size = batch_size
-        self.num_workers = num_workers
-        self.neg_sample_ratio = neg_sample_ratio
-        self.label_smoothing_rate = label_smoothing_rate
-        self.construct_dataset()
-
-    def construct_dataset(self):
-        # @TODO: Proof the logic behind
-        if self.form == 'RelationPrediction':
-            self.target_dim = len(self.relation_to_idx)
-        elif self.form == 'EntityPrediction':
-            self.target_dim = len(self.entity_to_idx)
-        elif self.form == 'NegativeSampling':  # we can name it as TriplePrediction
-            # self.dataset_type_class = TriplePredictionDataset
-            # self.target_dim = 1
-            # self.neg_sample_ratio = neg_sample_ratio
-            pass
-        elif self.form == '1VsAll':
-            # Multi-class
-            self.dataset = OnevsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
-                                           relation_idxs=self.relation_to_idx, form=self.form)
-        elif self.form == 'KvsSample':
-            self.dataset = KvsSampleDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
-                                            relation_idxs=self.relation_to_idx, form=self.form,
-                                            neg_sample_ratio=self.neg_sample_ratio,
-                                            label_smoothing_rate=self.label_smoothing_rate)
-        elif self.form == 'Pyke':
-            self.dataset = PykeDataset(self.train_set_idx,
-                                       entity_idxs=self.entity_to_idx,
-                                       relation_idxs=self.relation_to_idx,
-                                       form=self.form,
-                                       neg_sample_ratio=self.neg_sample_ratio,
-                                       label_smoothing_rate=self.label_smoothing_rate)
+@timeit
+def construct_dataset(*, train_set: np.ndarray,
+                      valid_set=None,
+                      test_set=None,
+                      entity_to_idx: dict,
+                      relation_to_idx: dict,
+                      form_of_labelling: str,
+                      scoring_technique: str,
+                      neg_ratio: int,
+                      label_smoothing_rate: float) -> Dataset:
+    if scoring_technique == 'NegSample':
+        # Binary-class.
+        train_set = TriplePredictionDataset(train_set=train_set,
+                                            num_entities=len(entity_to_idx),
+                                            num_relations=len(relation_to_idx),
+                                            neg_sample_ratio=neg_ratio,
+                                            label_smoothing_rate=label_smoothing_rate)
+    elif form_of_labelling == 'EntityPrediction':
+        if scoring_technique == '1vsAll':
+            # Multi-class.
+            train_set = OnevsAllDataset(train_set, entity_idxs=entity_to_idx)
+        elif scoring_technique == 'KvsSample':
+            # Multi-label.
+            train_set = KvsSampleDataset(train_set=train_set,
+                                         num_entities=len(entity_to_idx),
+                                         num_relations=len(relation_to_idx),
+                                         neg_sample_ratio=neg_ratio,
+                                         label_smoothing_rate=label_smoothing_rate)
+        elif scoring_technique == 'KvsAll':
+            # Multi-label.
+            train_set = KvsAll(train_set,
+                               entity_idxs=entity_to_idx,
+                               relation_idxs=relation_to_idx, form=form_of_labelling,
+                               label_smoothing_rate=label_smoothing_rate)
         else:
-            raise ValueError(f'Invalid input : {self.form}')
-
-    # Train, Valid, TestDATALOADERs
-    def train_dataloader(self) -> DataLoader:
-        if self.form == 'NegativeSampling':
-            train_set = TriplePredictionDataset(self.train_set_idx,
-                                                num_entities=len(self.entity_to_idx),
-                                                num_relations=len(self.relation_to_idx),
-                                                neg_sample_ratio=self.neg_sample_ratio,
-                                                label_smoothing_rate=self.label_smoothing_rate)
-            return DataLoader(train_set, batch_size=self.batch_size, shuffle=True,
-                              num_workers=self.num_workers, collate_fn=train_set.collate_fn, persistent_workers=True)
-        elif self.form == 'EntityPrediction' or self.form == 'RelationPrediction':
-            train_set = KvsAll(self.train_set_idx, entity_idxs=self.entity_to_idx,
-                               relation_idxs=self.relation_to_idx, form=self.form,
-                               label_smoothing_rate=self.label_smoothing_rate)
-            return DataLoader(train_set, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers,
-                              persistent_workers=True)
-        elif self.form in ['KvsSample', 'PvsAll', 'CCvsAll', '1VsAll', 'BatchRelaxedKvsAll', 'BatchRelaxed1vsAll',
-                           'Pyke']:
-            return DataLoader(self.dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers,
-                              persistent_workers=True)
-        else:
-            raise KeyError(f'{self.form} illegal input.')
-
-    def val_dataloader(self) -> DataLoader:
-        if self.form == 'NegativeSampling':
-            valid_set = TriplePredictionDataset(self.valid_set_idx,
-                                                num_entities=len(self.entity_to_idx),
-                                                num_relations=len(self.relation_to_idx),
-                                                neg_sample_ratio=0)
-            return DataLoader(valid_set, batch_size=self.batch_size,
-                              shuffle=False,
-                              num_workers=self.num_workers,
-                              collate_fn=valid_set.collate_fn)
-        elif self.form == 'EntityPrediction' or self.form == 'RelationPrediction':
-            valid_set = KvsAll(self.valid_set_idx, entity_idxs=self.entity_to_idx,
-                               relation_idxs=self.relation_to_idx, form=self.form,
-                               label_smoothing_rate=self.label_smoothing_rate)
-            return DataLoader(valid_set, batch_size=self.batch_size, shuffle=False, num_workers=self.num_workers)
-
-        elif self.form == '1VsAll':
-            return DataLoader(OneVsAllEntityPredictionDataset(self.valid_set_idx), batch_size=self.batch_size,
-                              shuffle=False,
-                              num_workers=self.num_workers)
-        else:
-            raise KeyError(f'{self.form} illegal input.')
-
-    def test_dataloader(self) -> DataLoader:
-        if self.form == 'NegativeSampling':
-            test_set = TriplePredictionDataset(self.test_set_idx,
-                                               num_entities=len(self.entity_to_idx),
-                                               num_relations=len(self.relation_to_idx), )
-            return DataLoader(test_set, batch_size=self.batch_size, num_workers=self.num_workers)
-
-        elif self.form == 'EntityPrediction':
-            test_set = KvsAll(self.test_set_idx, entity_idxs=self.entity_to_idx,
-                              relation_idxs=self.relation_to_idx, form=self.form)
-            return DataLoader(test_set, batch_size=self.batch_size, num_workers=self.num_workers)
-        else:
-            raise KeyError(f'{self.form} illegal input.')
-
-    def setup(self, *args, **kwargs):
-        pass
-
-    def transfer_batch_to_device(self, *args, **kwargs):
-        pass
-
-    def prepare_data(self, *args, **kwargs):
-        # Nothing to be prepared for now.
-        pass
-
-
-class CVDataModule(pl.LightningDataModule):
-    """
-       Create a Dataset for cross validation
-
-       Parameters
-       ----------
-       train_set_idx
-           Indexed triples for the training.
-       num_entities
-           entity to index mapping.
-       num_relations
-           relation to index mapping.
-       batch_size
-           int
-       form
-           ?
-       num_workers
-           int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
-
-
-
-       Returns
-       -------
-       ?
-       """
-
-    def __init__(self, train_set_idx: np.ndarray, num_entities, num_relations, neg_sample_ratio, batch_size,
-                 num_workers):
-        super().__init__()
-        assert isinstance(train_set_idx, np.ndarray)
-        self.train_set_idx = train_set_idx
-        self.num_entities = num_entities
-        self.num_relations = num_relations
-        self.neg_sample_ratio = neg_sample_ratio
-        self.batch_size = batch_size
-        self.num_workers = num_workers
-
-    def train_dataloader(self) -> DataLoader:
-        train_set = TriplePredictionDataset(self.train_set_idx,
-                                            num_entities=self.num_entities,
-                                            num_relations=self.num_relations,
-                                            neg_sample_ratio=self.neg_sample_ratio)
-        return DataLoader(train_set, batch_size=self.batch_size,
-                          shuffle=True,
-                          num_workers=self.num_workers,
-                          collate_fn=train_set.collate_fn)
-
-    def setup(self, *args, **kwargs):
-        pass
-
-    def transfer_batch_to_device(self, *args, **kwargs):
-        pass
-
-    def prepare_data(self, *args, **kwargs):
-        # Nothing to be prepared for now.
-        pass
+            raise ValueError(f'Invalid scoring technique : {scoring_technique}')
+    elif form_of_labelling == 'RelationPrediction':
+        # Multi-label.
+        train_set = KvsAll(train_set, entity_idxs=entity_to_idx, relation_idxs=relation_to_idx,
+                           form=form_of_labelling, label_smoothing_rate=label_smoothing_rate)
+    elif form_of_labelling == 'Pyke':
+        # Regression.
+        train_set = PykeDataset(train_set)
+    else:
+        raise KeyError(f'{form} illegal input.')
+    return train_set
 
 
 class OnevsAllDataset(Dataset):
@@ -279,12 +110,13 @@ class OnevsAllDataset(Dataset):
        torch.utils.data.Dataset
        """
 
-    def __init__(self, train_set_idx: np.ndarray, entity_idxs, relation_idxs, form):
+    def __init__(self, train_set_idx: np.ndarray, entity_idxs):
         super().__init__()
         assert isinstance(train_set_idx, np.ndarray)
         assert len(train_set_idx) > 0
-        self.train_data = train_set_idx
+        self.train_data = torch.LongTensor(train_set_idx)
         self.target_dim = len(entity_idxs)
+        self.collate_fn = None
 
     def __len__(self):
         return len(self.train_data)
@@ -292,7 +124,6 @@ class OnevsAllDataset(Dataset):
     def __getitem__(self, idx):
         y_vec = torch.zeros(self.target_dim)
         y_vec[self.train_data[idx, 2]] = 1
-
         return self.train_data[idx, :2], y_vec
 
 
@@ -354,17 +185,16 @@ class KvsAll(Dataset):
         assert len(store) > 0
         # Keys in store correspond to integer representation (index) of subject and predicate
         # Values correspond to a list of integer representations of entities.
-        self.train_data = torch.IntTensor(list(store.keys()))
+        self.train_data = torch.LongTensor(list(store.keys()))
 
         if sum([len(i) for i in store.values()]) == len(store):
             # if each s,p pair contains at most 1 entity
-            self.train_target = np.array(list(store.values()), dtype=np.int64)
+            self.train_target = np.array(list(store.values()))
             try:
                 assert isinstance(self.train_target[0], np.ndarray)
             except IndexError or AssertionError:
                 print(self.train_target)
                 exit(1)
-            assert isinstance(self.train_target[0][0], np.int64)
         else:
             self.train_target = list(store.values())
             assert isinstance(self.train_target[0], list)
@@ -387,16 +217,13 @@ class KvsAll(Dataset):
 class KvsSampleDataset(Dataset):
     """
     KvsSample a Dataset:
-
         D:= {(x,y)_i}_i ^N, where
             . x:(h,r) is a unique h \in E and a relation r \in R and
             . y \in [0,1]^{|E|} is a binary label. \forall y_i =1 s.t. (h r E_i) \in KG
-
            At each mini-batch construction, we subsample(y), hence n
             |new_y| << |E|
             new_y contains all 1's if sum(y)< neg_sample ratio
             new_y contains
-
        Parameters
        ----------
        train_set_idx
@@ -411,37 +238,32 @@ class KvsSampleDataset(Dataset):
             ?
        label_smoothing_rate
            ?
-
-
-
        Returns
        -------
        torch.utils.data.Dataset
        """
 
-    def __init__(self, train_set_idx: np.ndarray, entity_idxs, relation_idxs, form, store=None,
-                 neg_sample_ratio: int = None,
-                 label_smoothing_rate: float = 0.0):
+    def __init__(self, train_set: np.ndarray, num_entities, num_relations, neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0):
         super().__init__()
-        assert isinstance(train_set_idx, np.ndarray)
-        self.train_data = None
-        self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
+        assert isinstance(train_set, np.ndarray)
+        # https://pytorch.org/docs/stable/data.html#multi-process-data-loading
+        # TLDL; replace Python objects with non-refcounted representations such as Pandas, Numpy or PyArrow objects
+        self.train_data = train_set
+        self.num_entities = num_entities
+        self.num_relations = num_relations
         self.neg_sample_ratio = neg_sample_ratio
+        self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.collate_fn = None
+
         if self.neg_sample_ratio == 0:
             print(f'neg_sample_ratio is {neg_sample_ratio}. It will be set to 10.')
             self.neg_sample_ratio = 10
+
         print('Constructing training data...')
-        self.num_entities = len(entity_idxs)
-        store = mapping_from_first_two_cols_to_third(train_set_idx)
-        assert len(store) > 0
-        # Keys in store correspond to integer representation (index) of subject and predicate
-        # Values correspond to a list of integer representations of entities.
-        # Infer its type
+        store = mapping_from_first_two_cols_to_third(train_set)
         self.train_data = torch.IntTensor(list(store.keys()))
         self.train_target = list(store.values())
-        assert isinstance(self.train_target[0], list)
-        del store, train_set_idx, entity_idxs
+        del store
 
     def __len__(self):
         assert len(self.train_data) == len(self.train_target)
@@ -451,22 +273,24 @@ class KvsSampleDataset(Dataset):
         # (1) Get i.th unique (head,relation) pair.
         x = self.train_data[idx]
         # (2) Get tail entities given (1).
-        positives_idx = self.train_target[idx]
+        positives_idx = np.array(self.train_target[idx])
         num_positives = len(positives_idx)
         # (3) Do we need to subsample (2) to create training data points of same size.
         if num_positives < self.neg_sample_ratio:
             # (3.1) Take all tail entities as positive examples
             positives_idx = torch.IntTensor(positives_idx)
             # (3.2) Generate more negative entities
-            negative_idx = torch.randint(low=0, high=self.num_entities,
+            negative_idx = torch.randint(low=0,
+                                         high=self.num_entities,
                                          size=(self.neg_sample_ratio + self.neg_sample_ratio - num_positives,),
                                          dtype=torch.int32)
         else:
             # (3.1) Subsample positives without replacement.
-            # https://docs.python.org/3/library/random.html#random.sample
-            positives_idx = torch.IntTensor(random.sample(positives_idx, self.neg_sample_ratio))
+            positives_idx = torch.IntTensor(np.random.choice(positives_idx, size=self.neg_sample_ratio, replace=False))
             # (3.2) Generate random entities.
-            negative_idx = torch.randint(low=0, high=self.num_entities, size=(self.neg_sample_ratio,),
+            negative_idx = torch.randint(low=0,
+                                         high=self.num_entities,
+                                         size=(self.neg_sample_ratio,),
                                          dtype=torch.int32)
         # (5) Create selected indexes.
         y_idx = torch.cat((positives_idx, negative_idx), 0)
@@ -507,50 +331,51 @@ class TriplePredictionDataset(Dataset):
        torch.utils.data.Dataset
        """
 
-    def __init__(self, train_set_idx: np.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1,
+    @timeit
+    def __init__(self, train_set: np.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1,
                  label_smoothing_rate: float = 0.0):
-        assert isinstance(train_set_idx, np.ndarray)
+        assert isinstance(train_set, np.ndarray)
+        # https://pytorch.org/docs/stable/data.html#multi-process-data-loading
+        # TLDL; replace Python objects with non-refcounted representations such as Pandas, Numpy or PyArrow objects
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
-        self.neg_sample_ratio = neg_sample_ratio  # 0 Implies that we do not add negative samples. This is needed during testing and validation
-        self.triples_idx = torch.IntTensor(train_set_idx)
-
-        assert num_entities >= max(self.triples_idx[:, 0]) and num_entities >= max(self.triples_idx[:, 2])
-        self.length = len(self.triples_idx)
-        self.num_entities = num_entities
-        self.num_relations = num_relations
+        self.neg_sample_ratio = torch.tensor(
+            neg_sample_ratio)  # 0 Implies that we do not add negative samples. This is needed during testing and validation
+        self.train_set = torch.from_numpy(train_set)
+        assert num_entities >= max(self.train_set[:, 0]) and num_entities >= max(self.train_set[:, 2])
+        self.length = len(self.train_set)
+        self.num_entities = torch.tensor(num_entities)
+        self.num_relations = torch.tensor(num_relations)
 
     def __len__(self):
         return self.length
 
     def __getitem__(self, idx):
-        return self.triples_idx[idx]
+        return self.train_set[idx]
 
-    def collate_fn(self, batch: List[torch.IntTensor]):
+    def collate_fn(self, batch: List[torch.Tensor]):
         batch = torch.stack(batch, dim=0)
         h, r, t = batch[:, 0], batch[:, 1], batch[:, 2]
         size_of_batch, _ = batch.shape
         assert size_of_batch > 0
-        label = torch.ones((size_of_batch,), dtype=torch.int16) - self.label_smoothing_rate
+        label = torch.ones((size_of_batch,)) - self.label_smoothing_rate
         # corrupt head, tail or rel ?!
         # (1) Corrupted Entities:
-        corr = torch.randint(0, high=self.num_entities, size=(size_of_batch * self.neg_sample_ratio, 2),
-                             dtype=torch.int32)
+        corr = torch.randint(0, high=self.num_entities, size=(size_of_batch * self.neg_sample_ratio, 2))
         # (2) Head Corrupt:
         h_head_corr = corr[:, 0]
         r_head_corr = r.repeat(self.neg_sample_ratio, )
         t_head_corr = t.repeat(self.neg_sample_ratio, )
-        label_head_corr = torch.zeros(len(t_head_corr), dtype=torch.int16) + self.label_smoothing_rate
+        label_head_corr = torch.zeros(len(t_head_corr)) + self.label_smoothing_rate
         # (3) Tail Corrupt:
         h_tail_corr = h.repeat(self.neg_sample_ratio, )
         r_tail_corr = r.repeat(self.neg_sample_ratio, )
         t_tail_corr = corr[:, 1]
-        label_tail_corr = torch.zeros(len(t_tail_corr), dtype=torch.int16) + self.label_smoothing_rate
+        label_tail_corr = torch.zeros(len(t_tail_corr)) + self.label_smoothing_rate
         # (4) Relations Corrupt:
         h_rel_corr = h.repeat(self.neg_sample_ratio, )
-        r_rel_corr = torch.randint(0, self.num_relations, (size_of_batch * self.neg_sample_ratio, 1),
-                                   dtype=torch.int32)[:, 0]
+        r_rel_corr = torch.randint(0, self.num_relations, (size_of_batch * self.neg_sample_ratio, 1))[:, 0]
         t_rel_corr = t.repeat(self.neg_sample_ratio, )
-        label_rel_corr = torch.zeros(len(t_rel_corr), dtype=torch.int16) + self.label_smoothing_rate
+        label_rel_corr = torch.zeros(len(t_rel_corr)) + self.label_smoothing_rate
         # (5) Stack True and Corrupted Triples
         h = torch.cat((h, h_head_corr, h_tail_corr, h_rel_corr), 0)
         r = torch.cat((r, r_head_corr, r_tail_corr, r_rel_corr), 0)
@@ -561,9 +386,7 @@ class TriplePredictionDataset(Dataset):
 
 
 class PykeDataset(Dataset):
-    def __init__(self, train_set_idx: np.ndarray, entity_idxs, relation_idxs, form, store=None,
-                 neg_sample_ratio: int = None,
-                 label_smoothing_rate=None):
+    def __init__(self, train_set_idx: np.ndarray):
         super().__init__()
         assert isinstance(train_set_idx, np.ndarray)
         self.entity_vocab = dict()
@@ -614,3 +437,171 @@ class PykeDataset(Dataset):
         select_negative_idx = torch.LongTensor(random.sample(self.entity_vocab.keys(), len(select_positives_idx)))
         x = torch.cat((torch.LongTensor([anchor]), select_positives_idx, select_negative_idx), dim=0)
         return x, torch.LongTensor([0])
+
+
+class CVDataModule(pl.LightningDataModule):
+    """
+       Create a Dataset for cross validation
+
+       Parameters
+       ----------
+       train_set_idx
+           Indexed triples for the training.
+       num_entities
+           entity to index mapping.
+       num_relations
+           relation to index mapping.
+       batch_size
+           int
+       form
+           ?
+       num_workers
+           int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
+
+
+
+       Returns
+       -------
+       ?
+       """
+
+    def __init__(self, train_set_idx: np.ndarray, num_entities, num_relations, neg_sample_ratio, batch_size,
+                 num_workers):
+        super().__init__()
+        assert isinstance(train_set_idx, np.ndarray)
+        self.train_set_idx = train_set_idx
+        self.num_entities = num_entities
+        self.num_relations = num_relations
+        self.neg_sample_ratio = neg_sample_ratio
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+
+    def train_dataloader(self) -> DataLoader:
+        train_set = TriplePredictionDataset(self.train_set_idx,
+                                            num_entities=self.num_entities,
+                                            num_relations=self.num_relations,
+                                            neg_sample_ratio=self.neg_sample_ratio)
+        return DataLoader(train_set, batch_size=self.batch_size,
+                          shuffle=True,
+                          num_workers=self.num_workers,
+                          collate_fn=train_set.collate_fn)
+
+    def setup(self, *args, **kwargs):
+        pass
+
+    def transfer_batch_to_device(self, *args, **kwargs):
+        pass
+
+    def prepare_data(self, *args, **kwargs):
+        # Nothing to be prepared for now.
+        pass
+
+
+# @TODO: Deprecated
+class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
+    """
+    Creat a Dataset for KGE
+
+    Parameters
+    ----------
+    train_set_idx
+        Indexed triples for the training.
+    entity_to_idx
+        entity to index mapping.
+    relation_to_idx
+        relation to index mapping.
+    batch_size
+        int
+    form
+        ?
+    num_workers
+        int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
+    valid_set_idx
+        Indexed triples for the validation.
+    test_set_idx
+        Indexed triples for the testing.
+    neg_sample_ratio
+        int negative triples per a training data
+    label_smoothing_rate
+    Smoothing binary labels None
+
+
+
+    Returns
+    -------
+    ?
+    """
+
+    def __init__(self, train_set_idx: np.ndarray, entity_to_idx, relation_to_idx, batch_size, form, scoring_technique,
+                 num_workers=None, valid_set_idx=None,
+                 test_set_idx=None, neg_sample_ratio=None,
+                 label_smoothing_rate: int = 0.0):
+        super().__init__()
+        input_data_type_checking(train_set_idx=train_set_idx,
+                                 valid_set_idx=valid_set_idx,
+                                 test_set_idx=test_set_idx,
+                                 entity_to_idx=entity_to_idx,
+                                 relation_to_idx=relation_to_idx)
+
+        self.train_set_idx = train_set_idx
+        self.valid_set_idx = valid_set_idx
+        self.test_set_idx = test_set_idx
+        self.entity_to_idx = entity_to_idx
+        self.relation_to_idx = relation_to_idx
+        self.target_dim = None
+        self.form = form
+        self.scoring_technique = scoring_technique
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.neg_sample_ratio = neg_sample_ratio
+        self.label_smoothing_rate = label_smoothing_rate
+
+    def train_dataloader(self) -> DataLoader:
+        print('Initializing Dataset...')
+        if self.scoring_technique == 'NegSample':
+            train_set = TriplePredictionDataset(self.train_set_idx,
+                                                num_entities=len(self.entity_to_idx),
+                                                num_relations=len(self.relation_to_idx),
+                                                neg_sample_ratio=self.neg_sample_ratio,
+                                                label_smoothing_rate=self.label_smoothing_rate)
+        elif self.form == 'EntityPrediction':
+            if self.scoring_technique == '1vsAll':
+                # Multi-class
+                train_set = OnevsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx)
+            elif self.scoring_technique == 'KvsSample':
+                train_set = KvsSampleDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
+                                             neg_sample_ratio=self.neg_sample_ratio,
+                                             label_smoothing_rate=self.label_smoothing_rate)
+            elif self.scoring_technique == 'KvsAll':
+                train_set = KvsAll(self.train_set_idx, entity_idxs=self.entity_to_idx,
+                                   relation_idxs=self.relation_to_idx, form=self.form,
+                                   label_smoothing_rate=self.label_smoothing_rate)
+            else:
+                raise ValueError(f'Invalid scoring technique : {self.scoring_technique}')
+        elif self.form == 'RelationPrediction':
+            train_set = KvsAll(self.train_set_idx, entity_idxs=self.entity_to_idx,
+                               relation_idxs=self.relation_to_idx, form=self.form,
+                               label_smoothing_rate=self.label_smoothing_rate)
+        elif self.form == 'Pyke':
+            train_set = PykeDataset(self.train_set_idx)
+        else:
+            raise KeyError(f'{self.form} illegal input.')
+        print('Initializing Dataloader...')
+        return DataLoader(dataset=train_set, batch_size=self.batch_size,
+                          shuffle=True, collate_fn=train_set.collate_fn,
+                          num_workers=self.num_workers, persistent_workers=False)
+
+    def val_dataloader(self) -> DataLoader:
+        raise NotImplementedError
+
+    def test_dataloader(self) -> DataLoader:
+        raise NotImplementedError
+
+    def setup(self, *args, **kwargs):
+        pass
+
+    def transfer_batch_to_device(self, *args, **kwargs):
+        pass
+
+    def prepare_data(self, *args, **kwargs):
+        pass

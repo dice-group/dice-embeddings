@@ -24,13 +24,14 @@ class PreprocessKG:
             self.preprocess_with_pandas()
         else:
             raise KeyError(f'{self.kg.backend} not found')
-        # (1) Storing indexes in more integer efficient types.
+
+        print('Data Type conversion...')
         self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
                                                     num=max(self.kg.num_entities, self.kg.num_relations))
-
         if self.kg.valid_set is not None:
             self.kg.valid_set = numpy_data_type_changer(self.kg.valid_set,
                                                         num=max(self.kg.num_entities, self.kg.num_relations))
+
         if self.kg.test_set is not None:
             self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
                                                        num=max(self.kg.num_entities, self.kg.num_relations))
@@ -145,50 +146,74 @@ class PreprocessKG:
         def entity_index():
             """ Create a mapping from str representation of entities/nodes to integers"""
             # Entity Index: {'a':1, 'b':2} :
-            self.kg.entity_to_idx = polars.concat((df_str_kg['subject'], df_str_kg['object'])).unique(
-                maintain_order=True).rename('entity')
-
-            print('Polars DataFrame to python dictionary conversion...')
-            self.kg.entity_to_idx = dict(zip(self.kg.entity_to_idx.to_list(), list(range(len(self.kg.entity_to_idx)))))
+            return polars.concat((df_str_kg['subject'], df_str_kg['object'])).unique(maintain_order=True).rename(
+                'entity')
 
         print('Entity Indexing...', end=' ')
-        entity_index()
+        self.kg.entity_to_idx = entity_index()
 
         @timeit
         def relation_index():
             """ Create a mapping from str representation of relations/edges to integers"""
             # Relation Index: {'r1':1, 'r2:'2}
-            self.kg.relation_to_idx = df_str_kg['relation'].unique(maintain_order=True)
-            print('Polars DataFrame to python dictionary conversion...')
-            self.kg.relation_to_idx = dict(
-                zip(self.kg.relation_to_idx.to_list(), list(range(len(self.kg.relation_to_idx)))))
+            return df_str_kg['relation'].unique(maintain_order=True)
 
         print('Relation Indexing...', end=' ')
-        relation_index()
+        self.kg.relation_to_idx = relation_index()
+        # On YAGO3-10     # 2.90427 and 0.00065 MB,
+        # print(f'Est. size of entity_to_idx in Polars:{self.kg.entity_to_idx.estimated_size(unit="mb"):.5f} in MB')
+        # print(f'Est. of relation_to_idx in Polars:{self.kg.relation_to_idx.estimated_size(unit="mb"):.5f} in MB')
+        self.kg.entity_to_idx = dict(zip(self.kg.entity_to_idx.to_list(), list(range(len(self.kg.entity_to_idx)))))
+        self.kg.relation_to_idx = dict(
+            zip(self.kg.relation_to_idx.to_list(), list(range(len(self.kg.relation_to_idx)))))
+        # On YAGO3-10, 5.24297 in MB and 0.00118 in MB
+        # print(f'Estimated size of entity_to_idx in Python dict:{sys.getsizeof(self.kg.entity_to_idx) / 1000000 :.5f} in MB')
+        # print(f'Estimated size of relation_to_idx in Python dict:{sys.getsizeof(self.kg.relation_to_idx) / 1000000 :.5f} in MB')
         self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
 
+        # using this requires more time and more mem. Maybe there is a bug somewhere in polars.
         def indexer(data):
             """ Apply str to int mapping on an input data"""
             # These column assignments are executed in parallel
-            return data.with_columns(
-                [polars.col("subject").apply(lambda x: self.kg.entity_to_idx[x]).alias("subject"),
-                 polars.col("relation").apply(lambda x: self.kg.relation_to_idx[x]).alias("relation"),
-                 polars.col("object").apply(lambda x: self.kg.entity_to_idx[x]).alias("object")])
+            # with_colums allows you to create new columns for you analyses.
+            # https://pola-rs.github.io/polars-book/user-guide/quickstart/quick-exploration-guide.html#with_columns
+            return data.with_columns([polars.col("subject").apply(lambda x: self.kg.entity_to_idx[x]),
+                                      polars.col("relation").apply(lambda x: self.kg.relation_to_idx[x]),
+                                      polars.col("object").apply(lambda x: self.kg.entity_to_idx[x])])
 
         @timeit
-        def index_datasets(df: polars.DataFrame):
+        def index_datasets():
             """ Map str stored in a polars Dataframe to int"""
-            df = indexer(df)
-            return df.to_numpy()
+            self.kg.train_set = self.kg.train_set.select(
+                [polars.col("subject").apply(lambda x: self.kg.entity_to_idx[x]),
+                 polars.col("relation").apply(lambda x: self.kg.relation_to_idx[x]),
+                 polars.col("object").apply(lambda x: self.kg.entity_to_idx[x])]).to_numpy()
+
+        @timeit
+        def from_pandas_to_numpy(df):
+            # Index pandas dataframe?
+            print(f'Convering data to Pandas {df.shape}...')
+            df = df.to_pandas()
+            # Index pandas dataframe?
+            print(f'Indexing Training Data {df.shape}...')
+            return index_triples_with_pandas(df, entity_to_idx=self.kg.entity_to_idx,
+                                             relation_to_idx=self.kg.relation_to_idx).to_numpy()
 
         print(f'Indexing Training Data {self.kg.train_set.shape}...')
-        self.kg.train_set = index_datasets(df=self.kg.train_set)
+        self.kg.train_set = from_pandas_to_numpy(self.kg.train_set)
+        # index_datasets(df=self.kg.train_set)
+        # we may try vaex to speed up pandas
+        # https://stackoverflow.com/questions/69971992/vaex-apply-does-not-work-when-using-dataframe-columns
+
+        print(f'Estimated size of train_set in Numpy: {self.kg.train_set.nbytes / 1_000_000_000 :.5f} in GB')
         if self.kg.valid_set is not None:
             print(f'Indexing Val Data {self.kg.valid_set.shape}...')
-            self.kg.valid_set = index_datasets(df=self.kg.valid_set)
+            self.kg.valid_set = from_pandas_to_numpy(self.kg.valid_set)
+            print(f'Estimated size of valid_set in Numpy: {self.kg.valid_set.nbytes / 1_000_000_000:.5f} in GB')
         if self.kg.test_set is not None:
             print(f'Indexing Test Data {self.kg.test_set.shape}...')
-            self.kg.test_set = index_datasets(df=self.kg.test_set)
+            self.kg.test_set = from_pandas_to_numpy(self.kg.test_set)
+            print(f'Estimated size of test_set in Numpy: {self.kg.test_set.nbytes / 1_000_000_000:.5f} in GB')
         print(f'*** Preprocessing Train Data:{self.kg.train_set.shape} with Polars DONE ***')
 
     def sequential_vocabulary_construction(self) -> None:

@@ -8,8 +8,9 @@ import pandas as pd
 from core.static_funcs import numpy_data_type_changer
 import concurrent
 import pickle
-
-enable_log = False
+import sys
+import os
+import psutil
 
 
 def timeit(func):
@@ -19,19 +20,8 @@ def timeit(func):
         result = func(*args, **kwargs)
         end_time = time.perf_counter()
         total_time = end_time - start_time
-        if enable_log:
-            if args is not None:
-                s_args = [type(i) for i in args]
-            else:
-                s_args = args
-            if kwargs is not None:
-                s_kwargs = {k: type(v) for k, v in kwargs.items()}
-            else:
-                s_kwargs = kwargs
-            print(f'Function {func.__name__} with  Args:{s_args} | Kwargs:{s_kwargs} took {total_time:.4f} seconds')
-        else:
-            print(f'Took {total_time:.4f} seconds')
-
+        print(
+            f'Took {total_time:.4f} seconds | Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB')
         return result
 
     return timeit_wrapper
@@ -96,21 +86,23 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
                              new_columns=['subject', 'relation', 'object'],
                              sep="\t")  # \s+ doesn't work for polars
     else:
-        df = polars.read_parquet(data_path, n_rows=None if read_only_few is None else read_only_few)
+        if read_only_few is None:
+            df = polars.read_parquet(data_path, use_pyarrow=True)
+        else:
+            df = polars.read_parquet(data_path, n_rows=read_only_few)
 
+    print(f'Estimated size of the Polars Dataframe: {df.estimated_size() / 1000000} in MB')
     # (2) Sample from (1)
     if sample_triples_ratio:
         print(f'Subsampling {sample_triples_ratio} of input data {df.shape}...')
         df = df.sample(frac=sample_triples_ratio)
         print(df.shape)
-        print('Done !\n')
 
     # (3) Type heuristic prediction: If KG is an RDF KG, remove all triples where subject is not <?>.
     h = df.head().to_pandas()
     if sum(h["subject"].str.startswith('<')) + sum(h["relation"].str.startswith('<')) > 2:
         print('Removing triples with literal values...')
         df = df.filter(polars.col("object").str.starts_with('<'))
-        print('Done !\n')
     return df
 
 
@@ -196,7 +188,7 @@ def get_ee_vocab(data, file_path: str = None):
     return ee_vocab
 
 
-def create_constraints(triples,file_path: str = None):
+def create_constraints(triples, file_path: str = None):
     """
     (1) Extract domains and ranges of relations
     (2) Store a mapping from relations to entities that are outside of the domain and range.
@@ -366,6 +358,7 @@ def load_pickle(*, file_path=str):
     with open(file_path, 'rb') as f:
         return pickle.load(f)
 
+
 def create_recipriocal_triples(x):
     """
     Add inverse triples into dask dataframe
@@ -375,7 +368,6 @@ def create_recipriocal_triples(x):
     return pd.concat([x, x['object'].to_frame(name='subject').join(
         x['relation'].map(lambda x: x + '_inverse').to_frame(name='relation')).join(
         x['subject'].to_frame(name='object'))], ignore_index=True)
-
 
 
 def index_triples_with_pandas(train_set, entity_to_idx: dict, relation_to_idx: dict) -> pd.core.frame.DataFrame:
@@ -393,11 +385,6 @@ def index_triples_with_pandas(train_set, entity_to_idx: dict, relation_to_idx: d
     # train_set = train_set.dropna(inplace=True)
     if isinstance(train_set, pd.core.frame.DataFrame):
         assert (n, d) == train_set.shape
-    elif isinstance(train_set, dask.dataframe.core.DataFrame):
-        nn, dd = train_set.shape
-        assert isinstance(dd, int)
-        if isinstance(nn, int):
-            assert n == nn and d == dd
     else:
         raise KeyError('Wrong type training data')
     return train_set

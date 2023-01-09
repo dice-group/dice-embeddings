@@ -47,8 +47,6 @@ def preprocesses_input_args(arg):
     assert arg.weight_decay >= 0.0
     arg.learning_rate = arg.lr
     arg.deterministic = True
-    if arg.num_core <= 0:
-        arg.num_core = 1
 
     assert arg.init_param in ['xavier_normal', None]
     for i in arg.callbacks:

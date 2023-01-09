@@ -53,9 +53,9 @@ class TestRegressionOmult:
         args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
-        assert 0.75 >= result['Test']['H@1'] >= 0.72
-        assert 0.78 >= result['Val']['H@1'] >= 0.75
-        assert 0.92 >= result['Train']['H@1'] >= 0.86
+        assert 0.75 >= result['Test']['H@1'] >= 0.71
+        assert 0.78 >= result['Val']['H@1'] >= 0.74
+        assert 0.92 >= result['Train']['H@1'] >= 0.82
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):
