@@ -15,6 +15,7 @@ import pickle
 import os
 import psutil
 
+
 def timeit(func):
     @functools.wraps(func)
     def timeit_wrapper(*args, **kwargs):
@@ -22,8 +23,10 @@ def timeit(func):
         result = func(*args, **kwargs)
         end_time = time.perf_counter()
         total_time = end_time - start_time
-        print(f'Took {total_time:.4f} seconds | Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB')
+        print(
+            f'Took {total_time:.4f} seconds | Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB')
         return result
+
     return timeit_wrapper
 
 
@@ -195,16 +198,21 @@ def store(trainer,
     save_checkpoint_model(trainer=trainer,
                           model=trained_model, path=full_storage_path + f'/{model_name}.pt')
     if save_as_csv:
-        raise NotImplementedError('Should be done in post processing')
-        # (2.1) Get embeddings.
         entity_emb, relation_ebm = trained_model.get_embeddings()
-        save_embeddings(entity_emb.numpy(), indexes=dataset.entities_str,
+        entity_to_idx = pickle.load(open(full_storage_path + '/entity_to_idx.p', 'rb'))
+        entity_str = entity_to_idx.keys()
+        # Ensure that the ordering is correct.
+        assert list(range(0, len(entity_str))) == list(entity_to_idx.values())
+        save_embeddings(entity_emb.numpy(), indexes=entity_str,
                         path=full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
-        del entity_emb
+        del entity_to_idx, entity_str, entity_emb
         if relation_ebm is not None:
-            save_embeddings(relation_ebm.numpy(), indexes=dataset.relations_str,
+            relation_to_idx = pickle.load(open(full_storage_path + '/relation_to_idx.p', 'rb'))
+            relations_str = relation_to_idx.keys()
+
+            save_embeddings(relation_ebm.numpy(), indexes=relations_str,
                             path=full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
-            del relation_ebm
+            del relation_ebm,relations_str,relation_to_idx
         else:
             pass
 
