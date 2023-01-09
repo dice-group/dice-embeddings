@@ -10,7 +10,7 @@ import os
 
 class TestKGEInteractive:
     @pytest.mark.filterwarnings('ignore::UserWarning')
-    def test_missing_triples(self):
+    def test_missing_triples_and_conjunctive_query_answering(self):
         args = main_argparse_default([])
         args.model = 'AConEx'
         args.scoring_technique = 'KvsAll'
@@ -33,5 +33,5 @@ class TestKGEInteractive:
         assert len(m) <= 10
         x = pre_trained_kge.predict_conjunctive_query(entity='alga',
                                                       relations=['isa',
-                                                                 'causes'], topk=1)
-        assert len(x) ==1
+                                                                 'causes'], topk=3)
+        assert x == {'body_system', 'anatomical_structure', 'intellectual_product', 'vitamin'}

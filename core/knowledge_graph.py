@@ -8,11 +8,9 @@ class KG:
     """ Knowledge Graph """
 
     def __init__(self, data_dir: str = None, path_for_deserialization: str = None,
-                 num_core: int = 0,
                  add_reciprical: bool = None, eval_model: str = None,
                  read_only_few: int = None, sample_triples_ratio: float = None,
-                 path_for_serialization: str = None, add_noise_rate: float = None,
-                 min_freq_for_vocab: int = None,
+                 path_for_serialization: str = None,
                  entity_to_idx=None, relation_to_idx=None, backend=None):
         """
         :param data_dir: A path of a folder containing the input knowledge graph
@@ -27,16 +25,12 @@ class KG:
         self.num_relations = None
         self.data_dir = data_dir
         self.path_for_deserialization = path_for_deserialization
-        self.num_core = num_core
         self.add_reciprical = add_reciprical
         self.eval_model = eval_model
 
         self.read_only_few = read_only_few
         self.sample_triples_ratio = sample_triples_ratio
         self.path_for_serialization = path_for_serialization
-        self.add_noise_rate = add_noise_rate
-
-        self.min_freq_for_vocab = min_freq_for_vocab
         # dicts of str to int
         self.entity_to_idx = entity_to_idx
         self.relation_to_idx = relation_to_idx

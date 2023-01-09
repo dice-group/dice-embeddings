@@ -251,13 +251,11 @@ def read_or_load_kg(args, cls):
     print('*** Read or Load Knowledge Graph  ***')
     start_time = time.time()
     kg = cls(data_dir=args.path_dataset_folder,
-             num_core=args.num_core,
              add_reciprical=args.apply_reciprical_or_noise,
              eval_model=args.eval_model,
              read_only_few=args.read_only_few,
              sample_triples_ratio=args.sample_triples_ratio,
              path_for_serialization=args.full_storage_path,
-             min_freq_for_vocab=args.min_freq_for_vocab,
              path_for_deserialization=args.path_experiment_folder if hasattr(args, 'path_experiment_folder') else None,
              backend=args.backend)
     print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
@@ -384,7 +382,7 @@ def deploy_tail_entity_prediction(pre_trained_kge, str_subject, str_predicate, t
     if pre_trained_kge.model.name == 'Shallom':
         print('Tail entity prediction is not available for Shallom')
         raise NotImplementedError
-    scores, entity = pre_trained_kge.predict_topk(head_entity=[str_subject], relation=[str_predicate], k=top_k)
+    scores, entity = pre_trained_kge.predict_topk(head_entity=[str_subject], relation=[str_predicate], topk=top_k)
     return f'(  {str_subject},  {str_predicate}, ? )', pd.DataFrame({'Entity': entity, 'Score': scores})
 
 
@@ -393,12 +391,12 @@ def deploy_head_entity_prediction(pre_trained_kge, str_object, str_predicate, to
         print('Head entity prediction is not available for Shallom')
         raise NotImplementedError
 
-    scores, entity = pre_trained_kge.predict_topk(tail_entity=[str_object], relation=[str_predicate], k=top_k)
+    scores, entity = pre_trained_kge.predict_topk(tail_entity=[str_object], relation=[str_predicate], topk=top_k)
     return f'(  ?,  {str_predicate}, {str_object} )', pd.DataFrame({'Entity': entity, 'Score': scores})
 
 
 def deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k):
-    scores, relations = pre_trained_kge.predict_topk(head_entity=[str_subject], tail_entity=[str_object], k=top_k)
+    scores, relations = pre_trained_kge.predict_topk(head_entity=[str_subject], tail_entity=[str_object], topk=top_k)
     return f'(  {str_subject}, ?, {str_object} )', pd.DataFrame({'Relations': relations, 'Score': scores})
 
 

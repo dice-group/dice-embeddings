@@ -128,8 +128,6 @@ class PreprocessKG:
             raise TypeError(f"{type(kg.train_set)}")
         assert isinstance(self.kg.valid_set, polars.DataFrame) or self.kg.valid_set is None
         assert isinstance(self.kg.test_set, polars.DataFrame) or self.kg.test_set is None
-        if self.kg.min_freq_for_vocab is not None:
-            raise NotImplementedError('With using Polars')
 
         def concat_splits(train, val, test):
             x = [train]
@@ -259,7 +257,8 @@ class PreprocessKG:
         del ordered_list
 
     def remove_triples_from_train_with_condition(self):
-        if self.kg.min_freq_for_vocab is not None:
+        if None:
+            # self.kg.min_freq_for_vocab is not
             assert isinstance(self.kg.min_freq_for_vocab, int)
             assert self.kg.min_freq_for_vocab > 0
             print(
@@ -302,7 +301,7 @@ class PreprocessKG:
             print('Done !\n')
 
         # (2) Extend KG with triples where entities and relations are randomly sampled.
-        if self.kg.add_noise_rate is not None:
+        if None:
             print(f'[4 / 14] Adding noisy triples...')
             self.kg.train_set = add_noisy_triples(self.kg.train_set, self.kg.add_noise_rate)
             print('Done!\n')
