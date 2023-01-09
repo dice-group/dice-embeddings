@@ -1,6 +1,6 @@
 import os
 import datetime
-import pandas.core.indexes.range
+#import pandas.core.indexes.range
 from .static_funcs import load_model_ensemble, load_model, save_checkpoint_model
 from .static_preprocess_funcs import create_constraints
 import torch
@@ -498,12 +498,13 @@ class BaseInteractiveKGE:
         """
         n = len(head_entity)
         assert n == len(relation) == len(tail_entity)
-        idx_head_entity = torch.LongTensor(self.entity_to_idx.loc[head_entity]['entity'].values).reshape(n, 1)
-        idx_relation = torch.LongTensor(self.relation_to_idx.loc[relation]['relation'].values).reshape(n, 1)
-        idx_tail_entity = torch.LongTensor(self.entity_to_idx.loc[tail_entity]['entity'].values).reshape(n, 1)
+        idx_head_entity = torch.LongTensor([self.entity_to_idx[i] for i in head_entity]).reshape(n, 1)
+        idx_relation = torch.LongTensor([self.relation_to_idx[i] for i in relation]).reshape(n, 1)
+        idx_tail_entity = torch.LongTensor([self.entity_to_idx[i] for i in tail_entity]).reshape(n, 1)
         return idx_head_entity, idx_relation, idx_tail_entity
 
     def construct_input_and_output_k_vs_all(self, head_entity, relation):
+        raise NotImplementedError()
         # @TODO: Add explanation
         try:
             idx_head_entity = self.entity_to_idx.loc[head_entity]['entity'].values[0]
@@ -582,6 +583,9 @@ class BaseInteractiveKGE:
         # Hard Labels
         labels: object = torch.FloatTensor(labels)
         return x, labels
+
+    def parameters(self):
+        return self.model.parameters()
 
 
 class AbstractCallback(ABC):
