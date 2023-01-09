@@ -10,6 +10,7 @@ from .dataset_classes import TriplePredictionDataset
 import numpy as np
 import sys
 
+
 class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
 
@@ -22,16 +23,28 @@ class KGE(BaseInteractiveKGE):
     def __str__(self):
         return 'KGE | ' + str(self.model)
 
-    def predict_conjunctive_query(self, entity: str, relations: List[str], topk: int = 1) -> Set[str]:
+    def predict_conjunctive_query(self, entity: str, relations: List[str], topk: int = 3) -> Set[str]:
         """
-         Find an answer set for a conjunctive query
+         Find an answer set for a conjunctive query.
 
+         A graphical explanation is shown below
+                                                    -> result_1
+                                -> e_i,relations[1] -> result_2
+                                                    -> result_3
+
+                                                    -> result_4
+         entity, relations[0]   -> e_j,relations[1] -> result_5
+                                                    -> result_7
+
+                                                    -> result_8
+                                -> e_k,relations[1] -> result_9
+                                                    -> result_10
 
         Parameter
         ---------
         entity: str
 
-        String representation of a selected entity.
+        String representation of a selected/anchor entity.
 
         relations: List[str]
 
@@ -51,26 +64,29 @@ class KGE(BaseInteractiveKGE):
         assert isinstance(relations, list)
         assert len(entity) >= 1
         assert len(relations) >= 1
-
-        results = {entity}
-        # Iterate over relations
-        while relations:
-            r = relations.pop(0)
-
-            tail_entities = set()
-            # Iterative over entities
-            while results:
-                e = results.pop()
-                # answers =: topK(f(e,r,?))
-                _, str_tail_entities = self.predict_topk(head_entity=[e], relation=[r], topk=topk)
-
-                if isinstance(str_tail_entities, str):
-                    tail_entities.add(str_tail_entities)
-                else:
-                    tail_entities.update(set(str_tail_entities))
-            # Accumulate results
-            results.update(tail_entities)
-
+        # (1) An entity set.
+        results = set()
+        # (2) Bookkeeping.
+        each_intermediate_result = dict()
+        hop_counter = 0
+        # (3) Iterate over each relation.
+        for r in relations:
+            # (3.1) if entity is an anchor entity:
+            if len(results) == 0:
+                top_ranked_entities = self.predict_topk(head_entity=[entity], relation=[r], topk=topk)[1]
+                results = set(top_ranked_entities)
+                each_intermediate_result[(hop_counter, entity, r)] = top_ranked_entities
+            else:
+                # (3.2) Iterative over intermediate results
+                temp_intermediate_results = set()
+                while results:
+                    entity = results.pop()
+                    top_ranked_entities = self.predict_topk(head_entity=[entity], relation=[r], topk=topk)[1]
+                    temp_intermediate_results |= set(top_ranked_entities)
+                    each_intermediate_result[(hop_counter, entity, r)] = top_ranked_entities
+                # (3.3)
+                results = temp_intermediate_results
+            hop_counter += 1
         return results
 
     def find_missing_triples(self, confidence: float, topk: int = 10, at_most: int = sys.maxsize) -> Set:
@@ -113,7 +129,7 @@ class KGE(BaseInteractiveKGE):
                 # (5.2) \forall e \in Entities store a tuple of scoring_func(head,relation,e) and e
                 # (5.3.) Sort (5.2) and return top  tuples
                 predicted_scores, str_tail_entities = self.predict_topk(head_entity=[str_head_entity],
-                                                                        relation=[str_relation],topk=topk)
+                                                                        relation=[str_relation], topk=topk)
                 # (5.4) Iterate over 5.3
                 for predicted_score, str_entity in zip(predicted_scores, str_tail_entities):
                     # (5.5) If score is less than 99% ignore it
