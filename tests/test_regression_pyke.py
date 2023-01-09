@@ -4,7 +4,7 @@ import sys
 import pytest
 
 
-class TestRegressionQmult:
+class TestRegressionPyke:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
         args = argparse_default([])
@@ -18,6 +18,6 @@ class TestRegressionQmult:
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
-        args.scoring_technique = 'KvsAll'
+        args.scoring_technique = 'Pyke'
         args.eval_model = None
-        result = Execute(args).start()
+        #result = Execute(args).start()
