@@ -143,36 +143,6 @@ def get_ee_vocab(data):
     return ee_vocab
 
 
-demir = None
-
-
-def f(start, stop):
-    store = dict()
-    for s_idx, p_idx, o_idx in demir[start:stop]:
-        store.setdefault((s_idx, p_idx), list()).append(o_idx)
-    return store
-
-
-@timeit
-def parallel_mapping_from_first_two_cols_to_third(train_set_idx) -> dict:
-    global demir
-    demir = train_set_idx
-    NUM_WORKERS = os.cpu_count()
-    chunk_size = int(len(train_set_idx) / NUM_WORKERS)
-    futures = []
-    with concurrent.futures.process.ProcessPoolExecutor(max_workers=NUM_WORKERS) as executor:
-        for i in range(0, NUM_WORKERS):
-            start = i + chunk_size if i == 0 else 0
-            futures.append(executor.submit(f, start, i + chunk_size))
-    futures, _ = concurrent.futures.wait(futures)
-    result = dict()
-    for i in futures:
-        d = i.result()
-        result = result | d
-    del demir
-    return result
-
-
 @timeit
 def mapping_from_first_two_cols_to_third(train_set_idx):
     store = dict()

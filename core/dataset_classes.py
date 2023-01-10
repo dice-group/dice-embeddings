@@ -6,7 +6,7 @@ import torch
 import pytorch_lightning as pl
 import random
 from typing import Dict, List
-from .static_preprocess_funcs import mapping_from_first_two_cols_to_third, parallel_mapping_from_first_two_cols_to_third
+from .static_preprocess_funcs import mapping_from_first_two_cols_to_third
 from .static_funcs import timeit, load_pickle
 
 
