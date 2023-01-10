@@ -6,8 +6,8 @@ import torch
 import pytorch_lightning as pl
 import random
 from typing import Dict, List
-from .static_preprocess_funcs import mapping_from_first_two_cols_to_third,parallel_mapping_from_first_two_cols_to_third
-from .static_funcs import timeit
+from .static_preprocess_funcs import mapping_from_first_two_cols_to_third, parallel_mapping_from_first_two_cols_to_third
+from .static_funcs import timeit, load_pickle
 
 
 def input_data_type_checking(train_set_idx, valid_set_idx, test_set_idx, entity_to_idx: Dict, relation_to_idx: Dict):
@@ -39,6 +39,19 @@ def create_tensor(x: np.ndarray):
 
 
 @timeit
+def reload_dataset(path: str, form_of_labelling, scoring_technique, neg_ratio, label_smoothing_rate):
+    """ Reload the files from disk to construct the Pytorch dataset """
+    return construct_dataset(train_set=np.load(path + '/train_set.npy'),
+                             valid_set=None,
+                             test_set=None,
+                             entity_to_idx=load_pickle(file_path=path + '/entity_to_idx.p'),
+                             relation_to_idx=load_pickle(file_path=path + '/relation_to_idx.p'),
+                             form_of_labelling=form_of_labelling,
+                             scoring_technique=scoring_technique, neg_ratio=neg_ratio,
+                             label_smoothing_rate=label_smoothing_rate)
+
+
+@timeit
 def construct_dataset(*, train_set: np.ndarray,
                       valid_set=None,
                       test_set=None,
@@ -47,7 +60,7 @@ def construct_dataset(*, train_set: np.ndarray,
                       form_of_labelling: str,
                       scoring_technique: str,
                       neg_ratio: int,
-                      label_smoothing_rate: float) -> Dataset:
+                      label_smoothing_rate: float) -> torch.utils.data.Dataset:
     if scoring_technique == 'NegSample':
         # Binary-class.
         train_set = TriplePredictionDataset(train_set=train_set,
@@ -86,7 +99,7 @@ def construct_dataset(*, train_set: np.ndarray,
     return train_set
 
 
-class OnevsAllDataset(Dataset):
+class OnevsAllDataset(torch.utils.data.Dataset):
     """
        Dataset for the 1vsALL training strategy
 
@@ -127,7 +140,7 @@ class OnevsAllDataset(Dataset):
         return self.train_data[idx, :2], y_vec
 
 
-class KvsAll(Dataset):
+class KvsAll(torch.utils.data.Dataset):
     """
     KvsAll a Dataset:
 
@@ -214,7 +227,7 @@ class KvsAll(Dataset):
         return self.train_data[idx], y_vec
 
 
-class KvsSampleDataset(Dataset):
+class KvsSampleDataset(torch.utils.data.Dataset):
     """
     KvsSample a Dataset:
         D:= {(x,y)_i}_i ^N, where
@@ -243,7 +256,8 @@ class KvsSampleDataset(Dataset):
        torch.utils.data.Dataset
        """
 
-    def __init__(self, train_set: np.ndarray, num_entities, num_relations, neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0):
+    def __init__(self, train_set: np.ndarray, num_entities, num_relations, neg_sample_ratio: int = None,
+                 label_smoothing_rate: float = 0.0):
         super().__init__()
         assert isinstance(train_set, np.ndarray)
         # https://pytorch.org/docs/stable/data.html#multi-process-data-loading
@@ -299,7 +313,7 @@ class KvsSampleDataset(Dataset):
         return x, y_idx, y_vec
 
 
-class TriplePredictionDataset(Dataset):
+class TriplePredictionDataset(torch.utils.data.Dataset):
     """
     Triple Dataset
 
@@ -385,7 +399,7 @@ class TriplePredictionDataset(Dataset):
         return x, label
 
 
-class PykeDataset(Dataset):
+class PykeDataset(torch.utils.data.Dataset):
     def __init__(self, train_set_idx: np.ndarray):
         super().__init__()
         assert isinstance(train_set_idx, np.ndarray)
@@ -494,114 +508,4 @@ class CVDataModule(pl.LightningDataModule):
 
     def prepare_data(self, *args, **kwargs):
         # Nothing to be prepared for now.
-        pass
-
-
-# @TODO: Deprecated
-class StandardDataModule(pl.LightningDataModule, metaclass=ABCMeta):
-    """
-    Creat a Dataset for KGE
-
-    Parameters
-    ----------
-    train_set_idx
-        Indexed triples for the training.
-    entity_to_idx
-        entity to index mapping.
-    relation_to_idx
-        relation to index mapping.
-    batch_size
-        int
-    form
-        ?
-    num_workers
-        int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
-    valid_set_idx
-        Indexed triples for the validation.
-    test_set_idx
-        Indexed triples for the testing.
-    neg_sample_ratio
-        int negative triples per a training data
-    label_smoothing_rate
-    Smoothing binary labels None
-
-
-
-    Returns
-    -------
-    ?
-    """
-
-    def __init__(self, train_set_idx: np.ndarray, entity_to_idx, relation_to_idx, batch_size, form, scoring_technique,
-                 num_workers=None, valid_set_idx=None,
-                 test_set_idx=None, neg_sample_ratio=None,
-                 label_smoothing_rate: int = 0.0):
-        super().__init__()
-        input_data_type_checking(train_set_idx=train_set_idx,
-                                 valid_set_idx=valid_set_idx,
-                                 test_set_idx=test_set_idx,
-                                 entity_to_idx=entity_to_idx,
-                                 relation_to_idx=relation_to_idx)
-
-        self.train_set_idx = train_set_idx
-        self.valid_set_idx = valid_set_idx
-        self.test_set_idx = test_set_idx
-        self.entity_to_idx = entity_to_idx
-        self.relation_to_idx = relation_to_idx
-        self.target_dim = None
-        self.form = form
-        self.scoring_technique = scoring_technique
-        self.batch_size = batch_size
-        self.num_workers = num_workers
-        self.neg_sample_ratio = neg_sample_ratio
-        self.label_smoothing_rate = label_smoothing_rate
-
-    def train_dataloader(self) -> DataLoader:
-        print('Initializing Dataset...')
-        if self.scoring_technique == 'NegSample':
-            train_set = TriplePredictionDataset(self.train_set_idx,
-                                                num_entities=len(self.entity_to_idx),
-                                                num_relations=len(self.relation_to_idx),
-                                                neg_sample_ratio=self.neg_sample_ratio,
-                                                label_smoothing_rate=self.label_smoothing_rate)
-        elif self.form == 'EntityPrediction':
-            if self.scoring_technique == '1vsAll':
-                # Multi-class
-                train_set = OnevsAllDataset(self.train_set_idx, entity_idxs=self.entity_to_idx)
-            elif self.scoring_technique == 'KvsSample':
-                train_set = KvsSampleDataset(self.train_set_idx, entity_idxs=self.entity_to_idx,
-                                             neg_sample_ratio=self.neg_sample_ratio,
-                                             label_smoothing_rate=self.label_smoothing_rate)
-            elif self.scoring_technique == 'KvsAll':
-                train_set = KvsAll(self.train_set_idx, entity_idxs=self.entity_to_idx,
-                                   relation_idxs=self.relation_to_idx, form=self.form,
-                                   label_smoothing_rate=self.label_smoothing_rate)
-            else:
-                raise ValueError(f'Invalid scoring technique : {self.scoring_technique}')
-        elif self.form == 'RelationPrediction':
-            train_set = KvsAll(self.train_set_idx, entity_idxs=self.entity_to_idx,
-                               relation_idxs=self.relation_to_idx, form=self.form,
-                               label_smoothing_rate=self.label_smoothing_rate)
-        elif self.form == 'Pyke':
-            train_set = PykeDataset(self.train_set_idx)
-        else:
-            raise KeyError(f'{self.form} illegal input.')
-        print('Initializing Dataloader...')
-        return DataLoader(dataset=train_set, batch_size=self.batch_size,
-                          shuffle=True, collate_fn=train_set.collate_fn,
-                          num_workers=self.num_workers, persistent_workers=False)
-
-    def val_dataloader(self) -> DataLoader:
-        raise NotImplementedError
-
-    def test_dataloader(self) -> DataLoader:
-        raise NotImplementedError
-
-    def setup(self, *args, **kwargs):
-        pass
-
-    def transfer_batch_to_device(self, *args, **kwargs):
-        pass
-
-    def prepare_data(self, *args, **kwargs):
         pass

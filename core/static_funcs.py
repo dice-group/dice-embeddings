@@ -29,6 +29,14 @@ def timeit(func):
 
     return timeit_wrapper
 
+def save_pickle(*, data: object, file_path=str):
+    pickle.dump(data, open(file_path, "wb"))
+
+
+def load_pickle(*, file_path=str):
+    with open(file_path, 'rb') as f:
+        return pickle.load(f)
+
 
 # @TODO: Could these funcs can be merged?
 def select_model(args: dict, is_continual_training: bool = None, storage_path: str = None):

@@ -180,12 +180,22 @@ class PreprocessKG:
                                       polars.col("object").apply(lambda x: self.kg.entity_to_idx[x])])
 
         @timeit
-        def index_datasets():
+        def from_polars_to_numpy():
             """ Map str stored in a polars Dataframe to int"""
+            # https://github.com/pola-rs/polars/issues/5973#issuecomment-1373781420
+            mapper_entity = polars.DataFrame(
+                {"keys": list(self.kg.entity_to_idx.keys()), "values": list(self.kg.entity_to_idx.values())})
+            mapper_relation = polars.DataFrame(
+                {"keys": list(self.kg.relation_to_idx.keys()), "values": list(self.kg.relation_to_idx.values())})
+
+            print(self.kg.train_set[:, "subject"].join(mapper_entity, on="subject", how="left").to_series(1))
+            exit(1)
+
             self.kg.train_set = self.kg.train_set.select(
-                [polars.col("subject").apply(lambda x: self.kg.entity_to_idx[x]),
-                 polars.col("relation").apply(lambda x: self.kg.relation_to_idx[x]),
-                 polars.col("object").apply(lambda x: self.kg.entity_to_idx[x])]).to_numpy()
+                [polars.col("subject").to_frame("keys").join(mapper_entity, on="keys", how="left").to_series(1),
+                 polars.col("relation").to_frame("keys").join(mapper_relation, on="keys", how="left").to_series(1),
+                 polars.col("subject").to_frame("keys").join(mapper_entity, on="keys", how="left").to_series(1)]
+            ).to_numpy()
 
         @timeit
         def from_pandas_to_numpy(df):
@@ -199,7 +209,7 @@ class PreprocessKG:
 
         print(f'Indexing Training Data {self.kg.train_set.shape}...')
         self.kg.train_set = from_pandas_to_numpy(self.kg.train_set)
-        # index_datasets(df=self.kg.train_set)
+        # self.kg.train_set = from_polars_to_numpy()
         # we may try vaex to speed up pandas
         # https://stackoverflow.com/questions/69971992/vaex-apply-does-not-work-when-using-dataframe-columns
 
