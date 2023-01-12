@@ -7,13 +7,12 @@ import os
 import datetime
 
 import numpy as np
-import torch
-import torch.nn.functional as F
 from pytorch_lightning import seed_everything
 
 from core.knowledge_graph import KG
 from core.models.base_model import BaseKGE
 from core.evaluator import Evaluator
+# Avoid
 from core.static_funcs import *
 from core.static_preprocess_funcs import preprocesses_input_args
 from core.sanity_checkers import *
@@ -100,14 +99,25 @@ class Execute:
 
     def start(self) -> dict:
         """
-        (1) Data Preparation:
-            (1.1) Read, Preprocess Index, Serialize.
-            (1.2) Load a data that has been in (1.1).
-        (2) Train & Eval
-        (3) Save the model
-        (4) Return a report of the training
+        Start training
+
+        # (1) Loading the Data
+        # (2) Create an evaluator object.
+        # (3) Create a trainer object.
+        # (4) Start the training
+        # (5) Store trained model.
+        # (6) Eval model if required.
+
+        Parameter
+        ---------
+
+        Returns
+        -------
+        A dict containing information about the training and/or evaluation
+
         """
         start_time = time.time()
+        print(f"Start time:{datetime.datetime.now()}")
         # (1) Loading the Data
         #  Load the indexed data from disk or read a raw data from disk.
         self.load_indexed_data() if self.is_continual_training else self.read_preprocess_index_serialize_data()
@@ -134,7 +144,12 @@ class Execute:
 
 
 class ContinuousExecute(Execute):
-    """ Continue training a pretrained KGE model """
+    """ A subclass of Execute Class for retraining
+
+    (1) Loading & Preprocessing & Serializing input data.
+    (2) Training & Validation & Testing
+    (3) Storing all necessary info
+    """
 
     def __init__(self, args):
         assert os.path.exists(args.path_experiment_folder)
@@ -158,10 +173,13 @@ class ContinuousExecute(Execute):
         previous_args.full_storage_path = previous_args.path_experiment_folder
         print('ContinuousExecute starting...')
         print(previous_args)
+        # TODO: can we remove continuous_training from Execute ?
         super().__init__(previous_args, continuous_training=True)
 
     def continual_start(self) -> dict:
         """
+        Start Continual Training
+
         (1) Initialize training.
         (2) Start continual training.
         (3) Save trained model.
@@ -171,7 +189,8 @@ class ContinuousExecute(Execute):
 
         Returns
         -------
-        report:dict
+        A dict containing information about the training and/or evaluation
+
         """
         # (1)
         self.trainer = DICE_Trainer(args=self.args, is_continual_training=True,

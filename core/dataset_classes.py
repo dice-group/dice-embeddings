@@ -260,8 +260,6 @@ class KvsSampleDataset(torch.utils.data.Dataset):
                  label_smoothing_rate: float = 0.0):
         super().__init__()
         assert isinstance(train_set, np.ndarray)
-        # https://pytorch.org/docs/stable/data.html#multi-process-data-loading
-        # TLDL; replace Python objects with non-refcounted representations such as Pandas, Numpy or PyArrow objects
         self.train_data = train_set
         self.num_entities = num_entities
         self.num_relations = num_relations
@@ -276,8 +274,18 @@ class KvsSampleDataset(torch.utils.data.Dataset):
         print('Constructing training data...')
         store = mapping_from_first_two_cols_to_third(train_set)
         self.train_data = torch.IntTensor(list(store.keys()))
-        self.train_target = list(store.values())
+        # https://pytorch.org/docs/stable/data.html#multi-process-data-loading
+        # TLDL; replace Python objects with non-refcounted representations such as Pandas, Numpy or PyArrow objects
+        # Unsure whether a list of numpy arrays are non-refcounted
+        self.train_target = list([np.array(i) for i in store.values()])
         del store
+        # @TODO: Investigate reference counts of using list of numpy arrays.
+        #import sys
+        #import gc
+        # print(sys.getrefcount(self.train_target))
+        # print(sys.getrefcount(self.train_target[0]))
+        # print(gc.get_referrers(self.train_target))
+        # print(gc.get_referrers(self.train_target[0]))
 
     def __len__(self):
         assert len(self.train_data) == len(self.train_target)
@@ -287,7 +295,7 @@ class KvsSampleDataset(torch.utils.data.Dataset):
         # (1) Get i.th unique (head,relation) pair.
         x = self.train_data[idx]
         # (2) Get tail entities given (1).
-        positives_idx = np.array(self.train_target[idx])
+        positives_idx = self.train_target[idx]
         num_positives = len(positives_idx)
         # (3) Do we need to subsample (2) to create training data points of same size.
         if num_positives < self.neg_sample_ratio:
@@ -296,16 +304,14 @@ class KvsSampleDataset(torch.utils.data.Dataset):
             # (3.2) Generate more negative entities
             negative_idx = torch.randint(low=0,
                                          high=self.num_entities,
-                                         size=(self.neg_sample_ratio + self.neg_sample_ratio - num_positives,),
-                                         dtype=torch.int32)
+                                         size=(self.neg_sample_ratio + self.neg_sample_ratio - num_positives,))
         else:
             # (3.1) Subsample positives without replacement.
             positives_idx = torch.IntTensor(np.random.choice(positives_idx, size=self.neg_sample_ratio, replace=False))
             # (3.2) Generate random entities.
             negative_idx = torch.randint(low=0,
                                          high=self.num_entities,
-                                         size=(self.neg_sample_ratio,),
-                                         dtype=torch.int32)
+                                         size=(self.neg_sample_ratio,))
         # (5) Create selected indexes.
         y_idx = torch.cat((positives_idx, negative_idx), 0)
         # (6) Create binary labels.

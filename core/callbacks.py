@@ -8,7 +8,6 @@ from typing import Optional
 import os
 import pandas as pd
 
-
 class AccumulateEpochLossCallback(AbstractCallback):
     def __init__(self, path: str):
         super().__init__()
@@ -41,7 +40,7 @@ class PrintCallback(AbstractCallback):
         print(pl_module)
         print(pl_module.summarize())
         print(pl_module.selected_optimizer)
-        print("\nTraining is starting...")
+        print(f"\nTraining is starting {datetime.datetime.now()}...")
 
     def on_fit_end(self, trainer, pl_module):
         training_time = time.time() - self.start_time
