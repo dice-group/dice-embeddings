@@ -8,6 +8,7 @@ from typing import Optional
 import os
 import pandas as pd
 
+
 class AccumulateEpochLossCallback(AbstractCallback):
     def __init__(self, path: str):
         super().__init__()
@@ -179,6 +180,59 @@ class PPE:
             # Store the model
             torch.save(x, f=f"{self.path}/trainer_checkpoint_main.pt")
             self.sample_counter += 1
+
+    def on_fit_end(self, trainer, model):
+        """ END:Called """
+        model.load_state_dict(torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device('cpu')))
+
+    def on_train_batch_end(self, *args, **kwargs):
+        return
+
+
+class FPPE:
+    """ A callback for Forgetful Polyak Parameter Ensemble Technique
+
+        Maintains a running weighted average of parameters in each epoch interval.
+        As i -> N the impact of the parameters at the early stage of the training decreasing.
+    """
+
+    def __init__(self, num_epochs, path, last_percent_to_consider):
+        self.num_epochs = num_epochs
+        self.path = path
+        self.epoch_counter = 0
+        self.sample_counter = 0
+        self.epoch_to_start = 0
+
+        if last_percent_to_consider is None:
+            # Initialize Alphas
+            self.alphas = np.cumsum(np.ones(self.num_epochs) * (1 / self.num_epochs))
+        else:
+            # e.g. Average only last 10 percent
+            self.epoch_to_start = self.num_epochs - int(self.num_epochs / last_percent_to_consider)
+            size_of_alphas = self.num_epochs - self.epoch_to_start - 1
+            self.alphas = np.cumsum(np.ones(size_of_alphas) * (1 / size_of_alphas))
+        self.alphas /= sum(self.alphas)
+        assert 1.00001 >= sum(self.alphas) >= 0.999
+        self.alphas = torch.from_numpy(self.alphas)
+        print(self.alphas)
+
+    def on_fit_start(self, trainer, model):
+        torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_main.pt")
+
+    def on_train_epoch_end(self, trainer, model):
+
+        if self.epoch_to_start < self.epoch_counter:
+            # Load averaged model
+            x = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device(model.device))
+
+            with torch.no_grad():
+                # Update the model
+                for k, v in model.state_dict().items():
+                    x[k] = x[k] * self.alphas[self.sample_counter] + v
+            # Store the model
+            torch.save(x, f=f"{self.path}/trainer_checkpoint_main.pt")
+            self.sample_counter += 1
+        self.epoch_counter += 1
 
     def on_fit_end(self, trainer, model):
         """ END:Called """

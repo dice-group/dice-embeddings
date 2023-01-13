@@ -48,11 +48,24 @@ def get_callbacks(args):
                  AccumulateEpochLossCallback(path=args.full_storage_path)
                  ]
     for i in args.callbacks:
-        if 'PPE' in i:
+        if 'FPPE' in i:
+            if i == 'FPPE':
+                callbacks.append(
+                    FPPE(num_epochs=args.num_epochs, path=args.full_storage_path, last_percent_to_consider=None))
+            elif 'FPPE' == i[:4] and len(i) > 3:
+                name, param = i[:4], i[4:]
+                assert name == 'FPPE'
+                assert int(param)
+                callbacks.append(FPPE(num_epochs=args.num_epochs,
+                                      path=args.full_storage_path,
+                                      last_percent_to_consider=int(param)))
+            else:
+                raise KeyError(f'Unexpected input for callbacks ***\t{i}\t***')
+        elif 'PPE' in i:
             if "PPE" == i:
                 callbacks.append(
                     PPE(num_epochs=args.num_epochs, path=args.full_storage_path, last_percent_to_consider=None))
-            elif len(i) > 3:
+            elif 'PPE' == i[:3] and len(i) > 3:
                 name, param = i[:3], i[3:]
                 assert name == 'PPE'
                 assert int(param)
@@ -61,6 +74,9 @@ def get_callbacks(args):
                                      last_percent_to_consider=int(param)))
             else:
                 raise KeyError(f'Unexpected input for callbacks ***\t{i}\t***')
+        else:
+            raise KeyError(f'Unexpected input for callbacks ***\t{i}\t***')
+
     return callbacks
 
 
