@@ -1,6 +1,6 @@
 import os
 import time
-from typing import List, Tuple, Set
+from typing import List, Tuple, Set, Iterable, Dict
 import pandas as pd
 import torch
 from torch import optim
@@ -89,7 +89,9 @@ class KGE(BaseInteractiveKGE):
             hop_counter += 1
         return results
 
-    def find_missing_triples(self, confidence: float, topk: int = 10, at_most: int = sys.maxsize) -> Set:
+    def find_missing_triples(self, confidence: float, entities: List[str] = None, relations: List[str] = None,
+                             topk: int = 10,
+                             at_most: int = sys.maxsize) -> Set:
         """
          Find missing triples
 
@@ -118,14 +120,37 @@ class KGE(BaseInteractiveKGE):
 
         assert 1.0 >= confidence >= 0.0
         assert topk >= 1
+
+        def select(items: List[str], item_mapping: Dict[str, int]) -> Iterable[Tuple[str, int]]:
+            """
+             Get selected entities and their indexes
+
+            Parameter
+            ---------
+            items: list
+
+            item_mapping: dict
+
+
+            Returns: Iterable
+            ---------
+
+            """
+
+            if items is None:
+                return item_mapping.items()
+            else:
+                return ((i, item_mapping[i]) for i in items)
+
         extended_triples = set()
         print(f'Number of entities:{len(self.entity_to_idx)} \t Number of relations:{len(self.relation_to_idx)}')
+
         # (5) Cartesian Product over entities and relations
         # (5.1) Iterate over entities
         print('Finding missing triples..')
-        for str_head_entity, idx_entity in self.entity_to_idx.items():
+        for str_head_entity, idx_entity in select(entities, self.entity_to_idx):
             # (5.1) Iterate over relations
-            for str_relation, idx_relation in self.relation_to_idx.items():
+            for str_relation, idx_relation in select(relations, self.relation_to_idx):
                 # (5.2) \forall e \in Entities store a tuple of scoring_func(head,relation,e) and e
                 # (5.3.) Sort (5.2) and return top  tuples
                 predicted_scores, str_tail_entities = self.predict_topk(head_entity=[str_head_entity],

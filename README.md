@@ -105,7 +105,7 @@ pre_trained_kge.predict_topk(relation=["http://dbpedia.org/ontology/birthPlace"]
 ```python
 from core import KGE
 pre_trained_kge = KGE(path_of_pretrained_model_dir='ConEx')
-missing_triples = pre_trained_kge.find_missing_triples(confidence=0.95)
+missing_triples = pre_trained_kge.find_missing_triples(confidence=0.95, entities=[''], relations=[''])
 ```
 
 ## How to Train a KGE model 
