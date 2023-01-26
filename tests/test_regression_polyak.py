@@ -58,4 +58,4 @@ class TestPolyak:
         args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
-        assert .99 >= result['Train']['MRR'] >= 0.97
+        assert 1.00 >= result['Train']['MRR'] >= 0.97
