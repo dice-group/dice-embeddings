@@ -609,3 +609,8 @@ def continual_training_setup_executor(executor):
         with open(executor.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
             temp = vars(executor.args)
             json.dump(temp, file_descriptor, indent=3)
+
+def exponential_function(x: np.ndarray, lam: float) -> torch.FloatTensor:
+    result = np.flip(np.exp(-lam * x) / np.sum(np.exp(-lam * x)))
+    assert 0.999 < sum(result) < 1.0001
+    return torch.tensor(result.tolist())

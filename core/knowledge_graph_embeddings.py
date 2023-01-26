@@ -23,7 +23,8 @@ class KGE(BaseInteractiveKGE):
     def __str__(self):
         return 'KGE | ' + str(self.model)
 
-    def predict_conjunctive_query(self, entity: str, relations: List[str], topk: int = 3) -> Set[str]:
+    def predict_conjunctive_query(self, entity: str, relations: List[str], topk: int = 3,
+                                  show_intermediate_results=False) -> Set[str]:
         """
          Find an answer set for a conjunctive query.
 
@@ -87,7 +88,10 @@ class KGE(BaseInteractiveKGE):
                 # (3.3)
                 results = temp_intermediate_results
             hop_counter += 1
-        return results
+        if show_intermediate_results is True:
+            return results, each_intermediate_result
+        else:
+            return results
 
     def find_missing_triples(self, confidence: float, entities: List[str] = None, relations: List[str] = None,
                              topk: int = 10,
