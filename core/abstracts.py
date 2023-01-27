@@ -1,6 +1,6 @@
 import os
 import datetime
-#import pandas.core.indexes.range
+# import pandas.core.indexes.range
 from .static_funcs import load_model_ensemble, load_model, save_checkpoint_model
 from .static_preprocess_funcs import create_constraints
 import torch
@@ -696,3 +696,52 @@ class AbstractCallback(ABC):
         None
         """
         pass
+
+
+class AbstractPPECallback(AbstractCallback):
+    """
+    Abstract class for Callback class for knowledge graph embedding models
+
+
+    Parameter
+    ---------
+
+    """
+
+    def __init__(self, num_epochs, path, last_percent_to_consider):
+        super(AbstractPPECallback, self).__init__()
+        self.num_epochs = num_epochs
+        self.path = path
+        self.sample_counter = 0
+        if last_percent_to_consider is None:
+            self.epoch_to_start = 1
+            self.num_ensemble_coefficient = self.num_epochs - 1
+        else:
+            # Compute the last X % of the training
+            self.epoch_to_start = self.num_epochs - int(self.num_epochs * last_percent_to_consider / 100)
+            self.num_ensemble_coefficient = self.num_epochs - self.epoch_to_start
+
+    def on_fit_start(self, trainer, model):
+        pass
+
+    def on_fit_end(self, trainer, model):
+        model.load_state_dict(torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device('cpu')))
+
+    def on_train_epoch_end(self, trainer, model):
+        if self.epoch_to_start <= 0:
+            if self.sample_counter == 0:
+                torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_main.pt")
+            # (1) Load the running parameter ensemble model.
+            param_ensemble = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device(model.device))
+            with torch.no_grad():
+                for k, v in model.state_dict().items():
+                    # (2) Update the parameter ensemble model with the current model.
+                    param_ensemble[k] += self.alphas[self.sample_counter] * v
+            # (3) Save the updated parameter ensemble model.
+            torch.save(param_ensemble, f=f"{self.path}/trainer_checkpoint_main.pt")
+            self.sample_counter += 1
+
+        self.epoch_to_start -= 1
+
+    def on_train_batch_end(self, *args, **kwargs):
+        return

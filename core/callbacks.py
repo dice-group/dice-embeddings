@@ -1,9 +1,10 @@
 import datetime
+import math
 import time
 import numpy as np
 import torch
 from .static_funcs import save_checkpoint_model, exponential_function
-from .abstracts import AbstractCallback
+from .abstracts import AbstractCallback,AbstractPPECallback
 from typing import Optional
 import os
 import pandas as pd
@@ -146,63 +147,33 @@ def compute_convergence(seq, i):
     return estimate_q(seq[-i:] / (np.arange(i) + 1))
 
 
-class PPE:
-    """ A callback for Polyak Parameter Ensemble Technique
 
+class PPE(AbstractPPECallback):
+    """ A callback for Polyak Parameter Ensemble Technique
         Maintains a running parameter average for all parameters requiring gradient signals
     """
 
     def __init__(self, num_epochs, path, last_percent_to_consider=None):
-        self.num_epochs = num_epochs
-        self.path = path
-        self.sample_counter = 0
-        if last_percent_to_consider is None:
-            self.epoch_to_start = 1
-            N = self.num_epochs -1
-        else:
-            # e.g. Average only last 10 percent
-            self.epoch_to_start = self.num_epochs - int(self.num_epochs / last_percent_to_consider)
-            N = self.num_epochs - self.epoch_to_start -1
-
-        self.alphas = np.ones(N) / N
-        print(f"Ensemble Coefficients:", self.alphas)
-
-    def on_fit_start(self, trainer, model):
-        torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_main.pt")
-
-    def on_train_epoch_end(self, trainer, model):
-        if self.epoch_to_start <= 0:
-            # Load averaged model as a dummy object
-            x = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device(model.device))
-            with torch.no_grad():
-                # Update the model
-                for k, v in model.state_dict().items():
-                    x[k] = self.alphas[self.sample_counter] * v
-            # Store the updated model/ scaled v
-            torch.save(x, f=f"{self.path}/trainer_checkpoint_main.pt")
-            self.sample_counter += 1
-        self.epoch_to_start -= 1
-
-    def on_fit_end(self, trainer, model):
-        """ END:Called """
-        model.load_state_dict(torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device('cpu')))
-
-    def on_train_batch_end(self, *args, **kwargs):
-        return
+        super().__init__(num_epochs, path, last_percent_to_consider)
+        self.alphas = np.ones(self.num_ensemble_coefficient) / self.num_ensemble_coefficient
+        print(f"Equal Ensemble Coefficients:", self.alphas)
 
 
-class FPPE:
+class FPPE(AbstractPPECallback):
     """
     import matplotlib.pyplot as plt
     import numpy as np
-    def exponential_function(x, lam):
-        result = np.flip(np.exp(-lam * x) / np.sum(np.exp(-lam * x)))
+    def exponential_function(x: np.ndarray, lam: float, ascending_order=True) -> torch.FloatTensor:
+        # A sequence in exponentially decreasing order
+        result = np.exp(-lam * x) / np.sum(np.exp(-lam * x))
         assert 0.999 < sum(result) < 1.0001
-        return result
+        result = np.flip(result) if ascending_order else result
+        return torch.tensor(result.tolist())
+
     N = 100
     equal_weights = np.ones(N) / N
     plt.plot(equal_weights, 'r', label="Equal")
-    plt.plot(exponential_function(np.arange(N), lam=0.1), 'c-', label="Exp. forgetful with 0.1")
+    plt.plot(exponential_function(np.arange(N), lam=0.1,), 'c-', label="Exp. forgetful with 0.1")
     plt.plot(exponential_function(np.arange(N), lam=0.05), 'g-', label="Exp. forgetful with 0.05")
     plt.plot(exponential_function(np.arange(N), lam=0.025), 'b-', label="Exp. forgetful with 0.025")
     plt.plot(exponential_function(np.arange(N), lam=0.01), 'k-', label="Exp. forgetful with 0.01")
@@ -215,39 +186,7 @@ class FPPE:
     """
 
     def __init__(self, num_epochs, path, last_percent_to_consider=None):
-        self.num_epochs = num_epochs
-        self.path = path
-        self.sample_counter = 0
-        if last_percent_to_consider is None:
-            self.epoch_to_start = 1
-            N = self.num_epochs -1
-        else:
-            # e.g. Average only last 10 percent
-            self.epoch_to_start = self.num_epochs - int(self.num_epochs / last_percent_to_consider)
-            N = self.num_epochs - self.epoch_to_start -1
-
-        self.alphas = exponential_function(np.arange(N), lam=0.001)
-        print(f"Ensemble Coefficients:", self.alphas)
-
-    def on_fit_start(self, trainer, model):
-        torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_main.pt")
-
-    def on_train_epoch_end(self, trainer, model):
-        if self.epoch_to_start <= 0:
-            # Load averaged model as a dummy object
-            x = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device(model.device))
-            with torch.no_grad():
-                # Update the model
-                for k, v in model.state_dict().items():
-                    x[k] = self.alphas[self.sample_counter] * v
-            # Store the updated model/ scaled v
-            torch.save(x, f=f"{self.path}/trainer_checkpoint_main.pt")
-            self.sample_counter += 1
-        self.epoch_to_start -= 1
-
-    def on_fit_end(self, trainer, model):
-        """ END:Called """
-        model.load_state_dict(torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device('cpu')))
-
-    def on_train_batch_end(self, *args, **kwargs):
-        return
+        super().__init__(num_epochs, path, last_percent_to_consider)
+        lamb = 0.1
+        self.alphas = exponential_function(np.arange(self.num_ensemble_coefficient), lam=lamb, ascending_order=True)
+        print(f"Forgetful Ensemble Coefficients with lambda {lamb}:", self.alphas)

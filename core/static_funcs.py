@@ -29,6 +29,7 @@ def timeit(func):
 
     return timeit_wrapper
 
+
 def save_pickle(*, data: object, file_path=str):
     pickle.dump(data, open(file_path, "wb"))
 
@@ -220,7 +221,7 @@ def store(trainer,
 
             save_embeddings(relation_ebm.numpy(), indexes=relations_str,
                             path=full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
-            del relation_ebm,relations_str,relation_to_idx
+            del relation_ebm, relations_str, relation_to_idx
         else:
             pass
 
@@ -610,7 +611,10 @@ def continual_training_setup_executor(executor):
             temp = vars(executor.args)
             json.dump(temp, file_descriptor, indent=3)
 
-def exponential_function(x: np.ndarray, lam: float) -> torch.FloatTensor:
-    result = np.flip(np.exp(-lam * x) / np.sum(np.exp(-lam * x)))
+
+def exponential_function(x: np.ndarray, lam: float, ascending_order=True) -> torch.FloatTensor:
+    # A sequence in exponentially decreasing order
+    result = np.exp(-lam * x) / np.sum(np.exp(-lam * x))
     assert 0.999 < sum(result) < 1.0001
+    result = np.flip(result) if ascending_order else result
     return torch.tensor(result.tolist())
