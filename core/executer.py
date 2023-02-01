@@ -93,9 +93,6 @@ class Execute:
         self.report['num_relations'] = self.args.num_relations
         self.report['path_experiment_folder'] = self.storage_path
 
-        # (4) Store the report of training.
-        with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
-            json.dump(self.report, file_descriptor, indent=4)
 
     def start(self) -> dict:
         """
@@ -134,6 +131,9 @@ class Execute:
         self.save_trained_model()
         self.report['Runtime'] = time.time() - start_time
         print(f"Total computation time: {self.report['Runtime']:.3f} seconds")
+        # (4) Store the report of training.
+        with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
+            json.dump(self.report, file_descriptor, indent=4)
         # (6) Eval model.
         if self.args.eval_model is None:
             return self.report

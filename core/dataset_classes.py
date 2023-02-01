@@ -378,6 +378,34 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
         size_of_batch, _ = batch.shape
         assert size_of_batch > 0
         label = torch.ones((size_of_batch,)) - self.label_smoothing_rate
+
+        corr_entities = torch.randint(0, high=self.num_entities, size=(size_of_batch * self.neg_sample_ratio, ))
+
+        if torch.rand(1)>=0.5:
+            # corrupt head
+            r_head_corr = r.repeat(self.neg_sample_ratio, )
+            t_head_corr = t.repeat(self.neg_sample_ratio, )
+            label_head_corr = torch.zeros(len(t_head_corr)) + self.label_smoothing_rate
+
+            h = torch.cat((h, corr_entities), 0)
+            r = torch.cat((r, r_head_corr), 0)
+            t = torch.cat((t, t_head_corr), 0)
+            x = torch.stack((h, r, t), dim=1)
+            label = torch.cat((label, label_head_corr), 0)
+
+        else:
+            # corrupt tail
+            h_tail_corr = h.repeat(self.neg_sample_ratio, )
+            r_tail_corr = r.repeat(self.neg_sample_ratio, )
+            label_tail_corr = torch.zeros(len(r_tail_corr)) + self.label_smoothing_rate
+
+            h = torch.cat((h, h_tail_corr), 0)
+            r = torch.cat((r, r_tail_corr), 0)
+            t = torch.cat((t, corr_entities), 0)
+            x = torch.stack((h, r, t), dim=1)
+            label = torch.cat((label, label_tail_corr), 0)
+
+        """        
         # corrupt head, tail or rel ?!
         # (1) Corrupted Entities:
         corr = torch.randint(0, high=self.num_entities, size=(size_of_batch * self.neg_sample_ratio, 2))
@@ -402,6 +430,7 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
         t = torch.cat((t, t_head_corr, t_tail_corr, t_rel_corr), 0)
         x = torch.stack((h, r, t), dim=1)
         label = torch.cat((label, label_head_corr, label_tail_corr, label_rel_corr), 0)
+        """
         return x, label
 
 
