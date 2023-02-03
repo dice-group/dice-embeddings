@@ -280,8 +280,8 @@ class KvsSampleDataset(torch.utils.data.Dataset):
         self.train_target = list([np.array(i) for i in store.values()])
         del store
         # @TODO: Investigate reference counts of using list of numpy arrays.
-        #import sys
-        #import gc
+        # import sys
+        # import gc
         # print(sys.getrefcount(self.train_target))
         # print(sys.getrefcount(self.train_target[0]))
         # print(gc.get_referrers(self.train_target))
@@ -378,10 +378,8 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
         size_of_batch, _ = batch.shape
         assert size_of_batch > 0
         label = torch.ones((size_of_batch,)) - self.label_smoothing_rate
-
-        corr_entities = torch.randint(0, high=self.num_entities, size=(size_of_batch * self.neg_sample_ratio, ))
-
-        if torch.rand(1)>=0.5:
+        corr_entities = torch.randint(0, high=self.num_entities, size=(size_of_batch * self.neg_sample_ratio,))
+        if torch.rand(1) >= 0.5:
             # corrupt head
             r_head_corr = r.repeat(self.neg_sample_ratio, )
             t_head_corr = t.repeat(self.neg_sample_ratio, )
@@ -392,7 +390,6 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
             t = torch.cat((t, t_head_corr), 0)
             x = torch.stack((h, r, t), dim=1)
             label = torch.cat((label, label_head_corr), 0)
-
         else:
             # corrupt tail
             h_tail_corr = h.repeat(self.neg_sample_ratio, )

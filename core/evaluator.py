@@ -284,19 +284,19 @@ class Evaluator:
         all_entities = all_entities.reshape(len(all_entities), )
         # Iterating one by one is not good when you are using batch norm
         for i in range(0, len(triple_idx)):
-            # 1. Get a triple
+            # (1) Get a triple (head entity, relation, tail entity
             data_point = triple_idx[i]
-            s, p, o = data_point[0], data_point[1], data_point[2]
+            h, r, t = data_point[0], data_point[1], data_point[2]
 
-            # 2. Predict missing heads and tails
-            x = torch.stack((torch.tensor(s).repeat(self.num_entities, ),
-                             torch.tensor(p).repeat(self.num_entities, ),
-                             all_entities
-                             ), dim=1)
+            # (2) Predict missing heads and tails
+            x = torch.stack((torch.tensor(h).repeat(self.num_entities, ),
+                             torch.tensor(r).repeat(self.num_entities, ),
+                             all_entities), dim=1)
+
             predictions_tails = model.forward_triples(x)
             x = torch.stack((all_entities,
-                             torch.tensor(p).repeat(self.num_entities, ),
-                             torch.tensor(o).repeat(self.num_entities)
+                             torch.tensor(r).repeat(self.num_entities, ),
+                             torch.tensor(t).repeat(self.num_entities)
                              ), dim=1)
 
             predictions_heads = model.forward_triples(x)
@@ -304,39 +304,36 @@ class Evaluator:
 
             # 3. Computed filtered ranks for missing tail entities.
             # 3.1. Compute filtered tail entity rankings
-            filt_tails = self.er_vocab[(s, p)]
+            filt_tails = self.er_vocab[(h, r)]
             # 3.2 Get the predicted target's score
-            target_value = predictions_tails[o].item()
+            target_value = predictions_tails[t].item()
             # 3.3 Filter scores of all triples containing filtered tail entities
             predictions_tails[filt_tails] = -np.Inf
             # 3.3.1 Filter entities outside of the range
             if 'constraint' in self.args.eval_model:
-                predictions_tails[self.range_constraints_per_rel[p]] = -np.Inf
+                predictions_tails[self.range_constraints_per_rel[r]] = -np.Inf
             # 3.4 Reset the target's score
-            predictions_tails[o] = target_value
+            predictions_tails[t] = target_value
             # 3.5. Sort the score
             _, sort_idxs = torch.sort(predictions_tails, descending=True)
-            # sort_idxs = sort_idxs.cpu().numpy()
-            sort_idxs = sort_idxs.detach()  # cpu().numpy()
-            filt_tail_entity_rank = np.where(sort_idxs == o)[0][0]
+            sort_idxs = sort_idxs.detach()
+            filt_tail_entity_rank = np.where(sort_idxs == t)[0][0]
 
             # 4. Computed filtered ranks for missing head entities.
             # 4.1. Retrieve head entities to be filtered
-            filt_heads = self.re_vocab[(p, o)]
-            # filt_heads = data[(data['relation'] == p) & (data['object'] == o)]['subject'].values
+            filt_heads = self.re_vocab[(r, t)]
             # 4.2 Get the predicted target's score
-            target_value = predictions_heads[s].item()
+            target_value = predictions_heads[h].item()
             # 4.3 Filter scores of all triples containing filtered head entities.
             predictions_heads[filt_heads] = -np.Inf
             if isinstance(self.args.eval_model, bool) is False:
                 if 'constraint' in self.args.eval_model:
                     # 4.3.1 Filter entities that are outside the domain
-                    predictions_heads[self.domain_constraints_per_rel[p]] = -np.Inf
-            predictions_heads[s] = target_value
+                    predictions_heads[self.domain_constraints_per_rel[r]] = -np.Inf
+            predictions_heads[h] = target_value
             _, sort_idxs = torch.sort(predictions_heads, descending=True)
-            # sort_idxs = sort_idxs.cpu().numpy()
-            sort_idxs = sort_idxs.detach()  # cpu().numpy()
-            filt_head_entity_rank = np.where(sort_idxs == s)[0][0]
+            sort_idxs = sort_idxs.detach()
+            filt_head_entity_rank = np.where(sort_idxs == h)[0][0]
 
             # 4. Add 1 to ranks as numpy array first item has the index of 0.
             filt_head_entity_rank += 1
