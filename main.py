@@ -13,22 +13,23 @@ def argparse_default(description=None):
     parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="Embeddings, model, and any other related data will be stored therein.")
     parser.add_argument("--model", type=str,
-                        default="AConEx",
+                        default="DistMult",
                         help="Available models: ConEx, ConvQ, ConvO, DistMult, QMult, OMult, "
                              "Shallom, AConEx, ConEx, ComplEx, DistMult, TransE, CLf")
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[Adan, NAdam, Adam, SGD, Sls, AdamSLS]')
-    parser.add_argument('--embedding_dim', type=int, default=32, help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. ')
-    parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
+    parser.add_argument('--embedding_dim', type=int, default=64, help='Number of dimensions for an embedding vector. ')
+    parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
+    parser.add_argument('--batch_size', type=int, default=32, help='Mini batch size')
+    parser.add_argument('--auto_batch_finder', type=bool, default=False, help='Find a batch size w.r.t. computational budgets')
     parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument('--callbacks', '--list', nargs='+', default=[],
-                        help='List of tuples representing a callback and values, e.g. [PPE10 ,PPE20 or PPE]')
-    parser.add_argument("--backend", type=str, default='polars',
+                        help='List of tuples representing a callback and values, e.g. [FPPE or PPE or PPE10 ,PPE20 or PPE, FPPE]')
+    parser.add_argument("--backend", type=str, default='pandas',
                         help='Select [polars(seperator: \t), modin(seperator: \s+), pandas(seperator: \s+)]')
-    parser.add_argument("--trainer", type=str, default='torchDDP',
+    parser.add_argument("--trainer", type=str, default='torchCPUTrainer',
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
-    parser.add_argument('--scoring_technique', default='NegSample', help="KvsSample, 1vsAll, KvsAll, NegSample")
+    parser.add_argument('--scoring_technique', default='KvsSample', help="KvsSample, 1vsAll, KvsAll, NegSample")
     parser.add_argument('--neg_ratio', type=int, default=10,
                         help='The number of negative triples generated per positive triple.')
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')

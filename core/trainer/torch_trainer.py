@@ -122,22 +122,23 @@ class TorchTrainer(AbstractTrainer):
 
         print(
             f'NumOfDataPoints:{len(self.train_dataloaders.dataset)} | NumOfEpochs:{self.attributes.max_epochs} | LearningRate:{self.model.learning_rate} | BatchSize:{self.train_dataloaders.batch_size} | EpochBatchsize:{len(train_dataloaders)}')
-
-        increment_ratio=0
+        counter = 0
         for epoch in range(self.attributes.max_epochs):
             start_time = time.time()
-            # (1)
+
             avg_epoch_loss = self._run_epoch(epoch)
-            print(f"Epoch:{epoch + 1} | Loss:{avg_epoch_loss:.8f} | Runtime:{(time.time() - start_time) / 60:.3f}mins")
-            # Autobatch Finder: Increase the batch size at each epoch's end if memory allows
-            #             mem=self.process.memory_info().rss
-            if increment_ratio>1:
+            print(f"Epoch:{epoch + 1} | Loss:{avg_epoch_loss:.8f} | Runtime:{(time.time() - start_time) / 60:.3f} mins")
+            # Autobatch Finder: Double the current batch size if memory allows and repeat this process at mast 5 times.
+            if self.attributes.auto_batch_finder and psutil.virtual_memory().percent < 30.0 and counter < 5:
                 self.train_dataloaders = torch.utils.data.DataLoader(dataset=self.train_dataloaders.dataset,
-                                                                     batch_size=self.train_dataloaders.batch_size +self.train_dataloaders.batch_size,
+                                                                     batch_size=self.train_dataloaders.batch_size + self.train_dataloaders.batch_size,
                                                                      shuffle=True,
                                                                      collate_fn=self.train_dataloaders.dataset.collate_fn,
                                                                      num_workers=self.train_dataloaders.num_workers,
                                                                      persistent_workers=False)
+                print(
+                    f'NumOfDataPoints:{len(self.train_dataloaders.dataset)} | NumOfEpochs:{self.attributes.max_epochs} | LearningRate:{self.model.learning_rate} | BatchSize:{self.train_dataloaders.batch_size} | EpochBatchsize:{len(train_dataloaders)}')
+                counter += 1
 
             self.model.loss_history.append(avg_epoch_loss)
             self.on_train_epoch_end(self, self.model)
