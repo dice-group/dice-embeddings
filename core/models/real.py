@@ -233,6 +233,40 @@ class CLf(BaseKGE):
             [B_rel_transpose[:, :, i].unsqueeze(-1) @ C_head[:, i, :].unsqueeze(1) for i in range(self.k)], dim=1)
 
         assert F_head_relation.shape == (batch_size, self.k, self.p, self.q)
+        return A_head_relation, B_head_relation, C_head_relation, D_head_relation, E_head_relation, F_head_relation
+
+    def cl_matrix_multiplication(self, A_head, B_head, C_head, A_relation, B_relation, C_relation):
+        # batch size and number of dimensions
+        batch_size = len(A_head)
+        # (5) CL multiplication of (2) and (3).
+        # (5.1) Computation of A. # k \times 1
+
+        A_head_relation = A_head * A_relation + torch.sum(B_head * B_relation, dim=-1, keepdim=True) - torch.sum(
+            C_head * C_relation,
+            dim=-1,
+            keepdim=True)
+        assert A_head_relation.shape == (batch_size, self.k, 1)
+
+        # (5.2) Computation of B. batch_size \times k \times p
+        # Comment:A_head @ torch.ones(batch_size, 1, self.p)) => adds self.p extra columns
+        B_head_relation = (A_head @ torch.ones(batch_size, 1, self.p)) * B_relation + (
+                A_relation @ torch.ones(batch_size, 1, self.p)) * B_head
+        assert B_head_relation.shape == (batch_size, self.k, self.p)
+
+        # (5.3) Computation of C. batch_size \times k \times q
+        C_head_relation = (A_head @ torch.ones(batch_size, 1, self.q)) * C_relation + (
+                A_relation @ torch.ones(batch_size, 1, self.q)) * C_head
+        assert C_head_relation.shape == (batch_size, self.k, self.q)
+
+        # (5.4) Computation of D : batch_size \times k \times p \times p
+        B_head_transpose = B_head.transpose(1, 2)
+        B_rel_transpose = B_relation.transpose(1, 2)
+        C_head_transpose = C_head.transpose(1, 2)
+        C_rel_transpose = C_relation.transpose(1, 2)
+
+        D_head_relation = B_head_transpose @ B_relation - B_rel_transpose @ B_head
+        E_head_relation = C_head_transpose @ C_relation - C_rel_transpose @ C_head
+        F_head_relation = B_head_transpose @ C_relation - B_rel_transpose @ C_head
 
         return A_head_relation, B_head_relation, C_head_relation, D_head_relation, E_head_relation, F_head_relation
 
@@ -255,14 +289,23 @@ class CLf(BaseKGE):
         C_tail: torch.Tensor  # shape (batch_size, self.n, self.q)
         A_tail, B_tail, C_tail = self.construct_cl_vector(tail_ent_emb)
 
-        A, B, C, D, E, F = self.cl_multiplication(A_head, B_head, C_head, A_rel, B_rel, C_rel)
+        if False:
+            A, B, C, D, E, F = self.cl_multiplication(A_head, B_head, C_head, A_rel, B_rel, C_rel)
+            A_score = torch.sum(A * A_tail, dim=(1, 2))
+            B_score = torch.sum(B * B_tail, dim=(1, 2))
+            C_score = torch.sum(C * C_tail, dim=(1, 2))
+            D_score = torch.sum(D, dim=(1, 2, 3))
+            E_score = torch.sum(E, dim=(1, 2, 3))
+            F_score = torch.sum(F, dim=(1, 2, 3))
+        else:
+            A, B, C, D, E, F = self.cl_matrix_multiplication(A_head, B_head, C_head, A_rel, B_rel, C_rel)
 
-        A_score = torch.sum(A * A_tail, dim=(1, 2))
-        B_score = torch.sum(B * B_tail, dim=(1, 2))
-        C_score = torch.sum(C * C_tail, dim=(1, 2))
-        D_score = torch.sum(D, dim=(1, 2, 3))
-        E_score = torch.sum(E, dim=(1, 2, 3))
-        F_score = torch.sum(F, dim=(1, 2, 3))
+            A_score = torch.sum(A * A_tail, dim=(1, 2))
+            B_score = torch.sum(B * B_tail, dim=(1, 2))
+            C_score = torch.sum(C * C_tail, dim=(1, 2))
+            D_score = torch.sum(D, dim=(1, 2))
+            E_score = torch.sum(E, dim=(1, 2))
+            F_score = torch.sum(F, dim=(1, 2))
 
         return A_score + B_score + C_score + D_score + E_score + F_score
 
