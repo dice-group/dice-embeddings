@@ -49,6 +49,7 @@ class TransE(BaseKGE):
         self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
         self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
         self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
+
     def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
@@ -56,7 +57,8 @@ class TransE(BaseKGE):
         # if d =0 sigma(5-0) => 1
         # if d =5 sigma(5-5) => 0.5
         # Update: sigmoid( \gamma - d)
-        distance = self.margin - torch.nn.functional.pairwise_distance(head_ent_emb + rel_ent_emb, tail_ent_emb, p=self._norm)
+        distance = self.margin - torch.nn.functional.pairwise_distance(head_ent_emb + rel_ent_emb, tail_ent_emb,
+                                                                       p=self._norm)
         return distance
 
     def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
@@ -141,8 +143,19 @@ class Pyke(BaseKGE):
 
 
 """ On going works"""
+
+
 class CLf(BaseKGE):
-    """Clifford:Embedding Space Search in Clifford Algebras"""
+    """Clifford:Embedding Space Search in Clifford Algebras
+
+
+    h = A_{d \times 1}, B_{d \times p}, C_{d \times q}
+
+    r = A'_{d \times 1}, B'_{d \times p}, C'_{d \times q}
+
+    t = A''_{d \times 1}, B''_{d \times p}, C_{d \times q}
+
+    """
 
     def __init__(self, args):
         super().__init__(args)
@@ -151,27 +164,113 @@ class CLf(BaseKGE):
         self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
         self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
+        # n + np + nq : n*( 1 + p + q) =embedding_dim
+        self.p = 2
+        self.q = 2
+        self.k = self.embedding_dim / (self.p + self.q + 1)
+
+        print(f'P{self.p}\tQ{self.q}\tn:{self.k}')
+        assert self.k % 2 == 0
+        self.k = int(self.k)
+
+    def construct_cl_vector(self, x):
+        # h = A_{n \times 1}, B_{n \times p}, C_{n \times q}
+        # we have n1 + np + nq numbers
+        A = x[:, :self.k].unsqueeze(-1)
+        B = x[:, self.k: self.k + (self.k * self.p)].reshape(len(x), self.k, self.p)
+        C = x[:, -(self.k * self.q):].reshape(len(x), self.k, self.q)
+        batch_size, nA, _ = A.shape
+        assert _ == 1
+        batch_size, nB, __ = B.shape
+        assert __ == self.p
+        batch_size, nC, __ = C.shape
+        assert __ == self.q
+        assert nA == nB == nC
+        return A, B, C
+
+    def cl_multiplication(self, A_head, B_head, C_head, A_relation, B_relation, C_relation):
+        # batch size and number of dimensions
+        batch_size = len(A_head)
+        # (5) CL multiplication of (2) and (3).
+        # (5.1) Computation of A. # k \times 1
+        A_head_relation = A_head * A_relation + torch.sum(B_head * B_relation, dim=-1, keepdim=True) - torch.sum(
+            C_head * C_relation,
+            dim=-1,
+            keepdim=True)
+        assert A_head_relation.shape == (batch_size, self.k, 1)
+        # (5.2) Computation of B. batch_size \times k \times p
+        B_head_relation = (A_head @ torch.ones(batch_size, 1, self.p)) * B_relation + (
+                A_relation @ torch.ones(batch_size, 1, self.p)) * B_head
+        assert B_head_relation.shape == (batch_size, self.k, self.p)
+
+        # (5.3) Computation of C. batch_size \times k \times q
+        C_head_relation = (A_head @ torch.ones(batch_size, 1, self.q)) * C_relation + (
+                A_relation @ torch.ones(batch_size, 1, self.q)) * C_head
+        assert C_head_relation.shape == (batch_size, self.k, self.q)
+
+        # (5.4) Computation of D : batch_size \times k \times p \times p
+        B_head_transpose = B_head.transpose(1, 2)
+        B_rel_transpose = B_relation.transpose(1, 2)
+        # We need to vectorize it
+        D_head_relation = torch.stack(
+            [B_head_transpose[:, :, i].unsqueeze(-1) @ B_relation[:, i, :].unsqueeze(1) for i in range(self.k)],
+            dim=1) - torch.stack(
+            [B_rel_transpose[:, :, i].unsqueeze(-1) @ B_head[:, i, :].unsqueeze(1) for i in range(self.k)], dim=1)
+        assert D_head_relation.shape == (batch_size, self.k, self.p, self.p)
+
+        C_head_transpose = C_head.transpose(1, 2)
+        C_rel_transpose = C_relation.transpose(1, 2)
+
+        E_head_relation = torch.stack(
+            [C_head_transpose[:, :, i].unsqueeze(-1) @ C_relation[:, i, :].unsqueeze(1) for i in range(self.k)],
+            dim=1) - torch.stack(
+            [C_rel_transpose[:, :, i].unsqueeze(-1) @ C_head[:, i, :].unsqueeze(1) for i in range(self.k)], dim=1)
+        assert E_head_relation.shape == (batch_size, self.k, self.q, self.q)
+
+        F_head_relation = torch.stack(
+            [B_head_transpose[:, :, i].unsqueeze(-1) @ C_relation[:, i, :].unsqueeze(1) for i in range(self.k)],
+            dim=1) - torch.stack(
+            [B_rel_transpose[:, :, i].unsqueeze(-1) @ C_head[:, i, :].unsqueeze(1) for i in range(self.k)], dim=1)
+
+        assert F_head_relation.shape == (batch_size, self.k, self.p, self.q)
+
+        return A_head_relation, B_head_relation, C_head_relation, D_head_relation, E_head_relation, F_head_relation
+
     def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
+        # (2) Construct n dimensional vector in CL_{p,q}
+        A_head: torch.Tensor  # shape (batch_size, self.n, 1)
+        B_head: torch.Tensor  # shape (batch_size, self.n, self.p)
+        C_head: torch.Tensor  # shape (batch_size, self.n, self.q)
+        A_head, B_head, C_head = self.construct_cl_vector(head_ent_emb)
+        # (3) Construct n dimensional vector in CL_{p,q}
+        A_rel: torch.Tensor  # shape (batch_size, self.n, 1)
+        B_rel: torch.Tensor  # shape (batch_size, self.n, self.p)
+        C_rel: torch.Tensor  # shape (batch_size, self.n, self.q)
+        A_rel, B_rel, C_rel = self.construct_cl_vector(rel_ent_emb)
+        # (4) Construct n dimensional vector in CL_{p,q}
+        A_tail: torch.Tensor  # shape (batch_size, self.n, 1)
+        B_tail: torch.Tensor  # shape (batch_size, self.n, self.p)
+        C_tail: torch.Tensor  # shape (batch_size, self.n, self.q)
+        A_tail, B_tail, C_tail = self.construct_cl_vector(tail_ent_emb)
 
-        # (2) Formula for CL_{p,1}(\mathbb R) =>  a + \sum_i ^p b_i v_i + \sum_j ^q c_j u_j.
-        # (3) a + bv + cu provided that p= 1 and q=1.
-        # (4) Head embedding representation in CL (a + bv + cu)
-        a, b, c = torch.hsplit(head_ent_emb, 3)
-        # (5) Relation embedding representation in CL (a' + b'v + c'u).
-        a_prime, b_prime, c_prime = torch.hsplit(rel_ent_emb, 3)
-        # (6) Tail embedding representation in CL (a''' + b'''v + c'''u).
-        a_3prime, b_3prime, c_3prime = torch.hsplit(tail_ent_emb, 3)
-        # (7) Scoring function.
-        score_vec = a_3prime * ((a * a_prime + b * b_prime) - (c * c_prime)) + b_3prime * (
-                a * b_prime + a_prime * b) + c_3prime * (a * c_prime + a_prime * c)
-        return score_vec.sum(dim=1)
+        A, B, C, D, E, F = self.cl_multiplication(A_head, B_head, C_head, A_rel, B_rel, C_rel)
+
+        A_score = torch.sum(A * A_tail, dim=(1, 2))
+        B_score = torch.sum(B * B_tail, dim=(1, 2))
+        C_score = torch.sum(C * C_tail, dim=(1, 2))
+        D_score = torch.sum(D, dim=(1, 2, 3))
+        E_score = torch.sum(E, dim=(1, 2, 3))
+        F_score = torch.sum(F, dim=(1, 2, 3))
+
+        return A_score + B_score + C_score + D_score + E_score + F_score
 
     def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
         emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
         print('Hello')
         raise NotImplementedError('Implement scoring function for KvsAll')
+
 
 # TODO: need refactoring
 class KPDistMult(BaseKGE):
