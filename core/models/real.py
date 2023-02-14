@@ -5,6 +5,143 @@ from math import sqrt
 from .static_funcs import quaternion_mul
 
 
+class CLf(BaseKGE):
+    """Clifford:Embedding Space Search in Clifford Algebras
+
+
+    h = A_{d \times 1}, B_{d \times p}, C_{d \times q}
+
+    r = A'_{d \times 1}, B'_{d \times p}, C'_{d \times q}
+
+    t = A''_{d \times 1}, B''_{d \times p}, C_{d \times q}
+
+    """
+
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = 'CLf'
+        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
+        self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
+        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
+        self.p = self.args['p']
+        self.q = self.args['q']
+        if self.p is None:
+            self.p = 0
+        if self.q is None:
+            self.q = 0
+
+        self.k = self.embedding_dim / (self.p + self.q + 1)
+        print(f'k:{self.k}\tp:{self.p}\tq:{self.q}')
+        try:
+            assert self.k.is_integer()
+        except AssertionError:
+            raise AssertionError(f'k= embedding_dim / (p + q+ 1) must be a whole number\n'
+                                 f'Currently {self.k}={self.embedding_dim} / ({self.p}+ {self.q} +1)')
+        self.k = int(self.k)
+
+    def construct_cl_vector(self, batch_x: torch.FloatTensor) -> tuple[
+        torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
+        """ Convert a batch of d-dimensional real valued vectors to a batch of k-dimensional Clifford vectors
+        batch_x: n \times d
+
+        batch_x_cl: A_{n \times k,1}, B_{n \times k \times p}, C_{n \times k \times q}
+        """
+        batch_size, d = batch_x.shape
+        # (1) A_{n \times k}: take the first k columns
+        A = batch_x[:, :self.k].view(batch_size, self.k)
+        # (2) B_{n \times p}, C_{n \times q}: take the self.k * self.p columns after the k. column
+        if self.p > 0:
+            B = batch_x[:, self.k: self.k + (self.k * self.p)].view(batch_size, self.k, self.p)
+        else:
+            B = torch.zeros((batch_size, self.k, self.p))
+
+        if self.q > 0:
+            # (3) B_{n \times p}, C_{n \times q}: take the last self.k * self.q .
+            C = batch_x[:, -(self.k * self.q):].view(batch_size, self.k, self.q)
+        else:
+            C = torch.zeros((batch_size, self.k, self.q))
+
+        return A, B, C
+
+    @staticmethod
+    def clifford_mul_with_einsum(A_h, B_h, C_h, A_r, B_r, C_r):
+        """ Compute CL multiplication """
+        # (1) Compute A: batch_size (b), A \in \mathbb{R}^k
+        A = torch.einsum('bk,bk->bk', A_h, A_r) \
+            + torch.einsum('bkp,bkp->bk', B_h, B_r) \
+            - torch.einsum('bkq,bkq->bk', C_h, C_r)
+        # (2) Compute B: batch_size (b), B \in \mathbb{R}^{k \times p}
+        B = torch.einsum('bk,bkp->bkp', A_h, B_r) + torch.einsum('bk,bkp->bkp', A_r, B_h)
+        # (3) Compute C: batch_size (b), C \in \mathbb{R}^{k \times q}
+        C = torch.einsum('bk,bkq->bkq', A_h, C_r) + torch.einsum('bk,bkq->bkq', A_r, C_h)
+
+        # (4) Compute D: batch_size (b), D \in \mathbb{R}^{k \times  p \times p}
+        D = torch.einsum('bkp,bkl->bkpl', B_h, B_r) - torch.einsum('bkp,bkl->bkpl', B_r, B_h)
+
+        # (5) Compute E: batch_size (b), E \in \mathbb{R}^{k \times  q \times q}
+        E = torch.einsum('bkq,bkl->bkql', C_h, C_r) - torch.einsum('bkq,bkl->bkql', C_r, C_h)
+        # (5) Compute F: batch_size (b), E \in \mathbb{R}^{k \times  p \times q}
+        F = torch.einsum('bkp,bkq->bkpq', B_h, C_r) - torch.einsum('bkp,bkq->bkpq', B_r, C_h)
+
+        return A, B, C, D, E, F
+
+    def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
+        # (1) Retrieve real-valued embedding vectors.
+        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
+        # (2) Construct k-dimensional vector in CL_{p,q} for head entities.
+        A_head, B_head, C_head = self.construct_cl_vector(head_ent_emb)
+        # (3) Construct n dimensional vector in CL_{p,q} for relations.
+        A_rel, B_rel, C_rel = self.construct_cl_vector(rel_ent_emb)
+        # (4) Construct n dimensional vector in CL_{p,q} for tail entities.
+        A_tail, B_tail, C_tail = self.construct_cl_vector(tail_ent_emb)
+
+        # (5) Clifford multiplication of (2) and (3)
+        A, B, C, D, E, F = self.clifford_mul_with_einsum(A_head, B_head, C_head, A_rel, B_rel, C_rel)
+        # (6) Inner product of (5) and (4)
+        A_score = torch.einsum('bk,bk->b', A_tail, A)
+        B_score = torch.einsum('bkp,bkp->b', B_tail, B)
+        C_score = torch.einsum('bkq,bkq->b', C_tail, C)
+        D_score = torch.einsum('bkpp->b', D)
+        E_score = torch.einsum('bkqq->b', E)
+        F_score = torch.einsum('bkpq->b', F)
+        return A_score + B_score + C_score + D_score + E_score + F_score
+
+    def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
+        # (1) Retrieve real-valued embedding vectors.
+        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
+        # (2) Construct k-dimensional vector in CL_{p,q} for head entities.
+        A_head, B_head, C_head = self.construct_cl_vector(head_ent_emb)
+        # (3) Construct n dimensional vector in CL_{p,q} for relations.
+        A_rel, B_rel, C_rel = self.construct_cl_vector(rel_ent_emb)
+        # (5) Clifford multiplication of (2) and (3).
+        A, B, C, D, E, F = self.clifford_mul_with_einsum(A_head, B_head, C_head, A_rel, B_rel, C_rel)
+
+        # (6) Extract embeddings for all entities.
+        Emb_all = self.entity_embeddings.weight
+        # (7) Compute A
+        A_all = Emb_all[:, :self.k]
+        A_score = torch.einsum('bk,ek->be', A, A_all)
+        # (8) Compute B
+        if self.p > 0:
+            B_all = Emb_all[:, self.k: self.k + (self.k * self.p)].view(self.num_entities, self.k, self.p)
+            B_score = torch.einsum('bkp,ekp->be', B, B_all)
+        else:
+            B_score = 0
+        # (9) Compute C
+        if self.q > 0:
+            C_all = Emb_all[:, -(self.k * self.q):].view(self.num_entities, self.k, self.q)
+            C_score = torch.einsum('bkq,ekq->be', C, C_all)
+        else:
+            C_score = 0
+        # (10) Aggregate (7,8,9)
+        A_B_C_score = A_score + B_score + C_score
+        # (11) Compute and Aggregate D,E,F
+        D_E_F_score = torch.einsum('bkpp->b', D) + torch.einsum('bkqq->b', E) + torch.einsum('bkpq->b', F)
+        D_E_F_score = D_E_F_score.view(len(D_E_F_score), 1)
+        # (12) Score
+        return A_B_C_score + D_E_F_score
+
+
 class DistMult(BaseKGE):
     """
     Embedding Entities and Relations for Learning and Inference in Knowledge Bases
@@ -140,179 +277,6 @@ class Pyke(BaseKGE):
         mean_pos_emb = pos_emb.mean(dim=1)
         mean_neg_emb = neg_emb.mean(dim=1)
         return anchor, mean_pos_emb, mean_neg_emb
-
-
-""" On going works"""
-
-
-class CLf(BaseKGE):
-    """Clifford:Embedding Space Search in Clifford Algebras
-
-
-    h = A_{d \times 1}, B_{d \times p}, C_{d \times q}
-
-    r = A'_{d \times 1}, B'_{d \times p}, C'_{d \times q}
-
-    t = A''_{d \times 1}, B''_{d \times p}, C_{d \times q}
-
-    """
-
-    def __init__(self, args):
-        super().__init__(args)
-        self.name = 'CLf'
-        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
-
-        # n + np + nq : n*( 1 + p + q) =embedding_dim
-        self.p = 2
-        self.q = 2
-        self.k = self.embedding_dim / (self.p + self.q + 1)
-
-        print(f'P{self.p}\tQ{self.q}\tn:{self.k}')
-        assert self.k % 2 == 0
-        self.k = int(self.k)
-
-    def construct_cl_vector(self, x):
-        # h = A_{n \times 1}, B_{n \times p}, C_{n \times q}
-        # we have n1 + np + nq numbers
-        A = x[:, :self.k].unsqueeze(-1)
-        B = x[:, self.k: self.k + (self.k * self.p)].reshape(len(x), self.k, self.p)
-        C = x[:, -(self.k * self.q):].reshape(len(x), self.k, self.q)
-        batch_size, nA, _ = A.shape
-        assert _ == 1
-        batch_size, nB, __ = B.shape
-        assert __ == self.p
-        batch_size, nC, __ = C.shape
-        assert __ == self.q
-        assert nA == nB == nC
-        return A, B, C
-
-    def cl_multiplication(self, A_head, B_head, C_head, A_relation, B_relation, C_relation):
-        # batch size and number of dimensions
-        batch_size = len(A_head)
-        # (5) CL multiplication of (2) and (3).
-        # (5.1) Computation of A. # k \times 1
-        A_head_relation = A_head * A_relation + torch.sum(B_head * B_relation, dim=-1, keepdim=True) - torch.sum(
-            C_head * C_relation,
-            dim=-1,
-            keepdim=True)
-        assert A_head_relation.shape == (batch_size, self.k, 1)
-        # (5.2) Computation of B. batch_size \times k \times p
-        B_head_relation = (A_head @ torch.ones(batch_size, 1, self.p)) * B_relation + (
-                A_relation @ torch.ones(batch_size, 1, self.p)) * B_head
-        assert B_head_relation.shape == (batch_size, self.k, self.p)
-
-        # (5.3) Computation of C. batch_size \times k \times q
-        C_head_relation = (A_head @ torch.ones(batch_size, 1, self.q)) * C_relation + (
-                A_relation @ torch.ones(batch_size, 1, self.q)) * C_head
-        assert C_head_relation.shape == (batch_size, self.k, self.q)
-
-        # (5.4) Computation of D : batch_size \times k \times p \times p
-        B_head_transpose = B_head.transpose(1, 2)
-        B_rel_transpose = B_relation.transpose(1, 2)
-        # We need to vectorize it
-        D_head_relation = torch.stack(
-            [B_head_transpose[:, :, i].unsqueeze(-1) @ B_relation[:, i, :].unsqueeze(1) for i in range(self.k)],
-            dim=1) - torch.stack(
-            [B_rel_transpose[:, :, i].unsqueeze(-1) @ B_head[:, i, :].unsqueeze(1) for i in range(self.k)], dim=1)
-        assert D_head_relation.shape == (batch_size, self.k, self.p, self.p)
-
-        C_head_transpose = C_head.transpose(1, 2)
-        C_rel_transpose = C_relation.transpose(1, 2)
-
-        E_head_relation = torch.stack(
-            [C_head_transpose[:, :, i].unsqueeze(-1) @ C_relation[:, i, :].unsqueeze(1) for i in range(self.k)],
-            dim=1) - torch.stack(
-            [C_rel_transpose[:, :, i].unsqueeze(-1) @ C_head[:, i, :].unsqueeze(1) for i in range(self.k)], dim=1)
-        assert E_head_relation.shape == (batch_size, self.k, self.q, self.q)
-
-        F_head_relation = torch.stack(
-            [B_head_transpose[:, :, i].unsqueeze(-1) @ C_relation[:, i, :].unsqueeze(1) for i in range(self.k)],
-            dim=1) - torch.stack(
-            [B_rel_transpose[:, :, i].unsqueeze(-1) @ C_head[:, i, :].unsqueeze(1) for i in range(self.k)], dim=1)
-
-        assert F_head_relation.shape == (batch_size, self.k, self.p, self.q)
-        return A_head_relation, B_head_relation, C_head_relation, D_head_relation, E_head_relation, F_head_relation
-
-    def cl_matrix_multiplication(self, A_head, B_head, C_head, A_relation, B_relation, C_relation):
-        # batch size and number of dimensions
-        batch_size = len(A_head)
-        # (5) CL multiplication of (2) and (3).
-        # (5.1) Computation of A. # k \times 1
-
-        A_head_relation = A_head * A_relation + torch.sum(B_head * B_relation, dim=-1, keepdim=True) - torch.sum(
-            C_head * C_relation,
-            dim=-1,
-            keepdim=True)
-        assert A_head_relation.shape == (batch_size, self.k, 1)
-
-        # (5.2) Computation of B. batch_size \times k \times p
-        # Comment:A_head @ torch.ones(batch_size, 1, self.p)) => adds self.p extra columns
-        B_head_relation = (A_head @ torch.ones(batch_size, 1, self.p)) * B_relation + (
-                A_relation @ torch.ones(batch_size, 1, self.p)) * B_head
-        assert B_head_relation.shape == (batch_size, self.k, self.p)
-
-        # (5.3) Computation of C. batch_size \times k \times q
-        C_head_relation = (A_head @ torch.ones(batch_size, 1, self.q)) * C_relation + (
-                A_relation @ torch.ones(batch_size, 1, self.q)) * C_head
-        assert C_head_relation.shape == (batch_size, self.k, self.q)
-
-        # (5.4) Computation of D : batch_size \times k \times p \times p
-        B_head_transpose = B_head.transpose(1, 2)
-        B_rel_transpose = B_relation.transpose(1, 2)
-        C_head_transpose = C_head.transpose(1, 2)
-        C_rel_transpose = C_relation.transpose(1, 2)
-
-        D_head_relation = B_head_transpose @ B_relation - B_rel_transpose @ B_head
-        E_head_relation = C_head_transpose @ C_relation - C_rel_transpose @ C_head
-        F_head_relation = B_head_transpose @ C_relation - B_rel_transpose @ C_head
-
-        return A_head_relation, B_head_relation, C_head_relation, D_head_relation, E_head_relation, F_head_relation
-
-    def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
-        # (1) Retrieve embeddings & Apply Dropout & Normalization.
-        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
-        # (2) Construct n dimensional vector in CL_{p,q}
-        A_head: torch.Tensor  # shape (batch_size, self.n, 1)
-        B_head: torch.Tensor  # shape (batch_size, self.n, self.p)
-        C_head: torch.Tensor  # shape (batch_size, self.n, self.q)
-        A_head, B_head, C_head = self.construct_cl_vector(head_ent_emb)
-        # (3) Construct n dimensional vector in CL_{p,q}
-        A_rel: torch.Tensor  # shape (batch_size, self.n, 1)
-        B_rel: torch.Tensor  # shape (batch_size, self.n, self.p)
-        C_rel: torch.Tensor  # shape (batch_size, self.n, self.q)
-        A_rel, B_rel, C_rel = self.construct_cl_vector(rel_ent_emb)
-        # (4) Construct n dimensional vector in CL_{p,q}
-        A_tail: torch.Tensor  # shape (batch_size, self.n, 1)
-        B_tail: torch.Tensor  # shape (batch_size, self.n, self.p)
-        C_tail: torch.Tensor  # shape (batch_size, self.n, self.q)
-        A_tail, B_tail, C_tail = self.construct_cl_vector(tail_ent_emb)
-
-        if False:
-            A, B, C, D, E, F = self.cl_multiplication(A_head, B_head, C_head, A_rel, B_rel, C_rel)
-            A_score = torch.sum(A * A_tail, dim=(1, 2))
-            B_score = torch.sum(B * B_tail, dim=(1, 2))
-            C_score = torch.sum(C * C_tail, dim=(1, 2))
-            D_score = torch.sum(D, dim=(1, 2, 3))
-            E_score = torch.sum(E, dim=(1, 2, 3))
-            F_score = torch.sum(F, dim=(1, 2, 3))
-        else:
-            A, B, C, D, E, F = self.cl_matrix_multiplication(A_head, B_head, C_head, A_rel, B_rel, C_rel)
-
-            A_score = torch.sum(A * A_tail, dim=(1, 2))
-            B_score = torch.sum(B * B_tail, dim=(1, 2))
-            C_score = torch.sum(C * C_tail, dim=(1, 2))
-            D_score = torch.sum(D, dim=(1, 2))
-            E_score = torch.sum(E, dim=(1, 2))
-            F_score = torch.sum(F, dim=(1, 2))
-
-        return A_score + B_score + C_score + D_score + E_score + F_score
-
-    def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
-        emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
-        print('Hello')
-        raise NotImplementedError('Implement scoring function for KvsAll')
 
 
 # TODO: need refactoring

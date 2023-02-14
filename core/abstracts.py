@@ -141,7 +141,8 @@ class BaseInteractiveKGE:
     apply_semantic_constraint : boolean
     """
 
-    def __init__(self, path_of_pretrained_model_dir: str, construct_ensemble: bool = False, model_name: str = None,
+    def __init__(self, path_of_pretrained_model_dir: str, compute_range_and_domain: bool = False,
+                 construct_ensemble: bool = False, model_name: str = None,
                  apply_semantic_constraint: bool = False):
         try:
             assert os.path.isdir(path_of_pretrained_model_dir)
@@ -173,13 +174,25 @@ class BaseInteractiveKGE:
         with open(self.path + '/train_set.npy', 'rb') as f:
             self.train_set = np.load(f)
 
+        if compute_range_and_domain:
+            self.domain_constraints_per_rel, self.range_constraints_per_rel, self.domain_per_rel, self.range_per_rel = create_constraints(
+                self.train_set)
+
         if self.apply_semantic_constraint:
-            # TODO: LOAD constrants from disk
-            # TODO: 1 Obtain a mapping from a relation to its ranges
-            # TODO: 2 Convert 2 into a mapping from relations to entities outside of their ranges
-            self.domain_constraints_per_rel, self.range_constraints_per_rel = create_constraints(
-                self.train_set.to_numpy())
-            # TODO 3 Use 2 at predicting scores.
+            self.domain_constraints_per_rel, self.range_constraints_per_rel, self.domain_per_rel, self.range_per_rel = create_constraints(
+                self.train_set)
+
+    def get_domain_of_relation(self, rel: str) -> List[str]:
+        x = [self.idx_to_entity[i] for i in self.domain_per_rel[self.relation_to_idx[rel]]]
+        res = set(x)
+        assert len(x) == len(res)
+        return res
+
+    def get_range_of_relation(self, rel: str) -> List[str]:
+        x = [self.idx_to_entity[i] for i in self.range_per_rel[self.relation_to_idx[rel]]]
+        res = set(x)
+        assert len(x) == len(res)
+        return res
 
     def set_model_train_mode(self) -> None:
         """
@@ -212,7 +225,7 @@ class BaseInteractiveKGE:
         for parameter in self.model.parameters():
             parameter.requires_grad = False
 
-    def __predict_missing_head_entity(self, relation: List[str], tail_entity: List[str], k: int) -> Tuple:
+    def __predict_missing_head_entity(self, relation: List[str], tail_entity: List[str]) -> Tuple:
         """
         Given a relation and a tail entity, return top k ranked head entity.
 
@@ -238,7 +251,6 @@ class BaseInteractiveKGE:
 
         Highest K scores and entities
         """
-        assert k >= 0
 
         head_entity = torch.arange(0, len(self.entity_to_idx))
         relation = torch.LongTensor([self.relation_to_idx[i] for i in relation])
@@ -246,11 +258,9 @@ class BaseInteractiveKGE:
         x = torch.stack((head_entity,
                          relation.repeat(self.num_entities, ),
                          tail_entity.repeat(self.num_entities, )), dim=1)
-        scores = self.model(x)
-        sort_scores, sort_idxs = torch.topk(scores, k)
-        return sort_scores, [self.idx_to_entity[i] for i in sort_idxs.tolist()]
+        return self.model(x)
 
-    def __predict_missing_relations(self, head_entity: List[str], tail_entity: List[str], k: int = 3) -> Tuple:
+    def __predict_missing_relations(self, head_entity: List[str], tail_entity: List[str]) -> Tuple:
         """
         Given a head entity and a tail entity, return top k ranked relations.
 
@@ -278,8 +288,6 @@ class BaseInteractiveKGE:
         Highest K scores and entities
         """
 
-        assert k >= 0
-
         head_entity = torch.LongTensor([self.entity_to_idx[i] for i in head_entity])
         relation = torch.arange(0, len(self.relation_to_idx))
         tail_entity = torch.LongTensor([self.entity_to_idx[i] for i in tail_entity])
@@ -287,11 +295,12 @@ class BaseInteractiveKGE:
         x = torch.stack((head_entity.repeat(self.num_relations, ),
                          relation,
                          tail_entity.repeat(self.num_relations, )), dim=1)
-        scores = self.model(x)
-        sort_scores, sort_idxs = torch.topk(scores, k)
-        return sort_scores, [self.idx_to_relations[i] for i in sort_idxs.tolist()]
+        return self.model(x)
+        # scores = self.model(x)
+        # sort_scores, sort_idxs = torch.topk(scores, topk)
+        # return sort_scores, [self.idx_to_relations[i] for i in sort_idxs.tolist()]
 
-    def __predict_missing_tail_entity(self, head_entity: List[str], relation: List[str], k: int = 3) -> Tuple:
+    def __predict_missing_tail_entity(self, head_entity: List[str], relation: List[str]) -> torch.FloatTensor:
         """
         Given a head entity and a relation, return top k ranked entities
 
@@ -308,29 +317,48 @@ class BaseInteractiveKGE:
 
         String representation of selected entities.
 
-
-        k: int
-
-        Highest ranked k entities.
-
         Returns: Tuple
         ---------
 
-        Highest K scores and entities
+        scores
         """
+        head_entity = torch.LongTensor([self.entity_to_idx[i] for i in head_entity]).unsqueeze(-1)
+        relation = torch.LongTensor([self.relation_to_idx[i] for i in relation]).unsqueeze(-1)
+        return self.model(torch.cat((head_entity, relation), dim=1))
 
-        assert k >= 0
-        # Get index of head entity
-        head_entity = torch.LongTensor([self.entity_to_idx[i] for i in head_entity])
-        # Get index of relation
-        relation = torch.LongTensor([self.relation_to_idx[i] for i in relation])
-        # Get all entity indexes.
-        tail_entity = torch.arange(0, len(self.entity_to_idx))
-        x = torch.stack((head_entity.repeat(self.num_entities, ), relation.repeat(self.num_entities, ), tail_entity),
-                        dim=1)
-        scores = self.model(x)
-        sort_scores, sort_idxs = torch.topk(scores, k)
-        return sort_scores, [self.idx_to_entity[i] for i in sort_idxs.tolist()]
+    def predict(self, *, head_entities: List[str] = None, relations: List[str] = None, tail_entities: List[str] = None):
+        # (1) Sanity checking.
+        if head_entities is not None:
+            assert isinstance(head_entities, list)
+            assert isinstance(head_entities[0], str)
+        if relations is not None:
+            assert isinstance(relations, list)
+            assert isinstance(relations[0], str)
+        if tail_entities is not None:
+            assert isinstance(tail_entities, list)
+            assert isinstance(tail_entities[0], str)
+        # (2) Predict missing head entity given a relation and a tail entity.
+        if head_entities is None:
+            assert relations is not None
+            assert tail_entities is not None
+            # ? r, t
+            scores = self.__predict_missing_head_entity(relations, tail_entities)
+        # (3) Predict missing relation given a head entity and a tail entity.
+        elif relations is None:
+            assert head_entities is not None
+            assert tail_entities is not None
+            # h ? t
+            scores = self.__predict_missing_relations(head_entities, tail_entities)
+        # (4) Predict missing tail entity given a head entity and a relation
+        elif tail_entities is None:
+            assert head_entities is not None
+            assert relations is not None
+            # h r ?
+            scores = self.__predict_missing_tail_entity(head_entities, relations)
+        else:
+            assert len(head_entities) == len(relations) == len(tail_entities)
+            scores = self.triple_score(head_entities=head_entities, relations=relations, tail_entity=tail_entities)
+        return torch.sigmoid(scores)
 
     def predict_topk(self, *, head_entity: List[str] = None, relation: List[str] = None, tail_entity: List[str] = None,
                      topk: int = 10):
@@ -376,22 +404,25 @@ class BaseInteractiveKGE:
             assert relation is not None
             assert tail_entity is not None
             # ? r, t
-            scores, entities = self.__predict_missing_head_entity(relation, tail_entity, topk)
-            return torch.sigmoid(scores), entities
+            scores = self.__predict_missing_head_entity(relation, tail_entity).flatten()
+            sort_scores, sort_idxs = torch.topk(scores, topk)
+            return torch.sigmoid(sort_scores), [self.idx_to_entity[i] for i in sort_idxs.tolist()]
         # (3) Predict missing relation given a head entity and a tail entity.
         elif relation is None:
             assert head_entity is not None
             assert tail_entity is not None
             # h ? t
-            scores, relations = self.__predict_missing_relations(head_entity, tail_entity, topk)
-            return torch.sigmoid(scores), relations
+            scores = self.__predict_missing_relations(head_entity, tail_entity).flatten()
+            sort_scores, sort_idxs = torch.topk(scores, topk)
+            return torch.sigmoid(sort_scores), [self.idx_to_relations[i] for i in sort_idxs.tolist()]
         # (4) Predict missing tail entity given a head entity and a relation
         elif tail_entity is None:
             assert head_entity is not None
             assert relation is not None
             # h r ?t
-            scores, entities = self.__predict_missing_tail_entity(head_entity, relation, topk)
-            return torch.sigmoid(scores), entities
+            scores = self.__predict_missing_tail_entity(head_entity, relation).flatten()
+            sort_scores, sort_idxs = torch.topk(scores, topk)
+            return torch.sigmoid(sort_scores), [self.idx_to_entity[i] for i in sort_idxs.tolist()]
         else:
 
             assert len(head_entity) == len(relation) == len(tail_entity)

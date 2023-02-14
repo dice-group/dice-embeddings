@@ -53,6 +53,7 @@ class TestRegressionQmult:
         args.read_only_few = None
         args.trainer = 'torchCPUTrainer'
         args.init_param = 'xavier_normal'
+        args.normalization='LayerNorm'
         result = Execute(args).start()
         assert 0.92 >= result['Train']['H@1'] >= 0.83
         assert 0.82 >= result['Test']['H@1'] >= 0.75

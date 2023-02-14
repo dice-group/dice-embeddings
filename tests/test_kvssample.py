@@ -53,6 +53,7 @@ class TestRegressionQmult:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.trainer = 'torchCPUTrainer'
+        args.normalization='LayerNorm'
         result = Execute(args).start()
         assert result['Train']['MRR'] >= 0.220
         assert result['Val']['MRR'] >= 0.220

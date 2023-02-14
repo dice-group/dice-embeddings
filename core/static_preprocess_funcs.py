@@ -89,7 +89,7 @@ def preprocesses_input_args(arg):
     return arg
 
 
-def create_constraints(triples: np.ndarray) -> Tuple[dict, dict]:
+def create_constraints(triples: np.ndarray) -> Tuple[dict, dict, dict, dict]:
     """
     (1) Extract domains and ranges of relations
     (2) Store a mapping from relations to entities that are outside of the domain and range.
@@ -101,22 +101,25 @@ def create_constraints(triples: np.ndarray) -> Tuple[dict, dict]:
     assert triples.shape[1] == 3
 
     # (1) Compute the range and domain of each relation
+    domain_per_rel = dict()
+    range_per_rel = dict()
+
     range_constraints_per_rel = dict()
     domain_constraints_per_rel = dict()
     set_of_entities = set()
     set_of_relations = set()
     for (e1, p, e2) in triples:
-        range_constraints_per_rel.setdefault(p, set()).add(e2)
-        domain_constraints_per_rel.setdefault(p, set()).add(e1)
+        domain_per_rel.setdefault(p, set()).add(e1)
+        range_per_rel.setdefault(p, set()).add(e2)
         set_of_entities.add(e1)
         set_of_relations.add(p)
         set_of_entities.add(e2)
 
     for rel in set_of_relations:
-        range_constraints_per_rel[rel] = list(set_of_entities - range_constraints_per_rel[rel])
-        domain_constraints_per_rel[rel] = list(set_of_entities - domain_constraints_per_rel[rel])
+        range_constraints_per_rel[rel] = list(set_of_entities - range_per_rel[rel])
+        domain_constraints_per_rel[rel] = list(set_of_entities - domain_per_rel[rel])
 
-    return domain_constraints_per_rel, range_constraints_per_rel
+    return domain_constraints_per_rel, range_constraints_per_rel, domain_per_rel, range_per_rel
 
 
 def get_er_vocab(data):
