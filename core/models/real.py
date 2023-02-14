@@ -63,8 +63,7 @@ class CLf(BaseKGE):
 
         return A, B, C
 
-    @staticmethod
-    def clifford_mul_with_einsum(A_h, B_h, C_h, A_r, B_r, C_r):
+    def clifford_mul_with_einsum(self, A_h, B_h, C_h, A_r, B_r, C_r):
         """ Compute CL multiplication """
         # (1) Compute A: batch_size (b), A \in \mathbb{R}^k
         A = torch.einsum('bk,bk->bk', A_h, A_r) \
@@ -76,8 +75,17 @@ class CLf(BaseKGE):
         C = torch.einsum('bk,bkq->bkq', A_h, C_r) + torch.einsum('bk,bkq->bkq', A_r, C_h)
 
         # (4) Compute D: batch_size (b), D \in \mathbb{R}^{k \times  p \times p}
+        """
+        x = B_h.transpose(1, 2)
+        b, p, k = x.shape
+        results = []
+        for i in range(k):
+            a = x[:, :, i].view(len(x), self.p, 1)
+            b = B_r[:, i, :].view(len(x), 1, self.p)
+            results.append(a @ b)
+        results = torch.stack(results, dim=1)
+        """
         D = torch.einsum('bkp,bkl->bkpl', B_h, B_r) - torch.einsum('bkp,bkl->bkpl', B_r, B_h)
-
         # (5) Compute E: batch_size (b), E \in \mathbb{R}^{k \times  q \times q}
         E = torch.einsum('bkq,bkl->bkql', C_h, C_r) - torch.einsum('bkq,bkl->bkql', C_r, C_h)
         # (5) Compute F: batch_size (b), E \in \mathbb{R}^{k \times  p \times q}

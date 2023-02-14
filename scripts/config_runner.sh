@@ -1,1 +1,0 @@
-python "$1" --path_dataset_folder "$2" --model  "$3"  --num_epochs "$4" --embedding_dim "$5"
