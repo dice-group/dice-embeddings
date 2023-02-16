@@ -1,13 +1,11 @@
-from main import argparse_default
-from dicee.executer import Execute
-import sys
+from dicee.executer import Execute, get_default_arguments
 import pytest
 
 
 class TestRegressionComplEx:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'ComplEx'
         args.scoring_technique = 'KvsAll'
         args.optim = 'Adam'
@@ -33,7 +31,7 @@ class TestRegressionComplEx:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'ComplEx'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 50
@@ -58,7 +56,7 @@ class TestRegressionComplEx:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'ComplEx'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 50

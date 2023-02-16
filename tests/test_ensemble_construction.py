@@ -1,17 +1,13 @@
-from continual_training import argparse_default as ct_argparse_default
-from main import argparse_default as main_argparse_default
-from dicee.executer import Execute, ContinuousExecute
+from dicee.executer import Execute, ContinuousExecute, get_default_arguments
 from dicee.knowledge_graph_embeddings import KGE
-from dicee.knowledge_graph import KG
 import pytest
-import argparse
 import os
 
 
 class TestEnsembleConstruction:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
-        args = main_argparse_default([])
+        args = get_default_arguments([])
         args.model = 'QMult'
         args.scoring_technique = 'KvsAll'
         args.optim = 'Adam'

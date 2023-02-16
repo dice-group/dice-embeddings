@@ -1,13 +1,11 @@
-from main import argparse_default
-from dicee.executer import Execute
-import sys
+from dicee.executer import Execute, get_default_arguments
 import pytest
 
 
 class TestDefaultParams:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_shallom(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'Shallom'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -27,7 +25,7 @@ class TestDefaultParams:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_conex(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'ConEx'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -47,7 +45,7 @@ class TestDefaultParams:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'QMult'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -66,7 +64,7 @@ class TestDefaultParams:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_convq(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'ConvQ'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -86,7 +84,7 @@ class TestDefaultParams:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_omult(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'OMult'
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'
@@ -107,7 +105,7 @@ class TestDefaultParams:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_convo(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'ConvO'
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'
@@ -127,7 +125,7 @@ class TestDefaultParams:
         Execute(args).start()
 
     def test_distmult(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'DistMult'
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'

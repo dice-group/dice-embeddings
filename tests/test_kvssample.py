@@ -1,13 +1,11 @@
-from main import argparse_default
-from dicee.executer import Execute
-import sys
+from dicee.executer import Execute, get_default_arguments
 import pytest
 
 
 class TestRegressionQmult:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_sample(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'QMult'
         args.path_dataset_folder = 'KGs/UMLS'
         args.optim = 'Adam'
@@ -34,7 +32,7 @@ class TestRegressionQmult:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_sample_regression(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'AConEx'
         args.path_dataset_folder = 'KGs/UMLS'
         args.optim = 'Adam'
@@ -53,7 +51,7 @@ class TestRegressionQmult:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.trainer = 'torchCPUTrainer'
-        args.normalization='LayerNorm'
+        args.normalization = 'LayerNorm'
         result = Execute(args).start()
         assert result['Train']['MRR'] >= 0.220
         assert result['Val']['MRR'] >= 0.220

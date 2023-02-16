@@ -1,5 +1,4 @@
-from main import argparse_default as main_argparse_default
-from dicee.executer import Execute
+from dicee.executer import Execute, get_default_arguments
 from dicee.knowledge_graph_embeddings import KGE
 import torch
 import pytest
@@ -10,7 +9,7 @@ import os
 class TestRegressionOnlineLearning:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_umls(self):
-        args = main_argparse_default([])
+        args = get_default_arguments([])
         args.model = 'AConEx'
         args.scoring_technique = 'KvsSample'
         args.optim = 'Adam'

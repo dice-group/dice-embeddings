@@ -1,5 +1,4 @@
-from main import argparse_default
-from dicee.executer import Execute
+from dicee.executer import Execute,get_default_arguments
 import sys
 import pytest
 
@@ -7,7 +6,7 @@ import pytest
 class TestCV_NegSample:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_conex_NegSample(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'ConEx'
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'
@@ -16,7 +15,7 @@ class TestCV_NegSample:
         args.batch_size = 1024
         args.lr = 0.01
         args.embedding_dim = 32
-        args.backend = 'pandas'  #  Error with polars becasue sep="\s" should be a single byte character, but is 2 bytes long.
+        args.backend = 'pandas'  #  Error with polars because sep="\s" should be a single byte character, but is 2 bytes long.
         args.eval_model = 'train'
         args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
@@ -24,7 +23,7 @@ class TestCV_NegSample:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult_NegSample(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'QMult'
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'
@@ -41,7 +40,7 @@ class TestCV_NegSample:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_convq_NegSample(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'ConvQ'
         args.scoring_technique = 'NegSample'
         args.path_dataset_folder = 'KGs/Family'
@@ -58,7 +57,7 @@ class TestCV_NegSample:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_omult_NegSample(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'OMult'
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'
@@ -75,7 +74,7 @@ class TestCV_NegSample:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_convo_NegSample(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'ConvO'
         args.scoring_technique = 'NegSample'
         args.path_dataset_folder = 'KGs/Family'
@@ -90,7 +89,7 @@ class TestCV_NegSample:
         Execute(args).start()
 
     def test_distmult_NegSample(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'DistMult'
         args.scoring_technique = 'NegSample'
         args.path_dataset_folder = 'KGs/Family'
@@ -106,7 +105,7 @@ class TestCV_NegSample:
         Execute(args).start()
 
     def test_complex_NegSample(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'ComplEx'
         args.scoring_technique = 'NegSample'
         args.path_dataset_folder = 'KGs/Family'

@@ -1,13 +1,11 @@
-from main import argparse_default
-import dicee
-from dicee.executer import Execute
+from dicee.executer import Execute, get_default_arguments
 import pytest
 
 
 class TestRegressionDistMult:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'DistMult'
         args.optim = 'Adam'
         args.path_dataset_folder = 'KGs/UMLS'
@@ -30,7 +28,7 @@ class TestRegressionDistMult:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'DistMult'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
@@ -52,7 +50,7 @@ class TestRegressionDistMult:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'DistMult'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10

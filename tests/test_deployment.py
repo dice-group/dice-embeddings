@@ -1,5 +1,4 @@
-from main import argparse_default
-from dicee.executer import Execute
+from dicee.executer import Execute, get_default_arguments
 import sys
 import pytest
 from dicee import KGE
@@ -9,7 +8,7 @@ from dicee.static_funcs import random_prediction
 class TestDefaultParams:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'QMult'
         args.optim = 'Adam'
         args.num_epochs = 1

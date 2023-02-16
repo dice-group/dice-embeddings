@@ -1,5 +1,4 @@
-from main import argparse_default
-from dicee.executer import Execute
+from dicee.executer import Execute, get_default_arguments
 import sys
 import pytest
 
@@ -7,7 +6,7 @@ import pytest
 class TestReadFewOnly:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult_kvsall(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'QMult'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -29,7 +28,7 @@ class TestReadFewOnly:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult_1vsall(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'QMult'
         args.num_epochs = 1
         args.scoring_technique = '1vsAll'
@@ -51,7 +50,7 @@ class TestReadFewOnly:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult_neg_sampling(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'QMult'
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'

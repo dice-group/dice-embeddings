@@ -1,5 +1,4 @@
-from main import argparse_default
-from dicee.executer import Execute
+from dicee.executer import Execute, get_default_arguments
 import sys
 import pytest
 
@@ -7,7 +6,7 @@ import pytest
 class TestRegressionAConEx:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
-        args = argparse_default([])
+        args = get_default_arguments([])
         args.model = 'AConEx'
         args.scoring_technique = 'KvsAll'
         args.optim = 'Adam'
