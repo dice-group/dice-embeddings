@@ -1,5 +1,5 @@
 from main import argparse_default
-from core.executer import Execute
+from dicee.executer import Execute
 import sys
 import pytest
 
@@ -22,6 +22,6 @@ class TestDefaultParams:
         args.sample_triples_ratio = None
         args.read_only_few = None
         args.num_folds_for_cv = None
-        args.gradient_accumulation_steps=5
+        args.gradient_accumulation_steps = 5
         args.trainer = 'torchCPUTrainer'
         Execute(args).start()

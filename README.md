@@ -59,7 +59,7 @@ pytest -p no:warnings --ff # to run the failures first and then the rest of the 
 ## Applications
 ### Conjunctive Query/Question Answering
 ```python
-from core import KGE
+from dicee import KGE
 # (1) Load a pretrained KGE model on KGs/Family
 pre_trained_kge = KGE(path_of_pretrained_model_dir='Experiments/2022-12-08 11:46:33.654677')
 # (2) Answer the following conjunctive query question: To whom a sibling of F9M167 is married to?
@@ -77,7 +77,7 @@ pre_trained_kge.predict_conjunctive_query(entity='<http://www.benchmark.org/fami
 mkdir ConEx && cd ConEx && wget -r -nd -np https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpedia/ConEx/ && cd ..
 ```
 ```python
-from core import KGE
+from dicee import KGE
 # (1) Load a pretrained ConEx on DBpedia 
 pre_trained_kge = KGE(path_of_pretrained_model_dir='ConEx')
 
@@ -90,20 +90,20 @@ pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Ei
 ```
 ### Relation Prediction
 ```python
-from core import KGE
+from dicee import KGE
 pre_trained_kge = KGE(path_of_pretrained_model_dir='ConEx')
 pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],tail_entity=["http://dbpedia.org/resource/Ulm"])
 ```
 ### Entity Prediction
 ```python
-from core import KGE
+from dicee import KGE
 pre_trained_kge = KGE(path_of_pretrained_model_dir='ConEx')
 pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"]) 
 pre_trained_kge.predict_topk(relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Albert_Einstein"]) 
 ```
 ### Finding Missing Triples
 ```python
-from core import KGE
+from dicee import KGE
 pre_trained_kge = KGE(path_of_pretrained_model_dir='ConEx')
 missing_triples = pre_trained_kge.find_missing_triples(confidence=0.95, entities=[''], relations=[''])
 ```

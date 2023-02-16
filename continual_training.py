@@ -1,4 +1,4 @@
-from core.executer import ContinuousExecute
+from dicee.executer import ContinuousExecute
 import argparse
 def argparse_default(description=None):
     parser = argparse.ArgumentParser(add_help=False)

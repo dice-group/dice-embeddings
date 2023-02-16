@@ -1,5 +1,5 @@
 from main import argparse_default
-from core.executer import Execute, ContinuousExecute
+from dicee.executer import Execute, ContinuousExecute
 import sys
 import pytest
 

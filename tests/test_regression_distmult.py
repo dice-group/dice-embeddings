@@ -1,6 +1,6 @@
 from main import argparse_default
-from core.executer import Execute
-import sys
+import dicee
+from dicee.executer import Execute
 import pytest
 
 

@@ -2,10 +2,10 @@ import time
 import pytorch_lightning as pl
 import gc
 from typing import Union
-from core.models.base_model import BaseKGE
-from core.static_funcs import select_model
-from core.callbacks import *
-from core.dataset_classes import construct_dataset, reload_dataset
+from dicee.models.base_model import BaseKGE
+from dicee.static_funcs import select_model
+from dicee.callbacks import *
+from dicee.dataset_classes import construct_dataset, reload_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
 from ..static_funcs import timeit

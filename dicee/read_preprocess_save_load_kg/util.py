@@ -5,7 +5,7 @@ import glob
 import time
 import functools
 import pandas as pd
-from core.static_funcs import numpy_data_type_changer
+from dicee.static_funcs import numpy_data_type_changer
 import concurrent
 import pickle
 import sys

@@ -1,9 +1,9 @@
 from main import argparse_default
-from core.executer import Execute
+from dicee.executer import Execute
 import sys
 import pytest
-from core import KGE
-from core.static_funcs import random_prediction
+from dicee import KGE
+from dicee.static_funcs import random_prediction
 
 
 class TestDefaultParams:

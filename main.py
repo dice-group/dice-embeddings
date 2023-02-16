@@ -1,4 +1,4 @@
-from core.executer import Execute
+from dicee.executer import Execute
 import argparse
 import pytorch_lightning as pl
 

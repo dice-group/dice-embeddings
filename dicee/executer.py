@@ -9,14 +9,14 @@ import datetime
 import numpy as np
 from pytorch_lightning import seed_everything
 
-from core.knowledge_graph import KG
-from core.models.base_model import BaseKGE
-from core.evaluator import Evaluator
+from dicee.knowledge_graph import KG
+from dicee.models.base_model import BaseKGE
+from dicee.evaluator import Evaluator
 # Avoid
-from core.static_funcs import *
-from core.static_preprocess_funcs import preprocesses_input_args
-from core.sanity_checkers import *
-from core.trainer import DICE_Trainer
+from dicee.static_funcs import *
+from dicee.static_preprocess_funcs import preprocesses_input_args
+from dicee.sanity_checkers import *
+from dicee.trainer import DICE_Trainer
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)

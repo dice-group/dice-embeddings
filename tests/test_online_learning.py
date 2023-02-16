@@ -1,6 +1,6 @@
 from main import argparse_default as main_argparse_default
-from core.executer import Execute
-from core.knowledge_graph_embeddings import KGE
+from dicee.executer import Execute
+from dicee.knowledge_graph_embeddings import KGE
 import torch
 import pytest
 import argparse

@@ -1,5 +1,5 @@
 from main import argparse_default
-from core.executer import Execute
+from dicee.executer import Execute
 import sys
 import os
 import pickle
@@ -38,6 +38,7 @@ class TestPickle:
         args = argparse_default([])
         args.path_dataset_folder = 'KGs/UMLS'
         args.model = 'QMult'
+        args.embedding_dim=16
         args.scoring_technique = 'NegSample'
         executor = Execute(args)
         args.trainer = 'torchCPUTrainer'

@@ -1,20 +1,17 @@
+import os
+import sys
 import torch
 import time
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed.optim import ZeroRedundancyOptimizer
 import torch.distributed as dist
-import os
 import numpy as np
-from core.abstracts import AbstractTrainer
+from dicee.abstracts import AbstractTrainer
+from dicee.static_funcs_training import efficient_zero_grad
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
-import sys
-from core.static_funcs_training import efficient_zero_grad
-
-
 # DDP with gradiant accumulation https://gist.github.com/mcarilli/bf013d2d2f4b4dd21ade30c9b52d5e2e
-
 def print_peak_memory(prefix, device):
     if device == 0:
         print(f"{prefix}: {torch.cuda.max_memory_allocated(device) // 1e6}MB ")

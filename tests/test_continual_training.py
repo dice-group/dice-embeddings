@@ -1,8 +1,8 @@
 from continual_training import argparse_default as ct_argparse_default
 from main import argparse_default as main_argparse_default
-from core.executer import Execute, ContinuousExecute
-from core.knowledge_graph_embeddings import KGE
-from core.knowledge_graph import KG
+from dicee.executer import Execute, ContinuousExecute
+from dicee.knowledge_graph_embeddings import KGE
+from dicee.knowledge_graph import KG
 import pytest
 import argparse
 import os
