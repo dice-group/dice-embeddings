@@ -2,6 +2,68 @@ from .base_model import BaseKGE
 import torch
 
 
+def clifford_mul(x: torch.FloatTensor, y: torch.FloatTensor, p: int, q: int) -> tuple:
+    """
+    Clifford multiplication Cl_{p,q} (\mathbb{R})
+
+    Parameter
+    ---------
+    x: torch.FloatTensor with (n,d) shape
+
+    y: torch.FloatTensor with (n,d) shape
+
+    p: a non-negative integer p>= 0
+    q: a non-negative integer q>= 0
+
+
+
+    Returns
+    -------
+
+    """
+
+    if p == q == 0:
+        # (1) Elementwise multiplication CL_0,0(\mathbb{R}) is isomorphic to \mathbb{R}
+        return x * y
+    elif p == 1 and q == 0:
+        # (2) Elementwise multiplication CL_0,0(\mathbb{R}) is isomorphic to ? \mathbb{R}(2)
+        a0, a1 = torch.hsplit(x, 2)
+        b0, b1 = torch.hsplit(y, 2)
+        ab0 = a0 * b0 + a1 * b1
+        ab1 = a0 * b1 + a1 * b0
+        return ab0, ab1
+    elif p == 0 and q == 1:
+        # (2) Elementwise multiplication CL_0,0(\mathbb{R}) is isomorphic to \mathbb{C}
+        a0, a1 = torch.hsplit(x, 2)
+        b0, b1 = torch.hsplit(y, 2)
+
+        ab0 = a0 * b0 - a1 * b1
+        ab1 = a0 * b1 + a1 * b0
+        return ab0, ab1
+    elif p == 2 and q == 0:
+        # (2) Elementwise multiplication CL_0,0(\mathbb{R}) is isomorphic to ?\mathbb{C}
+        a0, a1, a2, a12 = torch.hsplit(x, 4)
+        b0, b1, b2, b12 = torch.hsplit(y, 4)
+        # (2) multiplication
+        ab0 =  a0*b0  + a1*b1  + a2*b2  - a12*b12
+        ab1 =  a0*b1  + a1*b0  - a2*b12 + a12*b2
+        ab2 =  a0*b2  + a1*b12 + a2*b0  - a12*b1
+        ab12 = a0*b12 + a1*b2  - a2*b1  + a12*b0
+        return ab0, ab1, ab2, ab12
+    elif p == 0 and q == 2:
+        # (2) Elementwise multiplication CL_0,0(\mathbb{R}) is isomorphic to \mathbb{H}
+        a0, a1, a2, a12 = torch.hsplit(x, 4)
+        b0, b1, b2, b12 = torch.hsplit(y, 4)
+
+        ab0  =  a0*b0  - a1*b1  - a2*b2  -  a12*b12
+        ab1  =  a0*b1  + a1*b0  + a2*b12 -  a12*b2
+        ab2  =  a0*b2  - a1*b12 + a2*b0  +  a12*b1
+        ab12 =  a0*b12 + a1*b2  - a2*b1  +  a12*b0
+        return ab0, ab1, ab2, ab12
+    else:
+        raise NotImplementedError
+
+
 class CMult(BaseKGE):
     """
     Cl_(0,0) => Real Numbers
@@ -37,90 +99,63 @@ class CMult(BaseKGE):
             self.p = 0
         if self.q is None:
             self.q = 0
-        self.k = self.embedding_dim / (self.p + self.q + 1)
-        print(f'k:{self.k}\tp:{self.p}\tq:{self.q}')
-        try:
-            assert self.k.is_integer()
-        except AssertionError:
-            raise AssertionError(f'k= embedding_dim / (p + q+ 1) must be a whole number\n'
-                                 f'Currently {self.k}={self.embedding_dim} / ({self.p}+ {self.q} +1)')
-        self.k = int(self.k)
+        print(f'\tp:{self.p}\tq:{self.q}')
 
     def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
         # (1) Retrieve real-valued embedding vectors.
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
-        # (2) Construct k-dimensional vector in CL_{p,q} for head entities.
+        ab = clifford_mul(x=head_ent_emb, y=rel_ent_emb, p=self.p, q=self.q)
 
-        # (1) A_{n \times k}: take the first k columns
         if self.p == self.q == 0:
-            # DistMult
-            return torch.einsum('bd,bd,bd->b', head_ent_emb, rel_ent_emb, tail_ent_emb)
-        elif self.p == 0 and self.q == 1:
-            # ComplEx
-            batch_size, d = head_ent_emb.shape
-            # Complex representations
-            head_0 = head_ent_emb[:, :self.k].view(batch_size, self.k)
-            head_1 = head_ent_emb[:, -self.k:].view(batch_size, self.k)
-            rel_0 = rel_ent_emb[:, :self.k].view(batch_size, self.k)
-            rel_1 = rel_ent_emb[:, -self.k:].view(batch_size, self.k)
-            tail_0 = tail_ent_emb[:, :self.k].view(batch_size, self.k)
-            tail_1 = tail_ent_emb[:, -self.k:].view(batch_size, self.k)
-
-            # Complex multiplication
-            rel = torch.einsum('bd,bd->bd', head_0, rel_0) - torch.einsum('bd,bd->bd', head_1, rel_1)
-            imag = torch.einsum('bd,bd->bd', head_0, rel_1) + torch.einsum('bd,bd->bd', head_1, rel_0)
-
-            return torch.einsum('bd,bd->b', rel, tail_0) + torch.einsum('bd,bd->b', imag, tail_1)
-        elif self.p == 0 and self.q == 2:
-            # Quaternions
-            # Eq. 39
-            # a = a_0 + a_1 e_1 + a_2 e_2 + a_{12} e1 e2
-            a0, a1, a2, a12 = torch.hsplit(head_ent_emb, 4)
-            b0, b1, b2, b12 = torch.hsplit(rel_ent_emb, 4)
-
-            ab0 = a0 * b0 - a1 * b1 - a2 * b2 - a12 * b12
-            ab1 = a0 * b1 + a1 * b0 + a2 * b12 - a12 * b2
-            ab2 = a0 * b2 - a1 * b12 + a2 * b0 + a12 * b1
-            ab12 = a0 * b12 - a1 * b2 + a12 * b0
-            ab = torch.cat((ab0, ab1, ab2, ab12), dim=1)
-            return torch.einsum('bd, bd -> b', ab, tail_ent_emb)
+            return torch.einsum('bd,bd->b', ab, tail_ent_emb)
+        elif (self.p == 1 and self.q == 0) or (self.p == 0 and self.q == 1):
+            ab0, ab1 = ab
+            c0, c1 = torch.hsplit(tail_ent_emb, 2)
+            return torch.einsum('bd,bd->b', ab0, c0) + torch.einsum('bd,bd->b', ab1, c1)
+        elif (self.p == 2 and self.q == 0) or (self.p == 0 and self.q == 2):
+            ab0, ab1, ab2, ab12 = ab
+            c0, c1, c2, c12 = torch.hsplit(tail_ent_emb, 4)
+            return torch.einsum('bd,bd->b', ab0, c0) \
+                   + torch.einsum('bd,bd->b', ab1, c1) \
+                   + torch.einsum('bd,bd->b', ab2, c2) \
+                   + torch.einsum('bd,bd->b', ab12, c12)
         else:
             raise NotImplementedError
 
-        exit(1)
+    def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
+        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
+        # CL mult of
+        ab = clifford_mul(x=head_ent_emb, y=rel_ent_emb, p=self.p, q=self.q)
 
-        a0b0 = torch.einsum('bd,bd->b', head_a0, rel_a0)
+        if self.p == self.q == 0:
+            return torch.mm(ab, self.entity_embeddings.weight.transpose(1, 0))
+            # produces different results
+            # return torch.einsum('bd,kd->bk', ab, Emb_all)
 
-        print(head_a0[0])
-        print(head_a1[0])
-        print(head_a2[0])
+        elif (self.p == 1 and self.q == 0) or (self.p == 0 and self.q == 1):
+            ab0, ab1 = ab
+            c0, c1 = torch.hsplit(self.entity_embeddings.weight, 2)
+            return torch.einsum('bd,kd->bk', ab0, c0) + torch.einsum('bd,kd->bk', ab1, c1)
+        elif (self.p == 2 and self.q == 0) or (self.p == 0 and self.q == 2):
+            ab0, ab1, ab2, ab12 = ab
+            c0, c1, c2, c12 = torch.hsplit(self.entity_embeddings.weight, 4)
+            """
+            # Slightly slower
+            torch.einsum('bd,kd->bk', ab0, c0) \
+                   + torch.einsum('bd,kd->bk', ab1, c1) \
+                   + torch.einsum('bd,kd->bk', ab2, c2) \
+                   + torch.einsum('bd,kd->bk', ab12, c12)
+            """
+            real_score = torch.mm(ab0, c0.transpose(1, 0))
+            i_score = torch.mm(ab1, c1.transpose(1, 0))
+            j_score = torch.mm(ab2, c2.transpose(1, 0))
+            k_score = torch.mm(ab12, c12.transpose(1, 0))
+            return real_score+i_score+j_score+k_score
 
-        exit(1)
-        print(a0.shape)
-        print(a1.shape)
-        print(a2.shape)
-        exit(1)
-        # (5)mult (2) and (3)
-        a0b0 = torch.einsum('bd,bd->b', a0, b0)
-        a0b1 = torch.einsum('bd,bd->b', a0, b1)
-        a1b0 = torch.einsum('bd,bd->b', a1, b0)
-        a1b1 = torch.einsum('bd,bd->b', a1, b1)
 
-        z = (a0b0 - a1b1) + (a0b1 + a1b0)
 
-        print(z.shape)
-        exit(1)
-        print(A_head)
-        # (5) Clifford multiplication of (2) and (3)
-        A, B, C, D, E, F = self.clifford_mul_with_einsum(A_head, B_head, C_head, A_rel, B_rel, C_rel)
-        # (6) Inner product of (5) and (4)
-        A_score = torch.einsum('bk,bk->b', A_tail, A)
-        B_score = torch.einsum('bkp,bkp->b', B_tail, B)
-        C_score = torch.einsum('bkq,bkq->b', C_tail, C)
-        D_score = torch.einsum('bkpp->b', D)
-        E_score = torch.einsum('bkqq->b', E)
-        F_score = torch.einsum('bkpq->b', F)
-        return A_score + B_score + C_score + D_score + E_score + F_score
+        else:
+            raise NotImplementedError
 
 
 class CLf(BaseKGE):
