@@ -5,7 +5,7 @@ import warnings
 from types import SimpleNamespace
 import os
 import datetime
-
+import argparse
 import numpy as np
 from pytorch_lightning import seed_everything
 
@@ -208,32 +208,31 @@ class ContinuousExecute(Execute):
             self.evaluator.dummy_eval(self.trained_model, form_of_labelling)
             return {**self.report, **self.evaluator.report}
 
-import argparse
 
 def get_default_arguments(description=None):
     """ Extends pytorch_lightning Trainer's arguments with ours """
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Family',
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
                         help="The path of a folder containing input data")
     parser.add_argument("--save_embeddings_as_csv", type=bool, default=False,
                         help='A flag for saving embeddings in csv file.')
     parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="Embeddings, model, and any other related data will be stored therein.")
     parser.add_argument("--model", type=str,
-                        default="CLf",
-                        help="Available models: ConEx, ConvQ, ConvO, DistMult, QMult, OMult, "
+                        default="CMult",
+                        help="Available models: CMult, ConEx, ConvQ, ConvO, DistMult, QMult, OMult, "
                              "Shallom, AConEx, ConEx, ComplEx, DistMult, TransE, CLf")
     parser.add_argument('--p', type=int, default=0,
                         help='P for Clifford Algebra')
-    parser.add_argument('--q', type=int, default=0,
+    parser.add_argument('--q', type=int, default=2,
                         help='Q for Clifford Algebra')
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[Adan, NAdam, Adam, SGD, Sls, AdamSLS]')
-    parser.add_argument('--embedding_dim', type=int, default=10,
+    parser.add_argument('--embedding_dim', type=int, default=12,
                         help='Number of dimensions for an embedding vector. ')
     parser.add_argument("--num_epochs", type=int, default=256, help='Number of epochs for training. ')
-    parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
+    parser.add_argument('--batch_size', type=int, default=512, help='Mini batch size')
     parser.add_argument('--auto_batch_finder', type=bool, default=False,
                         help='Find a batch size w.r.t. computational budgets')
     parser.add_argument("--lr", type=float, default=0.1)
@@ -243,8 +242,8 @@ def get_default_arguments(description=None):
                         help='Select [polars(seperator: \t), modin(seperator: \s+), pandas(seperator: \s+)]')
     parser.add_argument("--trainer", type=str, default='torchCPUTrainer',
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
-    parser.add_argument('--scoring_technique', default='KvsAll', help="KvsSample, 1vsAll, KvsAll, NegSample")
-    parser.add_argument('--neg_ratio', type=int, default=0,
+    parser.add_argument('--scoring_technique', default='NegSample', help="KvsSample, 1vsAll, KvsAll, NegSample")
+    parser.add_argument('--neg_ratio', type=int, default=1,
                         help='The number of negative triples generated per positive triple.')
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
     parser.add_argument('--input_dropout_rate', type=float, default=0.0)
