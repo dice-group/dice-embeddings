@@ -45,21 +45,35 @@ def clifford_mul(x: torch.FloatTensor, y: torch.FloatTensor, p: int, q: int) -> 
         a0, a1, a2, a12 = torch.hsplit(x, 4)
         b0, b1, b2, b12 = torch.hsplit(y, 4)
         # (2) multiplication
-        ab0 =  a0*b0  + a1*b1  + a2*b2  - a12*b12
-        ab1 =  a0*b1  + a1*b0  - a2*b12 + a12*b2
-        ab2 =  a0*b2  + a1*b12 + a2*b0  - a12*b1
-        ab12 = a0*b12 + a1*b2  - a2*b1  + a12*b0
+        ab0 = a0 * b0 + a1 * b1 + a2 * b2 - a12 * b12
+        ab1 = a0 * b1 + a1 * b0 - a2 * b12 + a12 * b2
+        ab2 = a0 * b2 + a1 * b12 + a2 * b0 - a12 * b1
+        ab12 = a0 * b12 + a1 * b2 - a2 * b1 + a12 * b0
         return ab0, ab1, ab2, ab12
     elif p == 0 and q == 2:
         # (2) Elementwise multiplication CL_0,0(\mathbb{R}) is isomorphic to \mathbb{H}
         a0, a1, a2, a12 = torch.hsplit(x, 4)
         b0, b1, b2, b12 = torch.hsplit(y, 4)
 
-        ab0  =  a0*b0  - a1*b1  - a2*b2  -  a12*b12
-        ab1  =  a0*b1  + a1*b0  + a2*b12 -  a12*b2
-        ab2  =  a0*b2  - a1*b12 + a2*b0  +  a12*b1
-        ab12 =  a0*b12 + a1*b2  - a2*b1  +  a12*b0
+        ab0 = a0 * b0 - a1 * b1 - a2 * b2 - a12 * b12
+        ab1 = a0 * b1 + a1 * b0 + a2 * b12 - a12 * b2
+        ab2 = a0 * b2 - a1 * b12 + a2 * b0 + a12 * b1
+        ab12 = a0 * b12 + a1 * b2 - a2 * b1 + a12 * b0
         return ab0, ab1, ab2, ab12
+    elif p == 3 and q == 0:
+        # cl3,0 no 0,3
+        a0, a1, a2, a3, a12, a13, a23, a123 = torch.hsplit(x, 8)
+        b0, b1, b2, b3, b12, b13, b23, b123 = torch.hsplit(y, 8)
+
+        ab0 = a0 * b0 + a1 * b1 + a2 * b2 + a3 * b3 - a12 * b12 - a13 * b13 - a23 * b23 - a123 * b123
+        ab1 = a0 * b1 + a1 * b0 - a2 * b12 - a3 * b13 + a12 * b2 + a13 * b3 - a23 * b123 - a123 * b23
+        ab2 = a0 * b2 + a1 * b12 + a2 * b0 - a3 * b23 - a12 * b1 + a13 * b123 + a23 * b3 + a123 * b13
+        ab3 = a0 * b3 + a1 * b13 + a2 * b23 + a3 * b0 - a12 * b123 - a13 * b1 - a23 * b2 - a123 * b12
+        ab12 = a0 * b12 + a1 * b2 - a2 * b1 + a3 * b123 + a12 * b0 - a13 * b23 + a23 * b13 + a123 * b3
+        ab13 = a0 * b13 + a1 * b3 - a2 * b123 - a3 * b1 + a12 * b23 + a13 * b0 - a23 * b12 - a123 * b2
+        ab23 = a0 * b23 + a1 * b123 + a2 * b3 - a3 * b2 - a12 * b13 - a13 * b12 + a23 * b0 + a123 * b1
+        ab123 = a0 * b123 + a1 * b23 - a2 * b13 + a3 * b12 + a12 * b3 - a13 * b2 + a23 * b1 + a123 * b0
+        return ab0, ab1, ab2, ab3, ab12, ab13, ab23, ab123
     else:
         raise NotImplementedError
 
@@ -135,24 +149,31 @@ class CMult(BaseKGE):
         elif (self.p == 1 and self.q == 0) or (self.p == 0 and self.q == 1):
             ab0, ab1 = ab
             c0, c1 = torch.hsplit(self.entity_embeddings.weight, 2)
+            # return torch.mm(ab0, c0.transpose(1, 0))+torch.mm(ab1, c1.transpose(1, 0))
             return torch.einsum('bd,kd->bk', ab0, c0) + torch.einsum('bd,kd->bk', ab1, c1)
         elif (self.p == 2 and self.q == 0) or (self.p == 0 and self.q == 2):
             ab0, ab1, ab2, ab12 = ab
             c0, c1, c2, c12 = torch.hsplit(self.entity_embeddings.weight, 4)
             """
             # Slightly slower
-            torch.einsum('bd,kd->bk', ab0, c0) \
+            return torch.einsum('bd,kd->bk', ab0, c0) \
                    + torch.einsum('bd,kd->bk', ab1, c1) \
                    + torch.einsum('bd,kd->bk', ab2, c2) \
                    + torch.einsum('bd,kd->bk', ab12, c12)
             """
-            real_score = torch.mm(ab0, c0.transpose(1, 0))
-            i_score = torch.mm(ab1, c1.transpose(1, 0))
-            j_score = torch.mm(ab2, c2.transpose(1, 0))
-            k_score = torch.mm(ab12, c12.transpose(1, 0))
-            return real_score+i_score+j_score+k_score
+            return torch.mm(ab0, c0.transpose(1, 0)) + torch.mm(ab1, c1.transpose(1, 0)) + torch.mm(ab2, c2.transpose(1, 0)) + torch.mm(ab12, c12.transpose(1, 0))
+        elif self.p == 3 and self.q == 0:
 
+            ab0, ab1, ab2, ab3, ab12, ab13, ab23, ab123 = ab
+            c0, c1, c2, c3, c12, c13, c23, c123 = torch.hsplit(self.entity_embeddings.weight, 8)
 
+            return torch.mm(ab0, c0.transpose(1, 0)) \
+                   + torch.mm(ab1, c1.transpose(1, 0)) \
+                   + torch.mm(ab2, c2.transpose(1, 0)) \
+                   + torch.mm(ab3, c3.transpose(1, 0)) + torch.mm(ab12, c3.transpose(1, 0)) + torch.mm(ab13,
+                                                                                                       c13.transpose(1,
+                                                                                                                     0)) \
+                   + torch.mm(ab23, c23.transpose(1, 0)) + torch.mm(ab123, c123.transpose(1, 0))
 
         else:
             raise NotImplementedError

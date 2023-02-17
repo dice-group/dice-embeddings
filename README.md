@@ -37,7 +37,6 @@ or
 git clone https://github.com/dice-group/dice-embeddings.git
 conda create -n dice python=3.9.12
 conda activate dice
-# Choose a backend
 pip3 install pandas==1.5.1 
 pip3 install polars==0.15.13 
 pip3 install modin[ray]==0.16.2 
@@ -131,7 +130,7 @@ Running on public URL: https://54886.gradio.app
 
 This share link expires in 72 hours. For free permanent hosting, check out Spaces (https://huggingface.co/spaces)
 ```
-![alt text](core/figures/deploy_qmult_family.png)
+![alt text](dicee/figures/deploy_qmult_family.png)
 ## Pre-trained Models
 Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , if you lack hardware resources to obtain embeddings of a specific knowledge Graph.
 - [DBpedia version: 06-2022 Embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpediaQMultEmbeddings_03_07):
