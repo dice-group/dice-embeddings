@@ -6,6 +6,10 @@ def clifford_mul(x: torch.FloatTensor, y: torch.FloatTensor, p: int, q: int) -> 
     """
     Clifford multiplication Cl_{p,q} (\mathbb{R})
 
+    ei ^2 = +1     for i =< i =< p
+    ej ^2 = -1     for p < j =< p+q
+    ei ej = -eje1  for i \neq j
+
     Parameter
     ---------
     x: torch.FloatTensor with (n,d) shape
@@ -23,56 +27,54 @@ def clifford_mul(x: torch.FloatTensor, y: torch.FloatTensor, p: int, q: int) -> 
     """
 
     if p == q == 0:
-        # (1) Elementwise multiplication CL_0,0(\mathbb{R}) is isomorphic to \mathbb{R}
         return x * y
-    elif p == 1 and q == 0:
-        # (2) Elementwise multiplication CL_0,0(\mathbb{R}) is isomorphic to ? \mathbb{R}(2)
+    elif (p == 1 and q == 0) or (p == 0 and q == 1):
+        # {1,e1} e_i^2 = +1 for i
         a0, a1 = torch.hsplit(x, 2)
         b0, b1 = torch.hsplit(y, 2)
-        ab0 = a0 * b0 + a1 * b1
-        ab1 = a0 * b1 + a1 * b0
+        if p == 1 and q == 0:
+            ab0 = a0*b0 + a1*b1
+            ab1 = a0*b1 + a1*b0
+        else:
+            ab0 = a0*b0 - a1*b1
+            ab1 = a0*b1 + a1*b0
         return ab0, ab1
-    elif p == 0 and q == 1:
-        # (2) Elementwise multiplication CL_0,0(\mathbb{R}) is isomorphic to \mathbb{C}
-        a0, a1 = torch.hsplit(x, 2)
-        b0, b1 = torch.hsplit(y, 2)
-
-        ab0 = a0 * b0 - a1 * b1
-        ab1 = a0 * b1 + a1 * b0
-        return ab0, ab1
-    elif p == 2 and q == 0:
-        # (2) Elementwise multiplication CL_0,0(\mathbb{R}) is isomorphic to ?\mathbb{C}
+    elif (p == 2 and q == 0) or (p == 0 and q == 2):
         a0, a1, a2, a12 = torch.hsplit(x, 4)
         b0, b1, b2, b12 = torch.hsplit(y, 4)
-        # (2) multiplication
-        ab0 = a0 * b0 + a1 * b1 + a2 * b2 - a12 * b12
-        ab1 = a0 * b1 + a1 * b0 - a2 * b12 + a12 * b2
-        ab2 = a0 * b2 + a1 * b12 + a2 * b0 - a12 * b1
-        ab12 = a0 * b12 + a1 * b2 - a2 * b1 + a12 * b0
+        if p == 2 and q == 0:
+            ab0 =  a0*b0  + a1*b1  + a2*b2  - a12*b12
+            ab1 =  a0*b1  + a1*b0  - a2*b12 + a12*b2
+            ab2 =  a0*b2  + a1*b12 + a2*b0  - a12*b1
+            ab12 = a0*b12 + a1*b2  - a2*b1  + a12*b0
+        else:
+            ab0 =  a0*b0  - a1*b1  - a2*b2  - a12*b12
+            ab1 =  a0*b1  + a1*b0  + a2*b12 - a12*b2
+            ab2 =  a0*b2  - a1*b12 + a2*b0  + a12*b1
+            ab12 = a0*b12 + a1*b2  - a2*b1  + a12*b0
         return ab0, ab1, ab2, ab12
-    elif p == 0 and q == 2:
-        # (2) Elementwise multiplication CL_0,0(\mathbb{R}) is isomorphic to \mathbb{H}
+    elif p == 1 and q == 1:
         a0, a1, a2, a12 = torch.hsplit(x, 4)
         b0, b1, b2, b12 = torch.hsplit(y, 4)
 
-        ab0 = a0 * b0 - a1 * b1 - a2 * b2 - a12 * b12
-        ab1 = a0 * b1 + a1 * b0 + a2 * b12 - a12 * b2
-        ab2 = a0 * b2 - a1 * b12 + a2 * b0 + a12 * b1
-        ab12 = a0 * b12 + a1 * b2 - a2 * b1 + a12 * b0
+        ab0 =  a0*b0  + a1*b1  - a2*b2  + a12*b12
+        ab1 =  a0*b1  + a1*b0  + a2*b12 - a12*b2
+        ab2 =  a0*b2  + a1*b12 + a2*b0  - a12*b1
+        ab12 = a0*b12 + a1*b2  - a2*b1  + a12*b0
         return ab0, ab1, ab2, ab12
     elif p == 3 and q == 0:
         # cl3,0 no 0,3
         a0, a1, a2, a3, a12, a13, a23, a123 = torch.hsplit(x, 8)
         b0, b1, b2, b3, b12, b13, b23, b123 = torch.hsplit(y, 8)
 
-        ab0 = a0 * b0 + a1 * b1 + a2 * b2 + a3 * b3 - a12 * b12 - a13 * b13 - a23 * b23 - a123 * b123
-        ab1 = a0 * b1 + a1 * b0 - a2 * b12 - a3 * b13 + a12 * b2 + a13 * b3 - a23 * b123 - a123 * b23
-        ab2 = a0 * b2 + a1 * b12 + a2 * b0 - a3 * b23 - a12 * b1 + a13 * b123 + a23 * b3 + a123 * b13
-        ab3 = a0 * b3 + a1 * b13 + a2 * b23 + a3 * b0 - a12 * b123 - a13 * b1 - a23 * b2 - a123 * b12
-        ab12 = a0 * b12 + a1 * b2 - a2 * b1 + a3 * b123 + a12 * b0 - a13 * b23 + a23 * b13 + a123 * b3
-        ab13 = a0 * b13 + a1 * b3 - a2 * b123 - a3 * b1 + a12 * b23 + a13 * b0 - a23 * b12 - a123 * b2
-        ab23 = a0 * b23 + a1 * b123 + a2 * b3 - a3 * b2 - a12 * b13 - a13 * b12 + a23 * b0 + a123 * b1
-        ab123 = a0 * b123 + a1 * b23 - a2 * b13 + a3 * b12 + a12 * b3 - a13 * b2 + a23 * b1 + a123 * b0
+        ab0 =  a0*b0   + a1*b1   + a2*b2   + a3*b3   - a12*b12  - a13*b13  - a23*b23  - a123*b123
+        ab1 =  a0*b1   + a1*b0   - a2*b12  - a3*b13  + a12*b2   + a13*b3   - a23*b123 - a123*b23
+        ab2 =  a0*b2   + a1*b12  + a2*b0   - a3*b23  - a12*b1   + a13*b123 + a23*b3   + a123*b13
+        ab3 =  a0*b3   + a1*b13  + a2*b23  + a3*b0   - a12*b123 - a13*b1   - a23*b2   - a123*b12
+        ab12 = a0*b12  + a1*b2   - a2*b1   + a3*b123 + a12*b0   - a13*b23  + a23*b13  + a123*b3
+        ab13 = a0*b13  + a1*b3   - a2*b123 - a3*b1   + a12*b23  + a13*b0   - a23*b12  - a123*b2
+        ab23 = a0*b23  + a1*b123 + a2*b3   - a3*b2   - a12*b13  - a13*b12  + a23*b0   + a123*b1
+        ab123= a0*b123 + a1*b23  - a2*b13  + a3*b12  + a12*b3   - a13*b2   + a23*b1   + a123*b0
         return ab0, ab1, ab2, ab3, ab12, ab13, ab23, ab123
     else:
         raise NotImplementedError
@@ -115,7 +117,21 @@ class CMult(BaseKGE):
             self.q = 0
         print(f'\tp:{self.p}\tq:{self.q}')
 
-    def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
+    def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
+        """
+        Compute batch triple scores
+
+        Parameter
+        ---------
+        x: torch.LongTensor with shape n by 3
+
+
+        Returns
+        -------
+        torch.LongTensor with shape n
+
+        """
+
         # (1) Retrieve real-valued embedding vectors.
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
         ab = clifford_mul(x=head_ent_emb, y=rel_ent_emb, p=self.p, q=self.q)
@@ -137,31 +153,36 @@ class CMult(BaseKGE):
             raise NotImplementedError
 
     def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
-        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
-        # CL mult of
-        ab = clifford_mul(x=head_ent_emb, y=rel_ent_emb, p=self.p, q=self.q)
+        """
+        Compute batch KvsAll triple scores
 
+        Parameter
+        ---------
+        x: torch.LongTensor with shape n by 3
+
+
+        Returns
+        -------
+        torch.LongTensor with shape n
+
+        """
+        # (1) Retrieve embedding vectors of heads and relations.
+        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
+        # (2) CL multiply (1).
+        ab = clifford_mul(x=head_ent_emb, y=rel_ent_emb, p=self.p, q=self.q)
+        # (3) Inner product of (2) and all entity embeddings.
         if self.p == self.q == 0:
             return torch.mm(ab, self.entity_embeddings.weight.transpose(1, 0))
-            # produces different results
-            # return torch.einsum('bd,kd->bk', ab, Emb_all)
-
         elif (self.p == 1 and self.q == 0) or (self.p == 0 and self.q == 1):
             ab0, ab1 = ab
             c0, c1 = torch.hsplit(self.entity_embeddings.weight, 2)
-            # return torch.mm(ab0, c0.transpose(1, 0))+torch.mm(ab1, c1.transpose(1, 0))
-            return torch.einsum('bd,kd->bk', ab0, c0) + torch.einsum('bd,kd->bk', ab1, c1)
+            return torch.mm(ab0, c0.transpose(1, 0)) + torch.mm(ab1, c1.transpose(1, 0))
         elif (self.p == 2 and self.q == 0) or (self.p == 0 and self.q == 2):
             ab0, ab1, ab2, ab12 = ab
             c0, c1, c2, c12 = torch.hsplit(self.entity_embeddings.weight, 4)
-            """
-            # Slightly slower
-            return torch.einsum('bd,kd->bk', ab0, c0) \
-                   + torch.einsum('bd,kd->bk', ab1, c1) \
-                   + torch.einsum('bd,kd->bk', ab2, c2) \
-                   + torch.einsum('bd,kd->bk', ab12, c12)
-            """
-            return torch.mm(ab0, c0.transpose(1, 0)) + torch.mm(ab1, c1.transpose(1, 0)) + torch.mm(ab2, c2.transpose(1, 0)) + torch.mm(ab12, c12.transpose(1, 0))
+            return torch.mm(ab0, c0.transpose(1, 0)) + torch.mm(ab1, c1.transpose(1, 0)) + torch.mm(ab2, c2.transpose(1,
+                                                                                                                      0)) + torch.mm(
+                ab12, c12.transpose(1, 0))
         elif self.p == 3 and self.q == 0:
 
             ab0, ab1, ab2, ab3, ab12, ab13, ab23, ab123 = ab
@@ -174,6 +195,12 @@ class CMult(BaseKGE):
                                                                                                        c13.transpose(1,
                                                                                                                      0)) \
                    + torch.mm(ab23, c23.transpose(1, 0)) + torch.mm(ab123, c123.transpose(1, 0))
+        elif self.p == 1 and self.q == 1:
+            ab0, ab1, ab2, ab12 = ab
+            c0, c1, c2, c12 = torch.hsplit(self.entity_embeddings.weight, 4)
+            return torch.mm(ab0, c0.transpose(1, 0)) + torch.mm(ab1, c1.transpose(1, 0)) + torch.mm(ab2, c2.transpose(1,
+                                                                                                                      0)) + torch.mm(
+                ab12, c12.transpose(1, 0))
 
         else:
             raise NotImplementedError
@@ -209,7 +236,7 @@ class CLf(BaseKGE):
             assert self.k.is_integer()
         except AssertionError:
             raise AssertionError(f'k= embedding_dim / (p + q+ 1) must be a whole number\n'
-                                 f'Currently {self.k}={self.embedding_dim} / ({self.p}+ {self.q} +1)')
+                  f'Currently {self.k}={self.embedding_dim} / ({self.p}+ {self.q} +1)')
         self.k = int(self.k)
 
     def construct_cl_vector(self, batch_x: torch.FloatTensor) -> tuple[
