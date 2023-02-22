@@ -208,8 +208,6 @@ class CMult(BaseKGE):
 
 class CLf(BaseKGE):
     """Clifford:Embedding Space Search in Clifford Algebras
-
-
     h = A_{d \times 1}, B_{d \times p}, C_{d \times q}
 
     r = A'_{d \times 1}, B'_{d \times p}, C'_{d \times q}
@@ -237,6 +235,7 @@ class CLf(BaseKGE):
         except AssertionError:
             print(f'k= embedding_dim / (p + q+ 1) must be a whole number\n'
                   f'Currently {self.k}={self.embedding_dim} / ({self.p}+ {self.q} +1)')
+            print(f'k is corrected to {int(self.k)}')
         self.k = int(self.k)
 
     def construct_cl_vector(self, batch_x: torch.FloatTensor) -> tuple[
