@@ -33,48 +33,48 @@ def clifford_mul(x: torch.FloatTensor, y: torch.FloatTensor, p: int, q: int) -> 
         a0, a1 = torch.hsplit(x, 2)
         b0, b1 = torch.hsplit(y, 2)
         if p == 1 and q == 0:
-            ab0 = a0*b0 + a1*b1
-            ab1 = a0*b1 + a1*b0
+            ab0 = a0 * b0 + a1 * b1
+            ab1 = a0 * b1 + a1 * b0
         else:
-            ab0 = a0*b0 - a1*b1
-            ab1 = a0*b1 + a1*b0
+            ab0 = a0 * b0 - a1 * b1
+            ab1 = a0 * b1 + a1 * b0
         return ab0, ab1
     elif (p == 2 and q == 0) or (p == 0 and q == 2):
         a0, a1, a2, a12 = torch.hsplit(x, 4)
         b0, b1, b2, b12 = torch.hsplit(y, 4)
         if p == 2 and q == 0:
-            ab0 =  a0*b0  + a1*b1  + a2*b2  - a12*b12
-            ab1 =  a0*b1  + a1*b0  - a2*b12 + a12*b2
-            ab2 =  a0*b2  + a1*b12 + a2*b0  - a12*b1
-            ab12 = a0*b12 + a1*b2  - a2*b1  + a12*b0
+            ab0 = a0 * b0 + a1 * b1 + a2 * b2 - a12 * b12
+            ab1 = a0 * b1 + a1 * b0 - a2 * b12 + a12 * b2
+            ab2 = a0 * b2 + a1 * b12 + a2 * b0 - a12 * b1
+            ab12 = a0 * b12 + a1 * b2 - a2 * b1 + a12 * b0
         else:
-            ab0 =  a0*b0  - a1*b1  - a2*b2  - a12*b12
-            ab1 =  a0*b1  + a1*b0  + a2*b12 - a12*b2
-            ab2 =  a0*b2  - a1*b12 + a2*b0  + a12*b1
-            ab12 = a0*b12 + a1*b2  - a2*b1  + a12*b0
+            ab0 = a0 * b0 - a1 * b1 - a2 * b2 - a12 * b12
+            ab1 = a0 * b1 + a1 * b0 + a2 * b12 - a12 * b2
+            ab2 = a0 * b2 - a1 * b12 + a2 * b0 + a12 * b1
+            ab12 = a0 * b12 + a1 * b2 - a2 * b1 + a12 * b0
         return ab0, ab1, ab2, ab12
     elif p == 1 and q == 1:
         a0, a1, a2, a12 = torch.hsplit(x, 4)
         b0, b1, b2, b12 = torch.hsplit(y, 4)
 
-        ab0 =  a0*b0  + a1*b1  - a2*b2  + a12*b12
-        ab1 =  a0*b1  + a1*b0  + a2*b12 - a12*b2
-        ab2 =  a0*b2  + a1*b12 + a2*b0  - a12*b1
-        ab12 = a0*b12 + a1*b2  - a2*b1  + a12*b0
+        ab0 = a0 * b0 + a1 * b1 - a2 * b2 + a12 * b12
+        ab1 = a0 * b1 + a1 * b0 + a2 * b12 - a12 * b2
+        ab2 = a0 * b2 + a1 * b12 + a2 * b0 - a12 * b1
+        ab12 = a0 * b12 + a1 * b2 - a2 * b1 + a12 * b0
         return ab0, ab1, ab2, ab12
     elif p == 3 and q == 0:
         # cl3,0 no 0,3
         a0, a1, a2, a3, a12, a13, a23, a123 = torch.hsplit(x, 8)
         b0, b1, b2, b3, b12, b13, b23, b123 = torch.hsplit(y, 8)
 
-        ab0 =  a0*b0   + a1*b1   + a2*b2   + a3*b3   - a12*b12  - a13*b13  - a23*b23  - a123*b123
-        ab1 =  a0*b1   + a1*b0   - a2*b12  - a3*b13  + a12*b2   + a13*b3   - a23*b123 - a123*b23
-        ab2 =  a0*b2   + a1*b12  + a2*b0   - a3*b23  - a12*b1   + a13*b123 + a23*b3   + a123*b13
-        ab3 =  a0*b3   + a1*b13  + a2*b23  + a3*b0   - a12*b123 - a13*b1   - a23*b2   - a123*b12
-        ab12 = a0*b12  + a1*b2   - a2*b1   + a3*b123 + a12*b0   - a13*b23  + a23*b13  + a123*b3
-        ab13 = a0*b13  + a1*b3   - a2*b123 - a3*b1   + a12*b23  + a13*b0   - a23*b12  - a123*b2
-        ab23 = a0*b23  + a1*b123 + a2*b3   - a3*b2   - a12*b13  - a13*b12  + a23*b0   + a123*b1
-        ab123= a0*b123 + a1*b23  - a2*b13  + a3*b12  + a12*b3   - a13*b2   + a23*b1   + a123*b0
+        ab0 = a0 * b0 + a1 * b1 + a2 * b2 + a3 * b3 - a12 * b12 - a13 * b13 - a23 * b23 - a123 * b123
+        ab1 = a0 * b1 + a1 * b0 - a2 * b12 - a3 * b13 + a12 * b2 + a13 * b3 - a23 * b123 - a123 * b23
+        ab2 = a0 * b2 + a1 * b12 + a2 * b0 - a3 * b23 - a12 * b1 + a13 * b123 + a23 * b3 + a123 * b13
+        ab3 = a0 * b3 + a1 * b13 + a2 * b23 + a3 * b0 - a12 * b123 - a13 * b1 - a23 * b2 - a123 * b12
+        ab12 = a0 * b12 + a1 * b2 - a2 * b1 + a3 * b123 + a12 * b0 - a13 * b23 + a23 * b13 + a123 * b3
+        ab13 = a0 * b13 + a1 * b3 - a2 * b123 - a3 * b1 + a12 * b23 + a13 * b0 - a23 * b12 - a123 * b2
+        ab23 = a0 * b23 + a1 * b123 + a2 * b3 - a3 * b2 - a12 * b13 - a13 * b12 + a23 * b0 + a123 * b1
+        ab123 = a0 * b123 + a1 * b23 - a2 * b13 + a3 * b12 + a12 * b3 - a13 * b2 + a23 * b1 + a123 * b0
         return ab0, ab1, ab2, ab3, ab12, ab13, ab23, ab123
     else:
         raise NotImplementedError
@@ -252,13 +252,13 @@ class CLf(BaseKGE):
         if self.p > 0:
             B = batch_x[:, self.k: self.k + (self.k * self.p)].view(batch_size, self.k, self.p)
         else:
-            B = torch.zeros((batch_size, self.k, self.p),device=self.device)
+            B = torch.zeros((batch_size, self.k, self.p), device=self.device)
 
         if self.q > 0:
             # (3) B_{n \times p}, C_{n \times q}: take the last self.k * self.q .
             C = batch_x[:, -(self.k * self.q):].view(batch_size, self.k, self.q)
         else:
-            C = torch.zeros((batch_size, self.k, self.q),self.device)
+            C = torch.zeros((batch_size, self.k, self.q), self.device)
 
         return A, B, C
 
@@ -292,38 +292,35 @@ class CLf(BaseKGE):
 
         return A, B, C, D, E, F
 
-    def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
-        # (1) Retrieve real-valued embedding vectors.
-        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
-        # (2) Construct k-dimensional vector in CL_{p,q} for head entities.
-        A_head, B_head, C_head = self.construct_cl_vector(head_ent_emb)
-        # (3) Construct n dimensional vector in CL_{p,q} for relations.
-        A_rel, B_rel, C_rel = self.construct_cl_vector(rel_ent_emb)
-        # (4) Construct n dimensional vector in CL_{p,q} for tail entities.
-        A_tail, B_tail, C_tail = self.construct_cl_vector(tail_ent_emb)
-
-        # (5) Clifford multiplication of (2) and (3)
-        A, B, C, D, E, F = self.clifford_mul_with_einsum(A_head, B_head, C_head, A_rel, B_rel, C_rel)
-        # (6) Inner product of (5) and (4)
-        A_score = torch.einsum('bk,bk->b', A_tail, A)
-        B_score = torch.einsum('bkp,bkp->b', B_tail, B)
-        C_score = torch.einsum('bkq,bkq->b', C_tail, C)
-        D_score = torch.einsum('bkpp->b', D)
-        E_score = torch.einsum('bkqq->b', E)
-        F_score = torch.einsum('bkpq->b', F)
-        return A_score + B_score + C_score + D_score + E_score + F_score
-
     def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
+        """
+        Kvsall training
+
+        (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .
+        (2) Construct head entity and relation embeddings according to Cl_{p,q}(\mathbb{R}^d) .
+        (3) Perform Cl multiplication
+        (4) Inner product of (3) and all entity embeddings
+
+        Parameter
+        ---------
+        x: torch.LongTensor with (n,2) shape
+
+
+
+        Returns
+        -------
+        torch.FloatTensor with (n, |E|) shape
+        """
         # (1) Retrieve real-valued embedding vectors.
         head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
         # (2) Construct k-dimensional vector in CL_{p,q} for head entities.
         A_head, B_head, C_head = self.construct_cl_vector(head_ent_emb)
         # (3) Construct n dimensional vector in CL_{p,q} for relations.
         A_rel, B_rel, C_rel = self.construct_cl_vector(rel_ent_emb)
-        # (5) Clifford multiplication of (2) and (3).
+        # (3) Clifford multiplication of (2) and (3).
         A, B, C, D, E, F = self.clifford_mul_with_einsum(A_head, B_head, C_head, A_rel, B_rel, C_rel)
 
-        # (6) Extract embeddings for all entities.
+        # (4) Extract embeddings for all entities.
         Emb_all = self.entity_embeddings.weight
         # (7) Compute A
         A_all = Emb_all[:, :self.k]
@@ -347,3 +344,25 @@ class CLf(BaseKGE):
         D_E_F_score = D_E_F_score.view(len(D_E_F_score), 1)
         # (12) Score
         return A_B_C_score + D_E_F_score
+
+
+    def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
+        # (1) Retrieve real-valued embedding vectors.
+        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
+        # (2) Construct k-dimensional vector in CL_{p,q} for head entities.
+        A_head, B_head, C_head = self.construct_cl_vector(head_ent_emb)
+        # (3) Construct n dimensional vector in CL_{p,q} for relations.
+        A_rel, B_rel, C_rel = self.construct_cl_vector(rel_ent_emb)
+        # (4) Construct n dimensional vector in CL_{p,q} for tail entities.
+        A_tail, B_tail, C_tail = self.construct_cl_vector(tail_ent_emb)
+
+        # (5) Clifford multiplication of (2) and (3)
+        A, B, C, D, E, F = self.clifford_mul_with_einsum(A_head, B_head, C_head, A_rel, B_rel, C_rel)
+        # (6) Inner product of (5) and (4)
+        A_score = torch.einsum('bk,bk->b', A_tail, A)
+        B_score = torch.einsum('bkp,bkp->b', B_tail, B)
+        C_score = torch.einsum('bkq,bkq->b', C_tail, C)
+        D_score = torch.einsum('bkpp->b', D)
+        E_score = torch.einsum('bkqq->b', E)
+        F_score = torch.einsum('bkpq->b', F)
+        return A_score + B_score + C_score + D_score + E_score + F_score
