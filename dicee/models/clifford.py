@@ -235,7 +235,7 @@ class CLf(BaseKGE):
         try:
             assert self.k.is_integer()
         except AssertionError:
-            raise AssertionError(f'k= embedding_dim / (p + q+ 1) must be a whole number\n'
+            print(f'k= embedding_dim / (p + q+ 1) must be a whole number\n'
                   f'Currently {self.k}={self.embedding_dim} / ({self.p}+ {self.q} +1)')
         self.k = int(self.k)
 
