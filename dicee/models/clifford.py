@@ -253,13 +253,13 @@ class CLf(BaseKGE):
         if self.p > 0:
             B = batch_x[:, self.k: self.k + (self.k * self.p)].view(batch_size, self.k, self.p)
         else:
-            B = torch.zeros((batch_size, self.k, self.p))
+            B = torch.zeros((batch_size, self.k, self.p),device=self.device)
 
         if self.q > 0:
             # (3) B_{n \times p}, C_{n \times q}: take the last self.k * self.q .
             C = batch_x[:, -(self.k * self.q):].view(batch_size, self.k, self.q)
         else:
-            C = torch.zeros((batch_size, self.k, self.q))
+            C = torch.zeros((batch_size, self.k, self.q),self.device)
 
         return A, B, C
 
