@@ -206,15 +206,6 @@ class CMult(BaseKGE):
 
 
 class CLf(BaseKGE):
-    """Clifford:Embedding Space Search in Clifford Algebras
-    h = A_{d \times 1}, B_{d \times p}, C_{d \times q}
-
-    r = A'_{d \times 1}, B'_{d \times p}, C'_{d \times q}
-
-    t = A''_{d \times 1}, B''_{d \times p}, C_{d \times q}
-
-    """
-
     def __init__(self, args):
         super().__init__(args)
         self.name = 'CLf'
@@ -285,30 +276,83 @@ class CLf(BaseKGE):
         # equiv. => a0.view(n, self.r, 1) * bq + b0.view(n, self.r, 1) * aq
         AB_q = torch.einsum('nr,nrq->nrq', a0, bq) + torch.einsum('nr,nrq->nrq', b0, aq)
 
-        # (4) AB_{p,p}  = \sum_{i=1}^{p-1} \sum_{k=i+1}^p ap_i bp_k - ap_k bp_i  v_i v_k
-        # if p=2, then => (ap_1 bp_2 - ap_2 bp_1) v_1 v_2
-        # (4.1) This is what we do now
-        # AB_{p,p}  = \sum_{i=1}^{p} \sum_{k=1}^p ap_i bp_k - ap_k bp_i  v_i v_k
-        # if p=2, then =>  (ap_1 bp_1 - ap_1 bp_1 )v_1 v_1
-        #                + (ap_1 bp_2 - ap_2 bp_1) v_1 v_2
-        #                + (ap_2 bp_1 - ap_1 bp_2) v_2 v_1
-        #                + (ap_2 bp_2 - ap_2 bp_2) v_2 v_2
-        """
-        results = []
-        for i in range(self.p):
-            # the i.th column vector of ap ( r by p)
-            api = ap[:, :, i].view(n, self.r, 1)
-            # Multiply each row vector of bp with api
-            results.append(api*bp)
-        torch.stack(results, dim=2) ==torch.einsum('nrp,nrx->nrpx', ap, bp)
-        """
+        # (4) AB_{p,p}  = \sum_{i=1}^{p} \sum_{k=1}^p ap_i bp_k - ap_k bp_i  v_i v_k
         AB_pp = torch.einsum('nrp,nrx->nrpx', ap, bp) - torch.einsum('nrp,nrx->nrpx', bp, ap)
         assert AB_pp.shape == (n, self.r, self.p, self.p)
+        # (5) AB_{q,q}  = \sum_{j=1}^{q} \sum_{j+1}^q aq_j bp_k - aq_k bq_j  u_i u_k
+        AB_qq = torch.einsum('nrq,nrx->nrqx', aq, bq) - torch.einsum('nrq,nrx->nrqx', bq, aq)
+        assert AB_qq.shape == (n, self.r, self.q, self.q)
+        # (6) AB_{p,q}  = \sum_{i=1}^p \sum_{j=1}^q ap_i bq_j - aq_j bp_i  v_i u_j.
+        AB_pq = torch.einsum('bkp,bkq->bkpq', ap, bq) - torch.einsum('bkp,bkq->bkpq', bp, aq)
+        assert AB_pq.shape == (n, self.r, self.p, self.q)
+        return AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq
+
+    def clifford_mul_reduced_interactions(self, a0, ap, aq, b0, bp, bq):
+        """ Compute our CL multiplication
+
+        a = a_0 + \sum_i=1 ^p ap_i  v_i + \sum_j=1 ^q aq_j  u_j
+        b = b_0 + \sum_i=1 ^p bp_i  v_i + \sum_j=1 ^q bq_j  u_j,
+
+        ei ^2 = +1     for i =< i =< p
+        ej ^2 = -1     for p < j =< p+q
+        ei ej = -eje1  for i \neq j
+
+        \mathbf{a}\mathbf{b} =   AB_0 + AB_p + AB_q + AB_{p,p}+ AB_{q,q} + AB_{p,q}
+        where
+                (1) AB_0      = a_0b_0 + \sum\limits_{i=1}^p ap_i bp_i - \sum\limits_{j=1}^q aq_j bq_j
+                (2) AB_p      = \sum_{i=1}^p a_0bp_i + b_0 ap_i  v_i
+                (3) AB_q      = \sum\limits_{j=1}^q a_0bq_j  + b_0 aq_j  u_j
+                (4) AB_{p,p}  = \sum\limits_{i=1}^{p-1} \sum\limits_{k=i+1}^p ap_i bp_k - ap_k bp_i  v_i v_k
+                (5) AB_{q,q}  = \sum\limits_{j=1}^{q-1} \sum\limits_{k=j+1}^q aq_j bp_k - aq_k bq_j  u_i u_k
+                (6) AB_{p,q}  = \sum\limits_{i=1}^p \sum\limits_{j=1}^q ap_i bq_j - aq_j bp_i  v_i u_j.
+
+        """
+        n = len(a0)
+        assert a0.shape == (n, self.r) == b0.shape == (n, self.r)
+        assert ap.shape == (n, self.r, self.p) == bp.shape == (n, self.r, self.p)
+        assert aq.shape == (n, self.r, self.q) == bq.shape == (n, self.r, self.q)
+
+        AB_0: torch.FloatTensor
+        # AB_0.shape: torch.Size([batch_size, r])
+        # (1) AB_0 = a_0b_0 + \sum_{i=1}^p ap_i bp_i - \sum_{j=1}^q aq_j bq_j ,e.g. p=q=0, hadamard product
+        AB_0 = torch.einsum('nr,nr->nr', a0, b0) \
+               + torch.einsum('nrp,nrp->nr', ap, bp) \
+               - torch.einsum('nrq,nrq->nr', aq, bq)
+        assert AB_0.shape == (n, self.r)
+
+        # (2) AB_p = \sum_{i=1}^p a_0 bp_i + b_0 ap_i  v_i
+        # (2.1) \sum_{i=1}^p a_0 bp_i : multiply each column vector of r by p matrix (ap) with r-dimensional vector (a_0)
+        # (2.2) \sum_{i=1}^p b_0 ap_i : multiply each column vector of r by p matrix (ap) with r-dimensional vector (b_0)
+        # (2.3) Sum (2.1) and (2.2)
+        # equiv. => a0.view(n, self.r, 1) * bp + b0.view(n, self.r, 1) * ap
+        AB_p = torch.einsum('nr,nrp->nrp', a0, bp) + torch.einsum('nr,nrp->nrp', b0, ap)
+        assert AB_p.shape == (n, self.r, self.p)
+
+        # (3) AB_q = \sum_{j=1}^q a_0 bq_j  + b_0 aq_j  u_j
+        # (3.1) \sum_{i=1}^q a_0 bq_i : multiply each column vector of r by q matrix (ap) with r-dimensional vector (a_0)
+        # (3.2) \sum_{i=1}^q b_0 aq_i : multiply each column vector of r by q matrix (ap) with r-dimensional vector (b_0)
+        # (3.3) Sum (3.1) and (3.2)
+        # equiv. => a0.view(n, self.r, 1) * bq + b0.view(n, self.r, 1) * aq
+        AB_q = torch.einsum('nr,nrq->nrq', a0, bq) + torch.einsum('nr,nrq->nrq', b0, aq)
+
+        # (4) AB_{p,p}  = \sum_{i=1}^{p-1} \sum_{k=i+1}^p ap_i bp_k - ap_k bp_i  v_i v_k
+        # if p=2, then => (ap_1 bp_2 - ap_2 bp_1) v_1 v_2
+        results = []
+        for i in range(self.p - 1):
+            for k in range(i + 1, self.p):
+                x = ap[:, :, i] * bp[:, :, k] - ap[:, :, k] * ap[:, :, i]
+                results.append(x.view(n, self.r).unsqueeze(-1))
+        AB_pp = torch.stack(results, dim=2)
 
         # (5) AB_{q,q}  = \sum_{j=1}^{q-1} \sum_{k=j+1}^q aq_j bp_k - aq_k bq_j  u_i u_k
         # Explanation written in (4) holds for (5)
-        AB_qq = torch.einsum('nrq,nrx->nrqx', aq, bq) - torch.einsum('nrq,nrx->nrqx', bq, aq)
-        assert AB_pp.shape == (n, self.r, self.p, self.p)
+        results = []
+        for i in range(self.q - 1):
+            for k in range(i + 1, self.q):
+                x = ap[:, :, i] * bp[:, :, k] - ap[:, :, k] * ap[:, :, i]
+                results.append(x.view(n, self.r).unsqueeze(-1))
+        AB_qq = torch.stack(results, dim=2)
+
         # (6) AB_{p,q}  = \sum_{i=1}^p \sum_{j=1}^q ap_i bq_j - aq_j bp_i  v_i u_j.
         AB_pq = torch.einsum('bkp,bkq->bkpq', ap, bq) - torch.einsum('bkp,bkq->bkpq', bp, aq)
         assert AB_pq.shape == (n, self.r, self.p, self.q)
@@ -362,8 +406,8 @@ class CLf(BaseKGE):
         # (10) Aggregate (7,8,9).
         A_B_C_score = A_score + B_score + C_score
         # (11) Compute inner products of AB_pp, AB_qq, AB_pq and respective identity matrices of all entities.
-        D_E_F_score = torch.einsum('bkpp->b', AB_pp) + torch.einsum('bkqq->b', AB_qq) + torch.einsum('bkpq->b', AB_pq)
-        D_E_F_score = D_E_F_score.view(len(D_E_F_score), 1)
+        D_E_F_score = (torch.einsum('bkpp->b', AB_pp) + torch.einsum('bkqq->b', AB_qq) + torch.einsum('bkpq->b',AB_pq))
+        D_E_F_score=D_E_F_score.view(len(head_ent_emb), 1)
         # (12) Score
         return A_B_C_score + D_E_F_score
 
