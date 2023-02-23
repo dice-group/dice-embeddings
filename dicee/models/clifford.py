@@ -2,84 +2,6 @@ from .base_model import BaseKGE
 import torch
 
 
-def clifford_mul(x: torch.FloatTensor, y: torch.FloatTensor, p: int, q: int) -> tuple:
-    """
-    Clifford multiplication Cl_{p,q} (\mathbb{R})
-
-    ei ^2 = +1     for i =< i =< p
-    ej ^2 = -1     for p < j =< p+q
-    ei ej = -eje1  for i \neq j
-
-    Parameter
-    ---------
-    x: torch.FloatTensor with (n,d) shape
-
-    y: torch.FloatTensor with (n,d) shape
-
-    p: a non-negative integer p>= 0
-    q: a non-negative integer q>= 0
-
-
-
-    Returns
-    -------
-
-    """
-
-    if p == q == 0:
-        return x * y
-    elif (p == 1 and q == 0) or (p == 0 and q == 1):
-        # {1,e1} e_i^2 = +1 for i
-        a0, a1 = torch.hsplit(x, 2)
-        b0, b1 = torch.hsplit(y, 2)
-        if p == 1 and q == 0:
-            ab0 = a0 * b0 + a1 * b1
-            ab1 = a0 * b1 + a1 * b0
-        else:
-            ab0 = a0 * b0 - a1 * b1
-            ab1 = a0 * b1 + a1 * b0
-        return ab0, ab1
-    elif (p == 2 and q == 0) or (p == 0 and q == 2):
-        a0, a1, a2, a12 = torch.hsplit(x, 4)
-        b0, b1, b2, b12 = torch.hsplit(y, 4)
-        if p == 2 and q == 0:
-            ab0 = a0 * b0 + a1 * b1 + a2 * b2 - a12 * b12
-            ab1 = a0 * b1 + a1 * b0 - a2 * b12 + a12 * b2
-            ab2 = a0 * b2 + a1 * b12 + a2 * b0 - a12 * b1
-            ab12 = a0 * b12 + a1 * b2 - a2 * b1 + a12 * b0
-        else:
-            ab0 = a0 * b0 - a1 * b1 - a2 * b2 - a12 * b12
-            ab1 = a0 * b1 + a1 * b0 + a2 * b12 - a12 * b2
-            ab2 = a0 * b2 - a1 * b12 + a2 * b0 + a12 * b1
-            ab12 = a0 * b12 + a1 * b2 - a2 * b1 + a12 * b0
-        return ab0, ab1, ab2, ab12
-    elif p == 1 and q == 1:
-        a0, a1, a2, a12 = torch.hsplit(x, 4)
-        b0, b1, b2, b12 = torch.hsplit(y, 4)
-
-        ab0 = a0 * b0 + a1 * b1 - a2 * b2 + a12 * b12
-        ab1 = a0 * b1 + a1 * b0 + a2 * b12 - a12 * b2
-        ab2 = a0 * b2 + a1 * b12 + a2 * b0 - a12 * b1
-        ab12 = a0 * b12 + a1 * b2 - a2 * b1 + a12 * b0
-        return ab0, ab1, ab2, ab12
-    elif p == 3 and q == 0:
-        # cl3,0 no 0,3
-        a0, a1, a2, a3, a12, a13, a23, a123 = torch.hsplit(x, 8)
-        b0, b1, b2, b3, b12, b13, b23, b123 = torch.hsplit(y, 8)
-
-        ab0 = a0 * b0 + a1 * b1 + a2 * b2 + a3 * b3 - a12 * b12 - a13 * b13 - a23 * b23 - a123 * b123
-        ab1 = a0 * b1 + a1 * b0 - a2 * b12 - a3 * b13 + a12 * b2 + a13 * b3 - a23 * b123 - a123 * b23
-        ab2 = a0 * b2 + a1 * b12 + a2 * b0 - a3 * b23 - a12 * b1 + a13 * b123 + a23 * b3 + a123 * b13
-        ab3 = a0 * b3 + a1 * b13 + a2 * b23 + a3 * b0 - a12 * b123 - a13 * b1 - a23 * b2 - a123 * b12
-        ab12 = a0 * b12 + a1 * b2 - a2 * b1 + a3 * b123 + a12 * b0 - a13 * b23 + a23 * b13 + a123 * b3
-        ab13 = a0 * b13 + a1 * b3 - a2 * b123 - a3 * b1 + a12 * b23 + a13 * b0 - a23 * b12 - a123 * b2
-        ab23 = a0 * b23 + a1 * b123 + a2 * b3 - a3 * b2 - a12 * b13 - a13 * b12 + a23 * b0 + a123 * b1
-        ab123 = a0 * b123 + a1 * b23 - a2 * b13 + a3 * b12 + a12 * b3 - a13 * b2 + a23 * b1 + a123 * b0
-        return ab0, ab1, ab2, ab3, ab12, ab13, ab23, ab123
-    else:
-        raise NotImplementedError
-
-
 class CMult(BaseKGE):
     """
     Cl_(0,0) => Real Numbers
@@ -117,6 +39,83 @@ class CMult(BaseKGE):
             self.q = 0
         print(f'\tp:{self.p}\tq:{self.q}')
 
+    def clifford_mul(self, x: torch.FloatTensor, y: torch.FloatTensor, p: int, q: int) -> tuple:
+        """
+        Clifford multiplication Cl_{p,q} (\mathbb{R})
+
+        ei ^2 = +1     for i =< i =< p
+        ej ^2 = -1     for p < j =< p+q
+        ei ej = -eje1  for i \neq j
+
+        Parameter
+        ---------
+        x: torch.FloatTensor with (n,d) shape
+
+        y: torch.FloatTensor with (n,d) shape
+
+        p: a non-negative integer p>= 0
+        q: a non-negative integer q>= 0
+
+
+
+        Returns
+        -------
+
+        """
+
+        if p == q == 0:
+            return x * y
+        elif (p == 1 and q == 0) or (p == 0 and q == 1):
+            # {1,e1} e_i^2 = +1 for i
+            a0, a1 = torch.hsplit(x, 2)
+            b0, b1 = torch.hsplit(y, 2)
+            if p == 1 and q == 0:
+                ab0 = a0 * b0 + a1 * b1
+                ab1 = a0 * b1 + a1 * b0
+            else:
+                ab0 = a0 * b0 - a1 * b1
+                ab1 = a0 * b1 + a1 * b0
+            return ab0, ab1
+        elif (p == 2 and q == 0) or (p == 0 and q == 2):
+            a0, a1, a2, a12 = torch.hsplit(x, 4)
+            b0, b1, b2, b12 = torch.hsplit(y, 4)
+            if p == 2 and q == 0:
+                ab0 = a0 * b0 + a1 * b1 + a2 * b2 - a12 * b12
+                ab1 = a0 * b1 + a1 * b0 - a2 * b12 + a12 * b2
+                ab2 = a0 * b2 + a1 * b12 + a2 * b0 - a12 * b1
+                ab12 = a0 * b12 + a1 * b2 - a2 * b1 + a12 * b0
+            else:
+                ab0 = a0 * b0 - a1 * b1 - a2 * b2 - a12 * b12
+                ab1 = a0 * b1 + a1 * b0 + a2 * b12 - a12 * b2
+                ab2 = a0 * b2 - a1 * b12 + a2 * b0 + a12 * b1
+                ab12 = a0 * b12 + a1 * b2 - a2 * b1 + a12 * b0
+            return ab0, ab1, ab2, ab12
+        elif p == 1 and q == 1:
+            a0, a1, a2, a12 = torch.hsplit(x, 4)
+            b0, b1, b2, b12 = torch.hsplit(y, 4)
+
+            ab0 = a0 * b0 + a1 * b1 - a2 * b2 + a12 * b12
+            ab1 = a0 * b1 + a1 * b0 + a2 * b12 - a12 * b2
+            ab2 = a0 * b2 + a1 * b12 + a2 * b0 - a12 * b1
+            ab12 = a0 * b12 + a1 * b2 - a2 * b1 + a12 * b0
+            return ab0, ab1, ab2, ab12
+        elif p == 3 and q == 0:
+            # cl3,0 no 0,3
+            a0, a1, a2, a3, a12, a13, a23, a123 = torch.hsplit(x, 8)
+            b0, b1, b2, b3, b12, b13, b23, b123 = torch.hsplit(y, 8)
+
+            ab0 = a0 * b0 + a1 * b1 + a2 * b2 + a3 * b3 - a12 * b12 - a13 * b13 - a23 * b23 - a123 * b123
+            ab1 = a0 * b1 + a1 * b0 - a2 * b12 - a3 * b13 + a12 * b2 + a13 * b3 - a23 * b123 - a123 * b23
+            ab2 = a0 * b2 + a1 * b12 + a2 * b0 - a3 * b23 - a12 * b1 + a13 * b123 + a23 * b3 + a123 * b13
+            ab3 = a0 * b3 + a1 * b13 + a2 * b23 + a3 * b0 - a12 * b123 - a13 * b1 - a23 * b2 - a123 * b12
+            ab12 = a0 * b12 + a1 * b2 - a2 * b1 + a3 * b123 + a12 * b0 - a13 * b23 + a23 * b13 + a123 * b3
+            ab13 = a0 * b13 + a1 * b3 - a2 * b123 - a3 * b1 + a12 * b23 + a13 * b0 - a23 * b12 - a123 * b2
+            ab23 = a0 * b23 + a1 * b123 + a2 * b3 - a3 * b2 - a12 * b13 - a13 * b12 + a23 * b0 + a123 * b1
+            ab123 = a0 * b123 + a1 * b23 - a2 * b13 + a3 * b12 + a12 * b3 - a13 * b2 + a23 * b1 + a123 * b0
+            return ab0, ab1, ab2, ab3, ab12, ab13, ab23, ab123
+        else:
+            raise NotImplementedError
+
     def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
         """
         Compute batch triple scores
@@ -134,7 +133,7 @@ class CMult(BaseKGE):
 
         # (1) Retrieve real-valued embedding vectors.
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
-        ab = clifford_mul(x=head_ent_emb, y=rel_ent_emb, p=self.p, q=self.q)
+        ab = self.clifford_mul(x=head_ent_emb, y=rel_ent_emb, p=self.p, q=self.q)
 
         if self.p == self.q == 0:
             return torch.einsum('bd,bd->b', ab, tail_ent_emb)
@@ -169,7 +168,7 @@ class CMult(BaseKGE):
         # (1) Retrieve embedding vectors of heads and relations.
         head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
         # (2) CL multiply (1).
-        ab = clifford_mul(x=head_ent_emb, y=rel_ent_emb, p=self.p, q=self.q)
+        ab = self.clifford_mul(x=head_ent_emb, y=rel_ent_emb, p=self.p, q=self.q)
         # (3) Inner product of (2) and all entity embeddings.
         if self.p == self.q == 0:
             return torch.mm(ab, self.entity_embeddings.weight.transpose(1, 0))
@@ -228,69 +227,93 @@ class CLf(BaseKGE):
             self.p = 0
         if self.q is None:
             self.q = 0
-        self.k = self.embedding_dim / (self.p + self.q + 1)
-        print(f'k:{self.k}\tp:{self.p}\tq:{self.q}')
+        self.r = self.embedding_dim / (self.p + self.q + 1)
+        print(f'r:{self.r}\tp:{self.p}\tq:{self.q}')
         try:
-            assert self.k.is_integer()
+            assert self.r.is_integer()
         except AssertionError:
-            print(f'k= embedding_dim / (p + q+ 1) must be a whole number\n'
-                  f'Currently {self.k}={self.embedding_dim} / ({self.p}+ {self.q} +1)')
-            print(f'k is corrected to {int(self.k)}')
-        self.k = int(self.k)
+            print(f'r = embedding_dim / (p + q+ 1) must be a whole number\n'
+                  f'Currently {self.r}={self.embedding_dim} / ({self.p}+ {self.q} +1)')
+            print(f'r is corrected to {int(self.r)}')
+        self.r = int(self.r)
 
-    def construct_cl_vector(self, batch_x: torch.FloatTensor) -> tuple[
-        torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
-        """ Convert a batch of d-dimensional real valued vectors to a batch of k-dimensional Clifford vectors
-        batch_x: n \times d
+    def clifford_mul(self, a0, ap, aq, b0, bp, bq):
+        """ Compute our CL multiplication
 
-        batch_x_cl: A_{n \times k,1}, B_{n \times k \times p}, C_{n \times k \times q}
+        a = a_0 + \sum_i=1 ^p ap_i  v_i + \sum_j=1 ^q aq_j  u_j
+        b = b_0 + \sum_i=1 ^p bp_i  v_i + \sum_j=1 ^q bq_j  u_j,
+
+        ei ^2 = +1     for i =< i =< p
+        ej ^2 = -1     for p < j =< p+q
+        ei ej = -eje1  for i \neq j
+
+        \mathbf{a}\mathbf{b} =   AB_0 + AB_p + AB_q + AB_{p,p}+ AB_{q,q} + AB_{p,q}
+        where
+                (1) AB_0      = a_0b_0 + \sum\limits_{i=1}^p ap_i bp_i - \sum\limits_{j=1}^q aq_j bq_j
+                (2) AB_p      = \sum_{i=1}^p a_0bp_i + b_0 ap_i  v_i
+                (3) AB_q      = \sum\limits_{j=1}^q a_0bq_j  + b_0 aq_j  u_j
+                (4) AB_{p,p}  = \sum\limits_{i=1}^{p-1} \sum\limits_{k=i+1}^p ap_i bp_k - ap_k bp_i  v_i v_k
+                (5) AB_{q,q}  = \sum\limits_{j=1}^{q-1} \sum\limits_{k=j+1}^q aq_j bp_k - aq_k bq_j  u_i u_k
+                (6) AB_{p,q}  = \sum\limits_{i=1}^p \sum\limits_{j=1}^q ap_i bq_j - aq_j bp_i  v_i u_j.
+
         """
-        batch_size, d = batch_x.shape
-        # (1) A_{n \times k}: take the first k columns
-        A = batch_x[:, :self.k].view(batch_size, self.k)
-        # (2) B_{n \times p}, C_{n \times q}: take the self.k * self.p columns after the k. column
-        if self.p > 0:
-            B = batch_x[:, self.k: self.k + (self.k * self.p)].view(batch_size, self.k, self.p)
-        else:
-            B = torch.zeros((batch_size, self.k, self.p), device=self.device)
+        n = len(a0)
+        assert a0.shape == (n, self.r) == b0.shape == (n, self.r)
+        assert ap.shape == (n, self.r, self.p) == bp.shape == (n, self.r, self.p)
+        assert aq.shape == (n, self.r, self.q) == bq.shape == (n, self.r, self.q)
 
-        if self.q > 0:
-            # (3) B_{n \times p}, C_{n \times q}: take the last self.k * self.q .
-            C = batch_x[:, -(self.k * self.q):].view(batch_size, self.k, self.q)
-        else:
-            C = torch.zeros((batch_size, self.k, self.q), device=self.device)
+        AB_0: torch.FloatTensor
+        # AB_0.shape: torch.Size([batch_size, r])
+        # (1) AB_0 = a_0b_0 + \sum_{i=1}^p ap_i bp_i - \sum_{j=1}^q aq_j bq_j ,e.g. p=q=0, hadamard product
+        AB_0 = torch.einsum('nr,nr->nr', a0, b0) \
+               + torch.einsum('nrp,nrp->nr', ap, bp) \
+               - torch.einsum('nrq,nrq->nr', aq, bq)
+        assert AB_0.shape == (n, self.r)
 
-        return A, B, C
+        # (2) AB_p = \sum_{i=1}^p a_0 bp_i + b_0 ap_i  v_i
+        # (2.1) \sum_{i=1}^p a_0 bp_i : multiply each column vector of r by p matrix (ap) with r-dimensional vector (a_0)
+        # (2.2) \sum_{i=1}^p b_0 ap_i : multiply each column vector of r by p matrix (ap) with r-dimensional vector (b_0)
+        # (2.3) Sum (2.1) and (2.2)
+        # equiv. => a0.view(n, self.r, 1) * bp + b0.view(n, self.r, 1) * ap
+        AB_p = torch.einsum('nr,nrp->nrp', a0, bp) + torch.einsum('nr,nrp->nrp', b0, ap)
+        assert AB_p.shape == (n, self.r, self.p)
 
-    def clifford_mul_with_einsum(self, A_h, B_h, C_h, A_r, B_r, C_r):
-        """ Compute CL multiplication """
-        # (1) Compute A: batch_size (b), A \in \mathbb{R}^k
-        A = torch.einsum('bk,bk->bk', A_h, A_r) \
-            + torch.einsum('bkp,bkp->bk', B_h, B_r) \
-            - torch.einsum('bkq,bkq->bk', C_h, C_r)
-        # (2) Compute B: batch_size (b), B \in \mathbb{R}^{k \times p}
-        B = torch.einsum('bk,bkp->bkp', A_h, B_r) + torch.einsum('bk,bkp->bkp', A_r, B_h)
-        # (3) Compute C: batch_size (b), C \in \mathbb{R}^{k \times q}
-        C = torch.einsum('bk,bkq->bkq', A_h, C_r) + torch.einsum('bk,bkq->bkq', A_r, C_h)
+        # (3) AB_q = \sum_{j=1}^q a_0 bq_j  + b_0 aq_j  u_j
+        # (3.1) \sum_{i=1}^q a_0 bq_i : multiply each column vector of r by q matrix (ap) with r-dimensional vector (a_0)
+        # (3.2) \sum_{i=1}^q b_0 aq_i : multiply each column vector of r by q matrix (ap) with r-dimensional vector (b_0)
+        # (3.3) Sum (3.1) and (3.2)
+        # equiv. => a0.view(n, self.r, 1) * bq + b0.view(n, self.r, 1) * aq
+        AB_q = torch.einsum('nr,nrq->nrq', a0, bq) + torch.einsum('nr,nrq->nrq', b0, aq)
 
-        # (4) Compute D: batch_size (b), D \in \mathbb{R}^{k \times  p \times p}
+        # (4) AB_{p,p}  = \sum_{i=1}^{p-1} \sum_{k=i+1}^p ap_i bp_k - ap_k bp_i  v_i v_k
+        # if p=2, then => (ap_1 bp_2 - ap_2 bp_1) v_1 v_2
+        # (4.1) This is what we do now
+        # AB_{p,p}  = \sum_{i=1}^{p} \sum_{k=1}^p ap_i bp_k - ap_k bp_i  v_i v_k
+        # if p=2, then =>  (ap_1 bp_1 - ap_1 bp_1 )v_1 v_1
+        #                + (ap_1 bp_2 - ap_2 bp_1) v_1 v_2
+        #                + (ap_2 bp_1 - ap_1 bp_2) v_2 v_1
+        #                + (ap_2 bp_2 - ap_2 bp_2) v_2 v_2
         """
-        x = B_h.transpose(1, 2)
-        b, p, k = x.shape
         results = []
-        for i in range(k):
-            a = x[:, :, i].view(len(x), self.p, 1)
-            b = B_r[:, i, :].view(len(x), 1, self.p)
-            results.append(a @ b)
-        results = torch.stack(results, dim=1)
+        for i in range(self.p):
+            # the i.th column vector of ap ( r by p)
+            api = ap[:, :, i].view(n, self.r, 1)
+            # Multiply each row vector of bp with api
+            results.append(api*bp)
+        torch.stack(results, dim=2) ==torch.einsum('nrp,nrx->nrpx', ap, bp)
         """
-        D = torch.einsum('bkp,bkl->bkpl', B_h, B_r) - torch.einsum('bkp,bkl->bkpl', B_r, B_h)
-        # (5) Compute E: batch_size (b), E \in \mathbb{R}^{k \times  q \times q}
-        E = torch.einsum('bkq,bkl->bkql', C_h, C_r) - torch.einsum('bkq,bkl->bkql', C_r, C_h)
-        # (5) Compute F: batch_size (b), E \in \mathbb{R}^{k \times  p \times q}
-        F = torch.einsum('bkp,bkq->bkpq', B_h, C_r) - torch.einsum('bkp,bkq->bkpq', B_r, C_h)
+        AB_pp = torch.einsum('nrp,nrx->nrpx', ap, bp) - torch.einsum('nrp,nrx->nrpx', bp, ap)
+        assert AB_pp.shape == (n, self.r, self.p, self.p)
 
-        return A, B, C, D, E, F
+        # (5) AB_{q,q}  = \sum_{j=1}^{q-1} \sum_{k=j+1}^q aq_j bp_k - aq_k bq_j  u_i u_k
+        # Explanation written in (4) holds for (5)
+        AB_qq = torch.einsum('nrq,nrx->nrqx', aq, bq) - torch.einsum('nrq,nrx->nrqx', bq, aq)
+        assert AB_pp.shape == (n, self.r, self.p, self.p)
+        # (6) AB_{p,q}  = \sum_{i=1}^p \sum_{j=1}^q ap_i bq_j - aq_j bp_i  v_i u_j.
+        AB_pq = torch.einsum('bkp,bkq->bkpq', ap, bq) - torch.einsum('bkp,bkq->bkpq', bp, aq)
+        assert AB_pq.shape == (n, self.r, self.p, self.q)
+
+        return AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq
 
     def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
         """
@@ -305,46 +328,74 @@ class CLf(BaseKGE):
         ---------
         x: torch.LongTensor with (n,2) shape
 
-
-
         Returns
         -------
         torch.FloatTensor with (n, |E|) shape
         """
         # (1) Retrieve real-valued embedding vectors.
         head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
-        # (2) Construct k-dimensional vector in CL_{p,q} for head entities.
-        A_head, B_head, C_head = self.construct_cl_vector(head_ent_emb)
-        # (3) Construct n dimensional vector in CL_{p,q} for relations.
-        A_rel, B_rel, C_rel = self.construct_cl_vector(rel_ent_emb)
-        # (3) Clifford multiplication of (2) and (3).
-        A, B, C, D, E, F = self.clifford_mul_with_einsum(A_head, B_head, C_head, A_rel, B_rel, C_rel)
+        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities.
+        a0, ap, aq = self.construct_cl_multivector(head_ent_emb, r=self.r, p=self.p, q=self.q)
+        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for relations.
+        b0, bp, bq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
 
-        # (4) Extract embeddings for all entities.
-        Emb_all = self.entity_embeddings.weight
-        # (7) Compute A
-        A_all = Emb_all[:, :self.k]
-        A_score = torch.einsum('bk,ek->be', A, A_all)
-        # (8) Compute B
+        # (4) Clifford multiplication of (2) and (3).
+        # AB_pp, AB_qq, AB_pq
+        AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq = self.clifford_mul(a0, ap, aq, b0, bp, bq)
+
+        # (7) Inner product of AB_0 and a0 of all entities.
+        A_score = torch.einsum('bk,ek->be', AB_0, self.entity_embeddings.weight[:, :self.r])
+        # (8) Inner product of AB_p and ap of all entities.
         if self.p > 0:
-            B_all = Emb_all[:, self.k: self.k + (self.k * self.p)].view(self.num_entities, self.k, self.p)
-            B_score = torch.einsum('bkp,ekp->be', B, B_all)
+            B_score = torch.einsum('bkp,ekp->be', AB_p,
+                                   self.entity_embeddings.weight[:, self.r: self.r + (self.r * self.p)]
+                                   .view(self.num_entities, self.r, self.p))
         else:
             B_score = 0
-        # (9) Compute C
+        # (9) Inner product of AB_q and aq of all entities.
         if self.q > 0:
-            C_all = Emb_all[:, -(self.k * self.q):].view(self.num_entities, self.k, self.q)
-            C_score = torch.einsum('bkq,ekq->be', C, C_all)
+            C_score = torch.einsum('bkq,ekq->be', AB_q,
+                                   self.entity_embeddings.weight[:, -(self.r * self.q):]
+                                   .view(self.num_entities, self.r, self.q))
         else:
             C_score = 0
-        # (10) Aggregate (7,8,9)
+        # (10) Aggregate (7,8,9).
         A_B_C_score = A_score + B_score + C_score
-        # (11) Compute and Aggregate D,E,F
-        D_E_F_score = torch.einsum('bkpp->b', D) + torch.einsum('bkqq->b', E) + torch.einsum('bkpq->b', F)
+        # (11) Compute inner products of AB_pp, AB_qq, AB_pq and respective identity matrices of all entities.
+        D_E_F_score = torch.einsum('bkpp->b', AB_pp) + torch.einsum('bkqq->b', AB_qq) + torch.einsum('bkpq->b', AB_pq)
         D_E_F_score = D_E_F_score.view(len(D_E_F_score), 1)
         # (12) Score
         return A_B_C_score + D_E_F_score
 
+    def construct_cl_multivector(self, x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[
+        torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
+        """
+        Construct a batch of multivectors Cl_{p,q}(\mathbb{R}^d)
+
+        Parameter
+        ---------
+        x: torch.FloatTensor with (n,d) shape
+
+        Returns
+        -------
+        a0: torch.FloatTensor with (n,r) shape
+        ap: torch.FloatTensor with (n,r,p) shape
+        aq: torch.FloatTensor with (n,r,q) shape
+        """
+        batch_size, d = x.shape
+        # (1) A_{n \times k}: take the first k columns
+        a0 = x[:, :r].view(batch_size, r)
+        # (2) B_{n \times p}, C_{n \times q}: take the self.k * self.p columns after the k. column
+        if p > 0:
+            ap = x[:, r: r + (r * p)].view(batch_size, r, p)
+        else:
+            ap = torch.zeros((batch_size, r, p), device=self.device)
+        if q > 0:
+            # (3) B_{n \times p}, C_{n \times q}: take the last self.r * self.q .
+            aq = x[:, -(r * q):].view(batch_size, r, q)
+        else:
+            aq = torch.zeros((batch_size, r, q), device=self.device)
+        return a0, ap, aq
 
     def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
         # (1) Retrieve real-valued embedding vectors.
