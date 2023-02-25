@@ -46,6 +46,7 @@ pip3 install pytorch-lightning==1.6.4
 pip3 install scikit-learn==1.1.1
 pip3 install pytest==6.2.5
 pip3 install gradio==3.0.17
+pip install matplotlib==3.6.2
 ```
 To test the Installation
 ```
