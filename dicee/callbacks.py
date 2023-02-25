@@ -3,11 +3,13 @@ import math
 import time
 import numpy as np
 import torch
-from .static_funcs import save_checkpoint_model, exponential_function
-from .abstracts import AbstractCallback,AbstractPPECallback
+from .static_funcs import save_checkpoint_model, exponential_function, save_pickle, load_pickle
+from .abstracts import AbstractCallback, AbstractPPECallback
 from typing import Optional
 import os
 import pandas as pd
+import torch.nn.functional as F
+import matplotlib.pyplot as plt
 
 
 class AccumulateEpochLossCallback(AbstractCallback):
@@ -147,7 +149,6 @@ def compute_convergence(seq, i):
     return estimate_q(seq[-i:] / (np.arange(i) + 1))
 
 
-
 class PPE(AbstractPPECallback):
     """ A callback for Polyak Parameter Ensemble Technique
         Maintains a running parameter average for all parameters requiring gradient signals
@@ -190,3 +191,83 @@ class FPPE(AbstractPPECallback):
         lamb = 0.1
         self.alphas = exponential_function(np.arange(self.num_ensemble_coefficient), lam=lamb, ascending_order=True)
         print(f"Forgetful Ensemble Coefficients with lambda {lamb}:", self.alphas)
+
+
+class PQS(AbstractCallback):
+    def __init__(self, path):
+        super().__init__()
+        self.path = path
+        self.reports = []
+        self.epoch_counter = 0
+
+    def r_p_q_search(self, trainer, model):
+        p_q = []
+        # cartesian product (1,2,3,4) (1,2,3,4)
+        """
+        if model.assert_p_and_q(p=1, q=0):
+            p_q.append((1, 0))
+        if model.assert_p_and_q(p=0, q=1):
+            p_q.append((0, 1))
+        if model.assert_p_and_q(p=1, q=1):
+            p_q.append((1, 1))
+        if model.assert_p_and_q(p=2, q=0):
+            p_q.append((2, 0))
+        if model.assert_p_and_q(p=0, q=2):
+            p_q.append((0, 2))
+        if model.assert_p_and_q(p=0, q=3):
+            p_q.append((0, 3))
+        if model.assert_p_and_q(p=3, q=0):
+            p_q.append((3, 0))
+        if model.assert_p_and_q(p=1, q=2):
+            p_q.append((1, 2))
+        if model.assert_p_and_q(p=2, q=1):
+            p_q.append((2, 1))
+        """
+
+        config = []
+        model.eval()
+
+        model.eval()
+        for p, q in p_q:
+            model.update_p_and_q(p, q)
+
+            report = trainer.evaluator.eval(dataset=trainer.dataset, trained_model=model,
+                                            form_of_labelling=trainer.form_of_labelling, during_training=True)
+            train_mrr = report['Train']['MRR']
+            val_mrr = report['Val']['MRR']
+            config.append((p, q, train_mrr, val_mrr))
+        model.update_p_and_q(init_p, init_q)
+        model.train()
+        return config
+
+    def on_fit_start(self, trainer, model):
+        pass
+
+    def on_fit_end(self, trainer, model):
+        save_pickle(data=self.reports, file_path=trainer.attributes.full_storage_path + '/evals_per_epoch')
+        """
+
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 7))
+        for (p,q), mrr in pairs_to_train_mrr.items():
+            ax1.plot(mrr, label=f'{p},{q}')
+        ax1.set_ylabel('Train MRR')
+
+        for (p,q), mrr in pairs_to_val_mrr.items():
+            ax2.plot(mrr, label=f'{p},{q}')
+        ax2.set_ylabel('Val MRR')
+
+        plt.legend()
+        plt.xlabel('Epochs')
+        plt.savefig('{full_storage_path}train_val_mrr.pdf')
+        plt.show()
+        """
+
+    def on_train_epoch_end(self, trainer, model):
+        model.eval()
+        report = trainer.evaluator.eval(dataset=trainer.dataset, trained_model=model,
+                                        form_of_labelling=trainer.form_of_labelling, during_training=True)
+        model.train()
+        self.reports.append(report)
+
+    def on_train_batch_end(self, *args, **kwargs):
+        return

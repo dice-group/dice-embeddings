@@ -48,7 +48,9 @@ def get_callbacks(args):
                  AccumulateEpochLossCallback(path=args.full_storage_path)
                  ]
     for i in args.callbacks:
-        if 'FPPE' in i:
+        if i=='PQS':
+            callbacks.append(PQS(path=args.full_storage_path))
+        elif 'FPPE' in i:
             if i == 'FPPE':
                 callbacks.append(
                     FPPE(num_epochs=args.num_epochs, path=args.full_storage_path, last_percent_to_consider=None))
@@ -110,6 +112,7 @@ class DICE_Trainer:
         self.storage_path = storage_path
         # Required for CV.
         self.evaluator = evaluator
+        self.form_of_labelling=None
         print(
             f'# of CPUs:{os.cpu_count()} | # of GPUs:{torch.cuda.device_count()} | # of CPUs for dataloader:{self.args.num_core}')
 
@@ -181,7 +184,6 @@ class DICE_Trainer:
         if self.args.eval_model is None:
             del dataset.train_set
             gc.collect()
-
         # pickle.PicklingError: memo id too large for LONG_BINPUT
         # torch.save(train_loader, self.storage_path + '/TrainDataloader.pth')
         # @TODO: SaveDataset
@@ -198,8 +200,13 @@ class DICE_Trainer:
             self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args), plugins=[])
             model, form_of_labelling = self.initialize_or_load_model()
             assert self.args.scoring_technique in ['KvsSample', '1vsAll', 'KvsAll', 'NegSample']
-            train_loader = self.initialize_dataloader(self.initialize_dataset(dataset, form_of_labelling))
-            self.trainer.fit(model, train_dataloaders=train_loader)
+
+
+            self.trainer.evaluator=self.evaluator
+            self.trainer.dataset = dataset
+            self.trainer.form_of_labelling = form_of_labelling
+
+            self.trainer.fit(model, train_dataloaders=self.initialize_dataloader(self.initialize_dataset(dataset, form_of_labelling)))
             return model, form_of_labelling
 
     def k_fold_cross_validation(self, dataset) -> Tuple[BaseKGE, str]:

@@ -24,6 +24,7 @@ class Evaluator:
         self.domain_constraints_per_rel, self.range_constraints_per_rel = None, None
         self.args = args
         self.report = dict()
+        self.during_training = False
 
     def vocab_preparation(self, dataset) -> None:
         """
@@ -36,7 +37,7 @@ class Evaluator:
         ----------
         None
         """
-        print("** VOCAB Prep **")
+        # print("** VOCAB Prep **")
         if isinstance(dataset.er_vocab, dict):
             self.er_vocab = dataset.er_vocab
         else:
@@ -67,14 +68,15 @@ class Evaluator:
         pickle.dump(self.re_vocab, open(self.args.full_storage_path + "/re_vocab.p", "wb"))
         pickle.dump(self.ee_vocab, open(self.args.full_storage_path + "/ee_vocab.p", "wb"))
 
-    @timeit
-    def eval(self, dataset, trained_model, form_of_labelling) -> None:
+    # @timeit
+    def eval(self, dataset, trained_model, form_of_labelling, during_training=False) -> None:
+        self.during_training = during_training
         # (1) Exit, if the flag is not set
         if self.args.eval_model is None:
             return
-        print("** EVAL **")
+        # print("** EVAL **")
         self.vocab_preparation(dataset)
-        print('Evaluation Starts.')
+        # print('Evaluation Starts.')
         if self.args.num_folds_for_cv > 1:
             # the evaluation must have done in the training part
             return
@@ -95,10 +97,12 @@ class Evaluator:
                                   form_of_labelling=form_of_labelling)
         else:
             raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
-        with open(self.args.full_storage_path + '/eval_report.json', 'w') as file_descriptor:
-            json.dump(self.report, file_descriptor, indent=4)
+        if self.during_training is False:
+            with open(self.args.full_storage_path + '/eval_report.json', 'w') as file_descriptor:
+                json.dump(self.report, file_descriptor, indent=4)
+        return {k: v for k, v in self.report.items()}
 
-    def dummy_eval(self, trained_model,form_of_labelling):
+    def dummy_eval(self, trained_model, form_of_labelling):
 
         if self.is_continual_training:
             self.er_vocab = pickle.load(open(self.args.full_storage_path + "/er_vocab.p", "rb"))
@@ -106,9 +110,9 @@ class Evaluator:
             self.ee_vocab = pickle.load(open(self.args.full_storage_path + "/ee_vocab.p", "rb"))
 
         if 'train' in self.args.eval_model:
-            train_set=np.load(self.args.full_storage_path + "/train_set.npy")
+            train_set = np.load(self.args.full_storage_path + "/train_set.npy")
         else:
-            train_set=None
+            train_set = None
         if 'val' in self.args.eval_model:
             valid_set = np.load(self.args.full_storage_path + "/valid_set.npy")
         else:
@@ -188,7 +192,7 @@ class Evaluator:
         # Hit range
         hits_range = [i for i in range(1, 11)]
         hits = {i: [] for i in hits_range}
-        if info:
+        if info and self.during_training is False:
             print(info + ':', end=' ')
         if form_of_labelling == 'RelationPrediction':
             # Iterate over integer indexed triples in mini batch fashion
@@ -256,7 +260,7 @@ class Evaluator:
         mean_reciprocal_rank = np.mean(1. / np.array(ranks))
 
         results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10, 'MRR': mean_reciprocal_rank}
-        if info:
+        if info and self.during_training is False:
             print(info)
             print(results)
         return results
