@@ -219,13 +219,12 @@ class CLf(BaseKGE):
         if self.q is None:
             self.q = 0
         self.r = self.embedding_dim / (self.p + self.q + 1)
-        print(f'r:{self.r}\tp:{self.p}\tq:{self.q}')
         try:
             assert self.r.is_integer()
         except AssertionError:
-            print(f'r = embedding_dim / (p + q+ 1) must be a whole number\n'
-                  f'Currently {self.r}={self.embedding_dim} / ({self.p}+ {self.q} +1)')
-            print(f'r is corrected to {int(self.r)}')
+            raise (f'r = embedding_dim / (p + q+ 1) must be a whole number\n'
+                   f'Currently {self.r}={self.embedding_dim} / ({self.p}+ {self.q} +1)')
+            # print(f'r is corrected to {int(self.r)}')
         self.r = int(self.r)
 
     def clifford_mul(self, a0, ap, aq, b0, bp, bq):
@@ -342,16 +341,28 @@ class CLf(BaseKGE):
             for k in range(i + 1, self.p):
                 x = ap[:, :, i] * bp[:, :, k] - ap[:, :, k] * ap[:, :, i]
                 results.append(x.view(n, self.r).unsqueeze(-1))
-        AB_pp = torch.stack(results, dim=2)
+        if len(results) > 0:
+            AB_pp = torch.stack(results, dim=2)
+            assert AB_pp.shape == (n, self.r, self.p - 1, self.p - 1)
+
+        else:
+            AB_pp = torch.zeros((n, self.r, self.p, self.p), device=self.device)
+            assert AB_pp.shape == (n, self.r, self.p, self.p)
 
         # (5) AB_{q,q}  = \sum_{j=1}^{q-1} \sum_{k=j+1}^q aq_j bp_k - aq_k bq_j  u_i u_k
         # Explanation written in (4) holds for (5)
         results = []
         for i in range(self.q - 1):
             for k in range(i + 1, self.q):
-                x = ap[:, :, i] * bp[:, :, k] - ap[:, :, k] * ap[:, :, i]
+                x = aq[:, :, i] * bq[:, :, k] - aq[:, :, k] * aq[:, :, i]
                 results.append(x.view(n, self.r).unsqueeze(-1))
-        AB_qq = torch.stack(results, dim=2)
+        if len(results) > 0:
+            AB_qq = torch.stack(results, dim=2)
+            assert AB_qq.shape == (n, self.r, self.q - 1, self.q - 1)
+
+        else:
+            AB_qq = torch.zeros((n, self.r, self.q, self.q), device=self.device)
+            assert AB_qq.shape == (n, self.r, self.q, self.q)
 
         # (6) AB_{p,q}  = \sum_{i=1}^p \sum_{j=1}^q ap_i bq_j - aq_j bp_i  v_i u_j.
         AB_pq = torch.einsum('bkp,bkq->bkpq', ap, bq) - torch.einsum('bkp,bkq->bkpq', bp, aq)
@@ -385,6 +396,7 @@ class CLf(BaseKGE):
 
         # (4) Clifford multiplication of (2) and (3).
         # AB_pp, AB_qq, AB_pq
+        # AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq = self.clifford_mul_reduced_interactions(a0, ap, aq, b0, bp, bq)
         AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq = self.clifford_mul(a0, ap, aq, b0, bp, bq)
 
         # (7) Inner product of AB_0 and a0 of all entities.
@@ -406,8 +418,8 @@ class CLf(BaseKGE):
         # (10) Aggregate (7,8,9).
         A_B_C_score = A_score + B_score + C_score
         # (11) Compute inner products of AB_pp, AB_qq, AB_pq and respective identity matrices of all entities.
-        D_E_F_score = (torch.einsum('bkpp->b', AB_pp) + torch.einsum('bkqq->b', AB_qq) + torch.einsum('bkpq->b',AB_pq))
-        D_E_F_score=D_E_F_score.view(len(head_ent_emb), 1)
+        D_E_F_score = (torch.einsum('bkpp->b', AB_pp) + torch.einsum('bkqq->b', AB_qq) + torch.einsum('bkpq->b', AB_pq))
+        D_E_F_score = D_E_F_score.view(len(head_ent_emb), 1)
         # (12) Score
         return A_B_C_score + D_E_F_score
 
@@ -442,22 +454,123 @@ class CLf(BaseKGE):
         return a0, ap, aq
 
     def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
+        """
+        Kvsall training
+
+        (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .
+        (2) Construct head entity and relation embeddings according to Cl_{p,q}(\mathbb{R}^d) .
+        (3) Perform Cl multiplication
+        (4) Inner product of (3) and all entity embeddings
+
+        Parameter
+        ---------
+        x: torch.LongTensor with (n,2) shape
+
+        Returns
+        -------
+        torch.FloatTensor with (n, |E|) shape
+        """
         # (1) Retrieve real-valued embedding vectors.
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
-        # (2) Construct k-dimensional vector in CL_{p,q} for head entities.
-        A_head, B_head, C_head = self.construct_cl_vector(head_ent_emb)
-        # (3) Construct n dimensional vector in CL_{p,q} for relations.
-        A_rel, B_rel, C_rel = self.construct_cl_vector(rel_ent_emb)
-        # (4) Construct n dimensional vector in CL_{p,q} for tail entities.
-        A_tail, B_tail, C_tail = self.construct_cl_vector(tail_ent_emb)
+        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities.
+        a0, ap, aq = self.construct_cl_multivector(head_ent_emb, r=self.r, p=self.p, q=self.q)
+        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for relations.
+        b0, bp, bq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
 
-        # (5) Clifford multiplication of (2) and (3)
-        A, B, C, D, E, F = self.clifford_mul_with_einsum(A_head, B_head, C_head, A_rel, B_rel, C_rel)
-        # (6) Inner product of (5) and (4)
-        A_score = torch.einsum('bk,bk->b', A_tail, A)
-        B_score = torch.einsum('bkp,bkp->b', B_tail, B)
-        C_score = torch.einsum('bkq,bkq->b', C_tail, C)
-        D_score = torch.einsum('bkpp->b', D)
-        E_score = torch.einsum('bkqq->b', E)
-        F_score = torch.einsum('bkpq->b', F)
-        return A_score + B_score + C_score + D_score + E_score + F_score
+        c0, cp, cq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
+
+
+        # (4) Clifford multiplication of (2) and (3).
+        # AB_pp, AB_qq, AB_pq
+        AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq = self.clifford_mul(a0, ap, aq, b0, bp, bq)
+
+        # (7) Inner product of AB_0 and a0 of all entities.
+        A_score = torch.einsum('bk,bk->b', AB_0, c0)
+        # (8) Inner product of AB_p and ap of all entities.
+        if self.p > 0:
+            B_score = torch.einsum('bkl,bkl->b', AB_p, cp)
+        else:
+            B_score = 0
+        # (9) Inner product of AB_q and aq of all entities.
+        if self.q > 0:
+            C_score = torch.einsum('bkl,bkl->b', AB_q, cq)
+        else:
+            C_score = 0
+        # (10) Aggregate (7,8,9).
+        A_B_C_score = A_score + B_score + C_score
+        # (11) Compute inner products of AB_pp, AB_qq, AB_pq and respective identity matrices of all entities.
+        D_E_F_score = (torch.einsum('bkpp->b', AB_pp) + torch.einsum('bkqq->b', AB_qq) + torch.einsum('bkpq->b', AB_pq))
+        # (12) Score
+        return A_B_C_score + D_E_F_score
+
+
+    def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor:
+        """
+        Kvsall training
+
+        (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .
+        (2) Construct head entity and relation embeddings according to Cl_{p,q}(\mathbb{R}^d) .
+        (3) Perform Cl multiplication
+        (4) Inner product of (3) and all entity embeddings
+
+        Parameter
+        ---------
+        x: torch.LongTensor with (n,2) shape
+
+        Returns
+        -------
+        torch.FloatTensor with (n, |E|) shape
+        """
+        # (1) Retrieve real-valued embedding vectors.
+        head_ent_emb, rel_emb = self.get_head_relation_representation(x)
+        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities.
+        a0, ap, aq = self.construct_cl_multivector(head_ent_emb, r=self.r, p=self.p, q=self.q)
+        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for relations.
+        b0, bp, bq = self.construct_cl_multivector(rel_emb, r=self.r, p=self.p, q=self.q)
+
+        # (4) Clifford multiplication of (2) and (3).
+        # AB_pp, AB_qq, AB_pq
+        # AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq = self.clifford_mul_reduced_interactions(a0, ap, aq, b0, bp, bq)
+        AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq = self.clifford_mul(a0, ap, aq, b0, bp, bq)
+
+        # b e r
+        selected_tail_entity_embeddings=self.entity_embeddings(target_entity_idx)
+        # (7) Inner product of AB_0 and a0 of all entities.
+        A_score = torch.einsum('br,ber->be', AB_0, selected_tail_entity_embeddings[:, :self.r])
+
+        # (8) Inner product of AB_p and ap of all entities.
+        if self.p > 0:
+            B_score = torch.einsum('brp,berp->be', AB_p,
+                                   selected_tail_entity_embeddings[:, self.r: self.r + (self.r * self.p)]
+                                   .view(self.num_entities, self.r, self.p))
+        else:
+            B_score = 0
+        # (9) Inner product of AB_q and aq of all entities.
+        if self.q > 0:
+            C_score = torch.einsum('brq,berq->be', AB_q,
+                                   selected_tail_entity_embeddings[:, -(self.r * self.q):]
+                                   .view(self.num_entities, self.r, self.q))
+        else:
+            C_score = 0
+        # (10) Aggregate (7,8,9).
+        A_B_C_score = A_score + B_score + C_score
+        # (11) Compute inner products of AB_pp, AB_qq, AB_pq and respective identity matrices of all entities.
+        D_E_F_score = (torch.einsum('brpp->b', AB_pp) + torch.einsum('brqq->b', AB_qq) + torch.einsum('brpq->b', AB_pq))
+        D_E_F_score = D_E_F_score.view(len(head_ent_emb), 1)
+        # (12) Score
+        return A_B_C_score + D_E_F_score
+
+    def assert_p_and_q(self, p, q):
+        r = self.embedding_dim / (p + q + 1)
+        if r.is_integer() and r > 0:
+            return True
+        else:
+            return False
+
+    def update_p_and_q(self, p, q):
+        if self.assert_p_and_q(p, q):
+            self.r = self.embedding_dim // (p + q + 1)
+            self.p = p
+            self.q = q
+        else:
+            raise ArithmeticError('wrong p or q')
