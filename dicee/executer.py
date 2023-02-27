@@ -18,6 +18,7 @@ from dicee.static_preprocess_funcs import preprocesses_input_args
 from dicee.sanity_checkers import *
 from dicee.trainer import DICE_Trainer
 import pytorch_lightning as pl
+
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 os.environ["TORCH_DISTRIBUTED_DEBUG"] = "INFO"
@@ -51,11 +52,24 @@ class Execute:
         self.evaluator = None  # e.g. Evaluator(self)
 
     def read_preprocess_index_serialize_data(self) -> None:
-        """ Read & Preprocess & Index & Serialize Input Data """
+        """ Read & Preprocess & Index & Serialize Input Data
+
+        (1) Read or load the data from disk into memory.
+        (2) Store the statistics of the data.
+
+        Parameter
+        ----------
+
+        Return
+        ----------
+        None
+
+        """
         # (1) Read & Preprocess & Index & Serialize Input Data.
         self.dataset = read_or_load_kg(self.args, cls=KG)
-        # (3) Sanity checking.
+        # (2) Sanity checking.
         self.args, self.dataset = config_kge_sanity_checking(self.args, self.dataset)
+        # (3) Store the stats
         self.args.num_entities = self.dataset.num_entities
         self.args.num_relations = self.dataset.num_relations
         self.report['num_train_triples'] = len(self.dataset.train_set)
@@ -63,12 +77,35 @@ class Execute:
         self.report['num_relations'] = self.dataset.num_relations
 
     def load_indexed_data(self) -> None:
-        """ Load Indexed Data"""
+        """ Load the indexed data from disk into memory
+
+        Parameter
+        ----------
+
+        Return
+        ----------
+        None
+
+        """
         self.dataset = read_or_load_kg(self.args, cls=KG)
 
     @timeit
     def save_trained_model(self) -> None:
-        """ Save a knowledge graph embedding model (an instance of BaseKGE class) """
+        """ Save a knowledge graph embedding model
+
+        (1) Send model to eval mode and cpu.
+        (2) Store the memory footprint of the model.
+        (3) Save the model into disk.
+        (4) Update the stats of KG again ?
+
+        Parameter
+        ----------
+
+        Return
+        ----------
+        None
+
+        """
         print('*** Save Trained Model ***')
         self.trained_model.eval()
         self.trained_model.to('cpu')
@@ -93,6 +130,37 @@ class Execute:
         self.report['num_relations'] = self.args.num_relations
         self.report['path_experiment_folder'] = self.storage_path
 
+    def end(self, start_time, form_of_labelling) -> dict:
+        """
+        End training
+
+        (1) Store trained model.
+        (2) Report runtimes.
+        (3) Eval model if required.
+
+        Parameter
+        ---------
+
+        Returns
+        -------
+        A dict containing information about the training and/or evaluation
+
+        """
+        # (1) Save the model
+        self.save_trained_model()
+        # (2) Update and inform the runtime
+        self.report['Runtime'] = time.time() - start_time
+        print(f"Total computation time: {self.report['Runtime']:.3f} seconds")
+        # (3) Store the report of training.
+        with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
+            json.dump(self.report, file_descriptor, indent=4)
+        # (4) Eval model and return eval results.
+        if self.args.eval_model is None:
+            return {**self.report}
+        else:
+            self.evaluator.eval(dataset=self.dataset, trained_model=self.trained_model,
+                                form_of_labelling=form_of_labelling)
+            return {**self.report, **self.evaluator.report}
 
     def start(self) -> dict:
         """
@@ -102,8 +170,6 @@ class Execute:
         # (2) Create an evaluator object.
         # (3) Create a trainer object.
         # (4) Start the training
-        # (5) Store trained model.
-        # (6) Eval model if required.
 
         Parameter
         ---------
@@ -127,20 +193,7 @@ class Execute:
                                     evaluator=self.evaluator)
         # (4) Start the training
         self.trained_model, form_of_labelling = self.trainer.start(dataset=self.dataset)
-        # (5) Store trained model.
-        self.save_trained_model()
-        self.report['Runtime'] = time.time() - start_time
-        print(f"Total computation time: {self.report['Runtime']:.3f} seconds")
-        # (4) Store the report of training.
-        with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
-            json.dump(self.report, file_descriptor, indent=4)
-        # (6) Eval model.
-        if self.args.eval_model is None:
-            return self.report
-        else:
-            self.evaluator.eval(dataset=self.dataset, trained_model=self.trained_model,
-                                form_of_labelling=form_of_labelling)
-            return {**self.report, **self.evaluator.report}
+        return self.end(start_time, form_of_labelling)
 
 
 class ContinuousExecute(Execute):
@@ -236,7 +289,7 @@ def get_default_arguments(description=None):
     parser.add_argument('--auto_batch_finder', type=bool, default=False,
                         help='Find a batch size w.r.t. computational budgets')
     parser.add_argument("--lr", type=float, default=0.1)
-    parser.add_argument('--callbacks', '--list', nargs='+', default=['PQS'],
+    parser.add_argument('--callbacks', '--list', nargs='+', default=[],
                         help='List of tuples representing a callback and values, e.g. [FPPE or PPE or PPE10 ,PPE20 or PPE, FPPE]')
     parser.add_argument("--backend", type=str, default='pandas',
                         help='Select [polars(seperator: \t), modin(seperator: \s+), pandas(seperator: \s+)]')

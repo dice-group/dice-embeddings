@@ -29,7 +29,7 @@ class TestRegressionOnlineLearning:
         result = Execute(args).start()
         assert os.path.isdir(result['path_experiment_folder'])
         # Load the model
-        pre_trained_kge = KGE(path_of_pretrained_model_dir=result['path_experiment_folder'])
+        pre_trained_kge = KGE(path=result['path_experiment_folder'])
         # (1) Assume that acquired_abnormality,location_of,acquired_abnormality is a false triple
         first = pre_trained_kge.triple_score(head_entity=["acquired_abnormality"],
                                              relation=['location_of'],

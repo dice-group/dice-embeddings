@@ -34,5 +34,5 @@ class TestEnsembleConstruction:
         assert os.path.isdir(result['path_experiment_folder'])
 
         # (1) Load single model
-        pre_trained_kge = KGE(path_of_pretrained_model_dir=result['path_experiment_folder'])
-        pre_trained_kge = KGE(path_of_pretrained_model_dir=result['path_experiment_folder'], construct_ensemble=True)
+        pre_trained_kge = KGE(path=result['path_experiment_folder'])
+        pre_trained_kge = KGE(path=result['path_experiment_folder'], construct_ensemble=True)

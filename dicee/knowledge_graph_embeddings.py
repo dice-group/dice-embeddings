@@ -15,13 +15,17 @@ class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
 
     # @TODO: we can download the model if it is not present locally
-    def __init__(self, path_of_pretrained_model_dir, compute_range_and_domain=False,construct_ensemble=False, model_name=None,
+    def __init__(self, path, compute_range_and_domain=False, construct_ensemble=False, model_name=None,
                  apply_semantic_constraint=False):
-        super().__init__(path_of_pretrained_model_dir, compute_range_and_domain=compute_range_and_domain,construct_ensemble=construct_ensemble, model_name=model_name,
+        super().__init__(path=path, compute_range_and_domain=compute_range_and_domain,
+                         construct_ensemble=construct_ensemble, model_name=model_name,
                          apply_semantic_constraint=apply_semantic_constraint)
 
     def __str__(self):
         return 'KGE | ' + str(self.model)
+
+    def topk(self, head_entity: str, relation: str, k=3):
+        return self.predict_topk(head_entity=[head_entity], relation=[relation], topk=k)
 
     def predict_conjunctive_query(self, entity: str, relations: List[str], topk: int = 3,
                                   show_intermediate_results=False) -> Set[str]:

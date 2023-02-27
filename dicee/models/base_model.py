@@ -132,6 +132,7 @@ class BaseKGE(pl.LightningModule):
             raise KeyError(f'--init_param (***{self.args.get("init_param")}***) not found')
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
+        # @TODO why twice data.data.?
         return self.entity_embeddings.weight.data.data.detach(), self.relation_embeddings.weight.data.detach()
 
     def configure_optimizers(self, parameters=None):

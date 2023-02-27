@@ -141,14 +141,14 @@ class BaseInteractiveKGE:
     apply_semantic_constraint : boolean
     """
 
-    def __init__(self, path_of_pretrained_model_dir: str, compute_range_and_domain: bool = False,
+    def __init__(self, path: str, compute_range_and_domain: bool = False,
                  construct_ensemble: bool = False, model_name: str = None,
                  apply_semantic_constraint: bool = False):
         try:
-            assert os.path.isdir(path_of_pretrained_model_dir)
+            assert os.path.isdir(path)
         except AssertionError:
-            raise AssertionError(f'Could not find a directory {path_of_pretrained_model_dir}')
-        self.path = path_of_pretrained_model_dir
+            raise AssertionError(f'Could not find a directory {path}')
+        self.path = path
         # (1) Load model...
         self.construct_ensemble = construct_ensemble
         self.apply_semantic_constraint = apply_semantic_constraint
@@ -569,6 +569,20 @@ class BaseInteractiveKGE:
             'relation'].unique()
         # => relation_to_idx must be a dataframe with monotonically increasing
         return self.relation_to_idx.iloc[idx_relations].index.values.tolist()
+
+    def add_new_entity_embeddings(self, entity_name: str = None, embeddings: torch.FloatTensor = None):
+        assert isinstance(entity_name, str) and isinstance(embeddings, torch.FloatTensor)
+
+        if entity_name in self.entity_to_idx:
+            print(f'Entity ({entity_name}) exists..')
+        else:
+            self.entity_to_idx[entity_name] = len(self.entity_to_idx)
+            self.idx_to_entity[self.entity_to_idx[entity_name]]=entity_name
+            self.num_entities += 1
+            self.model.num_entities+=1
+            self.model.entity_embeddings.weight.data=torch.cat((self.model.entity_embeddings.weight.data.detach(),embeddings.unsqueeze(0)), dim=0)
+            self.model.entity_embeddings.num_embeddings+=1
+
 
     def get_entity_embeddings(self, items: List[str]):
         """

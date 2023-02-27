@@ -29,5 +29,5 @@ class TestDefaultParams:
         executor = Execute(args)
         executor.start()
 
-        pre_trained_kge = KGE(path_of_pretrained_model_dir=executor.args.full_storage_path)
+        pre_trained_kge = KGE(path=executor.args.full_storage_path)
         random_prediction(pre_trained_kge)

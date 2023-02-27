@@ -28,7 +28,7 @@ class TestRegressionCL:
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert os.path.isdir(result['path_experiment_folder'])
-        pre_trained_kge = KGE(path_of_pretrained_model_dir=result['path_experiment_folder'])
+        pre_trained_kge = KGE(path=result['path_experiment_folder'])
         kg = KG(data_dir=args.path_dataset_folder)
         pre_trained_kge.train(kg, epoch=1, batch_size=args.batch_size)
 
@@ -53,7 +53,7 @@ class TestRegressionCL:
         args.backend = 'pandas'  # Error with polars because sep="\s" should be a single byte character, but is 2 bytes long.
         result = Execute(args).start()
         assert os.path.isdir(result['path_experiment_folder'])
-        pre_trained_kge = KGE(path_of_pretrained_model_dir=result['path_experiment_folder'])
+        pre_trained_kge = KGE(path=result['path_experiment_folder'])
         kg = KG(args.path_dataset_folder, entity_to_idx=pre_trained_kge.entity_to_idx,
                 relation_to_idx=pre_trained_kge.relation_to_idx)
         pre_trained_kge.train(kg, epoch=1, batch_size=args.batch_size)
