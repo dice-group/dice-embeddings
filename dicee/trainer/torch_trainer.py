@@ -1,8 +1,8 @@
 import torch
 from typing import Tuple
 from dicee.abstracts import AbstractTrainer
-from dicee.custom_opt.sls import Sls
-from dicee.custom_opt.adam_sls import AdamSLS
+#from dicee.custom_opt.sls import Sls
+#from dicee.custom_opt.adam_sls import AdamSLS
 import time
 import os
 import psutil
@@ -115,10 +115,10 @@ class TorchTrainer(AbstractTrainer):
         # (1) Start running callbacks
         self.on_fit_start(self, self.model)
 
-        if isinstance(self.optimizer, Sls) or isinstance(self.optimizer, AdamSLS):
-            self.use_closure = True
-        else:
-            self.use_closure = False
+        #if isinstance(self.optimizer, Sls) or isinstance(self.optimizer, AdamSLS):
+        #    self.use_closure = True
+        #else:
+        self.use_closure = False
 
         print(
             f'NumOfDataPoints:{len(self.train_dataloaders.dataset)} | NumOfEpochs:{self.attributes.max_epochs} | LearningRate:{self.model.learning_rate} | BatchSize:{self.train_dataloaders.batch_size} | EpochBatchsize:{len(train_dataloaders)}')

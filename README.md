@@ -47,6 +47,7 @@ pip3 install scikit-learn==1.1.1
 pip3 install pytest==6.2.5
 pip3 install gradio==3.0.17
 pip install matplotlib==3.6.2
+
 ```
 To test the Installation
 ```
@@ -55,6 +56,14 @@ unzip KGs.zip
 pytest -p no:warnings -x # it takes circa 15 minutes
 pytest -p no:warnings --lf # run only the last failed test
 pytest -p no:warnings --ff # to run the failures first and then the rest of the tests.
+```
+To see the software architecture, execute the following command
+```
+pyreverse dicee/ && dot -Tpng -x classes.dot -o dice_software.png && eog dice_software.png
+```
+
+```
+pyreverse dicee/trainer && dot -Tpng -x classes.dot -o trainer.png && eog trainer.png
 ```
 ## Applications
 ### Description Logic Concept Learning (soon)

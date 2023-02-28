@@ -5,7 +5,7 @@ from torch.nn import functional as F
 from torchmetrics import Accuracy as accuracy
 from typing import List, Any, Tuple, Union, Dict
 import numpy as np
-from dicee.custom_opt import Sls, AdamSLS, Adan
+#from dicee.custom_opt import Sls, AdamSLS, Adan
 
 
 class BaseKGE(pl.LightningModule):

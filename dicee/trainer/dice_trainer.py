@@ -225,12 +225,13 @@ class DICE_Trainer:
         :return: model
         """
         print(f'{self.args.num_folds_for_cv}-fold cross-validation')
+        # (1) Create Kfold data
         kf = KFold(n_splits=self.args.num_folds_for_cv, shuffle=True, random_state=1)
         model = None
         eval_folds = []
-
+        # (2) Iterate over (1)
         for (ith, (train_index, test_index)) in enumerate(kf.split(dataset.train_set)):
-            # Need to create a new copy for the callbacks
+            # (2.1) Create a new copy for the callbacks
             args = copy.copy(self.args)
             trainer = initialize_trainer(args, get_callbacks(args))
             model, form_of_labelling = select_model(vars(args), self.is_continual_training, self.storage_path)
