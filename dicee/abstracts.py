@@ -163,7 +163,8 @@ class BaseInteractiveKGE:
 
         self.num_entities = len(self.entity_to_idx)
         self.num_relations = len(self.relation_to_idx)
-
+        self.entity_to_idx: dict
+        self.relation_to_idx: dict
         assert list(self.entity_to_idx.values()) == list(range(0, len(self.entity_to_idx)))
         assert list(self.relation_to_idx.values()) == list(range(0, len(self.relation_to_idx)))
 
@@ -171,16 +172,17 @@ class BaseInteractiveKGE:
         self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
 
         print('Loading indexed training data...')
-        with open(self.path + '/train_set.npy', 'rb') as f:
-            self.train_set = np.load(f)
-
-        if compute_range_and_domain:
-            self.domain_constraints_per_rel, self.range_constraints_per_rel, self.domain_per_rel, self.range_per_rel = create_constraints(
-                self.train_set)
-
-        if self.apply_semantic_constraint:
-            self.domain_constraints_per_rel, self.range_constraints_per_rel, self.domain_per_rel, self.range_per_rel = create_constraints(
-                self.train_set)
+        try:
+            with open(self.path + '/train_set.npy', 'rb') as f:
+                self.train_set = np.load(f)
+            if compute_range_and_domain:
+                self.domain_constraints_per_rel, self.range_constraints_per_rel, self.domain_per_rel, self.range_per_rel = create_constraints(
+                    self.train_set)
+            if self.apply_semantic_constraint:
+                self.domain_constraints_per_rel, self.range_constraints_per_rel, self.domain_per_rel, self.range_per_rel = create_constraints(
+                    self.train_set)
+        except FileNotFoundError:
+            print(f'{self.path} /train_set.npy is not found')
 
     def get_domain_of_relation(self, rel: str) -> List[str]:
         x = [self.idx_to_entity[i] for i in self.domain_per_rel[self.relation_to_idx[rel]]]
@@ -577,12 +579,12 @@ class BaseInteractiveKGE:
             print(f'Entity ({entity_name}) exists..')
         else:
             self.entity_to_idx[entity_name] = len(self.entity_to_idx)
-            self.idx_to_entity[self.entity_to_idx[entity_name]]=entity_name
+            self.idx_to_entity[self.entity_to_idx[entity_name]] = entity_name
             self.num_entities += 1
-            self.model.num_entities+=1
-            self.model.entity_embeddings.weight.data=torch.cat((self.model.entity_embeddings.weight.data.detach(),embeddings.unsqueeze(0)), dim=0)
-            self.model.entity_embeddings.num_embeddings+=1
-
+            self.model.num_entities += 1
+            self.model.entity_embeddings.weight.data = torch.cat(
+                (self.model.entity_embeddings.weight.data.detach(), embeddings.unsqueeze(0)), dim=0)
+            self.model.entity_embeddings.num_embeddings += 1
 
     def get_entity_embeddings(self, items: List[str]):
         """
