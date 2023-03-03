@@ -359,7 +359,7 @@ class BaseInteractiveKGE:
             scores = self.__predict_missing_tail_entity(head_entities, relations)
         else:
             assert len(head_entities) == len(relations) == len(tail_entities)
-            scores = self.triple_score(head_entities=head_entities, relations=relations, tail_entity=tail_entities)
+            scores = self.triple_score(head_entities, relations, tail_entities)
         return torch.sigmoid(scores)
 
     def predict_topk(self, *, head_entity: List[str] = None, relation: List[str] = None, tail_entity: List[str] = None,
@@ -435,7 +435,7 @@ class BaseInteractiveKGE:
         x = torch.LongTensor((head, relation, tail)).reshape(len(head), 3)
         return torch.sigmoid(self.model(x))
 
-    def triple_score(self, *, head_entity: List[str] = None, relation: List[str] = None,
+    def triple_score(self, head_entity: List[str] = None, relation: List[str] = None,
                      tail_entity: List[str] = None, logits=False) -> torch.FloatTensor:
         """
         Predict triple score
