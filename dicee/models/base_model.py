@@ -53,7 +53,7 @@ class BaseKGE(pl.LightningModule):
         return {'EstimatedSizeMB': (num_params + buffer_size) / 1024 ** 2, 'NumParam': num_params}
 
     def init_params_with_sanity_checking(self):
-        assert self.args['model'] in ['CMult', 'CLf', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO',
+        assert self.args['model'] in ['CMult', 'Keci', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO',
                                       'AConEx', 'ConEx', 'Shallom', 'TransE', 'Pyke']
         if self.args.get('weight_decay'):
             self.weight_decay = self.args['weight_decay']

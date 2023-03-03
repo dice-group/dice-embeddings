@@ -205,7 +205,7 @@ class CMult(BaseKGE):
             raise NotImplementedError
 
 
-class CLf(BaseKGE):
+class Keci(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'CLf'

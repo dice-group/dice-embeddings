@@ -326,8 +326,8 @@ def intialize_model(args: dict) -> Tuple[pl.LightningModule, str]:
     elif model_name == 'Pyke':
         model = Pyke(args=args)
         form_of_labelling = 'Pyke'
-    elif model_name == 'CLf':
-        model = CLf(args=args)
+    elif model_name == 'Keci':
+        model = Keci(args=args)
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'CMult':
         model = CMult(args=args)

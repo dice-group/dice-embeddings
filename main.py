@@ -6,25 +6,25 @@ def get_default_arguments(description=None):
     """ Extends pytorch_lightning Trainer's arguments with ours """
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/Countries-S3',
+    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
                         help="The path of a folder containing input data")
     parser.add_argument("--save_embeddings_as_csv", type=bool, default=False,
                         help='A flag for saving embeddings in csv file.')
     parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="Embeddings, model, and any other related data will be stored therein.")
     parser.add_argument("--model", type=str,
-                        default="DistMult",
+                        default="Keci",
                         help="Available models: CMult, ConEx, ConvQ, ConvO, DistMult, QMult, OMult, "
-                             "Shallom, AConEx, ConEx, ComplEx, DistMult, TransE, CLf")
-    parser.add_argument('--p', type=int, default=3,
+                             "Shallom, AConEx, ConEx, ComplEx, DistMult, TransE, Keci")
+    parser.add_argument('--p', type=int, default=0,
                         help='P for Clifford Algebra')
-    parser.add_argument('--q', type=int, default=4,
+    parser.add_argument('--q', type=int, default=1,
                         help='Q for Clifford Algebra')
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[Adam, SGD]')
     parser.add_argument('--embedding_dim', type=int, default=32,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=256, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
     parser.add_argument('--auto_batch_finder', type=bool, default=False,
                         help='Find a batch size w.r.t. computational budgets')
