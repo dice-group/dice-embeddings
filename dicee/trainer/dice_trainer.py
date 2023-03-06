@@ -48,7 +48,11 @@ def get_callbacks(args):
                  AccumulateEpochLossCallback(path=args.full_storage_path)
                  ]
     for i in args.callbacks:
-        if i=='PQS':
+
+        if i=='Search':
+            callbacks.append(Search(num_epochs=args.num_epochs,embedding_dim=args.embedding_dim))
+        # @TODO: Rename it
+        elif i=='PQS':
             callbacks.append(PQS(path=args.full_storage_path))
         elif 'FPPE' in i:
             if i == 'FPPE':
