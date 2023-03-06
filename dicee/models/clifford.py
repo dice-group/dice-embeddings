@@ -208,10 +208,11 @@ class CMult(BaseKGE):
 class Keci(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
-        self.name = 'CLf'
+        self.name = 'Keci'
         self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
         self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
         self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
+
         self.p = self.args['p']
         self.q = self.args['q']
         if self.p is None:
@@ -226,149 +227,211 @@ class Keci(BaseKGE):
                    f'Currently {self.r}={self.embedding_dim} / ({self.p}+ {self.q} +1)')
             # print(f'r is corrected to {int(self.r)}')
         self.r = int(self.r)
+        self.requires_grad_for_interactions = True
 
-    def clifford_mul(self, a0, ap, aq, b0, bp, bq):
+        self.coefficients = torch.nn.ParameterDict({
+            'r': torch.nn.Parameter(torch.ones(1, dtype=torch.float),
+                                    requires_grad=self.requires_grad_for_interactions),
+            'pp': torch.nn.Parameter(torch.ones(1, dtype=torch.float),
+                                     requires_grad=self.requires_grad_for_interactions),
+            'qq': torch.nn.Parameter(torch.ones(1, dtype=torch.float),
+                                     requires_grad=self.requires_grad_for_interactions),
+            'pq': torch.nn.Parameter(torch.ones(1, dtype=torch.float),
+                                     requires_grad=self.requires_grad_for_interactions),
+            'p': torch.nn.ParameterDict(
+                {str(i): torch.nn.Parameter(torch.ones(1, dtype=torch.float),
+                                            requires_grad=self.requires_grad_for_interactions) for i in
+                 range(3)}),
+            'q': torch.nn.ParameterDict(
+                {str(i): torch.nn.Parameter(torch.ones(1, dtype=torch.float),
+                                            requires_grad=self.requires_grad_for_interactions) for i in
+                 range(3)})})
+
+    def compute_sigma_pp(self, hp, rp):
+        """
+        Compute  sigma_{pp} = \sum_{i=1}^{p-1} \sum_{k=i+1}^p (h_i r_k - h_k r_i) e_i e_k
+
+        sigma_{pp} captures the interactions between along p bases
+        For instance, let p e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
+        This can be implemented with a nested two for loops
+
+                        results = []
+                        for i in range(p - 1):
+                            for k in range(i + 1, p):
+                                results.append(hp[:, :, i] * rp[:, :, k] - hp[:, :, k] * rp[:, :, i])
+                        sigma_pp = torch.stack(results, dim=2)
+                        assert sigma_pp.shape == (b, r, int((p * (p - 1)) / 2))
+
+        Yet, this computation would be quite inefficient. Instead, we compute interactions along all p,
+        e.g., e1e1, e1e2, e1e3,
+              e2e1, e2e2, e2e3,
+              e3e1, e3e2, e3e3
+        Then select the triangular matrix without diagonals: e1e2, e1e3, e2e3.
+        """
+        # Compute indexes for the upper triangle of p by p matrix
+        indices = torch.triu_indices(self.p, self.p, offset=1)
+        # Compute p by p operations
+        sigma_pp = torch.einsum('nrp,nrx->nrpx', hp, rp) - torch.einsum('nrx,nrp->nrpx', hp, rp)
+        sigma_pp = sigma_pp[:, :, indices[0], indices[1]]
+        return sigma_pp
+
+    def compute_sigma_qq(self, hq, rq):
+        """
+        Compute  sigma_{qq} = \sum_{j=1}^{p+q-1} \sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k
+        sigma_{q} captures the interactions between along q bases
+        For instance, let q e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
+        This can be implemented with a nested two for loops
+
+                        results = []
+                        for j in range(q - 1):
+                            for k in range(j + 1, q):
+                                results.append(hq[:, :, j] * rq[:, :, k] - hq[:, :, k] * rq[:, :, j])
+                        sigma_qq = torch.stack(results, dim=2)
+                        assert sigma_qq.shape == (b, r, int((q * (q - 1)) / 2))
+
+        Yet, this computation would be quite inefficient. Instead, we compute interactions along all p,
+        e.g., e1e1, e1e2, e1e3,
+              e2e1, e2e2, e2e3,
+              e3e1, e3e2, e3e3
+        Then select the triangular matrix without diagonals: e1e2, e1e3, e2e3.
+        """
+        # Compute indexes for the upper triangle of p by p matrix
+        if self.q > 1:
+            indices = torch.triu_indices(self.q, self.q, offset=1)
+            # Compute p by p operations
+            sigma_qq = torch.einsum('nrp,nrx->nrpx', hq, rq) - torch.einsum('nrx,nrp->nrpx', hq, rq)
+            sigma_qq = sigma_qq[:, :, indices[0], indices[1]]
+        else:
+            sigma_qq = torch.zeros((len(hq), self.r, int((self.q * (self.q - 1)) / 2)))
+
+        return sigma_qq
+
+    def compute_sigma_pq(self, *, hp, hq, rp, rq):
+        """
+        \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
+
+        results = []
+        sigma_pq = torch.zeros(b, r, p, q)
+        for i in range(p):
+            for j in range(q):
+                sigma_pq[:, :, i, j] = hp[:, :, i] * rq[:, :, j] - hq[:, :, j] * rp[:, :, i]
+        print(sigma_pq.shape)
+
+        """
+        sigma_pq = torch.einsum('nrp,nrq->nrpq', hp, rq) - torch.einsum('nrq,nrp->nrpq', hq, rp)
+        assert sigma_pq.shape[1:] == (self.r, self.p, self.q)
+        return sigma_pq
+
+    def clifford_multiplication(self, h0, hp, hq, r0, rp, rq):
         """ Compute our CL multiplication
 
-        a = a_0 + \sum_i=1 ^p ap_i  v_i + \sum_j=1 ^q aq_j  u_j
-        b = b_0 + \sum_i=1 ^p bp_i  v_i + \sum_j=1 ^q bq_j  u_j,
+        h = h_0 + \sum_{i=1}^p h_i e_i + \sum_{j=p+1}^{p+q} h_j e_j
+        r = r_0 + \sum_{i=1}^p r_i e_i + \sum_{j=p+1}^{p+q} r_j e_j
 
         ei ^2 = +1     for i =< i =< p
         ej ^2 = -1     for p < j =< p+q
         ei ej = -eje1  for i \neq j
 
-        \mathbf{a}\mathbf{b} =   AB_0 + AB_p + AB_q + AB_{p,p}+ AB_{q,q} + AB_{p,q}
+        h r =   sigma_0 + sigma_p + sigma_q + sigma_{pp} + sigma_{q}+ sigma_{pq}
         where
-                (1) AB_0      = a_0b_0 + \sum\limits_{i=1}^p ap_i bp_i - \sum\limits_{j=1}^q aq_j bq_j
-                (2) AB_p      = \sum_{i=1}^p a_0bp_i + b_0 ap_i  v_i
-                (3) AB_q      = \sum\limits_{j=1}^q a_0bq_j  + b_0 aq_j  u_j
-                (4) AB_{p,p}  = \sum\limits_{i=1}^{p-1} \sum\limits_{k=i+1}^p ap_i bp_k - ap_k bp_i  v_i v_k
-                (5) AB_{q,q}  = \sum\limits_{j=1}^{q-1} \sum\limits_{k=j+1}^q aq_j bp_k - aq_k bq_j  u_i u_k
-                (6) AB_{p,q}  = \sum\limits_{i=1}^p \sum\limits_{j=1}^q ap_i bq_j - aq_j bp_i  v_i u_j.
+                (1) sigma_0 = h_0 r_0 + \sum_{i=1}^p (h_0 r_i) e_i - \sum_{j=p+1}^{p+q} (h_j r_j) e_j
+
+                (2) sigma_p = \sum_{i=1}^p (h_0 r_i + h_i r_0) e_i
+
+                (3) sigma_q = \sum_{j=p+1}^{p+q} (h_0 r_j + h_j r_0) e_j
+
+                (4) sigma_{pp} = \sum_{i=1}^{p-1} \sum_{k=i+1}^p (h_i r_k - h_k r_i) e_i e_k
+
+                (5) sigma_{qq} = \sum_{j=1}^{p+q-1} \sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k
+
+                (6) sigma_{pq} = \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
 
         """
-        n = len(a0)
-        assert a0.shape == (n, self.r) == b0.shape == (n, self.r)
-        assert ap.shape == (n, self.r, self.p) == bp.shape == (n, self.r, self.p)
-        assert aq.shape == (n, self.r, self.q) == bq.shape == (n, self.r, self.q)
+        n = len(h0)
+        assert h0.shape == (n, self.r) == r0.shape == (n, self.r)
+        assert hp.shape == (n, self.r, self.p) == rp.shape == (n, self.r, self.p)
+        assert hq.shape == (n, self.r, self.q) == rq.shape == (n, self.r, self.q)
+        # (1)
+        sigma_0 = h0 * r0 + torch.sum(hp * rp, dim=2) - torch.sum(hq * rq, dim=2)
+        assert sigma_0.shape == (n, self.r)
+        # (2)
+        sigma_p = torch.einsum('nr,nrp->nrp', h0, rp) + torch.einsum('nr,nrp->nrp', r0, hp)
+        assert sigma_p.shape == (n, self.r, self.p)
+        # (3)
+        sigma_q = torch.einsum('nr,nrq->nrq', h0, rq) + torch.einsum('nr,nrq->nrq', r0, hq)
+        # (4)
+        sigma_pp = self.compute_sigma_pp(hp, rp)
+        # (5)
+        sigma_qq = self.compute_sigma_qq(hq, rq)
+        # (6)
+        sigma_pq = torch.einsum('bkp,bkq->bkpq', hp, rq) - torch.einsum('bkp,bkq->bkpq', rp, hq)
+        assert sigma_pq.shape == (n, self.r, self.p, self.q)
 
-        AB_0: torch.FloatTensor
-        # AB_0.shape: torch.Size([batch_size, r])
-        # (1) AB_0 = a_0b_0 + \sum_{i=1}^p ap_i bp_i - \sum_{j=1}^q aq_j bq_j ,e.g. p=q=0, hadamard product
-        AB_0 = torch.einsum('nr,nr->nr', a0, b0) \
-               + torch.einsum('nrp,nrp->nr', ap, bp) \
-               - torch.einsum('nrq,nrq->nr', aq, bq)
-        assert AB_0.shape == (n, self.r)
+        return sigma_0, sigma_p, sigma_q, sigma_pp, sigma_qq, sigma_pq
 
-        # (2) AB_p = \sum_{i=1}^p a_0 bp_i + b_0 ap_i  v_i
-        # (2.1) \sum_{i=1}^p a_0 bp_i : multiply each column vector of r by p matrix (ap) with r-dimensional vector (a_0)
-        # (2.2) \sum_{i=1}^p b_0 ap_i : multiply each column vector of r by p matrix (ap) with r-dimensional vector (b_0)
-        # (2.3) Sum (2.1) and (2.2)
-        # equiv. => a0.view(n, self.r, 1) * bp + b0.view(n, self.r, 1) * ap
-        AB_p = torch.einsum('nr,nrp->nrp', a0, bp) + torch.einsum('nr,nrp->nrp', b0, ap)
-        assert AB_p.shape == (n, self.r, self.p)
+    def forward_k_vs_with_explicit(self, x: torch.Tensor):
+        n = len(x)
+        # (1) Retrieve real-valued embedding vectors.
+        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
+        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations
+        h0, hp, hq = self.construct_cl_multivector(head_ent_emb, r=self.r, p=self.p, q=self.q)
+        r0, rp, rq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
+        E = self.entity_embeddings.weight
 
-        # (3) AB_q = \sum_{j=1}^q a_0 bq_j  + b_0 aq_j  u_j
-        # (3.1) \sum_{i=1}^q a_0 bq_i : multiply each column vector of r by q matrix (ap) with r-dimensional vector (a_0)
-        # (3.2) \sum_{i=1}^q b_0 aq_i : multiply each column vector of r by q matrix (ap) with r-dimensional vector (b_0)
-        # (3.3) Sum (3.1) and (3.2)
-        # equiv. => a0.view(n, self.r, 1) * bq + b0.view(n, self.r, 1) * aq
-        AB_q = torch.einsum('nr,nrq->nrq', a0, bq) + torch.einsum('nr,nrq->nrq', b0, aq)
+        # Clifford mul.
+        sigma_0 = h0 * r0 + torch.sum(hp * rp, dim=2) - torch.sum(hq * rq, dim=2)
+        sigma_p = torch.einsum('nr,nrp->nrp', h0, rp) + torch.einsum('nrp, nr->nrp', hp, r0)
+        sigma_q = torch.einsum('nr,nrq->nrq', h0, rq) + torch.einsum('nrq, nr->nrq', hq, r0)
 
-        # (4) AB_{p,p}  = \sum_{i=1}^{p} \sum_{k=1}^p ap_i bp_k - ap_k bp_i  v_i v_k
-        AB_pp = torch.einsum('nrp,nrx->nrpx', ap, bp) - torch.einsum('nrp,nrx->nrpx', bp, ap)
-        assert AB_pp.shape == (n, self.r, self.p, self.p)
-        # (5) AB_{q,q}  = \sum_{j=1}^{q} \sum_{j+1}^q aq_j bp_k - aq_k bq_j  u_i u_k
-        AB_qq = torch.einsum('nrq,nrx->nrqx', aq, bq) - torch.einsum('nrq,nrx->nrqx', bq, aq)
-        assert AB_qq.shape == (n, self.r, self.q, self.q)
-        # (6) AB_{p,q}  = \sum_{i=1}^p \sum_{j=1}^q ap_i bq_j - aq_j bp_i  v_i u_j.
-        AB_pq = torch.einsum('bkp,bkq->bkpq', ap, bq) - torch.einsum('bkp,bkq->bkpq', bp, aq)
-        assert AB_pq.shape == (n, self.r, self.p, self.q)
-        return AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq
+        t0 = E[:, :self.r]
 
-    def clifford_mul_reduced_interactions(self, a0, ap, aq, b0, bp, bq):
-        """ Compute our CL multiplication
-
-        a = a_0 + \sum_i=1 ^p ap_i  v_i + \sum_j=1 ^q aq_j  u_j
-        b = b_0 + \sum_i=1 ^p bp_i  v_i + \sum_j=1 ^q bq_j  u_j,
-
-        ei ^2 = +1     for i =< i =< p
-        ej ^2 = -1     for p < j =< p+q
-        ei ej = -eje1  for i \neq j
-
-        \mathbf{a}\mathbf{b} =   AB_0 + AB_p + AB_q + AB_{p,p}+ AB_{q,q} + AB_{p,q}
-        where
-                (1) AB_0      = a_0b_0 + \sum\limits_{i=1}^p ap_i bp_i - \sum\limits_{j=1}^q aq_j bq_j
-                (2) AB_p      = \sum_{i=1}^p a_0bp_i + b_0 ap_i  v_i
-                (3) AB_q      = \sum\limits_{j=1}^q a_0bq_j  + b_0 aq_j  u_j
-                (4) AB_{p,p}  = \sum\limits_{i=1}^{p-1} \sum\limits_{k=i+1}^p ap_i bp_k - ap_k bp_i  v_i v_k
-                (5) AB_{q,q}  = \sum\limits_{j=1}^{q-1} \sum\limits_{k=j+1}^q aq_j bp_k - aq_k bq_j  u_i u_k
-                (6) AB_{p,q}  = \sum\limits_{i=1}^p \sum\limits_{j=1}^q ap_i bq_j - aq_j bp_i  v_i u_j.
-
-        """
-        n = len(a0)
-        assert a0.shape == (n, self.r) == b0.shape == (n, self.r)
-        assert ap.shape == (n, self.r, self.p) == bp.shape == (n, self.r, self.p)
-        assert aq.shape == (n, self.r, self.q) == bq.shape == (n, self.r, self.q)
-
-        AB_0: torch.FloatTensor
-        # AB_0.shape: torch.Size([batch_size, r])
-        # (1) AB_0 = a_0b_0 + \sum_{i=1}^p ap_i bp_i - \sum_{j=1}^q aq_j bq_j ,e.g. p=q=0, hadamard product
-        AB_0 = torch.einsum('nr,nr->nr', a0, b0) \
-               + torch.einsum('nrp,nrp->nr', ap, bp) \
-               - torch.einsum('nrq,nrq->nr', aq, bq)
-        assert AB_0.shape == (n, self.r)
-
-        # (2) AB_p = \sum_{i=1}^p a_0 bp_i + b_0 ap_i  v_i
-        # (2.1) \sum_{i=1}^p a_0 bp_i : multiply each column vector of r by p matrix (ap) with r-dimensional vector (a_0)
-        # (2.2) \sum_{i=1}^p b_0 ap_i : multiply each column vector of r by p matrix (ap) with r-dimensional vector (b_0)
-        # (2.3) Sum (2.1) and (2.2)
-        # equiv. => a0.view(n, self.r, 1) * bp + b0.view(n, self.r, 1) * ap
-        AB_p = torch.einsum('nr,nrp->nrp', a0, bp) + torch.einsum('nr,nrp->nrp', b0, ap)
-        assert AB_p.shape == (n, self.r, self.p)
-
-        # (3) AB_q = \sum_{j=1}^q a_0 bq_j  + b_0 aq_j  u_j
-        # (3.1) \sum_{i=1}^q a_0 bq_i : multiply each column vector of r by q matrix (ap) with r-dimensional vector (a_0)
-        # (3.2) \sum_{i=1}^q b_0 aq_i : multiply each column vector of r by q matrix (ap) with r-dimensional vector (b_0)
-        # (3.3) Sum (3.1) and (3.2)
-        # equiv. => a0.view(n, self.r, 1) * bq + b0.view(n, self.r, 1) * aq
-        AB_q = torch.einsum('nr,nrq->nrq', a0, bq) + torch.einsum('nr,nrq->nrq', b0, aq)
-
-        # (4) AB_{p,p}  = \sum_{i=1}^{p-1} \sum_{k=i+1}^p ap_i bp_k - ap_k bp_i  v_i v_k
-        # if p=2, then => (ap_1 bp_2 - ap_2 bp_1) v_1 v_2
-        results = []
-        for i in range(self.p - 1):
-            for k in range(i + 1, self.p):
-                x = ap[:, :, i] * bp[:, :, k] - ap[:, :, k] * ap[:, :, i]
-                results.append(x.view(n, self.r).unsqueeze(-1))
-        if len(results) > 0:
-            AB_pp = torch.stack(results, dim=2)
-            assert AB_pp.shape == (n, self.r, self.p - 1, self.p - 1)
-
+        score_sigma_0 = sigma_0 @ t0.transpose(1, 0)
+        if self.p > 0:
+            tp = E[:, self.r: self.r + (self.r * self.p)].view(self.num_entities, self.r, self.p)
+            score_sigma_p = torch.einsum('bkp,ekp->be', sigma_p, tp)
         else:
-            AB_pp = torch.zeros((n, self.r, self.p, self.p), device=self.device)
-            assert AB_pp.shape == (n, self.r, self.p, self.p)
-
-        # (5) AB_{q,q}  = \sum_{j=1}^{q-1} \sum_{k=j+1}^q aq_j bp_k - aq_k bq_j  u_i u_k
-        # Explanation written in (4) holds for (5)
-        results = []
-        for i in range(self.q - 1):
-            for k in range(i + 1, self.q):
-                x = aq[:, :, i] * bq[:, :, k] - aq[:, :, k] * aq[:, :, i]
-                results.append(x.view(n, self.r).unsqueeze(-1))
-        if len(results) > 0:
-            AB_qq = torch.stack(results, dim=2)
-            assert AB_qq.shape == (n, self.r, self.q - 1, self.q - 1)
-
+            score_sigma_p = 0
+        if self.q > 0:
+            tq = E[:, -(self.r * self.q):].view(self.num_entities, self.r, self.q)
+            score_sigma_q = torch.einsum('bkp,ekp->be', sigma_q, tq)
         else:
-            AB_qq = torch.zeros((n, self.r, self.q, self.q), device=self.device)
-            assert AB_qq.shape == (n, self.r, self.q, self.q)
+            score_sigma_q = 0
 
-        # (6) AB_{p,q}  = \sum_{i=1}^p \sum_{j=1}^q ap_i bq_j - aq_j bp_i  v_i u_j.
-        AB_pq = torch.einsum('bkp,bkq->bkpq', ap, bq) - torch.einsum('bkp,bkq->bkpq', bp, aq)
-        assert AB_pq.shape == (n, self.r, self.p, self.q)
+        # Compute sigma_pp sigma_qq and sigma_pq
+        if self.p > 1:
+            results = []
+            for i in range(self.p - 1):
+                for k in range(i + 1, self.p):
+                    results.append(hp[:, :, i] * rp[:, :, k] - hp[:, :, k] * rp[:, :, i])
+            sigma_pp = torch.stack(results, dim=2)
+            assert sigma_pp.shape == (n, self.r, int((self.p * (self.p - 1)) / 2))
+            sigma_pp = torch.sum(sigma_pp, dim=[1, 2]).view(n, 1)
+            del results
+        else:
+            sigma_pp = 0
 
-        return AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq
+        if self.q > 1:
+            results = []
+            for j in range(self.q - 1):
+                for k in range(j + 1, self.q):
+                    results.append(hq[:, :, j] * rq[:, :, k] - hq[:, :, k] * rq[:, :, j])
+            sigma_qq = torch.stack(results, dim=2)
+            del results
+            assert sigma_qq.shape == (n, self.r, int((self.q * (self.q - 1)) / 2))
+            sigma_qq = torch.sum(sigma_qq, dim=[1, 2]).view(n, 1)
+        else:
+            sigma_qq = 0
+
+        if self.p >= 1 and self.q >= 1:
+            sigma_pq = torch.zeros(n, self.r, self.p, self.q)
+            for i in range(self.p):
+                for j in range(self.q):
+                    sigma_pq[:, :, i, j] = hp[:, :, i] * rq[:, :, j] - hq[:, :, j] * rp[:, :, i]
+            sigma_pq = torch.sum(sigma_pq, dim=[1, 2, 3]).view(n, 1)
+        else:
+            sigma_pq = 0
+
+        return score_sigma_0 + score_sigma_p + score_sigma_q + sigma_pp + sigma_qq + sigma_pq
 
     def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
         """
@@ -379,49 +442,64 @@ class Keci(BaseKGE):
         (3) Perform Cl multiplication
         (4) Inner product of (3) and all entity embeddings
 
+        forward_k_vs_with_explicit and this funcitons are identical
         Parameter
         ---------
         x: torch.LongTensor with (n,2) shape
-
         Returns
         -------
         torch.FloatTensor with (n, |E|) shape
         """
         # (1) Retrieve real-valued embedding vectors.
         head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
-        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities.
-        a0, ap, aq = self.construct_cl_multivector(head_ent_emb, r=self.r, p=self.p, q=self.q)
-        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for relations.
-        b0, bp, bq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
+        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations
+        h0, hp, hq = self.construct_cl_multivector(head_ent_emb, r=self.r, p=self.p, q=self.q)
+        r0, rp, rq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
 
-        # (4) Clifford multiplication of (2) and (3).
-        # AB_pp, AB_qq, AB_pq
-        # AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq = self.clifford_mul_reduced_interactions(a0, ap, aq, b0, bp, bq)
-        AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq = self.clifford_mul(a0, ap, aq, b0, bp, bq)
+        # (3) Extract all entity embeddings
+        E = self.entity_embeddings.weight
+        t0 = E[:, :self.r]
+        # (4) Compute a triple score based on interactions described by the basis 1. Eq. 20
+        h0r0t0 = self.coefficients['r'] * torch.einsum('br,er->be', h0 * r0, t0)
 
-        # (7) Inner product of AB_0 and a0 of all entities.
-        A_score = torch.einsum('bk,ek->be', AB_0, self.entity_embeddings.weight[:, :self.r])
-        # (8) Inner product of AB_p and ap of all entities.
+        # (5) Compute a triple score based on interactions described by the bases of p {e_1, ..., e_p}. Eq. 21
         if self.p > 0:
-            B_score = torch.einsum('bkp,ekp->be', AB_p,
-                                   self.entity_embeddings.weight[:, self.r: self.r + (self.r * self.p)]
-                                   .view(self.num_entities, self.r, self.p))
+            tp = E[:, self.r: self.r + (self.r * self.p)].view(self.num_entities, self.r, self.p)
+            hp_rp_t0 = torch.einsum('brp, er  -> be', hp * rp, t0)
+            h0_rp_tp = torch.einsum('brp, erp -> be', torch.einsum('br,  brp -> brp', h0, rp), tp)
+            hp_r0_tp = torch.einsum('brp, erp -> be', torch.einsum('brp, br  -> brp', hp, r0), tp)
+            score_p = self.coefficients['p']['0'] * hp_rp_t0 + self.coefficients['p']['1'] * h0_rp_tp + \
+                      self.coefficients['p']['2'] * hp_r0_tp
         else:
-            B_score = 0
-        # (9) Inner product of AB_q and aq of all entities.
+            score_p = 0
+
+        # (5) Compute a triple score based on interactions described by the bases of q {e_{p+1}, ..., e_{p+q}}. Eq. 22
         if self.q > 0:
-            C_score = torch.einsum('bkq,ekq->be', AB_q,
-                                   self.entity_embeddings.weight[:, -(self.r * self.q):]
-                                   .view(self.num_entities, self.r, self.q))
+            tq = E[:, -(self.r * self.q):].view(self.num_entities, self.r, self.q)
+            h0_rq_tq = torch.einsum('brq, erq -> be', torch.einsum('br,  brq -> brq', h0, rq), tq)
+            hq_r0_tq = torch.einsum('brq, erq -> be', torch.einsum('brq, br  -> brq', hq, r0), tq)
+            hq_rq_t0 = torch.einsum('brq, er  -> be', hq * rq, t0)
+            score_q = self.coefficients['q']['0'] * h0_rq_tq + self.coefficients['q']['1'] * hq_r0_tq - \
+                      self.coefficients['q']['2'] * hq_rq_t0
         else:
-            C_score = 0
-        # (10) Aggregate (7,8,9).
-        A_B_C_score = A_score + B_score + C_score
-        # (11) Compute inner products of AB_pp, AB_qq, AB_pq and respective identity matrices of all entities.
-        D_E_F_score = (torch.einsum('bkpp->b', AB_pp) + torch.einsum('bkqq->b', AB_qq) + torch.einsum('bkpq->b', AB_pq))
-        D_E_F_score = D_E_F_score.view(len(head_ent_emb), 1)
-        # (12) Score
-        return A_B_C_score + D_E_F_score
+            score_q = 0
+
+        if self.p >= 2:
+            sigma_pp = self.coefficients['pp'] * (torch.sum(self.compute_sigma_pp(hp, rp), dim=[1, 2]).unsqueeze(-1))
+        else:
+            sigma_pp = 0
+
+        if self.q >= 2:
+            sigma_qq = self.coefficients['qq'] * (torch.sum(self.compute_sigma_qq(hq, rq), dim=[1, 2]).unsqueeze(-1))
+        else:
+            sigma_qq = 0
+
+        if self.p >= 2 and self.q >= 2:
+            sigma_pq = self.coefficients['pq'] * (
+                torch.sum(self.compute_sigma_pq(hp=hp, hq=hq, rp=rp, rq=rq), dim=[1, 2, 3]).unsqueeze(-1))
+        else:
+            sigma_pq = 0
+        return h0r0t0 + score_p + score_q + sigma_pp + sigma_qq + sigma_pq
 
     def construct_cl_multivector(self, x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[
         torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
@@ -479,7 +557,6 @@ class Keci(BaseKGE):
 
         c0, cp, cq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
 
-
         # (4) Clifford multiplication of (2) and (3).
         # AB_pp, AB_qq, AB_pq
         AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq = self.clifford_mul(a0, ap, aq, b0, bp, bq)
@@ -502,7 +579,6 @@ class Keci(BaseKGE):
         D_E_F_score = (torch.einsum('bkpp->b', AB_pp) + torch.einsum('bkqq->b', AB_qq) + torch.einsum('bkpq->b', AB_pq))
         # (12) Score
         return A_B_C_score + D_E_F_score
-
 
     def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor:
         """
@@ -534,7 +610,7 @@ class Keci(BaseKGE):
         AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq = self.clifford_mul(a0, ap, aq, b0, bp, bq)
 
         # b e r
-        selected_tail_entity_embeddings=self.entity_embeddings(target_entity_idx)
+        selected_tail_entity_embeddings = self.entity_embeddings(target_entity_idx)
         # (7) Inner product of AB_0 and a0 of all entities.
         A_score = torch.einsum('br,ber->be', AB_0, selected_tail_entity_embeddings[:, :self.r])
 
@@ -559,18 +635,3 @@ class Keci(BaseKGE):
         D_E_F_score = D_E_F_score.view(len(head_ent_emb), 1)
         # (12) Score
         return A_B_C_score + D_E_F_score
-
-    def assert_p_and_q(self, p, q):
-        r = self.embedding_dim / (p + q + 1)
-        if r.is_integer() and r > 0:
-            return True
-        else:
-            return False
-
-    def update_p_and_q(self, p, q):
-        if self.assert_p_and_q(p, q):
-            self.r = self.embedding_dim // (p + q + 1)
-            self.p = p
-            self.q = q
-        else:
-            raise ArithmeticError('wrong p or q')

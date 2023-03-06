@@ -74,11 +74,8 @@ class Evaluator:
         # (1) Exit, if the flag is not set
         if self.args.eval_model is None:
             return
-        # print("** EVAL **")
         self.vocab_preparation(dataset)
-        # print('Evaluation Starts.')
         if self.args.num_folds_for_cv > 1:
-            # the evaluation must have done in the training part
             return
         if isinstance(self.args.eval_model, bool):
             print('Wrong input:RESET')
