@@ -482,7 +482,7 @@ class Keci(BaseKGE):
             h0_rq_tq = torch.einsum('brq, erq -> be', torch.einsum('br,  brq -> brq', h0, rq), tq)
             hq_r0_tq = torch.einsum('brq, erq -> be', torch.einsum('brq, br  -> brq', hq, r0), tq)
             hq_rq_t0 = torch.einsum('brq, er  -> be', hq * rq, t0)
-            score_q = self.q_coefficients['0'] * h0_rq_tq + self.p_coefficients['1'] * hq_r0_tq - \
+            score_q = self.q_coefficients['0'] * h0_rq_tq + self.q_coefficients['1'] * hq_r0_tq - \
                       self.q_coefficients['2'] * hq_rq_t0
         else:
             score_q = 0
