@@ -271,3 +271,72 @@ class PQS(AbstractCallback):
 
     def on_train_batch_end(self, *args, **kwargs):
         return
+
+
+class Search(AbstractCallback):
+    def __init__(self, num_epochs: int, embedding_dim: int):
+        super().__init__()
+        self.counter = 0
+        self.last_eval = None
+        self.configurations = []
+
+    @staticmethod
+    def find_valid_p_q(dim):
+        results = set()
+        p = 0
+        q = 0
+        denom = p + q + 1
+        while True:
+            if denom == dim:
+                break
+
+            r = dim / denom
+            if r.is_integer():
+                results.add((p, q))
+                assert (dim / (p + q + 1)).is_integer()
+            else:
+                for i in range(denom):
+                    if (dim / (i + denom - i + 1)).is_integer():
+                        results.add((i, denom - i))
+
+            denom += 1
+
+        return results
+
+    def on_fit_start(self, trainer, model):
+        configurations = self.find_valid_p_q(model.embedding_dim)
+        print(f"Total p and q configs: {len(configurations)}")
+        self.configurations = configurations
+
+    def on_fit_end(self, trainer, model):
+        print(model.p, model.q, model.r)
+        # model.q=1
+        # model.r//=2
+
+    def signal(self, trainer, model):
+        initial_r, initial_p, initial_q = model.r, model.p, model.q
+        model.eval()
+        for p, q in self.configurations:
+            r = (model.embedding_dim / (p + q + 1))
+            assert r.is_integer()
+
+            model.r, model.p, model.q = int(r), p, q
+
+            x = trainer.evaluator.eval(dataset=trainer.dataset, trained_model=model,
+                                       form_of_labelling=trainer.form_of_labelling,
+                                       during_training=True)
+            print(p, q)
+            for i in x.items():
+                print(i)
+
+        model.r, model.p, model.q=initial_r, initial_p, initial_q
+        model.train()
+
+    def on_train_epoch_end(self, trainer, model):
+        self.counter += 1
+        # validation check rule can be determined by the epoch at which training stagnates
+        if self.counter == 99:
+            self.signal(trainer, model)
+
+    def on_train_batch_end(self, *args, **kwargs):
+        return
