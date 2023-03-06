@@ -51,7 +51,7 @@ def preprocesses_input_args(arg):
     assert arg.init_param in ['xavier_normal', None]
     for i in arg.callbacks:
         try:
-            assert 'PPE' in i or 'EFS' in i or 'PQS' in i
+            assert 'PPE' in i or 'EFS' in i or 'Search' in i
         except AssertionError:
             raise AssertionError(f'Unexpected input for callbacks ***\t{i}\t***')
 
