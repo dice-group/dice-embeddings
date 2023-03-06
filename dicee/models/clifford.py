@@ -229,23 +229,26 @@ class Keci(BaseKGE):
         self.r = int(self.r)
         self.requires_grad_for_interactions = True
 
-        self.coefficients = torch.nn.ParameterDict({
-            'r': torch.nn.Parameter(torch.ones(1, dtype=torch.float),
-                                    requires_grad=self.requires_grad_for_interactions),
-            'pp': torch.nn.Parameter(torch.ones(1, dtype=torch.float),
-                                     requires_grad=self.requires_grad_for_interactions),
-            'qq': torch.nn.Parameter(torch.ones(1, dtype=torch.float),
-                                     requires_grad=self.requires_grad_for_interactions),
-            'pq': torch.nn.Parameter(torch.ones(1, dtype=torch.float),
-                                     requires_grad=self.requires_grad_for_interactions),
-            'p': torch.nn.ParameterDict(
-                {str(i): torch.nn.Parameter(torch.ones(1, dtype=torch.float),
-                                            requires_grad=self.requires_grad_for_interactions) for i in
-                 range(3)}),
-            'q': torch.nn.ParameterDict(
-                {str(i): torch.nn.Parameter(torch.ones(1, dtype=torch.float),
-                                            requires_grad=self.requires_grad_for_interactions) for i in
-                 range(3)})})
+        if self.p > 0:
+            self.p_coefficients = torch.nn.ParameterDict(
+                {str(i): torch.nn.Parameter(torch.ones(1, dtype=torch.float, device=self.device),
+                                            requires_grad=self.requires_grad_for_interactions) for i in range(3)})
+
+        if self.q > 0:
+            self.q_coefficients = torch.nn.ParameterDict(
+                {str(i): torch.nn.Parameter(torch.ones(1, dtype=torch.float, device=self.device),
+                                            requires_grad=self.requires_grad_for_interactions) for i in range(3)})
+
+        if self.p >= 2:
+            self.pp = torch.nn.Parameter(torch.ones(1, dtype=torch.float, device=self.device),
+                                         requires_grad=self.requires_grad_for_interactions)
+        if self.q >= 2:
+            self.qq = torch.nn.Parameter(torch.ones(1, dtype=torch.float, device=self.device),
+                                         requires_grad=self.requires_grad_for_interactions)
+
+        if self.p >= 1 and self.q >= 1:
+            self.pq = torch.nn.Parameter(torch.ones(1, dtype=torch.float, device=self.device),
+                                         requires_grad=self.requires_grad_for_interactions)
 
     def compute_sigma_pp(self, hp, rp):
         """
@@ -460,7 +463,7 @@ class Keci(BaseKGE):
         E = self.entity_embeddings.weight
         t0 = E[:, :self.r]
         # (4) Compute a triple score based on interactions described by the basis 1. Eq. 20
-        h0r0t0 = self.coefficients['r'] * torch.einsum('br,er->be', h0 * r0, t0)
+        h0r0t0 = torch.einsum('br,er->be', h0 * r0, t0)
 
         # (5) Compute a triple score based on interactions described by the bases of p {e_1, ..., e_p}. Eq. 21
         if self.p > 0:
@@ -468,8 +471,8 @@ class Keci(BaseKGE):
             hp_rp_t0 = torch.einsum('brp, er  -> be', hp * rp, t0)
             h0_rp_tp = torch.einsum('brp, erp -> be', torch.einsum('br,  brp -> brp', h0, rp), tp)
             hp_r0_tp = torch.einsum('brp, erp -> be', torch.einsum('brp, br  -> brp', hp, r0), tp)
-            score_p = self.coefficients['p']['0'] * hp_rp_t0 + self.coefficients['p']['1'] * h0_rp_tp + \
-                      self.coefficients['p']['2'] * hp_r0_tp
+            score_p = self.p_coefficients['0'] * hp_rp_t0 + self.p_coefficients['1'] * h0_rp_tp + \
+                      self.p_coefficients['2'] * hp_r0_tp
         else:
             score_p = 0
 
@@ -479,23 +482,23 @@ class Keci(BaseKGE):
             h0_rq_tq = torch.einsum('brq, erq -> be', torch.einsum('br,  brq -> brq', h0, rq), tq)
             hq_r0_tq = torch.einsum('brq, erq -> be', torch.einsum('brq, br  -> brq', hq, r0), tq)
             hq_rq_t0 = torch.einsum('brq, er  -> be', hq * rq, t0)
-            score_q = self.coefficients['q']['0'] * h0_rq_tq + self.coefficients['q']['1'] * hq_r0_tq - \
-                      self.coefficients['q']['2'] * hq_rq_t0
+            score_q = self.q_coefficients['0'] * h0_rq_tq + self.p_coefficients['1'] * hq_r0_tq - \
+                      self.q_coefficients['2'] * hq_rq_t0
         else:
             score_q = 0
 
         if self.p >= 2:
-            sigma_pp = self.coefficients['pp'] * (torch.sum(self.compute_sigma_pp(hp, rp), dim=[1, 2]).unsqueeze(-1))
+            sigma_pp = self.pp * (torch.sum(self.compute_sigma_pp(hp, rp), dim=[1, 2]).unsqueeze(-1))
         else:
             sigma_pp = 0
 
         if self.q >= 2:
-            sigma_qq = self.coefficients['qq'] * (torch.sum(self.compute_sigma_qq(hq, rq), dim=[1, 2]).unsqueeze(-1))
+            sigma_qq = self.qq * (torch.sum(self.compute_sigma_qq(hq, rq), dim=[1, 2]).unsqueeze(-1))
         else:
             sigma_qq = 0
 
         if self.p >= 2 and self.q >= 2:
-            sigma_pq = self.coefficients['pq'] * (
+            sigma_pq = self.pq * (
                 torch.sum(self.compute_sigma_pq(hp=hp, hq=hq, rp=rp, rq=rq), dim=[1, 2, 3]).unsqueeze(-1))
         else:
             sigma_pq = 0
