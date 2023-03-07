@@ -228,27 +228,18 @@ class Keci(BaseKGE):
             # print(f'r is corrected to {int(self.r)}')
         self.r = int(self.r)
         self.requires_grad_for_interactions = True
+        print(f'r:{self.r}\t p:{self.p}\t q:{self.q}')
 
         if self.p > 0:
-            self.p_coefficients = torch.nn.ParameterDict(
-                {str(i): torch.nn.Parameter(torch.ones(1, dtype=torch.float, device=self.device),
-                                            requires_grad=self.requires_grad_for_interactions) for i in range(3)})
-
+            self.p_coefficients = torch.nn.Parameter(
+                torch.tensor([1.0 for _ in range(self.p)], dtype=torch.float, device=self.device),
+                requires_grad=self.requires_grad_for_interactions)
+            print(f'with base p coefficients:{self.p_coefficients}')
         if self.q > 0:
-            self.q_coefficients = torch.nn.ParameterDict(
-                {str(i): torch.nn.Parameter(torch.ones(1, dtype=torch.float, device=self.device),
-                                            requires_grad=self.requires_grad_for_interactions) for i in range(3)})
-
-        if self.p >= 2:
-            self.pp = torch.nn.Parameter(torch.ones(1, dtype=torch.float, device=self.device),
-                                         requires_grad=self.requires_grad_for_interactions)
-        if self.q >= 2:
-            self.qq = torch.nn.Parameter(torch.ones(1, dtype=torch.float, device=self.device),
-                                         requires_grad=self.requires_grad_for_interactions)
-
-        if self.p >= 1 and self.q >= 1:
-            self.pq = torch.nn.Parameter(torch.ones(1, dtype=torch.float, device=self.device),
-                                         requires_grad=self.requires_grad_for_interactions)
+            self.q_coefficients = torch.nn.Parameter(
+                torch.tensor([1.0 for _ in range(self.q)], dtype=torch.float, device=self.device),
+                requires_grad=self.requires_grad_for_interactions)
+            print(f'with base q coefficients:{self.q_coefficients}')
 
     def compute_sigma_pp(self, hp, rp):
         """
@@ -436,6 +427,19 @@ class Keci(BaseKGE):
 
         return score_sigma_0 + score_sigma_p + score_sigma_q + sigma_pp + sigma_qq + sigma_pq
 
+    def apply_coefficients(self, h0, hp, hq, r0, rp, rq):
+        # Though about this but it didn't improve alot
+        # h0 = h0 * self.r_coefficients
+        # r0 = r0 * self.r_coefficients
+        if self.p > 0:
+            hp = hp * self.p_coefficients
+            rp = rp * self.p_coefficients
+
+        if self.q > 0:
+            hq = hq * self.q_coefficients
+            rq = rq * self.q_coefficients
+        return h0, hp, hq, r0, rp, rq
+
     def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
         """
         Kvsall training
@@ -459,6 +463,7 @@ class Keci(BaseKGE):
         h0, hp, hq = self.construct_cl_multivector(head_ent_emb, r=self.r, p=self.p, q=self.q)
         r0, rp, rq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
 
+        h0, hp, hq, h0, rp, rq = self.apply_coefficients(h0, hp, hq, h0, rp, rq)
         # (3) Extract all entity embeddings
         E = self.entity_embeddings.weight
         t0 = E[:, :self.r]
@@ -471,8 +476,7 @@ class Keci(BaseKGE):
             hp_rp_t0 = torch.einsum('brp, er  -> be', hp * rp, t0)
             h0_rp_tp = torch.einsum('brp, erp -> be', torch.einsum('br,  brp -> brp', h0, rp), tp)
             hp_r0_tp = torch.einsum('brp, erp -> be', torch.einsum('brp, br  -> brp', hp, r0), tp)
-            score_p = self.p_coefficients['0'] * hp_rp_t0 + self.p_coefficients['1'] * h0_rp_tp + \
-                      self.p_coefficients['2'] * hp_r0_tp
+            score_p = hp_rp_t0 + h0_rp_tp + hp_r0_tp
         else:
             score_p = 0
 
@@ -482,24 +486,22 @@ class Keci(BaseKGE):
             h0_rq_tq = torch.einsum('brq, erq -> be', torch.einsum('br,  brq -> brq', h0, rq), tq)
             hq_r0_tq = torch.einsum('brq, erq -> be', torch.einsum('brq, br  -> brq', hq, r0), tq)
             hq_rq_t0 = torch.einsum('brq, er  -> be', hq * rq, t0)
-            score_q = self.q_coefficients['0'] * h0_rq_tq + self.q_coefficients['1'] * hq_r0_tq - \
-                      self.q_coefficients['2'] * hq_rq_t0
+            score_q = h0_rq_tq + hq_r0_tq - hq_rq_t0
         else:
             score_q = 0
 
         if self.p >= 2:
-            sigma_pp = self.pp * (torch.sum(self.compute_sigma_pp(hp, rp), dim=[1, 2]).unsqueeze(-1))
+            sigma_pp = torch.sum(self.compute_sigma_pp(hp, rp), dim=[1, 2]).unsqueeze(-1)
         else:
             sigma_pp = 0
 
         if self.q >= 2:
-            sigma_qq = self.qq * (torch.sum(self.compute_sigma_qq(hq, rq), dim=[1, 2]).unsqueeze(-1))
+            sigma_qq = torch.sum(self.compute_sigma_qq(hq, rq), dim=[1, 2]).unsqueeze(-1)
         else:
             sigma_qq = 0
 
         if self.p >= 2 and self.q >= 2:
-            sigma_pq = self.pq * (
-                torch.sum(self.compute_sigma_pq(hp=hp, hq=hq, rp=rp, rq=rq), dim=[1, 2, 3]).unsqueeze(-1))
+            sigma_pq = torch.sum(self.compute_sigma_pq(hp=hp, hq=hq, rp=rp, rq=rq), dim=[1, 2, 3]).unsqueeze(-1)
         else:
             sigma_pq = 0
         return h0r0t0 + score_p + score_q + sigma_pp + sigma_qq + sigma_pq
