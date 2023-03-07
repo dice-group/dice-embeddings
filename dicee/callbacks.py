@@ -193,52 +193,12 @@ class FPPE(AbstractPPECallback):
         print(f"Forgetful Ensemble Coefficients with lambda {lamb}:", self.alphas)
 
 
-class PQS(AbstractCallback):
+class Eval(AbstractCallback):
     def __init__(self, path):
         super().__init__()
         self.path = path
         self.reports = []
         self.epoch_counter = 0
-
-    def r_p_q_search(self, trainer, model):
-        p_q = []
-        # cartesian product (1,2,3,4) (1,2,3,4)
-        """
-        if model.assert_p_and_q(p=1, q=0):
-            p_q.append((1, 0))
-        if model.assert_p_and_q(p=0, q=1):
-            p_q.append((0, 1))
-        if model.assert_p_and_q(p=1, q=1):
-            p_q.append((1, 1))
-        if model.assert_p_and_q(p=2, q=0):
-            p_q.append((2, 0))
-        if model.assert_p_and_q(p=0, q=2):
-            p_q.append((0, 2))
-        if model.assert_p_and_q(p=0, q=3):
-            p_q.append((0, 3))
-        if model.assert_p_and_q(p=3, q=0):
-            p_q.append((3, 0))
-        if model.assert_p_and_q(p=1, q=2):
-            p_q.append((1, 2))
-        if model.assert_p_and_q(p=2, q=1):
-            p_q.append((2, 1))
-        """
-
-        config = []
-        model.eval()
-
-        model.eval()
-        for p, q in p_q:
-            model.update_p_and_q(p, q)
-
-            report = trainer.evaluator.eval(dataset=trainer.dataset, trained_model=model,
-                                            form_of_labelling=trainer.form_of_labelling, during_training=True)
-            train_mrr = report['Train']['MRR']
-            val_mrr = report['Val']['MRR']
-            config.append((p, q, train_mrr, val_mrr))
-        model.update_p_and_q(init_p, init_q)
-        model.train()
-        return config
 
     def on_fit_start(self, trainer, model):
         pass
