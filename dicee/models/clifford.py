@@ -232,12 +232,12 @@ class Keci(BaseKGE):
 
         if self.p > 0:
             self.p_coefficients = torch.nn.Parameter(
-                torch.tensor([1.0 for _ in range(self.p)], dtype=torch.float, device=self.device),
+                torch.tensor([0.0 for _ in range(self.p)], dtype=torch.float, device=self.device),
                 requires_grad=self.requires_grad_for_interactions)
             print(f'with base p coefficients:{self.p_coefficients}')
         if self.q > 0:
             self.q_coefficients = torch.nn.Parameter(
-                torch.tensor([1.0 for _ in range(self.q)], dtype=torch.float, device=self.device),
+                torch.tensor([0.0 for _ in range(self.q)], dtype=torch.float, device=self.device),
                 requires_grad=self.requires_grad_for_interactions)
             print(f'with base q coefficients:{self.q_coefficients}')
 
