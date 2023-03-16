@@ -2,8 +2,9 @@ import os
 import numpy as np
 import torch
 import datetime
-import pytorch_lightning as pl
-from .models import *
+from .types import Tuple
+from .models import Shallom, ConEx, AConEx, QMult, OMult, ConvQ, ConvO, ComplEx, DistMult, TransE, Keci, CMult
+from .models.base_model import BaseKGE
 import time
 import pandas as pd
 import json
@@ -61,7 +62,7 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
         return intialize_model(args)
 
 
-def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[BaseKGE, dict, dict]:
+def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[object, dict, dict]:
     """ Load weights and initialize pytorch module from namespace arguments"""
     print(f'Loading model {model_name}...', end=' ')
     start_time = time.time()
@@ -195,7 +196,7 @@ def store(trainer,
     :param dataset: an instance of KG see core.knowledge_graph.
     :param full_storage_path: path to save parameters.
     :param model_name: string representation of the name of the model.
-    :param trained_model: an instance of BaseKGE(pl.LightningModule) see core.models.base_model .
+    :param trained_model: an instance of BaseKGE see core.models.base_model .
     :param save_as_csv: for easy access of embeddings.
     :return:
     """
@@ -273,7 +274,7 @@ def read_or_load_kg(args, cls):
     return kg
 
 
-def intialize_model(args: dict) -> Tuple[pl.LightningModule, str]:
+def intialize_model(args: dict) -> Tuple[object, str]:
     # @TODO: Apply construct_krone as callback? or use KronE_QMult as a prefix.
     # @TODO: Remove form_of_labelling
     model_name = args['model']
