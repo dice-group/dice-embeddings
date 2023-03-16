@@ -1,6 +1,5 @@
 from .base_model import BaseKGE
-import torch
-
+from ..types import torch
 
 class CMult(BaseKGE):
     """

@@ -11,10 +11,11 @@ setup(
                       'polars>=0.15.13',
                       'pyarrow>=8.0.0',
                       'torch>=1.13.0',
-                      'pytorch-lightning>=1.6.4',
+                      'pytorch-lightning==1.6.4',
                       'scikit-learn>=1.1.1',
                       'pytest>=6.2.5',
-                      'gradio>=3.0.17'
+                      'gradio>=3.0.17',
+                      'matplotlib>=3.6.2'
                       ],
     author='Caglar Demir',
     author_email='caglardemir8@gmail.com',

@@ -1,7 +1,5 @@
-import numpy as np
-import torch
-from typing import Tuple
 from .base_model import *
+from ..types import torch, Tuple
 
 
 class ConEx(BaseKGE):
@@ -10,8 +8,8 @@ class ConEx(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'ConEx'
-        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
+        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
         self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
         # Convolution
         self.conv2d = torch.nn.Conv2d(in_channels=1, out_channels=self.num_of_output_channels,
@@ -39,10 +37,10 @@ class ConEx(BaseKGE):
                        emb_rel_real.view(-1, 1, 1, self.embedding_dim // 2),
                        emb_rel_imag_i.view(-1, 1, 1, self.embedding_dim // 2)], 2)
 
-        x = F.relu(self.bn_conv2d(self.conv2d(x)))
+        x = torch.nn.functional.relu(self.bn_conv2d(self.conv2d(x)))
         x = self.feature_map_dropout(x)
         x = x.view(x.shape[0], -1)  # reshape for NN.
-        x = F.relu(self.norm_fc1(self.fc1(x)))
+        x = torch.nn.functional.relu(self.norm_fc1(self.fc1(x)))
         return torch.chunk(x, 2, dim=1)
 
     def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
@@ -119,8 +117,8 @@ class AConEx(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'AConEx'
-        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
+        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
         self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
         # Convolution
         self.conv2d = torch.nn.Conv2d(in_channels=1, out_channels=self.num_of_output_channels,
@@ -148,10 +146,10 @@ class AConEx(BaseKGE):
                        emb_rel_real.view(-1, 1, 1, self.embedding_dim // 2),
                        emb_rel_imag_i.view(-1, 1, 1, self.embedding_dim // 2)], 2)
 
-        x = F.relu(self.bn_conv2d(self.conv2d(x)))
+        x = torch.nn.functional.relu(self.bn_conv2d(self.conv2d(x)))
         x = self.feature_map_dropout(x)
         x = x.view(x.shape[0], -1)  # reshape for NN.
-        x = F.relu(self.norm_fc1(self.fc1(x)))
+        x = torch.nn.functional.relu(self.norm_fc1(self.fc1(x)))
         #
         return torch.chunk(x, 4, dim=1)
 
@@ -231,8 +229,8 @@ class ComplEx(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'ComplEx'
-        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
+        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
         self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
     def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:

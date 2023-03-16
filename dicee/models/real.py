@@ -1,8 +1,6 @@
-import torch
-from .base_model import *
-import numpy as np
-from math import sqrt
+from .base_model import BaseKGE
 from .static_funcs import quaternion_mul
+from ..types import Tuple, Union, torch, np
 
 
 class DistMult(BaseKGE):
@@ -13,8 +11,8 @@ class DistMult(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'DistMult'
-        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
+        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
         self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
     def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
@@ -46,8 +44,8 @@ class TransE(BaseKGE):
         self.name = 'TransE'
         self._norm = 2
         self.margin = 4
-        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
+        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
         self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
     def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
@@ -76,13 +74,13 @@ class Shallom(BaseKGE):
         self.name = 'Shallom'
         # Fixed
         shallom_width = int(2 * self.embedding_dim)
-        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
+        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
         self.param_init(self.entity_embeddings.weight.data)
-        self.shallom = nn.Sequential(nn.Dropout(self.input_dropout_rate),
+        self.shallom = torch.nn.Sequential(torch.nn.Dropout(self.input_dropout_rate),
                                      torch.nn.Linear(self.embedding_dim * 2, shallom_width),
                                      self.normalizer_class(shallom_width),
-                                     nn.ReLU(),
-                                     nn.Dropout(self.hidden_dropout_rate),
+                                     torch.nn.ReLU(),
+                                     torch.nn.Dropout(self.hidden_dropout_rate),
                                      torch.nn.Linear(shallom_width, self.num_relations))
 
     def get_embeddings(self) -> Tuple[np.ndarray, None]:
@@ -114,10 +112,10 @@ class Pyke(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'Pyke'
-        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
+        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
         self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
-        self.loss = nn.TripletMarginLoss(margin=1.0, p=2)
+        self.loss = torch.nn.TripletMarginLoss(margin=1.0, p=2)
 
     def get_embeddings(self) -> Tuple[np.ndarray, Union[np.ndarray, None]]:
         return self.entity_embeddings.weight.data.data.detach(), None
@@ -140,4 +138,3 @@ class Pyke(BaseKGE):
         mean_pos_emb = pos_emb.mean(dim=1)
         mean_neg_emb = neg_emb.mean(dim=1)
         return anchor, mean_pos_emb, mean_neg_emb
-

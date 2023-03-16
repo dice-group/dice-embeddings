@@ -1,4 +1,4 @@
-from dicee.executer import Execute  # , get_default_arguments
+from dicee.executer import Execute
 import pytorch_lightning as pl
 import argparse
 

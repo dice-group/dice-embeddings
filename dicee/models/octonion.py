@@ -1,5 +1,5 @@
-import torch
-from .base_model import *
+from ..types import torch
+from .base_model import BaseKGE
 
 
 def octonion_mul(*, O_1, O_2):
@@ -48,8 +48,8 @@ class OMult(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'QMult'
-        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
+        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
         self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
     def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
@@ -135,8 +135,8 @@ class ConvO(BaseKGE):
     def __init__(self, args: dict):
         super().__init__(args=args)
         self.name = 'ConvO'
-        self.entity_embeddings = nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = nn.Embedding(self.num_relations, self.embedding_dim)
+        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
         self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
         # Convolution
         self.conv2d = torch.nn.Conv2d(in_channels=1, out_channels=self.num_of_output_channels,
@@ -166,10 +166,10 @@ class ConvO(BaseKGE):
                        emb_rel_e5.view(-1, 1, 1, self.embedding_dim // 8),
                        emb_rel_e6.view(-1, 1, 1, self.embedding_dim // 8),
                        emb_rel_e7.view(-1, 1, 1, self.embedding_dim // 8), ], 2)
-        x = F.relu(self.bn_conv2d(self.conv2d(x)))
+        x = torch.nn.functional.relu(self.bn_conv2d(self.conv2d(x)))
         x = self.feature_map_dropout(x)
         x = x.view(x.shape[0], -1)  # reshape for NN.
-        x = F.relu(self.norm_fc1(self.fc1(x)))
+        x = torch.nn.functional.relu(self.norm_fc1(self.fc1(x)))
         return torch.chunk(x, 8, dim=1)
 
     def forward_triples(self, x: torch.Tensor) -> torch.Tensor:

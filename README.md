@@ -35,7 +35,7 @@ pip install dicee
 or
 ```
 git clone https://github.com/dice-group/dice-embeddings.git
-conda create -n dice python=3.9.12
+conda create -n dice python=3.9.12 --no-default-packages
 conda activate dice
 pip3 install pandas==1.5.1 
 pip3 install polars==0.15.13 
@@ -46,8 +46,7 @@ pip3 install pytorch-lightning==1.6.4
 pip3 install scikit-learn==1.1.1
 pip3 install pytest==6.2.5
 pip3 install gradio==3.0.17
-pip install matplotlib==3.6.2
-
+pip3 install matplotlib==3.6.2
 ```
 To test the Installation
 ```
@@ -60,9 +59,7 @@ pytest -p no:warnings --ff # to run the failures first and then the rest of the 
 To see the software architecture, execute the following command
 ```
 pyreverse dicee/ && dot -Tpng -x classes.dot -o dice_software.png && eog dice_software.png
-```
-
-```
+# or
 pyreverse dicee/trainer && dot -Tpng -x classes.dot -o trainer.png && eog trainer.png
 ```
 ## Applications
@@ -125,9 +122,7 @@ missing_triples = pre_trained_kge.find_missing_triples(confidence=0.95, entities
 ```
 
 ## How to Train a KGE model 
-> How to use the framework:`documents/using_dice_embedding_framework`.
-
-> Training different strategies: `documents/training_techniques`.
+> How to use the framework:`examples`.
 
 ## How to Deploy
 Any pretrained model can be deployed with an ease. Moreover, anyone on the internet can use the pretrained model with ```--share``` parameter.

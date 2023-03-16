@@ -260,6 +260,7 @@ class KvsSampleDataset(torch.utils.data.Dataset):
                  label_smoothing_rate: float = 0.0):
         super().__init__()
         assert isinstance(train_set, np.ndarray)
+        assert isinstance(neg_sample_ratio,int)
         self.train_data = train_set
         self.num_entities = num_entities
         self.num_relations = num_relations

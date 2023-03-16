@@ -1,14 +1,6 @@
-import pytorch_lightning as pl
-import torch
-from torch import nn
-from torch.nn import functional as F
-from torchmetrics import Accuracy as accuracy
-from typing import List, Any, Tuple, Union, Dict
-import numpy as np
-#from dicee.custom_opt import Sls, AdamSLS, Adan
-
-
-class BaseKGE(pl.LightningModule):
+from ..types import List, Any, Tuple, Union, Dict, np, torch
+import pytorch_lightning
+class BaseKGE(pytorch_lightning.LightningModule):
     def __init__(self, args: dict):
         super().__init__()
         self.args = args
@@ -260,6 +252,8 @@ class BaseKGE(pl.LightningModule):
         self.loss_history.append(avg)
 
     def validation_step(self, batch, batch_idx):
+        """
+        # from torchmetrics import Accuracy as accuracy
         if len(batch) == 4:
             h, r, t, y_batch = batch
             predictions = self.forward_triples(h, r, t)
@@ -270,14 +264,18 @@ class BaseKGE(pl.LightningModule):
         val_loss = self.loss_function(predictions, y_batch)
         val_accuracy = accuracy(predictions, y_batch)
         return {'val_acc': val_accuracy, 'val_loss': val_loss}
+        """
 
     def validation_epoch_end(self, outputs: List[Any]) -> None:
+        """
         x = [[x['val_acc'], x['val_loss']] for x in outputs]
         avg_val_acc, avg_loss = torch.tensor(x).mean(dim=0)[:]
         self.log('avg_loss_per_epoch', avg_loss, on_epoch=True, prog_bar=True)
         self.log('avg_val_acc_per_epoch', avg_val_acc, on_epoch=True, prog_bar=True)
+        """
 
     def test_step(self, batch, batch_idx):
+        """
         if len(batch) == 4:
             h, r, t, y_batch = batch
             predictions = self.forward_triples(h, r, t)
@@ -286,10 +284,14 @@ class BaseKGE(pl.LightningModule):
             predictions = self.forward_k_vs_all(h, x)
         test_accuracy = accuracy(predictions, y_batch)
         return {'test_accuracy': test_accuracy}
+        """
+
 
     def test_epoch_end(self, outputs: List[Any]):
+        """
         avg_test_accuracy = torch.stack([x['test_accuracy'] for x in outputs]).mean()
         self.log('avg_test_accuracy', avg_test_accuracy, on_epoch=True, prog_bar=True)
+        """
 
     def test_dataloader(self) -> None:
         pass
