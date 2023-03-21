@@ -427,9 +427,7 @@ class Keci(BaseKGE):
         return score_sigma_0 + score_sigma_p + score_sigma_q + sigma_pp + sigma_qq + sigma_pq
 
     def apply_coefficients(self, h0, hp, hq, r0, rp, rq):
-        # Though about this but it didn't improve alot
-        # h0 = h0 * self.r_coefficients
-        # r0 = r0 * self.r_coefficients
+        """ Multiplying a base vector with its scalar coefficient """
         if self.p > 0:
             hp = hp * self.p_coefficients
             rp = rp * self.p_coefficients
