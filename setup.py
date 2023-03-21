@@ -4,7 +4,7 @@ with open('README.md', 'r') as fh:
 setup(
     name='dicee',
     description='Dice embedding is an hardware-agnostic framework for large-scale knowledge graph embedding applications',
-    version='0.0.1',
+    version='0.0.2',
     packages=find_packages(),
     install_requires=['pandas>=1.5.1',
                       'modin[ray]>=0.16.2',
