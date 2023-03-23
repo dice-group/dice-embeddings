@@ -110,11 +110,12 @@ def create_constraints(triples: np.ndarray) -> Tuple[dict, dict, dict, dict]:
     set_of_relations = set()
     print('Constructing domain and range information by iterating over kg...')
     for (e1, p, e2) in triples:
-        domain_per_rel.setdefault(p, set()).add(e1)
-        range_per_rel.setdefault(p, set()).add(e2)
-        set_of_entities.add(e1)
-        set_of_relations.add(p)
-        set_of_entities.add(e2)
+        # e1, p, e2 have numpy.int16 or else types.
+        domain_per_rel.setdefault(int(p), set()).add(int(e1))
+        range_per_rel.setdefault(int(p), set()).add(int(e2))
+        set_of_entities.add(int(e1))
+        set_of_relations.add(int(p))
+        set_of_entities.add(int(e2))
     print(f'Creating constraints based on {len(set_of_relations)} relations...')
     for rel in set_of_relations:
         range_constraints_per_rel[rel] = list(set_of_entities - range_per_rel[rel])

@@ -623,9 +623,10 @@ def exponential_function(x: np.ndarray, lam: float, ascending_order=True) -> tor
     result = np.flip(result) if ascending_order else result
     return torch.tensor(result.tolist())
 
+
 @timeit
-def load_numpy(path):
-    print('Loading indexed training data...')
+def load_numpy(path) -> np.ndarray:
+    print('Loading indexed training data...', end='')
     with open(path, 'rb') as f:
         data = np.load(f)
     return data

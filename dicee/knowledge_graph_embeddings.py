@@ -7,7 +7,8 @@ from torch import optim
 from torch.utils.data import DataLoader
 from .abstracts import BaseInteractiveKGE
 from .dataset_classes import TriplePredictionDataset
-from .static_funcs import random_prediction, deploy_triple_prediction, deploy_tail_entity_prediction, deploy_relation_prediction, deploy_head_entity_prediction
+from .static_funcs import random_prediction, deploy_triple_prediction, deploy_tail_entity_prediction, \
+    deploy_relation_prediction, deploy_head_entity_prediction
 import numpy as np
 import sys
 
@@ -18,7 +19,7 @@ class KGE(BaseInteractiveKGE):
     # @TODO: we can download the model if it is not present locally
     def __init__(self, path, construct_ensemble=False, model_name=None,
                  apply_semantic_constraint=False):
-        super().__init__(path=path,construct_ensemble=construct_ensemble, model_name=model_name,
+        super().__init__(path=path, construct_ensemble=construct_ensemble, model_name=model_name,
                          apply_semantic_constraint=apply_semantic_constraint)
 
     def __str__(self):
@@ -184,7 +185,7 @@ class KGE(BaseInteractiveKGE):
                                 return extended_triples
         return extended_triples
 
-    def deploy(self,share:bool=False,top_k:int=10):
+    def deploy(self, share: bool = False, top_k: int = 10):
         import gradio as gr
 
         def predict(str_subject: str, str_predicate: str, str_object: str, random_examples: bool):
@@ -218,12 +219,11 @@ class KGE(BaseInteractiveKGE):
                     gr.inputs.Textbox(lines=1, placeholder=None, label='Predicate'),
                     gr.inputs.Textbox(lines=1, placeholder=None, label='Object'), "checkbox"],
             outputs=[gr.outputs.Textbox(label='Input Triple'),
-                     gr.outputs.Dataframe(label='Outputs',type='pandas')],
+                     gr.outputs.Dataframe(label='Outputs', type='pandas')],
             title=f'{self.name} Deployment',
             description='1. Enter a triple to compute its score,\n'
                         '2. Enter a subject and predicate pair to obtain most likely top ten entities or\n'
                         '3. Checked the random examples box and click submit').launch(share=share)
-
 
     # @TODO: Do we really need this ?!
     def train_triples(self, head_entity: List[str], relation: List[str], tail_entity: List[str], labels: List[float],

@@ -1,3 +1,4 @@
+import math
 import os
 import datetime
 # import pandas.core.indexes.range
@@ -171,7 +172,6 @@ class BaseInteractiveKGE:
         self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
 
         self.train_set=load_numpy(path=self.path + '/train_set.npy')
-
         if self.apply_semantic_constraint:
             self.domain_constraints_per_rel, self.range_constraints_per_rel, self.domain_per_rel, self.range_per_rel = create_constraints(
                 self.train_set)
@@ -252,7 +252,8 @@ class BaseInteractiveKGE:
         x = torch.stack((head_entity,
                          relation.repeat(self.num_entities, ),
                          tail_entity.repeat(self.num_entities, )), dim=1)
-        return self.model(x)
+        return self.model.forward(x)
+
 
     def __predict_missing_relations(self, head_entity: List[str], tail_entity: List[str]) -> Tuple:
         """
@@ -316,9 +317,9 @@ class BaseInteractiveKGE:
 
         scores
         """
-        head_entity = torch.LongTensor([self.entity_to_idx[i] for i in head_entity]).unsqueeze(-1)
-        relation = torch.LongTensor([self.relation_to_idx[i] for i in relation]).unsqueeze(-1)
-        return self.model(torch.cat((head_entity, relation), dim=1))
+        x=torch.cat((torch.LongTensor([self.entity_to_idx[i] for i in head_entity]).unsqueeze(-1),
+                     torch.LongTensor([self.relation_to_idx[i] for i in relation]).unsqueeze(-1)), dim=1)
+        return self.model.forward(x)
 
     def predict(self, *, head_entities: List[str] = None, relations: List[str] = None, tail_entities: List[str] = None):
         # (1) Sanity checking.
@@ -399,6 +400,11 @@ class BaseInteractiveKGE:
             assert tail_entity is not None
             # ? r, t
             scores = self.__predict_missing_head_entity(relation, tail_entity).flatten()
+            if self.apply_semantic_constraint:
+                # filter the scores
+                for th, i in enumerate(relation):
+                    scores[self.domain_constraints_per_rel[self.relation_to_idx[i]]] = -math.inf
+
             sort_scores, sort_idxs = torch.topk(scores, topk)
             return torch.sigmoid(sort_scores), [self.idx_to_entity[i] for i in sort_idxs.tolist()]
         # (3) Predict missing relation given a head entity and a tail entity.
@@ -415,6 +421,10 @@ class BaseInteractiveKGE:
             assert relation is not None
             # h r ?t
             scores = self.__predict_missing_tail_entity(head_entity, relation).flatten()
+            if self.apply_semantic_constraint:
+                # filter the scores
+                for th, i in enumerate(relation):
+                    scores[self.range_constraints_per_rel[self.relation_to_idx[i]]] = -math.inf
             sort_scores, sort_idxs = torch.topk(scores, topk)
             return torch.sigmoid(sort_scores), [self.idx_to_entity[i] for i in sort_idxs.tolist()]
         else:

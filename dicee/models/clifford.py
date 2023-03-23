@@ -231,10 +231,10 @@ class Keci(BaseKGE):
 
         if self.p > 0:
             self.p_coefficients = torch.nn.Embedding(num_embeddings=1,embedding_dim=self.p)
-            #torch.nn.init.zeros_(self.p_coefficients.weight)
+            torch.nn.init.zeros_(self.p_coefficients.weight)
         if self.q > 0:
             self.q_coefficients = torch.nn.Embedding(num_embeddings=1,embedding_dim=self.q)
-            #torch.nn.init.zeros_(self.q_coefficients.weight)
+            torch.nn.init.zeros_(self.q_coefficients.weight)
 
     def compute_sigma_pp(self, hp, rp):
         """
@@ -547,35 +547,48 @@ class Keci(BaseKGE):
         """
         # (1) Retrieve real-valued embedding vectors.
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
-        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities.
-        a0, ap, aq = self.construct_cl_multivector(head_ent_emb, r=self.r, p=self.p, q=self.q)
-        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for relations.
-        b0, bp, bq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
+        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations
+        h0, hp, hq = self.construct_cl_multivector(head_ent_emb, r=self.r, p=self.p, q=self.q)
+        r0, rp, rq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
+        t0, tp, tq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
 
-        c0, cp, cq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
+        h0, hp, hq, h0, rp, rq = self.apply_coefficients(h0, hp, hq, h0, rp, rq)
+        # (4) Compute a triple score based on interactions described by the basis 1. Eq. 20
+        h0r0t0 = torch.einsum('br, br->b', h0 * r0, t0)
 
-        # (4) Clifford multiplication of (2) and (3).
-        # AB_pp, AB_qq, AB_pq
-        AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq = self.clifford_mul(a0, ap, aq, b0, bp, bq)
-
-        # (7) Inner product of AB_0 and a0 of all entities.
-        A_score = torch.einsum('bk,bk->b', AB_0, c0)
-        # (8) Inner product of AB_p and ap of all entities.
+        # (5) Compute a triple score based on interactions described by the bases of p {e_1, ..., e_p}. Eq. 21
         if self.p > 0:
-            B_score = torch.einsum('bkl,bkl->b', AB_p, cp)
+            hp_rp_t0 = torch.einsum('brp, brp  -> b', hp * rp, t0)
+            h0_rp_tp = torch.einsum('brp, brp -> b', torch.einsum('br,  brp -> brp', h0, rp), tp)
+            hp_r0_tp = torch.einsum('brp, brp -> b', torch.einsum('brp, br  -> brp', hp, r0), tp)
+            score_p = hp_rp_t0 + h0_rp_tp + hp_r0_tp
         else:
-            B_score = 0
-        # (9) Inner product of AB_q and aq of all entities.
+            score_p = 0
+
+        # (5) Compute a triple score based on interactions described by the bases of q {e_{p+1}, ..., e_{p+q}}. Eq. 22
         if self.q > 0:
-            C_score = torch.einsum('bkl,bkl->b', AB_q, cq)
+            h0_rq_tq = torch.einsum('brq, brq -> b', torch.einsum('br,  brq -> brq', h0, rq), tq)
+            hq_r0_tq = torch.einsum('brq, brq -> b', torch.einsum('brq, br  -> brq', hq, r0), tq)
+            hq_rq_t0 = torch.einsum('brq, brq  -> b', hq * rq, t0)
+            score_q = h0_rq_tq + hq_r0_tq - hq_rq_t0
         else:
-            C_score = 0
-        # (10) Aggregate (7,8,9).
-        A_B_C_score = A_score + B_score + C_score
-        # (11) Compute inner products of AB_pp, AB_qq, AB_pq and respective identity matrices of all entities.
-        D_E_F_score = (torch.einsum('bkpp->b', AB_pp) + torch.einsum('bkqq->b', AB_qq) + torch.einsum('bkpq->b', AB_pq))
-        # (12) Score
-        return A_B_C_score + D_E_F_score
+            score_q = 0
+
+        if self.p >= 2:
+            sigma_pp = torch.sum(self.compute_sigma_pp(hp, rp), dim=[1, 2]).unsqueeze(-1)
+        else:
+            sigma_pp = 0
+
+        if self.q >= 2:
+            sigma_qq = torch.sum(self.compute_sigma_qq(hq, rq), dim=[1, 2]).unsqueeze(-1)
+        else:
+            sigma_qq = 0
+
+        if self.p >= 2 and self.q >= 2:
+            sigma_pq = torch.sum(self.compute_sigma_pq(hp=hp, hq=hq, rp=rp, rq=rq), dim=[1, 2, 3]).unsqueeze(-1)
+        else:
+            sigma_pq = 0
+        return h0r0t0 + score_p + score_q + sigma_pp + sigma_qq + sigma_pq
 
     def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor:
         """
