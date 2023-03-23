@@ -145,9 +145,7 @@ def read_from_disk(data_path, read_only_few: int = None,
     assert backend
     # If path exits
     if glob.glob(data_path):
-        if backend == 'modin':
-            return read_with_modin(data_path, read_only_few, sample_triples_ratio)
-        elif backend == 'pandas':
+        if backend == 'pandas':
             return read_with_pandas(data_path, read_only_few, sample_triples_ratio)
         elif backend == 'polars':
             return read_with_polars(data_path, read_only_few, sample_triples_ratio)

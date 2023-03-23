@@ -7,6 +7,7 @@ from torch import optim
 from torch.utils.data import DataLoader
 from .abstracts import BaseInteractiveKGE
 from .dataset_classes import TriplePredictionDataset
+from .static_funcs import random_prediction, deploy_triple_prediction, deploy_tail_entity_prediction, deploy_relation_prediction, deploy_head_entity_prediction
 import numpy as np
 import sys
 
@@ -15,10 +16,9 @@ class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
 
     # @TODO: we can download the model if it is not present locally
-    def __init__(self, path, compute_range_and_domain=False, construct_ensemble=False, model_name=None,
+    def __init__(self, path, construct_ensemble=False, model_name=None,
                  apply_semantic_constraint=False):
-        super().__init__(path=path, compute_range_and_domain=compute_range_and_domain,
-                         construct_ensemble=construct_ensemble, model_name=model_name,
+        super().__init__(path=path,construct_ensemble=construct_ensemble, model_name=model_name,
                          apply_semantic_constraint=apply_semantic_constraint)
 
     def __str__(self):
@@ -184,6 +184,48 @@ class KGE(BaseInteractiveKGE):
                                 return extended_triples
         return extended_triples
 
+    def deploy(self,share:bool=False,top_k:int=10):
+        import gradio as gr
+
+        def predict(str_subject: str, str_predicate: str, str_object: str, random_examples: bool):
+            if random_examples:
+                return random_prediction(self)
+            else:
+                if self.is_seen(entity=str_subject) and self.is_seen(
+                        relation=str_predicate) and self.is_seen(entity=str_object):
+                    """ Triple Prediction """
+                    return deploy_triple_prediction(self, str_subject, str_predicate, str_object)
+
+                elif self.is_seen(entity=str_subject) and self.is_seen(
+                        relation=str_predicate):
+                    """ Tail Entity Prediction """
+                    return deploy_tail_entity_prediction(self, str_subject, str_predicate, top_k)
+                elif self.is_seen(entity=str_object) and self.is_seen(
+                        relation=str_predicate):
+                    """ Head Entity Prediction """
+                    return deploy_head_entity_prediction(self, str_object, str_predicate, top_k)
+                elif self.is_seen(entity=str_subject) and self.is_seen(entity=str_object):
+                    """ Relation Prediction """
+                    return deploy_relation_prediction(self, str_subject, str_object, top_k)
+                else:
+                    KeyError('Uncovered scenario')
+            # If user simply select submit
+            return random_prediction(pre_trained_kge)
+
+        gr.Interface(
+            fn=predict,
+            inputs=[gr.inputs.Textbox(lines=1, placeholder=None, label='Subject'),
+                    gr.inputs.Textbox(lines=1, placeholder=None, label='Predicate'),
+                    gr.inputs.Textbox(lines=1, placeholder=None, label='Object'), "checkbox"],
+            outputs=[gr.outputs.Textbox(label='Input Triple'),
+                     gr.outputs.Dataframe(label='Outputs',type='pandas')],
+            title=f'{self.name} Deployment',
+            description='1. Enter a triple to compute its score,\n'
+                        '2. Enter a subject and predicate pair to obtain most likely top ten entities or\n'
+                        '3. Checked the random examples box and click submit').launch(share=share)
+
+
+    # @TODO: Do we really need this ?!
     def train_triples(self, head_entity: List[str], relation: List[str], tail_entity: List[str], labels: List[float],
                       iteration=2, optimizer=None):
         """

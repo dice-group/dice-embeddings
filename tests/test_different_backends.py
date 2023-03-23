@@ -21,14 +21,7 @@ class TestPolyak:
     def test_pandas_as_backend(self):
         args = get_default_arguments([])
         args.path_dataset_folder = 'KGs/UMLS'
-        args.backend = 'modin'
-        Execute(args).start()
-
-    @pytest.mark.filterwarnings('ignore::UserWarning')
-    def test_modin_rdf_as_backend(self):
-        args = get_default_arguments([])
-        args.path_dataset_folder = 'KGs/Family'
-        args.backend = 'modin'
+        args.backend = 'pandas'
         Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')

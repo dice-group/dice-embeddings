@@ -35,18 +35,16 @@ pip install dicee
 or
 ```
 git clone https://github.com/dice-group/dice-embeddings.git
-conda create -n dice python=3.9.12 --no-default-packages
-conda activate dice
-pip3 install pandas==1.5.1 
-pip3 install polars==0.15.13 
-pip3 install modin[ray]==0.16.2 
-pip3 install pyarrow==8.0.0
-pip3 install torch==1.13.0 
-pip3 install pytorch-lightning==1.6.4
-pip3 install scikit-learn==1.1.1
-pip3 install pytest==6.2.5
-pip3 install gradio==3.0.17
-pip3 install matplotlib==3.6.2
+conda create -n dice python=3.10 --no-default-packages && conda activate dice
+pip3 install "pandas>=1.5.1"
+pip3 install "torch>=2.0.0"
+pip3 install "polars>=0.16.14"
+pip3 install "scikit-learn>=1.2.2"
+pip3 install "pyarrow>=11.0.0"
+pip3 install "pytest>=7.2.2"
+pip3 install "gradio>=3.23.0"
+pip3 install "psutil>=5.9.4"
+pip3 install "pytorch-lightning==1.6.4"
 ```
 To test the Installation
 ```
@@ -125,15 +123,10 @@ missing_triples = pre_trained_kge.find_missing_triples(confidence=0.95, entities
 > How to use the framework:`examples`.
 
 ## How to Deploy
-Any pretrained model can be deployed with an ease. Moreover, anyone on the internet can use the pretrained model with ```--share``` parameter.
-```
-python deploy.py --path_of_experiment_folder 'ConEx' --share True
-Loading Model...
-Model is loaded!
-Running on local URL:  http://127.0.0.1:7860/
-Running on public URL: https://54886.gradio.app
-
-This share link expires in 72 hours. For free permanent hosting, check out Spaces (https://huggingface.co/spaces)
+Any pretrained model can be deployed with an ease. By setting ```share=True```, anyone on the internet can use a pretrained model.
+```python
+from dicee import KGE
+KGE(path='...').deploy(share=True,top_k=10)
 ```
 ![alt text](dicee/figures/deploy_qmult_family.png)
 ## Pre-trained Models

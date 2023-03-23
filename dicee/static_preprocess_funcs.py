@@ -88,12 +88,12 @@ def preprocesses_input_args(arg):
 
     return arg
 
-
+@timeit
 def create_constraints(triples: np.ndarray) -> Tuple[dict, dict, dict, dict]:
     """
     (1) Extract domains and ranges of relations
     (2) Store a mapping from relations to entities that are outside of the domain and range.
-    Crete constrainted entities based on the range of relations
+    Create constraints entities based on the range of relations
     :param triples:
     :return:
     """
@@ -108,13 +108,14 @@ def create_constraints(triples: np.ndarray) -> Tuple[dict, dict, dict, dict]:
     domain_constraints_per_rel = dict()
     set_of_entities = set()
     set_of_relations = set()
+    print('Constructing domain and range information by iterating over kg...')
     for (e1, p, e2) in triples:
         domain_per_rel.setdefault(p, set()).add(e1)
         range_per_rel.setdefault(p, set()).add(e2)
         set_of_entities.add(e1)
         set_of_relations.add(p)
         set_of_entities.add(e2)
-
+    print(f'Creating constraints based on {len(set_of_relations)} relations...')
     for rel in set_of_relations:
         range_constraints_per_rel[rel] = list(set_of_entities - range_per_rel[rel])
         domain_constraints_per_rel[rel] = list(set_of_entities - domain_per_rel[rel])

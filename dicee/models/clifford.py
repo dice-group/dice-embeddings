@@ -1,6 +1,7 @@
 from .base_model import BaseKGE
 from ..types import torch
 
+
 class CMult(BaseKGE):
     """
     Cl_(0,0) => Real Numbers
@@ -222,23 +223,18 @@ class Keci(BaseKGE):
         try:
             assert self.r.is_integer()
         except AssertionError:
-            raise (f'r = embedding_dim / (p + q+ 1) must be a whole number\n'
-                   f'Currently {self.r}={self.embedding_dim} / ({self.p}+ {self.q} +1)')
-            # print(f'r is corrected to {int(self.r)}')
+            raise AssertionError(f'r = embedding_dim / (p + q+ 1) must be a whole number\n'
+                                 f'Currently {self.r}={self.embedding_dim} / ({self.p}+ {self.q} +1)')
         self.r = int(self.r)
         self.requires_grad_for_interactions = True
         print(f'r:{self.r}\t p:{self.p}\t q:{self.q}')
 
         if self.p > 0:
-            self.p_coefficients = torch.nn.Parameter(
-                torch.tensor([0.0 for _ in range(self.p)], dtype=torch.float, device=self.device),
-                requires_grad=self.requires_grad_for_interactions)
-            print(f'with base p coefficients:{self.p_coefficients}')
+            self.p_coefficients = torch.nn.Embedding(num_embeddings=1,embedding_dim=self.p)
+            #torch.nn.init.zeros_(self.p_coefficients.weight)
         if self.q > 0:
-            self.q_coefficients = torch.nn.Parameter(
-                torch.tensor([0.0 for _ in range(self.q)], dtype=torch.float, device=self.device),
-                requires_grad=self.requires_grad_for_interactions)
-            print(f'with base q coefficients:{self.q_coefficients}')
+            self.q_coefficients = torch.nn.Embedding(num_embeddings=1,embedding_dim=self.q)
+            #torch.nn.init.zeros_(self.q_coefficients.weight)
 
     def compute_sigma_pp(self, hp, rp):
         """
@@ -429,12 +425,11 @@ class Keci(BaseKGE):
     def apply_coefficients(self, h0, hp, hq, r0, rp, rq):
         """ Multiplying a base vector with its scalar coefficient """
         if self.p > 0:
-            hp = hp * self.p_coefficients
-            rp = rp * self.p_coefficients
-
+            hp = hp * self.p_coefficients.weight
+            rp = rp * self.p_coefficients.weight
         if self.q > 0:
-            hq = hq * self.q_coefficients
-            rq = rq * self.q_coefficients
+            hq = hq * self.q_coefficients.weight
+            rq = rq * self.q_coefficients.weight
         return h0, hp, hq, r0, rp, rq
 
     def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:

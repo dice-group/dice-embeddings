@@ -1,7 +1,7 @@
 import os
 import datetime
 # import pandas.core.indexes.range
-from .static_funcs import load_model_ensemble, load_model, save_checkpoint_model
+from .static_funcs import load_model_ensemble, load_model, save_checkpoint_model,load_numpy
 from .static_preprocess_funcs import create_constraints
 import torch
 from typing import List, Tuple
@@ -141,8 +141,7 @@ class BaseInteractiveKGE:
     apply_semantic_constraint : boolean
     """
 
-    def __init__(self, path: str, compute_range_and_domain: bool = False,
-                 construct_ensemble: bool = False, model_name: str = None,
+    def __init__(self, path: str, construct_ensemble: bool = False, model_name: str = None,
                  apply_semantic_constraint: bool = False):
         try:
             assert os.path.isdir(path)
@@ -171,18 +170,11 @@ class BaseInteractiveKGE:
         self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
         self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
 
-        print('Loading indexed training data...')
-        try:
-            with open(self.path + '/train_set.npy', 'rb') as f:
-                self.train_set = np.load(f)
-            if compute_range_and_domain:
-                self.domain_constraints_per_rel, self.range_constraints_per_rel, self.domain_per_rel, self.range_per_rel = create_constraints(
-                    self.train_set)
-            if self.apply_semantic_constraint:
-                self.domain_constraints_per_rel, self.range_constraints_per_rel, self.domain_per_rel, self.range_per_rel = create_constraints(
-                    self.train_set)
-        except FileNotFoundError:
-            print(f'{self.path} /train_set.npy is not found')
+        self.train_set=load_numpy(path=self.path + '/train_set.npy')
+
+        if self.apply_semantic_constraint:
+            self.domain_constraints_per_rel, self.range_constraints_per_rel, self.domain_per_rel, self.range_per_rel = create_constraints(
+                self.train_set)
 
     def get_domain_of_relation(self, rel: str) -> List[str]:
         x = [self.idx_to_entity[i] for i in self.domain_per_rel[self.relation_to_idx[rel]]]

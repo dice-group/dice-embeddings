@@ -115,9 +115,6 @@ class TorchTrainer(AbstractTrainer):
         # (1) Start running callbacks
         self.on_fit_start(self, self.model)
 
-        #if isinstance(self.optimizer, Sls) or isinstance(self.optimizer, AdamSLS):
-        #    self.use_closure = True
-        #else:
         self.use_closure = False
 
         print(

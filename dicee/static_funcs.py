@@ -622,3 +622,10 @@ def exponential_function(x: np.ndarray, lam: float, ascending_order=True) -> tor
     assert 0.999 < sum(result) < 1.0001
     result = np.flip(result) if ascending_order else result
     return torch.tensor(result.tolist())
+
+@timeit
+def load_numpy(path):
+    print('Loading indexed training data...')
+    with open(path, 'rb') as f:
+        data = np.load(f)
+    return data

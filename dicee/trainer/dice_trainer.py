@@ -204,8 +204,6 @@ class DICE_Trainer:
             self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args), plugins=[])
             model, form_of_labelling = self.initialize_or_load_model()
             assert self.args.scoring_technique in ['KvsSample', '1vsAll', 'KvsAll', 'NegSample']
-
-
             self.trainer.evaluator=self.evaluator
             self.trainer.dataset = dataset
             self.trainer.form_of_labelling = form_of_labelling
