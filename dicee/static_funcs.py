@@ -378,14 +378,14 @@ def random_prediction(pre_trained_kge):
     head_entity = pre_trained_kge.sample_entity(1)
     relation = pre_trained_kge.sample_relation(1)
     tail_entity = pre_trained_kge.sample_entity(1)
-    triple_score = pre_trained_kge.predict_topk(head_entity=head_entity,
+    triple_score = pre_trained_kge.triple_score(head_entity=head_entity,
                                                 relation=relation,
                                                 tail_entity=tail_entity)
     return f'( {head_entity[0]},{relation[0]}, {tail_entity[0]} )', pd.DataFrame({'Score': triple_score})
 
 
 def deploy_triple_prediction(pre_trained_kge, str_subject, str_predicate, str_object):
-    triple_score = pre_trained_kge.predict_topk(head_entity=[str_subject],
+    triple_score = pre_trained_kge.triple_score(head_entity=[str_subject],
                                                 relation=[str_predicate],
                                                 tail_entity=[str_object])
     return f'( {str_subject}, {str_predicate}, {str_object} )', pd.DataFrame({'Score': triple_score})

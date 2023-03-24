@@ -17,7 +17,8 @@ class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
 
     # @TODO: we can download the model if it is not present locally
-    def __init__(self, path, construct_ensemble=False, model_name=None,
+    def __init__(self, path, construct_ensemble=False,
+                 model_name=None,
                  apply_semantic_constraint=False):
         super().__init__(path=path, construct_ensemble=construct_ensemble, model_name=model_name,
                          apply_semantic_constraint=apply_semantic_constraint)
@@ -25,8 +26,259 @@ class KGE(BaseInteractiveKGE):
     def __str__(self):
         return 'KGE | ' + str(self.model)
 
-    def topk(self, head_entity: str, relation: str, k=3):
-        return self.predict_topk(head_entity=[head_entity], relation=[relation], topk=k)
+    def predict_missing_head_entity(self, relation: List[str], tail_entity: List[str]) -> Tuple:
+        """
+        Given a relation and a tail entity, return top k ranked head entity.
+
+        argmax_{e \in E } f(e,r,t), where r \in R, t \in E.
+
+        Parameter
+        ---------
+        relation: List[str]
+
+        String representation of selected relations.
+
+        tail_entity: List[str]
+
+        String representation of selected entities.
+
+
+        k: int
+
+        Highest ranked k entities.
+
+        Returns: Tuple
+        ---------
+
+        Highest K scores and entities
+        """
+
+        head_entity = torch.arange(0, len(self.entity_to_idx))
+        relation = torch.LongTensor([self.relation_to_idx[i] for i in relation])
+        tail_entity = torch.LongTensor([self.entity_to_idx[i] for i in tail_entity])
+        x = torch.stack((head_entity,
+                         relation.repeat(self.num_entities, ),
+                         tail_entity.repeat(self.num_entities, )), dim=1)
+        return self.model.forward(x)
+
+
+    def predict_missing_relations(self, head_entity: List[str], tail_entity: List[str]) -> Tuple:
+        """
+        Given a head entity and a tail entity, return top k ranked relations.
+
+        argmax_{r \in R } f(h,r,t), where h, t \in E.
+
+
+        Parameter
+        ---------
+        head_entity: List[str]
+
+        String representation of selected entities.
+
+        tail_entity: List[str]
+
+        String representation of selected entities.
+
+
+        k: int
+
+        Highest ranked k entities.
+
+        Returns: Tuple
+        ---------
+
+        Highest K scores and entities
+        """
+
+        head_entity = torch.LongTensor([self.entity_to_idx[i] for i in head_entity])
+        relation = torch.arange(0, len(self.relation_to_idx))
+        tail_entity = torch.LongTensor([self.entity_to_idx[i] for i in tail_entity])
+
+        x = torch.stack((head_entity.repeat(self.num_relations, ),
+                         relation,
+                         tail_entity.repeat(self.num_relations, )), dim=1)
+        return self.model(x)
+        # scores = self.model(x)
+        # sort_scores, sort_idxs = torch.topk(scores, topk)
+        # return sort_scores, [self.idx_to_relations[i] for i in sort_idxs.tolist()]
+
+    def predict_missing_tail_entity(self, head_entity: List[str], relation: List[str]) -> torch.FloatTensor:
+        """
+        Given a head entity and a relation, return top k ranked entities
+
+        argmax_{e \in E } f(h,r,e), where h \in E and r \in R.
+
+
+        Parameter
+        ---------
+        head_entity: List[str]
+
+        String representation of selected entities.
+
+        tail_entity: List[str]
+
+        String representation of selected entities.
+
+        Returns: Tuple
+        ---------
+
+        scores
+        """
+        x=torch.cat((torch.LongTensor([self.entity_to_idx[i] for i in head_entity]).unsqueeze(-1),
+                     torch.LongTensor([self.relation_to_idx[i] for i in relation]).unsqueeze(-1)), dim=1)
+        return self.model.forward(x)
+
+    def predict(self, *, head_entities: List[str] = None, relations: List[str] = None, tail_entities: List[str] = None):
+        # (1) Sanity checking.
+        if head_entities is not None:
+            assert isinstance(head_entities, list)
+            assert isinstance(head_entities[0], str)
+        if relations is not None:
+            assert isinstance(relations, list)
+            assert isinstance(relations[0], str)
+        if tail_entities is not None:
+            assert isinstance(tail_entities, list)
+            assert isinstance(tail_entities[0], str)
+        # (2) Predict missing head entity given a relation and a tail entity.
+        if head_entities is None:
+            assert relations is not None
+            assert tail_entities is not None
+            # ? r, t
+            scores = self.__predict_missing_head_entity(relations, tail_entities)
+        # (3) Predict missing relation given a head entity and a tail entity.
+        elif relations is None:
+            assert head_entities is not None
+            assert tail_entities is not None
+            # h ? t
+            scores = self.__predict_missing_relations(head_entities, tail_entities)
+        # (4) Predict missing tail entity given a head entity and a relation
+        elif tail_entities is None:
+            assert head_entities is not None
+            assert relations is not None
+            # h r ?
+            scores = self.__predict_missing_tail_entity(head_entities, relations)
+        else:
+            assert len(head_entities) == len(relations) == len(tail_entities)
+            scores = self.triple_score(head_entities, relations, tail_entities)
+        return torch.sigmoid(scores)
+
+    def predict_topk(self, *, head_entity: List[str] = None, relation: List[str] = None, tail_entity: List[str] = None,
+                     topk: int = 10):
+        """
+        Predict missing item in a given triple.
+
+
+
+        Parameter
+        ---------
+        head_entity: List[str]
+
+        String representation of selected entities.
+
+        relation: List[str]
+
+        String representation of selected relations.
+
+        tail_entity: List[str]
+
+        String representation of selected entities.
+
+
+        k: int
+
+        Highest ranked k item.
+
+        Returns: Tuple
+        ---------
+
+        Highest K scores and items
+        """
+
+        # (1) Sanity checking.
+        if head_entity is not None:
+            assert isinstance(head_entity, list)
+        if relation is not None:
+            assert isinstance(relation, list)
+        if tail_entity is not None:
+            assert isinstance(tail_entity, list)
+        # (2) Predict missing head entity given a relation and a tail entity.
+        if head_entity is None:
+            assert relation is not None
+            assert tail_entity is not None
+            # ? r, t
+            scores = self.predict_missing_head_entity(relation, tail_entity).flatten()
+            if self.apply_semantic_constraint:
+                # filter the scores
+                for th, i in enumerate(relation):
+                    scores[self.domain_constraints_per_rel[self.relation_to_idx[i]]] = -torch.inf
+
+            sort_scores, sort_idxs = torch.topk(scores, topk)
+            return torch.sigmoid(sort_scores), [self.idx_to_entity[i] for i in sort_idxs.tolist()]
+        # (3) Predict missing relation given a head entity and a tail entity.
+        elif relation is None:
+            assert head_entity is not None
+            assert tail_entity is not None
+            # h ? t
+            scores = self.predict_missing_relations(head_entity, tail_entity).flatten()
+            sort_scores, sort_idxs = torch.topk(scores, topk)
+            return torch.sigmoid(sort_scores), [self.idx_to_relations[i] for i in sort_idxs.tolist()]
+        # (4) Predict missing tail entity given a head entity and a relation
+        elif tail_entity is None:
+            assert head_entity is not None
+            assert relation is not None
+            # h r ?t
+            scores = self.predict_missing_tail_entity(head_entity, relation).flatten()
+            if self.apply_semantic_constraint:
+                # filter the scores
+                for th, i in enumerate(relation):
+                    scores[self.range_constraints_per_rel[self.relation_to_idx[i]]] = -torch.inf
+            sort_scores, sort_idxs = torch.topk(scores, topk)
+            return torch.sigmoid(sort_scores), [self.idx_to_entity[i] for i in sort_idxs.tolist()]
+        else:
+            raise AttributeError('Use triple_score method')
+
+    def triple_score(self, head_entity: List[str] = None, relation: List[str] = None,
+                     tail_entity: List[str] = None, logits=False) -> torch.FloatTensor:
+        """
+        Predict triple score
+
+        Parameter
+        ---------
+        head_entity: List[str]
+
+        String representation of selected entities.
+
+        relation: List[str]
+
+        String representation of selected relations.
+
+        tail_entity: List[str]
+
+        String representation of selected entities.
+
+        logits: bool
+
+        If logits is True, unnormalized score returned
+
+        Returns: Tuple
+        ---------
+
+        pytorch tensor of triple score
+        """
+        head_entity = torch.LongTensor([self.entity_to_idx[i] for i in head_entity]).reshape(len(head_entity), 1)
+        relation = torch.LongTensor([self.relation_to_idx[i] for i in relation]).reshape(len(relation), 1)
+        tail_entity = torch.LongTensor([self.entity_to_idx[i] for i in tail_entity]).reshape(len(tail_entity), 1)
+
+        x = torch.hstack((head_entity, relation, tail_entity))
+        if self.apply_semantic_constraint:
+            raise NotImplementedError()
+        else:
+            with torch.no_grad():
+                out = self.model(x)
+                if logits:
+                    return out
+                else:
+                    return torch.sigmoid(out)
 
     def predict_conjunctive_query(self, entity: str, relations: List[str], topk: int = 3,
                                   show_intermediate_results=False) -> Set[str]:
