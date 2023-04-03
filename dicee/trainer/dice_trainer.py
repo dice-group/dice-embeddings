@@ -48,8 +48,9 @@ def get_callbacks(args):
                  AccumulateEpochLossCallback(path=args.full_storage_path)
                  ]
     for i in args.callbacks:
-
-        if i=='Search':
+        if i=='KronE':
+            callbacks.append(KronE())
+        elif i=='Search':
             callbacks.append(Search(num_epochs=args.num_epochs,embedding_dim=args.embedding_dim))
         # @TODO: Rename it
         elif i=='Eval':

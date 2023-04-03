@@ -3,6 +3,8 @@ import math
 import time
 import numpy as np
 import torch
+
+import dicee.models.base_model
 from .static_funcs import save_checkpoint_model, exponential_function, save_pickle, load_pickle
 from .abstracts import AbstractCallback, AbstractPPECallback
 from typing import Optional
@@ -233,70 +235,50 @@ class Eval(AbstractCallback):
         return
 
 
-class Search(AbstractCallback):
-    def __init__(self, num_epochs: int, embedding_dim: int):
+class KronE(AbstractCallback):
+    def __init__(self):
         super().__init__()
-        self.counter = 0
-        self.last_eval = None
-        self.configurations = []
+        self.f = None
 
     @staticmethod
-    def find_valid_p_q(dim):
-        results = set()
-        p = 0
-        q = 0
-        denom = p + q + 1
-        while True:
-            if denom == dim:
-                break
+    def batch_kronecker_product(a, b):
+        """
+        Kronecker product of matrices a and b with leading batch dimensions.
+        Batch dimensions are broadcast. The number of them mush
+        :type a: torch.Tensor
+        :type b: torch.Tensor
+        :rtype: torch.Tensor
+        """
 
-            r = dim / denom
-            if r.is_integer():
-                results.add((p, q))
-                assert (dim / (p + q + 1)).is_integer()
-            else:
-                for i in range(denom):
-                    if (dim / (i + denom - i + 1)).is_integer():
-                        results.add((i, denom - i))
+        a, b = a.unsqueeze(1), b.unsqueeze(1)
 
-            denom += 1
+        siz1 = torch.Size(torch.tensor(a.shape[-2:]) * torch.tensor(b.shape[-2:]))
+        res = a.unsqueeze(-1).unsqueeze(-3) * b.unsqueeze(-2).unsqueeze(-4)
+        siz0 = res.shape[:-4]
+        res = res.reshape(siz0 + siz1)
+        return res.flatten(1)
 
-        return results
+    def get_kronecker_triple_representation(self, indexed_triple: torch.LongTensor):
+        """
+        Get kronecker embeddings
+        """
+        n, d = indexed_triple.shape
+        assert d == 3
+        # Get the embeddings
+        head_ent_emb, rel_ent_emb, tail_ent_emb = self.f(indexed_triple)
+
+        head_ent_kron_emb = self.batch_kronecker_product(*torch.hsplit(head_ent_emb, 2))
+        rel_ent_kron_emb = self.batch_kronecker_product(*torch.hsplit(rel_ent_emb, 2))
+        tail_ent_kron_emb = self.batch_kronecker_product(*torch.hsplit(tail_ent_emb, 2))
+
+        return torch.cat((head_ent_emb, head_ent_kron_emb), dim=1), \
+               torch.cat((rel_ent_emb, rel_ent_kron_emb), dim=1), \
+               torch.cat((tail_ent_emb, tail_ent_kron_emb), dim=1)
 
     def on_fit_start(self, trainer, model):
-        configurations = self.find_valid_p_q(model.embedding_dim)
-        print(f"Total p and q configs: {len(configurations)}")
-        self.configurations = configurations
+        if isinstance(model.normalize_head_entity_embeddings, dicee.models.base_model.IdentityClass):
+            self.f = model.get_triple_representation
+            model.get_triple_representation = self.get_kronecker_triple_representation
 
-    def on_fit_end(self, trainer, model):
-        print(model.p, model.q, model.r)
-        # model.q=1
-        # model.r//=2
-
-    def signal(self, trainer, model):
-        initial_r, initial_p, initial_q = model.r, model.p, model.q
-        model.eval()
-        for p, q in self.configurations:
-            r = (model.embedding_dim / (p + q + 1))
-            assert r.is_integer()
-
-            model.r, model.p, model.q = int(r), p, q
-
-            x = trainer.evaluator.eval(dataset=trainer.dataset, trained_model=model,
-                                       form_of_labelling=trainer.form_of_labelling,
-                                       during_training=True)
-            print(p, q)
-            for i in x.items():
-                print(i)
-
-        model.r, model.p, model.q=initial_r, initial_p, initial_q
-        model.train()
-
-    def on_train_epoch_end(self, trainer, model):
-        self.counter += 1
-        # validation check rule can be determined by the epoch at which training stagnates
-        if self.counter == 99:
-            self.signal(trainer, model)
-
-    def on_train_batch_end(self, *args, **kwargs):
-        return
+        else:
+            raise NotImplementedError('Normalizer should be reinitialized')
