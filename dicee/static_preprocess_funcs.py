@@ -83,6 +83,7 @@ def preprocesses_input_args(arg):
 
     return arg
 
+
 @timeit
 def create_constraints(triples: np.ndarray) -> Tuple[dict, dict, dict, dict]:
     """
@@ -103,18 +104,18 @@ def create_constraints(triples: np.ndarray) -> Tuple[dict, dict, dict, dict]:
     domain_constraints_per_rel = dict()
     set_of_entities = set()
     set_of_relations = set()
-    print('Constructing domain and range information by iterating over kg...')
+    print(f'Constructing domain and range information by iterating over {len(triples)} triples...', end='\t')
     for (e1, p, e2) in triples:
         # e1, p, e2 have numpy.int16 or else types.
-        domain_per_rel.setdefault(int(p), set()).add(int(e1))
-        range_per_rel.setdefault(int(p), set()).add(int(e2))
-        set_of_entities.add(int(e1))
-        set_of_relations.add(int(p))
-        set_of_entities.add(int(e2))
-    print(f'Creating constraints based on {len(set_of_relations)} relations...')
+        domain_per_rel.setdefault(p, set()).add(e1)
+        range_per_rel.setdefault(p, set()).add(e2)
+        set_of_entities.add(e1)
+        set_of_relations.add(p)
+        set_of_entities.add(e2)
+    print(f'Creating constraints based on {len(set_of_relations)} relations and {len(set_of_entities)} entities...', end='\t')
     for rel in set_of_relations:
-        range_constraints_per_rel[rel] = set_of_entities - range_per_rel[rel]
-        domain_constraints_per_rel[rel] = set_of_entities - domain_per_rel[rel]
+        range_constraints_per_rel[rel] = list(set_of_entities - range_per_rel[rel])
+        domain_constraints_per_rel[rel] = list(set_of_entities - domain_per_rel[rel])
     return domain_constraints_per_rel, range_constraints_per_rel, domain_per_rel, range_per_rel
 
 
