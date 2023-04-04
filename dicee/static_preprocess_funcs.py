@@ -113,9 +113,8 @@ def create_constraints(triples: np.ndarray) -> Tuple[dict, dict, dict, dict]:
         set_of_entities.add(int(e2))
     print(f'Creating constraints based on {len(set_of_relations)} relations...')
     for rel in set_of_relations:
-        range_constraints_per_rel[rel] = list(set_of_entities - range_per_rel[rel])
-        domain_constraints_per_rel[rel] = list(set_of_entities - domain_per_rel[rel])
-
+        range_constraints_per_rel[rel] = set_of_entities - range_per_rel[rel]
+        domain_constraints_per_rel[rel] = set_of_entities - domain_per_rel[rel]
     return domain_constraints_per_rel, range_constraints_per_rel, domain_per_rel, range_per_rel
 
 

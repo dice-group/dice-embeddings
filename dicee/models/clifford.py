@@ -432,6 +432,36 @@ class Keci(BaseKGE):
             rq = rq * self.q_coefficients.weight
         return h0, hp, hq, r0, rp, rq
 
+    def construct_cl_multivector(self, x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[
+        torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
+        """
+        Construct a batch of multivectors Cl_{p,q}(\mathbb{R}^d)
+
+        Parameter
+        ---------
+        x: torch.FloatTensor with (n,d) shape
+
+        Returns
+        -------
+        a0: torch.FloatTensor with (n,r) shape
+        ap: torch.FloatTensor with (n,r,p) shape
+        aq: torch.FloatTensor with (n,r,q) shape
+        """
+        batch_size, d = x.shape
+        # (1) A_{n \times k}: take the first k columns
+        a0 = x[:, :r].view(batch_size, r)
+        # (2) B_{n \times p}, C_{n \times q}: take the self.k * self.p columns after the k. column
+        if p > 0:
+            ap = x[:, r: r + (r * p)].view(batch_size, r, p)
+        else:
+            ap = torch.zeros((batch_size, r, p), device=self.device)
+        if q > 0:
+            # (3) B_{n \times p}, C_{n \times q}: take the last self.r * self.q .
+            aq = x[:, -(r * q):].view(batch_size, r, q)
+        else:
+            aq = torch.zeros((batch_size, r, q), device=self.device)
+        return a0, ap, aq
+
     def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
         """
         Kvsall training
@@ -458,6 +488,7 @@ class Keci(BaseKGE):
         h0, hp, hq, h0, rp, rq = self.apply_coefficients(h0, hp, hq, h0, rp, rq)
         # (3) Extract all entity embeddings
         E = self.entity_embeddings.weight
+        # (3.1) Extract real part
         t0 = E[:, :self.r]
         # (4) Compute a triple score based on interactions described by the basis 1. Eq. 20
         h0r0t0 = torch.einsum('br,er->be', h0 * r0, t0)
@@ -497,36 +528,6 @@ class Keci(BaseKGE):
         else:
             sigma_pq = 0
         return h0r0t0 + score_p + score_q + sigma_pp + sigma_qq + sigma_pq
-
-    def construct_cl_multivector(self, x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[
-        torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
-        """
-        Construct a batch of multivectors Cl_{p,q}(\mathbb{R}^d)
-
-        Parameter
-        ---------
-        x: torch.FloatTensor with (n,d) shape
-
-        Returns
-        -------
-        a0: torch.FloatTensor with (n,r) shape
-        ap: torch.FloatTensor with (n,r,p) shape
-        aq: torch.FloatTensor with (n,r,q) shape
-        """
-        batch_size, d = x.shape
-        # (1) A_{n \times k}: take the first k columns
-        a0 = x[:, :r].view(batch_size, r)
-        # (2) B_{n \times p}, C_{n \times q}: take the self.k * self.p columns after the k. column
-        if p > 0:
-            ap = x[:, r: r + (r * p)].view(batch_size, r, p)
-        else:
-            ap = torch.zeros((batch_size, r, p), device=self.device)
-        if q > 0:
-            # (3) B_{n \times p}, C_{n \times q}: take the last self.r * self.q .
-            aq = x[:, -(r * q):].view(batch_size, r, q)
-        else:
-            aq = torch.zeros((batch_size, r, q), device=self.device)
-        return a0, ap, aq
 
     def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
         """
@@ -645,3 +646,17 @@ class Keci(BaseKGE):
         D_E_F_score = D_E_F_score.view(len(head_ent_emb), 1)
         # (12) Score
         return A_B_C_score + D_E_F_score
+
+class KeciBase(Keci):
+    " Without learning dimension scaling"
+    def __init__(self, args):
+        super().__init__(args)
+        self.name = 'KeciBase'
+        self.requires_grad_for_interactions = False
+        print(f'r:{self.r}\t p:{self.p}\t q:{self.q}')
+        if self.p > 0:
+            self.p_coefficients = torch.nn.Embedding(num_embeddings=1,embedding_dim=self.p)
+            torch.nn.init.ones_(self.p_coefficients.weight)
+        if self.q > 0:
+            self.q_coefficients = torch.nn.Embedding(num_embeddings=1,embedding_dim=self.q)
+            torch.nn.init.ones_(self.q_coefficients.weight)
