@@ -77,11 +77,11 @@ class Shallom(BaseKGE):
         self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
         self.param_init(self.entity_embeddings.weight.data)
         self.shallom = torch.nn.Sequential(torch.nn.Dropout(self.input_dropout_rate),
-                                     torch.nn.Linear(self.embedding_dim * 2, shallom_width),
-                                     self.normalizer_class(shallom_width),
-                                     torch.nn.ReLU(),
-                                     torch.nn.Dropout(self.hidden_dropout_rate),
-                                     torch.nn.Linear(shallom_width, self.num_relations))
+                                           torch.nn.Linear(self.embedding_dim * 2, shallom_width),
+                                           self.normalizer_class(shallom_width),
+                                           torch.nn.ReLU(),
+                                           torch.nn.Dropout(self.hidden_dropout_rate),
+                                           torch.nn.Linear(shallom_width, self.num_relations))
 
     def get_embeddings(self) -> Tuple[np.ndarray, None]:
         return self.entity_embeddings.weight.data.detach(), None
@@ -115,26 +115,14 @@ class Pyke(BaseKGE):
         self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
         self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
         self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
-        self.loss = torch.nn.TripletMarginLoss(margin=1.0, p=2)
+        self.dist_func = torch.nn.PairwiseDistance(p=2)
+        self.margin = 1.0
 
-    def get_embeddings(self) -> Tuple[np.ndarray, Union[np.ndarray, None]]:
-        return self.entity_embeddings.weight.data.data.detach(), None
-
-    def loss_function(self, x: torch.FloatTensor, y=None) -> torch.FloatTensor:
-        anchor, positive, negative = x
-        return self.loss(anchor, positive, negative)
-
-    def forward_sequence(self, x: torch.LongTensor):
-        # (1) Anchor node Embedding: N, D
-        anchor = self.entity_embeddings(x[:, 0])
-        # (2) Positives and Negatives
-        pos, neg = torch.hsplit(x[:, 1:], 2)
-        # (3) Embeddings for Pos N, K, D
-        pos_emb = self.entity_embeddings(pos)
-        # (4) Embeddings for Negs N, K, D
-        neg_emb = self.entity_embeddings(neg)
-        # (5) Mean.
-        # N, D
-        mean_pos_emb = pos_emb.mean(dim=1)
-        mean_neg_emb = neg_emb.mean(dim=1)
-        return anchor, mean_pos_emb, mean_neg_emb
+    def forward_triples(self, x: torch.LongTensor):
+        # (1) get embeddings for a batch of entities and relations
+        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
+        # (2) Compute the Euclidean distance from head to relation
+        dist_head_rel = self.dist_func(head_ent_emb, rel_ent_emb)
+        dist_rel_tail = self.dist_func(rel_ent_emb, tail_ent_emb)
+        avg_dist = (dist_head_rel + dist_rel_tail) / 2
+        return self.margin - avg_dist

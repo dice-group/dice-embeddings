@@ -3,7 +3,8 @@ import numpy as np
 import torch
 import datetime
 from .types import Tuple
-from .models import Shallom, ConEx, AConEx, QMult, OMult, ConvQ, ConvO, ComplEx, DistMult, TransE, Keci, CMult,KeciBase
+from .models import Shallom, ConEx, AConEx, QMult, OMult, ConvQ, ConvO, ComplEx, DistMult, TransE, Keci, CMult, \
+    KeciBase, Pyke
 from .models.base_model import BaseKGE
 import time
 import pandas as pd
@@ -310,7 +311,7 @@ def intialize_model(args: dict) -> Tuple[object, str]:
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'Pyke':
         model = Pyke(args=args)
-        form_of_labelling = 'Pyke'
+        form_of_labelling = 'EntityPrediction'
     elif model_name == 'Keci':
         model = Keci(args=args)
         form_of_labelling = 'EntityPrediction'
