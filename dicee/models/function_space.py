@@ -15,24 +15,24 @@ class FMult(BaseKGE):
         self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
         self.k = int(np.sqrt(self.embedding_dim // 2))
         self.num_sample = 50
-        # self.gamma = torch.rand(self.k, self.num_sample) [0,1) => worse results
+        # self.gamma = torch.rand(self.k, self.num_sample) [0,1) uniform=> worse results
         self.gamma = torch.randn(self.k, self.num_sample)  # N(0,1)
 
     def compute_func(self, weights: torch.FloatTensor, x) -> torch.FloatTensor:
         n = len(weights)
-        # (Weights for two layers
+        # Weights for two linear layers.
         w1, w2 = torch.hsplit(weights, 2)
         # (1) Construct two-layered neural network
         w1 = w1.reshape(n, self.k, self.k)
         w2 = w2.reshape(n, self.k, self.k)
         # (2) Forward Pass
-        out1 = torch.tanh(w1 @ x)
+        out1 = torch.tanh(w1 @ x)  # torch.sigmoid => worse results
         out2 = w2 @ out1
-        return out2
+        return out2  # no non-linearity => better results
 
-    def chain_func(self, weights, x):
+    def chain_func(self, weights, x: torch.FloatTensor):
         n = len(weights)
-        # (Weights for two layers
+        # Weights for two linear layers.
         w1, w2 = torch.hsplit(weights, 2)
         # (1) Construct two-layered neural network
         w1 = w1.reshape(n, self.k, self.k)
@@ -51,11 +51,12 @@ class FMult(BaseKGE):
         # r_x = self.compute_func(rel_ent_emb, x=self.gamma)  # batch, \mathbb{R}^k, |\Gamma|
         # t_x = self.compute_func(tail_ent_emb, x=self.gamma)  # batch, \mathbb{R}^k, |\Gamma|
         # out = h_x * r_x * t_x  # batch, \mathbb{R}^k, |gamma|
-        # Logits via FDistMult2...
+        # (2) Compute NNs on \Gamma
         h_x = self.compute_func(head_ent_emb, x=self.gamma)  # batch, \mathbb{R}^k, |\Gamma|
         t_x = self.compute_func(tail_ent_emb, x=self.gamma)  # batch, \mathbb{R}^k, |\Gamma|
         r_h_x = self.chain_func(weights=rel_ent_emb, x=h_x)  # batch, \mathbb{R}^k, |\Gamma|
-        out = r_h_x * t_x  # batch, \mathbb{R}^k, |\Gamma|
-        out = torch.sum(out, dim=1)  # batch, |gamma| #
+        # (3) Compute |\Gamma| predictions
+        out = torch.sum(r_h_x * t_x, dim=1)  # batch, |gamma| #
+        # (4) Average (3) over \Gamma
         out = torch.mean(out, dim=1)  # batch
         return out
