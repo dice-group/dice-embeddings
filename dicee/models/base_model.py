@@ -49,7 +49,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
     def init_params_with_sanity_checking(self):
         assert self.args['model'] in ['FMult', 'CMult', 'Keci', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ',
                                       'ConvO',
-                                      'AConEx', 'ConEx', 'Shallom', 'TransE', 'Pyke', 'KeciBase']
+                                      'AConEx', 'ConEx', 'Shallom', 'TransE', 'Pyke', 'KeciBase', 'SedE']
         if self.args.get('weight_decay'):
             self.weight_decay = self.args['weight_decay']
         else:
