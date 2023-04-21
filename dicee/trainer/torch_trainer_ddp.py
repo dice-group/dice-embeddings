@@ -49,10 +49,11 @@ class TorchDDPTrainer(AbstractTrainer):
         """ Train model        """
         assert len(args) == 1
         model, = args
-        # (1) Fit start.
+        # (1) Run the fit the start callback.
         self.on_fit_start(self, model)
-        # nodes * gpus
+        # (2) Compute the world size nodes * gpus.
         world_size = self.attributes.num_nodes * torch.cuda.device_count()
+        # (3) Spawn the function across processes. nproces => 1 process for each GPU.
         mp.spawn(fn=distributed_training,
                  args=(world_size, model, kwargs['train_dataloaders'], self.callbacks, self.attributes), nprocs=world_size,
                  join=True, )
@@ -69,8 +70,8 @@ def distributed_training(rank: int, world_size, model, train_dataset_loader, cal
     callbacks:list of callback objects
     The function is called as ``fn(i, *args)``, where ``i`` is the process index and ``args`` is the passed through tuple of arguments.
     """
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '1234'
+    #os.environ['MASTER_ADDR'] = 'localhost'
+    #os.environ['MASTER_PORT'] = '1234'
     dist.init_process_group(backend='nccl', rank=rank, world_size=world_size)
     # (1) Create DATA LOADER.
     #train_dataset_loader.sampler=torch.utils.data.distributed.DistributedSampler
@@ -101,10 +102,11 @@ class DDPTrainer:
         self.loss_func = self.model.loss
         self.optimizer = optimizer
         self.callbacks = callbacks
+        # (1) Wrap the model with DDP() along with GPU ID that model lives on.
         self.model = DDP(model, device_ids=[gpu_id])
         self.num_epochs = num_epochs
         print_peak_memory("Max memory allocated after creating DDP:", gpu_id)
-        print('GPU:{self.gpu_id')
+        print('GPU:{self.gpu_id}')
         print(self.model)
         print(self.optimizer)
         print(f'NumOfDataPoints:{len(self.train_dataset_loader.dataset)} | NumOfEpochs:{self.num_epochs} | LearningRate:{self.model.module.learning_rate} | BatchSize:{self.train_dataset_loader.batch_size} | EpochBatchsize:{len(self.train_dataset_loader)}')
