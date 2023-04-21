@@ -1,14 +1,14 @@
-from dicee.executer import Execute, get_default_arguments
+from dicee.executer import Execute
 import sys
 import pytest
 from dicee import KGE
 from dicee.static_funcs import random_prediction
-
+from dicee.config import Args
 
 class TestDefaultParams:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult(self):
-        args = get_default_arguments([])
+        args = Args()#get_default_arguments([])
         args.model = 'QMult'
         args.optim = 'Adam'
         args.num_epochs = 1

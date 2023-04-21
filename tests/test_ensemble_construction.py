@@ -1,13 +1,13 @@
-from dicee.executer import Execute, ContinuousExecute, get_default_arguments
+from dicee.executer import Execute, ContinuousExecute
 from dicee.knowledge_graph_embeddings import KGE
 import pytest
 import os
-
+from dicee.config import Args
 
 class TestEnsembleConstruction:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
-        args = get_default_arguments([])
+        args = Args()#get_default_arguments([])
         args.model = 'QMult'
         args.scoring_technique = 'KvsAll'
         args.optim = 'Adam'

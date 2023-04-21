@@ -1,6 +1,7 @@
 from dicee.executer import Execute, ContinuousExecute, get_default_arguments
 from dicee.knowledge_graph_embeddings import KGE
 from dicee.knowledge_graph import KG
+from dicee.config import Args
 import pytest
 import argparse
 import os
@@ -9,7 +10,7 @@ import os
 class TestRegressionCL:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):
-        args = get_default_arguments([])
+        args = Args()#get_default_arguments([])
         args.model = 'QMult'
         args.scoring_technique = 'KvsAll'
         args.optim = 'Adam'
@@ -34,7 +35,7 @@ class TestRegressionCL:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling_Family(self):
-        args = get_default_arguments([])
+        args = Args()#get_default_arguments([])
         args.model = 'QMult'
         args.path_dataset_folder = 'KGs/Family'
         args.scoring_technique = 'KvsAll'

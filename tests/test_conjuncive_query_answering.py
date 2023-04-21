@@ -1,6 +1,7 @@
-from dicee.executer import Execute, ContinuousExecute,get_default_arguments
+from dicee.executer import Execute, ContinuousExecute
 from dicee.knowledge_graph_embeddings import KGE
 from dicee.knowledge_graph import KG
+from dicee.config import Args
 import pytest
 import argparse
 import os
@@ -9,7 +10,7 @@ import os
 class TestKGEInteractive:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_missing_triples_and_conjunctive_query_answering(self):
-        args = get_default_arguments([])
+        args = Args()#get_default_arguments([])
         args.model = 'AConEx'
         args.scoring_technique = 'KvsAll'
         args.optim = 'Adam'

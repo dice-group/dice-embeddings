@@ -1,12 +1,12 @@
-from dicee.executer import Execute, get_default_arguments
+from dicee.executer import Execute
 import sys
 import pytest
-
+from dicee.config import Args
 
 class TestPolyak:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_polyak_qmult_k_vs_all(self):
-        args = get_default_arguments([])
+        args = Args()  # get_default_arguments([])
         args.model = 'QMult'
         args.path_dataset_folder = 'KGs/UMLS'
         args.optim = 'Adam'
@@ -36,7 +36,7 @@ class TestPolyak:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_polyak_qmult_k_vs_all(self):
-        args = get_default_arguments([])
+        args = Args()  # get_default_arguments([])
         args.model = 'QMult'
         args.path_dataset_folder = 'KGs/UMLS'
         args.optim = 'Adam'
