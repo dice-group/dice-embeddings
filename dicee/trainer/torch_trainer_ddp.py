@@ -68,7 +68,7 @@ class TorchDDPTrainer(AbstractTrainer):
         # (2) Initialize OPTIMIZER.
         optimizer = model.configure_optimizers()
         # (3) Create a static DDB Trainer.
-        NodeTrainer(model, train_dataset_loader, optimizer, callbacks, args.num_epochs).train()
+        NodeTrainer(model, train_dataset_loader, optimizer, self.callbacks, self.attributes.num_epochs).train()
         dist.destroy_process_group()
         model.load_state_dict(torch.load("model.pt", map_location=torch.device('cpu')))
         os.remove('model.pt')
