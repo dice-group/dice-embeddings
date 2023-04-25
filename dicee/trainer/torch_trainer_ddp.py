@@ -158,10 +158,10 @@ class NodeTrainer:
                 construct_mini_batch_time = start_time - construct_mini_batch_time
             batch_loss = self._run_batch(source, targets)
             epoch_loss += batch_loss
-            if self.local_rank == self.global_rank==0:
+            if True:#self.local_rank == self.global_rank==0:
                 if construct_mini_batch_time:
                     print(
-                        f"Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec | BatchConst.:{construct_mini_batch_time:.2f}sec")
+                        f"Global{self.global_rank} | Local{self.local_rank} | Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec | BatchConst.:{construct_mini_batch_time:.2f}sec")
                 else:
                     print(
                         f"Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
