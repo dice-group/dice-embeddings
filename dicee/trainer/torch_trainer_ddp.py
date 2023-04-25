@@ -56,14 +56,14 @@ class TorchDDPTrainer(AbstractTrainer):
         self.on_fit_start(self, model)
         # (2) Setup DDP.
         dist.init_process_group(backend="nccl")
-
+        train_dataset_loader=kwargs['train_dataloaders']
         # (1) Create DATA LOADER.
-        train_dataset_loader = DataLoader(kwargs['train_dataloaders'].dataset, batch_size=args.batch_size,
-                                          pin_memory=True, shuffle=False, num_workers=args.num_core,
+        train_dataset_loader = DataLoader(train_dataset_loader.dataset, batch_size=self.attributes.batch_size,
+                                          pin_memory=True, shuffle=False, num_workers=self.attributes.num_core,
                                           persistent_workers=False,
                                           collate_fn=kwargs['train_dataloaders'].dataset.collate_fn,
                                           sampler=torch.utils.data.distributed.DistributedSampler(
-                                              kwargs['train_dataloaders'].dataset))
+                                              train_dataset_loader.dataset))
 
         # (2) Initialize OPTIMIZER.
         optimizer = model.configure_optimizers()
