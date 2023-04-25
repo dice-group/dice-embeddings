@@ -67,7 +67,7 @@ class TorchDDPTrainer(AbstractTrainer):
 
         # (2) Initialize OPTIMIZER.
         optimizer = model.configure_optimizers()
-        # (3) Create a static DDB Trainer.
+        # (3) Start NodeTrainer.
         NodeTrainer(model, train_dataset_loader, optimizer, self.callbacks, self.attributes.num_epochs).train()
         torch.distributed.destroy_process_group()
         self.on_fit_end(self, model)
@@ -100,14 +100,16 @@ class NodeTrainer:
                  optimizer: torch.optim.Optimizer,
                  callbacks,
                  num_epochs: int) -> None:
+        # (1) Local and Global Ranks. 
         self.local_rank = int(os.environ["LOCAL_RANK"])
         self.global_rank = int(os.environ["RANK"])
+        # (2) Send model to local trainer. (Check whether it is uncesseary as we wrap it with DDP
         self.model = model.to(self.local_rank)
         self.train_dataset_loader = train_dataset_loader
         self.loss_func = self.model.loss
         self.optimizer = optimizer
         self.callbacks = callbacks
-        # (1) Wrap the model with DDP() along with GPU ID that model lives on.
+        # (3) Wrap the model with DDP() along with GPU ID that model lives on.
         self.model = DDP(model, device_ids=[self.local_rank])
         self.num_epochs = num_epochs
         print_peak_memory("Max memory allocated after creating DDP local local_rank:", self.local_rank)
@@ -115,7 +117,7 @@ class NodeTrainer:
         print(self.model)
         print(self.optimizer)
         print(
-            f'NumOfDataPoints:{len(self.train_dataset_loader.dataset)} | NumOfEpochs:{self.num_epochs} | LearningRate:{self.model.module.learning_rate} | BatchSize:{self.train_dataset_loader.batch_size} | EpochBatchsize:{len(self.train_dataset_loader)}')
+                f'Global:{self.global_rank} | Local:{self.local_rank} | NumOfDataPoints:{len(self.train_dataset_loader.dataset)} | NumOfEpochs:{self.num_epochs} | LearningRate:{self.model.module.learning_rate} | BatchSize:{self.train_dataset_loader.batch_size} | EpochBatchsize:{len(self.train_dataset_loader)}')
 
         self.loss_history = []
 
@@ -162,7 +164,7 @@ class NodeTrainer:
                         f"Global:{self.global_rank} | Local:{self.local_rank} | Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec | BatchConst.:{construct_mini_batch_time:.2f}sec")
                 else:
                     print(
-                        f"Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
+                        f"Global:{self.global_rank} | Local:{self.local_rank} | Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
             construct_mini_batch_time = time.time()
         return epoch_loss / (i + 1)
 
@@ -170,8 +172,10 @@ class NodeTrainer:
         for epoch in range(self.num_epochs):
             start_time = time.time()
             epoch_loss = self._run_epoch(epoch)
-            if self.local_rank == self.global_rank == 0:
-                print(f"Epoch:{epoch + 1} | Loss:{epoch_loss:.8f} | Runtime:{(time.time() - start_time) / 60:.3f}mins")
+
+            print(f"Epoch:{epoch + 1} | Loss:{epoch_loss:.8f} | Runtime:{(time.time() - start_time) / 60:.3f}mins")
+            if True:#self.local_rank == self.global_rank == 0:
+                #print(f"Epoch:{epoch + 1} | Loss:{epoch_loss:.8f} | Runtime:{(time.time() - start_time) / 60:.3f}mins")
                 self.model.module.loss_history.append(epoch_loss)
                 for c in self.callbacks:
                     c.on_train_epoch_end(None, self.model.module)
