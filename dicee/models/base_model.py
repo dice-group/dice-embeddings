@@ -1,5 +1,7 @@
 from ..types import List, Any, Tuple, Union, Dict, np, torch
 import pytorch_lightning
+
+
 class BaseKGE(pytorch_lightning.LightningModule):
     def __init__(self, args: dict):
         super().__init__()
@@ -45,8 +47,9 @@ class BaseKGE(pytorch_lightning.LightningModule):
         return {'EstimatedSizeMB': (num_params + buffer_size) / 1024 ** 2, 'NumParam': num_params}
 
     def init_params_with_sanity_checking(self):
-        assert self.args['model'] in ['CMult', 'Keci', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO',
-                                      'AConEx', 'ConEx', 'Shallom', 'TransE', 'Pyke']
+        assert self.args['model'] in ['FMult', 'CMult', 'Keci', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ',
+                                      'ConvO',
+                                      'AConEx', 'ConEx', 'Shallom', 'TransE', 'Pyke', 'KeciBase']
         if self.args.get('weight_decay'):
             self.weight_decay = self.args['weight_decay']
         else:
@@ -285,7 +288,6 @@ class BaseKGE(pytorch_lightning.LightningModule):
         test_accuracy = accuracy(predictions, y_batch)
         return {'test_accuracy': test_accuracy}
         """
-
 
     def test_epoch_end(self, outputs: List[Any]):
         """

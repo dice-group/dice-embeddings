@@ -17,7 +17,7 @@ import pandas as pd
 from sklearn.model_selection import KFold
 import copy
 from typing import List, Tuple
-
+from ..knowledge_graph import KG
 
 def initialize_trainer(args, callbacks):
     if args.trainer == 'torchCPUTrainer':
@@ -162,7 +162,7 @@ class DICE_Trainer:
         print('Initializing Model...', end='\t')
         model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         self.report['form_of_labelling'] = form_of_labelling
-        assert form_of_labelling in ['EntityPrediction', 'RelationPrediction', 'Pyke']
+        assert form_of_labelling in ['EntityPrediction', 'RelationPrediction']
         return model, form_of_labelling
 
     @timeit
@@ -194,7 +194,7 @@ class DICE_Trainer:
         # @TODO: SaveDataset
         return train_dataset
 
-    def start(self, dataset) -> Tuple[BaseKGE, str]:
+    def start(self, dataset:KG) -> Tuple[BaseKGE, str]:
         """ Train selected model via the selected training strategy """
         print('------------------- Train -------------------')
         # (1) Perform K-fold CV
@@ -204,7 +204,6 @@ class DICE_Trainer:
             self.trainer: Union[TorchTrainer, TorchDDPTrainer, pl.Trainer]
             self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args), plugins=[])
             model, form_of_labelling = self.initialize_or_load_model()
-            assert self.args.scoring_technique in ['KvsSample', '1vsAll', 'KvsAll', 'NegSample']
             self.trainer.evaluator=self.evaluator
             self.trainer.dataset = dataset
             self.trainer.form_of_labelling = form_of_labelling

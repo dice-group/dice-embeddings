@@ -1,11 +1,11 @@
-from dicee.executer import Execute, get_default_arguments
+from dicee.executer import Execute
 import pytest
-
+from dicee.config import Args
 
 class TestCV_KvsAll:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_shallom_kvs_all(self):
-        args = get_default_arguments([])
+        args = Args()  # get_default_arguments([])
         args.model = 'Shallom'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -27,7 +27,7 @@ class TestCV_KvsAll:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_conex_kvs_all(self):
-        args = get_default_arguments([])
+        args = Args()  # get_default_arguments([])
         args.model = 'ConEx'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -49,7 +49,7 @@ class TestCV_KvsAll:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult_kvs_all(self):
-        args = get_default_arguments([])
+        args = Args()  # get_default_arguments([])
         args.model = 'QMult'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -71,7 +71,7 @@ class TestCV_KvsAll:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_convq_kvs_all(self):
-        args = get_default_arguments([])
+        args = Args()  # get_default_arguments([])
         args.model = 'ConvQ'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -93,7 +93,7 @@ class TestCV_KvsAll:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_omult_kvs_all(self):
-        args = get_default_arguments([])
+        args = Args()  # get_default_arguments([])
         args.model = 'OMult'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -115,7 +115,7 @@ class TestCV_KvsAll:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_convo_kvs_all(self):
-        args = get_default_arguments([])
+        args = Args()#get_default_arguments([])
         args.model = 'ConvO'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -134,7 +134,7 @@ class TestCV_KvsAll:
         Execute(args).start()
 
     def test_distmult_kvs_all(self):
-        args = get_default_arguments([])
+        args = Args()#get_default_arguments([])
         args.model = 'DistMult'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -152,7 +152,7 @@ class TestCV_KvsAll:
         Execute(args).start()
 
     def test_complex_kvs_all(self):
-        args = get_default_arguments([])
+        args = Args()  # get_default_arguments([])
         args.model = 'ComplEx'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'

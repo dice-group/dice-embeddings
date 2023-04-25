@@ -1,12 +1,12 @@
-from dicee.executer import Execute, get_default_arguments
+from dicee.executer import Execute
 import sys
 import pytest
-
+from dicee.config import Args
 
 class TestRegressionConvO:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
-        args = get_default_arguments([])
+        args = Args()  # get_default_arguments([])
         args.model = 'ConvO'
         args.scoring_technique = 'KvsAll'
         args.path_dataset_folder = 'KGs/UMLS'
@@ -28,7 +28,7 @@ class TestRegressionConvO:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
-        args = get_default_arguments([])
+        args = Args()  # get_default_arguments([])
         args.model = 'ConvO'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
@@ -51,7 +51,7 @@ class TestRegressionConvO:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):
-        args = get_default_arguments([])
+        args = Args()  # get_default_arguments([])
         args.model = 'ConvO'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10

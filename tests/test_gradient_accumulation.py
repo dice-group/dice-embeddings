@@ -1,12 +1,12 @@
-from dicee.executer import Execute, get_default_arguments
+from dicee.executer import Execute
 import sys
 import pytest
-
+from dicee.config import Args
 
 class TestDefaultParams:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_shallom(self):
-        args = get_default_arguments([])
+        args = Args()  # get_default_arguments([])
         args.model = 'Shallom'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'

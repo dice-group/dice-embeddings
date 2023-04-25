@@ -5,12 +5,15 @@ import time
 import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.distributed.optim import ZeroRedundancyOptimizer
-import torch.distributed as dist
+
 import numpy as np
 from dicee.abstracts import AbstractTrainer
 from dicee.static_funcs_training import efficient_zero_grad
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
+from torch.distributed import init_process_group, destroy_process_group
+
+
 # DDP with gradiant accumulation https://gist.github.com/mcarilli/bf013d2d2f4b4dd21ade30c9b52d5e2e
 def print_peak_memory(prefix, device):
     if device == 0:
@@ -49,16 +52,130 @@ class TorchDDPTrainer(AbstractTrainer):
         """ Train model        """
         assert len(args) == 1
         model, = args
-        # (1) Fit start.
+        # (1) Run the fit the start callback.
         self.on_fit_start(self, model)
-        # nodes * gpus
+        # (2) Setup DDP.
+        torch.distributed.init_process_group(backend="nccl")
+        train_dataset_loader = kwargs['train_dataloaders']
+        # (1) Create DATA LOADER.
+        train_dataset_loader = DataLoader(train_dataset_loader.dataset, batch_size=self.attributes.batch_size,
+                                          pin_memory=True, shuffle=False, num_workers=self.attributes.num_core,
+                                          persistent_workers=False,
+                                          collate_fn=kwargs['train_dataloaders'].dataset.collate_fn,
+                                          sampler=torch.utils.data.distributed.DistributedSampler(
+                                              train_dataset_loader.dataset))
+
+        # (2) Initialize OPTIMIZER.
+        optimizer = model.configure_optimizers()
+        # (3) Create a static DDB Trainer.
+        NodeTrainer(model, train_dataset_loader, optimizer, self.callbacks, self.attributes.num_epochs).train()
+        torch.distributed.destroy_process_group()
+        self.on_fit_end(self, model)
+
+    def old_fit(self, *args, **kwargs):
+        """ Train model        """
+        assert len(args) == 1
+        model, = args
+        # (1) Run the fit the start callback.
+        self.on_fit_start(self, model)
+        # (2) Compute the world size nodes * gpus.
         world_size = self.attributes.num_nodes * torch.cuda.device_count()
+        # @TODO: torchrun is required
+        # https://pytorch.org/tutorials/beginner/ddp_series_fault_tolerance.html
+        # https://github.com/pytorch/examples/blob/main/distributed/ddp-tutorial-series/multinode.py
+        # (3) Spawn the function across processes. nprocs => 1 process for each GPU.
         mp.spawn(fn=distributed_training,
-                 args=(world_size, model, kwargs['train_dataloaders'], self.callbacks, self.attributes), nprocs=world_size,
+                 args=(world_size, model, kwargs['train_dataloaders'], self.callbacks, self.attributes),
+                 nprocs=world_size,
                  join=True, )
         model.load_state_dict(torch.load("model.pt", map_location=torch.device('cpu')))
         os.remove('model.pt')
         self.on_fit_end(self, model)
+
+
+class NodeTrainer:
+    def __init__(self,
+                 model: torch.nn.Module,
+                 train_dataset_loader: DataLoader,
+                 optimizer: torch.optim.Optimizer,
+                 callbacks,
+                 num_epochs: int) -> None:
+        self.local_rank = int(os.environ["LOCAL_RANK"])
+        self.global_rank = int(os.environ["RANK"])
+        self.model = model.to(self.local_rank)
+        self.train_dataset_loader = train_dataset_loader
+        self.loss_func = self.model.loss
+        self.optimizer = optimizer
+        self.callbacks = callbacks
+        # (1) Wrap the model with DDP() along with GPU ID that model lives on.
+        self.model = DDP(model, device_ids=[self.local_rank])
+        self.num_epochs = num_epochs
+        print_peak_memory("Max memory allocated after creating DDP local local_rank:", self.local_rank)
+        print(f'Global Rank {self.global_rank}\t Local Rank:{self.local_rank}')
+        print(self.model)
+        print(self.optimizer)
+        print(
+            f'NumOfDataPoints:{len(self.train_dataset_loader.dataset)} | NumOfEpochs:{self.num_epochs} | LearningRate:{self.model.module.learning_rate} | BatchSize:{self.train_dataset_loader.batch_size} | EpochBatchsize:{len(self.train_dataset_loader)}')
+
+        self.loss_history = []
+
+    def _load_snapshot(self, snapshot_path):
+        raise NotImplementedError
+
+    def _run_batch(self, source, targets):
+        self.optimizer.zero_grad()
+        output = self.model(source)
+        loss = self.loss_func(output, targets)
+        batch_loss = loss.item()
+        loss.backward()
+        self.optimizer.step()
+        return batch_loss
+
+    def extract_input_outputs(self, z: list):
+        if len(z) == 2:
+            x_batch, y_batch = z
+            return x_batch.to(self.local_rank), y_batch.to(self.local_rank)
+        elif len(z) == 3:
+            x_batch, y_idx_batch, y_batch, = z
+            x_batch, y_idx_batch, y_batch = x_batch.to(self.local_rank), y_idx_batch.to(self.local_rank), y_batch.to(
+                self.local_rank)
+            return (x_batch, y_idx_batch), y_batch
+        else:
+            print(len(batch))
+            raise ValueError('Unexpected batch shape..')
+
+    def _run_epoch(self, epoch):
+        self.train_dataset_loader.sampler.set_epoch(epoch)
+        epoch_loss = 0
+        i = 0
+        construct_mini_batch_time = None
+        for i, z in enumerate(self.train_dataset_loader):
+            source, targets = self.extract_input_outputs(z)
+            start_time = time.time()
+            if construct_mini_batch_time:
+                construct_mini_batch_time = start_time - construct_mini_batch_time
+            batch_loss = self._run_batch(source, targets)
+            epoch_loss += batch_loss
+            if True:  # self.local_rank == self.global_rank==0:
+                if construct_mini_batch_time:
+                    print(
+                        f"Global:{self.global_rank} | Local:{self.local_rank} | Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec | BatchConst.:{construct_mini_batch_time:.2f}sec")
+                else:
+                    print(
+                        f"Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
+            construct_mini_batch_time = time.time()
+        return epoch_loss / (i + 1)
+
+    def train(self):
+        for epoch in range(self.num_epochs):
+            start_time = time.time()
+            epoch_loss = self._run_epoch(epoch)
+            if self.local_rank == self.global_rank == 0:
+                print(f"Epoch:{epoch + 1} | Loss:{epoch_loss:.8f} | Runtime:{(time.time() - start_time) / 60:.3f}mins")
+                self.model.module.loss_history.append(epoch_loss)
+                for c in self.callbacks:
+                    c.on_train_epoch_end(None, self.model.module)
+
 
 def distributed_training(rank: int, world_size, model, train_dataset_loader, callbacks, args):
     """
@@ -69,15 +186,13 @@ def distributed_training(rank: int, world_size, model, train_dataset_loader, cal
     callbacks:list of callback objects
     The function is called as ``fn(i, *args)``, where ``i`` is the process index and ``args`` is the passed through tuple of arguments.
     """
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '1234'
     dist.init_process_group(backend='nccl', rank=rank, world_size=world_size)
     # (1) Create DATA LOADER.
-    #train_dataset_loader.sampler=torch.utils.data.distributed.DistributedSampler
     train_dataset_loader = DataLoader(train_dataset_loader.dataset, batch_size=args.batch_size,
-                                      pin_memory=True, shuffle=False,num_workers=args.num_core,
+                                      pin_memory=True, shuffle=False, num_workers=args.num_core,
                                       persistent_workers=False, collate_fn=train_dataset_loader.dataset.collate_fn,
-                                      sampler=torch.utils.data.distributed.DistributedSampler(train_dataset_loader.dataset))
+                                      sampler=torch.utils.data.distributed.DistributedSampler(
+                                          train_dataset_loader.dataset))
 
     # (2) Initialize OPTIMIZER.
     optimizer = model.configure_optimizers()
@@ -88,6 +203,7 @@ def distributed_training(rank: int, world_size, model, train_dataset_loader, cal
         trainer.model.loss_history = trainer.loss_history
         torch.save(trainer.model.module.state_dict(), "model.pt")
     dist.destroy_process_group()
+
 
 class DDPTrainer:
     def __init__(self,
@@ -101,13 +217,15 @@ class DDPTrainer:
         self.loss_func = self.model.loss
         self.optimizer = optimizer
         self.callbacks = callbacks
+        # (1) Wrap the model with DDP() along with GPU ID that model lives on.
         self.model = DDP(model, device_ids=[gpu_id])
         self.num_epochs = num_epochs
         print_peak_memory("Max memory allocated after creating DDP:", gpu_id)
-        print('GPU:{self.gpu_id')
+        print('GPU:{self.gpu_id}')
         print(self.model)
         print(self.optimizer)
-        print(f'NumOfDataPoints:{len(self.train_dataset_loader.dataset)} | NumOfEpochs:{self.num_epochs} | LearningRate:{self.model.module.learning_rate} | BatchSize:{self.train_dataset_loader.batch_size} | EpochBatchsize:{len(self.train_dataset_loader)}')
+        print(
+            f'NumOfDataPoints:{len(self.train_dataset_loader.dataset)} | NumOfEpochs:{self.num_epochs} | LearningRate:{self.model.module.learning_rate} | BatchSize:{self.train_dataset_loader.batch_size} | EpochBatchsize:{len(self.train_dataset_loader)}')
 
         self.loss_history = []
 

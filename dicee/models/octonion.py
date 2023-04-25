@@ -63,14 +63,13 @@ class OMult(BaseKGE):
             8)
         emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 = torch.hsplit(
             tail_ent_emb, 8)
+        # (3) Octonion Multiplication
         e0, e1, e2, e3, e4, e5, e6, e7 = octonion_mul(
             O_1=(
                 emb_head_e0, emb_head_e1, emb_head_e2, emb_head_e3, emb_head_e4, emb_head_e5, emb_head_e6, emb_head_e7),
             O_2=(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7))
-        # (3)
-        # (3.1) Dropout on (2)-result of octonion multiplication.
-        # (3.2) Apply BN + DP on ALL entities.
-        # (3.3) Inner product
+        # (4)
+        # (4.3) Inner product
         e0_score = (e0 * emb_tail_e0).sum(dim=1)
         e1_score = (e1 * emb_tail_e1).sum(dim=1)
         e2_score = (e2 * emb_tail_e2).sum(dim=1)
@@ -99,15 +98,14 @@ class OMult(BaseKGE):
             rel_ent_emb,
             8)
 
-        # (3)
-        # (3.1) Apply BN + Dropout on (1.2)-relations.
-        # (3.2) Apply quaternion multiplication on (1.1) and (3.1).
+        # (3)Apply octonion multiplication
         e0, e1, e2, e3, e4, e5, e6, e7 = octonion_mul(
             O_1=(emb_head_e0, emb_head_e1, emb_head_e2, emb_head_e3, emb_head_e4,
                  emb_head_e5, emb_head_e6, emb_head_e7),
             O_2=(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4,
                  emb_rel_e5, emb_rel_e6, emb_rel_e7))
 
+        # Prepare all entities.
         emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 = torch.hsplit(
             self.entity_embeddings.weight, 8)
         emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 = emb_tail_e0.transpose(
@@ -116,9 +114,6 @@ class OMult(BaseKGE):
             1, 0), emb_tail_e5.transpose(1, 0), emb_tail_e6.transpose(1, 0), emb_tail_e7.transpose(1, 0)
 
         # (4)
-        # (4.1) Hadamard product of (2) with (3).
-        # (4.2) Dropout on (4.1).
-        # (4.3) Apply BN + DP on ALL entities.
         # (4.4) Inner product
         e0_score = torch.mm(e0, emb_tail_e0)
         e1_score = torch.mm(e1, emb_tail_e1)
@@ -193,17 +188,13 @@ class ConvO(BaseKGE):
         conv_e0, conv_e1, conv_e2, conv_e3, conv_e4, conv_e5, conv_e6, conv_e7 = O_3
 
         # (3)
-        # (3.1) Apply BN + Dropout on (1.2)-relations.
-        # (3.2) Apply quaternion multiplication on (1.1) and (3.1).
+        # (3.1) Apply quaternion multiplication.
         e0, e1, e2, e3, e4, e5, e6, e7 = octonion_mul(
             O_1=(emb_head_e0, emb_head_e1, emb_head_e2, emb_head_e3, emb_head_e4,
                  emb_head_e5, emb_head_e6, emb_head_e7),
             O_2=(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4,
                  emb_rel_e5, emb_rel_e6, emb_rel_e7))
         # (4)
-        # (4.1) Hadamard product of (2) with (3).
-        # (4.2) Dropout on (4.1).
-        # (4.3) Apply BN + DP on ALL entities.
         # (4.4) Inner product
         e0_score = (conv_e0 * e0 * emb_tail_e0).sum(dim=1)
         e1_score = (conv_e1 * e1 * emb_tail_e1).sum(dim=1)
@@ -240,7 +231,6 @@ class ConvO(BaseKGE):
         conv_e0, conv_e1, conv_e2, conv_e3, conv_e4, conv_e5, conv_e6, conv_e7 = O_3
 
         # (3)
-        # (3.1) Apply BN + Dropout on (1.2)-relations.
         # (3.2) Apply quaternion multiplication on (1.1) and (3.1).
         e0, e1, e2, e3, e4, e5, e6, e7 = octonion_mul(
             O_1=(emb_head_e0, emb_head_e1, emb_head_e2, emb_head_e3, emb_head_e4,
@@ -256,9 +246,6 @@ class ConvO(BaseKGE):
             1, 0), emb_tail_e5.transpose(1, 0), emb_tail_e6.transpose(1, 0), emb_tail_e7.transpose(1, 0)
 
         # (4)
-        # (4.1) Hadamard product of (2) with (3).
-        # (4.2) Dropout on (4.1).
-        # (4.3) Apply BN + DP on ALL entities.
         # (4.4) Inner product
         e0_score = torch.mm(conv_e0 * e0, emb_tail_e0)
         e1_score = torch.mm(conv_e1 * e1, emb_tail_e1)

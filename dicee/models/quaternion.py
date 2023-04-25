@@ -37,14 +37,12 @@ class QMult(BaseKGE):
         emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(tail_ent_emb, 4)
 
         # (2)
-        # (2.1) Apply BN + Dropout on (1.2)-relations.
-        # (2.2) Apply quaternion multiplication on (1.1) and (2.1).
+        # (2.1) Apply quaternion multiplication on (1.1) and (2.1).
         r_val, i_val, j_val, k_val = quaternion_mul(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
                                                     Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
 
         # (3)
-        # (3.1) Dropout on (2)-result of quaternion multiplication.
-        # (3.2) Inner product
+        # (3.1) Inner product
         real_score = torch.sum(r_val * emb_tail_real, dim=1)
         i_score = torch.sum(i_val * emb_tail_i, dim=1)
         j_score = torch.sum(j_val * emb_tail_j, dim=1)
@@ -73,8 +71,7 @@ class QMult(BaseKGE):
             1, 0), emb_tail_k.transpose(1, 0)
 
         # (3)
-        # (3.1) Dropout on (2)-result of quaternion multiplication.
-        # (3.2) Inner product
+        # (3.1) Inner product
         real_score = torch.mm(r_val, emb_tail_real)
         i_score = torch.mm(i_val, emb_tail_i)
         j_score = torch.mm(j_val, emb_tail_j)
@@ -99,7 +96,6 @@ class QMult(BaseKGE):
                                                     Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
 
         # (batch size, num. selected entity, dimension)
-        # tail_entity_emb = self.normalize_tail_entity_embeddings(self.entity_embeddings(target_entity_idx))
         tail_entity_emb = self.entity_embeddings(target_entity_idx)
         # quaternion vectors
         emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.tensor_split(tail_entity_emb, 4, dim=2)
@@ -181,15 +177,12 @@ class ConvQ(BaseKGE):
                                         Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
         conv_real, conv_imag_i, conv_imag_j, conv_imag_k = Q_3
         # (3)
-        # (3.1) Apply BN + Dropout on (1.2).
-        # (3.2) Apply quaternion multiplication on (1.1) and (3.1).
+        # (3.1) Apply quaternion multiplication on (1.1) and (3.1).
         r_val, i_val, j_val, k_val = quaternion_mul(
             Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
             Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
         # (4)
-        # (4.1) Hadamard product of (2) with (3).
-        # (4.2) Dropout on (4.1).
-        # (4.3) Inner product
+        # (4.1) Hadamard product of (2) with (3) and inner product with tails
         real_score = torch.sum(conv_real * r_val * emb_tail_real, dim=1)
         i_score = torch.sum(conv_imag_i * i_val * emb_tail_i, dim=1)
         j_score = torch.sum(conv_imag_j * j_val * emb_tail_j, dim=1)
@@ -214,17 +207,18 @@ class ConvQ(BaseKGE):
                                         Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
         conv_real, conv_imag_i, conv_imag_j, conv_imag_k = Q_3
 
+        # (3)
+        # (3.1) Apply quaternion multiplication.
         r_val, i_val, j_val, k_val = quaternion_mul(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
                                                     Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
-
+        # Prepare all entity embeddings.
         emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(self.entity_embeddings.weight, 4)
         emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = emb_tail_real.transpose(1, 0), emb_tail_i.transpose(1,
                                                                                                                 0), emb_tail_j.transpose(
             1, 0), emb_tail_k.transpose(1, 0)
 
-        # (3)
-        # (3.1) Dropout on (2)-result of quaternion multiplication.
-        # (3.2) Inner product
+        # (4)
+        # (4.1) Hadamard product of (2) with (3) and inner product with tails
         real_score = torch.mm(conv_real * r_val, emb_tail_real)
         i_score = torch.mm(conv_imag_i * i_val, emb_tail_i)
         j_score = torch.mm(conv_imag_j * j_val, emb_tail_j)

@@ -3,7 +3,8 @@ import numpy as np
 import torch
 import datetime
 from .types import Tuple
-from .models import Shallom, ConEx, AConEx, QMult, OMult, ConvQ, ConvO, ComplEx, DistMult, TransE, Keci, CMult
+from .models import Shallom, ConEx, AConEx, QMult, OMult, ConvQ, ConvO, ComplEx, DistMult, TransE, Keci, CMult, \
+    KeciBase, Pyke, FMult
 from .models.base_model import BaseKGE
 import time
 import pandas as pd
@@ -278,23 +279,7 @@ def intialize_model(args: dict) -> Tuple[object, str]:
     # @TODO: Apply construct_krone as callback? or use KronE_QMult as a prefix.
     # @TODO: Remove form_of_labelling
     model_name = args['model']
-    if model_name == 'KronELinear':
-        model = KronELinear(args=args)
-        form_of_labelling = 'EntityPrediction'
-    elif model_name == 'KPDistMult':
-        model = KPDistMult(args=args)
-        form_of_labelling = 'EntityPrediction'
-    elif model_name == 'KPFullDistMult':
-        # Full compression of entities and relations.
-        model = KPFullDistMult(args=args)
-        form_of_labelling = 'EntityPrediction'
-    elif model_name == 'KronE':
-        model = KronE(args=args)
-        form_of_labelling = 'EntityPrediction'
-    elif model_name == 'KronE_wo_f':
-        model = KronE_wo_f(args=args)
-        form_of_labelling = 'EntityPrediction'
-    elif model_name == 'Shallom':
+    if model_name == 'Shallom':
         model = Shallom(args=args)
         form_of_labelling = 'RelationPrediction'
     elif model_name == 'ConEx':
@@ -326,12 +311,18 @@ def intialize_model(args: dict) -> Tuple[object, str]:
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'Pyke':
         model = Pyke(args=args)
-        form_of_labelling = 'Pyke'
+        form_of_labelling = 'EntityPrediction'
     elif model_name == 'Keci':
         model = Keci(args=args)
         form_of_labelling = 'EntityPrediction'
+    elif model_name == 'KeciBase':
+        model = KeciBase(args=args)
+        form_of_labelling = 'EntityPrediction'
     elif model_name == 'CMult':
         model = CMult(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'FMult':
+        model = FMult(args=args)
         form_of_labelling = 'EntityPrediction'
     # elif for PYKEEN https://github.com/dice-group/dice-embeddings/issues/54
     else:
