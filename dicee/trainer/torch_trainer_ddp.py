@@ -136,11 +136,11 @@ class NodeTrainer:
     def extract_input_outputs(self, z: list):
         if len(z) == 2:
             x_batch, y_batch = z
-            return x_batch.to(self.gpu_id), y_batch.to(self.gpu_id)
+            return x_batch.to(self.local_rank), y_batch.to(self.local_rank)
         elif len(z) == 3:
             x_batch, y_idx_batch, y_batch, = z
-            x_batch, y_idx_batch, y_batch = x_batch.to(self.gpu_id), y_idx_batch.to(self.gpu_id), y_batch.to(
-                self.gpu_id)
+            x_batch, y_idx_batch, y_batch = x_batch.to(self.local_rank), y_idx_batch.to(self.local_rank), y_batch.to(
+                self.local_rank)
             return (x_batch, y_idx_batch), y_batch
         else:
             print(len(batch))
