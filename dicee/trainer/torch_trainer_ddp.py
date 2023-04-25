@@ -70,8 +70,8 @@ class TorchDDPTrainer(AbstractTrainer):
         # (3) Create a static DDB Trainer.
         NodeTrainer(model, train_dataset_loader, optimizer, self.callbacks, self.attributes.num_epochs).train()
         dist.destroy_process_group()
-        model.load_state_dict(torch.load("model.pt", map_location=torch.device('cpu')))
-        os.remove('model.pt')
+        #model.load_state_dict(torch.load("model.pt", map_location=torch.device('cpu')))
+        #os.remove('model.pt')
         self.on_fit_end(self, model)
 
     def old_fit(self, *args, **kwargs):
