@@ -11,16 +11,13 @@ from dicee.abstracts import AbstractTrainer
 from dicee.static_funcs_training import efficient_zero_grad
 from torch.utils.data import Dataset, DataLoader
 import pandas as pd
-
+from torch.distributed import init_process_group, destroy_process_group
 
 # DDP with gradiant accumulation https://gist.github.com/mcarilli/bf013d2d2f4b4dd21ade30c9b52d5e2e
 def print_peak_memory(prefix, device):
     if device == 0:
         print(f"{prefix}: {torch.cuda.max_memory_allocated(device) // 1e6}MB ")
 
-
-def ddp_setup():
-    init_process_group(backend="nccl")
 
 
 class TorchDDPTrainer(AbstractTrainer):
@@ -58,7 +55,7 @@ class TorchDDPTrainer(AbstractTrainer):
         # (1) Run the fit the start callback.
         self.on_fit_start(self, model)
         # (2) Setup DDP.
-        ddp_setup()
+        dist.init_process_group(backend="nccl")
 
         # (1) Create DATA LOADER.
         train_dataset_loader = DataLoader(kwargs['train_dataloaders'].dataset, batch_size=args.batch_size,
@@ -71,8 +68,8 @@ class TorchDDPTrainer(AbstractTrainer):
         # (2) Initialize OPTIMIZER.
         optimizer = model.configure_optimizers()
         # (3) Create a static DDB Trainer.
-        NodeTrainer(model, train_dataset_loader, optimizer, rank, callbacks, args.num_epochs).train()
-        destroy_process_group()
+        NodeTrainer(model, train_dataset_loader, optimizer, callbacks, args.num_epochs).train()
+        dist.destroy_process_group()
         model.load_state_dict(torch.load("model.pt", map_location=torch.device('cpu')))
         os.remove('model.pt')
         self.on_fit_end(self, model)
@@ -102,8 +99,9 @@ class NodeTrainer:
     def __init__(self,
                  model: torch.nn.Module,
                  train_dataset_loader: DataLoader,
-                 optimizer: torch.optim.Optimizer
-                 , callbacks, num_epochs) -> None:
+                 optimizer: torch.optim.Optimizer,
+                 callbacks,
+                 num_epochs:int) -> None:
         self.local_rank = int(os.environ["LOCAL_RANK"])
         self.global_rank = int(os.environ["RANK"])
         self.model = model.to(self.local_rank)
