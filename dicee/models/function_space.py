@@ -52,6 +52,7 @@ class FMult(BaseKGE):
         # t_x = self.compute_func(tail_ent_emb, x=self.gamma)  # batch, \mathbb{R}^k, |\Gamma|
         # out = h_x * r_x * t_x  # batch, \mathbb{R}^k, |gamma|
         # (2) Compute NNs on \Gamma
+        self.gamma=self.gamma.to(head_ent_emb.device)
         h_x = self.compute_func(head_ent_emb, x=self.gamma)  # batch, \mathbb{R}^k, |\Gamma|
         t_x = self.compute_func(tail_ent_emb, x=self.gamma)  # batch, \mathbb{R}^k, |\Gamma|
         r_h_x = self.chain_func(weights=rel_ent_emb, x=h_x)  # batch, \mathbb{R}^k, |\Gamma|
