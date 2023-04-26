@@ -13,21 +13,15 @@ def get_default_arguments(description=None):
     parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="Embeddings, model, and any other related data will be stored therein.")
     parser.add_argument("--model", type=str,
-                        default="Keci",
+                        default="AConEx",
                         help="Available models: CMult, ConEx, ConvQ, ConvO, DistMult, QMult, OMult, "
                              "Shallom, AConEx, ConEx, ComplEx, DistMult, TransE, Keci")
-    parser.add_argument('--p', type=int, default=0,
-                        help='P for Clifford Algebra')
-    parser.add_argument('--q', type=int, default=1,
-                        help='Q for Clifford Algebra')
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[Adam, SGD]')
     parser.add_argument('--embedding_dim', type=int, default=32,
                         help='Number of dimensions for an embedding vector. ')
     parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024, help='Mini batch size')
-    parser.add_argument('--auto_batch_finder', type=bool, default=False,
-                        help='Find a batch size w.r.t. computational budgets')
     parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument('--callbacks', '--list', nargs='+', default=[],
                         help='List of tuples representing a callback and values, e.g. [FPPE or PPE or PPE10 ,PPE20 or PPE, FPPE]')
@@ -56,7 +50,7 @@ def get_default_arguments(description=None):
                         help='At every X number of epochs model will be saved. If None, we save 4 times.')
     parser.add_argument("--label_smoothing_rate", type=float, default=0.0, help='None for not using it.')
     parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
-    parser.add_argument("--num_of_output_channels", type=int, default=32,
+    parser.add_argument("--num_of_output_channels", type=int, default=2,
                         help="# of output channels in convolution")
     parser.add_argument("--num_core", type=int, default=0,
                         help='Number of cores to be used. 0 implies using single CPU')
@@ -65,6 +59,12 @@ def get_default_arguments(description=None):
     parser.add_argument("--sample_triples_ratio", type=float, default=None, help='Sample input data.')
     parser.add_argument("--read_only_few", type=int, default=None,
                         help='READ only first N triples. If 0, read all.')
+    parser.add_argument('--p', type=int, default=0,
+                        help='P for Clifford Algebra')
+    parser.add_argument('--q', type=int, default=0,
+                        help='Q for Clifford Algebra')
+    parser.add_argument('--auto_batch_finder', type=bool, default=False,
+                        help='Find a batch size w.r.t. computational budgets')
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)
