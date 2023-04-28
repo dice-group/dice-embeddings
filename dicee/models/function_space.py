@@ -9,7 +9,7 @@ class FMult(BaseKGE):
 
     def __init__(self, args):
         super().__init__(args)
-        self.name = 'FMult'
+        self.name = 'FMult2'
         self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
         self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
         self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
