@@ -70,7 +70,7 @@ class FMult2(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'FMult2'
-        self.n_layers = 2
+        self.n_layers = 3
         tuned_embedding_dim = False
         while int(np.sqrt((self.embedding_dim-1) / self.n_layers)) != np.sqrt((self.embedding_dim-1) / self.n_layers):
             self.embedding_dim += 1
@@ -78,9 +78,8 @@ class FMult2(BaseKGE):
         if tuned_embedding_dim:
             print(f"\n\n*****Embedding dimension reset to {self.embedding_dim} to fit model architecture!*****\n")
         self.k = int(np.sqrt((self.embedding_dim-1) // self.n_layers))
-        self.n = 20
+        self.n = 50
         self.a, self.b = -1.0, 1.0
-        self.gamma = 0.0
         #self.score_func = "vtp" # "vector triple product"
         #self.score_func = "trilinear"
         self.score_func = "compositional"
