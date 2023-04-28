@@ -9,7 +9,7 @@ class FMult(BaseKGE):
 
     def __init__(self, args):
         super().__init__(args)
-        self.name = 'FMult2'
+        self.name = 'FMult'
         self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
         self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
         self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
@@ -69,7 +69,7 @@ class FMult2(BaseKGE):
 
     def __init__(self, args):
         super().__init__(args)
-        self.name = 'FMult'
+        self.name = 'FMult2'
         self.n_layers = 2
         tuned_embedding_dim = False
         while int(np.sqrt((self.embedding_dim-1) / self.n_layers)) != np.sqrt((self.embedding_dim-1) / self.n_layers):
