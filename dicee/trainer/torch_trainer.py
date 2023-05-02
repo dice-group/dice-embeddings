@@ -1,8 +1,6 @@
 import torch
 from typing import Tuple
 from dicee.abstracts import AbstractTrainer
-# from dicee.custom_opt.sls import Sls
-# from dicee.custom_opt.adam_sls import AdamSLS
 import time
 import os
 import psutil
@@ -109,13 +107,6 @@ class TorchTrainer(AbstractTrainer):
         model, = args
         self.model = model
         self.model.to(self.device)
-        # To plot the computation graph
-        # import matplotlib.pyplot as plt
-        # from torchviz import make_dot
-        # x = torch.tensor([[11, 44, 33]])
-        # out = self.model(x)
-        # g = make_dot(out, show_saved=True)
-        # g.render('fmult.gv', format='jpg', view=True)
         self.train_dataloaders = train_dataloaders
         self.loss_function = model.loss_function
         self.optimizer = self.model.configure_optimizers()
