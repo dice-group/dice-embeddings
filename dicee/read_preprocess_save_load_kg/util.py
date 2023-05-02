@@ -84,7 +84,7 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
                              columns=[0, 1, 2],
                              dtypes=[polars.Utf8],  # str
                              new_columns=['subject', 'relation', 'object'],
-                             sep="\t")  # \s+ doesn't work for polars
+                             separator="\t")  # \s+ doesn't work for polars
     else:
         if read_only_few is None:
             df = polars.read_parquet(data_path, use_pyarrow=True)

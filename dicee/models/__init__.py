@@ -4,4 +4,4 @@ from .complex import *
 from .quaternion import *
 from .octonion import *
 from .clifford import *
-from .function_space import FMult
+from .function_space import FMult, GFMult

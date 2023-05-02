@@ -47,9 +47,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
         return {'EstimatedSizeMB': (num_params + buffer_size) / 1024 ** 2, 'NumParam': num_params}
 
     def init_params_with_sanity_checking(self):
-        assert self.args['model'] in ['FMult', 'CMult', 'Keci', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ',
-                                      'ConvO',
-                                      'AConEx', 'ConEx', 'Shallom', 'TransE', 'Pyke', 'KeciBase']
+        assert self.args['model'] in ['FMult', 'CMult', 'Keci', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ', 'ConvO','GFMult', 'AConEx', 'ConEx', 'Shallom', 'TransE', 'Pyke', 'KeciBase']
         if self.args.get('weight_decay'):
             self.weight_decay = self.args['weight_decay']
         else:
