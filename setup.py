@@ -21,7 +21,7 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3.10",
         "License :: OSI Approved :: MIT License"],
-    python_requires='>==3.10',
+    python_requires='>=3.10',
     long_description=long_description,
     long_description_content_type="text/markdown",
 )
