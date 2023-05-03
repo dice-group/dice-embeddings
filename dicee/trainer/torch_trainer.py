@@ -1,8 +1,6 @@
 import torch
 from typing import Tuple
 from dicee.abstracts import AbstractTrainer
-#from dicee.custom_opt.sls import Sls
-#from dicee.custom_opt.adam_sls import AdamSLS
 import time
 import os
 import psutil

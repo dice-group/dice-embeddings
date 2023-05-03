@@ -3,8 +3,7 @@ import numpy as np
 import torch
 import datetime
 from .types import Tuple
-from .models import Shallom, ConEx, AConEx, QMult, OMult, ConvQ, ConvO, ComplEx, DistMult, TransE, Keci, CMult, \
-    KeciBase, Pyke, FMult
+from .models import Shallom, ConEx, AConEx, QMult, OMult, ConvQ, ConvO, ComplEx, DistMult, TransE, Keci, CMult, KeciBase, Pyke, FMult, FMult2, GFMult
 from .models.base_model import BaseKGE
 import time
 import pandas as pd
@@ -323,6 +322,12 @@ def intialize_model(args: dict) -> Tuple[object, str]:
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'FMult':
         model = FMult(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'FMult2':
+        model = FMult2(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'GFMult':
+        model = GFMult(args=args)
         form_of_labelling = 'EntityPrediction'
     # elif for PYKEEN https://github.com/dice-group/dice-embeddings/issues/54
     else:
