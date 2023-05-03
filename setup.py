@@ -10,7 +10,7 @@ setup(
                       "polars>=0.16.14",
                       "pyarrow>=11.0.0",
                       'torch>=2.0.0',
-                      "pytorch-lightning==1.6.4"
+                      "pytorch-lightning==1.6.4",
                       "scikit-learn>=1.2.2",
                       "pytest>=7.2.2",
                       "psutil>=5.9.4"
