@@ -13,7 +13,7 @@ setup(
                       "pytorch-lightning==1.6.4",
                       "scikit-learn>=1.2.2",
                       "pytest>=7.2.2",
-                      "psutil>=5.9.4"
+                      "psutil>=5.9.4",
                       "gradio>=3.23.0"],
     author='Caglar Demir',
     author_email='caglardemir8@gmail.com',
