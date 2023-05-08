@@ -44,7 +44,7 @@ def get_default_arguments(description=None):
                         help='Number of folds in k-fold cross validation.'
                              'If >2 ,no evaluation scenario is applied implies no evaluation.')
     parser.add_argument("--eval_model", type=str, default="train_val_test",
-                        help='train, val, test, constraint, combine them anyway you want, e.g. '
+                        help='test the link prediction results on the splits, e.g. '
                              'train_val,train_val_test, val_test, val_test_constraint ')
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
                         help='At every X number of epochs model will be saved. If None, we save 4 times.')

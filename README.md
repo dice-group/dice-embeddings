@@ -27,7 +27,6 @@ With our framework, practitioners can directly use PytorchLightning for model pa
 **Why [Hugging-face Gradio](https://huggingface.co/gradio)?**
 Deploy a pre-trained embedding model without writing a single line of code.
 
-
 ## Installation
 ```
 pip install dicee
@@ -128,7 +127,6 @@ Any pretrained model can be deployed with an ease. By setting ```share=True```, 
 from dicee import KGE
 KGE(path='...').deploy(share=True,top_k=10)
 ```
-![alt text](dicee/figures/deploy_qmult_family.png)
 ## Pre-trained Models
 Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , if you lack hardware resources to obtain embeddings of a specific knowledge Graph.
 - [DBpedia version: 06-2022 Embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpediaQMultEmbeddings_03_07):
