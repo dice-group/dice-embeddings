@@ -5,7 +5,7 @@ from dicee.config import Args
 class TestRegressionPyke:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
-        args = Args()  # get_default_arguments([])
+        args = Args()
         args.model = 'Pyke'
         args.path_dataset_folder = 'KGs/UMLS'
         args.optim = 'Adam'

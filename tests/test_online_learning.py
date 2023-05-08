@@ -9,7 +9,7 @@ from dicee.config import Args
 class TestRegressionOnlineLearning:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_umls(self):
-        args = Args()  # get_default_arguments([])
+        args = Args()
         args.model = 'AConEx'
         args.scoring_technique = 'KvsSample'
         args.optim = 'Adam'

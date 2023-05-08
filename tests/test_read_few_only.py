@@ -6,7 +6,7 @@ from dicee.config import Args
 class TestReadFewOnly:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult_kvsall(self):
-        args = Args()  # get_default_arguments([])
+        args = Args()
         args.model = 'QMult'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'

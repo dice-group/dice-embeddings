@@ -7,7 +7,7 @@ from dicee.config import Args
 class TestPickle:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_dismult_pickle(self):
-        args = Args()  # get_default_arguments([])
+        args = Args()
         args.path_dataset_folder = 'KGs/UMLS'
         args.model = 'DistMult'
         executor = Execute(args)
@@ -20,7 +20,7 @@ class TestPickle:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_transe_pickle(self):
-        args = Args()  # get_default_arguments([])
+        args = Args()
         args.path_dataset_folder = 'KGs/UMLS'
         args.model = 'TransE'
         args.scoring_technique = 'NegSample'
@@ -33,7 +33,7 @@ class TestPickle:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult_pickle(self):
-        args = Args()  # get_default_arguments([])
+        args = Args()
         args.path_dataset_folder = 'KGs/UMLS'
         args.model = 'QMult'
         args.embedding_dim = 16
@@ -60,7 +60,7 @@ class TestPickle:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_conex_pickle(self):
-        args = Args()  # get_default_arguments([])
+        args = Args()
         args.path_dataset_folder = 'KGs/UMLS'
         args.model = 'ConEx'
         args.scoring_technique = 'NegSample'

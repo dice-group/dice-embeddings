@@ -10,7 +10,7 @@ import os
 class TestRegressionCL:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):
-        args = Args()#get_default_arguments([])
+        args = Args()
         args.model = 'QMult'
         args.scoring_technique = 'KvsAll'
         args.optim = 'Adam'
@@ -35,7 +35,7 @@ class TestRegressionCL:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling_Family(self):
-        args = Args()#get_default_arguments([])
+        args = Args()
         args.model = 'QMult'
         args.path_dataset_folder = 'KGs/Family'
         args.scoring_technique = 'KvsAll'

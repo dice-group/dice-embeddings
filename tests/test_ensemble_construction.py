@@ -7,7 +7,7 @@ from dicee.config import Args
 class TestEnsembleConstruction:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
-        args = Args()#get_default_arguments([])
+        args = Args()
         args.model = 'QMult'
         args.scoring_technique = 'KvsAll'
         args.optim = 'Adam'

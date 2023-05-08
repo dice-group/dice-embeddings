@@ -5,7 +5,7 @@ from dicee.config import Args
 class TestRegressionConEx:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
-        args = Args()  # get_default_arguments([])
+        args = Args()
         args.model = 'ConEx'
         args.scoring_technique = 'KvsAll'
         args.optim = 'Adam'
@@ -31,7 +31,7 @@ class TestRegressionConEx:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
-        args = Args()  # get_default_arguments([])
+        args = Args()
         args.model = 'ConEx'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
@@ -56,7 +56,7 @@ class TestRegressionConEx:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):
-        args = Args()  # get_default_arguments([])
+        args = Args()
         args.model = 'ConEx'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 50
@@ -79,3 +79,5 @@ class TestRegressionConEx:
         assert 0.77 >= result['Train']['H@1'] >= .20
         assert 0.70 >= result['Val']['H@1'] >= .20
         assert 0.70 >= result['Test']['H@1'] >= .20
+
+    # TODO: Write Test and compare ConEx with AConEx

@@ -6,7 +6,7 @@ from dicee.config import Args
 class TestRegressionAConEx:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
-        args = Args()  # get_default_arguments([])
+        args = Args()
         args.model = 'AConEx'
         args.scoring_technique = 'KvsAll'
         args.optim = 'Adam'

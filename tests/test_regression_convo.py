@@ -6,7 +6,7 @@ from dicee.config import Args
 class TestRegressionConvO:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
-        args = Args()  # get_default_arguments([])
+        args = Args()
         args.model = 'ConvO'
         args.scoring_technique = 'KvsAll'
         args.path_dataset_folder = 'KGs/UMLS'
@@ -28,7 +28,7 @@ class TestRegressionConvO:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
-        args = Args()  # get_default_arguments([])
+        args = Args()
         args.model = 'ConvO'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
@@ -51,7 +51,7 @@ class TestRegressionConvO:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):
-        args = Args()  # get_default_arguments([])
+        args = Args()
         args.model = 'ConvO'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
