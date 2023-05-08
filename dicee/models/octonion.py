@@ -257,3 +257,135 @@ class ConvO(BaseKGE):
         e7_score = torch.mm(conv_e7 * e7, emb_tail_e7)
         return e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
 
+
+class AConvO(BaseKGE):
+    """ Additive Convolutional Octonion Knowledge Graph Embeddings """
+    def __init__(self, args: dict):
+        super().__init__(args=args)
+        self.name = 'AConvO'
+        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
+        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
+        # Convolution
+        self.conv2d = torch.nn.Conv2d(in_channels=1, out_channels=self.num_of_output_channels,
+                                      kernel_size=(self.kernel_size, self.kernel_size), stride=1, padding=1, bias=True)
+        self.fc_num_input = self.embedding_dim * 2 * self.num_of_output_channels
+        self.fc1 = torch.nn.Linear(self.fc_num_input, self.embedding_dim)  # Hard compression.
+        self.bn_conv2d = torch.nn.BatchNorm2d(self.num_of_output_channels)
+        self.norm_fc1 = self.normalizer_class(self.embedding_dim)
+        self.feature_map_dropout = torch.nn.Dropout2d(self.feature_map_dropout_rate)
+
+    def residual_convolution(self, O_1, O_2):
+        emb_ent_e0, emb_ent_e1, emb_ent_e2, emb_ent_e3, emb_ent_e4, emb_ent_e5, emb_ent_e6, emb_ent_e7 = O_1
+        emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7 = O_2
+        x = torch.cat([emb_ent_e0.view(-1, 1, 1, self.embedding_dim // 8),
+                       emb_ent_e1.view(-1, 1, 1, self.embedding_dim // 8),
+                       emb_ent_e2.view(-1, 1, 1, self.embedding_dim // 8),
+                       emb_ent_e3.view(-1, 1, 1, self.embedding_dim // 8),
+                       emb_ent_e4.view(-1, 1, 1, self.embedding_dim // 8),
+                       emb_ent_e5.view(-1, 1, 1, self.embedding_dim // 8),
+                       emb_ent_e6.view(-1, 1, 1, self.embedding_dim // 8),
+                       emb_ent_e7.view(-1, 1, 1, self.embedding_dim // 8),  # entities
+                       emb_rel_e0.view(-1, 1, 1, self.embedding_dim // 8),
+                       emb_rel_e1.view(-1, 1, 1, self.embedding_dim // 8),
+                       emb_rel_e2.view(-1, 1, 1, self.embedding_dim // 8),
+                       emb_rel_e3.view(-1, 1, 1, self.embedding_dim // 8),
+                       emb_rel_e4.view(-1, 1, 1, self.embedding_dim // 8),
+                       emb_rel_e5.view(-1, 1, 1, self.embedding_dim // 8),
+                       emb_rel_e6.view(-1, 1, 1, self.embedding_dim // 8),
+                       emb_rel_e7.view(-1, 1, 1, self.embedding_dim // 8), ], 2)
+        x = torch.nn.functional.relu(self.bn_conv2d(self.conv2d(x)))
+        x = self.feature_map_dropout(x)
+        x = x.view(x.shape[0], -1)  # reshape for NN.
+        x = torch.nn.functional.relu(self.norm_fc1(self.fc1(x)))
+        return torch.chunk(x, 8, dim=1)
+
+    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
+
+        # (1) Retrieve embeddings & Apply Dropout & Normalization.
+        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
+        # (2) Split (1) into real and imaginary parts.
+        emb_head_e0, emb_head_e1, emb_head_e2, emb_head_e3, emb_head_e4, emb_head_e5, emb_head_e6, emb_head_e7 = torch.hsplit(
+            head_ent_emb, 8)
+        emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7 = torch.hsplit(
+            rel_ent_emb,
+            8)
+        emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 = torch.hsplit(
+            tail_ent_emb, 8)
+
+        # (2) Apply convolution operation on (1.1) and (1.2).
+        O_3 = self.residual_convolution(O_1=(emb_head_e0, emb_head_e1, emb_head_e2, emb_head_e3,
+                                             emb_head_e4, emb_head_e5, emb_head_e6, emb_head_e7),
+                                        O_2=(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3,
+                                             emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7))
+        conv_e0, conv_e1, conv_e2, conv_e3, conv_e4, conv_e5, conv_e6, conv_e7 = O_3
+
+        # (3)
+        # (3.1) Apply quaternion multiplication.
+        e0, e1, e2, e3, e4, e5, e6, e7 = octonion_mul(
+            O_1=(emb_head_e0, emb_head_e1, emb_head_e2, emb_head_e3, emb_head_e4,
+                 emb_head_e5, emb_head_e6, emb_head_e7),
+            O_2=(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4,
+                 emb_rel_e5, emb_rel_e6, emb_rel_e7))
+        # (4)
+        # (4.4) Inner product
+        e0_score = (conv_e0 + e0 * emb_tail_e0).sum(dim=1)
+        e1_score = (conv_e1 + e1 * emb_tail_e1).sum(dim=1)
+        e2_score = (conv_e2 + e2 * emb_tail_e2).sum(dim=1)
+        e3_score = (conv_e3 + e3 * emb_tail_e3).sum(dim=1)
+        e4_score = (conv_e4 + e4 * emb_tail_e4).sum(dim=1)
+        e5_score = (conv_e5 + e5 * emb_tail_e5).sum(dim=1)
+        e6_score = (conv_e6 + e6 * emb_tail_e6).sum(dim=1)
+        e7_score = (conv_e7 + e7 * emb_tail_e7).sum(dim=1)
+        return e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
+
+    def forward_k_vs_all(self, x: torch.Tensor):
+        """
+        Given a head entity and a relation (h,r), we compute scores for all entities.
+        [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
+        Given a batch of head entities and relations => shape (size of batch,| Entities|)
+        """
+
+        # (1) Retrieve embeddings & Apply Dropout & Normalization.
+        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
+        # (2) Split (1) into real and imaginary parts.
+        # (2) Split (1) into real and imaginary parts.
+        emb_head_e0, emb_head_e1, emb_head_e2, emb_head_e3, emb_head_e4, emb_head_e5, emb_head_e6, emb_head_e7 = torch.hsplit(
+            head_ent_emb, 8)
+        emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7 = torch.hsplit(
+            rel_ent_emb,
+            8)
+
+        # (2) Apply convolution operation on (1.1) and (1.2).
+        O_3 = self.residual_convolution(O_1=(emb_head_e0, emb_head_e1, emb_head_e2, emb_head_e3,
+                                             emb_head_e4, emb_head_e5, emb_head_e6, emb_head_e7),
+                                        O_2=(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3,
+                                             emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7))
+        conv_e0, conv_e1, conv_e2, conv_e3, conv_e4, conv_e5, conv_e6, conv_e7 = O_3
+
+        # (3)
+        # (3.2) Apply quaternion multiplication on (1.1) and (3.1).
+        e0, e1, e2, e3, e4, e5, e6, e7 = octonion_mul(
+            O_1=(emb_head_e0, emb_head_e1, emb_head_e2, emb_head_e3, emb_head_e4,
+                 emb_head_e5, emb_head_e6, emb_head_e7),
+            O_2=(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4,
+                 emb_rel_e5, emb_rel_e6, emb_rel_e7))
+
+        emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 = torch.hsplit(
+            self.entity_embeddings.weight, 8)
+        emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 = emb_tail_e0.transpose(
+            1, 0), emb_tail_e1.transpose(1, 0), emb_tail_e2.transpose(1, 0), emb_tail_e3.transpose(1,
+                                                                                                   0), emb_tail_e4.transpose(
+            1, 0), emb_tail_e5.transpose(1, 0), emb_tail_e6.transpose(1, 0), emb_tail_e7.transpose(1, 0)
+
+        # (4)
+        # (4.4) Inner product
+        e0_score = torch.mm(conv_e0 + e0, emb_tail_e0)
+        e1_score = torch.mm(conv_e1 + e1, emb_tail_e1)
+        e2_score = torch.mm(conv_e2 + e2, emb_tail_e2)
+        e3_score = torch.mm(conv_e3 + e3, emb_tail_e3)
+        e4_score = torch.mm(conv_e4 + e4, emb_tail_e4)
+        e5_score = torch.mm(conv_e5 + e5, emb_tail_e5)
+        e6_score = torch.mm(conv_e6 + e6, emb_tail_e6)
+        e7_score = torch.mm(conv_e7 + e7, emb_tail_e7)
+        return e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
