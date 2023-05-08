@@ -13,9 +13,9 @@ def get_default_arguments(description=None):
     parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="Embeddings, model, and any other related data will be stored therein.")
     parser.add_argument("--model", type=str,
-                        default="ConEx",
-                        help="Available models: CMult, ConEx, ConvQ, ConvO, DistMult, QMult, OMult, "
-                             "Shallom, AConEx, ConEx, ComplEx, DistMult, TransE, Keci")
+                        default="AConvQ",
+                        help="Available models: ConEx, AConEx, ConvQ, AConQ, ConvO, AConvO,"
+                             "QMult, OMult, Shallom, DistMult, TransE, ComplEx, Keci")
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[Adam, SGD]')
     parser.add_argument('--embedding_dim', type=int, default=32,
@@ -49,7 +49,7 @@ def get_default_arguments(description=None):
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
                         help='At every X number of epochs model will be saved. If None, we save 4 times.')
     parser.add_argument("--label_smoothing_rate", type=float, default=0.0, help='None for not using it.')
-    parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for ConEx")
+    parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for convolution based models.")
     parser.add_argument("--num_of_output_channels", type=int, default=2,
                         help="# of output channels in convolution")
     parser.add_argument("--num_core", type=int, default=0,
