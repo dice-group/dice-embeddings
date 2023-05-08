@@ -8,7 +8,7 @@ from dicee.config import Args
 class TestDefaultParams:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult(self):
-        args = Args()#get_default_arguments([])
+        args = Args()
         args.model = 'QMult'
         args.optim = 'Adam'
         args.num_epochs = 1

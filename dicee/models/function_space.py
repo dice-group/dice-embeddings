@@ -79,7 +79,7 @@ class GFMult(BaseKGE):
         self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
         self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
         self.k = int(np.sqrt(self.embedding_dim // 2))
-        self.num_sample = 50
+        self.num_sample = 250
         roots, weights = roots_legendre(self.num_sample)
         self.roots = torch.from_numpy(roots).repeat(self.k, 1).float()  # shape self.k by self.n
         self.weights = torch.from_numpy(weights).reshape(1, -1).float()  # shape 1 by self.n

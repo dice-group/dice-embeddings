@@ -6,7 +6,7 @@ from dicee.config import Args
 class TestPolyak:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_polyak_qmult_k_vs_all(self):
-        args = Args()  # get_default_arguments([])
+        args = Args()
         args.model = 'QMult'
         args.path_dataset_folder = 'KGs/UMLS'
         args.optim = 'Adam'
@@ -36,7 +36,7 @@ class TestPolyak:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_polyak_qmult_k_vs_all(self):
-        args = Args()  # get_default_arguments([])
+        args = Args()
         args.model = 'QMult'
         args.path_dataset_folder = 'KGs/UMLS'
         args.optim = 'Adam'

@@ -10,7 +10,7 @@ import os
 class TestKGEInteractive:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_missing_triples_and_conjunctive_query_answering(self):
-        args = Args()#get_default_arguments([])
+        args = Args()
         args.model = 'AConEx'
         args.scoring_technique = 'KvsAll'
         args.optim = 'Adam'

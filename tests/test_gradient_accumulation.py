@@ -6,7 +6,7 @@ from dicee.config import Args
 class TestDefaultParams:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_shallom(self):
-        args = Args()  # get_default_arguments([])
+        args = Args()
         args.model = 'Shallom'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'

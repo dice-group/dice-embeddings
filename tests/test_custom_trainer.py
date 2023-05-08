@@ -6,7 +6,7 @@ import pytest
 class TestDefaultParams:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_shallom(self):
-        args = Args()#get_default_arguments([])
+        args = Args()
         args.model = 'Shallom'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -26,7 +26,7 @@ class TestDefaultParams:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_conex(self):
-        args = Args()#get_default_arguments([])
+        args = Args()
         args.model = 'ConEx'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -46,7 +46,7 @@ class TestDefaultParams:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult(self):
-        args = Args()#get_default_arguments([])
+        args = Args()
         args.model = 'QMult'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -65,7 +65,7 @@ class TestDefaultParams:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_convq(self):
-        args = Args()#get_default_arguments([])
+        args = Args()
         args.model = 'ConvQ'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -85,7 +85,7 @@ class TestDefaultParams:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_omult(self):
-        args = Args()#get_default_arguments([])
+        args = Args()
         args.model = 'OMult'
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'
@@ -106,7 +106,7 @@ class TestDefaultParams:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_convo(self):
-        args = Args()#get_default_arguments([])
+        args = Args()
         args.model = 'ConvO'
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'
@@ -126,7 +126,7 @@ class TestDefaultParams:
         Execute(args).start()
 
     def test_distmult(self):
-        args = Args()#get_default_arguments([])
+        args = Args()
         args.model = 'DistMult'
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'

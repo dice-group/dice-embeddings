@@ -5,7 +5,7 @@ from dicee.config import Args
 class TestRegressionDistMult:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
-        args = Args()  # get_default_arguments([])
+        args = Args()
         args.model = 'DistMult'
         args.path_dataset_folder = 'KGs/WN18RR'
         args.optim = 'Adam'
@@ -31,7 +31,7 @@ class TestRegressionDistMult:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_neg_sample(self):
-        args = Args()  # get_default_arguments([])
+        args = Args()
         args.model = 'DistMult'
         args.path_dataset_folder = 'KGs/WN18RR'
         args.optim = 'Adam'

@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import datetime
 from .types import Tuple
-from .models import Shallom, ConEx, AConEx, QMult, OMult, ConvQ, ConvO, ComplEx, DistMult, TransE, Keci, CMult, KeciBase, Pyke, FMult, FMult2, GFMult
+from .models import *#Shallom, ConEx, AConEx, QMult, OMult, ConvQ, ConvO, ComplEx, DistMult, TransE, Keci, CMult, KeciBase, Pyke, FMult, FMult2, GFMult
 from .models.base_model import BaseKGE
 import time
 import pandas as pd
@@ -296,8 +296,14 @@ def intialize_model(args: dict) -> Tuple[object, str]:
     elif model_name == 'ConvQ':
         model = ConvQ(args=args)
         form_of_labelling = 'EntityPrediction'
+    elif model_name == 'AConvQ':
+        model = AConvQ(args=args)
+        form_of_labelling = 'EntityPrediction'
     elif model_name == 'ConvO':
         model = ConvO(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'AConvO':
+        model = AConvO(args=args)
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'ComplEx':
         model = ComplEx(args=args)
