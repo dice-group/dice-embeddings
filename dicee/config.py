@@ -21,7 +21,7 @@ class Args:
         self.weight_decay: float = 0.0
         self.input_dropout_rate: float = 0.0
         self.hidden_dropout_rate: float = 0.0
-        self.feature_map_dropout_rate: int = 0.0
+        self.feature_map_dropout_rate: float = 0.0
         self.normalization: str = "None"
         self.init_param: str = None
         self.gradient_accumulation_steps: int = 0
