@@ -47,7 +47,7 @@ def octonion_mul_norm(*, O_1, O_2):
 class OMult(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
-        self.name = 'QMult'
+        self.name = 'OMult'
         self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
         self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
         self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
