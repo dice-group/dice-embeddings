@@ -1,11 +1,13 @@
 # Link Prediction on Benchmark Datasets
 
-Here, we show that generalization performance of knowledge graph embedding models do not differ much if they are trained well.
+Here, we show that generalization performance of knowledge graph embedding models do not differ much if they are trained
+well.
 
 # Hyperparameter Setting
 
-Hyperparameters play an important role in the successful applications of knowledge graph embedding models.
-In our experiments, we selected such hyperparameter configuration so that experiments can be done less than a minute on UMLS dataset
+Hyperparameters play an important role in the successful applications of knowledge graph embedding models. In our
+experiments, we selected such hyperparameter configuration so that experiments can be done less than a minute on UMLS
+dataset
 
 # Link Prediction Performance Analysis on KINSHIP
 
@@ -22,11 +24,11 @@ In our experiments, we selected such hyperparameter configuration so that experi
 | AConEx       |    0.888418 |     0.8204 |    0.95055 |    0.989993 |   0.75704 | 0.637172 | 0.858614 |  0.955993 |   0.753787 |  0.634078 |  0.847765 |   0.967877 |   48.5488 |
 | AConvQ       |    0.888232 |   0.822156 |   0.947507 |    0.989876 |   0.74992 | 0.625468 | 0.852528 |  0.961142 |   0.752967 |  0.625698 |  0.856145 |   0.969274 |   46.3772 |
 
-
 # Link Prediction Performance Analysis on UMLS
 
 1. Multiplicative models fit the training dataset split of UMLS better than convolutional neural network based models.
-2. Replacing the multiplicative connections of conv(h,r) with additive connections leads convolutional neural network based models to fit better the training data.
+2. Replacing the multiplicative connections of conv(h,r) with additive connections leads convolutional neural network
+   based models to fit better the training data.
 3. Additive connections decrease the runtimes of the neural network based models.
 
 | model_name   |   train_mrr |   train_h1 |   train_h3 |   train_h10 |   val_mrr |   val_h1 |   val_h3 |   val_h10 |   test_mrr |   test_h1 |   test_h3 |   test_h10 |   runtime |
@@ -42,11 +44,27 @@ In our experiments, we selected such hyperparameter configuration so that experi
 | AConvQ       |    0.995162 |   0.990702 |   0.999808 |           1 |  0.709874 | 0.568252 | 0.819018 |  0.956288 |   0.737209 |  0.607413 |  0.850983 |   0.953858 |   42.8576 |
 | AConvO       |    0.986693 |   0.974214 |   0.999041 |           1 |  0.698491 | 0.548313 | 0.817485 |  0.946319 |   0.732535 |  0.594554 |   0.83888 |   0.961422 |   44.2366 |
 
+# Link Prediction Performance Analysis on FB15K-237
+
+| model_name | train_mrr | train_h1 | train_h3 | train_h10 |  val_mrr |   val_h1 |   val_h3 |  val_h10 | test_mrr |  test_h1 |  test_h3 | test_h10 | runtime |
+|:-----------|----------:|---------:|---------:|----------:|---------:|---------:|---------:|---------:|---------:|---------:|---------:|---------:|--------:|
+| DistMult   |  0.593914 | 0.499502 | 0.647212 |  0.773351 |  0.26749 | 0.189136 | 0.290077 | 0.425463 | 0.264973 |   0.1867 |   0.2854 | 0.426024 | 1006.55 |
+| ComplEx    |  0.574006 | 0.476723 | 0.627397 |  0.760223 | 0.261119 | 0.182948 | 0.282606 |  0.41996 | 0.259313 | 0.180592 | 0.281809 | 0.421602 | 1031.37 |
+| QMult      |  0.549874 | 0.448279 | 0.605929 |  0.743963 | 0.266945 | 0.188822 | 0.290248 | 0.423667 | 0.265085 | 0.186114 | 0.288161 | 0.424265 | 1038.14 |
+| OMult      |  0.497422 | 0.389729 |  0.55521 |   0.70461 | 0.276785 | 0.197149 | 0.302509 | 0.435329 |  0.27315 | 0.193809 |   0.2972 | 0.432791 | 1098.29 |
+| ConEx      |   0.16171 |  0.10981 | 0.171578 |  0.260664 | 0.185139 | 0.130026 | 0.197177 | 0.292159 | 0.184531 | 0.128286 | 0.197743 | 0.293633 | 1096.44 |
+| AConEx     |  0.559767 | 0.458587 | 0.615846 |   0.75322 | 0.271471 | 0.192273 | 0.294953 | 0.430539 | 0.270874 | 0.191977 | 0.293975 | 0.431227 | 1106.65 |
+| AConvQ     |   0.49182 | 0.383151 | 0.546962 |  0.702877 | 0.263918 | 0.184631 | 0.285458 | 0.424636 | 0.263824 | 0.184306 | 0.286988 | 0.424411 | 1118.75 |
+| AConvO     |  0.481607 | 0.374538 | 0.535467 |  0.690759 | 0.275071 | 0.197092 | 0.296664 | 0.435672 |  0.27353 | 0.194225 | 0.298568 | 0.433744 | 1203.71 |
 
 
+## Rerun Experiments
+
+**Datasets: KGs/UMLS, KGs/KINSHIP, and KGs/FB15k-237**
 ## ConEx (Convolutional Complex Knowledge Graph Embeddings)
+
 ```bash
-python main.py --path_dataset_folder KGs/UMLS --model "ConEx" --optim Adam --embedding_dim 32 --num_epochs 256 --batch_size 1024 --lr 0.1 --backend 'pandas' --trainer 'PL' --scoring_technique 'KvsAll' --weight_decay 0.0 --input_dropout_rate 0.0 --hidden_dropout_rate 0.0 --feature_map_dropout_rate 0.0 --normalization LayerNorm --init_param xavier_normal --label_smoothing_rate 0.0 --kernel_size 3 --num_of_output_channels 3 --seed_for_computation 0 --num_core 4
+python main.py --path_dataset_folder KGs/UMLS --model "ConEx" --optim Adam --embedding_dim 32 --num_epochs 256 --batch_size 1024 --lr 0.1 --backend 'pandas' --trainer 'PL' --scoring_technique 'KvsAll' --weight_decay 0.0 --input_dropout_rate 0.0 --hidden_dropout_rate 0.0 --feature_map_dropout_rate 0.0 --normalization LayerNorm --init_param xavier_normal --label_smoothing_rate 0.0 --kernel_size 3 --num_of_output_channels 3 --seed_for_computation 0
 ```
 ```bash
 Total computation time: 38.546 seconds
@@ -59,9 +77,11 @@ Evaluate ConEx on Test set: Evaluate ConEx on Test set
 ```
 
 ## AConEx (ConEx with Additive Connections)
+
 ```bash
 python main.py --path_dataset_folder KGs/UMLS --model "AConEx" --optim Adam --embedding_dim 32 --num_epochs 256 --batch_size 1024 --lr 0.1 --backend 'pandas' --trainer 'PL' --scoring_technique 'KvsAll' --weight_decay 0.0 --input_dropout_rate 0.0 --hidden_dropout_rate 0.0 --feature_map_dropout_rate 0.0 --normalization LayerNorm --init_param xavier_normal --label_smoothing_rate 0.0 --kernel_size 3 --num_of_output_channels 3 --seed_for_computation 0 --num_core 4
 ```
+
 ```bash
 Total computation time: 38.555 seconds
 Evaluate AConEx on Train set: Evaluate AConEx on Train set
@@ -73,9 +93,11 @@ Evaluate AConEx on Test set: Evaluate AConEx on Test set
 ```
 
 ## ConvQ
+
 ```bash
 python main.py --path_dataset_folder KGs/UMLS --model "ConvQ" --optim Adam --embedding_dim 32 --num_epochs 256 --batch_size 1024 --lr 0.1 --backend 'pandas' --trainer 'PL' --scoring_technique 'KvsAll' --weight_decay 0.0 --input_dropout_rate 0.0 --hidden_dropout_rate 0.0 --feature_map_dropout_rate 0.0 --normalization LayerNorm --init_param xavier_normal --label_smoothing_rate 0.0 --kernel_size 3 --num_of_output_channels 3 --seed_for_computation 0 --num_core 4
 ```
+
 ```bash
 Total computation time: 41.013 seconds
 Evaluate ConvQ on Train set: Evaluate ConvQ on Train set
@@ -87,9 +109,11 @@ Evaluate ConvQ on Test set: Evaluate ConvQ on Test set
 ```
 
 ## AConvQ (ConvQ with with Additive Connections)
+
 ```bash
 python main.py --path_dataset_folder KGs/UMLS --model "AConvQ" --optim Adam --embedding_dim 32 --num_epochs 256 --batch_size 1024 --lr 0.1 --backend 'pandas' --trainer 'PL' --scoring_technique 'KvsAll' --weight_decay 0.0 --input_dropout_rate 0.0 --hidden_dropout_rate 0.0 --feature_map_dropout_rate 0.0 --normalization LayerNorm --init_param xavier_normal --label_smoothing_rate 0.0 --kernel_size 3 --num_of_output_channels 3 --seed_for_computation 0 --num_core 4
 ```
+
 ```bash
 Total computation time: 41.238 seconds
 Evaluate AConvQ on Train set: Evaluate AConvQ on Train set
@@ -101,9 +125,11 @@ Evaluate AConvQ on Test set: Evaluate AConvQ on Test set
 ```
 
 ## ConvO
+
 ```bash
 python main.py --path_dataset_folder KGs/UMLS --model "ConvO" --optim Adam --embedding_dim 32 --num_epochs 256 --batch_size 1024 --lr 0.1 --backend 'pandas' --trainer 'PL' --scoring_technique 'KvsAll' --weight_decay 0.0 --input_dropout_rate 0.0 --hidden_dropout_rate 0.0 --feature_map_dropout_rate 0.0 --normalization LayerNorm --init_param xavier_normal --label_smoothing_rate 0.0 --kernel_size 3 --num_of_output_channels 3 --seed_for_computation 0 --num_core 4
 ```
+
 ```bash
 Total computation time: 54.756 seconds
 Evaluate ConvO on Train set: Evaluate ConvO on Train set
@@ -116,9 +142,11 @@ Evaluate ConvO on Test set: Evaluate ConvO on Test set
 ```
 
 ## AConvO
+
 ```bash
 python main.py --path_dataset_folder KGs/UMLS --model "AConvO" --optim Adam --embedding_dim 32 --num_epochs 256 --batch_size 1024 --lr 0.1 --backend 'pandas' --trainer 'PL' --scoring_technique 'KvsAll' --weight_decay 0.0 --input_dropout_rate 0.0 --hidden_dropout_rate 0.0 --feature_map_dropout_rate 0.0 --normalization LayerNorm --init_param xavier_normal --label_smoothing_rate 0.0 --kernel_size 3 --num_of_output_channels 3 --seed_for_computation 0 --num_core 4
 ```
+
 ```bash
 Total computation time: 42.910 seconds
 Evaluate AConvO on Train set: Evaluate AConvO on Train set
@@ -130,9 +158,11 @@ Evaluate AConvO on Test set: Evaluate AConvO on Test set
 ```
 
 ## DistMult
+
 ```bash
 python main.py --path_dataset_folder KGs/UMLS --model "DistMult" --optim Adam --embedding_dim 32 --num_epochs 256 --batch_size 1024 --lr 0.1 --backend 'pandas' --trainer 'PL' --scoring_technique 'KvsAll' --weight_decay 0.0 --input_dropout_rate 0.0 --hidden_dropout_rate 0.0 --feature_map_dropout_rate 0.0 --normalization LayerNorm --init_param xavier_normal --label_smoothing_rate 0.0  --seed_for_computation 0 --num_core 4
 ```
+
 ```bash
 Total computation time: 43.789 seconds
 Evaluate DistMult on Train set: Evaluate DistMult on Train set
@@ -144,9 +174,11 @@ Evaluate DistMult on Test set: Evaluate DistMult on Test set
 ```
 
 ## ComplEx
+
 ```bash
 python main.py --path_dataset_folder KGs/UMLS --model "ComplEx" --optim Adam --embedding_dim 32 --num_epochs 256 --batch_size 1024 --lr 0.1 --backend 'pandas' --trainer 'PL' --scoring_technique 'KvsAll' --weight_decay 0.0 --input_dropout_rate 0.0 --hidden_dropout_rate 0.0 --feature_map_dropout_rate 0.0 --normalization LayerNorm --init_param xavier_normal --label_smoothing_rate 0.0 --seed_for_computation 0 --num_core 4
 ```
+
 ```bash
 Total computation time: 37.448 seconds
 Evaluate ComplEx on Train set: Evaluate ComplEx on Train set
@@ -157,10 +189,13 @@ Evaluate ComplEx on Test set: Evaluate ComplEx on Test set
 {'H@1': 0.6338880484114977, 'H@3': 0.8305597579425114, 'H@10': 0.9583963691376702, 'MRR': 0.7487605914404327}
 
 ```
+
 ## QMult
+
 ```bash
 python main.py --path_dataset_folder KGs/UMLS --model "QMult" --optim Adam --embedding_dim 32 --num_epochs 256 --batch_size 1024 --lr 0.1 --backend 'pandas' --trainer 'PL' --scoring_technique 'KvsAll' --weight_decay 0.0 --input_dropout_rate 0.0 --hidden_dropout_rate 0.0  --normalization LayerNorm --init_param xavier_normal --label_smoothing_rate 0.0 --seed_for_computation 0 --num_core 4
 ```
+
 ```bash
 Total computation time: 35.082 seconds
 Evaluate QMult on Train set: Evaluate QMult on Train set
@@ -171,10 +206,13 @@ Evaluate QMult on Test set: Evaluate QMult on Test set
 {'H@1': 0.6111951588502269, 'H@3': 0.8267776096822995, 'H@10': 0.9606656580937972, 'MRR': 0.7328362412430357}
 
 ```
+
 ## OMult
+
 ```bash
 python main.py --path_dataset_folder KGs/UMLS --model "OMult" --optim Adam --embedding_dim 32 --num_epochs 256 --batch_size 1024 --lr 0.1 --backend 'pandas' --trainer 'PL' --scoring_technique 'KvsAll' --weight_decay 0.0 --input_dropout_rate 0.0 --hidden_dropout_rate 0.0  --normalization LayerNorm --init_param xavier_normal --label_smoothing_rate 0.0 --seed_for_computation 0 --num_core 4
 ```
+
 ```bash
 Total computation time: 52.970 seconds
 Evaluate OMult on Train set: Evaluate OMult on Train set
