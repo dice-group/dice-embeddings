@@ -1,4 +1,4 @@
-from dicee.executer import Execute,get_default_arguments
+from dicee.executer import Execute, get_default_arguments
 import sys
 import pytest
 import wandb
@@ -7,10 +7,10 @@ def template(model_name):
     args = get_default_arguments([])
     args.model = model_name
     args.scoring_technique = "NegSample"  # default value of args.eval is 'val_test'
-    # args.path_dataset_folder = "KGs/Nations"
-    args.path_dataset_folder = "KGs/UMLS"
+    args.path_dataset_folder = "KGs/Nations"
+    # args.path_dataset_folder = "KGs/UMLS"
     # args.path_dataset_folder = "KGs/FB15k-237"
-    args.num_epochs = 3
+    args.num_epochs = 2
     args.batch_size = 128
     args.lr = 0.01
     args.embedding_dim = 64
@@ -22,7 +22,7 @@ def template(model_name):
     args.sample_triples_ratio = None
     args.trainer = "PL"
     # args.trainer = "torchCPUTrainer"
-    args.neg_ratio = 25
+    args.neg_ratio = 1
     args.pykeen_model_kwargs = dict(
         embedding_dim=args.embedding_dim, loss="BCEWithLogitsLoss"
     )

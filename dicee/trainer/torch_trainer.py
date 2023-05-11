@@ -118,7 +118,10 @@ class TorchTrainer(AbstractTrainer):
         self.model = model
         self.model.to(self.device)
         self.train_dataloaders = train_dataloaders
-        self.loss_function = model.loss_function
+        if isinstance(model, pykeen.contrib.lightning.LitModule):
+            self.loss_function = model.loss
+        else:
+            self.loss_function = model.loss_function
         self.optimizer = self.model.configure_optimizers()
         # (1) Start running callbacks
         self.on_fit_start(self, self.model)
