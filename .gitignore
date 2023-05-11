@@ -9,13 +9,6 @@ KGs/
 Experiments/
 .vscode/
 wandb/*
-benchmarks/Experiments/
-benchmarks/performance_test_1st/
-benchmarks/pykeen_bigdataset/
-benchmarks/pykeen_cpu/
-benchmarks/pykeen_gpu/
-benchmarks/wandb/
-benchmarks/dice/wandb/
+benchmarks/
 checkpoints/
-benchmarks/performance_test_1st/
 dicee/read_preprocess_save_load_kg/__pycache__/
