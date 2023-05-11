@@ -1,0 +1,7 @@
+include *.py
+include *.txt
+include *.yml
+recursive-include dicee *.png
+recursive-include documents *.ipynb
+recursive-include documents *.md
+recursive-include documents *.py
