@@ -28,49 +28,6 @@ def timeit(func):
 
 
 @timeit
-def read_with_modin(data_path, read_only_few: int = None, sample_triples_ratio: float = None):
-    print(f'*** Reading {data_path} with Modin ***')
-
-    import modin.pandas as pd
-    if data_path[-3:] in ['txt', 'csv']:
-        print('Reading with modin.read_csv with sep ** s+ ** ...')
-        df = pd.read_csv(data_path,
-                         sep='\s+',
-                         header=None,
-                         usecols=[0, 1, 2],
-                         names=['subject', 'relation', 'object'],
-                         dtype=str)
-    else:
-        df = pd.read_parquet(data_path, engine='pyarrow')
-
-    # df <class 'modin.pandas.dataframe.DataFrame'>
-    # return pandas DataFrame
-    # (2)a Read only few if it is asked.
-    if isinstance(read_only_few, int):
-        if read_only_few > 0:
-            print(f'Reading only few input data {read_only_few}...')
-            df = df.head(read_only_few)
-            print('Done !\n')
-    # (3) Read only sample
-    if sample_triples_ratio:
-        print(f'Subsampling {sample_triples_ratio} of input data...')
-        df = df.sample(frac=sample_triples_ratio)
-        print('Done !\n')
-    if sum(df.head()["subject"].str.startswith('<')) + sum(df.head()["relation"].str.startswith('<')) > 2:
-        # (4) Drop Rows/triples with double or boolean: Example preprocessing
-        # Drop of object does not start with **<**.
-        # Specifying na to be False instead of NaN.
-        print('Removing triples with literal values...')
-        df = df[df["object"].str.startswith('<', na=False)]
-        print('Done !\n')
-        # (5) Remove **<** and **>**
-        print('Removing brackets **<** and **>**...')
-        df = df.apply(lambda x: x.str.removeprefix("<").str.removesuffix(">"), axis=1)
-        print('Done !\n')
-    return df._to_pandas()
-
-
-@timeit
 def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None) -> polars.DataFrame:
     """ Load and Preprocess via Polars """
     print(f'*** Reading {data_path} with Polars ***')
@@ -109,22 +66,23 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
 @timeit
 def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None):
     print(f'*** Reading {data_path} with Pandas ***')
-    if data_path[-3:] in ['txt', 'csv']:
+    if data_path[-3:] in ['txt', 'csv','zst']:
         print('Reading with pandas.read_csv with sep ** s+ ** ...')
         df = pd.read_csv(data_path,
                          sep="\s+",
                          header=None,
+                         nrows=None if read_only_few is None else read_only_few,
                          usecols=[0, 1, 2],
                          names=['subject', 'relation', 'object'],
                          dtype=str)
     else:
         df = pd.read_parquet(data_path, engine='pyarrow')
-    # (2)a Read only few if it is asked.
-    if isinstance(read_only_few, int):
-        if read_only_few > 0:
-            print(f'Reading only few input data {read_only_few}...')
-            df = df.head(read_only_few)
-            print('Done !\n')
+        # (2)a Read only few if it is asked.
+        if isinstance(read_only_few, int):
+            if read_only_few > 0:
+                print(f'Reading only few input data {read_only_few}...')
+                df = df.head(read_only_few)
+                print('Done !\n')
     # (3) Read only sample
     if sample_triples_ratio:
         print(f'Subsampling {sample_triples_ratio} of input data...')
