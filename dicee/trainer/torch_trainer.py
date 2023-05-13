@@ -45,7 +45,7 @@ class TorchTrainer(AbstractTrainer):
         # https://psutil.readthedocs.io/en/latest/#psutil.Process
         self.process = psutil.Process(os.getpid())
 
-    def _run_batch(self, i: int, x_batch, y_batch,batch = None) -> float:
+    def _run_batch(self, i: int, x_batch=None, y_batch=None,batch = None) -> float:
         """
             Forward anc Backward according to a mini-batch
 
@@ -66,7 +66,7 @@ class TorchTrainer(AbstractTrainer):
             # (2) Do not accumulate gradient, zero the gradients per batch.
             self.optimizer.zero_grad(set_to_none=True)
         # (3) Loss Forward and Backward w.r.t the batch.
-        return self.compute_forward_loss_backward(x_batch=None,y_batch=None,batch=batch).item()
+        return self.compute_forward_loss_backward(x_batch,y_batch,batch=batch).item()
         # return self.compute_forward_loss_backward(x_batch, y_batch).item()
 
     def _run_epoch(self, epoch: int) -> float:
@@ -89,7 +89,7 @@ class TorchTrainer(AbstractTrainer):
             if construct_mini_batch_time:
                 construct_mini_batch_time = start_time - construct_mini_batch_time
             # (2) Forward-Backward-Update.
-            batch_loss = self._run_batch(i=None, x_batch=None, y_batch=None,batch=batch)
+            batch_loss = self._run_batch(i, x_batch, y_batch,batch=batch)
             # batch_loss = self._run_batch(i, x_batch, y_batch)
               
             epoch_loss += batch_loss
@@ -155,7 +155,7 @@ class TorchTrainer(AbstractTrainer):
             self.on_train_epoch_end(self, self.model)
         self.on_fit_end(self, self.model)
 
-    def compute_forward_loss_backward(self, x_batch: torch.Tensor, y_batch: torch.Tensor,batch=None) -> torch.Tensor:
+    def compute_forward_loss_backward(self, x_batch: torch.Tensor=None, y_batch: torch.Tensor=None,batch=None) -> torch.Tensor:
         """
             Compute forward, loss, backward, and parameter update
 

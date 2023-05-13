@@ -20,12 +20,17 @@ def template(model_name):
     args.sample_triples_ratio = None
     args.read_only_few = None
     args.sample_triples_ratio = None
-    # args.trainer = "PL"
+    args.trainer = "PL"
     # args.trainer = "torchCPUTrainer"
-    args.gpus = 1
+    # args.gpus = 1
     args.neg_ratio = 1
+    # args.pykeen_model_kwargs = dict(
+    #     embedding_dim=args.embedding_dim, loss="BCEWithLogitsLoss",
+
+    
+    # )
     args.pykeen_model_kwargs = dict(
-        embedding_dim=args.embedding_dim, loss="CrossEntropyLoss",
+        embedding_dim=args.embedding_dim, loss="BCEWithLogitsLoss",
 
     
     )
@@ -36,7 +41,7 @@ def template(model_name):
 
     # )
     args.interaction_kwargs = None
-    args.use_SLCWALitModule = True
+    args.use_SLCWALitModule = False
     args.num_core = 1
     args.save_embeddings_as_csv = True
     args.eval_model = 'train_val_test'
@@ -44,6 +49,7 @@ def template(model_name):
     args.accelerator = 'gpu'
     args.devices = 1
     args.normalization = None
+    args.scoring_technique = 'KvsAll'
     return args
 
 
