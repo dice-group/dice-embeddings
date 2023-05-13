@@ -23,10 +23,10 @@ class MySLCWALitModule(SLCWALitModule, Pykeen_Module):
         }
         # print(avg)
         # wandb.log(log_dict)
-        print(avg)
+        # print(avg)
         # log_dict = {
         #     'train_loss':training_step_outputs,
         #     "epoch":self.current_epoch+1,
         # }
-        wandb.log(log_dict)
+        # wandb.log(log_dict)
 
