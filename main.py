@@ -30,10 +30,6 @@ def get_default_arguments(description=None):
                         default="DistMult",
                         help="Available models: CMult, ConEx, ConvQ, ConvO, DistMult, QMult, OMult, "
                              "Shallom, AConEx, ConEx, ComplEx, DistMult, TransE, Keci")
-    parser.add_argument('--p', type=int, default=0,
-                        help='P for Clifford Algebra')
-    parser.add_argument('--q', type=int, default=1,
-                        help='Q for Clifford Algebra')
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[Adam, SGD]')
     parser.add_argument('--embedding_dim', type=int, default=32,
@@ -77,8 +73,6 @@ def get_default_arguments(description=None):
     parser.add_argument("--seed_for_computation", type=int, default=0,
                         help='Seed for all, see pl seed_everything().')
     parser.add_argument("--sample_triples_ratio", type=float, default=None, help='Sample input data.')
-    parser.add_argument("--read_only_few", type=int, default=None,
-                        help='READ only first N triples. If 0, read all.')
     parser.add_argument('--p', type=int, default=0,
                         help='P for Clifford Algebra')
     parser.add_argument('--q', type=int, default=0,

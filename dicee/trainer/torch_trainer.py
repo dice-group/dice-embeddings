@@ -45,7 +45,7 @@ class TorchTrainer(AbstractTrainer):
         # https://psutil.readthedocs.io/en/latest/#psutil.Process
         self.process = psutil.Process(os.getpid())
 
-    def _run_batch(self, i: int, x_batch, y_batch) -> float:
+    def _run_batch(self, i: int, x_batch=None, y_batch=None,batch = None) -> float:
         """
             Forward anc Backward according to a mini-batch
 
@@ -66,7 +66,8 @@ class TorchTrainer(AbstractTrainer):
             # (2) Do not accumulate gradient, zero the gradients per batch.
             self.optimizer.zero_grad(set_to_none=True)
         # (3) Loss Forward and Backward w.r.t the batch.
-        return self.compute_forward_loss_backward(x_batch, y_batch).item()
+        return self.compute_forward_loss_backward(x_batch,y_batch,batch=batch).item()
+        # return self.compute_forward_loss_backward(x_batch, y_batch).item()
 
     def _run_epoch(self, epoch: int) -> float:
         """
@@ -88,7 +89,9 @@ class TorchTrainer(AbstractTrainer):
             if construct_mini_batch_time:
                 construct_mini_batch_time = start_time - construct_mini_batch_time
             # (2) Forward-Backward-Update.
-            batch_loss = self._run_batch(i, x_batch, y_batch)
+            batch_loss = self._run_batch(i, x_batch, y_batch,batch=batch)
+            # batch_loss = self._run_batch(i, x_batch, y_batch)
+              
             epoch_loss += batch_loss
             if construct_mini_batch_time:
                 print(
@@ -118,7 +121,10 @@ class TorchTrainer(AbstractTrainer):
         self.model = model
         self.model.to(self.device)
         self.train_dataloaders = train_dataloaders
-        self.loss_function = model.loss_function
+        if isinstance(model, pykeen.contrib.lightning.LitModule):
+            self.loss_function = model.loss
+        else:
+            self.loss_function = model.loss_function
         self.optimizer = self.model.configure_optimizers()
         # (1) Start running callbacks
         self.on_fit_start(self, self.model)
@@ -149,7 +155,7 @@ class TorchTrainer(AbstractTrainer):
             self.on_train_epoch_end(self, self.model)
         self.on_fit_end(self, self.model)
 
-    def compute_forward_loss_backward(self, x_batch: torch.Tensor, y_batch: torch.Tensor) -> torch.Tensor:
+    def compute_forward_loss_backward(self, x_batch: torch.Tensor=None, y_batch: torch.Tensor=None,batch=None) -> torch.Tensor:
         """
             Compute forward, loss, backward, and parameter update
 
@@ -167,9 +173,17 @@ class TorchTrainer(AbstractTrainer):
             return batch_loss
         else:
             # (1) Forward and Backpropagate the gradient of (3) w.r.t. parameters.
-            yhat_batch = self.model(x_batch)
+            if type(x_batch) == tuple:
+              x_batch = x_batch[0]
+            if x_batch!=None:
+              yhat_batch = self.model(x_batch)
             # (2) Compute the batch loss
-            batch_loss = self.loss_function(yhat_batch, y_batch)
+            
+            if isinstance(self.model, pykeen.contrib.lightning.LitModule):
+              # using the loss function in pykeen to get the batch_loss
+              batch_loss = self.model._step(batch, prefix="train")
+            else:
+              batch_loss = self.loss_function(yhat_batch, y_batch)
             # (3) Backward pass
             batch_loss.backward()
             # (4) Parameter update
