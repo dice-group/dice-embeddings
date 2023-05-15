@@ -87,7 +87,7 @@ class TorchDDPTrainer(AbstractTrainer):
       (model,) = args
       # (1) Fit start.
       self.on_fit_start(self, model)
-      # nodes * gpus
+      # nodes * gpus (one process per gpu)
       world_size = self.attributes.num_nodes * torch.cuda.device_count()
 
       if self.attributes.use_ddp_batch_finder:
@@ -97,7 +97,9 @@ class TorchDDPTrainer(AbstractTrainer):
           # the following training will use the final_batch_size
           self.attributes.batch_size = final_batch - 1
           self.attributes.num_epochs = rest_epoachs  # run the rest epochs
-
+          model.load_state_dict(torch.load("model.pt"))
+          
+          
       mp.spawn(
           fn=distributed_training,
           args=(
@@ -110,8 +112,8 @@ class TorchDDPTrainer(AbstractTrainer):
           nprocs=world_size,
           join=True,
       )
-      model.load_state_dict(torch.load("model.pt", map_location=torch.device("cpu")))
-      os.remove("model.pt")
+      # model.load_state_dict(torch.load("model.pt", map_location=torch.device("cpu")))
+      # os.remove("model.pt")
       
       import pickle
       f_read = open('loss_history.pkl','rb')
@@ -155,6 +157,10 @@ class TorchDDPTrainer(AbstractTrainer):
                     return self.attributes.batch_size, rest_epoachs
 
                 self.attributes.num_epochs = 1  # only run one epoch
+                if num_of_try_epochs!=0:
+                  model.load_state_dict(torch.load("model.pt"))
+                  # model.load_state_dict(torch.load("model.pt", map_location=torch.device("cpu")))
+                  
                 mp.spawn(
                     fn=distributed_training,
                     args=(
@@ -167,10 +173,10 @@ class TorchDDPTrainer(AbstractTrainer):
                     nprocs=world_size,
                     join=True,
                 )
-                model.load_state_dict(
-                    torch.load("model.pt", map_location=torch.device("cpu"))
-                )
-                os.remove("model.pt")
+                # model.load_state_dict(
+                #     torch.load("model.pt", map_location=torch.device("cpu"))
+                # )
+                # os.remove("model.pt")
                 # self.attributes.batch_size += batch_size  # increase the batch size
                 self.attributes.batch_size = self.attributes.batch_size*2 # make it faster
                 num_of_try_epochs += 1
@@ -212,6 +218,9 @@ class TorchDDPTrainer(AbstractTrainer):
                 mid = (l + r) // 2
                 self.attributes.batch_size = mid  # increase the batch size
                 self.attributes.num_epochs = 1  # only run one epoch
+            
+                model.load_state_dict(torch.load("model.pt"))
+                
                 mp.spawn(
                     fn=distributed_training,
                     args=(
@@ -224,10 +233,10 @@ class TorchDDPTrainer(AbstractTrainer):
                     nprocs=world_size,
                     join=True,
                 )
-                model.load_state_dict(
-                    torch.load("model.pt", map_location=torch.device("cpu"))
-                )
-                os.remove("model.pt")
+                # model.load_state_dict(
+                #     torch.load("model.pt", map_location=torch.device("cpu"))
+                # )
+                # os.remove("model.pt")
 
                 num_of_try_epochs += 1
                 l = mid
@@ -350,8 +359,9 @@ def distributed_training(rank: int, world_size, model, train_dataset_loader, cal
 
     # for test purpose(not sure if this simulation is correct???)
     # GPU memory managed by the caching allocator can now only allocate 0.01*total_memory memory
-    # torch.cuda.set_per_process_memory_fraction(0.007)
-
+    torch.cuda.set_per_process_memory_fraction(0.007)
+    
+    # set up
     dist.init_process_group(backend=backend, rank=rank, world_size=world_size)
 
     # train_dataset_loader = DataLoader(
@@ -394,6 +404,12 @@ def distributed_training(rank: int, world_size, model, train_dataset_loader, cal
     trainer = DDPTrainer(
         model, train_dataset_loader, optimizer, rank, callbacks, attribute.num_epochs
     )
+    
+        
+    # dist.barrier()
+    # map_location = {'cuda:%d' % 0: 'cuda:%d' % rank}
+    # model.load_state_dict(torch.load("model.pt", map_location=map_location))
+    
     # total_size=0
     # data_batch = next(iter(train_dataset_loader))
     # for data in data_batch:
@@ -410,8 +426,11 @@ def distributed_training(rank: int, world_size, model, train_dataset_loader, cal
         f_save = open('loss_history.pkl','wb')
         pickle.dump(loss_history_dict,f_save)
         f_save.close
-        
         torch.save(trainer.model.module.state_dict(), "model.pt")
+    
+    # if rank == 0:
+    #     os.remove("model.pt")
+    
     dist.destroy_process_group()
 
 
