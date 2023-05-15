@@ -294,7 +294,9 @@ class Evaluator:
         )
 
         # Iterating one by one is not good when you are using batch norm
-        for i in range(0, len(triple_idx)):
+        from tqdm import trange, tqdm
+        for i in trange(0,len(triple_idx)):
+        # for i in range(0, len(triple_idx)):
             # (1) Get a triple (head entity, relation, tail entity
             data_point = triple_idx[i]
             h, r, t = data_point[0], data_point[1], data_point[2]
