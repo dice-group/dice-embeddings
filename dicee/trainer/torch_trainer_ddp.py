@@ -439,10 +439,6 @@ def distributed_training(rank: int, world_size, model, train_dataset_loader, cal
         f_save = open('loss_history.pkl','wb')
         pickle.dump(loss_history_dict,f_save)
         f_save.close
-        
-        # configure map_location properly
-        
-        
         torch.save(trainer.model.module.state_dict(), "model.pt")
     
     # if rank == 0:
