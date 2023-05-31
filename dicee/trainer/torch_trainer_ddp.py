@@ -64,7 +64,13 @@ class TorchDDPTrainer(AbstractTrainer):
     #     # (1) Run the fit the start callback.
     #     self.on_fit_start(self, model)
     #     # (2) Setup DDP.
-    #     torch.distributed.init_process_group(backend="nccl")
+        
+    #     if platform.system().lower() == "windows":
+    #       backend = BACKEND_GLOO
+    #     else:
+    #       backend = BACKEND_NCCL
+        
+    #     torch.distributed.init_process_group(backend=backend)
     #     train_dataset_loader = kwargs['train_dataloaders']
     #     # (1) Create DATA LOADER.
     #     train_dataset_loader = DataLoader(train_dataset_loader.dataset, batch_size=self.attributes.batch_size,
@@ -124,6 +130,8 @@ class TorchDDPTrainer(AbstractTrainer):
       f_read.close()
       os.remove('loss_history.pkl')
       
+      model.load_state_dict(torch.load("model.pt"))
+      os.remove("model.pt")
       self.on_fit_end(self, model)
 
     def find_batch_size(self, model, world_size, kwargs):
@@ -133,6 +141,8 @@ class TorchDDPTrainer(AbstractTrainer):
         initial_num_epochs = self.attributes.num_epochs
         num_of_try_epochs = 0
         rest_epoachs = 0
+        double_counter = 0
+        
         if "train_dataloaders" not in kwargs:
             # get the length of dataset from pykeen
             kwargs["train_dataloaders"] = model.train_dataloaders
@@ -140,7 +150,7 @@ class TorchDDPTrainer(AbstractTrainer):
 
         size_of_train_data = len(kwargs["train_dataloaders"].dataset)
 
-        while not oom:
+        while not oom and double_counter < 3:
 
             try:
 
@@ -180,6 +190,7 @@ class TorchDDPTrainer(AbstractTrainer):
                 # self.attributes.batch_size += batch_size  # increase the batch size
                 self.attributes.batch_size = self.attributes.batch_size*2 # make it faster
                 num_of_try_epochs += 1
+                double_counter +=1
             # except RuntimeError:
             except Exception:
                 oom = True
@@ -359,7 +370,7 @@ def distributed_training(rank: int, world_size, model, train_dataset_loader, cal
 
     # for test purpose(not sure if this simulation is correct???)
     # GPU memory managed by the caching allocator can now only allocate 0.01*total_memory memory
-    torch.cuda.set_per_process_memory_fraction(0.007)
+    # torch.cuda.set_per_process_memory_fraction(0.1)
     
     # set up
     dist.init_process_group(backend=backend, rank=rank, world_size=world_size)

@@ -139,7 +139,7 @@ class TorchTrainer(AbstractTrainer):
 
             avg_epoch_loss = self._run_epoch(epoch)
             print(f"Epoch:{epoch + 1} | Loss:{avg_epoch_loss:.8f} | Runtime:{(time.time() - start_time) / 60:.3f} mins")
-            # Autobatch Finder: Double the current batch size if memory allows and repeat this process at mast 5 times.
+            # Autobatch Finder: Double the current batch size if memory allows and repeat this process at most 5 times.
             if self.attributes.auto_batch_finder and psutil.virtual_memory().percent < 30.0 and counter < 5:
                 self.train_dataloaders = torch.utils.data.DataLoader(dataset=self.train_dataloaders.dataset,
                                                                      batch_size=self.train_dataloaders.batch_size + self.train_dataloaders.batch_size,
