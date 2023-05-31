@@ -1,5 +1,5 @@
 import sys
-from tqdm import tqdm
+from tqdm import c
 import pandas as pd
 from sklearn.model_selection import KFold
 from sklearn.linear_model import LinearRegression

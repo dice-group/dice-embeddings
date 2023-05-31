@@ -30,13 +30,14 @@ class MyLCWALitModule(LCWALitModule,Pykeen_Module):
         
         # self.loss_history.append(avg)
         # self.log('val_loss',avg,on_epoch=True)
-        print(training_step_outputs)
+        # print(training_step_outputs)
         # log_dict = {
         #     'train_loss':training_step_outputs,
         #     "epoch":self.current_epoch+1,
             
         # }
         # wandb.log(log_dict)
+        pass
 
     def _dataloader(
         self, triples_factory: CoreTriplesFactory, shuffle: bool = False

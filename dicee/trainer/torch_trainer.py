@@ -83,6 +83,10 @@ class TorchTrainer(AbstractTrainer):
         i = 0
         construct_mini_batch_time = None
         for i, batch in enumerate(self.train_dataloaders):
+            # print(torch.cuda.memory_summary())
+          
+          
+          
             # (1) Extract Input and Outputs and set them on the dice
             x_batch, y_batch = self.extract_input_outputs_set_device(batch)
             start_time = time.time()
