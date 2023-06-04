@@ -150,7 +150,7 @@ class TorchDDPTrainer(AbstractTrainer):
 
         size_of_train_data = len(kwargs["train_dataloaders"].dataset)
 
-        while not oom and double_counter < 3:
+        while not oom and double_counter < 5:
 
             try:
 
@@ -203,9 +203,11 @@ class TorchDDPTrainer(AbstractTrainer):
             )
 
         r = self.attributes.batch_size
-        self.attributes.batch_size += (
-            -batch_size
-        )  # reset the batch size to the last add
+        # self.attributes.batch_size += (
+        #     -batch_size
+        # )  # reset the batch size to the last add
+        self.attributes.batch_size = self.attributes.batch_size//2 # reset back to the old batch size
+        
         l = self.attributes.batch_size
         # r = self.attributes.batch_size
         final_batch = l
