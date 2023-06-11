@@ -83,6 +83,10 @@ class TorchTrainer(AbstractTrainer):
         i = 0
         construct_mini_batch_time = None
         for i, batch in enumerate(self.train_dataloaders):
+            # print(torch.cuda.memory_summary())
+          
+          
+          
             # (1) Extract Input and Outputs and set them on the dice
             x_batch, y_batch = self.extract_input_outputs_set_device(batch)
             start_time = time.time()
@@ -175,7 +179,7 @@ class TorchTrainer(AbstractTrainer):
             # (1) Forward and Backpropagate the gradient of (3) w.r.t. parameters.
             if type(x_batch) == tuple:
               x_batch = x_batch[0]
-            if x_batch!=None:
+            if x_batch!=None and not isinstance(self.model, pykeen.contrib.lightning.LitModule):
               yhat_batch = self.model(x_batch)
             # (2) Compute the batch loss
             
