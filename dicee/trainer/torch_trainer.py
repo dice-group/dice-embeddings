@@ -179,7 +179,7 @@ class TorchTrainer(AbstractTrainer):
             # (1) Forward and Backpropagate the gradient of (3) w.r.t. parameters.
             if type(x_batch) == tuple:
               x_batch = x_batch[0]
-            if x_batch!=None:
+            if x_batch!=None and not isinstance(self.model, pykeen.contrib.lightning.LitModule):
               yhat_batch = self.model(x_batch)
             # (2) Compute the batch loss
             
