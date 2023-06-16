@@ -107,13 +107,6 @@
 # python ../main.py --storage_path ./complex_kvsall_yago_gpu_3 --path_dataset_folder ../KGs/YAGO3-10 --model ComplEx --neg_ratio 1 --num_epochs 100 --scoring_technique KvsAll --batch_size 4096 --lr 0.0016718252573185953 --embedding_dim 256 --gpus 1 --save_embeddings_as_csv --eval_model "test" --num_core 0 --optim "Adam" --normalization "None"
 
 
-# # # auto-btach-finder
-python ../main.py --storage_path ./distmult_yago_autobatch_kvsall --path_dataset_folder ../KGs/YAGO3-10 --model DistMult --neg_ratio 1 --num_epochs 100 --scoring_technique KvsAll --batch_size 4096 --lr 0.00113355532419969 --embedding_dim 256 --num_core 1 --trainer "torchDDP" --save_embeddings_as_csv --eval_model "test" --optim "Adam" --normalization "None" --use_ddp_batch_finder True
-# smaller batch size
-python ../main.py --storage_path ./complex_yago_autobatch_kvsall --path_dataset_folder ../KGs/YAGO3-10 --model ComplEx --neg_ratio 1 --num_epochs 100 --scoring_technique KvsAll --batch_size 8192 --lr 0.0016718252573185953  --embedding_dim 256 --num_core 1 --trainer "torchDDP" --save_embeddings_as_csv --eval_model "test" --optim "Adam" --normalization "None" --use_ddp_batch_finder True
-
-
-
 
 # PYkeen, LCWA
 
@@ -128,7 +121,7 @@ python ../main.py --storage_path ./complex_yago_autobatch_kvsall --path_dataset_
 # python ../main.py --storage_path ./pykeen_complex_lcwa_yago_gpu_2 --path_dataset_folder ../KGs/YAGO3-10 --model Pykeen_ComplEx --num_epochs 100 --scoring_technique "NegSample" --batch_size 4096 --lr 0.0016718252573185953 --embedding_dim 256 --num_core 1 --trainer "torchDDP" --save_embeddings_as_csv --eval_model "test" --optim "Adam" --normalization "None" --pykeen_model_kwargs embedding_dim=256 loss="BCEWithLogitsLoss"
 # python ../main.py --storage_path ./pykeen_complex_lcwa_yago_gpu_3 --path_dataset_folder ../KGs/YAGO3-10 --model Pykeen_ComplEx --num_epochs 100 --scoring_technique "NegSample" --batch_size 4096 --lr 0.0016718252573185953 --embedding_dim 256 --gpus 1 --save_embeddings_as_csv --eval_model "test" --num_core 1 --optim "Adam" --normalization "None" --pykeen_model_kwargs embedding_dim=256 loss="BCEWithLogitsLoss"
 
-# auto_batch finder pykeen
+
 
 
 

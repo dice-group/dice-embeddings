@@ -1,0 +1,23 @@
+{
+    "optuna": {
+      "n_trials": 20
+    },
+    "pipeline": {
+      "dataset": "umls",
+      "sampler":"GridSampler",
+      "model": "ComplEx",
+      "optimizer": "Adam",
+      "sampler_kwargs":{
+        "search_space":{
+          "model.embedding_dim": [64,128, 256],
+          "optimizer.lr": [0.0001, 0.001, 0.01, 0.1],
+          "negative_sampler.num_negs_per_pos": [32],
+          "training.num_epochs": [100],
+          "training.batch_size": [128,256,512,1024],
+          "regularizer.weight":[0.01],
+          "training.training_loop":["slcwa","lcwa"]
+      }
+      },
+      "loss": "BCEWithLogitsLoss"
+    }
+  }

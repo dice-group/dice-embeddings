@@ -64,13 +64,7 @@ class TorchDDPTrainer(AbstractTrainer):
     #     # (1) Run the fit the start callback.
     #     self.on_fit_start(self, model)
     #     # (2) Setup DDP.
-        
-    #     if platform.system().lower() == "windows":
-    #       backend = BACKEND_GLOO
-    #     else:
-    #       backend = BACKEND_NCCL
-        
-    #     torch.distributed.init_process_group(backend=backend)
+    #     torch.distributed.init_process_group(backend="nccl")
     #     train_dataset_loader = kwargs['train_dataloaders']
     #     # (1) Create DATA LOADER.
     #     train_dataset_loader = DataLoader(train_dataset_loader.dataset, batch_size=self.attributes.batch_size,
@@ -114,7 +108,7 @@ class TorchDDPTrainer(AbstractTrainer):
           self.attributes.batch_size = final_batch - 1
           self.attributes.num_epochs = rest_epoachs  # run the rest epochs
           
-          # model.load_state_dict(torch.load("model.pt"))
+          model.load_state_dict(torch.load("model.pt"))
       
       
       mp.spawn(
@@ -137,7 +131,7 @@ class TorchDDPTrainer(AbstractTrainer):
       loss_history_dict = pickle.load(f_read)
       
       print(loss_history_dict)
-      model.loss_history = loss_history_dict['loss_history']
+      model.loss_history = loss_history_dict
       f_read.close()
       model.load_state_dict(torch.load("model.pt"))
       os.remove('loss_history.pkl')
@@ -160,7 +154,7 @@ class TorchDDPTrainer(AbstractTrainer):
 
         size_of_train_data = len(kwargs["train_dataloaders"].dataset)
 
-        while not oom and double_counter < 5:
+        while not oom and double_counter <= 5:
 
             try:
 
@@ -180,9 +174,15 @@ class TorchDDPTrainer(AbstractTrainer):
                     break
 
                 self.attributes.num_epochs = 1  # only run one epoch
+                
                 # if num_of_try_epochs!=0:
                 #   model.load_state_dict(torch.load("model.pt"))
                   # model.load_state_dict(torch.load("model.pt", map_location=torch.device("cpu")))
+                
+                if num_of_try_epochs != 0:
+                  model.load_state_dict(torch.load("model.pt"))
+                  self.attributes.batch_size = self.attributes.batch_size*2 # make it faster
+                  
                   
                 mp.spawn(
                     fn=distributed_training,
@@ -201,7 +201,7 @@ class TorchDDPTrainer(AbstractTrainer):
                 # )
                 # os.remove("model.pt")
                 # self.attributes.batch_size += batch_size  # increase the batch size
-                self.attributes.batch_size = self.attributes.batch_size*2 # make it faster
+                
                 num_of_try_epochs += 1
                 double_counter +=1
             # except RuntimeError:
@@ -256,8 +256,8 @@ class TorchDDPTrainer(AbstractTrainer):
                   self.attributes.batch_size = mid  # increase the batch size
                   self.attributes.num_epochs = 1  # only run one epoch
 
-                  # if num_of_try_epochs!=0:
-                  #   model.load_state_dict(torch.load("model.pt"))
+                  if num_of_try_epochs!=0:
+                    model.load_state_dict(torch.load("model.pt"))
                   print(f'batch_size:{self.attributes.batch_size}')
                   mp.spawn(
                       fn=distributed_training,
@@ -298,7 +298,7 @@ class TorchDDPTrainer(AbstractTrainer):
           return final_batch, rest_epoachs
           
         
-        rest_epoachs = initial_num_epochs - num_of_try_epochs
+        rest_epoachs = initial_num_epochs - num_of_try_epochs + 1
         print(final_batch, rest_epoachs)
         return final_batch, rest_epoachs
 
