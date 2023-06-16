@@ -43,7 +43,7 @@ class MyLCWALitModule(LCWALitModule,Pykeen_Module):
         self, triples_factory: CoreTriplesFactory, shuffle: bool = False
     ) -> torch.utils.data.DataLoader:
         
-        print('customed dataloader is used............................................')
+        
         return torch.utils.data.DataLoader(dataset=triples_factory.create_lcwa_instances(), batch_size=self.args['batch_size'], shuffle=True,
                               num_workers=self.args['num_core'], persistent_workers=True)
 

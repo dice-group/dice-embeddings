@@ -225,7 +225,7 @@ class DICE_Trainer:
 
     def start(self, dataset) -> Tuple[BaseKGE, str]:
         """Train selected model via the selected training strategy"""
-        from ray.tune.integration.pytorch_lightning import TuneReportCallback
+        # from ray.tune.integration.pytorch_lightning import TuneReportCallback
 
         print("------------------- Train -------------------")
         # (1) Perform K-fold CV
@@ -250,13 +250,11 @@ class DICE_Trainer:
                 # model.train_dataloaders.dataset.collate_fn = model.train_dataloaders.dataset.get_collator()
                 self.trainer.fit(model,train_dataloaders=model.train_dataloaders)
                
-                print(model.loss_history)
                             
                 return model, form_of_labelling           
             
             self.trainer.fit(model, train_dataloaders=self.initialize_dataloader(self.initialize_dataset(dataset, form_of_labelling)))
            
-            print(model.loss_history)
             # import wandb
             # data = []
             # for i in range(self.args.num_epochs):

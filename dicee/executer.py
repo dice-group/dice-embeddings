@@ -209,9 +209,6 @@ class Execute:
                                     storage_path=self.storage_path,
                                     evaluator=self.evaluator)
         # (4) Start the training
-        import torch
-        torch.cuda.empty_cache()
-        
         self.trained_model, form_of_labelling = self.trainer.start(dataset=self.dataset)
         return self.end(start_time, form_of_labelling)
 
