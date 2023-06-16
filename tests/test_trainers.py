@@ -100,6 +100,5 @@ class TestCallback:
       args.pykeen_model_kwargs = dict(
           embedding_dim=args.embedding_dim, loss="BCEWithLogitsLoss"
       )
-      args.use_ddp_batch_finder = False
-      torch.cuda.empty_cache()
+      args.use_ddp_batch_finder = True
       Execute(args).start()

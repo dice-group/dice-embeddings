@@ -105,20 +105,12 @@ class TorchDDPTrainer(AbstractTrainer):
       
       if self.attributes.use_ddp_batch_finder:
           
-          # print(kwargs["train_dataloaders"].dataset)
+          
           final_batch, rest_epoachs = self.find_batch_size(
               model, world_size, kwargs
           )  # find the batch size
           # the following training will use the final_batch_size
-          size_of_train_data = len(kwargs["train_dataloaders"].dataset)
-          
-          size_one_batch = size_of_train_data/(final_batch*(1024*1024))
-          print(f'current device:{torch.cuda.current_device()}')
-          current_allocate = torch.cuda.max_memory_allocated(torch.cuda.current_device())/(1024*1024)
-          print("current_allocate:", current_allocate)
-          print(f'size_one_batch:{size_one_batch}')
-          
-          
+      
           self.attributes.batch_size = final_batch - 1
           self.attributes.num_epochs = rest_epoachs  # run the rest epochs
           
@@ -143,7 +135,7 @@ class TorchDDPTrainer(AbstractTrainer):
       import pickle
       f_read = open('loss_history.pkl','rb')
       loss_history_dict = pickle.load(f_read)
-      print("..............................")
+      
       print(loss_history_dict)
       model.loss_history = loss_history_dict['loss_history']
       f_read.close()
@@ -464,17 +456,6 @@ def distributed_training(rank: int, world_size, model, train_dataset_loader, cal
         model, train_dataset_loader, optimizer, rank, callbacks, attribute.num_epochs
     )
     
-        
-    # dist.barrier()
-    # map_location = {'cuda:%d' % 0: 'cuda:%d' % rank}
-    # model.load_state_dict(torch.load("model.pt", map_location=map_location))
-    
-    # total_size=0
-    # data_batch = next(iter(train_dataset_loader))
-    # for data in data_batch:
-    #     total_size += data.element_size() * data.nelement()
-    # print(f"Total size of data in batch: {total_size} bytes")
-    # print(f"{torch.cuda.memory_summary(0)}")
     trainer.train()
 
     
