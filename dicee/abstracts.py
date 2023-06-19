@@ -225,12 +225,12 @@ class BaseInteractiveKGE:
     def sample_entity(self, n: int) -> List[str]:
         assert isinstance(n, int)
         assert n >= 0
-        return random.sample(self.entity_to_idx.keys(), n)
+        return random.sample([i for i in self.entity_to_idx.keys()], n)
 
     def sample_relation(self, n: int) -> List[str]:
         assert isinstance(n, int)
         assert n >= 0
-        return random.sample(self.relation_to_idx.keys(), n)
+        return random.sample([i for i in self.relation_to_idx.keys()], n)
 
     def is_seen(self, entity: str = None, relation: str = None) -> bool:
         if entity is not None:
