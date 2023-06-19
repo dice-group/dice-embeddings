@@ -151,11 +151,14 @@ If you really like our work and want to cite it now, feel free to chose one :)
   year={2022},
   publisher={Elsevier}
 }
+# Keci
+Accepted at ECML. Stay tuned for the manuscript!
 # KronE
-@article{demir2022kronecker,
-  title={Kronecker Decomposition for Knowledge Graph Embeddings},
-  author={Demir, Caglar and Lienen, Julian and Ngomo, Axel-Cyrille Ngonga},
-  journal={arXiv preprint arXiv:2205.06560},
+@inproceedings{demir2022kronecker,
+  title={Kronecker decomposition for knowledge graph embeddings},
+  author={Demir, Caglar and Lienen, Julian and Ngonga Ngomo, Axel-Cyrille},
+  booktitle={Proceedings of the 33rd ACM Conference on Hypertext and Social Media},
+  pages={1--10},
   year={2022}
 }
 # QMult, OMult, ConvQ, ConvO
