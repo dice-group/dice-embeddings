@@ -425,7 +425,10 @@ def get_pykeen_model(model_name, args, dataset):
     # initialize module for pytorch-lightning trainer
     print(args["use_SLCWALitModule"])
     if args["use_SLCWALitModule"]:
-        model = MySLCWALitModule(
+       if 'kvsall'.lower() in args["scoring_technique"].lower():
+         raise NotImplementedError("kvsall is not supported by SLCWA. Please use LCWA instead.")
+       else:
+         model = MySLCWALitModule(
             dataset=_dataset,
             model=passed_model,
             model_name=actual_name,
@@ -441,6 +444,9 @@ def get_pykeen_model(model_name, args, dataset):
             ),
         )
     else:
+      if 'NegSample'.lower() in args['scoring_technique'].lower():
+        raise NotImplementedError("NegSample is not supported by LCWA. Please use SLCWA instead.")
+      else:
         model = MyLCWALitModule(
             dataset=_dataset,
             model=passed_model,

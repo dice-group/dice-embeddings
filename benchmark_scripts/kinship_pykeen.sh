@@ -30,4 +30,4 @@ done
 
 
 
-python ../main.py --path_dataset_folder ../KGs/KINSHIP --model Pykeen_ComplEx --num_epochs 10 --scoring_technique "NegSample" --batch_size 128 --lr 0.01 --embedding_dim 64 --trainer "PL" --neg_ratio 16 --pykeen_model_kwargs embedding_dim=128 loss="BCEWithLogitsLoss" --save_embeddings_as_csv --eval_model "train_val_test" --num_core 1 --accelerator "auto" --optim "Adam" --normalization "None" --use_SLCWALitModule
+ 
