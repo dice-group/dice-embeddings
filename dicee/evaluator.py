@@ -89,6 +89,7 @@ class Evaluator:
                                                    test_set=dataset.test_set,
                                                    trained_model=trained_model)
         elif self.args.scoring_technique in ['KvsAll', 'KvsSample', '1vsAll', 'PvsAll', 'CCvsAll']:
+          
             self.eval_with_vs_all(train_set=dataset.train_set,
                                   valid_set=dataset.valid_set,
                                   test_set=dataset.test_set,
@@ -128,6 +129,8 @@ class Evaluator:
                                                    test_set=test_set,
                                                    trained_model=trained_model)
         elif self.args.scoring_technique in ['KvsAll', 'KvsSample', '1vsAll', 'PvsAll', 'CCvsAll']:
+              
+
             self.eval_with_vs_all(train_set=train_set,
                                   valid_set=valid_set,
                                   test_set=test_set,
@@ -231,6 +234,7 @@ class Evaluator:
                     # (4.1) Get the ids of the head entity, the relation and the target tail entity in the j.th triple.
                     id_e, id_r, id_e_target = data_batch[j]
                     # (4.2) Get all ids of all entities occurring with the head entity and relation extracted in 4.1.
+                    # get the index of filtered entities
                     filt = self.er_vocab[(id_e, id_r)]
                     # (4.3) Store the assigned score of the target tail entity extracted in 4.1.
                     target_value = predictions[j, id_e_target].item()

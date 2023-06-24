@@ -149,8 +149,7 @@ def evaluation_pykeen_report(path):
 
 
 # evaluation_report('complex_kinships_cpu')
-# evaluation_pykeen_report("pykeen_benchmarks/pykeen_distmultumls/")
-# evaluation_pykeen_report("pykeen_benchmarks/pykeen_ComplEx_umls/")
+
 
 
 # runtime_report('distmult_umls_cpu/')
@@ -174,13 +173,13 @@ def evaluation_pykeen_report(path):
 # runtime_report('integrated_pykeen\slcwa\half_neg\pykeen_distmult_kinship_cpu')
 
 
-runtime_report('integrated_pykeen\slcwa\half_neg\pykeen_complex_umls_gpu_1')
-runtime_report('integrated_pykeen\slcwa\half_neg\pykeen_complex_umls_gpu_2')
-runtime_report('integrated_pykeen\slcwa\half_neg\pykeen_complex_umls_cpu')
+# runtime_report('integrated_pykeen\slcwa\half_neg\pykeen_complex_umls_gpu_1')
+# runtime_report('integrated_pykeen\slcwa\half_neg\pykeen_complex_umls_gpu_2')
+# runtime_report('integrated_pykeen\slcwa\half_neg\pykeen_complex_umls_cpu')
 
-runtime_report('integrated_pykeen\slcwa\half_neg\pykeen_complex_kinship_gpu_1')
-runtime_report('integrated_pykeen\slcwa\half_neg\pykeen_complex_kinship_gpu_2')
-runtime_report('integrated_pykeen\slcwa\half_neg\pykeen_complex_kinship_cpu')
+# runtime_report('integrated_pykeen\slcwa\half_neg\pykeen_complex_kinship_gpu_1')
+# runtime_report('integrated_pykeen\slcwa\half_neg\pykeen_complex_kinship_gpu_2')
+# runtime_report('integrated_pykeen\slcwa\half_neg\pykeen_complex_kinship_cpu')
 
 
 # runtime_report('pykeen_complex_umls_gpu_1')

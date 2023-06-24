@@ -5,10 +5,8 @@ from pykeen.triples.triples_factory import CoreTriplesFactory
 import wandb
 
 class MyLCWALitModule(LCWALitModule,Pykeen_Module):
-# class MyLCWALitModule(LCWALitModule, BaseKGE):
+
     def __init__(self, *, model_name: str,args, **kwargs):
-        # BaseKGE.__init__(self,args)
-        # super().__init__(args,**kwargs)
         Pykeen_Module.__init__(self,model_name , kwargs['optimizer'])
         super().__init__(**kwargs)
         self.loss_history = []

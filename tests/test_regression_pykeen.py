@@ -6,7 +6,7 @@ import wandb
 def template(model_name):
     args = get_default_arguments([])
     args.model = model_name
-    args.scoring_technique = "NegSample"  # default value of args.eval is 'val_test'
+    # args.scoring_technique = "NegSample"  # default value of args.eval is 'val_test'
     args.path_dataset_folder = "KGs/Nations"
     # args.path_dataset_folder = "KGs/UMLS"
     # args.path_dataset_folder = "KGs/FB15k-237"

@@ -1,0 +1,37 @@
+digraph "packages" {
+rankdir=BT
+charset="utf-8"
+"dicee.models" [color="black", label=<dicee.models>, shape="box", style="solid"];
+"dicee.models.base_model" [color="black", label=<dicee.models.base_model>, shape="box", style="solid"];
+"dicee.models.clifford" [color="black", label=<dicee.models.clifford>, shape="box", style="solid"];
+"dicee.models.complex" [color="black", label=<dicee.models.complex>, shape="box", style="solid"];
+"dicee.models.function_space" [color="black", label=<dicee.models.function_space>, shape="box", style="solid"];
+"dicee.models.octonion" [color="black", label=<dicee.models.octonion>, shape="box", style="solid"];
+"dicee.models.pykeen_LCWALitModule" [color="black", label=<dicee.models.pykeen_LCWALitModule>, shape="box", style="solid"];
+"dicee.models.pykeen_Module" [color="black", label=<dicee.models.pykeen_Module>, shape="box", style="solid"];
+"dicee.models.pykeen_SLCWALitModule" [color="black", label=<dicee.models.pykeen_SLCWALitModule>, shape="box", style="solid"];
+"dicee.models.quaternion" [color="black", label=<dicee.models.quaternion>, shape="box", style="solid"];
+"dicee.models.real" [color="black", label=<dicee.models.real>, shape="box", style="solid"];
+"dicee.models.static_funcs" [color="black", label=<dicee.models.static_funcs>, shape="box", style="solid"];
+"dicee.models" -> "dicee.models.base_model" [arrowhead="open", arrowtail="none"];
+"dicee.models" -> "dicee.models.clifford" [arrowhead="open", arrowtail="none"];
+"dicee.models" -> "dicee.models.complex" [arrowhead="open", arrowtail="none"];
+"dicee.models" -> "dicee.models.function_space" [arrowhead="open", arrowtail="none"];
+"dicee.models" -> "dicee.models.octonion" [arrowhead="open", arrowtail="none"];
+"dicee.models" -> "dicee.models.pykeen_LCWALitModule" [arrowhead="open", arrowtail="none"];
+"dicee.models" -> "dicee.models.pykeen_SLCWALitModule" [arrowhead="open", arrowtail="none"];
+"dicee.models" -> "dicee.models.quaternion" [arrowhead="open", arrowtail="none"];
+"dicee.models" -> "dicee.models.real" [arrowhead="open", arrowtail="none"];
+"dicee.models.clifford" -> "dicee.models.base_model" [arrowhead="open", arrowtail="none"];
+"dicee.models.complex" -> "dicee.models.base_model" [arrowhead="open", arrowtail="none"];
+"dicee.models.function_space" -> "dicee.models.base_model" [arrowhead="open", arrowtail="none"];
+"dicee.models.function_space" -> "dicee.models.static_funcs" [arrowhead="open", arrowtail="none"];
+"dicee.models.octonion" -> "dicee.models.base_model" [arrowhead="open", arrowtail="none"];
+"dicee.models.pykeen_LCWALitModule" -> "dicee.models.pykeen_Module" [arrowhead="open", arrowtail="none"];
+"dicee.models.pykeen_Module" -> "dicee.models.base_model" [arrowhead="open", arrowtail="none"];
+"dicee.models.pykeen_SLCWALitModule" -> "dicee.models.pykeen_Module" [arrowhead="open", arrowtail="none"];
+"dicee.models.quaternion" -> "dicee.models.base_model" [arrowhead="open", arrowtail="none"];
+"dicee.models.quaternion" -> "dicee.models.static_funcs" [arrowhead="open", arrowtail="none"];
+"dicee.models.real" -> "dicee.models.base_model" [arrowhead="open", arrowtail="none"];
+"dicee.models.real" -> "dicee.models.static_funcs" [arrowhead="open", arrowtail="none"];
+}

@@ -3,8 +3,25 @@ import numpy as np
 import torch
 import datetime
 from .types import Tuple
-from .models import Shallom, ConEx, AConEx, QMult, OMult, ConvQ, ConvO, ComplEx, DistMult, TransE, Keci, CMult, \
-    KeciBase, Pyke, FMult, MyLCWALitModule,MySLCWALitModule
+from .models import (
+    Shallom,
+    ConEx,
+    AConEx,
+    QMult,
+    OMult,
+    ConvQ,
+    ConvO,
+    ComplEx,
+    DistMult,
+    TransE,
+    Keci,
+    CMult,
+    KeciBase,
+    Pyke,
+    FMult,
+    MyLCWALitModule,
+    MySLCWALitModule,
+)
 from .models.base_model import BaseKGE
 import time
 import pandas as pd
@@ -23,8 +40,7 @@ from pykeen.contrib.lightning import LitModule
 from pykeen.models.nbase import ERModel
 from pykeen.nn.modules import interaction_resolver
 from pykeen.datasets.base import PathDataset, EagerDataset
-from pykeen.triples.triples_factory import CoreTriplesFactory,TriplesFactory
-
+from pykeen.triples.triples_factory import CoreTriplesFactory, TriplesFactory
 
 
 def timeit(func):
@@ -35,7 +51,8 @@ def timeit(func):
         end_time = time.perf_counter()
         total_time = end_time - start_time
         print(
-            f'Took {total_time:.4f} seconds | Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB')
+            f"Took {total_time:.4f} seconds | Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB"
+        )
         return result
 
     return timeit_wrapper
@@ -46,7 +63,7 @@ def save_pickle(*, data: object, file_path=str):
 
 
 def load_pickle(*, file_path=str):
-    with open(file_path, 'rb') as f:
+    with open(file_path, "rb") as f:
         return pickle.load(f)
 
 
@@ -76,22 +93,30 @@ def select_model(
             )
         return model, _
     else:
-        return intialize_model(args, dataset) if "pykeen" in args['model'].lower() else intialize_model(args)
+        return (
+            intialize_model(args, dataset)
+            if "pykeen" in args["model"].lower()
+            else intialize_model(args)
+        )
 
 
-def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[object, dict, dict]:
-    """ Load weights and initialize pytorch module from namespace arguments"""
-    print(f'Loading model {model_name}...', end=' ')
+def load_model(
+    path_of_experiment_folder, model_name="model.pt"
+) -> Tuple[object, dict, dict]:
+    """Load weights and initialize pytorch module from namespace arguments"""
+    print(f"Loading model {model_name}...", end=" ")
     start_time = time.time()
     # (1) Load weights..
-    weights = torch.load(path_of_experiment_folder + f'/{model_name}', torch.device('cpu'))
+    weights = torch.load(
+        path_of_experiment_folder + f"/{model_name}", torch.device("cpu")
+    )
     # (2) Loading input configuration..
-    configs = load_json(path_of_experiment_folder + '/configuration.json')
+    configs = load_json(path_of_experiment_folder + "/configuration.json")
     # (3) Loading the report of a training process.
-    report = load_json(path_of_experiment_folder + '/report.json')
+    report = load_json(path_of_experiment_folder + "/report.json")
     configs["num_entities"] = report["num_entities"]
     configs["num_relations"] = report["num_relations"]
-    print(f'Done! It took {time.time() - start_time:.3f}')
+    print(f"Done! It took {time.time() - start_time:.3f}")
     # (4) Select the model
     model, _ = intialize_model(configs)
     # (5) Put (1) into (4)
@@ -101,74 +126,76 @@ def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[object
         parameter.requires_grad = False
     model.eval()
     start_time = time.time()
-    print('Loading entity and relation indexes...', end=' ')
-    with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
+    print("Loading entity and relation indexes...", end=" ")
+    with open(path_of_experiment_folder + "/entity_to_idx.p", "rb") as f:
         entity_to_idx = pickle.load(f)
-    with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
+    with open(path_of_experiment_folder + "/relation_to_idx.p", "rb") as f:
         relation_to_idx = pickle.load(f)
     assert isinstance(entity_to_idx, dict)
     assert isinstance(relation_to_idx, dict)
-    print(f'Done! It took {time.time() - start_time:.4f}')
+    print(f"Done! It took {time.time() - start_time:.4f}")
     return model, entity_to_idx, relation_to_idx
 
 
-def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
-    """ Construct Ensemble Of weights and initialize pytorch module from namespace arguments
+def load_model_ensemble(
+    path_of_experiment_folder: str,
+) -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
+    """Construct Ensemble Of weights and initialize pytorch module from namespace arguments
 
     (1) Detect models under given path
     (2) Accumulate parameters of detected models
     (3) Normalize parameters
     (4) Insert (3) into model.
     """
-    print('Constructing Ensemble of ', end=' ')
+    print("Constructing Ensemble of ", end=" ")
     start_time = time.time()
     # (1) Detect models under given path.
-    paths_for_loading = glob.glob(path_of_experiment_folder + '/model*')
-    print(f'{len(paths_for_loading)} models...')
+    paths_for_loading = glob.glob(path_of_experiment_folder + "/model*")
+    print(f"{len(paths_for_loading)} models...")
     assert len(paths_for_loading) > 0
     num_of_models = len(paths_for_loading)
     weights = None
     # (2) Accumulate parameters of detected models.
     while len(paths_for_loading):
         p = paths_for_loading.pop()
-        print(f'Model: {p}...')
+        print(f"Model: {p}...")
         if weights is None:
-            weights = torch.load(p, torch.device('cpu'))
+            weights = torch.load(p, torch.device("cpu"))
         else:
-            five_weights = torch.load(p, torch.device('cpu'))
+            five_weights = torch.load(p, torch.device("cpu"))
             # (2.1) Accumulate model parameters
             for k, _ in weights.items():
-                if 'weight' in k:
-                    weights[k] = (weights[k] + five_weights[k])
+                if "weight" in k:
+                    weights[k] = weights[k] + five_weights[k]
     # (3) Normalize parameters.
     for k, _ in weights.items():
-        if 'weight' in k:
+        if "weight" in k:
             weights[k] /= num_of_models
     # (4) Insert (3) into model
     # (4.1) Load report and configuration to initialize model.
-    configs = load_json(path_of_experiment_folder + '/configuration.json')
-    report = load_json(path_of_experiment_folder + '/report.json')
+    configs = load_json(path_of_experiment_folder + "/configuration.json")
+    report = load_json(path_of_experiment_folder + "/report.json")
     configs["num_entities"] = report["num_entities"]
     configs["num_relations"] = report["num_relations"]
-    print(f'Done! It took {time.time() - start_time:.2f} seconds.')
+    print(f"Done! It took {time.time() - start_time:.2f} seconds.")
     # (4.2) Select the model
     model, _ = intialize_model(configs)
     # (4.3) Put (3) into their places
     model.load_state_dict(weights, strict=True)
     # (6) Set it into eval model.
-    print('Setting Eval mode & requires_grad params to False')
+    print("Setting Eval mode & requires_grad params to False")
     for parameter in model.parameters():
         parameter.requires_grad = False
     model.eval()
     start_time = time.time()
-    print('Loading entity and relation indexes...', end=' ')
-    with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
+    print("Loading entity and relation indexes...", end=" ")
+    with open(path_of_experiment_folder + "/entity_to_idx.p", "rb") as f:
         entity_to_idx = pickle.load(f)
-    with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
+    with open(path_of_experiment_folder + "/relation_to_idx.p", "rb") as f:
         relation_to_idx = pickle.load(f)
     assert isinstance(entity_to_idx, dict)
     assert isinstance(relation_to_idx, dict)
-    print(f'Done! It took {time.time() - start_time:.4f}')
+    print(f"Done! It took {time.time() - start_time:.4f}")
     return model, entity_to_idx, relation_to_idx
 
 
@@ -190,23 +217,28 @@ def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
         # print(f'Setting int32,\t {np.iinfo(np.int32).max}')
         train_set = train_set.astype(np.int32)
     else:
-        raise TypeError('Int64?')
+        raise TypeError("Int64?")
     return train_set
 
 
 def save_checkpoint_model(trainer, model, path: str) -> None:
-    """ Store Pytorch model into disk"""
+    """Store Pytorch model into disk"""
     try:
         torch.save(model.state_dict(), path)
     except ReferenceError as e:
         print(e)
         print(model.name)
-        print('Could not save the model correctly')
+        print("Could not save the model correctly")
 
 
-def store(trainer,
-          trained_model, model_name: str = 'model', full_storage_path: str = None,
-          dataset=None, save_as_csv=False) -> None:
+def store(
+    trainer,
+    trained_model,
+    model_name: str = "model",
+    full_storage_path: str = None,
+    dataset=None,
+    save_as_csv=False,
+) -> None:
     """
     Store trained_model model and save embeddings into csv file.
     :param trainer: an instance of trainer class
@@ -233,10 +265,10 @@ def store(trainer,
             return
         if isinstance(entity_emb, list) and len(entity_emb) == 0:
             return
-        
-        if hasattr(trained_model,'dataset'):
-        # if isinstance(trained_model.dataset, pykeen.datasets.base.PathDataset):
-        #     # solve the problem of filtered triples in pykeen
+
+        if hasattr(trained_model, "dataset"):
+            # if isinstance(trained_model.dataset, pykeen.datasets.base.PathDataset):
+            #     # solve the problem of filtered triples in pykeen
             entity_to_idx = trained_model.dataset.entity_to_id
         else:
             entity_to_idx = pickle.load(
@@ -276,7 +308,9 @@ def store(trainer,
         if isinstance(relation_ebm, list) and len(relation_ebm) == 0:
             return
 
-        relation_to_idx = pickle.load(open(full_storage_path + '/relation_to_idx.p', 'rb'))
+        relation_to_idx = pickle.load(
+            open(full_storage_path + "/relation_to_idx.p", "rb")
+        )
         relations_str = relation_to_idx.keys()
 
         if isinstance(relation_ebm, list) and len(relation_ebm) >= 1:
@@ -292,8 +326,14 @@ def store(trainer,
                     + ".csv",
                 )
         else:
-            save_embeddings(relation_ebm.numpy(), indexes=relations_str,
-                            path=full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
+            save_embeddings(
+                relation_ebm.numpy(),
+                indexes=relations_str,
+                path=full_storage_path
+                + "/"
+                + trained_model.name
+                + "_relation_embeddings.csv",
+            )
             del relation_ebm, relations_str, relation_to_idx
 
 
@@ -306,20 +346,27 @@ def add_noisy_triples(train_set: pd.DataFrame, add_noise_rate: float) -> pd.Data
     """
     num_triples = len(train_set)
     num_noisy_triples = int(num_triples * add_noise_rate)
-    print(f'[4 / 14] Generating {num_noisy_triples} noisy triples for training data...')
+    print(f"[4 / 14] Generating {num_noisy_triples} noisy triples for training data...")
 
-    list_of_entities = pd.unique(train_set[['subject', 'object']].values.ravel())
+    list_of_entities = pd.unique(train_set[["subject", "object"]].values.ravel())
 
-    train_set = pd.concat([train_set,
-                           # Noisy triples
-                           pd.DataFrame(
-                               {'subject': np.random.choice(list_of_entities, num_noisy_triples),
-                                'relation': np.random.choice(
-                                    pd.unique(train_set[['relation']].values.ravel()),
-                                    num_noisy_triples),
-                                'object': np.random.choice(list_of_entities, num_noisy_triples)}
-                           )
-                           ], ignore_index=True)
+    train_set = pd.concat(
+        [
+            train_set,
+            # Noisy triples
+            pd.DataFrame(
+                {
+                    "subject": np.random.choice(list_of_entities, num_noisy_triples),
+                    "relation": np.random.choice(
+                        pd.unique(train_set[["relation"]].values.ravel()),
+                        num_noisy_triples,
+                    ),
+                    "object": np.random.choice(list_of_entities, num_noisy_triples),
+                }
+            ),
+        ],
+        ignore_index=True,
+    )
 
     del list_of_entities
 
@@ -328,17 +375,21 @@ def add_noisy_triples(train_set: pd.DataFrame, add_noise_rate: float) -> pd.Data
 
 
 def read_or_load_kg(args, cls):
-    print('*** Read or Load Knowledge Graph  ***')
+    print("*** Read or Load Knowledge Graph  ***")
     start_time = time.time()
-    kg = cls(data_dir=args.path_dataset_folder,
-             add_reciprical=args.apply_reciprical_or_noise,
-             eval_model=args.eval_model,
-             read_only_few=args.read_only_few,
-             sample_triples_ratio=args.sample_triples_ratio,
-             path_for_serialization=args.full_storage_path,
-             path_for_deserialization=args.path_experiment_folder if hasattr(args, 'path_experiment_folder') else None,
-             backend=args.backend)
-    print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
+    kg = cls(
+        data_dir=args.path_dataset_folder,
+        add_reciprical=args.apply_reciprical_or_noise,
+        eval_model=args.eval_model,
+        read_only_few=args.read_only_few,
+        sample_triples_ratio=args.sample_triples_ratio,
+        path_for_serialization=args.full_storage_path,
+        path_for_deserialization=args.path_experiment_folder
+        if hasattr(args, "path_experiment_folder")
+        else None,
+        backend=args.backend,
+    )
+    print(f"Preprocessing took: {time.time() - start_time:.3f} seconds")
     # (2) Share some info about data for easy access.
     print(kg.description_of_input)
     return kg
@@ -365,10 +416,25 @@ def get_dataset_from_pykeen(model_name, dataset, path=None):
     if model_name.strip() == "NodePiece" or model_name.strip() == "CompGCN":
         use_inverse_triples = True
 
-    training_tf = TriplesFactory(dataset.train_set,dataset.entity_to_idx,dataset.relation_to_idx,create_inverse_triples=use_inverse_triples,)
-    testing_tf = TriplesFactory(dataset.test_set,dataset.entity_to_idx,dataset.relation_to_idx,create_inverse_triples=use_inverse_triples,)
-    validation_tf = TriplesFactory(dataset.valid_set,dataset.entity_to_idx,dataset.relation_to_idx,create_inverse_triples=use_inverse_triples,)
-    
+    training_tf = TriplesFactory(
+        dataset.train_set,
+        dataset.entity_to_idx,
+        dataset.relation_to_idx,
+        create_inverse_triples=use_inverse_triples,
+    )
+    testing_tf = TriplesFactory(
+        dataset.test_set,
+        dataset.entity_to_idx,
+        dataset.relation_to_idx,
+        create_inverse_triples=use_inverse_triples,
+    )
+    validation_tf = TriplesFactory(
+        dataset.valid_set,
+        dataset.entity_to_idx,
+        dataset.relation_to_idx,
+        create_inverse_triples=use_inverse_triples,
+    )
+
     dataset = EagerDataset(training_tf, testing_tf, validation_tf)
     # train_path = path + "/train.txt"
     # test_path = path + "/test.txt"
@@ -378,7 +444,7 @@ def get_dataset_from_pykeen(model_name, dataset, path=None):
     return dataset
 
 
-def get_pykeen_model(model_name, args, dataset):
+def get_pykeen_model(model_name: str, args, dataset):
     interaction_model = None
     passed_model = None
     model = None
@@ -404,6 +470,7 @@ def get_pykeen_model(model_name, args, dataset):
             list_len = len(interaction_instance.entity_shape)
             entity_representations = [None for x in range(list_len)]
 
+        # get interaction model
         interaction_model = ERModel(
             triples_factory=_dataset.training,
             entity_representations=entity_representations,
@@ -425,38 +492,41 @@ def get_pykeen_model(model_name, args, dataset):
     # initialize module for pytorch-lightning trainer
     print(args["use_SLCWALitModule"])
     if args["use_SLCWALitModule"]:
-       if 'kvsall'.lower() in args["scoring_technique"].lower():
-         raise NotImplementedError("kvsall is not supported by SLCWA. Please use LCWA instead.")
-       else:
-         model = MySLCWALitModule(
-            dataset=_dataset,
-            model=passed_model,
-            model_name=actual_name,
-            model_kwargs=args["pykeen_model_kwargs"],
-            learning_rate=args["lr"],
-            optimizer=args["optim"],
-            batch_size=args["batch_size"],
-            args=args,
-            negative_sampler="basic",
-            negative_sampler_kwargs=dict(
-                filtered=True,
-                num_negs_per_pos=args["neg_ratio"]
-            ),
-        )
+        if "kvsall".lower() in args["scoring_technique"].lower():
+            raise NotImplementedError(
+                "kvsall is not supported by SLCWA. Please use LCWA instead."
+            )
+        else:
+            model = MySLCWALitModule(
+                dataset=_dataset,
+                model=passed_model,
+                model_name=actual_name,
+                model_kwargs=args["pykeen_model_kwargs"],
+                learning_rate=args["lr"],
+                optimizer=args["optim"],
+                batch_size=args["batch_size"],
+                args=args,
+                negative_sampler="basic",
+                negative_sampler_kwargs=dict(
+                    filtered=True, num_negs_per_pos=args["neg_ratio"]
+                ),
+            )
     else:
-      if 'NegSample'.lower() in args['scoring_technique'].lower():
-        raise NotImplementedError("NegSample is not supported by LCWA. Please use SLCWA instead.")
-      else:
-        model = MyLCWALitModule(
-            dataset=_dataset,
-            model=passed_model,
-            model_name=actual_name,
-            learning_rate=args["lr"],
-            optimizer=args["optim"],
-            model_kwargs=args["pykeen_model_kwargs"],
-            batch_size=args["batch_size"],
-            args=args,
-        )
+        if "NegSample".lower() in args["scoring_technique"].lower():
+            raise NotImplementedError(
+                "NegSample is not supported by LCWA. Please use SLCWA instead."
+            )
+        else:
+            model = MyLCWALitModule(
+                dataset=_dataset,
+                model=passed_model,
+                model_name=actual_name,
+                learning_rate=args["lr"],
+                optimizer=args["optim"],
+                model_kwargs=args["pykeen_model_kwargs"],
+                batch_size=args["batch_size"],
+                args=args,
+            )
     return model
 
 
@@ -518,13 +588,13 @@ def intialize_model(args: dict, dataset=None) -> Tuple[pl.LightningModule, AnySt
         form_of_labelling = "EntityPrediction"
     elif model_name == "Pyke":
         model = Pyke(args=args)
-        form_of_labelling = 'Pyke'
-    elif model_name == 'Keci':
+        form_of_labelling = "Pyke"
+    elif model_name == "Keci":
         model = Keci(args=args)
-        form_of_labelling = 'EntityPrediction'
-    elif model_name == 'CMult':
+        form_of_labelling = "EntityPrediction"
+    elif model_name == "CMult":
         model = CMult(args=args)
-        form_of_labelling = 'EntityPrediction'
+        form_of_labelling = "EntityPrediction"
     # elif for PYKEEN https://github.com/dice-group/dice-embeddings/issues/54
     else:
         raise ValueError
@@ -533,7 +603,7 @@ def intialize_model(args: dict, dataset=None) -> Tuple[pl.LightningModule, AnySt
 
 def load_json(p: str) -> dict:
     assert os.path.isfile(p)
-    with open(p, 'r') as r:
+    with open(p, "r") as r:
         args = json.load(r)
     return args
 
@@ -568,7 +638,9 @@ def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
         else:
             df.to_csv(path)
     except KeyError or AttributeError as e:
-        print('Exception occurred at saving entity embeddings. Computation will continue')
+        print(
+            "Exception occurred at saving entity embeddings. Computation will continue"
+        )
         print(e)
     del df
 
@@ -580,42 +652,60 @@ def random_prediction(pre_trained_kge):
     head_entity = pre_trained_kge.sample_entity(1)
     relation = pre_trained_kge.sample_relation(1)
     tail_entity = pre_trained_kge.sample_entity(1)
-    triple_score = pre_trained_kge.triple_score(head_entity=head_entity,
-                                                relation=relation,
-                                                tail_entity=tail_entity)
-    return f'( {head_entity[0]},{relation[0]}, {tail_entity[0]} )', pd.DataFrame({'Score': triple_score})
+    triple_score = pre_trained_kge.triple_score(
+        head_entity=head_entity, relation=relation, tail_entity=tail_entity
+    )
+    return f"( {head_entity[0]},{relation[0]}, {tail_entity[0]} )", pd.DataFrame(
+        {"Score": triple_score}
+    )
 
 
 def deploy_triple_prediction(pre_trained_kge, str_subject, str_predicate, str_object):
-    triple_score = pre_trained_kge.triple_score(head_entity=[str_subject],
-                                                relation=[str_predicate],
-                                                tail_entity=[str_object])
-    return f'( {str_subject}, {str_predicate}, {str_object} )', pd.DataFrame({'Score': triple_score})
+    triple_score = pre_trained_kge.triple_score(
+        head_entity=[str_subject], relation=[str_predicate], tail_entity=[str_object]
+    )
+    return f"( {str_subject}, {str_predicate}, {str_object} )", pd.DataFrame(
+        {"Score": triple_score}
+    )
 
 
 def deploy_tail_entity_prediction(pre_trained_kge, str_subject, str_predicate, top_k):
-    if pre_trained_kge.model.name == 'Shallom':
-        print('Tail entity prediction is not available for Shallom')
+    if pre_trained_kge.model.name == "Shallom":
+        print("Tail entity prediction is not available for Shallom")
         raise NotImplementedError
-    scores, entity = pre_trained_kge.predict_topk(head_entity=[str_subject], relation=[str_predicate], topk=top_k)
-    return f'(  {str_subject},  {str_predicate}, ? )', pd.DataFrame({'Entity': entity, 'Score': scores})
+    scores, entity = pre_trained_kge.predict_topk(
+        head_entity=[str_subject], relation=[str_predicate], topk=top_k
+    )
+    return f"(  {str_subject},  {str_predicate}, ? )", pd.DataFrame(
+        {"Entity": entity, "Score": scores}
+    )
 
 
 def deploy_head_entity_prediction(pre_trained_kge, str_object, str_predicate, top_k):
-    if pre_trained_kge.model.name == 'Shallom':
-        print('Head entity prediction is not available for Shallom')
+    if pre_trained_kge.model.name == "Shallom":
+        print("Head entity prediction is not available for Shallom")
         raise NotImplementedError
 
-    scores, entity = pre_trained_kge.predict_topk(tail_entity=[str_object], relation=[str_predicate], topk=top_k)
-    return f'(  ?,  {str_predicate}, {str_object} )', pd.DataFrame({'Entity': entity, 'Score': scores})
+    scores, entity = pre_trained_kge.predict_topk(
+        tail_entity=[str_object], relation=[str_predicate], topk=top_k
+    )
+    return f"(  ?,  {str_predicate}, {str_object} )", pd.DataFrame(
+        {"Entity": entity, "Score": scores}
+    )
 
 
 def deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k):
-    scores, relations = pre_trained_kge.predict_topk(head_entity=[str_subject], tail_entity=[str_object], topk=top_k)
-    return f'(  {str_subject}, ?, {str_object} )', pd.DataFrame({'Relations': relations, 'Score': scores})
+    scores, relations = pre_trained_kge.predict_topk(
+        head_entity=[str_subject], tail_entity=[str_object], topk=top_k
+    )
+    return f"(  {str_subject}, ?, {str_object} )", pd.DataFrame(
+        {"Relations": relations, "Score": scores}
+    )
 
 
-def semi_supervised_split(train_set: np.ndarray, train_split_ratio=None, calibration_split_ratio=None):
+def semi_supervised_split(
+    train_set: np.ndarray, train_split_ratio=None, calibration_split_ratio=None
+):
     """
     Split input triples into three splits
     1. split corresponds to the first 10% of the input
@@ -628,10 +718,12 @@ def semi_supervised_split(train_set: np.ndarray, train_split_ratio=None, calibra
     # (1) Select X % of the first triples for the training.
     train = train_set[: int(n * train_split_ratio)]
     # (2) Select remaining first Y % of the triples for the calibration.
-    calibration = train_set[len(train):len(train) + int(n * calibration_split_ratio)]
+    calibration = train_set[len(train) : len(train) + int(n * calibration_split_ratio)]
     # (3) Consider remaining triples as unlabelled.
-    unlabelled = train_set[-len(train) - len(calibration):]
-    print(f'Shapes:\tTrain{train.shape}\tCalib:{calibration.shape}\tUnlabelled:{unlabelled.shape}')
+    unlabelled = train_set[-len(train) - len(calibration) :]
+    print(
+        f"Shapes:\tTrain{train.shape}\tCalib:{calibration.shape}\tUnlabelled:{unlabelled.shape}"
+    )
     return train, calibration, unlabelled
 
 
@@ -640,7 +732,9 @@ def p_value(non_conf_scores, act_score):
         act_score = act_score.unsqueeze(-1)
 
     # return (torch.sum(non_conf_scores >= act_score) + 1) / (len(non_conf_scores) + 1)
-    return (torch.sum(non_conf_scores >= act_score, dim=-1) + 1) / (len(non_conf_scores) + 1)
+    return (torch.sum(non_conf_scores >= act_score, dim=-1) + 1) / (
+        len(non_conf_scores) + 1
+    )
 
 
 def norm_p_value(p_values, variant):
@@ -650,8 +744,11 @@ def norm_p_value(p_values, variant):
     if variant == 0:
         norm_p_values = p_values / (torch.max(p_values, dim=-1).values.unsqueeze(-1))
     else:
-        norm_p_values = p_values.scatter_(1, torch.max(p_values, dim=-1).indices.unsqueeze(-1),
-                                          torch.ones_like(p_values))
+        norm_p_values = p_values.scatter_(
+            1,
+            torch.max(p_values, dim=-1).indices.unsqueeze(-1),
+            torch.ones_like(p_values),
+        )
     return norm_p_values
 
 
@@ -689,9 +786,11 @@ def gen_lr(p_hat, pi):
                 j = sorted_p_hat[i].shape[0] - 1
                 while j >= 0:
                     lookahead = det_lookahead(sorted_p_hat[i], sorted_pi[i], j, proj)
-                    proj[lookahead:j + 1] = sorted_p_hat[i][lookahead:j + 1] / torch.sum(
-                        sorted_p_hat[i][lookahead:j + 1]) * (
-                                                    sorted_pi[i][lookahead] - torch.sum(proj[j + 1:]))
+                    proj[lookahead : j + 1] = (
+                        sorted_p_hat[i][lookahead : j + 1]
+                        / torch.sum(sorted_p_hat[i][lookahead : j + 1])
+                        * (sorted_pi[i][lookahead] - torch.sum(proj[j + 1 :]))
+                    )
 
                     j = lookahead - 1
 
@@ -708,11 +807,13 @@ def gen_lr(p_hat, pi):
         sorted_pi_ind_c = sorted_pi_rt.indices[~is_c_set]
 
         result_probs = torch.zeros_like(sorted_p_hat)
-        result_probs[~is_c_set] = search_fn(sorted_p_hat_non_c, sorted_pi_non_c, sorted_pi_ind_c)
+        result_probs[~is_c_set] = search_fn(
+            sorted_p_hat_non_c, sorted_pi_non_c, sorted_pi_ind_c
+        )
         result_probs[is_c_set] = p_hat[is_c_set]
 
-    p_hat = torch.clip(p_hat, 1e-5, 1.)
-    result_probs = torch.clip(result_probs, 1e-5, 1.)
+    p_hat = torch.clip(p_hat, 1e-5, 1.0)
+    result_probs = torch.clip(result_probs, 1e-5, 1.0)
 
     divergence = F.kl_div(p_hat.log(), result_probs, log_target=False, reduction="none")
     divergence = torch.sum(divergence, dim=-1)
@@ -724,14 +825,16 @@ def gen_lr(p_hat, pi):
 
 def det_lookahead(p_hat, pi, ref_idx, proj, precision=1e-5):
     for i in range(ref_idx):
-        prop = p_hat[i:ref_idx + 1] / torch.sum(p_hat[i:ref_idx + 1])
-        prop *= (pi[i] - torch.sum(proj[ref_idx + 1:]))
+        prop = p_hat[i : ref_idx + 1] / torch.sum(p_hat[i : ref_idx + 1])
+        prop *= pi[i] - torch.sum(proj[ref_idx + 1 :])
 
         # Check violation
         violates = False
         # TODO: Make this more efficient by using cumsum
         for j in range(len(prop)):
-            if (torch.sum(prop[j:]) + torch.sum(proj[ref_idx + 1:])) > (torch.max(pi[i + j:]) + precision):
+            if (torch.sum(prop[j:]) + torch.sum(proj[ref_idx + 1 :])) > (
+                torch.max(pi[i + j :]) + precision
+            ):
                 violates = True
                 break
 
@@ -746,7 +849,9 @@ def construct_p_values(non_conf_scores, preds, non_conf_score_fn):
     tmp_non_conf = torch.zeros([preds.shape[0], num_class]).detach()
     p_values = torch.zeros([preds.shape[0], num_class]).detach()
     for clz in range(num_class):
-        tmp_non_conf[:, clz] = non_conf_score_fn(preds, torch.tensor(clz).repeat(preds.shape[0]))
+        tmp_non_conf[:, clz] = non_conf_score_fn(
+            preds, torch.tensor(clz).repeat(preds.shape[0])
+        )
         p_values[:, clz] = p_value(non_conf_scores, tmp_non_conf[:, clz])
     return p_values
 
@@ -768,7 +873,8 @@ def non_conformity_score_prop(predictions, targets) -> torch.Tensor:
     selected_predictions = predictions[~mask].view(-1, args.num_classes - 1)
 
     return torch.max(selected_predictions, dim=-1).values.squeeze() / (
-            class_val.squeeze() + args.non_conf_score_prop_gamma + 1e-5)
+        class_val.squeeze() + args.non_conf_score_prop_gamma + 1e-5
+    )
 
 
 def non_conformity_score_diff(predictions, targets) -> torch.Tensor:
@@ -793,11 +899,13 @@ def non_conformity_score_diff(predictions, targets) -> torch.Tensor:
 def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
     # @TODO: This function should take any DASK/Pandas DataFrame or Series.
     print(print_into)
-    vocab_to_idx.to_parquet(path_for_serialization + f'/{name}', compression='gzip', engine='pyarrow')
-    print('Done !\n')
+    vocab_to_idx.to_parquet(
+        path_for_serialization + f"/{name}", compression="gzip", engine="pyarrow"
+    )
+    print("Done !\n")
 
 
-def create_experiment_folder(folder_name='Experiments'):
+def create_experiment_folder(folder_name="Experiments"):
     directory = os.getcwd() + "/" + folder_name + "/"
     # folder_name = str(datetime.datetime.now())
     folder_name = str(datetime.datetime.now()).replace(":", "-")
@@ -813,14 +921,20 @@ def continual_training_setup_executor(executor):
         executor.storage_path = executor.args.full_storage_path
     else:
         # (4.2) Create a folder for the experiments.
-        executor.args.full_storage_path = create_experiment_folder(folder_name=executor.args.storage_path)
+        executor.args.full_storage_path = create_experiment_folder(
+            folder_name=executor.args.storage_path
+        )
         executor.storage_path = executor.args.full_storage_path
-        with open(executor.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
+        with open(
+            executor.args.full_storage_path + "/configuration.json", "w"
+        ) as file_descriptor:
             temp = vars(executor.args)
             json.dump(temp, file_descriptor, indent=3)
 
 
-def exponential_function(x: np.ndarray, lam: float, ascending_order=True) -> torch.FloatTensor:
+def exponential_function(
+    x: np.ndarray, lam: float, ascending_order=True
+) -> torch.FloatTensor:
     # A sequence in exponentially decreasing order
     result = np.exp(-lam * x) / np.sum(np.exp(-lam * x))
     assert 0.999 < sum(result) < 1.0001
@@ -830,36 +944,39 @@ def exponential_function(x: np.ndarray, lam: float, ascending_order=True) -> tor
 
 @timeit
 def load_numpy(path) -> np.ndarray:
-    print('Loading indexed training data...', end='')
-    with open(path, 'rb') as f:
+    print("Loading indexed training data...", end="")
+    with open(path, "rb") as f:
         data = np.load(f)
     return data
-  
-  
-  
+
+
 def init_wandb(args):
     import wandb
     from pytorch_lightning.loggers import WandbLogger
-    
-    dataset_name = args.path_dataset_folder.split('/')[1]
-    config = {"epoch":args.num_epochs,"lr":args.lr,"embedding_dim":args.embedding_dim,"optimizer":args.optim}
-    
+
+    dataset_name = args.path_dataset_folder.split("/")[1]
+    config = {
+        "epoch": args.num_epochs,
+        "lr": args.lr,
+        "embedding_dim": args.embedding_dim,
+        "optimizer": args.optim,
+    }
+
     if args.trainer != "PL":
-          # wandb for the other trainers
-          # performance_test
-          wandb.init(
-              project="performance_test", config=config, name=f"{args.model}-{dataset_name}"
-          )
-          
+        # wandb for the other trainers
+        # performance_test
+        wandb.init(
+            project="performance_test",
+            config=config,
+            name=f"{args.model}-{dataset_name}",
+        )
+
     else:
         wandb_logger = WandbLogger(
             project="performance_test",
-            name=f'{args.model}-{dataset_name}',
-            config=config
+            name=f"{args.model}-{dataset_name}",
+            config=config,
         )
         args.logger = wandb_logger
-    
+
     return args
-
-
-  

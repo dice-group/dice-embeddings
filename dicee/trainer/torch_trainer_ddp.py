@@ -445,7 +445,9 @@ def distributed_training(rank: int, world_size, model, train_dataset_loader, cal
         persistent_workers=True,
         collate_fn=collate_fn,
         sampler=torch.utils.data.distributed.DistributedSampler(
-            train_dataset_loader.dataset
+            train_dataset_loader.dataset,
+            num_replicas=world_size,
+            rank=rank,
         ),
     )
 

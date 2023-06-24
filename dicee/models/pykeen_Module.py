@@ -13,6 +13,11 @@ class Pykeen_Module:
         self.selected_optimizer = optimizer
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
+      
+        """
+        Get the entity and relation embeddings representtaion from the model.
+        """
+      
         relation_embedd = []
         entity_embedd = []
 
@@ -61,14 +66,12 @@ class Pykeen_Module:
         # https://pykeen.readthedocs.io/en/latest/reference/predict.html#predict-triples-df (migration guide)
         
         if t_prediction:
-            # torch.tensor(predictions_tails.df.score)
 
             predictions_tails = predict.predict_target(model=self.model,head = x[0,0].item(),relation = x[0,1].item(),targets=x[:,2])
           
             _df = predictions_tails.df.sort_values(by=['tail_id'])
             return torch.tensor(_df.score,dtype=torch.float64)
-            # tensor = self.model.score_t(x[:0,:1],tails = x[:2])
-            # return tensor
+
         if h_prediction:
             predictions_heads = predict.predict_target(model=self.model, relation = x[0,1].item(),tail=x[0,2].item(),targets=x[:,0])
             # for row in predictions_heads.df.iterrows():
