@@ -292,12 +292,13 @@ class TorchDDPTrainer(AbstractTrainer):
                      final_batch = l
                      continue
                 r = mid
-        else:
-          final_batch = self.attributes.batch_size
-          print(final_batch, rest_epoachs)
-          return final_batch, rest_epoachs
+        # else:
+        #   final_batch = self.attributes.batch_size
+        #   rest_epoachs = initial_num_epochs - num_of_try_epochs + 1
+        #   print(final_batch, rest_epoachs)
+        #   return final_batch, rest_epoachs
           
-        
+        final_batch = self.attributes.batch_size
         rest_epoachs = initial_num_epochs - num_of_try_epochs + 1
         print(final_batch, rest_epoachs)
         return final_batch, rest_epoachs
