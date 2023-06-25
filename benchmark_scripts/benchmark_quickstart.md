@@ -42,9 +42,6 @@ train and evaluate **Distmult** with kvsall using TorchTrainer and save embeddin
 python ../main.py --path_dataset_folder ../KGs/KINSHIP --model Pykeen_DistMult --num_epochs 10  --batch_size 256 --lr 0.1 --embedding_dim 128 --gpus 1  --pykeen_model_kwargs embedding_dim=128 loss="BCEWithLogitsLoss" --save_embeddings_as_csv --eval_model "train_val_test" --num_core 1 --optim "Adam" --normalization "None" --scoring_technique KvsAll
 ```
 
-CPU:
-
-- TorchTrainer
 
 train and evaluate **Distmult** with kvsall using TorchTrainer and save embedding representation.
 
