@@ -109,7 +109,7 @@ class DICE_Trainer:
     report:dict
     """
 
-    def __init__(self, args, is_continual_training, storage_path, evaluator=None):
+    def __init__(self, args, is_continual_training, storage_path, evaluator=None,dataset=None):
         self.report = dict()
         self.args = args
         self.trainer = None
@@ -118,6 +118,7 @@ class DICE_Trainer:
         # Required for CV.
         self.evaluator = evaluator
         self.form_of_labelling=None
+        self.dataset=dataset
         print(
             f'# of CPUs:{os.cpu_count()} | # of GPUs:{torch.cuda.device_count()} | # of CPUs for dataloader:{self.args.num_core}')
 
@@ -160,7 +161,7 @@ class DICE_Trainer:
     @timeit
     def initialize_or_load_model(self):
         print('Initializing Model...', end='\t')
-        model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
+        model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path,self.dataset)
         self.report['form_of_labelling'] = form_of_labelling
         assert form_of_labelling in ['EntityPrediction', 'RelationPrediction']
         return model, form_of_labelling
@@ -207,7 +208,7 @@ class DICE_Trainer:
             self.trainer.evaluator=self.evaluator
             self.trainer.dataset = dataset
             self.trainer.form_of_labelling = form_of_labelling
-
+            print(model)
             self.trainer.fit(model, train_dataloaders=self.initialize_dataloader(self.initialize_dataset(dataset, form_of_labelling)))
             return model, form_of_labelling
 

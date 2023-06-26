@@ -148,19 +148,23 @@ class Execute:
         """
         # (1) Save the model
         self.save_trained_model()
-        # (2) Update and inform the runtime
-        self.report['Runtime'] = time.time() - start_time
-        print(f"Total computation time: {self.report['Runtime']:.3f} seconds")
-        # (3) Store the report of training.
-        with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
-            json.dump(self.report, file_descriptor, indent=4)
-        # (4) Eval model and return eval results.
+        # (2) Report
+        self.write_report(start_time)
+        # (3) Eval model and return eval results.
         if self.args.eval_model is None:
+            self.write_report(start_time)
             return {**self.report}
         else:
             self.evaluator.eval(dataset=self.dataset, trained_model=self.trained_model,
                                 form_of_labelling=form_of_labelling)
+            self.write_report(start_time)
             return {**self.report, **self.evaluator.report}
+
+    def write_report(self, start_time):
+        self.report['Runtime'] = time.time() - start_time
+        print(f"Total computation time: {self.report['Runtime']:.3f} seconds")
+        with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
+            json.dump(self.report, file_descriptor, indent=4)
 
     def start(self) -> dict:
         """
@@ -190,7 +194,9 @@ class Execute:
         self.trainer = DICE_Trainer(args=self.args,
                                     is_continual_training=self.is_continual_training,
                                     storage_path=self.storage_path,
-                                    evaluator=self.evaluator)
+                                    evaluator=self.evaluator,
+                                    dataset=self.dataset  # only used for Pykeen's models
+                                    )
         # (4) Start the training
         self.trained_model, form_of_labelling = self.trainer.start(dataset=self.dataset)
         return self.end(start_time, form_of_labelling)
