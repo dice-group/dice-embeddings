@@ -3,7 +3,8 @@ import numpy as np
 import torch
 import datetime
 from .types import Tuple
-from .models import *#Shallom, ConEx, AConEx, QMult, OMult, ConvQ, ConvO, ComplEx, DistMult, TransE, Keci, CMult, KeciBase, Pyke, FMult, FMult2, GFMult
+from .models import *
+from .models.pykeen_models import MyLCWALitModule, MySLCWALitModule
 from .models.base_model import BaseKGE
 import time
 import pandas as pd
@@ -17,32 +18,11 @@ import os
 import psutil
 
 import os
-import numpy as np
 import torch
 import datetime
 from .types import Tuple
-from .models import (
-    Shallom,
-    ConEx,
-    AConEx,
-    QMult,
-    OMult,
-    ConvQ,
-    ConvO,
-    ComplEx,
-    DistMult,
-    TransE,
-    Keci,
-    CMult,
-    KeciBase,
-    Pyke,
-    FMult,
-    MyLCWALitModule,
-    MySLCWALitModule,
-)
 from .models.base_model import BaseKGE
 import time
-import pandas as pd
 import json
 import glob
 import pandas
@@ -53,12 +33,18 @@ import os
 import psutil
 import pytorch_lightning as pl
 from typing import AnyStr
+
+"""
 from pykeen.datasets.literal_base import NumericPathDataset
 from pykeen.contrib.lightning import LitModule
 from pykeen.models.nbase import ERModel
 from pykeen.nn.modules import interaction_resolver
 from pykeen.datasets.base import PathDataset, EagerDataset
 from pykeen.triples.triples_factory import CoreTriplesFactory, TriplesFactory
+"""
+from pykeen.datasets.base import EagerDataset
+from pykeen.triples.triples_factory import TriplesFactory
+
 
 def timeit(func):
     @functools.wraps(func)
@@ -84,7 +70,7 @@ def load_pickle(*, file_path=str):
 
 
 # @TODO: Could these funcs can be merged?
-def select_model(args: dict, is_continual_training: bool = None, storage_path: str = None,dataset=None):
+def select_model(args: dict, is_continual_training: bool = None, storage_path: str = None, dataset=None):
     isinstance(args, dict)
     assert len(args) > 0
     assert isinstance(is_continual_training, bool)
@@ -102,7 +88,7 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
             print(f"{storage_path}/model.pt is not found. The model will be trained with random weights")
         return model, _
     else:
-        return intialize_model(args,dataset)
+        return intialize_model(args, dataset)
 
 
 def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[object, dict, dict]:
@@ -315,56 +301,10 @@ def read_or_load_kg(args, cls):
     # (2) Share some info about data for easy access.
     print(kg.description_of_input)
     return kg
-def get_dataset_from_pykeen(model_name, dataset, path=None):
-    use_inverse_triples = False
-    if "Literal" in model_name.strip():
-        train_path = path + "/train.txt"
-        test_path = path + "/test.txt"
-        valid_path = path + "/valid.txt"
-        literal_path = path + "/literals.txt"
-        # @TODO: literalModel have two embeddings of entity_representations
-        # should we also implment this kind of model???
-        # https://github.com/pykeen/pykeen/blob/e0471a0c52b92a674e7c9186f324d6aacbebb1b1/src/pykeen/datasets/literal_base.py
-        # can only use function of pykeen to load the data (sa far I know)
-        return NumericPathDataset(
-            training_path=train_path,
-            testing_path=test_path,
-            validation_path=valid_path,
-            literals_path=literal_path,
-        )
 
-    if model_name.strip() == "NodePiece" or model_name.strip() == "CompGCN":
-        use_inverse_triples = True
 
-    training_tf = TriplesFactory(
-        dataset.train_set,
-        dataset.entity_to_idx,
-        dataset.relation_to_idx,
-        create_inverse_triples=use_inverse_triples,
-    )
-    testing_tf = TriplesFactory(
-        dataset.test_set,
-        dataset.entity_to_idx,
-        dataset.relation_to_idx,
-        create_inverse_triples=use_inverse_triples,
-    )
-    validation_tf = TriplesFactory(
-        dataset.valid_set,
-        dataset.entity_to_idx,
-        dataset.relation_to_idx,
-        create_inverse_triples=use_inverse_triples,
-    )
-
-    return EagerDataset(training_tf, testing_tf, validation_tf)
-
-def get_pykeen_model(model_name: str, args,dataset):
-    interaction_model = None
-    passed_model = None
-    model = None
-    path = args["path_dataset_folder"]
+def get_pykeen_model(model_name: str, args, dataset):
     actual_name = model_name.split("_")[1]
-    _dataset = get_dataset_from_pykeen(actual_name, dataset, path=path)
-
     # initialize model by name or by interaction function
     if "interaction" in model_name.lower():
         relation_representations = None
@@ -403,7 +343,21 @@ def get_pykeen_model(model_name: str, args,dataset):
     else:
         passed_model = actual_name
     # initialize module for pytorch-lightning trainer
-    print(args["use_SLCWALitModule"])
+    if args['scoring_technique'] == 'KvsAll':
+        _dataset = EagerDataset(training=TriplesFactory(dataset.train_set, dataset.entity_to_idx,dataset.relation_to_idx), testing=None)
+        return MyLCWALitModule(
+            model=passed_model,
+            dataset=_dataset,
+            model_name=actual_name,
+            learning_rate=args["lr"],
+            optimizer=args["optim"],
+            model_kwargs=args["pykeen_model_kwargs"],
+            batch_size=args["batch_size"],
+            args=args,
+        )
+    else:
+        raise NotImplementedError("Please use KvsAll")
+
     if args["use_SLCWALitModule"]:
         if "kvsall".lower() in args["scoring_technique"].lower():
             raise NotImplementedError(
@@ -420,9 +374,7 @@ def get_pykeen_model(model_name: str, args,dataset):
                 batch_size=args["batch_size"],
                 args=args,
                 negative_sampler="basic",
-                negative_sampler_kwargs=dict(
-                    filtered=True, num_negs_per_pos=args["neg_ratio"]
-                ),
+                negative_sampler_kwargs=dict(filtered=False, num_negs_per_pos=args["neg_ratio"]),
             )
     else:
         if "NegSample".lower() in args["scoring_technique"].lower():
@@ -441,12 +393,14 @@ def get_pykeen_model(model_name: str, args,dataset):
                 args=args,
             )
     return model
-def intialize_model(args: dict,dataset=None) -> Tuple[object, str]:
+
+
+def intialize_model(args: dict, dataset=None) -> Tuple[object, str]:
     # @TODO: Apply construct_krone as callback? or use KronE_QMult as a prefix.
     # @TODO: Remove form_of_labelling
     model_name = args['model']
     if "pykeen" in model_name.lower():
-        model = get_pykeen_model(model_name, args,dataset)
+        model = get_pykeen_model(model_name, args, dataset)
         form_of_labelling = "EntityPrediction"
     elif model_name == 'Shallom':
         model = Shallom(args=args)

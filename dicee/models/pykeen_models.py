@@ -1,9 +1,10 @@
+from pykeen.contrib.lightning import LCWALitModule, SLCWALitModule
+from pykeen.triples.triples_factory import CoreTriplesFactory
+import torch
 import torch.utils.data
 from pykeen import predict
-import torch
 import numpy as np
 from typing import Dict, Tuple
-import pandas as pd
 from .base_model import *
 
 
@@ -61,7 +62,6 @@ class Pykeen_Module:
         # https://twitter.com/PyTorch/status/1437838242418671620?s=20&t=8pEheJu4kRaLyJHBBLUvZA (solution)
         # torch_max_mem will be used by default. If the tensors are not moved to cuda, a warning will occur
         # https://pykeen.readthedocs.io/en/latest/reference/predict.html#predict-triples-df (migration guide)
-
         if t_prediction:
             predictions_tails = predict.predict_target(model=self.model, head=x[0, 0].item(), relation=x[0, 1].item(),
                                                        targets=x[:, 2])
@@ -90,3 +90,38 @@ class Pykeen_Module:
         for buffer in self.buffers():
             buffer_size += buffer.nelement() * buffer.element_size()
         return {'EstimatedSizeMB': (num_params + buffer_size) / 1024 ** 2, 'NumParam': num_params}
+
+
+class MyLCWALitModule(LCWALitModule, Pykeen_Module):
+
+    def __init__(self, *, model_name: str, args, **kwargs):
+        Pykeen_Module.__init__(self, model_name, kwargs['optimizer'])
+        super().__init__(**kwargs)
+        self.loss_history = []
+        self.args = args
+        self.train_dataloaders = self.train_dataloader()
+
+    @property
+    def loss_function(self):
+        return self.loss
+
+    def _dataloader(
+            self, triples_factory: CoreTriplesFactory, shuffle: bool = False
+    ) -> torch.utils.data.DataLoader:
+        return torch.utils.data.DataLoader(dataset=triples_factory.create_lcwa_instances(),
+                                           batch_size=self.args['batch_size'], shuffle=True,
+                                           num_workers=self.args['num_core'],
+                                           )
+
+
+class MySLCWALitModule(SLCWALitModule, Pykeen_Module):
+    def __init__(self, *, model_name: str, args, **kwargs):
+        Pykeen_Module.__init__(self, model_name, kwargs['optimizer'])
+        super().__init__(**kwargs)
+        self.loss_history = []
+        self.args = args
+        self.train_dataloaders = self.train_dataloader()
+
+    @property
+    def loss_function(self):
+        return self.loss

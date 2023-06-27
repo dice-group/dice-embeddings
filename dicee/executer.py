@@ -50,6 +50,8 @@ class Execute:
         self.report = dict()
         # (8) Create an object to carry out link prediction evaluations
         self.evaluator = None  # e.g. Evaluator(self)
+        # (9) Execution start time
+        self.start_time = None
 
     def read_preprocess_index_serialize_data(self) -> None:
         """ Read & Preprocess & Index & Serialize Input Data
@@ -75,6 +77,7 @@ class Execute:
         self.report['num_train_triples'] = len(self.dataset.train_set)
         self.report['num_entities'] = self.dataset.num_entities
         self.report['num_relations'] = self.dataset.num_relations
+        self.report['runtime_kg_loading'] = time.time() - self.start_time
 
     def load_indexed_data(self) -> None:
         """ Load the indexed data from disk into memory
@@ -130,7 +133,7 @@ class Execute:
         self.report['num_relations'] = self.args.num_relations
         self.report['path_experiment_folder'] = self.storage_path
 
-    def end(self, start_time, form_of_labelling) -> dict:
+    def end(self, form_of_labelling) -> dict:
         """
         End training
 
@@ -149,19 +152,20 @@ class Execute:
         # (1) Save the model
         self.save_trained_model()
         # (2) Report
-        self.write_report(start_time)
+        self.write_report()
         # (3) Eval model and return eval results.
         if self.args.eval_model is None:
-            self.write_report(start_time)
+            self.write_report()
             return {**self.report}
         else:
             self.evaluator.eval(dataset=self.dataset, trained_model=self.trained_model,
                                 form_of_labelling=form_of_labelling)
-            self.write_report(start_time)
+            self.write_report()
             return {**self.report, **self.evaluator.report}
 
-    def write_report(self, start_time):
-        self.report['Runtime'] = time.time() - start_time
+    def write_report(self):
+        # Report total runtime.
+        self.report['Runtime'] = time.time() - self.start_time
         print(f"Total computation time: {self.report['Runtime']:.3f} seconds")
         with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
             json.dump(self.report, file_descriptor, indent=4)
@@ -183,7 +187,7 @@ class Execute:
         A dict containing information about the training and/or evaluation
 
         """
-        start_time = time.time()
+        self.start_time = time.time()
         print(f"Start time:{datetime.datetime.now()}")
         # (1) Loading the Data
         #  Load the indexed data from disk or read a raw data from disk.
@@ -199,7 +203,7 @@ class Execute:
                                     )
         # (4) Start the training
         self.trained_model, form_of_labelling = self.trainer.start(dataset=self.dataset)
-        return self.end(start_time, form_of_labelling)
+        return self.end(form_of_labelling)
 
 
 class ContinuousExecute(Execute):

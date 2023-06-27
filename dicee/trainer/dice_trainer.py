@@ -174,7 +174,6 @@ class DICE_Trainer:
         return torch.utils.data.DataLoader(dataset=dataset, batch_size=self.args.batch_size,
                                            shuffle=True, collate_fn=dataset.collate_fn,
                                            num_workers=self.args.num_core, persistent_workers=False)
-
     @timeit
     def initialize_dataset(self, dataset, form_of_labelling) -> torch.utils.data.Dataset:
         print('Initializing Dataset...', end='\t')
