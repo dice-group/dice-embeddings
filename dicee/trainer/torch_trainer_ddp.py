@@ -93,24 +93,23 @@ class TorchDDPTrainer(AbstractTrainer):
       self.attributes.start_flag = False
       # world_size = torch.cuda.device_count() # available gpus on the machine
 
-      # find_flag = False
+      
       if self.attributes.use_ddp_batch_finder:
           
           
           final_batch, rest_epoachs = self.find_batch_size(
               model, world_size, kwargs
           )  # find the batch size
-          # the following training will use the final_batch_size
+          # the following training process will use the final_batch_size
       
           self.attributes.batch_size = final_batch - 1
           self.attributes.num_epochs = rest_epoachs  # run the rest epochs
           self.attributes.start_flag = True
           # model.load_state_dict(torch.load("model.pt",map_location='cpu'))
           
-      # binary search is not using, train with the increasing batch size with the rest epoches.
-      # if not find_flag:
+
       
-      print('fired........................')
+      # print('fired........................')
       mp.spawn(
           fn=distributed_training,
           args=(
@@ -167,9 +166,7 @@ class TorchDDPTrainer(AbstractTrainer):
                     return self.attributes.batch_size, rest_epoachs
 
                 if self.attributes.batch_size > size_of_train_data:
-                    # self.attributes.batch_size += -batch_size
-                    # self.attributes.batch_size = self.attributes.batch_size//2
-                    # return self.attributes.batch_size, rest_epoachs
+                    # go to binary search
                     oom = True
                     break
 
@@ -180,7 +177,7 @@ class TorchDDPTrainer(AbstractTrainer):
                   # model.load_state_dict(torch.load("model.pt", map_location=torch.device("cpu")))
                 
                 if num_of_try_epochs != 1:
-                  # model.load_state_dict(torch.load("model.pt",map_location='cpu'))
+                  
                   self.attributes.batch_size = self.attributes.batch_size*2 # make it faster
                   
                 self.attributes.num_of_try_epochs = num_of_try_epochs
@@ -206,7 +203,7 @@ class TorchDDPTrainer(AbstractTrainer):
                 num_of_try_epochs += 1
                 double_counter +=1
                 
-            # except RuntimeError:
+            
             except Exception:
                 
                 oom = True
@@ -218,10 +215,11 @@ class TorchDDPTrainer(AbstractTrainer):
         #         f"batch_size of {self.attributes.batch_size} is too large or something wrong in the first try!"
         #     )
             
-        # oom because of increaseing batch size or the origin batch size is too large
-        # finish the training once the binary search finds a proper batch size, otherwise throw error
+        
         # rest_epoachs = initial_num_epochs - num_of_try_epochs
         # find_flag =False
+        
+        # oom because of increaseing batch size or the origin batch size is too large
         if oom:
           r = self.attributes.batch_size
           # self.attributes.batch_size += (
@@ -237,7 +235,7 @@ class TorchDDPTrainer(AbstractTrainer):
           
          
           
-          # Once the proper batch size is found. train the rest of the epoches
+          
           while (
               l+1 < r
               and num_of_try_epochs != initial_num_epochs
@@ -304,10 +302,11 @@ class TorchDDPTrainer(AbstractTrainer):
                      continue
                 r = mid
           
+          # binary search cannot find batch size
           if num_of_try_epochs==1:
             raise Exception('cannot find suitable batch size.')
           
-          # binary search cannot continue, throw error
+          # otherwise return the batch size found by the binary search
           rest_epoachs = initial_num_epochs - num_of_try_epochs
           final_batch = self.attributes.batch_size
           return final_batch, rest_epoachs
@@ -319,7 +318,8 @@ class TorchDDPTrainer(AbstractTrainer):
         #   print(final_batch, rest_epoachs)
         #   return final_batch, rest_epoachs,find_flag
           
-          
+        
+        # return the beatch size after 5 epochs without oom
         final_batch = self.attributes.batch_size
         
         print(final_batch, rest_epoachs)
@@ -506,8 +506,7 @@ def distributed_training(rank: int, world_size, model, train_dataset_loader, cal
         f_save.close()
         torch.save(trainer.model.module.state_dict(), "model.pt")
     
-    # if rank == 0:
-    #     os.remove("model.pt")
+
     print(f"End running DDP with model parallel example on rank: {rank}.")
     print(f'End current process: {mp.current_process()}')
     print(f'End pid: {os.getpid()}')
