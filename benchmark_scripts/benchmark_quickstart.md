@@ -63,7 +63,7 @@ python ../main.py --path_dataset_folder ../KGs/KINSHIP --model Pykeen_DistMult -
 
 ## Using auto_batch finder
 
-**NOTE:** SLCWA training loop is not supported by auto_btach finder. Do not try to train the large model on the machine without enough memory of GPU, it will crash the machine immediately.
+**NOTE:** SLCWA training loop is not supported by auto_batch finder. Do not try to train the large model on the machine without enough memory of GPU, it will crash the machine immediately.
 
 Add `--use_ddp_batch_finder True`.
 
