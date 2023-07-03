@@ -210,6 +210,8 @@ class Execute:
                                     evaluator=self.evaluator)
         # (4) Start the training
         self.trained_model, form_of_labelling = self.trainer.start(dataset=self.dataset)
+        # mode, "EntityPrediction"
+        # model.load_state_dict(torch.load(PATH))
         return self.end(start_time, form_of_labelling)
 
 
