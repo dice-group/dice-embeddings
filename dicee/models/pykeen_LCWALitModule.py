@@ -40,8 +40,7 @@ class MyLCWALitModule(LCWALitModule,Pykeen_Module):
     def _dataloader(
         self, triples_factory: CoreTriplesFactory, shuffle: bool = False
     ) -> torch.utils.data.DataLoader:
-        
-        
+        # the parameters of DICE can be passed to the dataloader
         return torch.utils.data.DataLoader(dataset=triples_factory.create_lcwa_instances(), batch_size=self.args['batch_size'], shuffle=True,
                               num_workers=self.args['num_core'], persistent_workers=True)
 

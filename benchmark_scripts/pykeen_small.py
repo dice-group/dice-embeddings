@@ -19,8 +19,8 @@ def experiment_umls_distmult():
             
        )
   
-  model.to(torch.device('cpu'))
-  # model.to(torch.device('cuda'))
+  # model.to(torch.device('cpu'))
+  model.to(torch.device('cuda'))
   training_triples_factory =training_triples_factory
   optimizer = Adam(params=model.get_grad_params())
 
@@ -32,7 +32,7 @@ def experiment_umls_distmult():
     optimizer_kwargs=dict(lr=0.01),
     negative_sampler=BasicNegativeSampler,
     negative_sampler_kwargs=dict(
-      num_negs_per_pos=32,
+      num_negs_per_pos=1,
   ),
   )
   
@@ -86,12 +86,12 @@ def experiment_umls_complex():
   dataset = UMLS()
   training_triples_factory = dataset.training
   model = ComplEx(triples_factory=training_triples_factory,
-            embedding_dim=32,
+            embedding_dim=1,
 
             
        )
-  # model.to(torch.device('cuda'))
-  model.to(torch.device('cpu'))
+  model.to(torch.device('cuda'))
+  # model.to(torch.device('cpu'))
   training_triples_factory =training_triples_factory
   optimizer = Adam(params=model.get_grad_params())
 
@@ -103,7 +103,7 @@ def experiment_umls_complex():
     optimizer_kwargs=dict(lr=0.1),
     negative_sampler=BasicNegativeSampler,
     negative_sampler_kwargs=dict(
-      num_negs_per_pos=32,
+      num_negs_per_pos=1,
   ),   
   )
   
@@ -155,8 +155,8 @@ def experiment_kinship_distmult():
 
             
        )
-  # model.to(torch.device('cuda'))
-  model.to(torch.device('cpu'))
+  model.to(torch.device('cuda'))
+  # model.to(torch.device('cpu'))
   training_triples_factory =training_triples_factory
   optimizer = Adam(params=model.get_grad_params())
 
@@ -168,7 +168,7 @@ def experiment_kinship_distmult():
     optimizer_kwargs=dict(lr=0.1),
     negative_sampler=BasicNegativeSampler,
     negative_sampler_kwargs=dict(
-      num_negs_per_pos=32,
+      num_negs_per_pos=1,
   ),   
   )
   
@@ -221,8 +221,8 @@ def experiment_kinship_complex():
             
        )
   
-  # model.to(torch.device('cuda'))
-  model.to(torch.device('cpu'))
+  model.to(torch.device('cuda'))
+  # model.to(torch.device('cpu'))
   training_triples_factory =training_triples_factory
   optimizer = Adam(params=model.get_grad_params())
 
@@ -234,7 +234,7 @@ def experiment_kinship_complex():
     optimizer_kwargs=dict(lr=0.1),
     negative_sampler=BasicNegativeSampler,
     negative_sampler_kwargs=dict(
-      num_negs_per_pos=32,
+      num_negs_per_pos=1,
   ),   
   )
   
@@ -301,22 +301,22 @@ def save_report(runtime,filename):
 for i in range(5):
   
   runtime,results = experiment_umls_distmult()
-  save_report(runtime,f'slcwa32_cpu_umls_distmult_{i}')
+  save_report(runtime,f'slcwa1_gpu_umls_distmult_{i}')
   # save_evaluation(results,f'gpu_umls_distmult_eval{i}')
 
 
   runtime,results  = experiment_umls_complex()
-  save_report(runtime,f'slcwa32_cpu_umls_complex_{i}')
+  save_report(runtime,f'slcwa1_gpu_umls_complex_{i}')
   # save_evaluation(results,f'gpu_umls_complex_eval{i}')
 
 
   runtime,results  = experiment_kinship_distmult()
-  save_report(runtime,f'slcwa32_cpu_kinship_distmult_{i}')
+  save_report(runtime,f'slcwa1_gpu_kinship_distmult_{i}')
   # save_evaluation(results,f'gpu_kinship_distmult_eval{i}')
 
 
   runtime,results  = experiment_kinship_complex()
-  save_report(runtime,f'slcwa32_cpu_kinship_complex_{i}')
+  save_report(runtime,f'slcwa1_gpu_kinship_complex_{i}')
   # save_evaluation(results,f'gpu_kinship_complex_eval{i}')
 
 
