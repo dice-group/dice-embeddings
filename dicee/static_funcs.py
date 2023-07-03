@@ -415,26 +415,11 @@ def get_dataset_from_pykeen(model_name, dataset, path=None):
 
     if model_name.strip() == "NodePiece" or model_name.strip() == "CompGCN":
         use_inverse_triples = True
-
-    training_tf = TriplesFactory(
-        dataset.train_set,
-        dataset.entity_to_idx,
-        dataset.relation_to_idx,
-        create_inverse_triples=use_inverse_triples,
-    )
-    testing_tf = TriplesFactory(
-        dataset.test_set,
-        dataset.entity_to_idx,
-        dataset.relation_to_idx,
-        create_inverse_triples=use_inverse_triples,
-    )
-    validation_tf = TriplesFactory(
-        dataset.valid_set,
-        dataset.entity_to_idx,
-        dataset.relation_to_idx,
-        create_inverse_triples=use_inverse_triples,
-    )
-
+    
+    training_tf = TriplesFactory(dataset.train_set,dataset.entity_to_idx,dataset.relation_to_idx,create_inverse_triples=use_inverse_triples,)
+    testing_tf = TriplesFactory(dataset.test_set,dataset.entity_to_idx,dataset.relation_to_idx,create_inverse_triples=use_inverse_triples,)
+    validation_tf = TriplesFactory(dataset.valid_set,dataset.entity_to_idx,dataset.relation_to_idx,create_inverse_triples=use_inverse_triples,)
+    
     dataset = EagerDataset(training_tf, testing_tf, validation_tf)
     # train_path = path + "/train.txt"
     # test_path = path + "/test.txt"

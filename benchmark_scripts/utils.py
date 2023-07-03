@@ -147,21 +147,101 @@ def evaluation_pykeen_report(path):
         f"hit_1_max:{hit_1_max}\nhit_3_max:{hit_3_max}\nhit_10_max:{hit_10_max}\nmrr_max:{mrr_max}"
     )
 
+def pykeen_runtime_report1(path):
+  
+  files = os.listdir(path)
+  runtimes = []
+  for file in files:
+    tmp_path = os.path.join(path,file)
+    with open(tmp_path, "r") as f:
+      report_dict = json.load(f)
+      
+      runtimes.append(report_dict['report_time'])
+  
+  runtimes_np = np.array(runtimes)
+  runtimes_std = np.std(runtimes_np)
+  runtimes_mean = np.mean(runtimes_np)
+
+  print(f"mean: {runtimes_mean}, std: {runtimes_std}")
+  
+  
+def pykeen_eval(path):
+  max_mrr = 0
+  max_hit1=0
+  max_hit3=0
+  max_hit10=0
+  
+  for i in range(5):
+    
+    new_path = path[:-1]+str(i)
+    
+    with open(new_path, "r") as f:
+        for line in f:
+          metric = line.rstrip()
+          if "('inverse_harmonic_mean_rank', 'both', 'optimistic')" in metric:
+            value = metric[metric.index(':')+1:]
+            if float(value) > max_mrr:
+              max_mrr = float(value)
+            
+          if "('hits_at_1', 'both', 'optimistic')" in metric:
+            value = metric[metric.index(':')+1:]
+            if float(value) > max_hit1:
+              max_hit1 = float(value)
+           
+          if "('hits_at_3', 'both', 'optimistic')" in metric:
+            value = metric[metric.index(':')+1:]
+            if float(value) > max_hit3:
+              max_hit3 = float(value)
+           
+          if "('hits_at_10', 'both', 'optimistic')" in metric:
+            value = metric[metric.index(':')+1:]
+            if float(value) > max_hit10:
+              max_hit10 = float(value)
+        
+  print(f'MRR:{max_mrr}')
+  print(f'HIT1:{max_hit1}')
+  print(f'HIT3:{max_hit3}')
+  print(f'HIT10:{max_hit10}')
+  
+# pykeen_eval('pykeen_small/eval/gpu_umls_distmult_eval0')
+# print('----------------------')
+# pykeen_eval('pykeen_small/eval/gpu_kinship_distmult_eval0')
+# print('----------------------')
+# pykeen_eval('pykeen_small/eval/gpu_umls_complex_eval0')
+# print('----------------------')
+# pykeen_eval('pykeen_small/eval/gpu_kinship_complex_eval0')
+
+
+
+# pykeen_runtime_report1('pykeen_small/slcwa/slcwa32_gpu_umls_distmult/')
+# pykeen_runtime_report1('pykeen_small/slcwa/slcwa32_gpu_kinship_distmult/')
+# pykeen_runtime_report1('pykeen_small/slcwa/slcwa32_gpu_umls_complex/')
+# pykeen_runtime_report1('pykeen_small/slcwa/slcwa32_gpu_kinship_complex/')
 
 # evaluation_report('complex_kinships_cpu')
 
 
 
-# runtime_report('distmult_umls_cpu/')
-# runtime_report('distmult_umls_gpu_1/')
-# runtime_report('distmult_umls_gpu_2/')
-# runtime_report('distmult_umls_gpu_3/')
+
+# runtime_report('slcwa16_pykeen_distmult_umls_gpu_1/')
+# runtime_report('slcwa16_pykeen_distmult_umls_gpu_2/')
+# runtime_report('slcwa16_pykeen_distmult_umls_cpu/')
+# runtime_report('slcwa16_pykeen_complex_umls_gpu_1/')
+# runtime_report('slcwa16_pykeen_complex_umls_gpu_2/')
+# runtime_report('slcwa16_pykeen_complex_umls_cpu/')
+
+# runtime_report('dice_small/slcwa/slcwa32_pykeen_distmult_umls_cpu')
+# runtime_report('slcwa32_pykeen_distmult_kinship_gpu_2/')
+# runtime_report('slcwa32_pykeen_distmult_kinship_cpu/')
+# runtime_report('slcwa32_pykeen_complex_kinship_gpu_1/')
+# runtime_report('slcwa32_pykeen_complex_kinship_gpu_2/')
+# runtime_report('slcwa32_pykeen_complex_kinship_cpu/')
 
 
-# runtime_report('complex_umls_cpu/')
-# runtime_report('complex_umls_gpu_1/')
-# runtime_report('complex_umls_gpu_2/')
-# runtime_report('complex_umls_gpu_3/')
+# runtime_report('complex_kinships_gpu_1/')
+# runtime_report('complex_kinships_gpu_2/')
+# runtime_report('complex_kinships_gpu_3/')
+# runtime_report('complex_kinships_cpu/')
 
 # runtime_report('integrated_pykeen\slcwa\half_neg\pykeen_distmult_umls_gpu_1')
 # runtime_report('integrated_pykeen\slcwa\half_neg\pykeen_distmult_umls_gpu_2')
@@ -198,8 +278,8 @@ def evaluation_pykeen_report(path):
 
 # runtime_report('pykeen_complex_umls_cpu/')
 # runtime_report('pykeen_complex_umls_gpu_1/')
-# runtime_report('pykeen_complex_umls_gpu_2/')
-
+# runtime_report('dice_small/complex_umls_gpu_2/')
+# runtime_report('dice_small/complex_kinships_gpu_2/')
 
 # runtime_report('pykeen_distmult_kinship_cpu')
 # runtime_report('pykeen_distmult_kinship_gpu_1')
@@ -222,24 +302,87 @@ def evaluation_pykeen_report(path):
 # evaluation_pykeen_report('pykeen_benchmarks\lcwa\cpu\pykeen_ComplEx_kinships')
 
 
-# evaluation_report('integrated_pykeen\pykeen_distmult_umls_cpu')
-# evaluation_report('integrated_pykeen\pykeen_distmult_kinship_cpu')
-# evaluation_report('integrated_pykeen\pykeen_complex_umls_cpu')
-# evaluation_report('integrated_pykeen\pykeen_complex_kinship_cpu')
+# # evaluation_report('dice_small/slcwa_pykeen_distmult_umls_cpu')
+# # evaluation_report('dice_small/slcwa_pykeen_distmult_umls_gpu_1')
+# evaluation_report('dice_small/slcwa_pykeen_complex_umls_gpu_2')
+# # evaluation_report('dice_small/slcwa/slcwa16_pykeen_distmult_kinship_cpu')
+# # evaluation_report('dice_small/slcwa/slcwa16_pykeen_distmult_kinship_gpu_1')
+# evaluation_report('dice_small/slcwa/slcwa16_pykeen_complex_umls_gpu_2')
+# evaluation_report('dice_small/slcwa/slcwa32_pykeen_complex_umls_cpu')
+# # evaluation_report('dice_small/slcwa/slcwa32_pykeen_distmult_kinship_gpu_1')
+# evaluation_report('dice_small/slcwa/slcwa32_pykeen_complex_umls_gpu_2')
 
 
-# evaluation_report('dice_benchmark\distmult_umls_cpu')
-# evaluation_report('dice_benchmark\distmult_kinships_cpu')
-# evaluation_report('dice_benchmark\complex_umls_cpu')
-# evaluation_report('dice_benchmark\complex_kinships_cpu')
+# # evaluation_report('dice_small/slcwa_pykeen_complex_kinship_cpu')
+# # evaluation_report('dice_small/slcwa_pykeen_complex_kinship_gpu_1')
+# evaluation_report('dice_small/slcwa_pykeen_complex_kinship_gpu_2')
+# # evaluation_report('dice_small/slcwa/slcwa16_pykeen_complex_kinship_cpu')
+# # evaluation_report('dice_small/slcwa/slcwa16_pykeen_complex_kinship_gpu_1')
+# evaluation_report('dice_small/slcwa/slcwa16_pykeen_complex_kinship_gpu_2')
+# evaluation_report('dice_small/slcwa/slcwa32_pykeen_complex_kinship_cpu')
+# # evaluation_report('dice_small/slcwa/slcwa32_pykeen_complex_kinship_gpu_1')
+# evaluation_report('dice_small/slcwa/slcwa32_pykeen_complex_kinship_gpu_2')
 
 
-# pykeen_runtime_report('pykeen_benchmarks\slcwa\half_neg_sampl\gpu\pykeen_distmultumls')
-# pykeen_runtime_report('pykeen_benchmarks\slcwa\half_neg_sampl\gpu\pykeen_Distmult_kinships')
-# pykeen_runtime_report('pykeen_benchmarks\slcwa\half_neg_sampl\gpu\pykeen_ComplEx_umls')
-# pykeen_runtime_report('pykeen_benchmarks\slcwa\half_neg_sampl\gpu\pykeen_ComplEx_kinships')
+# evaluation_report('dice_small/complex_umls_cpu')
+# evaluation_report('dice_small/complex_umls_gpu_1')
+# evaluation_report('dice_small/complex_umls_gpu_2')
+# evaluation_report('dice_small/complex_umls_gpu_3')
 
-# pykeen_runtime_report('pykeen_benchmarks\slcwa\half_neg_sampl\gpu\pykeen_distmultumls')
-# pykeen_runtime_report('pykeen_benchmarks\slcwa\half_neg_sampl\gpu\pykeen_Distmult_kinships')
-# pykeen_runtime_report('pykeen_benchmarks\slcwa\half_neg_sampl\gpu\pykeen_ComplEx_umls')
-# pykeen_runtime_report('pykeen_benchmarks\slcwa\half_neg_sampl\gpu\pykeen_ComplEx_kinships')
+
+# evaluation_report('dice_small/complex_kinships_cpu')
+# evaluation_report('dice_small/complex_kinships_gpu_1')
+# evaluation_report('dice_small/complex_kinships_gpu_2')
+# evaluation_report('dice_small/complex_kinships_gpu_3')
+
+# evaluation_report('dice_small/pykeen_distmult_umls_cpu')
+# evaluation_report('dice_small/pykeen_distmult_umls_gpu_1')
+# evaluation_report('dice_small/pykeen_distmult_umls_gpu_2')
+# evaluation_report('dice_small/pykeen_distmult_umls_gpu_3')
+
+# evaluation_report('dice_small/pykeen_complex_kinship_cpu')
+# evaluation_report('dice_small/pykeen_complex_kinship_gpu_1')
+# evaluation_report('dice_small/pykeen_complex_kinship_gpu_2')
+# evaluation_report('dice_small/pykeen_complex_kinship_gpu_3')
+
+# evaluation_report('dice_small/kvsall_complex_umls_cpu')
+# evaluation_report('dice_small/kvsall_complex_umls_gpu_1')
+# evaluation_report('dice_small/kvsall_complex_umls_gpu_2')
+# evaluation_report('dice_small/kvsall_complex_umls_gpu_3')
+
+# evaluation_report('dice_small/kvsall_distmult_kinships_cpu')
+# evaluation_report('dice_small/kvsall_distmult_kinships_gpu_1')
+# evaluation_report('dice_small/kvsall_distmult_kinships_gpu_2')
+# evaluation_report('dice_small/kvsall_distmult_kinships_gpu_3')
+
+
+# evaluation_report('dice_small/pykeen_complex_umls_cpu')
+# evaluation_report('dice_small/pykeen_complex_umls_gpu_1')
+# evaluation_report('dice_small/pykeen_complex_umls_gpu_2')
+# evaluation_report('dice_small/pykeen_complex_umls_gpu_3')
+
+# evaluation_report('dice_small/pykeen_complex_kinship_cpu')
+# evaluation_report('dice_small/pykeen_complex_kinship_gpu_1')
+# evaluation_report('dice_small/pykeen_complex_kinship_gpu_2')
+# evaluation_report('dice_small/pykeen_complex_kinship_gpu_3')
+
+
+# runtime_report('kvsall_distmult_kinships_gpu_1/')
+# runtime_report('kvsall_distmult_kinships_gpu_2/')
+# runtime_report('kvsall_distmult_kinships_gpu_3/')
+# runtime_report('kvsall_distmult_kinships_cpu/')
+
+# runtime_report('pykeen_distmult_umls_gpu_3/')
+# runtime_report('pykeen_distmult_kinship_gpu_3/')
+# runtime_report('pykeen_complex_umls_gpu_3/')
+# runtime_report('pykeen_complex_kinships_gpu_3/')
+
+pykeen_runtime_report1('pykeen_small/cpu_umls_distmult/')
+pykeen_runtime_report1('pykeen_small/gpu_umls_distmult/')
+pykeen_runtime_report1('pykeen_small/cpu_kinship_distmult/')
+pykeen_runtime_report1('pykeen_small/gpu_kinship_distmult/')
+
+# pykeen_runtime_report1('pykeen_small/cpu_umls_complex/')
+# pykeen_runtime_report1('pykeen_small/gpu_umls_complex/')
+# pykeen_runtime_report1('pykeen_small/cpu_kinship_complex/')
+# pykeen_runtime_report1('pykeen_small/gpu_kinship_complex/')
