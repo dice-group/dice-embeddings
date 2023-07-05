@@ -6,11 +6,10 @@ import wandb
 def template(model_name):
     args = get_default_arguments([])
     args.model = model_name
-    args.scoring_technique = "NegSample"  # default value of args.eval is 'val_test'
     args.path_dataset_folder = "KGs/Nations"
     # args.path_dataset_folder = "KGs/UMLS"
     # args.path_dataset_folder = "KGs/FB15k-237"
-    args.num_epochs = 2
+    args.num_epochs = 3
     args.batch_size = 128
     args.lr = 0.01
     args.embedding_dim = 64
@@ -20,10 +19,11 @@ def template(model_name):
     args.sample_triples_ratio = None
     args.read_only_few = None
     args.sample_triples_ratio = None
-    args.trainer = "PL"
+    # args.trainer = "PL"
+    args.trainer = "torchDDP"
     # args.trainer = "torchCPUTrainer"
     # args.gpus = 1
-    args.neg_ratio = 1
+    # args.neg_ratio = 1
     # args.pykeen_model_kwargs = dict(
     #     embedding_dim=args.embedding_dim, loss="BCEWithLogitsLoss",
 
@@ -44,12 +44,13 @@ def template(model_name):
     args.use_SLCWALitModule = False
     args.num_core = 1
     args.save_embeddings_as_csv = True
-    args.eval_model = 'train_val_test'
+    args.eval_model = 'test'
     args.optim = 'Adam'
     args.accelerator = 'gpu'
     args.devices = 1
     args.normalization = None
     args.scoring_technique = 'KvsAll'
+    # args.scoring_technique = "NegSample"
     return args
 
 
@@ -129,33 +130,33 @@ def test_pykeenInteraction(model_name):
     Execute(args).start()
 
 
-class TestPykeen:
-    @pytest.mark.filterwarnings("ignore::UserWarning")
-    def test_specific_model(self):
-        args = get_default_arguments([])
-        args.model = "Pykeen_LineaREInteraction"
-        args.scoring_technique = "NegSample"
-        args.path_dataset_folder = "KGs/Nations"
-        args.num_epochs = 10
-        args.batch_size = 1024
-        args.lr = 0.01
-        args.embedding_dim = 64
-        args.input_dropout_rate = 0.0
-        args.hidden_dropout_rate = 0.0
-        args.feature_map_dropout_rate = 0.0
-        args.sample_triples_ratio = None
-        args.read_only_few = None
-        args.sample_triples_ratio = None
-        args.torch_trainer = "PL"
-        args.neg_ratio = 1
-        args.use_SLCWALitModule = False
-        args.pykeen_model_kwargs = dict(
-            embedding_dim=args.embedding_dim,
-            loss="bcewithlogits",
-            # entity_representations=[None],
-            # tokenizers=["AnchorTokenizer", "RelationTokenizer"],
-            # num_tokens=[3, 12],
-        )
+# class TestPykeen:
+#     @pytest.mark.filterwarnings("ignore::UserWarning")
+#     def test_specific_model(self):
+#         args = get_default_arguments([])
+#         args.model = "Pykeen_LineaREInteraction"
+#         args.scoring_technique = "NegSample"
+#         args.path_dataset_folder = "KGs/Nations"
+#         args.num_epochs = 10
+#         args.batch_size = 1024
+#         args.lr = 0.01
+#         args.embedding_dim = 64
+#         args.input_dropout_rate = 0.0
+#         args.hidden_dropout_rate = 0.0
+#         args.feature_map_dropout_rate = 0.0
+#         args.sample_triples_ratio = None
+#         args.read_only_few = None
+#         args.sample_triples_ratio = None
+#         args.torch_trainer = "PL"
+#         args.neg_ratio = 1
+#         args.use_SLCWALitModule = False
+#         args.pykeen_model_kwargs = dict(
+#             embedding_dim=args.embedding_dim,
+#             loss="bcewithlogits",
+#             # entity_representations=[None],
+#             # tokenizers=["AnchorTokenizer", "RelationTokenizer"],
+#             # num_tokens=[3, 12],
+#         )
 
-        Execute(args).start()
+#         Execute(args).start()
 

@@ -122,11 +122,26 @@
 
 
 
+# fb15k
+# Distmut
+# python ../main.py --storage_path ./pykeen_distmult_slcwa_fb15k_gpu_1 --path_dataset_folder ../KGs/FB15k-237 --model Pykeen_DistMult --num_epochs 100 --scoring_technique "NegSample" --neg_ratio 1 --batch_size 512 --lr 0.001849662035249092 --embedding_dim 64 --trainer "PL" --save_embeddings_as_csv --eval_model "test" --num_core 1 --accelerator "gpu" --optim "Adam" --normalization "None" --pykeen_model_kwargs embedding_dim=64 loss="BCEWithLogitsLoss" --use_SLCWALitModule
+
+# python ../main.py --storage_path ./pykeen_distmult_slcwa_distmult_fb15k_gpu_3 --path_dataset_folder ../KGs/FB15k-237 --model Pykeen_DistMult --num_epochs 100 --scoring_technique "NegSample" --neg_ratio 1 --batch_size 512 --lr 0.001849662035249092 --embedding_dim 64 --gpus 1 --save_embeddings_as_csv --eval_model "test" --num_core 1 --optim "Adam" --normalization "None" --pykeen_model_kwargs embedding_dim=64 loss="BCEWithLogitsLoss" --use_SLCWALitModule
 
 
+# # # # Complex
+# python ../main.py --storage_path ./pykeen_complex_slcwa_fb15k_gpu_1 --path_dataset_folder ../KGs/FB15k-237 --model Pykeen_ComplEx  --num_epochs 100 --scoring_technique "NegSample" --neg_ratio 1 --batch_size 512 --lr 0.007525067744232913 --embedding_dim 32 --trainer "PL" --save_embeddings_as_csv --eval_model "test" --num_core 1 --accelerator "gpu" --optim "Adam" --normalization "None" --pykeen_model_kwargs embedding_dim=32 loss="BCEWithLogitsLoss" --use_SLCWALitModule
+
+# python ../main.py --storage_path ./pykeen_complex_slcwa_fb15k_gpu_3 --path_dataset_folder ../KGs/FB15k-237 --model Pykeen_ComplEx --num_epochs 100 --scoring_technique "NegSample" --neg_ratio 1 --batch_size 512 --lr 0.007525067744232913 --embedding_dim 32 --gpus 1 --save_embeddings_as_csv --eval_model "test" --num_core 1 --optim "Adam" --normalization "None" --pykeen_model_kwargs embedding_dim=32 loss="BCEWithLogitsLoss" --use_SLCWALitModule
 
 
+# # yago3-10
+# python ../main.py --storage_path ./pykeen_distmult_slcwa_yago_gpu_1 --path_dataset_folder ../KGs/YAGO3-10 --model Pykeen_DistMult --num_epochs 100 --scoring_technique "NegSample" --neg_ratio 1 --batch_size 512 --lr 0.00113355532419969 --embedding_dim 64 --trainer "PL" --save_embeddings_as_csv --eval_model "test" --accelerator "gpu" --optim "Adam" --normalization "None" --pykeen_model_kwargs embedding_dim=64 loss="BCEWithLogitsLoss" --num_core 1 --use_SLCWALitModule 
+python ../main.py --storage_path ./pykeen_distmult_slcwa_distmult_yago_gpu_3 --path_dataset_folder ../KGs/YAGO3-10 --model Pykeen_DistMult --num_epochs 100 --scoring_technique "NegSample" --neg_ratio 1 --batch_size 512 --lr 0.00113355532419969 --embedding_dim 64 --gpus 1 --save_embeddings_as_csv --eval_model "test" --num_core 1 --optim "Adam" --normalization "None" --pykeen_model_kwargs embedding_dim=64 loss="BCEWithLogitsLoss" --use_SLCWALitModule
 
+
+python ../main.py --storage_path ./pykeen_complex_slcwa_yago_gpu_1 --path_dataset_folder ../KGs/YAGO3-10 --model Pykeen_ComplEx  --num_epochs 100 --scoring_technique "NegSample" --neg_ratio 1 --batch_size 512 --lr 0.0016718252573185953 --embedding_dim 32 --trainer "PL" --save_embeddings_as_csv --eval_model "test" --num_core 1 --accelerator "gpu" --optim "Adam" --normalization "None" --pykeen_model_kwargs embedding_dim=32 loss="BCEWithLogitsLoss" --use_SLCWALitModule 
+python ../main.py --storage_path ./pykeen_complex_slcwa_yago_gpu_3 --path_dataset_folder ../KGs/YAGO3-10 --model Pykeen_ComplEx --num_epochs 100 --scoring_technique "NegSample" --neg_ratio 1 --batch_size 512 --lr 0.0016718252573185953 --embedding_dim 32 --gpus 1 --save_embeddings_as_csv --eval_model "test" --num_core 1 --optim "Adam" --normalization "None" --pykeen_model_kwargs embedding_dim=32 loss="BCEWithLogitsLoss" --use_SLCWALitModule
 
 
 

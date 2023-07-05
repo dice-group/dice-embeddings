@@ -84,7 +84,7 @@ class TestCallback:
       # args.model = 'AConEx'
       args.model = model_name
       args.scoring_technique = "NegSample"
-      args.path_dataset_folder = "KGs/KINSHIP"
+      args.path_dataset_folder = "KGs/Nations"
       args.num_epochs = 20
       args.batch_size = 20
       args.lr = 0.01

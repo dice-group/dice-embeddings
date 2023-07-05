@@ -6,6 +6,7 @@ from torch.optim import Adam
 import time
 from pykeen.pipeline import pipeline
 import torch
+from pykeen.training import LCWATrainingLoop,SLCWATrainingLoop
 
 def experiment_fb15k_distmult():
   start_time = time.time()
@@ -22,15 +23,26 @@ def experiment_fb15k_distmult():
   
   optimizer = Adam(params=model.get_grad_params())
 
-  from pykeen.training import LCWATrainingLoop
-  training_loop = LCWATrainingLoop(
+  
+  # training_loop = LCWATrainingLoop(
+  #   model=model,
+  #   triples_factory=training_triples_factory,
+  #   optimizer=optimizer,
+  #   optimizer_kwargs=dict(lr=0.001849662035249092),
+
+        
+  # )
+  training_loop = SLCWATrainingLoop(
     model=model,
     triples_factory=training_triples_factory,
     optimizer=optimizer,
-    optimizer_kwargs=dict(lr=0.001849662035249092),
-
-        
+    optimizer_kwargs=dict(lr=0.1),
+    negative_sampler=BasicNegativeSampler,
+    negative_sampler_kwargs=dict(
+      num_negs_per_pos=1,
+  ),   
   )
+
 
   _ = training_loop.train(
     triples_factory=training_triples_factory,
@@ -59,15 +71,26 @@ def experiment_fb15k_complex():
   
   optimizer = Adam(params=model.get_grad_params())
 
-  from pykeen.training import LCWATrainingLoop
-  training_loop = LCWATrainingLoop(
+  # from pykeen.training import LCWATrainingLoop
+  # training_loop = LCWATrainingLoop(
+  #   model=model,
+  #   triples_factory=training_triples_factory,
+  #   optimizer=optimizer,
+  #   optimizer_kwargs=dict(lr=0.007525067744232913),
+
+        
+  # )
+  training_loop = SLCWATrainingLoop(
     model=model,
     triples_factory=training_triples_factory,
     optimizer=optimizer,
-    optimizer_kwargs=dict(lr=0.007525067744232913),
-
-        
+    optimizer_kwargs=dict(lr=0.1),
+    negative_sampler=BasicNegativeSampler,
+    negative_sampler_kwargs=dict(
+      num_negs_per_pos=1,
+  ),   
   )
+
 
   _ = training_loop.train(
     triples_factory=training_triples_factory,
@@ -95,15 +118,27 @@ def experiment_yago_distmult():
   
   optimizer = Adam(params=model.get_grad_params())
 
-  from pykeen.training import LCWATrainingLoop
-  training_loop = LCWATrainingLoop(
+  # from pykeen.training import LCWATrainingLoop
+  # training_loop = LCWATrainingLoop(
+  #   model=model,
+  #   triples_factory=training_triples_factory,
+  #   optimizer=optimizer,
+  #   optimizer_kwargs=dict(lr=0.00113355532419969),
+
+        
+  # )
+  training_loop = SLCWATrainingLoop(
     model=model,
     triples_factory=training_triples_factory,
     optimizer=optimizer,
-    optimizer_kwargs=dict(lr=0.00113355532419969),
-
-        
+    optimizer_kwargs=dict(lr=0.1),
+    negative_sampler=BasicNegativeSampler,
+    negative_sampler_kwargs=dict(
+      num_negs_per_pos=1,
+  ),   
   )
+
+
 
   _ = training_loop.train(
     triples_factory=training_triples_factory,
@@ -131,15 +166,27 @@ def experiment_yago_complex():
   
   optimizer = Adam(params=model.get_grad_params())
 
-  from pykeen.training import LCWATrainingLoop
-  training_loop = LCWATrainingLoop(
+  # from pykeen.training import LCWATrainingLoop
+  # training_loop = LCWATrainingLoop(
+  #   model=model,
+  #   triples_factory=training_triples_factory,
+  #   optimizer=optimizer,
+  #   optimizer_kwargs=dict(lr=0.001723135381847608),
+
+        
+  # )
+
+  training_loop = SLCWATrainingLoop(
     model=model,
     triples_factory=training_triples_factory,
     optimizer=optimizer,
-    optimizer_kwargs=dict(lr=0.001723135381847608),
-
-        
+    optimizer_kwargs=dict(lr=0.1),
+    negative_sampler=BasicNegativeSampler,
+    negative_sampler_kwargs=dict(
+      num_negs_per_pos=1,
+  ),   
   )
+
 
   _ = training_loop.train(
     triples_factory=training_triples_factory,
@@ -163,13 +210,13 @@ def save_report(runtime,filename):
 
 
 # runtime = experiment_fb15k_distmult()
-# save_report(runtime,'fb15k_distmult')
+# save_report(runtime,'fb15k_distmult_slcwa1')
 
 # runtime = experiment_fb15k_complex()
-# save_report(runtime,'fb15k_complex')
+# save_report(runtime,'fb15k_complex_slcwa1')
 
-# runtime = experiment_yago_distmult()
-# save_report(runtime,'yago_distmult')
+runtime = experiment_yago_distmult()
+# save_report(runtime,'yago_distmult_slcwa1')
 
-runtime = experiment_yago_complex()
-# save_report(runtime,'yago_complex')
+# runtime = experiment_yago_complex()
+# save_report(runtime,'yago_complex_slcwa1')

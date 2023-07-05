@@ -213,10 +213,10 @@ def pykeen_eval(path):
 
 
 
-# pykeen_runtime_report1('pykeen_small/slcwa/slcwa32_gpu_umls_distmult/')
-# pykeen_runtime_report1('pykeen_small/slcwa/slcwa32_gpu_kinship_distmult/')
-# pykeen_runtime_report1('pykeen_small/slcwa/slcwa32_gpu_umls_complex/')
-# pykeen_runtime_report1('pykeen_small/slcwa/slcwa32_gpu_kinship_complex/')
+# pykeen_runtime_report1('pykeen_small/slcwa/slcwa1_gpu_umls_distmult')
+# pykeen_runtime_report1('pykeen_small/slcwa/slcwa1_gpu_kinship_distmult')
+# pykeen_runtime_report1('pykeen_small/slcwa/slcwa1_gpu_umls_complex')
+# pykeen_runtime_report1('pykeen_small/slcwa/slcwa1_gpu_kinship_complex')
 
 # evaluation_report('complex_kinships_cpu')
 # evaluation_pykeen_report("pykeen_benchmarks/pykeen_distmultumls/")
@@ -231,12 +231,19 @@ def pykeen_eval(path):
 # runtime_report('slcwa16_pykeen_complex_umls_gpu_2/')
 # runtime_report('slcwa16_pykeen_complex_umls_cpu/')
 
-# runtime_report('dice_small/slcwa/slcwa32_pykeen_distmult_umls_cpu')
-# runtime_report('slcwa32_pykeen_distmult_kinship_gpu_2/')
-# runtime_report('slcwa32_pykeen_distmult_kinship_cpu/')
-# runtime_report('slcwa32_pykeen_complex_kinship_gpu_1/')
-# runtime_report('slcwa32_pykeen_complex_kinship_gpu_2/')
-# runtime_report('slcwa32_pykeen_complex_kinship_cpu/')
+# runtime_report('slcwa_pykeen_distmult_umls_cpu')
+# runtime_report('slcwa_pykeen_distmult_umls_gpu_1')
+# runtime_report('slcwa_pykeen_distmult_umls_gpu_2')
+# runtime_report('slcwa_pykeen_distmult_kinship_cpu')
+# runtime_report('slcwa_pykeen_distmult_kinship_gpu_1')
+# runtime_report('slcwa_pykeen_distmult_kinship_gpu_2')
+# runtime_report('slcwa_pykeen_complex_umls_cpu')
+# runtime_report('slcwa_pykeen_complex_umls_gpu_1')
+# runtime_report('slcwa_pykeen_complex_umls_gpu_2')
+# runtime_report('slcwa_pykeen_complex_kinship_cpu')
+# runtime_report('slcwa_pykeen_complex_kinship_gpu_1')
+# runtime_report('slcwa_pykeen_complex_kinship_gpu_2')
+
 
 
 # runtime_report('complex_kinships_gpu_1/')
@@ -303,26 +310,53 @@ def pykeen_eval(path):
 # evaluation_pykeen_report('pykeen_benchmarks\lcwa\cpu\pykeen_ComplEx_kinships')
 
 
-# # evaluation_report('dice_small/slcwa_pykeen_distmult_umls_cpu')
-# # evaluation_report('dice_small/slcwa_pykeen_distmult_umls_gpu_1')
-# evaluation_report('dice_small/slcwa_pykeen_complex_umls_gpu_2')
-# # evaluation_report('dice_small/slcwa/slcwa16_pykeen_distmult_kinship_cpu')
-# # evaluation_report('dice_small/slcwa/slcwa16_pykeen_distmult_kinship_gpu_1')
+# evaluation_report('dice_small/slcwa/slcwa_pykeen_distmult_umls_cpu')
+# evaluation_report('dice_small/slcwa/slcwa_pykeen_distmult_umls_gpu_1')
+# evaluation_report('dice_small/slcwa/slcwa_pykeen_distmult_umls_gpu_2')
+# # evaluation_report('dice_small/slcwa/slcwa_pykeen_complex_umls_gpu_2')
+# evaluation_report('dice_small/slcwa/slcwa16_pykeen_distmult_umls_cpu')
+# evaluation_report('dice_small/slcwa/slcwa16_pykeen_distmult_umls_gpu_1')
+# evaluation_report('dice_small/slcwa/slcwa16_pykeen_distmult_umls_gpu_2')
+# evaluation_report('dice_small/slcwa/slcwa32_pykeen_distmult_umls_cpu')
+# evaluation_report('dice_small/slcwa/slcwa32_pykeen_distmult_umls_gpu_1')
+# evaluation_report('dice_small/slcwa/slcwa32_pykeen_distmult_umls_gpu_2')
+
+
+# evaluation_report('dice_small/slcwa/slcwa_pykeen_distmult_kinship_cpu')
+# evaluation_report('dice_small/slcwa/slcwa_pykeen_distmult_kinship_gpu_1')
+# evaluation_report('dice_small/slcwa/slcwa_pykeen_distmult_kinship_gpu_2')
+# # evaluation_report('dice_small/slcwa/slcwa_pykeen_complex_kinship_gpu_2')
+# evaluation_report('dice_small/slcwa/slcwa16_pykeen_distmult_kinship_cpu')
+# evaluation_report('dice_small/slcwa/slcwa16_pykeen_distmult_kinship_gpu_1')
+# evaluation_report('dice_small/slcwa/slcwa16_pykeen_distmult_kinship_gpu_2')
+# evaluation_report('dice_small/slcwa/slcwa32_pykeen_distmult_kinship_cpu')
+# evaluation_report('dice_small/slcwa/slcwa32_pykeen_distmult_kinship_gpu_1')
+# evaluation_report('dice_small/slcwa/slcwa32_pykeen_distmult_kinship_gpu_2')
+
+
+
+# evaluation_report('dice_small/slcwa/slcwa_pykeen_complex_umls_cpu')
+# evaluation_report('dice_small/slcwa/slcwa_pykeen_complex_umls_gpu_1')
+# evaluation_report('dice_small/slcwa/slcwa_pykeen_complex_umls_gpu_2')
+# # evaluation_report('dice_small/slcwa/slcwa_pykeen_complex_umls_gpu_2')
+# evaluation_report('dice_small/slcwa/slcwa16_pykeen_complex_umls_cpu')
+# evaluation_report('dice_small/slcwa/slcwa16_pykeen_complex_umls_gpu_1')
 # evaluation_report('dice_small/slcwa/slcwa16_pykeen_complex_umls_gpu_2')
 # evaluation_report('dice_small/slcwa/slcwa32_pykeen_complex_umls_cpu')
-# # evaluation_report('dice_small/slcwa/slcwa32_pykeen_distmult_kinship_gpu_1')
+# evaluation_report('dice_small/slcwa/slcwa32_pykeen_complex_umls_gpu_1')
 # evaluation_report('dice_small/slcwa/slcwa32_pykeen_complex_umls_gpu_2')
 
 
-# # evaluation_report('dice_small/slcwa_pykeen_complex_kinship_cpu')
-# # evaluation_report('dice_small/slcwa_pykeen_complex_kinship_gpu_1')
-# evaluation_report('dice_small/slcwa_pykeen_complex_kinship_gpu_2')
-# # evaluation_report('dice_small/slcwa/slcwa16_pykeen_complex_kinship_cpu')
-# # evaluation_report('dice_small/slcwa/slcwa16_pykeen_complex_kinship_gpu_1')
+# evaluation_report('dice_small/slcwa/slcwa_pykeen_complex_kinship_cpu')
+# evaluation_report('dice_small/slcwa/slcwa_pykeen_complex_kinship_gpu_1')
+# evaluation_report('dice_small/slcwa/slcwa_pykeen_complex_kinship_gpu_2')
+# evaluation_report('dice_small/slcwa/slcwa16_pykeen_complex_kinship_cpu')
+# evaluation_report('dice_small/slcwa/slcwa16_pykeen_complex_kinship_gpu_1')
 # evaluation_report('dice_small/slcwa/slcwa16_pykeen_complex_kinship_gpu_2')
 # evaluation_report('dice_small/slcwa/slcwa32_pykeen_complex_kinship_cpu')
-# # evaluation_report('dice_small/slcwa/slcwa32_pykeen_complex_kinship_gpu_1')
+# evaluation_report('dice_small/slcwa/slcwa32_pykeen_complex_kinship_gpu_1')
 # evaluation_report('dice_small/slcwa/slcwa32_pykeen_complex_kinship_gpu_2')
+
 
 
 # evaluation_report('dice_small/complex_umls_cpu')
@@ -374,13 +408,13 @@ def pykeen_eval(path):
 # runtime_report('kvsall_distmult_kinships_cpu/')
 
 
-runtime_report('slcwa_pykeen_distmult_umls_gpu_1/')
-runtime_report('slcwa_pykeen_distmult_umls_gpu_2/')
-runtime_report('slcwa_pykeen_distmult_umls_cpu/')
+# runtime_report('slcwa_pykeen_distmult_umls_gpu_1/')
+# runtime_report('slcwa_pykeen_distmult_umls_gpu_2/')
+# runtime_report('slcwa_pykeen_distmult_umls_cpu/')
 
-runtime_report('slcwa_pykeen_distmult_kinship_gpu_1/')
-runtime_report('slcwa_pykeen_distmult_kinship_gpu_2/')
-runtime_report('slcwa_pykeen_distmult_kinship_cpu/')
+# runtime_report('slcwa_pykeen_distmult_kinship_gpu_1/')
+# runtime_report('slcwa_pykeen_distmult_kinship_gpu_2/')
+# runtime_report('slcwa_pykeen_distmult_kinship_cpu/')
 
 # runtime_report('slcwa_pykeen_complex_umls_cpu/')
 # runtime_report('slcwa_pykeen_complex_umls_gpu_1/')
