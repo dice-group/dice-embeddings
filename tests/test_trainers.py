@@ -85,7 +85,7 @@ class TestCallback:
       args.model = model_name
       args.scoring_technique = "NegSample"
       args.path_dataset_folder = "KGs/KINSHIP"
-      args.num_epochs = 20
+      args.num_epochs = 18
       args.batch_size = 20
       args.lr = 0.01
       args.embedding_dim = 64

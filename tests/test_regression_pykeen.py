@@ -20,9 +20,9 @@ def template(model_name):
     args.sample_triples_ratio = None
     args.read_only_few = None
     args.sample_triples_ratio = None
-    args.trainer = "PL"
-    # args.trainer = "torchCPUTrainer"
-    # args.gpus = 1
+    # args.trainer = "PL"
+    args.trainer = "torchCPUTrainer"
+    args.gpus = 1
     args.neg_ratio = 1
     # args.pykeen_model_kwargs = dict(
     #     embedding_dim=args.embedding_dim, loss="BCEWithLogitsLoss",
@@ -44,7 +44,7 @@ def template(model_name):
     args.use_SLCWALitModule = False
     args.num_core = 1
     args.save_embeddings_as_csv = True
-    args.eval_model = 'train_val_test'
+    args.eval_model = 'test'
     args.optim = 'Adam'
     args.accelerator = 'gpu'
     args.devices = 1

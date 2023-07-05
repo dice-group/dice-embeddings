@@ -239,14 +239,16 @@ class Evaluator:
                     # (4.3) Store the assigned score of the target tail entity extracted in 4.1.
                     target_value = predictions[j, id_e_target].item()
                     # (4.4.1) Filter all assigned scores for entities.
-                    predictions[j, filt] = -np.Inf
-                    # (4.4.2) Filter entities based on the range of a relation as well.
-                    if 'constraint' in self.args.eval_model:
-                        predictions[j, self.range_constraints_per_rel[data_batch[j, 1]]] = -np.Inf
-                    # (4.5) Insert 4.3. after filtering.
-                    predictions[j, id_e_target] = target_value
+                    with torch.no_grad():
+                      predictions[j, filt] = -np.Inf
+                      # (4.4.2) Filter entities based on the range of a relation as well.
+                      if 'constraint' in self.args.eval_model:
+                          predictions[j, self.range_constraints_per_rel[data_batch[j, 1]]] = -np.Inf
+                      # (4.5) Insert 4.3. after filtering.
+                      predictions[j, id_e_target] = target_value
                 # (5) Sort predictions.
-                sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
+                with torch.no_grad():
+                  sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
                 # (6) Compute the filtered ranks.
                 for j in range(data_batch.shape[0]):
                     # index between 0 and \inf

@@ -433,7 +433,7 @@ def distributed_training(rank: int, world_size, model, train_dataset_loader, cal
 
     # for test purpose(not sure if this simulation is correct???)
     # GPU memory managed by the caching allocator can now only allocate 0.01*total_memory memory
-    # torch.cuda.set_per_process_memory_fraction(0.007)
+    torch.cuda.set_per_process_memory_fraction(0.007)
     
     # set up
     dist.init_process_group(backend=backend, rank=rank, world_size=world_size)
