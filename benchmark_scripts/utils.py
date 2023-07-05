@@ -219,8 +219,7 @@ def pykeen_eval(path):
 # pykeen_runtime_report1('pykeen_small/slcwa/slcwa1_gpu_kinship_complex')
 
 # evaluation_report('complex_kinships_cpu')
-# evaluation_pykeen_report("pykeen_benchmarks/pykeen_distmultumls/")
-# evaluation_pykeen_report("pykeen_benchmarks/pykeen_ComplEx_umls/")
+
 
 
 
