@@ -1,0 +1,372 @@
+============================= test session starts ==============================
+platform linux -- Python 3.9.12, pytest-6.2.5, py-1.11.0, pluggy-1.0.0 -- /upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/bin/python
+cachedir: .pytest_cache
+rootdir: /local/upb/users/r/renzhong/profiles/unix/cs/Dicee/dice-embeddings
+plugins: anyio-3.6.2
+collecting ... collected 41 items
+
+tests/test_regression_pykeen.py::test_model[Pykeen_DistMult] PASSED      [  2%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TuckER] PASSED        [  4%]
+tests/test_regression_pykeen.py::test_model[Pykeen_UM] PASSED            [  7%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TransR] PASSED        [  9%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TransH] PASSED        [ 12%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TransF] PASSED        [ 14%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TransE] PASSED        [ 17%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TransD] PASSED        [ 19%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TorusE] PASSED        [ 21%]
+tests/test_regression_pykeen.py::test_model[Pykeen_SimplE] PASSED        [ 24%]
+tests/test_regression_pykeen.py::test_model[Pykeen_SE] PASSED            [ 26%]
+tests/test_regression_pykeen.py::test_model[Pykeen_RESCAL] PASSED        [ 29%]
+tests/test_regression_pykeen.py::test_model[Pykeen_RotatE] PASSED        [ 31%]
+tests/test_regression_pykeen.py::test_model[Pykeen_QuatE] PASSED         [ 34%]
+tests/test_regression_pykeen.py::test_model[Pykeen_PairRE] PASSED        [ 36%]
+tests/test_regression_pykeen.py::test_model[Pykeen_ProjE] PASSED         [ 39%]
+tests/test_regression_pykeen.py::test_model[Pykeen_NTN] PASSED           [ 41%]
+tests/test_regression_pykeen.py::test_model[Pykeen_NodePiece] PASSED     [ 43%]
+tests/test_regression_pykeen.py::test_model[Pykeen_MuRE] PASSED          [ 46%]
+tests/test_regression_pykeen.py::test_model[Pykeen_KG2E] PASSED          [ 48%]
+tests/test_regression_pykeen.py::test_model[Pykeen_InductiveNodePiece] FAILED [ 51%]
+tests/test_regression_pykeen.py::test_model[Pykeen_InductiveNodePieceGNN] FAILED [ 53%]
+tests/test_regression_pykeen.py::test_model[Pykeen_HolE] PASSED          [ 56%]
+tests/test_regression_pykeen.py::test_model[Pykeen_FixedModel] PASSED    [ 58%]
+tests/test_regression_pykeen.py::test_model[Pykeen_ERMLPE] PASSED        [ 60%]
+tests/test_regression_pykeen.py::test_model[Pykeen_DistMA] PASSED        [ 63%]
+tests/test_regression_pykeen.py::test_model[Pykeen_CrossE] PASSED        [ 65%]
+tests/test_regression_pykeen.py::test_model[Pykeen_CooccurrenceFilteredModel] PASSED [ 68%]
+tests/test_regression_pykeen.py::test_model[Pykeen_ConvKB] PASSED        [ 70%]
+tests/test_regression_pykeen.py::test_model[Pykeen_ConvE] PASSED         [ 73%]
+tests/test_regression_pykeen.py::test_model[Pykeen_ComplExLiteral] PASSED [ 75%]
+tests/test_regression_pykeen.py::test_model[Pykeen_ComplEx] PASSED       [ 78%]
+tests/test_regression_pykeen.py::test_model[Pykeen_CompGCN] PASSED       [ 80%]
+tests/test_regression_pykeen.py::test_model[Pykeen_CP] PASSED            [ 82%]
+tests/test_regression_pykeen.py::test_model[Pykeen_BoxE] PASSED          [ 85%]
+tests/test_regression_pykeen.py::test_model[Pykeen_AutoSF] PASSED        [ 87%]
+tests/test_regression_pykeen.py::test_model[Pykeen_DistMultLiteral] PASSED [ 90%]
+tests/test_regression_pykeen.py::test_pykeenInteraction[Pykeen_TripleREInteraction] PASSED [ 92%]
+tests/test_regression_pykeen.py::test_pykeenInteraction[Pykeen_TransformerInteraction] PASSED [ 95%]
+tests/test_regression_pykeen.py::test_pykeenInteraction[Pykeen_MultiLinearTuckerInteraction] PASSED [ 97%]
+tests/test_regression_pykeen.py::test_pykeenInteraction[Pykeen_LineaREInteraction] PASSED [100%]
+
+=================================== FAILURES ===================================
+____________________ test_model[Pykeen_InductiveNodePiece] _____________________
+
+model_name = 'Pykeen_InductiveNodePiece'
+
+    @pytest.mark.filterwarnings("ignore::UserWarning")
+    @pytest.mark.parametrize(
+        "model_name",
+        [
+            "Pykeen_DistMult",
+            "Pykeen_TuckER",
+            "Pykeen_UM",
+            "Pykeen_TransR",
+            "Pykeen_TransH",
+            "Pykeen_TransF",
+            "Pykeen_TransE",
+            "Pykeen_TransD",
+            "Pykeen_TorusE",
+            "Pykeen_SimplE",
+            "Pykeen_SE",
+            "Pykeen_RESCAL",
+            "Pykeen_RotatE",
+            "Pykeen_QuatE",
+            "Pykeen_PairRE",
+            "Pykeen_ProjE",
+            "Pykeen_NTN",
+            "Pykeen_NodePiece",
+            "Pykeen_MuRE",
+            "Pykeen_KG2E",
+            "Pykeen_InductiveNodePiece",
+            "Pykeen_InductiveNodePieceGNN",
+            "Pykeen_HolE",
+            "Pykeen_FixedModel",
+            "Pykeen_ERMLPE",
+            "Pykeen_DistMA",
+            "Pykeen_CrossE",
+            "Pykeen_CooccurrenceFilteredModel",
+            "Pykeen_ConvKB",  # this one is really slow
+            "Pykeen_ConvE",
+            "Pykeen_ComplExLiteral",
+            "Pykeen_ComplEx",
+            "Pykeen_CompGCN",
+            "Pykeen_CP",
+            "Pykeen_BoxE",
+            "Pykeen_AutoSF",
+            "Pykeen_DistMultLiteral",
+        ],
+    )
+    def test_model(model_name):
+        args = template(model_name)
+        # config = {
+        #     "epoch":args.num_epochs,"lr":args.lr,"embedding_dim":args.embedding_dim
+        # }
+        # dataset = args.path_dataset_folder.split('/')[1]
+        # wandb.setup(wandb.Settings(program="test_pykeen_model.py", program_relpath="test_pykeen_model.py"))
+        # wandb.init(project="dice_demo",config=config,name=f'{args.model}-{dataset}')
+>       Execute(args).start()
+
+tests/test_regression_pykeen.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+dicee/executer.py:212: in start
+    self.trained_model, form_of_labelling = self.trainer.start(dataset=self.dataset)
+dicee/trainer/dice_trainer.py:238: in start
+    model, form_of_labelling = self.initialize_or_load_model(dataset)
+dicee/static_funcs.py:34: in timeit_wrapper
+    result = func(*args, **kwargs)
+dicee/trainer/dice_trainer.py:185: in initialize_or_load_model
+    model, form_of_labelling = select_model(
+dicee/static_funcs.py:79: in select_model
+    return intialize_model(args, dataset) if "pykeen" in args['model'].lower() else intialize_model(args)
+dicee/static_funcs.py:464: in intialize_model
+    model = get_pykeen_model(model_name, args, dataset)
+dicee/static_funcs.py:428: in get_pykeen_model
+    model = MySLCWALitModule(
+dicee/models/pykeen_SLCWALitModule.py:10: in __init__
+    super().__init__(**kwargs)
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pykeen/contrib/lightning.py:197: in __init__
+    super().__init__(**kwargs)
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pykeen/contrib/lightning.py:112: in __init__
+    self.model = model_resolver.make(model, model_kwargs, triples_factory=self.dataset.training)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <class_resolver.api.ClassResolver object at 0x7fa9d3df4fa0>
+query = 'InductiveNodePiece'
+pos_kwargs = {'embedding_dim': 64, 'loss': 'BCEWithLogitsLoss'}
+kwargs = {'triples_factory': TriplesFactory(num_entities=14, num_relations=55, create_inverse_triples=False, num_triples=1592)}
+cls = <class 'pykeen.models.inductive.inductive_nodepiece.InductiveNodePiece'>
+
+    def make(
+        self,
+        query: HintOrType[X],
+        pos_kwargs: Optional[Mapping[str, Any]] = None,
+        **kwargs,
+    ) -> X:
+        """Instantiate a class with optional kwargs."""
+        if query is None or isinstance(query, (str, type)):
+            cls: Type[X] = self.lookup(query)
+            try:
+                return cls(**(pos_kwargs or {}), **kwargs)  # type: ignore
+            except TypeError as e:
+                if "required keyword-only argument" in e.args[0]:
+>                   raise KeywordArgumentError(cls, e.args[0]) from None
+E                   class_resolver.api.KeywordArgumentError: InductiveNodePiece: __init__() missing 1 required keyword-only argument: 'inference_factory'
+
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/class_resolver/api.py:207: KeywordArgumentError
+----------------------------- Captured stdout call -----------------------------
+Start time:2023-07-05 16:53:12.405720
+*** Read or Load Knowledge Graph  ***
+*** Reading KGs/Nations/test.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0014 seconds | Current Memory Usage  2683.8 in MB
+*** Reading KGs/Nations/train.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0015 seconds | Current Memory Usage  2683.8 in MB
+Unrecognized data KGs/Nations/literals.txt
+*** Reading KGs/Nations/valid.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0011 seconds | Current Memory Usage  2683.8 in MB
+
+Concatenating data to obtain index...
+Done !
+
+Creating a mapping from entities to integer indexes...
+Done !
+
+Done ! 0.002 seconds
+
+Done !
+
+Done !
+
+Took 0.0045 seconds | Current Memory Usage  2683.8 in MB
+Data Type conversion...
+Submit er-vocab, re-vocab, and ee-vocab via  ProcessPoolExecutor...
+Preprocessing took: 0.080 seconds
+
+------------------- Description of Dataset KGs/Nations -------------------
+Number of entities:14
+Number of relations:55
+Number of triples on train set:1592
+Number of triples on valid set:199
+Number of triples on test set:201
+Entity Index:0.00000 in GB
+Relation Index:0.00000 in GB
+Train set :0.00000 in GB
+
+# of CPUs:64 | # of GPUs:1 | # of CPUs for dataloader:1
+NVIDIA GeForce RTX 3090
+------------------- Train -------------------
+Initializing Pytorch-lightning Trainer	Took 0.0027 seconds | Current Memory Usage  2683.9 in MB
+Initializing Model...	Initializing the selected model... True
+___________________ test_model[Pykeen_InductiveNodePieceGNN] ___________________
+
+model_name = 'Pykeen_InductiveNodePieceGNN'
+
+    @pytest.mark.filterwarnings("ignore::UserWarning")
+    @pytest.mark.parametrize(
+        "model_name",
+        [
+            "Pykeen_DistMult",
+            "Pykeen_TuckER",
+            "Pykeen_UM",
+            "Pykeen_TransR",
+            "Pykeen_TransH",
+            "Pykeen_TransF",
+            "Pykeen_TransE",
+            "Pykeen_TransD",
+            "Pykeen_TorusE",
+            "Pykeen_SimplE",
+            "Pykeen_SE",
+            "Pykeen_RESCAL",
+            "Pykeen_RotatE",
+            "Pykeen_QuatE",
+            "Pykeen_PairRE",
+            "Pykeen_ProjE",
+            "Pykeen_NTN",
+            "Pykeen_NodePiece",
+            "Pykeen_MuRE",
+            "Pykeen_KG2E",
+            "Pykeen_InductiveNodePiece",
+            "Pykeen_InductiveNodePieceGNN",
+            "Pykeen_HolE",
+            "Pykeen_FixedModel",
+            "Pykeen_ERMLPE",
+            "Pykeen_DistMA",
+            "Pykeen_CrossE",
+            "Pykeen_CooccurrenceFilteredModel",
+            "Pykeen_ConvKB",  # this one is really slow
+            "Pykeen_ConvE",
+            "Pykeen_ComplExLiteral",
+            "Pykeen_ComplEx",
+            "Pykeen_CompGCN",
+            "Pykeen_CP",
+            "Pykeen_BoxE",
+            "Pykeen_AutoSF",
+            "Pykeen_DistMultLiteral",
+        ],
+    )
+    def test_model(model_name):
+        args = template(model_name)
+        # config = {
+        #     "epoch":args.num_epochs,"lr":args.lr,"embedding_dim":args.embedding_dim
+        # }
+        # dataset = args.path_dataset_folder.split('/')[1]
+        # wandb.setup(wandb.Settings(program="test_pykeen_model.py", program_relpath="test_pykeen_model.py"))
+        # wandb.init(project="dice_demo",config=config,name=f'{args.model}-{dataset}')
+>       Execute(args).start()
+
+tests/test_regression_pykeen.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+dicee/executer.py:212: in start
+    self.trained_model, form_of_labelling = self.trainer.start(dataset=self.dataset)
+dicee/trainer/dice_trainer.py:238: in start
+    model, form_of_labelling = self.initialize_or_load_model(dataset)
+dicee/static_funcs.py:34: in timeit_wrapper
+    result = func(*args, **kwargs)
+dicee/trainer/dice_trainer.py:185: in initialize_or_load_model
+    model, form_of_labelling = select_model(
+dicee/static_funcs.py:79: in select_model
+    return intialize_model(args, dataset) if "pykeen" in args['model'].lower() else intialize_model(args)
+dicee/static_funcs.py:464: in intialize_model
+    model = get_pykeen_model(model_name, args, dataset)
+dicee/static_funcs.py:428: in get_pykeen_model
+    model = MySLCWALitModule(
+dicee/models/pykeen_SLCWALitModule.py:10: in __init__
+    super().__init__(**kwargs)
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pykeen/contrib/lightning.py:197: in __init__
+    super().__init__(**kwargs)
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pykeen/contrib/lightning.py:112: in __init__
+    self.model = model_resolver.make(model, model_kwargs, triples_factory=self.dataset.training)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <class_resolver.api.ClassResolver object at 0x7fa9d3df4fa0>
+query = 'InductiveNodePieceGNN'
+pos_kwargs = {'embedding_dim': 64, 'loss': 'BCEWithLogitsLoss'}
+kwargs = {'triples_factory': TriplesFactory(num_entities=14, num_relations=55, create_inverse_triples=False, num_triples=1592)}
+cls = <class 'pykeen.models.inductive.inductive_nodepiece_gnn.InductiveNodePieceGNN'>
+
+    def make(
+        self,
+        query: HintOrType[X],
+        pos_kwargs: Optional[Mapping[str, Any]] = None,
+        **kwargs,
+    ) -> X:
+        """Instantiate a class with optional kwargs."""
+        if query is None or isinstance(query, (str, type)):
+            cls: Type[X] = self.lookup(query)
+            try:
+                return cls(**(pos_kwargs or {}), **kwargs)  # type: ignore
+            except TypeError as e:
+                if "required keyword-only argument" in e.args[0]:
+>                   raise KeywordArgumentError(cls, e.args[0]) from None
+E                   class_resolver.api.KeywordArgumentError: InductiveNodePieceGNN: __init__() missing 1 required keyword-only argument: 'inference_factory'
+
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/class_resolver/api.py:207: KeywordArgumentError
+----------------------------- Captured stdout call -----------------------------
+Start time:2023-07-05 16:53:12.848516
+*** Read or Load Knowledge Graph  ***
+*** Reading KGs/Nations/test.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0021 seconds | Current Memory Usage  2683.8 in MB
+*** Reading KGs/Nations/train.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0017 seconds | Current Memory Usage  2683.8 in MB
+Unrecognized data KGs/Nations/literals.txt
+*** Reading KGs/Nations/valid.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0011 seconds | Current Memory Usage  2683.8 in MB
+
+Concatenating data to obtain index...
+Done !
+
+Creating a mapping from entities to integer indexes...
+Done !
+
+Done ! 0.002 seconds
+
+Done !
+
+Done !
+
+Took 0.0046 seconds | Current Memory Usage  2683.8 in MB
+Data Type conversion...
+Submit er-vocab, re-vocab, and ee-vocab via  ProcessPoolExecutor...
+Preprocessing took: 0.085 seconds
+
+------------------- Description of Dataset KGs/Nations -------------------
+Number of entities:14
+Number of relations:55
+Number of triples on train set:1592
+Number of triples on valid set:199
+Number of triples on test set:201
+Entity Index:0.00000 in GB
+Relation Index:0.00000 in GB
+Train set :0.00000 in GB
+
+# of CPUs:64 | # of GPUs:1 | # of CPUs for dataloader:1
+NVIDIA GeForce RTX 3090
+------------------- Train -------------------
+Initializing Pytorch-lightning Trainer	Took 0.0037 seconds | Current Memory Usage  2683.9 in MB
+Initializing Model...	Initializing the selected model... True
+=============================== warnings summary ===============================
+../../../../../../../../../../upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/torch/utils/tensorboard/__init__.py:4
+  /upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/torch/utils/tensorboard/__init__.py:4: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    if not hasattr(tensorboard, "__version__") or LooseVersion(
+
+../../../../../../../../../../upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/torch/utils/tensorboard/__init__.py:6
+  /upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/torch/utils/tensorboard/__init__.py:6: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    ) < LooseVersion("1.15"):
+
+../../../../../../../../../../upb/users/r/renzhong/profiles/unix/cs/.local/lib/python3.9/site-packages/tensorboard/compat/tensorflow_stub/dtypes.py:326
+  /upb/users/r/renzhong/profiles/unix/cs/.local/lib/python3.9/site-packages/tensorboard/compat/tensorflow_stub/dtypes.py:326: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)
+    np.bool8: (False, True),
+
+tests/test_regression_pykeen.py::test_model[Pykeen_DistMult]
+  /upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/torch/distributed/_sharded_tensor/__init__.py:8: DeprecationWarning: torch.distributed._sharded_tensor will be deprecated, use torch.distributed._shard.sharded_tensor instead
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_regression_pykeen.py::test_model[Pykeen_InductiveNodePiece]
+FAILED tests/test_regression_pykeen.py::test_model[Pykeen_InductiveNodePieceGNN]
+================== 2 failed, 39 passed, 4 warnings in 43.15s ===================

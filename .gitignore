@@ -24,6 +24,7 @@ benchmark_scripts/*
 !benchmark_scripts/performance_comparision.sh
 !benchmark_scripts/utils.py
 !benchmark_scripts/read_configuration.py
+!benchmark_scripts/test_results/
 
 
 

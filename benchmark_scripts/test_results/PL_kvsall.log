@@ -1,0 +1,703 @@
+============================= test session starts ==============================
+platform linux -- Python 3.9.12, pytest-6.2.5, py-1.11.0, pluggy-1.0.0 -- /upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/bin/python
+cachedir: .pytest_cache
+rootdir: /local/upb/users/r/renzhong/profiles/unix/cs/Dicee/dice-embeddings
+plugins: anyio-3.6.2
+collecting ... collected 41 items
+
+tests/test_regression_pykeen.py::test_model[Pykeen_DistMult] PASSED      [  2%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TuckER] PASSED        [  4%]
+tests/test_regression_pykeen.py::test_model[Pykeen_UM] PASSED            [  7%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TransR] PASSED        [  9%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TransH] PASSED        [ 12%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TransF] PASSED        [ 14%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TransE] PASSED        [ 17%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TransD] PASSED        [ 19%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TorusE] PASSED        [ 21%]
+tests/test_regression_pykeen.py::test_model[Pykeen_SimplE] PASSED        [ 24%]
+tests/test_regression_pykeen.py::test_model[Pykeen_SE] PASSED            [ 26%]
+tests/test_regression_pykeen.py::test_model[Pykeen_RESCAL] PASSED        [ 29%]
+tests/test_regression_pykeen.py::test_model[Pykeen_RotatE] PASSED        [ 31%]
+tests/test_regression_pykeen.py::test_model[Pykeen_QuatE] PASSED         [ 34%]
+tests/test_regression_pykeen.py::test_model[Pykeen_PairRE] PASSED        [ 36%]
+tests/test_regression_pykeen.py::test_model[Pykeen_ProjE] PASSED         [ 39%]
+tests/test_regression_pykeen.py::test_model[Pykeen_NTN] PASSED           [ 41%]
+tests/test_regression_pykeen.py::test_model[Pykeen_NodePiece] PASSED     [ 43%]
+tests/test_regression_pykeen.py::test_model[Pykeen_MuRE] PASSED          [ 46%]
+tests/test_regression_pykeen.py::test_model[Pykeen_KG2E] PASSED          [ 48%]
+tests/test_regression_pykeen.py::test_model[Pykeen_InductiveNodePiece] FAILED [ 51%]
+tests/test_regression_pykeen.py::test_model[Pykeen_InductiveNodePieceGNN] FAILED [ 53%]
+tests/test_regression_pykeen.py::test_model[Pykeen_HolE] PASSED          [ 56%]
+tests/test_regression_pykeen.py::test_model[Pykeen_FixedModel] PASSED    [ 58%]
+tests/test_regression_pykeen.py::test_model[Pykeen_ERMLPE] PASSED        [ 60%]
+tests/test_regression_pykeen.py::test_model[Pykeen_DistMA] PASSED        [ 63%]
+tests/test_regression_pykeen.py::test_model[Pykeen_CrossE] PASSED        [ 65%]
+tests/test_regression_pykeen.py::test_model[Pykeen_CooccurrenceFilteredModel] PASSED [ 68%]
+tests/test_regression_pykeen.py::test_model[Pykeen_ConvKB] PASSED        [ 70%]
+tests/test_regression_pykeen.py::test_model[Pykeen_ConvE] PASSED         [ 73%]
+tests/test_regression_pykeen.py::test_model[Pykeen_ComplExLiteral] FAILED [ 75%]
+tests/test_regression_pykeen.py::test_model[Pykeen_ComplEx] PASSED       [ 78%]
+tests/test_regression_pykeen.py::test_model[Pykeen_CompGCN] PASSED       [ 80%]
+tests/test_regression_pykeen.py::test_model[Pykeen_CP] PASSED            [ 82%]
+tests/test_regression_pykeen.py::test_model[Pykeen_BoxE] PASSED          [ 85%]
+tests/test_regression_pykeen.py::test_model[Pykeen_AutoSF] PASSED        [ 87%]
+tests/test_regression_pykeen.py::test_model[Pykeen_DistMultLiteral] FAILED [ 90%]
+tests/test_regression_pykeen.py::test_pykeenInteraction[Pykeen_TripleREInteraction] PASSED [ 92%]
+tests/test_regression_pykeen.py::test_pykeenInteraction[Pykeen_TransformerInteraction] PASSED [ 95%]
+tests/test_regression_pykeen.py::test_pykeenInteraction[Pykeen_MultiLinearTuckerInteraction] PASSED [ 97%]
+tests/test_regression_pykeen.py::test_pykeenInteraction[Pykeen_LineaREInteraction] PASSED [100%]
+
+=================================== FAILURES ===================================
+____________________ test_model[Pykeen_InductiveNodePiece] _____________________
+
+model_name = 'Pykeen_InductiveNodePiece'
+
+    @pytest.mark.filterwarnings("ignore::UserWarning")
+    @pytest.mark.parametrize(
+        "model_name",
+        [
+            "Pykeen_DistMult",
+            "Pykeen_TuckER",
+            "Pykeen_UM",
+            "Pykeen_TransR",
+            "Pykeen_TransH",
+            "Pykeen_TransF",
+            "Pykeen_TransE",
+            "Pykeen_TransD",
+            "Pykeen_TorusE",
+            "Pykeen_SimplE",
+            "Pykeen_SE",
+            "Pykeen_RESCAL",
+            "Pykeen_RotatE",
+            "Pykeen_QuatE",
+            "Pykeen_PairRE",
+            "Pykeen_ProjE",
+            "Pykeen_NTN",
+            "Pykeen_NodePiece",
+            "Pykeen_MuRE",
+            "Pykeen_KG2E",
+            "Pykeen_InductiveNodePiece",
+            "Pykeen_InductiveNodePieceGNN",
+            "Pykeen_HolE",
+            "Pykeen_FixedModel",
+            "Pykeen_ERMLPE",
+            "Pykeen_DistMA",
+            "Pykeen_CrossE",
+            "Pykeen_CooccurrenceFilteredModel",
+            "Pykeen_ConvKB",  # this one is really slow
+            "Pykeen_ConvE",
+            "Pykeen_ComplExLiteral",
+            "Pykeen_ComplEx",
+            "Pykeen_CompGCN",
+            "Pykeen_CP",
+            "Pykeen_BoxE",
+            "Pykeen_AutoSF",
+            "Pykeen_DistMultLiteral",
+        ],
+    )
+    def test_model(model_name):
+        args = template(model_name)
+        # config = {
+        #     "epoch":args.num_epochs,"lr":args.lr,"embedding_dim":args.embedding_dim
+        # }
+        # dataset = args.path_dataset_folder.split('/')[1]
+        # wandb.setup(wandb.Settings(program="test_pykeen_model.py", program_relpath="test_pykeen_model.py"))
+        # wandb.init(project="dice_demo",config=config,name=f'{args.model}-{dataset}')
+>       Execute(args).start()
+
+tests/test_regression_pykeen.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+dicee/executer.py:212: in start
+    self.trained_model, form_of_labelling = self.trainer.start(dataset=self.dataset)
+dicee/trainer/dice_trainer.py:238: in start
+    model, form_of_labelling = self.initialize_or_load_model(dataset)
+dicee/static_funcs.py:34: in timeit_wrapper
+    result = func(*args, **kwargs)
+dicee/trainer/dice_trainer.py:185: in initialize_or_load_model
+    model, form_of_labelling = select_model(
+dicee/static_funcs.py:79: in select_model
+    return intialize_model(args, dataset) if "pykeen" in args['model'].lower() else intialize_model(args)
+dicee/static_funcs.py:464: in intialize_model
+    model = get_pykeen_model(model_name, args, dataset)
+dicee/static_funcs.py:428: in get_pykeen_model
+    model = MySLCWALitModule(
+dicee/models/pykeen_SLCWALitModule.py:10: in __init__
+    super().__init__(**kwargs)
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pykeen/contrib/lightning.py:197: in __init__
+    super().__init__(**kwargs)
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pykeen/contrib/lightning.py:112: in __init__
+    self.model = model_resolver.make(model, model_kwargs, triples_factory=self.dataset.training)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <class_resolver.api.ClassResolver object at 0x7f4f7a267fa0>
+query = 'InductiveNodePiece'
+pos_kwargs = {'embedding_dim': 64, 'loss': 'BCEWithLogitsLoss'}
+kwargs = {'triples_factory': TriplesFactory(num_entities=14, num_relations=110, create_inverse_triples=False, num_triples=3184)}
+cls = <class 'pykeen.models.inductive.inductive_nodepiece.InductiveNodePiece'>
+
+    def make(
+        self,
+        query: HintOrType[X],
+        pos_kwargs: Optional[Mapping[str, Any]] = None,
+        **kwargs,
+    ) -> X:
+        """Instantiate a class with optional kwargs."""
+        if query is None or isinstance(query, (str, type)):
+            cls: Type[X] = self.lookup(query)
+            try:
+                return cls(**(pos_kwargs or {}), **kwargs)  # type: ignore
+            except TypeError as e:
+                if "required keyword-only argument" in e.args[0]:
+>                   raise KeywordArgumentError(cls, e.args[0]) from None
+E                   class_resolver.api.KeywordArgumentError: InductiveNodePiece: __init__() missing 1 required keyword-only argument: 'inference_factory'
+
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/class_resolver/api.py:207: KeywordArgumentError
+----------------------------- Captured stdout call -----------------------------
+Start time:2023-07-05 19:24:18.204045
+*** Read or Load Knowledge Graph  ***
+*** Reading KGs/Nations/test.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0015 seconds | Current Memory Usage  2652.1 in MB
+*** Reading KGs/Nations/train.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0018 seconds | Current Memory Usage  2652.1 in MB
+Unrecognized data KGs/Nations/literals.txt
+*** Reading KGs/Nations/valid.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0012 seconds | Current Memory Usage  2652.1 in MB
+[3.1 / 14] Add reciprocal triples to train, validation, and test sets, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
+Done !
+
+
+Concatenating data to obtain index...
+Done !
+
+Creating a mapping from entities to integer indexes...
+Done !
+
+Done ! 0.003 seconds
+
+Done !
+
+Done !
+
+Took 0.0107 seconds | Current Memory Usage  2652.1 in MB
+Data Type conversion...
+Submit er-vocab, re-vocab, and ee-vocab via  ProcessPoolExecutor...
+Preprocessing took: 0.087 seconds
+
+------------------- Description of Dataset KGs/Nations -------------------
+Number of entities:14
+Number of relations:110
+Number of triples on train set:3184
+Number of triples on valid set:398
+Number of triples on test set:402
+Entity Index:0.00000 in GB
+Relation Index:0.00000 in GB
+Train set :0.00001 in GB
+
+# of CPUs:64 | # of GPUs:1 | # of CPUs for dataloader:1
+NVIDIA GeForce RTX 3090
+------------------- Train -------------------
+Initializing Pytorch-lightning Trainer	Took 0.0031 seconds | Current Memory Usage  2652.1 in MB
+Initializing Model...	Initializing the selected model... True
+___________________ test_model[Pykeen_InductiveNodePieceGNN] ___________________
+
+model_name = 'Pykeen_InductiveNodePieceGNN'
+
+    @pytest.mark.filterwarnings("ignore::UserWarning")
+    @pytest.mark.parametrize(
+        "model_name",
+        [
+            "Pykeen_DistMult",
+            "Pykeen_TuckER",
+            "Pykeen_UM",
+            "Pykeen_TransR",
+            "Pykeen_TransH",
+            "Pykeen_TransF",
+            "Pykeen_TransE",
+            "Pykeen_TransD",
+            "Pykeen_TorusE",
+            "Pykeen_SimplE",
+            "Pykeen_SE",
+            "Pykeen_RESCAL",
+            "Pykeen_RotatE",
+            "Pykeen_QuatE",
+            "Pykeen_PairRE",
+            "Pykeen_ProjE",
+            "Pykeen_NTN",
+            "Pykeen_NodePiece",
+            "Pykeen_MuRE",
+            "Pykeen_KG2E",
+            "Pykeen_InductiveNodePiece",
+            "Pykeen_InductiveNodePieceGNN",
+            "Pykeen_HolE",
+            "Pykeen_FixedModel",
+            "Pykeen_ERMLPE",
+            "Pykeen_DistMA",
+            "Pykeen_CrossE",
+            "Pykeen_CooccurrenceFilteredModel",
+            "Pykeen_ConvKB",  # this one is really slow
+            "Pykeen_ConvE",
+            "Pykeen_ComplExLiteral",
+            "Pykeen_ComplEx",
+            "Pykeen_CompGCN",
+            "Pykeen_CP",
+            "Pykeen_BoxE",
+            "Pykeen_AutoSF",
+            "Pykeen_DistMultLiteral",
+        ],
+    )
+    def test_model(model_name):
+        args = template(model_name)
+        # config = {
+        #     "epoch":args.num_epochs,"lr":args.lr,"embedding_dim":args.embedding_dim
+        # }
+        # dataset = args.path_dataset_folder.split('/')[1]
+        # wandb.setup(wandb.Settings(program="test_pykeen_model.py", program_relpath="test_pykeen_model.py"))
+        # wandb.init(project="dice_demo",config=config,name=f'{args.model}-{dataset}')
+>       Execute(args).start()
+
+tests/test_regression_pykeen.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+dicee/executer.py:212: in start
+    self.trained_model, form_of_labelling = self.trainer.start(dataset=self.dataset)
+dicee/trainer/dice_trainer.py:238: in start
+    model, form_of_labelling = self.initialize_or_load_model(dataset)
+dicee/static_funcs.py:34: in timeit_wrapper
+    result = func(*args, **kwargs)
+dicee/trainer/dice_trainer.py:185: in initialize_or_load_model
+    model, form_of_labelling = select_model(
+dicee/static_funcs.py:79: in select_model
+    return intialize_model(args, dataset) if "pykeen" in args['model'].lower() else intialize_model(args)
+dicee/static_funcs.py:464: in intialize_model
+    model = get_pykeen_model(model_name, args, dataset)
+dicee/static_funcs.py:428: in get_pykeen_model
+    model = MySLCWALitModule(
+dicee/models/pykeen_SLCWALitModule.py:10: in __init__
+    super().__init__(**kwargs)
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pykeen/contrib/lightning.py:197: in __init__
+    super().__init__(**kwargs)
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pykeen/contrib/lightning.py:112: in __init__
+    self.model = model_resolver.make(model, model_kwargs, triples_factory=self.dataset.training)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <class_resolver.api.ClassResolver object at 0x7f4f7a267fa0>
+query = 'InductiveNodePieceGNN'
+pos_kwargs = {'embedding_dim': 64, 'loss': 'BCEWithLogitsLoss'}
+kwargs = {'triples_factory': TriplesFactory(num_entities=14, num_relations=110, create_inverse_triples=False, num_triples=3184)}
+cls = <class 'pykeen.models.inductive.inductive_nodepiece_gnn.InductiveNodePieceGNN'>
+
+    def make(
+        self,
+        query: HintOrType[X],
+        pos_kwargs: Optional[Mapping[str, Any]] = None,
+        **kwargs,
+    ) -> X:
+        """Instantiate a class with optional kwargs."""
+        if query is None or isinstance(query, (str, type)):
+            cls: Type[X] = self.lookup(query)
+            try:
+                return cls(**(pos_kwargs or {}), **kwargs)  # type: ignore
+            except TypeError as e:
+                if "required keyword-only argument" in e.args[0]:
+>                   raise KeywordArgumentError(cls, e.args[0]) from None
+E                   class_resolver.api.KeywordArgumentError: InductiveNodePieceGNN: __init__() missing 1 required keyword-only argument: 'inference_factory'
+
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/class_resolver/api.py:207: KeywordArgumentError
+----------------------------- Captured stdout call -----------------------------
+Start time:2023-07-05 19:24:18.659085
+*** Read or Load Knowledge Graph  ***
+*** Reading KGs/Nations/test.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0023 seconds | Current Memory Usage  2652.1 in MB
+*** Reading KGs/Nations/train.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0017 seconds | Current Memory Usage  2652.1 in MB
+Unrecognized data KGs/Nations/literals.txt
+*** Reading KGs/Nations/valid.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0012 seconds | Current Memory Usage  2652.1 in MB
+[3.1 / 14] Add reciprocal triples to train, validation, and test sets, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
+Done !
+
+
+Concatenating data to obtain index...
+Done !
+
+Creating a mapping from entities to integer indexes...
+Done !
+
+Done ! 0.003 seconds
+
+Done !
+
+Done !
+
+Took 0.0103 seconds | Current Memory Usage  2652.1 in MB
+Data Type conversion...
+Submit er-vocab, re-vocab, and ee-vocab via  ProcessPoolExecutor...
+Preprocessing took: 0.089 seconds
+
+------------------- Description of Dataset KGs/Nations -------------------
+Number of entities:14
+Number of relations:110
+Number of triples on train set:3184
+Number of triples on valid set:398
+Number of triples on test set:402
+Entity Index:0.00000 in GB
+Relation Index:0.00000 in GB
+Train set :0.00001 in GB
+
+# of CPUs:64 | # of GPUs:1 | # of CPUs for dataloader:1
+NVIDIA GeForce RTX 3090
+------------------- Train -------------------
+Initializing Pytorch-lightning Trainer	Took 0.0039 seconds | Current Memory Usage  2652.1 in MB
+Initializing Model...	Initializing the selected model... True
+______________________ test_model[Pykeen_ComplExLiteral] _______________________
+
+model_name = 'Pykeen_ComplExLiteral'
+
+    @pytest.mark.filterwarnings("ignore::UserWarning")
+    @pytest.mark.parametrize(
+        "model_name",
+        [
+            "Pykeen_DistMult",
+            "Pykeen_TuckER",
+            "Pykeen_UM",
+            "Pykeen_TransR",
+            "Pykeen_TransH",
+            "Pykeen_TransF",
+            "Pykeen_TransE",
+            "Pykeen_TransD",
+            "Pykeen_TorusE",
+            "Pykeen_SimplE",
+            "Pykeen_SE",
+            "Pykeen_RESCAL",
+            "Pykeen_RotatE",
+            "Pykeen_QuatE",
+            "Pykeen_PairRE",
+            "Pykeen_ProjE",
+            "Pykeen_NTN",
+            "Pykeen_NodePiece",
+            "Pykeen_MuRE",
+            "Pykeen_KG2E",
+            "Pykeen_InductiveNodePiece",
+            "Pykeen_InductiveNodePieceGNN",
+            "Pykeen_HolE",
+            "Pykeen_FixedModel",
+            "Pykeen_ERMLPE",
+            "Pykeen_DistMA",
+            "Pykeen_CrossE",
+            "Pykeen_CooccurrenceFilteredModel",
+            "Pykeen_ConvKB",  # this one is really slow
+            "Pykeen_ConvE",
+            "Pykeen_ComplExLiteral",
+            "Pykeen_ComplEx",
+            "Pykeen_CompGCN",
+            "Pykeen_CP",
+            "Pykeen_BoxE",
+            "Pykeen_AutoSF",
+            "Pykeen_DistMultLiteral",
+        ],
+    )
+    def test_model(model_name):
+        args = template(model_name)
+        # config = {
+        #     "epoch":args.num_epochs,"lr":args.lr,"embedding_dim":args.embedding_dim
+        # }
+        # dataset = args.path_dataset_folder.split('/')[1]
+        # wandb.setup(wandb.Settings(program="test_pykeen_model.py", program_relpath="test_pykeen_model.py"))
+        # wandb.init(project="dice_demo",config=config,name=f'{args.model}-{dataset}')
+>       Execute(args).start()
+
+tests/test_regression_pykeen.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+dicee/executer.py:215: in start
+    return self.end(start_time, form_of_labelling)
+dicee/executer.py:152: in end
+    self.save_trained_model()
+dicee/static_funcs.py:34: in timeit_wrapper
+    result = func(*args, **kwargs)
+dicee/executer.py:119: in save_trained_model
+    store(trainer=self.trainer,
+dicee/static_funcs.py:284: in store
+    save_embeddings(
+dicee/static_funcs.py:554: in save_embeddings
+    df = pd.DataFrame(embeddings, index=_indexes)
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pandas/core/frame.py:720: in __init__
+    mgr = ndarray_to_mgr(
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pandas/core/internals/construction.py:349: in ndarray_to_mgr
+    _check_values_indices_shape_match(values, index, columns)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+values = array([[-0.17019765+0.03474686j, -0.05690513+0.24116138j,
+         0.02386484+0.03026405j, ...,  0.12687139+0.15440108...8512j, ...,  0.02365358-0.03191612j,
+        -0.02875211+0.04345806j,  0.22197942-0.0721167j ]],
+      dtype=complex64)
+index = Index(['militaryalliance', 'intergovorgs3', 'relbooktranslations',
+       'timesincewar', 'negativebehavior', 'relinte...erse', 'warning_inverse', 'lostterritory_inverse',
+       'severdiplomatic_inverse'],
+      dtype='object', length=110)
+columns = RangeIndex(start=0, stop=64, step=1)
+
+    def _check_values_indices_shape_match(
+        values: np.ndarray, index: Index, columns: Index
+    ) -> None:
+        """
+        Check that the shape implied by our axes matches the actual shape of the
+        data.
+        """
+        if values.shape[1] != len(columns) or values.shape[0] != len(index):
+            # Could let this raise in Block constructor, but we get a more
+            #  helpful exception message this way.
+            if values.shape[0] == 0:
+                raise ValueError("Empty data passed with indices specified.")
+    
+            passed = values.shape
+            implied = (len(index), len(columns))
+>           raise ValueError(f"Shape of passed values is {passed}, indices imply {implied}")
+E           ValueError: Shape of passed values is (55, 64), indices imply (110, 64)
+
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pandas/core/internals/construction.py:420: ValueError
+----------------------------- Captured stdout call -----------------------------
+Start time:2023-07-05 19:24:24.705326
+*** Read or Load Knowledge Graph  ***
+*** Reading KGs/Nations/test.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0015 seconds | Current Memory Usage  3532.9 in MB
+*** Reading KGs/Nations/train.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0017 seconds | Current Memory Usage  3532.9 in MB
+Unrecognized data KGs/Nations/literals.txt
+*** Reading KGs/Nations/valid.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0012 seconds | Current Memory Usage  3532.9 in MB
+[3.1 / 14] Add reciprocal triples to train, validation, and test sets, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
+Done !
+
+
+Concatenating data to obtain index...
+Done !
+
+Creating a mapping from entities to integer indexes...
+Done !
+
+Done ! 0.003 seconds
+
+Done !
+
+Done !
+
+Took 0.0104 seconds | Current Memory Usage  3532.9 in MB
+Data Type conversion...
+Submit er-vocab, re-vocab, and ee-vocab via  ProcessPoolExecutor...
+Preprocessing took: 0.101 seconds
+
+------------------- Description of Dataset KGs/Nations -------------------
+Number of entities:14
+Number of relations:110
+Number of triples on train set:3184
+Number of triples on valid set:398
+Number of triples on test set:402
+Entity Index:0.00000 in GB
+Relation Index:0.00000 in GB
+Train set :0.00001 in GB
+
+# of CPUs:64 | # of GPUs:1 | # of CPUs for dataloader:1
+NVIDIA GeForce RTX 3090
+------------------- Train -------------------
+Initializing Pytorch-lightning Trainer	Took 0.0052 seconds | Current Memory Usage  3533.6 in MB
+Initializing Model...	Initializing the selected model... True
+Took 0.0136 seconds | Current Memory Usage  3534.1 in MB
+Sanity Checking: 0it [00:00, ?it/s]Sanity Checking:   0%|          | 0/1 [00:00<?, ?it/s]Sanity Checking DataLoader 0:   0%|          | 0/1 [00:00<?, ?it/s]Sanity Checking DataLoader 0: 100%|██████████| 1/1 [00:00<00:00, 116.41it/s]                                                                            Training: 0it [00:00, ?it/s]Training:   0%|          | 0/12 [00:00<?, ?it/s]Epoch 0:   0%|          | 0/12 [00:00<?, ?it/s] Epoch 0:   8%|▊         | 1/12 [00:00<00:00, 72.25it/s]Epoch 0:   8%|▊         | 1/12 [00:00<00:00, 71.14it/s, loss=0.862]Epoch 0:  17%|█▋        | 2/12 [00:00<00:00, 73.47it/s, loss=0.862]Epoch 0:  17%|█▋        | 2/12 [00:00<00:00, 72.92it/s, loss=0.804]Epoch 0:  25%|██▌       | 3/12 [00:00<00:00, 74.16it/s, loss=0.804]Epoch 0:  25%|██▌       | 3/12 [00:00<00:00, 73.50it/s, loss=0.781]Epoch 0:  33%|███▎      | 4/12 [00:00<00:00, 74.68it/s, loss=0.781]Epoch 0:  33%|███▎      | 4/12 [00:00<00:00, 74.22it/s, loss=0.778]Epoch 0:  42%|████▏     | 5/12 [00:00<00:00, 75.02it/s, loss=0.778]Epoch 0:  42%|████▏     | 5/12 [00:00<00:00, 74.67it/s, loss=0.774]Epoch 0:  50%|█████     | 6/12 [00:00<00:00, 75.46it/s, loss=0.774]Epoch 0:  50%|█████     | 6/12 [00:00<00:00, 75.26it/s, loss=0.763]Epoch 0:  58%|█████▊    | 7/12 [00:00<00:00, 75.24it/s, loss=0.763]Epoch 0:  58%|█████▊    | 7/12 [00:00<00:00, 75.07it/s, loss=0.771]Epoch 0:  67%|██████▋   | 8/12 [00:00<00:00, 77.01it/s, loss=0.771]Epoch 0:  67%|██████▋   | 8/12 [00:00<00:00, 76.93it/s, loss=0.771]Epoch 0:  67%|██████▋   | 8/12 [00:00<00:00, 76.81it/s, loss=0.772]Epoch 0:  75%|███████▌  | 9/12 [00:00<00:00, 78.43it/s, loss=0.772]Epoch 0:  75%|███████▌  | 9/12 [00:00<00:00, 78.25it/s, loss=0.774]Epoch 0:  83%|████████▎ | 10/12 [00:00<00:00, 79.77it/s, loss=0.774]Epoch 0:  83%|████████▎ | 10/12 [00:00<00:00, 79.57it/s, loss=0.774]Epoch 0:  92%|█████████▏| 11/12 [00:00<00:00, 81.17it/s, loss=0.774]Epoch 0:  92%|█████████▏| 11/12 [00:00<00:00, 81.05it/s, loss=0.773]Epoch 0: 100%|██████████| 12/12 [00:00<00:00, 82.22it/s, loss=0.773]Epoch 0: 100%|██████████| 12/12 [00:00<00:00, 82.10it/s, loss=0.768]Epoch 0: 100%|██████████| 12/12 [00:00<00:00, 81.71it/s, loss=0.768]Epoch 0:   0%|          | 0/12 [00:00<?, ?it/s, loss=0.768]         Epoch 1:   0%|          | 0/12 [00:00<?, ?it/s, loss=0.768]Epoch 1:   8%|▊         | 1/12 [00:00<00:00, 93.94it/s, loss=0.768]Epoch 1:   8%|▊         | 1/12 [00:00<00:00, 91.95it/s, loss=0.765]Epoch 1:  17%|█▋        | 2/12 [00:00<00:00, 94.56it/s, loss=0.765]Epoch 1:  17%|█▋        | 2/12 [00:00<00:00, 93.10it/s, loss=0.765]Epoch 1:  25%|██▌       | 3/12 [00:00<00:00, 94.48it/s, loss=0.765]Epoch 1:  25%|██▌       | 3/12 [00:00<00:00, 93.86it/s, loss=0.766]Epoch 1:  33%|███▎      | 4/12 [00:00<00:00, 94.32it/s, loss=0.766]Epoch 1:  33%|███▎      | 4/12 [00:00<00:00, 93.85it/s, loss=0.763]Epoch 1:  42%|████▏     | 5/12 [00:00<00:00, 94.81it/s, loss=0.763]Epoch 1:  42%|████▏     | 5/12 [00:00<00:00, 94.44it/s, loss=0.762]Epoch 1:  50%|█████     | 6/12 [00:00<00:00, 94.55it/s, loss=0.762]Epoch 1:  50%|█████     | 6/12 [00:00<00:00, 94.08it/s, loss=0.76] Epoch 1:  58%|█████▊    | 7/12 [00:00<00:00, 94.43it/s, loss=0.76]Epoch 1:  58%|█████▊    | 7/12 [00:00<00:00, 93.99it/s, loss=0.76]Epoch 1:  67%|██████▋   | 8/12 [00:00<00:00, 94.48it/s, loss=0.76]Epoch 1:  67%|██████▋   | 8/12 [00:00<00:00, 94.25it/s, loss=0.759]Epoch 1:  75%|███████▌  | 9/12 [00:00<00:00, 94.37it/s, loss=0.759]Epoch 1:  75%|███████▌  | 9/12 [00:00<00:00, 94.17it/s, loss=0.753]Epoch 1:  83%|████████▎ | 10/12 [00:00<00:00, 94.47it/s, loss=0.753]Epoch 1:  83%|████████▎ | 10/12 [00:00<00:00, 94.37it/s, loss=0.753]Epoch 1:  83%|████████▎ | 10/12 [00:00<00:00, 94.23it/s, loss=0.748]Epoch 1:  92%|█████████▏| 11/12 [00:00<00:00, 94.24it/s, loss=0.748]Epoch 1:  92%|█████████▏| 11/12 [00:00<00:00, 94.07it/s, loss=0.749]Epoch 1: 100%|██████████| 12/12 [00:00<00:00, 94.14it/s, loss=0.749]Epoch 1: 100%|██████████| 12/12 [00:00<00:00, 93.91it/s, loss=0.747]Epoch 1: 100%|██████████| 12/12 [00:00<00:00, 93.43it/s, loss=0.747]Epoch 1:   0%|          | 0/12 [00:00<?, ?it/s, loss=0.747]         Epoch 2:   0%|          | 0/12 [00:00<?, ?it/s, loss=0.747]Epoch 2:   8%|▊         | 1/12 [00:00<00:00, 95.00it/s, loss=0.747]Epoch 2:   8%|▊         | 1/12 [00:00<00:00, 91.95it/s, loss=0.744]Epoch 2:  17%|█▋        | 2/12 [00:00<00:00, 94.07it/s, loss=0.744]Epoch 2:  17%|█▋        | 2/12 [00:00<00:00, 92.70it/s, loss=0.745]Epoch 2:  25%|██▌       | 3/12 [00:00<00:00, 95.04it/s, loss=0.745]Epoch 2:  25%|██▌       | 3/12 [00:00<00:00, 94.44it/s, loss=0.743]Epoch 2:  33%|███▎      | 4/12 [00:00<00:00, 95.63it/s, loss=0.743]Epoch 2:  33%|███▎      | 4/12 [00:00<00:00, 95.17it/s, loss=0.74] Epoch 2:  42%|████▏     | 5/12 [00:00<00:00, 95.37it/s, loss=0.74]Epoch 2:  42%|████▏     | 5/12 [00:00<00:00, 94.78it/s, loss=0.735]Epoch 2:  50%|█████     | 6/12 [00:00<00:00, 95.35it/s, loss=0.735]Epoch 2:  50%|█████     | 6/12 [00:00<00:00, 95.04it/s, loss=0.733]Epoch 2:  58%|█████▊    | 7/12 [00:00<00:00, 95.03it/s, loss=0.733]Epoch 2:  58%|█████▊    | 7/12 [00:00<00:00, 94.77it/s, loss=0.732]Epoch 2:  67%|██████▋   | 8/12 [00:00<00:00, 95.33it/s, loss=0.732]Epoch 2:  67%|██████▋   | 8/12 [00:00<00:00, 95.10it/s, loss=0.733]Epoch 2:  75%|███████▌  | 9/12 [00:00<00:00, 95.02it/s, loss=0.733]Epoch 2:  75%|███████▌  | 9/12 [00:00<00:00, 94.82it/s, loss=0.733]Epoch 2:  83%|████████▎ | 10/12 [00:00<00:00, 93.08it/s, loss=0.733]Epoch 2:  83%|████████▎ | 10/12 [00:00<00:00, 92.99it/s, loss=0.733]Epoch 2:  83%|████████▎ | 10/12 [00:00<00:00, 92.85it/s, loss=0.733]Epoch 2:  92%|█████████▏| 11/12 [00:00<00:00, 91.29it/s, loss=0.733]Epoch 2:  92%|█████████▏| 11/12 [00:00<00:00, 91.03it/s, loss=0.732]Epoch 2: 100%|██████████| 12/12 [00:00<00:00, 90.66it/s, loss=0.732]Epoch 2: 100%|██████████| 12/12 [00:00<00:00, 90.52it/s, loss=0.732]Epoch 2: 100%|██████████| 12/12 [00:00<00:00, 90.02it/s, loss=0.732]Epoch 2: 100%|██████████| 12/12 [00:00<00:00, 89.82it/s, loss=0.732]
+*** Save Trained Model ***
+------------------------------ Captured log call -------------------------------
+WARNING  pykeen.models.base:base.py:99 No random seed is specified. This may lead to non-reproducible results.
+WARNING  pykeen.nn.combination:combination.py:58 No symbolic computation of output shape.
+______________________ test_model[Pykeen_DistMultLiteral] ______________________
+
+model_name = 'Pykeen_DistMultLiteral'
+
+    @pytest.mark.filterwarnings("ignore::UserWarning")
+    @pytest.mark.parametrize(
+        "model_name",
+        [
+            "Pykeen_DistMult",
+            "Pykeen_TuckER",
+            "Pykeen_UM",
+            "Pykeen_TransR",
+            "Pykeen_TransH",
+            "Pykeen_TransF",
+            "Pykeen_TransE",
+            "Pykeen_TransD",
+            "Pykeen_TorusE",
+            "Pykeen_SimplE",
+            "Pykeen_SE",
+            "Pykeen_RESCAL",
+            "Pykeen_RotatE",
+            "Pykeen_QuatE",
+            "Pykeen_PairRE",
+            "Pykeen_ProjE",
+            "Pykeen_NTN",
+            "Pykeen_NodePiece",
+            "Pykeen_MuRE",
+            "Pykeen_KG2E",
+            "Pykeen_InductiveNodePiece",
+            "Pykeen_InductiveNodePieceGNN",
+            "Pykeen_HolE",
+            "Pykeen_FixedModel",
+            "Pykeen_ERMLPE",
+            "Pykeen_DistMA",
+            "Pykeen_CrossE",
+            "Pykeen_CooccurrenceFilteredModel",
+            "Pykeen_ConvKB",  # this one is really slow
+            "Pykeen_ConvE",
+            "Pykeen_ComplExLiteral",
+            "Pykeen_ComplEx",
+            "Pykeen_CompGCN",
+            "Pykeen_CP",
+            "Pykeen_BoxE",
+            "Pykeen_AutoSF",
+            "Pykeen_DistMultLiteral",
+        ],
+    )
+    def test_model(model_name):
+        args = template(model_name)
+        # config = {
+        #     "epoch":args.num_epochs,"lr":args.lr,"embedding_dim":args.embedding_dim
+        # }
+        # dataset = args.path_dataset_folder.split('/')[1]
+        # wandb.setup(wandb.Settings(program="test_pykeen_model.py", program_relpath="test_pykeen_model.py"))
+        # wandb.init(project="dice_demo",config=config,name=f'{args.model}-{dataset}')
+>       Execute(args).start()
+
+tests/test_regression_pykeen.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+dicee/executer.py:215: in start
+    return self.end(start_time, form_of_labelling)
+dicee/executer.py:152: in end
+    self.save_trained_model()
+dicee/static_funcs.py:34: in timeit_wrapper
+    result = func(*args, **kwargs)
+dicee/executer.py:119: in save_trained_model
+    store(trainer=self.trainer,
+dicee/static_funcs.py:284: in store
+    save_embeddings(
+dicee/static_funcs.py:554: in save_embeddings
+    df = pd.DataFrame(embeddings, index=_indexes)
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pandas/core/frame.py:720: in __init__
+    mgr = ndarray_to_mgr(
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pandas/core/internals/construction.py:349: in ndarray_to_mgr
+    _check_values_indices_shape_match(values, index, columns)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+values = array([[ 0.02159202,  0.07176002, -0.01237281, ..., -0.07222409,
+         0.02622431,  0.03655334],
+       [-0.1672983...6],
+       [-0.13922055,  0.10106196, -0.02928804, ..., -0.02238128,
+         0.17567295, -0.02879206]], dtype=float32)
+index = Index(['militaryalliance', 'intergovorgs3', 'relbooktranslations',
+       'timesincewar', 'negativebehavior', 'relinte...erse', 'warning_inverse', 'lostterritory_inverse',
+       'severdiplomatic_inverse'],
+      dtype='object', length=110)
+columns = RangeIndex(start=0, stop=64, step=1)
+
+    def _check_values_indices_shape_match(
+        values: np.ndarray, index: Index, columns: Index
+    ) -> None:
+        """
+        Check that the shape implied by our axes matches the actual shape of the
+        data.
+        """
+        if values.shape[1] != len(columns) or values.shape[0] != len(index):
+            # Could let this raise in Block constructor, but we get a more
+            #  helpful exception message this way.
+            if values.shape[0] == 0:
+                raise ValueError("Empty data passed with indices specified.")
+    
+            passed = values.shape
+            implied = (len(index), len(columns))
+>           raise ValueError(f"Shape of passed values is {passed}, indices imply {implied}")
+E           ValueError: Shape of passed values is (55, 64), indices imply (110, 64)
+
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pandas/core/internals/construction.py:420: ValueError
+----------------------------- Captured stdout call -----------------------------
+Start time:2023-07-05 19:24:31.608278
+*** Read or Load Knowledge Graph  ***
+*** Reading KGs/Nations/test.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0015 seconds | Current Memory Usage  3584.2 in MB
+*** Reading KGs/Nations/train.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0017 seconds | Current Memory Usage  3584.2 in MB
+Unrecognized data KGs/Nations/literals.txt
+*** Reading KGs/Nations/valid.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0013 seconds | Current Memory Usage  3584.2 in MB
+[3.1 / 14] Add reciprocal triples to train, validation, and test sets, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
+Done !
+
+
+Concatenating data to obtain index...
+Done !
+
+Creating a mapping from entities to integer indexes...
+Done !
+
+Done ! 0.003 seconds
+
+Done !
+
+Done !
+
+Took 0.0107 seconds | Current Memory Usage  3584.2 in MB
+Data Type conversion...
+Submit er-vocab, re-vocab, and ee-vocab via  ProcessPoolExecutor...
+Preprocessing took: 0.100 seconds
+
+------------------- Description of Dataset KGs/Nations -------------------
+Number of entities:14
+Number of relations:110
+Number of triples on train set:3184
+Number of triples on valid set:398
+Number of triples on test set:402
+Entity Index:0.00000 in GB
+Relation Index:0.00000 in GB
+Train set :0.00001 in GB
+
+# of CPUs:64 | # of GPUs:1 | # of CPUs for dataloader:1
+NVIDIA GeForce RTX 3090
+------------------- Train -------------------
+Initializing Pytorch-lightning Trainer	Took 0.0030 seconds | Current Memory Usage  3584.2 in MB
+Initializing Model...	Initializing the selected model... True
+Took 0.0135 seconds | Current Memory Usage  3584.2 in MB
+Sanity Checking: 0it [00:00, ?it/s]Sanity Checking:   0%|          | 0/1 [00:00<?, ?it/s]Sanity Checking DataLoader 0:   0%|          | 0/1 [00:00<?, ?it/s]Sanity Checking DataLoader 0: 100%|██████████| 1/1 [00:00<00:00, 186.87it/s]                                                                            Training: 0it [00:00, ?it/s]Training:   0%|          | 0/12 [00:00<?, ?it/s]Epoch 0:   0%|          | 0/12 [00:00<?, ?it/s] Epoch 0:   8%|▊         | 1/12 [00:00<00:00, 105.27it/s]Epoch 0:   8%|▊         | 1/12 [00:00<00:00, 103.17it/s, loss=1.63e+14]Epoch 0:  17%|█▋        | 2/12 [00:00<00:00, 117.75it/s, loss=1.63e+14]Epoch 0:  17%|█▋        | 2/12 [00:00<00:00, 116.46it/s, loss=1.22e+14]Epoch 0:  25%|██▌       | 3/12 [00:00<00:00, 123.92it/s, loss=1.22e+14]Epoch 0:  25%|██▌       | 3/12 [00:00<00:00, 122.50it/s, loss=1.2e+14] Epoch 0:  33%|███▎      | 4/12 [00:00<00:00, 126.33it/s, loss=1.2e+14]Epoch 0:  33%|███▎      | 4/12 [00:00<00:00, 125.58it/s, loss=1.19e+14]Epoch 0:  42%|████▏     | 5/12 [00:00<00:00, 127.30it/s, loss=1.19e+14]Epoch 0:  42%|████▏     | 5/12 [00:00<00:00, 126.40it/s, loss=1.1e+14] Epoch 0:  50%|█████     | 6/12 [00:00<00:00, 129.27it/s, loss=1.1e+14]Epoch 0:  50%|█████     | 6/12 [00:00<00:00, 128.53it/s, loss=1.22e+14]Epoch 0:  58%|█████▊    | 7/12 [00:00<00:00, 131.56it/s, loss=1.22e+14]Epoch 0:  58%|█████▊    | 7/12 [00:00<00:00, 131.08it/s, loss=1.2e+14] Epoch 0:  67%|██████▋   | 8/12 [00:00<00:00, 132.22it/s, loss=1.2e+14]Epoch 0:  67%|██████▋   | 8/12 [00:00<00:00, 131.70it/s, loss=1.16e+14]Epoch 0:  75%|███████▌  | 9/12 [00:00<00:00, 133.25it/s, loss=1.16e+14]Epoch 0:  75%|███████▌  | 9/12 [00:00<00:00, 132.80it/s, loss=1.08e+14]Epoch 0:  83%|████████▎ | 10/12 [00:00<00:00, 134.04it/s, loss=1.08e+14]Epoch 0:  83%|████████▎ | 10/12 [00:00<00:00, 133.66it/s, loss=1.03e+14]Epoch 0:  92%|█████████▏| 11/12 [00:00<00:00, 135.30it/s, loss=1.03e+14]Epoch 0:  92%|█████████▏| 11/12 [00:00<00:00, 134.98it/s, loss=9.75e+13]Epoch 0: 100%|██████████| 12/12 [00:00<00:00, 136.87it/s, loss=9.75e+13]Epoch 0: 100%|██████████| 12/12 [00:00<00:00, 136.57it/s, loss=9.86e+13]Epoch 0: 100%|██████████| 12/12 [00:00<00:00, 135.46it/s, loss=9.86e+13]Epoch 0:   0%|          | 0/12 [00:00<?, ?it/s, loss=9.86e+13]          Epoch 1:   0%|          | 0/12 [00:00<?, ?it/s, loss=9.86e+13]Epoch 1:   8%|▊         | 1/12 [00:00<00:00, 156.63it/s, loss=9.86e+13]Epoch 1:   8%|▊         | 1/12 [00:00<00:00, 151.13it/s, loss=1.02e+14]Epoch 1:  17%|█▋        | 2/12 [00:00<00:00, 155.32it/s, loss=1.02e+14]Epoch 1:  17%|█▋        | 2/12 [00:00<00:00, 152.53it/s, loss=1.05e+14]Epoch 1:  25%|██▌       | 3/12 [00:00<00:00, 154.09it/s, loss=1.05e+14]Epoch 1:  25%|██▌       | 3/12 [00:00<00:00, 152.29it/s, loss=1.05e+14]Epoch 1:  33%|███▎      | 4/12 [00:00<00:00, 155.12it/s, loss=1.05e+14]Epoch 1:  33%|███▎      | 4/12 [00:00<00:00, 153.98it/s, loss=1e+14]   Epoch 1:  42%|████▏     | 5/12 [00:00<00:00, 155.55it/s, loss=1e+14]Epoch 1:  42%|████▏     | 5/12 [00:00<00:00, 154.45it/s, loss=9.66e+13]Epoch 1:  50%|█████     | 6/12 [00:00<00:00, 155.34it/s, loss=9.66e+13]Epoch 1:  50%|█████     | 6/12 [00:00<00:00, 154.47it/s, loss=9.51e+13]Epoch 1:  58%|█████▊    | 7/12 [00:00<00:00, 155.47it/s, loss=9.51e+13]Epoch 1:  58%|█████▊    | 7/12 [00:00<00:00, 154.67it/s, loss=9.26e+13]Epoch 1:  67%|██████▋   | 8/12 [00:00<00:00, 155.13it/s, loss=9.26e+13]Epoch 1:  67%|██████▋   | 8/12 [00:00<00:00, 154.51it/s, loss=9.04e+13]Epoch 1:  75%|███████▌  | 9/12 [00:00<00:00, 155.68it/s, loss=9.04e+13]Epoch 1:  75%|███████▌  | 9/12 [00:00<00:00, 155.19it/s, loss=8.39e+13]Epoch 1:  83%|████████▎ | 10/12 [00:00<00:00, 156.15it/s, loss=8.39e+13]Epoch 1:  83%|████████▎ | 10/12 [00:00<00:00, 155.70it/s, loss=8.13e+13]Epoch 1:  92%|█████████▏| 11/12 [00:00<00:00, 156.19it/s, loss=8.13e+13]Epoch 1:  92%|█████████▏| 11/12 [00:00<00:00, 155.70it/s, loss=7.83e+13]Epoch 1: 100%|██████████| 12/12 [00:00<00:00, 156.37it/s, loss=7.83e+13]Epoch 1: 100%|██████████| 12/12 [00:00<00:00, 156.00it/s, loss=7.36e+13]Epoch 1: 100%|██████████| 12/12 [00:00<00:00, 154.65it/s, loss=7.36e+13]Epoch 1:   0%|          | 0/12 [00:00<?, ?it/s, loss=7.36e+13]          Epoch 2:   0%|          | 0/12 [00:00<?, ?it/s, loss=7.36e+13]Epoch 2:   8%|▊         | 1/12 [00:00<00:00, 159.92it/s, loss=7.36e+13]Epoch 2:   8%|▊         | 1/12 [00:00<00:00, 154.45it/s, loss=7.18e+13]Epoch 2:  17%|█▋        | 2/12 [00:00<00:00, 156.83it/s, loss=7.18e+13]Epoch 2:  17%|█▋        | 2/12 [00:00<00:00, 154.34it/s, loss=6.58e+13]Epoch 2:  25%|██▌       | 3/12 [00:00<00:00, 156.89it/s, loss=6.58e+13]Epoch 2:  25%|██▌       | 3/12 [00:00<00:00, 155.09it/s, loss=6.36e+13]Epoch 2:  33%|███▎      | 4/12 [00:00<00:00, 155.88it/s, loss=6.36e+13]Epoch 2:  33%|███▎      | 4/12 [00:00<00:00, 154.62it/s, loss=6.12e+13]Epoch 2:  42%|████▏     | 5/12 [00:00<00:00, 156.30it/s, loss=6.12e+13]Epoch 2:  42%|████▏     | 5/12 [00:00<00:00, 155.40it/s, loss=6.02e+13]Epoch 2:  50%|█████     | 6/12 [00:00<00:00, 155.80it/s, loss=6.02e+13]Epoch 2:  50%|█████     | 6/12 [00:00<00:00, 154.90it/s, loss=5.79e+13]Epoch 2:  58%|█████▊    | 7/12 [00:00<00:00, 155.87it/s, loss=5.79e+13]Epoch 2:  58%|█████▊    | 7/12 [00:00<00:00, 155.23it/s, loss=5.65e+13]Epoch 2:  67%|██████▋   | 8/12 [00:00<00:00, 155.73it/s, loss=5.65e+13]Epoch 2:  67%|██████▋   | 8/12 [00:00<00:00, 155.06it/s, loss=5.13e+13]Epoch 2:  75%|███████▌  | 9/12 [00:00<00:00, 155.40it/s, loss=5.13e+13]Epoch 2:  75%|███████▌  | 9/12 [00:00<00:00, 154.90it/s, loss=4.51e+13]Epoch 2:  83%|████████▎ | 10/12 [00:00<00:00, 155.56it/s, loss=4.51e+13]Epoch 2:  83%|████████▎ | 10/12 [00:00<00:00, 155.02it/s, loss=3.82e+13]Epoch 2:  92%|█████████▏| 11/12 [00:00<00:00, 154.33it/s, loss=3.82e+13]Epoch 2:  92%|█████████▏| 11/12 [00:00<00:00, 153.85it/s, loss=3.41e+13]Epoch 2: 100%|██████████| 12/12 [00:00<00:00, 154.18it/s, loss=3.41e+13]Epoch 2: 100%|██████████| 12/12 [00:00<00:00, 153.82it/s, loss=3.34e+13]Epoch 2: 100%|██████████| 12/12 [00:00<00:00, 152.49it/s, loss=3.34e+13]Epoch 2: 100%|██████████| 12/12 [00:00<00:00, 151.93it/s, loss=3.34e+13]
+*** Save Trained Model ***
+------------------------------ Captured log call -------------------------------
+WARNING  pykeen.models.base:base.py:99 No random seed is specified. This may lead to non-reproducible results.
+WARNING  pykeen.nn.combination:combination.py:58 No symbolic computation of output shape.
+=============================== warnings summary ===============================
+../../../../../../../../../../upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/torch/utils/tensorboard/__init__.py:4
+  /upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/torch/utils/tensorboard/__init__.py:4: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    if not hasattr(tensorboard, "__version__") or LooseVersion(
+
+../../../../../../../../../../upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/torch/utils/tensorboard/__init__.py:6
+  /upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/torch/utils/tensorboard/__init__.py:6: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    ) < LooseVersion("1.15"):
+
+../../../../../../../../../../upb/users/r/renzhong/profiles/unix/cs/.local/lib/python3.9/site-packages/tensorboard/compat/tensorflow_stub/dtypes.py:326
+  /upb/users/r/renzhong/profiles/unix/cs/.local/lib/python3.9/site-packages/tensorboard/compat/tensorflow_stub/dtypes.py:326: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)
+    np.bool8: (False, True),
+
+tests/test_regression_pykeen.py::test_model[Pykeen_DistMult]
+  /upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/torch/distributed/_sharded_tensor/__init__.py:8: DeprecationWarning: torch.distributed._sharded_tensor will be deprecated, use torch.distributed._shard.sharded_tensor instead
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_regression_pykeen.py::test_model[Pykeen_InductiveNodePiece]
+FAILED tests/test_regression_pykeen.py::test_model[Pykeen_InductiveNodePieceGNN]
+FAILED tests/test_regression_pykeen.py::test_model[Pykeen_ComplExLiteral] - V...
+FAILED tests/test_regression_pykeen.py::test_model[Pykeen_DistMultLiteral] - ...
+================== 4 failed, 37 passed, 4 warnings in 38.92s ===================

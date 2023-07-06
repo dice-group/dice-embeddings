@@ -1,0 +1,906 @@
+============================= test session starts ==============================
+platform linux -- Python 3.9.12, pytest-6.2.5, py-1.11.0, pluggy-1.0.0 -- /upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/bin/python
+cachedir: .pytest_cache
+rootdir: /local/upb/users/r/renzhong/profiles/unix/cs/Dicee/dice-embeddings
+plugins: anyio-3.6.2
+collecting ... collected 41 items
+
+tests/test_regression_pykeen.py::test_model[Pykeen_DistMult] PASSED      [  2%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TuckER] PASSED        [  4%]
+tests/test_regression_pykeen.py::test_model[Pykeen_UM] PASSED            [  7%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TransR] PASSED        [  9%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TransH] PASSED        [ 12%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TransF] PASSED        [ 14%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TransE] PASSED        [ 17%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TransD] PASSED        [ 19%]
+tests/test_regression_pykeen.py::test_model[Pykeen_TorusE] PASSED        [ 21%]
+tests/test_regression_pykeen.py::test_model[Pykeen_SimplE] PASSED        [ 24%]
+tests/test_regression_pykeen.py::test_model[Pykeen_SE] PASSED            [ 26%]
+tests/test_regression_pykeen.py::test_model[Pykeen_RESCAL] PASSED        [ 29%]
+tests/test_regression_pykeen.py::test_model[Pykeen_RotatE] PASSED        [ 31%]
+tests/test_regression_pykeen.py::test_model[Pykeen_QuatE] PASSED         [ 34%]
+tests/test_regression_pykeen.py::test_model[Pykeen_PairRE] PASSED        [ 36%]
+tests/test_regression_pykeen.py::test_model[Pykeen_ProjE] PASSED         [ 39%]
+tests/test_regression_pykeen.py::test_model[Pykeen_NTN] PASSED           [ 41%]
+tests/test_regression_pykeen.py::test_model[Pykeen_NodePiece] PASSED     [ 43%]
+tests/test_regression_pykeen.py::test_model[Pykeen_MuRE] PASSED          [ 46%]
+tests/test_regression_pykeen.py::test_model[Pykeen_KG2E] FAILED          [ 48%]
+tests/test_regression_pykeen.py::test_model[Pykeen_InductiveNodePiece] FAILED [ 51%]
+tests/test_regression_pykeen.py::test_model[Pykeen_InductiveNodePieceGNN] FAILED [ 53%]
+tests/test_regression_pykeen.py::test_model[Pykeen_HolE] PASSED          [ 56%]
+tests/test_regression_pykeen.py::test_model[Pykeen_FixedModel] PASSED    [ 58%]
+tests/test_regression_pykeen.py::test_model[Pykeen_ERMLPE] PASSED        [ 60%]
+tests/test_regression_pykeen.py::test_model[Pykeen_DistMA] PASSED        [ 63%]
+tests/test_regression_pykeen.py::test_model[Pykeen_CrossE] PASSED        [ 65%]
+tests/test_regression_pykeen.py::test_model[Pykeen_CooccurrenceFilteredModel] PASSED [ 68%]
+tests/test_regression_pykeen.py::test_model[Pykeen_ConvKB] PASSED        [ 70%]
+tests/test_regression_pykeen.py::test_model[Pykeen_ConvE] PASSED         [ 73%]
+tests/test_regression_pykeen.py::test_model[Pykeen_ComplExLiteral] PASSED [ 75%]
+tests/test_regression_pykeen.py::test_model[Pykeen_ComplEx] PASSED       [ 78%]
+tests/test_regression_pykeen.py::test_model[Pykeen_CompGCN] FAILED       [ 80%]
+tests/test_regression_pykeen.py::test_model[Pykeen_CP] PASSED            [ 82%]
+tests/test_regression_pykeen.py::test_model[Pykeen_BoxE] PASSED          [ 85%]
+tests/test_regression_pykeen.py::test_model[Pykeen_AutoSF] PASSED        [ 87%]
+tests/test_regression_pykeen.py::test_model[Pykeen_DistMultLiteral] PASSED [ 90%]
+tests/test_regression_pykeen.py::test_pykeenInteraction[Pykeen_TripleREInteraction] PASSED [ 92%]
+tests/test_regression_pykeen.py::test_pykeenInteraction[Pykeen_TransformerInteraction] PASSED [ 95%]
+tests/test_regression_pykeen.py::test_pykeenInteraction[Pykeen_MultiLinearTuckerInteraction] PASSED [ 97%]
+tests/test_regression_pykeen.py::test_pykeenInteraction[Pykeen_LineaREInteraction] PASSED [100%]
+
+=================================== FAILURES ===================================
+___________________________ test_model[Pykeen_KG2E] ____________________________
+
+model_name = 'Pykeen_KG2E'
+
+    @pytest.mark.filterwarnings("ignore::UserWarning")
+    @pytest.mark.parametrize(
+        "model_name",
+        [
+            "Pykeen_DistMult",
+            "Pykeen_TuckER",
+            "Pykeen_UM",
+            "Pykeen_TransR",
+            "Pykeen_TransH",
+            "Pykeen_TransF",
+            "Pykeen_TransE",
+            "Pykeen_TransD",
+            "Pykeen_TorusE",
+            "Pykeen_SimplE",
+            "Pykeen_SE",
+            "Pykeen_RESCAL",
+            "Pykeen_RotatE",
+            "Pykeen_QuatE",
+            "Pykeen_PairRE",
+            "Pykeen_ProjE",
+            "Pykeen_NTN",
+            "Pykeen_NodePiece",
+            "Pykeen_MuRE",
+            "Pykeen_KG2E",
+            "Pykeen_InductiveNodePiece",
+            "Pykeen_InductiveNodePieceGNN",
+            "Pykeen_HolE",
+            "Pykeen_FixedModel",
+            "Pykeen_ERMLPE",
+            "Pykeen_DistMA",
+            "Pykeen_CrossE",
+            "Pykeen_CooccurrenceFilteredModel",
+            "Pykeen_ConvKB",  # this one is really slow
+            "Pykeen_ConvE",
+            "Pykeen_ComplExLiteral",
+            "Pykeen_ComplEx",
+            "Pykeen_CompGCN",
+            "Pykeen_CP",
+            "Pykeen_BoxE",
+            "Pykeen_AutoSF",
+            "Pykeen_DistMultLiteral",
+        ],
+    )
+    def test_model(model_name):
+        args = template(model_name)
+        # config = {
+        #     "epoch":args.num_epochs,"lr":args.lr,"embedding_dim":args.embedding_dim
+        # }
+        # dataset = args.path_dataset_folder.split('/')[1]
+        # wandb.setup(wandb.Settings(program="test_pykeen_model.py", program_relpath="test_pykeen_model.py"))
+        # wandb.init(project="dice_demo",config=config,name=f'{args.model}-{dataset}')
+>       Execute(args).start()
+
+tests/test_regression_pykeen.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+dicee/executer.py:212: in start
+    self.trained_model, form_of_labelling = self.trainer.start(dataset=self.dataset)
+dicee/trainer/dice_trainer.py:251: in start
+    self.trainer.fit(model,train_dataloaders=model.train_dataloaders)
+dicee/trainer/torch_trainer.py:144: in fit
+    avg_epoch_loss = self._run_epoch(epoch)
+dicee/trainer/torch_trainer.py:96: in _run_epoch
+    batch_loss = self._run_batch(i, x_batch, y_batch,batch=batch)
+dicee/trainer/torch_trainer.py:69: in _run_batch
+    return self.compute_forward_loss_backward(x_batch,y_batch,batch=batch).item()
+dicee/trainer/torch_trainer.py:188: in compute_forward_loss_backward
+    batch_loss = self.model._step(batch, prefix="train")
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pykeen/contrib/lightning.py:203: in _step
+    loss = SLCWATrainingLoop._process_batch_static(
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pykeen/training/slcwa.py:110: in _process_batch_static
+    positive_scores = model.score_hrt(positive_batch, mode=mode)
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pykeen/models/nbase.py:477: in score_hrt
+    return self.interaction.score_hrt(h=h, r=r, t=t)
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pykeen/nn/modules.py:293: in score_hrt
+    return self.score(h=h, r=r, t=t).unsqueeze(dim=-1)
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pykeen/nn/modules.py:265: in score
+    return self(h=h, r=r, t=t)
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/torch/nn/modules/module.py:1501: in _call_impl
+    return forward_call(*args, **kwargs)
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pykeen/nn/modules.py:412: in forward
+    return self.__class__.func(**self._prepare_for_functional(h=h, r=r, t=t))
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pykeen/nn/functional.py:419: in kg2e_interaction
+    return KG2E_SIMILARITIES[similarity](
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+h = GaussianDistribution(mean=tensor([[0.1262, 0.1087, 0.0809,  ..., 0.0975, 0.1331, 0.0616],
+        [0.0667, 0.1357, 0.1...403, 2.1246, 0.0305],
+        [0.4453, 0.7390, 0.0292,  ..., 0.3153, 0.0299, 0.3451]],
+       grad_fn=<ViewBackward0>))
+r = GaussianDistribution(mean=tensor([[ 0.1757,  0.0230,  0.1636,  ...,  0.1292,  0.0451,  0.0617],
+        [-0.0282,  0.0...013, 0.0920, 0.2149],
+        [0.0966, 0.4182, 1.0934,  ..., 0.2273, 0.1025, 0.0957]],
+       grad_fn=<ViewBackward0>))
+t = GaussianDistribution(mean=tensor([[0.1188, 0.0791, 0.1400,  ..., 0.1339, 0.1122, 0.0971],
+        [0.1188, 0.0791, 0.1...153, 0.0299, 0.3451],
+        [0.0337, 0.7315, 0.0287,  ..., 0.0240, 0.0287, 0.0175]],
+       grad_fn=<ViewBackward0>))
+exact = True
+
+    def kullback_leibler_similarity(
+        h: GaussianDistribution,
+        r: GaussianDistribution,
+        t: GaussianDistribution,
+        exact: bool = True,
+    ) -> torch.FloatTensor:
+        r"""Compute the negative KL divergence.
+    
+        This is done between two Gaussian distributions given by mean `mu_*` and diagonal covariance matrix `sigma_*`.
+    
+        .. math::
+    
+            D((\mu_0, \Sigma_0), (\mu_1, \Sigma_1)) = 0.5 * (
+              tr(\Sigma_1^-1 \Sigma_0)
+              + (\mu_1 - \mu_0) * \Sigma_1^-1 (\mu_1 - \mu_0)
+              - k
+              + ln (det(\Sigma_1) / det(\Sigma_0))
+            )
+    
+        with :math:`\mu_e = \mu_h - \mu_t` and :math:`\Sigma_e = \Sigma_h + \Sigma_t`.
+    
+        .. note ::
+            This methods assumes diagonal covariance matrices :math:`\Sigma`.
+    
+        .. seealso ::
+            https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Kullback%E2%80%93Leibler_divergence
+    
+        :param h: shape: (batch_size, num_heads, 1, 1, d)
+            The head entity Gaussian distribution.
+        :param r: shape: (batch_size, 1, num_relations, 1, d)
+            The relation Gaussian distribution.
+        :param t: shape: (batch_size, 1, 1, num_tails, d)
+            The tail entity Gaussian distribution.
+        :param exact:
+            Whether to return the exact similarity, or leave out constant offsets.
+    
+        :return: torch.Tensor, shape: (s_1, ..., s_k)
+            The similarity.
+        """
+>       assert all((d.diagonal_covariance > 0).all() for d in (h, r, t))
+E       AssertionError
+
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pykeen/nn/sim.py:113: AssertionError
+----------------------------- Captured stdout call -----------------------------
+Start time:2023-07-05 16:49:29.411681
+*** Read or Load Knowledge Graph  ***
+*** Reading KGs/Nations/test.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0014 seconds | Current Memory Usage  617.11 in MB
+*** Reading KGs/Nations/train.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0015 seconds | Current Memory Usage  617.11 in MB
+Unrecognized data KGs/Nations/literals.txt
+*** Reading KGs/Nations/valid.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0012 seconds | Current Memory Usage  617.11 in MB
+
+Concatenating data to obtain index...
+Done !
+
+Creating a mapping from entities to integer indexes...
+Done !
+
+Done ! 0.002 seconds
+
+Done !
+
+Done !
+
+Took 0.0045 seconds | Current Memory Usage  617.11 in MB
+Data Type conversion...
+Submit er-vocab, re-vocab, and ee-vocab via  ProcessPoolExecutor...
+Preprocessing took: 0.032 seconds
+
+------------------- Description of Dataset KGs/Nations -------------------
+Number of entities:14
+Number of relations:55
+Number of triples on train set:1592
+Number of triples on valid set:199
+Number of triples on test set:201
+Entity Index:0.00000 in GB
+Relation Index:0.00000 in GB
+Train set :0.00000 in GB
+
+# of CPUs:64 | # of GPUs:1 | # of CPUs for dataloader:1
+NVIDIA GeForce RTX 3090
+------------------- Train -------------------
+Initializing TorchTrainer CPU Trainer...	Took 0.0006 seconds | Current Memory Usage  617.11 in MB
+Initializing Model...	Initializing the selected model... True
+Took 0.0054 seconds | Current Memory Usage  617.11 in MB
+MySLCWALitModule(
+  (model): KG2E(
+    (loss): BCEWithLogitsLoss()
+    (interaction): KG2EInteraction()
+    (entity_representations): ModuleList(
+      (0-1): 2 x Embedding(
+        (_embeddings): Embedding(14, 64)
+      )
+    )
+    (relation_representations): ModuleList(
+      (0-1): 2 x Embedding(
+        (_embeddings): Embedding(55, 64)
+      )
+    )
+    (weight_regularizers): ModuleList()
+  )
+  (loss): BCEWithLogitsLoss()
+)
+  | Name  | Type              | Params
+--------------------------------------------
+0 | model | KG2E              | 8.8 K 
+1 | loss  | BCEWithLogitsLoss | 0     
+--------------------------------------------
+8.8 K     Trainable params
+0         Non-trainable params
+8.8 K     Total params
+0.035     Total estimated model params size (MB)
+Adam
+
+Training is starting 2023-07-05 16:49:29.452437...
+NumOfDataPoints:12 | NumOfEpochs:3 | LearningRate:0.01 | BatchSize:None | EpochBatchsize:12
+Epoch:1 | Batch:1 | Loss:145.41378784179688 |ForwardBackwardUpdate:0.02secs | Mem. Usage  617.12MB
+Epoch:1 | Batch:2 | Loss:120.6144638062 |ForwardBackwardUpdate:0.00sec | BatchConst.:0.00sec | Mem. Usage  617.12MB  avail. 16.0 %
+Epoch:1 | Batch:3 | Loss:101.1169509888 |ForwardBackwardUpdate:0.00sec | BatchConst.:0.00sec | Mem. Usage  617.12MB  avail. 16.0 %
+Epoch:1 | Batch:4 | Loss:92.0543289185 |ForwardBackwardUpdate:0.00sec | BatchConst.:0.00sec | Mem. Usage  617.12MB  avail. 16.0 %
+Epoch:1 | Batch:5 | Loss:79.6128005981 |ForwardBackwardUpdate:0.00sec | BatchConst.:0.00sec | Mem. Usage  617.11MB  avail. 16.0 %
+Epoch:1 | Batch:6 | Loss:73.5509185791 |ForwardBackwardUpdate:0.00sec | BatchConst.:0.00sec | Mem. Usage  617.11MB  avail. 16.0 %
+------------------------------ Captured log call -------------------------------
+WARNING  pykeen.models.base:base.py:99 No random seed is specified. This may lead to non-reproducible results.
+____________________ test_model[Pykeen_InductiveNodePiece] _____________________
+
+model_name = 'Pykeen_InductiveNodePiece'
+
+    @pytest.mark.filterwarnings("ignore::UserWarning")
+    @pytest.mark.parametrize(
+        "model_name",
+        [
+            "Pykeen_DistMult",
+            "Pykeen_TuckER",
+            "Pykeen_UM",
+            "Pykeen_TransR",
+            "Pykeen_TransH",
+            "Pykeen_TransF",
+            "Pykeen_TransE",
+            "Pykeen_TransD",
+            "Pykeen_TorusE",
+            "Pykeen_SimplE",
+            "Pykeen_SE",
+            "Pykeen_RESCAL",
+            "Pykeen_RotatE",
+            "Pykeen_QuatE",
+            "Pykeen_PairRE",
+            "Pykeen_ProjE",
+            "Pykeen_NTN",
+            "Pykeen_NodePiece",
+            "Pykeen_MuRE",
+            "Pykeen_KG2E",
+            "Pykeen_InductiveNodePiece",
+            "Pykeen_InductiveNodePieceGNN",
+            "Pykeen_HolE",
+            "Pykeen_FixedModel",
+            "Pykeen_ERMLPE",
+            "Pykeen_DistMA",
+            "Pykeen_CrossE",
+            "Pykeen_CooccurrenceFilteredModel",
+            "Pykeen_ConvKB",  # this one is really slow
+            "Pykeen_ConvE",
+            "Pykeen_ComplExLiteral",
+            "Pykeen_ComplEx",
+            "Pykeen_CompGCN",
+            "Pykeen_CP",
+            "Pykeen_BoxE",
+            "Pykeen_AutoSF",
+            "Pykeen_DistMultLiteral",
+        ],
+    )
+    def test_model(model_name):
+        args = template(model_name)
+        # config = {
+        #     "epoch":args.num_epochs,"lr":args.lr,"embedding_dim":args.embedding_dim
+        # }
+        # dataset = args.path_dataset_folder.split('/')[1]
+        # wandb.setup(wandb.Settings(program="test_pykeen_model.py", program_relpath="test_pykeen_model.py"))
+        # wandb.init(project="dice_demo",config=config,name=f'{args.model}-{dataset}')
+>       Execute(args).start()
+
+tests/test_regression_pykeen.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+dicee/executer.py:212: in start
+    self.trained_model, form_of_labelling = self.trainer.start(dataset=self.dataset)
+dicee/trainer/dice_trainer.py:238: in start
+    model, form_of_labelling = self.initialize_or_load_model(dataset)
+dicee/static_funcs.py:34: in timeit_wrapper
+    result = func(*args, **kwargs)
+dicee/trainer/dice_trainer.py:185: in initialize_or_load_model
+    model, form_of_labelling = select_model(
+dicee/static_funcs.py:79: in select_model
+    return intialize_model(args, dataset) if "pykeen" in args['model'].lower() else intialize_model(args)
+dicee/static_funcs.py:464: in intialize_model
+    model = get_pykeen_model(model_name, args, dataset)
+dicee/static_funcs.py:428: in get_pykeen_model
+    model = MySLCWALitModule(
+dicee/models/pykeen_SLCWALitModule.py:10: in __init__
+    super().__init__(**kwargs)
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pykeen/contrib/lightning.py:197: in __init__
+    super().__init__(**kwargs)
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pykeen/contrib/lightning.py:112: in __init__
+    self.model = model_resolver.make(model, model_kwargs, triples_factory=self.dataset.training)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <class_resolver.api.ClassResolver object at 0x7f76c233efa0>
+query = 'InductiveNodePiece'
+pos_kwargs = {'embedding_dim': 64, 'loss': 'BCEWithLogitsLoss'}
+kwargs = {'triples_factory': TriplesFactory(num_entities=14, num_relations=55, create_inverse_triples=False, num_triples=1592)}
+cls = <class 'pykeen.models.inductive.inductive_nodepiece.InductiveNodePiece'>
+
+    def make(
+        self,
+        query: HintOrType[X],
+        pos_kwargs: Optional[Mapping[str, Any]] = None,
+        **kwargs,
+    ) -> X:
+        """Instantiate a class with optional kwargs."""
+        if query is None or isinstance(query, (str, type)):
+            cls: Type[X] = self.lookup(query)
+            try:
+                return cls(**(pos_kwargs or {}), **kwargs)  # type: ignore
+            except TypeError as e:
+                if "required keyword-only argument" in e.args[0]:
+>                   raise KeywordArgumentError(cls, e.args[0]) from None
+E                   class_resolver.api.KeywordArgumentError: InductiveNodePiece: __init__() missing 1 required keyword-only argument: 'inference_factory'
+
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/class_resolver/api.py:207: KeywordArgumentError
+----------------------------- Captured stdout call -----------------------------
+Start time:2023-07-05 16:49:29.862526
+*** Read or Load Knowledge Graph  ***
+*** Reading KGs/Nations/test.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0021 seconds | Current Memory Usage  619.17 in MB
+*** Reading KGs/Nations/train.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0017 seconds | Current Memory Usage  619.17 in MB
+Unrecognized data KGs/Nations/literals.txt
+*** Reading KGs/Nations/valid.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0011 seconds | Current Memory Usage  619.17 in MB
+
+Concatenating data to obtain index...
+Done !
+
+Creating a mapping from entities to integer indexes...
+Done !
+
+Done ! 0.002 seconds
+
+Done !
+
+Done !
+
+Took 0.0047 seconds | Current Memory Usage  619.17 in MB
+Data Type conversion...
+Submit er-vocab, re-vocab, and ee-vocab via  ProcessPoolExecutor...
+Preprocessing took: 0.042 seconds
+
+------------------- Description of Dataset KGs/Nations -------------------
+Number of entities:14
+Number of relations:55
+Number of triples on train set:1592
+Number of triples on valid set:199
+Number of triples on test set:201
+Entity Index:0.00000 in GB
+Relation Index:0.00000 in GB
+Train set :0.00000 in GB
+
+# of CPUs:64 | # of GPUs:1 | # of CPUs for dataloader:1
+NVIDIA GeForce RTX 3090
+------------------- Train -------------------
+Initializing TorchTrainer CPU Trainer...	Took 0.0008 seconds | Current Memory Usage  619.18 in MB
+Initializing Model...	Initializing the selected model... True
+___________________ test_model[Pykeen_InductiveNodePieceGNN] ___________________
+
+model_name = 'Pykeen_InductiveNodePieceGNN'
+
+    @pytest.mark.filterwarnings("ignore::UserWarning")
+    @pytest.mark.parametrize(
+        "model_name",
+        [
+            "Pykeen_DistMult",
+            "Pykeen_TuckER",
+            "Pykeen_UM",
+            "Pykeen_TransR",
+            "Pykeen_TransH",
+            "Pykeen_TransF",
+            "Pykeen_TransE",
+            "Pykeen_TransD",
+            "Pykeen_TorusE",
+            "Pykeen_SimplE",
+            "Pykeen_SE",
+            "Pykeen_RESCAL",
+            "Pykeen_RotatE",
+            "Pykeen_QuatE",
+            "Pykeen_PairRE",
+            "Pykeen_ProjE",
+            "Pykeen_NTN",
+            "Pykeen_NodePiece",
+            "Pykeen_MuRE",
+            "Pykeen_KG2E",
+            "Pykeen_InductiveNodePiece",
+            "Pykeen_InductiveNodePieceGNN",
+            "Pykeen_HolE",
+            "Pykeen_FixedModel",
+            "Pykeen_ERMLPE",
+            "Pykeen_DistMA",
+            "Pykeen_CrossE",
+            "Pykeen_CooccurrenceFilteredModel",
+            "Pykeen_ConvKB",  # this one is really slow
+            "Pykeen_ConvE",
+            "Pykeen_ComplExLiteral",
+            "Pykeen_ComplEx",
+            "Pykeen_CompGCN",
+            "Pykeen_CP",
+            "Pykeen_BoxE",
+            "Pykeen_AutoSF",
+            "Pykeen_DistMultLiteral",
+        ],
+    )
+    def test_model(model_name):
+        args = template(model_name)
+        # config = {
+        #     "epoch":args.num_epochs,"lr":args.lr,"embedding_dim":args.embedding_dim
+        # }
+        # dataset = args.path_dataset_folder.split('/')[1]
+        # wandb.setup(wandb.Settings(program="test_pykeen_model.py", program_relpath="test_pykeen_model.py"))
+        # wandb.init(project="dice_demo",config=config,name=f'{args.model}-{dataset}')
+>       Execute(args).start()
+
+tests/test_regression_pykeen.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+dicee/executer.py:212: in start
+    self.trained_model, form_of_labelling = self.trainer.start(dataset=self.dataset)
+dicee/trainer/dice_trainer.py:238: in start
+    model, form_of_labelling = self.initialize_or_load_model(dataset)
+dicee/static_funcs.py:34: in timeit_wrapper
+    result = func(*args, **kwargs)
+dicee/trainer/dice_trainer.py:185: in initialize_or_load_model
+    model, form_of_labelling = select_model(
+dicee/static_funcs.py:79: in select_model
+    return intialize_model(args, dataset) if "pykeen" in args['model'].lower() else intialize_model(args)
+dicee/static_funcs.py:464: in intialize_model
+    model = get_pykeen_model(model_name, args, dataset)
+dicee/static_funcs.py:428: in get_pykeen_model
+    model = MySLCWALitModule(
+dicee/models/pykeen_SLCWALitModule.py:10: in __init__
+    super().__init__(**kwargs)
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pykeen/contrib/lightning.py:197: in __init__
+    super().__init__(**kwargs)
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/pykeen/contrib/lightning.py:112: in __init__
+    self.model = model_resolver.make(model, model_kwargs, triples_factory=self.dataset.training)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <class_resolver.api.ClassResolver object at 0x7f76c233efa0>
+query = 'InductiveNodePieceGNN'
+pos_kwargs = {'embedding_dim': 64, 'loss': 'BCEWithLogitsLoss'}
+kwargs = {'triples_factory': TriplesFactory(num_entities=14, num_relations=55, create_inverse_triples=False, num_triples=1592)}
+cls = <class 'pykeen.models.inductive.inductive_nodepiece_gnn.InductiveNodePieceGNN'>
+
+    def make(
+        self,
+        query: HintOrType[X],
+        pos_kwargs: Optional[Mapping[str, Any]] = None,
+        **kwargs,
+    ) -> X:
+        """Instantiate a class with optional kwargs."""
+        if query is None or isinstance(query, (str, type)):
+            cls: Type[X] = self.lookup(query)
+            try:
+                return cls(**(pos_kwargs or {}), **kwargs)  # type: ignore
+            except TypeError as e:
+                if "required keyword-only argument" in e.args[0]:
+>                   raise KeywordArgumentError(cls, e.args[0]) from None
+E                   class_resolver.api.KeywordArgumentError: InductiveNodePieceGNN: __init__() missing 1 required keyword-only argument: 'inference_factory'
+
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/class_resolver/api.py:207: KeywordArgumentError
+----------------------------- Captured stdout call -----------------------------
+Start time:2023-07-05 16:49:29.957465
+*** Read or Load Knowledge Graph  ***
+*** Reading KGs/Nations/test.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0026 seconds | Current Memory Usage  619.18 in MB
+*** Reading KGs/Nations/train.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0017 seconds | Current Memory Usage  619.18 in MB
+Unrecognized data KGs/Nations/literals.txt
+*** Reading KGs/Nations/valid.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0012 seconds | Current Memory Usage  619.18 in MB
+
+Concatenating data to obtain index...
+Done !
+
+Creating a mapping from entities to integer indexes...
+Done !
+
+Done ! 0.002 seconds
+
+Done !
+
+Done !
+
+Took 0.0053 seconds | Current Memory Usage  619.17 in MB
+Data Type conversion...
+Submit er-vocab, re-vocab, and ee-vocab via  ProcessPoolExecutor...
+Preprocessing took: 0.033 seconds
+
+------------------- Description of Dataset KGs/Nations -------------------
+Number of entities:14
+Number of relations:55
+Number of triples on train set:1592
+Number of triples on valid set:199
+Number of triples on test set:201
+Entity Index:0.00000 in GB
+Relation Index:0.00000 in GB
+Train set :0.00000 in GB
+
+# of CPUs:64 | # of GPUs:1 | # of CPUs for dataloader:1
+NVIDIA GeForce RTX 3090
+------------------- Train -------------------
+Initializing TorchTrainer CPU Trainer...	Took 0.0015 seconds | Current Memory Usage  619.18 in MB
+Initializing Model...	Initializing the selected model... True
+__________________________ test_model[Pykeen_CompGCN] __________________________
+
+model_name = 'Pykeen_CompGCN'
+
+    @pytest.mark.filterwarnings("ignore::UserWarning")
+    @pytest.mark.parametrize(
+        "model_name",
+        [
+            "Pykeen_DistMult",
+            "Pykeen_TuckER",
+            "Pykeen_UM",
+            "Pykeen_TransR",
+            "Pykeen_TransH",
+            "Pykeen_TransF",
+            "Pykeen_TransE",
+            "Pykeen_TransD",
+            "Pykeen_TorusE",
+            "Pykeen_SimplE",
+            "Pykeen_SE",
+            "Pykeen_RESCAL",
+            "Pykeen_RotatE",
+            "Pykeen_QuatE",
+            "Pykeen_PairRE",
+            "Pykeen_ProjE",
+            "Pykeen_NTN",
+            "Pykeen_NodePiece",
+            "Pykeen_MuRE",
+            "Pykeen_KG2E",
+            "Pykeen_InductiveNodePiece",
+            "Pykeen_InductiveNodePieceGNN",
+            "Pykeen_HolE",
+            "Pykeen_FixedModel",
+            "Pykeen_ERMLPE",
+            "Pykeen_DistMA",
+            "Pykeen_CrossE",
+            "Pykeen_CooccurrenceFilteredModel",
+            "Pykeen_ConvKB",  # this one is really slow
+            "Pykeen_ConvE",
+            "Pykeen_ComplExLiteral",
+            "Pykeen_ComplEx",
+            "Pykeen_CompGCN",
+            "Pykeen_CP",
+            "Pykeen_BoxE",
+            "Pykeen_AutoSF",
+            "Pykeen_DistMultLiteral",
+        ],
+    )
+    def test_model(model_name):
+        args = template(model_name)
+        # config = {
+        #     "epoch":args.num_epochs,"lr":args.lr,"embedding_dim":args.embedding_dim
+        # }
+        # dataset = args.path_dataset_folder.split('/')[1]
+        # wandb.setup(wandb.Settings(program="test_pykeen_model.py", program_relpath="test_pykeen_model.py"))
+        # wandb.init(project="dice_demo",config=config,name=f'{args.model}-{dataset}')
+>       Execute(args).start()
+
+tests/test_regression_pykeen.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+dicee/executer.py:212: in start
+    self.trained_model, form_of_labelling = self.trainer.start(dataset=self.dataset)
+dicee/trainer/dice_trainer.py:251: in start
+    self.trainer.fit(model,train_dataloaders=model.train_dataloaders)
+dicee/trainer/torch_trainer.py:144: in fit
+    avg_epoch_loss = self._run_epoch(epoch)
+dicee/trainer/torch_trainer.py:96: in _run_epoch
+    batch_loss = self._run_batch(i, x_batch, y_batch,batch=batch)
+dicee/trainer/torch_trainer.py:69: in _run_batch
+    return self.compute_forward_loss_backward(x_batch,y_batch,batch=batch).item()
+dicee/trainer/torch_trainer.py:192: in compute_forward_loss_backward
+    batch_loss.backward()
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/torch/_tensor.py:487: in backward
+    torch.autograd.backward(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tensors = (tensor(1.6051, grad_fn=<AddBackward0>),), grad_tensors = None
+retain_graph = False, create_graph = False, grad_variables = None, inputs = ()
+
+    def backward(
+        tensors: _TensorOrTensors,
+        grad_tensors: Optional[_TensorOrTensors] = None,
+        retain_graph: Optional[bool] = None,
+        create_graph: bool = False,
+        grad_variables: Optional[_TensorOrTensors] = None,
+        inputs: Optional[_TensorOrTensors] = None,
+    ) -> None:
+        r"""Computes the sum of gradients of given tensors with respect to graph
+        leaves.
+    
+        The graph is differentiated using the chain rule. If any of ``tensors``
+        are non-scalar (i.e. their data has more than one element) and require
+        gradient, then the Jacobian-vector product would be computed, in this
+        case the function additionally requires specifying ``grad_tensors``.
+        It should be a sequence of matching length, that contains the "vector"
+        in the Jacobian-vector product, usually the gradient of the differentiated
+        function w.r.t. corresponding tensors (``None`` is an acceptable value for
+        all tensors that don't need gradient tensors).
+    
+        This function accumulates gradients in the leaves - you might need to zero
+        ``.grad`` attributes or set them to ``None`` before calling it.
+        See :ref:`Default gradient layouts<default-grad-layouts>`
+        for details on the memory layout of accumulated gradients.
+    
+        .. note::
+            Using this method with ``create_graph=True`` will create a reference cycle
+            between the parameter and its gradient which can cause a memory leak.
+            We recommend using ``autograd.grad`` when creating the graph to avoid this.
+            If you have to use this function, make sure to reset the ``.grad`` fields of your
+            parameters to ``None`` after use to break the cycle and avoid the leak.
+    
+        .. note::
+    
+            If you run any forward ops, create ``grad_tensors``, and/or call ``backward``
+            in a user-specified CUDA stream context, see
+            :ref:`Stream semantics of backward passes<bwd-cuda-stream-semantics>`.
+    
+        .. note::
+    
+            When ``inputs`` are provided and a given input is not a leaf,
+            the current implementation will call its grad_fn (even though it is not strictly needed to get this gradients).
+            It is an implementation detail on which the user should not rely.
+            See https://github.com/pytorch/pytorch/pull/60521#issuecomment-867061780 for more details.
+    
+        Args:
+            tensors (Sequence[Tensor] or Tensor): Tensors of which the derivative will be
+                computed.
+            grad_tensors (Sequence[Tensor or None] or Tensor, optional): The "vector" in
+                the Jacobian-vector product, usually gradients w.r.t. each element of
+                corresponding tensors. None values can be specified for scalar Tensors or
+                ones that don't require grad. If a None value would be acceptable for all
+                grad_tensors, then this argument is optional.
+            retain_graph (bool, optional): If ``False``, the graph used to compute the grad
+                will be freed. Note that in nearly all cases setting this option to ``True``
+                is not needed and often can be worked around in a much more efficient
+                way. Defaults to the value of ``create_graph``.
+            create_graph (bool, optional): If ``True``, graph of the derivative will
+                be constructed, allowing to compute higher order derivative products.
+                Defaults to ``False``.
+            inputs (Sequence[Tensor] or Tensor, optional): Inputs w.r.t. which the gradient
+                be will accumulated into ``.grad``. All other Tensors will be ignored. If
+                not provided, the gradient is accumulated into all the leaf Tensors that
+                were used to compute the attr::tensors.
+        """
+        if torch._C._are_functorch_transforms_active():
+            raise RuntimeError(
+                "backward() called inside a functorch transform. This is not "
+                "supported, please use functorch.grad or functorch.vjp instead "
+                "or call backward() outside of functorch transforms.")
+    
+        if grad_variables is not None:
+            warnings.warn("'grad_variables' is deprecated. Use 'grad_tensors' instead.")
+            if grad_tensors is None:
+                grad_tensors = grad_variables
+            else:
+                raise RuntimeError("'grad_tensors' and 'grad_variables' (deprecated) "
+                                   "arguments both passed to backward(). Please only "
+                                   "use 'grad_tensors'.")
+        if inputs is not None and len(inputs) == 0:
+            raise RuntimeError("'inputs' argument to backward() cannot be empty.")
+    
+        tensors = (tensors,) if isinstance(tensors, torch.Tensor) else tuple(tensors)
+        inputs = (inputs,) if isinstance(inputs, torch.Tensor) else \
+            tuple(inputs) if inputs is not None else tuple()
+    
+        grad_tensors_ = _tensor_or_tensors_to_tuple(grad_tensors, len(tensors))
+        grad_tensors_ = _make_grads(tensors, grad_tensors_, is_grads_batched=False)
+        if retain_graph is None:
+            retain_graph = create_graph
+    
+        # The reason we repeat same the comment below is that
+        # some Python versions print out the first line of a multi-line function
+        # calls in the traceback and some print out the last line
+>       Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+            tensors, grad_tensors_, retain_graph, create_graph, inputs,
+            allow_unreachable=True, accumulate_grad=True)  # Calls into the C++ engine to run the backward pass
+E       RuntimeError: Trying to backward through the graph a second time (or directly access saved tensors after they have already been freed). Saved intermediate values of the graph are freed when you call .backward() or autograd.grad(). Specify retain_graph=True if you need to backward through the graph a second time or if you need to access saved tensors after calling backward.
+
+/upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/torch/autograd/__init__.py:200: RuntimeError
+----------------------------- Captured stdout call -----------------------------
+Start time:2023-07-05 16:49:37.278359
+*** Read or Load Knowledge Graph  ***
+*** Reading KGs/Nations/test.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0015 seconds | Current Memory Usage  748.42 in MB
+*** Reading KGs/Nations/train.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0018 seconds | Current Memory Usage  748.42 in MB
+Unrecognized data KGs/Nations/literals.txt
+*** Reading KGs/Nations/valid.txt with Pandas ***
+Reading with pandas.read_csv with sep ** s+ ** ...
+Took 0.0011 seconds | Current Memory Usage  748.42 in MB
+
+Concatenating data to obtain index...
+Done !
+
+Creating a mapping from entities to integer indexes...
+Done !
+
+Done ! 0.002 seconds
+
+Done !
+
+Done !
+
+Took 0.0046 seconds | Current Memory Usage  748.42 in MB
+Data Type conversion...
+Submit er-vocab, re-vocab, and ee-vocab via  ProcessPoolExecutor...
+Preprocessing took: 0.057 seconds
+
+------------------- Description of Dataset KGs/Nations -------------------
+Number of entities:14
+Number of relations:55
+Number of triples on train set:1592
+Number of triples on valid set:199
+Number of triples on test set:201
+Entity Index:0.00000 in GB
+Relation Index:0.00000 in GB
+Train set :0.00000 in GB
+
+# of CPUs:64 | # of GPUs:1 | # of CPUs for dataloader:1
+NVIDIA GeForce RTX 3090
+------------------- Train -------------------
+Initializing TorchTrainer CPU Trainer...	Took 0.0004 seconds | Current Memory Usage  748.43 in MB
+Initializing Model...	Initializing the selected model... True
+Took 0.0147 seconds | Current Memory Usage  748.43 in MB
+MySLCWALitModule(
+  (model): CompGCN(
+    (loss): BCEWithLogitsLoss()
+    (interaction): DistMultInteraction()
+    (entity_representations): ModuleList(
+      (0): SingleCompGCNRepresentation(
+        (combined): CombinedCompGCNRepresentations(
+          (entity_representations): Embedding(
+            (_embeddings): Embedding(14, 64)
+          )
+          (relation_representations): Embedding(
+            (_embeddings): Embedding(110, 64)
+          )
+          (layers): ModuleList(
+            (0): CompGCNLayer(
+              (composition): MultiplicationCompositionModule()
+              (edge_weighting): SymmetricEdgeWeighting()
+              (w_rel): Linear(in_features=64, out_features=64, bias=False)
+              (drop): Dropout(p=0.0, inplace=False)
+              (bn): BatchNorm1d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+              (bias): Bias()
+              (activation): Identity()
+            )
+          )
+        )
+      )
+    )
+    (relation_representations): ModuleList(
+      (0): SingleCompGCNRepresentation(
+        (combined): CombinedCompGCNRepresentations(
+          (entity_representations): Embedding(
+            (_embeddings): Embedding(14, 64)
+          )
+          (relation_representations): Embedding(
+            (_embeddings): Embedding(110, 64)
+          )
+          (layers): ModuleList(
+            (0): CompGCNLayer(
+              (composition): MultiplicationCompositionModule()
+              (edge_weighting): SymmetricEdgeWeighting()
+              (w_rel): Linear(in_features=64, out_features=64, bias=False)
+              (drop): Dropout(p=0.0, inplace=False)
+              (bn): BatchNorm1d(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+              (bias): Bias()
+              (activation): Identity()
+            )
+          )
+        )
+      )
+    )
+    (weight_regularizers): ModuleList()
+  )
+  (loss): BCEWithLogitsLoss()
+)
+  | Name  | Type              | Params
+--------------------------------------------
+0 | model | CompGCN           | 24.6 K
+1 | loss  | BCEWithLogitsLoss | 0     
+--------------------------------------------
+24.6 K    Trainable params
+0         Non-trainable params
+24.6 K    Total params
+0.098     Total estimated model params size (MB)
+Adam
+
+Training is starting 2023-07-05 16:49:37.354686...
+NumOfDataPoints:24 | NumOfEpochs:3 | LearningRate:0.01 | BatchSize:None | EpochBatchsize:24
+Epoch:1 | Batch:1 | Loss:1.8121087551116943 |ForwardBackwardUpdate:0.01secs | Mem. Usage  748.76MB
+------------------------------ Captured log call -------------------------------
+WARNING  pykeen.models.base:base.py:99 No random seed is specified. This may lead to non-reproducible results.
+INFO     pykeen.triples.triples_factory:triples_factory.py:469 Creating inverse triples.
+=============================== warnings summary ===============================
+../../../../../../../../../../upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/torch/utils/tensorboard/__init__.py:4
+  /upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/torch/utils/tensorboard/__init__.py:4: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    if not hasattr(tensorboard, "__version__") or LooseVersion(
+
+../../../../../../../../../../upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/torch/utils/tensorboard/__init__.py:6
+  /upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/torch/utils/tensorboard/__init__.py:6: DeprecationWarning: distutils Version classes are deprecated. Use packaging.version instead.
+    ) < LooseVersion("1.15"):
+
+../../../../../../../../../../upb/users/r/renzhong/profiles/unix/cs/.local/lib/python3.9/site-packages/tensorboard/compat/tensorflow_stub/dtypes.py:326
+  /upb/users/r/renzhong/profiles/unix/cs/.local/lib/python3.9/site-packages/tensorboard/compat/tensorflow_stub/dtypes.py:326: DeprecationWarning: `np.bool8` is a deprecated alias for `np.bool_`.  (Deprecated NumPy 1.24)
+    np.bool8: (False, True),
+
+tests/test_regression_pykeen.py::test_model[Pykeen_DistMult]
+  /upb/users/r/renzhong/profiles/unix/cs/.conda/envs/pykeen/lib/python3.9/site-packages/torch/distributed/_sharded_tensor/__init__.py:8: DeprecationWarning: torch.distributed._sharded_tensor will be deprecated, use torch.distributed._shard.sharded_tensor instead
+    warnings.warn(
+
+tests/test_regression_pykeen.py: 39 warnings
+  /local/upb/users/r/renzhong/profiles/unix/cs/Dicee/dice-embeddings/dicee/abstracts.py:53: LightningDeprecationWarning: The `LightningModule.summarize` method is deprecated in v1.5 and will be removed in v1.7. Use `pytorch_lightning.utilities.model_summary.summarize` instead.
+    c.on_fit_start(*args, **kwargs)
+
+-- Docs: https://docs.pytest.org/en/stable/warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_regression_pykeen.py::test_model[Pykeen_KG2E] - AssertionError
+FAILED tests/test_regression_pykeen.py::test_model[Pykeen_InductiveNodePiece]
+FAILED tests/test_regression_pykeen.py::test_model[Pykeen_InductiveNodePieceGNN]
+FAILED tests/test_regression_pykeen.py::test_model[Pykeen_CompGCN] - RuntimeE...
+================== 4 failed, 37 passed, 43 warnings in 33.64s ==================
