@@ -4,7 +4,7 @@
 ## Introduction
 
 Pykeen offers two training loops for graph embedding training: LCWA (using kvsall) and SLCWA (using negative sampling). Once the training is complete, the models trained with these loops are evaluated using the evaluator in the Dice framework. The Dice framework provides three trainers specifically designed for graph embedding training. However, it's important to note that not all models trained with both training loops are compatible with these three trainers. For details, please refer to the paper.  
-When working with Pykeen's models, most of the parameters need to be set after `--pykeen_model_kwargs`. Some parameters, such as `embedding_dim`, may need to be set twice for the recording purpose of the Dice framework.
+When working with Pykeen's models, most of the parameters of Pykeen need to be set after `--pykeen_model_kwargs`. Some parameters, such as `embedding_dim`, may need to be set twice for the recording purpose of the Dice framework.
 
 ## Trainer
 
@@ -18,7 +18,7 @@ When working with Pykeen's models, most of the parameters need to be set after `
 
 Model training uses GPU:  
 
-- PL trainer:
+- PL trainer: `--accelerator` must be set to `"auto"` or `"gpu"`.
 
 train and evaluate **Distmult** with kvsall using PL trainer and save embedding representation.
 

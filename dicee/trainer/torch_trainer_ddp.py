@@ -16,7 +16,7 @@ import sys
 import platform
 import GPUtil
 import pykeen
-
+from pykeen.contrib.lightning import SLCWALitModule
 # DDP with gradiant accumulation https://gist.github.com/mcarilli/bf013d2d2f4b4dd21ade30c9b52d5e2e
 
 
@@ -95,7 +95,8 @@ class TorchDDPTrainer(AbstractTrainer):
 
       
       if self.attributes.use_ddp_batch_finder:
-          
+          if isinstance(model, SLCWALitModule):
+            raise NotImplementedError("Batch size finder is not implemented for SLCWA")
           
           final_batch, rest_epoachs = self.find_batch_size(
               model, world_size, kwargs
@@ -109,7 +110,7 @@ class TorchDDPTrainer(AbstractTrainer):
           
 
       
-      # print('fired........................')
+      
       mp.spawn(
           fn=distributed_training,
           args=(

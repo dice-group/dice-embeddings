@@ -83,7 +83,8 @@ class TestCallback:
       # args.model = 'Pykeen_KG2E'
       # args.model = 'AConEx'
       args.model = model_name
-      args.scoring_technique = "NegSample"
+      # args.scoring_technique = "NegSample"
+      args.scoring_technique = 'KvsAll'
       args.path_dataset_folder = "KGs/Nations"
       args.num_epochs = 20
       args.batch_size = 20
@@ -92,7 +93,7 @@ class TestCallback:
       args.trainer = 'torchDDP'
       # args.trainer = "torchCPUTrainer"
       args.num_core = 1  # need to be bigger than 0
-      args.eval_model = "train_val_test"
+      args.eval_model = "test"
       args.normalization = None
       args.devices = "auto"
       args.accelerator = "auto"
