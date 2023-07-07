@@ -44,6 +44,7 @@ pip3 install "pytest>=7.2.2"
 pip3 install "gradio>=3.23.0"
 pip3 install "psutil>=5.9.4"
 pip3 install "pytorch-lightning==1.6.4"
+pip3 install "pykeen==1.10.1"
 pip3 install "zstandard>=0.21.0"
 ```
 To test the Installation

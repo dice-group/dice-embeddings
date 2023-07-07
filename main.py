@@ -1,5 +1,6 @@
 from dicee.executer import Execute
 import pytorch_lightning as pl
+from dicee.config import ParseDict
 import argparse
 
 def get_default_arguments(description=None):
@@ -13,9 +14,10 @@ def get_default_arguments(description=None):
     parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="Embeddings, model, and any other related data will be stored therein.")
     parser.add_argument("--model", type=str,
-                        default="AConvQ",
-                        help="Available models: ConEx, AConEx, ConvQ, AConQ, ConvO, AConvO,"
-                             "QMult, OMult, Shallom, DistMult, TransE, ComplEx, Keci")
+                        default="Pykeen_QuatE",
+                        help="Available models: "
+                             "ConEx, AConEx, ConvQ, AConQ, ConvO, AConvO,"
+                             "QMult, OMult, Shallom, DistMult, TransE, ComplEx, Keci, and models implemented in Pykeen, e.g. Pykeen_QuatE")
     parser.add_argument('--optim', type=str, default='Adam',
                         help='[Adam, SGD]')
     parser.add_argument('--embedding_dim', type=int, default=32,
@@ -65,6 +67,8 @@ def get_default_arguments(description=None):
                         help='Q for Clifford Algebra')
     parser.add_argument('--auto_batch_finder', type=bool, default=False,
                         help='Find a batch size w.r.t. computational budgets')
+    parser.add_argument("--pykeen_model_kwargs", nargs='*', action=ParseDict,
+                        help='addtional paramters pass to pykeen_model')
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)

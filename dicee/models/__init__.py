@@ -4,4 +4,5 @@ from .complex import *
 from .quaternion import *
 from .octonion import *
 from .clifford import *
-from .function_space import FMult, FMult2, GFMult
+from .pykeen_models import *
+from .function_space import *
