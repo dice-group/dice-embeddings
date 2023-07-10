@@ -307,6 +307,7 @@ def get_pykeen_model(model_name: str, args, dataset):
     actual_name = model_name.split("_")[1]
     # initialize model by name or by interaction function
     if "interaction" in model_name.lower():
+        #@ TODO: not quite sure why this is needed.
         relation_representations = None
         entity_representations = None
         intection_kwargs = args["interaction_kwargs"]
@@ -342,6 +343,17 @@ def get_pykeen_model(model_name: str, args, dataset):
         passed_model = interaction_model
     else:
         passed_model = actual_name
+    if dataset is None:
+        # To use a trained pykeen model
+        return MyLCWALitModule(
+            model=passed_model,
+            model_name=actual_name,
+            learning_rate=args["lr"],
+            optimizer=args["optim"],
+            model_kwargs=args["pykeen_model_kwargs"],
+            batch_size=args["batch_size"],
+            args=args,
+        )
     # initialize module for pytorch-lightning trainer
     if args['scoring_technique'] == 'KvsAll':
         _dataset = EagerDataset(training=TriplesFactory(dataset.train_set, dataset.entity_to_idx,dataset.relation_to_idx), testing=None)
