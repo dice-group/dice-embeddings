@@ -463,7 +463,7 @@ class KGE(BaseInteractiveKGE):
                 else:
                     KeyError('Uncovered scenario')
             # If user simply select submit
-            return random_prediction(pre_trained_kge)
+            return random_prediction(self)
 
         gr.Interface(
             fn=predict,
