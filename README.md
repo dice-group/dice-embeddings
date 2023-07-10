@@ -28,10 +28,13 @@ With our framework, practitioners can directly use PytorchLightning for model pa
 Deploy a pre-trained embedding model without writing a single line of code.
 # Installation
 <details><summary> Details </summary>
-```
+
+``` 
 pip install dicee
 ```
+
 or
+
 ```
 git clone https://github.com/dice-group/dice-embeddings.git
 conda create -n dice python=3.11 --no-default-packages && conda activate dice
@@ -65,13 +68,20 @@ pyreverse dicee/trainer && dot -Tpng -x classes.dot -o trainer.png && eog traine
 
 # Knowledge Graph Embedding Models
 <details> <summary> Details</summary>
+
 1. TransE, DistMult, ComplEx, ConEx, QMult, OMult, ConvO, ConvQ, Keci
+
 2. All models implemented in Pykeen, e.g. Pykeen_QuatE
+
 > For more, please refer to `examples`.
 </details>
 
 # How to Train
-> How to use the framework:`examples`.
+<details> <summary> Details</summary>
+
+> Please refer to `examples`.
+</details>
+
 
 # How to Deploy
 ```python
