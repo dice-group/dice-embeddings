@@ -26,8 +26,8 @@ With our framework, practitioners can directly use PytorchLightning for model pa
 
 **Why [Hugging-face Gradio](https://huggingface.co/gradio)?**
 Deploy a pre-trained embedding model without writing a single line of code.
-
-## Installation
+# Installation
+<details><summary> Details </summary>
 ```
 pip install dicee
 ```
@@ -61,27 +61,28 @@ pyreverse dicee/ && dot -Tpng -x classes.dot -o dice_software.png && eog dice_so
 # or
 pyreverse dicee/trainer && dot -Tpng -x classes.dot -o trainer.png && eog trainer.png
 ```
-## Applications
-### Description Logic Concept Learning (soon)
+</details>
+
+# Knowledge Graph Embedding Models
+<details> <summary> Details</summary>
+1. TransE, DistMult, ComplEx, ConEx, QMult, OMult, ConvO, ConvQ, Keci
+2. All models implemented in Pykeen, e.g. Pykeen_QuatE
+> For more, please refer to `examples`.
+</details>
+
+# How to Train
+> How to use the framework:`examples`.
+
+# How to Deploy
 ```python
 from dicee import KGE
-# (1) Load a pretrained KGE model on KGs/Family
-pretrained_model = KGE(path='Experiments/2022-12-08 11:46:33.654677')
-pretrained_model.learn_concepts(pos={''},neg={''},topk=1)
+KGE(path='...').deploy(share=True,top_k=10)
 ```
-### Conjunctive Query/Question Answering
-```python
-from dicee import KGE
-# (1) Load a pretrained KGE model on KGs/Family
-pretrained_model = KGE(path='Experiments/2022-12-08 11:46:33.654677')
-# (2) Answer the following conjunctive query question: To whom a sibling of F9M167 is married to?
-# (3) Decompose (2) into two query
-# (3.1) Who is a sibling of F9M167? => {F9F141,F9M157}
-# (3.2) To whom a results of (3.1) is married to ? {F9M142, F9F158}
-pretrained_model.predict_conjunctive_query(entity='<http://www.benchmark.org/family#F9M167>',
-                                          relations=['<http://www.benchmark.org/family#hasSibling>',
-                                                     '<http://www.benchmark.org/family#married>'], topk=1)
-```
+<details> <summary> To see the interface of the webservice</summary>
+<img src="dicee/lp.png" alt="Italian Trulli">
+</details>
+
+## Downstream Applications
 ### Triple Classification
 #### Using pre-trained ConEx on DBpedia 03-2022
 ```bash
@@ -119,16 +120,29 @@ from dicee import KGE
 pre_trained_kge = KGE(path='ConEx')
 missing_triples = pre_trained_kge.find_missing_triples(confidence=0.95, entities=[''], relations=[''])
 ```
-
-## How to Train a KGE model 
-> How to use the framework:`examples`.
-
-## How to Deploy
-Any pretrained model can be deployed with an ease. By setting ```share=True```, anyone on the internet can use a pretrained model.
+### Conjunctive Query Answering
 ```python
 from dicee import KGE
-KGE(path='...').deploy(share=True,top_k=10)
+# (1) Load a pretrained KGE model on KGs/Family
+pretrained_model = KGE(path='Experiments/2022-12-08 11:46:33.654677')
+# (2) Answer the following conjunctive query question: To whom a sibling of F9M167 is married to?
+# (3) Decompose (2) into two query
+# (3.1) Who is a sibling of F9M167? => {F9F141,F9M157}
+# (3.2) To whom a results of (3.1) is married to ? {F9M142, F9F158}
+pretrained_model.predict_conjunctive_query(entity='<http://www.benchmark.org/family#F9M167>',
+                                          relations=['<http://www.benchmark.org/family#hasSibling>',
+                                                     '<http://www.benchmark.org/family#married>'], topk=1)
 ```
+
+### Description Logic Concept Learning (soon)
+```python
+from dicee import KGE
+# (1) Load a pretrained KGE model on KGs/Family
+pretrained_model = KGE(path='Experiments/2022-12-08 11:46:33.654677')
+pretrained_model.learn_concepts(pos={''},neg={''},topk=1)
+```
+
+
 ## Pre-trained Models
 Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , if you lack hardware resources to obtain embeddings of a specific knowledge Graph.
 - [DBpedia version: 06-2022 Embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpediaQMultEmbeddings_03_07):
