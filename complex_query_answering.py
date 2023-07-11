@@ -1,0 +1,1 @@
+# Write code that takes a pretrained KGE and answers first-ordered logic queries
