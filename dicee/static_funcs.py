@@ -302,9 +302,9 @@ def read_or_load_kg(args, cls):
     print(kg.description_of_input)
     return kg
 
-
 def get_pykeen_model(model_name: str, args, dataset):
     actual_name = model_name.split("_")[1]
+
     # initialize model by name or by interaction function
     if "interaction" in model_name.lower():
         #@ TODO: not quite sure why this is needed.
@@ -354,12 +354,10 @@ def get_pykeen_model(model_name: str, args, dataset):
             batch_size=args["batch_size"],
             args=args,
         )
-    # initialize module for pytorch-lightning trainer
-    if args['scoring_technique'] == 'KvsAll':
-        _dataset = EagerDataset(training=TriplesFactory(dataset.train_set, dataset.entity_to_idx,dataset.relation_to_idx), testing=None)
+    elif args['scoring_technique'] == 'KvsAll':
         return MyLCWALitModule(
             model=passed_model,
-            dataset=_dataset,
+            triples_factory=EagerDataset(training=TriplesFactory(dataset.train_set, dataset.entity_to_idx,dataset.relation_to_idx), testing=None),
             model_name=actual_name,
             learning_rate=args["lr"],
             optimizer=args["optim"],
@@ -367,43 +365,23 @@ def get_pykeen_model(model_name: str, args, dataset):
             batch_size=args["batch_size"],
             args=args,
         )
+    elif args['scoring_technique'] == 'NegSample':
+
+        model=MySLCWALitModule(
+            dataset=EagerDataset(training=TriplesFactory(dataset.train_set, dataset.entity_to_idx,dataset.relation_to_idx), testing=None),
+            model=passed_model,
+            model_name=actual_name,
+            model_kwargs=args["pykeen_model_kwargs"],
+            learning_rate=args["lr"],
+            optimizer=args["optim"],
+            batch_size=args["batch_size"],
+            args=args,
+            negative_sampler="basic",
+            negative_sampler_kwargs=dict(filtered=False, num_negs_per_pos=args["neg_ratio"])
+        )
+
     else:
         raise NotImplementedError("Please use KvsAll")
-
-    if args["use_SLCWALitModule"]:
-        if "kvsall".lower() in args["scoring_technique"].lower():
-            raise NotImplementedError(
-                "kvsall is not supported by SLCWA. Please use LCWA instead."
-            )
-        else:
-            model = MySLCWALitModule(
-                dataset=_dataset,
-                model=passed_model,
-                model_name=actual_name,
-                model_kwargs=args["pykeen_model_kwargs"],
-                learning_rate=args["lr"],
-                optimizer=args["optim"],
-                batch_size=args["batch_size"],
-                args=args,
-                negative_sampler="basic",
-                negative_sampler_kwargs=dict(filtered=False, num_negs_per_pos=args["neg_ratio"]),
-            )
-    else:
-        if "NegSample".lower() in args["scoring_technique"].lower():
-            raise NotImplementedError(
-                "NegSample is not supported by LCWA. Please use SLCWA instead."
-            )
-        else:
-            model = MyLCWALitModule(
-                dataset=_dataset,
-                model=passed_model,
-                model_name=actual_name,
-                learning_rate=args["lr"],
-                optimizer=args["optim"],
-                model_kwargs=args["pykeen_model_kwargs"],
-                batch_size=args["batch_size"],
-                args=args,
-            )
     return model
 
 
