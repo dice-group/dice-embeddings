@@ -57,6 +57,7 @@ class Pykeen_Module:
             relation_embedd,
         )
 
+    """
     def forward_triples(self, x: torch.Tensor, h_prediction=False, t_prediction=False) -> torch.FloatTensor:
         # the tensors here is inference tensors and can't be modified in-place outside InferenceMode.
         # https://twitter.com/PyTorch/status/1437838242418671620?s=20&t=8pEheJu4kRaLyJHBBLUvZA (solution)
@@ -79,6 +80,7 @@ class Pykeen_Module:
             return torch.tensor(_df.score, dtype=torch.float64)
 
         # return predict.predict_triples(model=self.model, triples=x.to("cuda"),).scores.clone()
+    """
 
     def mem_of_model(self) -> Dict:
         """ Size of model in MB and number of params"""
@@ -125,3 +127,9 @@ class MySLCWALitModule(SLCWALitModule, Pykeen_Module):
     @property
     def loss_function(self):
         return self.loss
+
+    def forward(self, batch):
+        return self.model.predict_hrt(batch).flatten()
+
+    def forward_triples(self, batch):
+        return self.model.predict_hrt(batch).flatten()
