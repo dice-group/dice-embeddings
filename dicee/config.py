@@ -50,5 +50,5 @@ class Args:
         self.seed_for_computation: int = 0
         self.sample_triples_ratio = None
         self.read_only_few = None
-        self.pykeen_model_kwargs: ParseDict = None
+        self.pykeen_model_kwargs: ParseDict = dict()
         self.use_SLCWALitModule: None = False
