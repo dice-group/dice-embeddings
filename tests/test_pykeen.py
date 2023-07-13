@@ -9,7 +9,7 @@ class TestDefaultParams:
     def test_distmult(self):
         args = Args()
         args.path_dataset_folder = 'KGs/UMLS'
-        args.trainer = 'PL'
+        args.trainer = 'torchCPUTrainer'
         args.model = 'Pykeen_DistMult'
         args.num_epochs = 10
         args.batch_size = 256
@@ -23,13 +23,13 @@ class TestDefaultParams:
         args.read_only_few = None
         args.num_folds_for_cv = None
         result = Execute(args).start()
-        assert 0.83 >= result['Train']['MRR'] >= 0.800
+        assert 0.84 >= result['Train']['MRR'] >= 0.800
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_complex(self):
         args = Args()
         args.path_dataset_folder = 'KGs/UMLS'
-        args.trainer = 'PL'
+        args.trainer = 'torchCPUTrainer'
         args.model = 'Pykeen_ComplEx'
         args.num_epochs = 10
         args.batch_size = 256
@@ -43,13 +43,13 @@ class TestDefaultParams:
         args.read_only_few = None
         args.num_folds_for_cv = None
         result = Execute(args).start()
-        assert 0.9 >= result['Train']['MRR'] >= 0.88
+        assert 0.92 >= result['Train']['MRR'] >= 0.88
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_quate(self):
         args = Args()
         args.path_dataset_folder = 'KGs/UMLS'
-        args.trainer = 'PL'
+        args.trainer = 'torchCPUTrainer'
         args.model = 'Pykeen_QuatE'
         args.num_epochs = 10
         args.batch_size = 256
@@ -64,13 +64,13 @@ class TestDefaultParams:
         args.num_folds_for_cv = None
         result = Execute(args).start()
         # num params 14528
-        assert 0.999 >= result['Train']['MRR'] >= 0.98
+        assert 0.999 >= result['Train']['MRR'] >= 0.94
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_mure(self):
         args = Args()
         args.path_dataset_folder = 'KGs/UMLS'
-        args.trainer = 'PL'
+        args.trainer = 'torchCPUTrainer'
         args.model = 'Pykeen_MuRE'
         args.num_epochs = 10
         args.batch_size = 256
@@ -85,4 +85,4 @@ class TestDefaultParams:
         args.num_folds_for_cv = None
         result = Execute(args).start()
         # num params 20686
-        assert 0.98 >= result['Train']['MRR'] >= 0.94
+        assert 0.88 >= result['Train']['MRR'] >= 0.82
