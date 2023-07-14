@@ -37,7 +37,7 @@ or
 
 ```
 git clone https://github.com/dice-group/dice-embeddings.git
-conda create -n dice python=3.11 --no-default-packages && conda activate dice
+conda create -n dice python=3.10 --no-default-packages && conda activate dice
 pip3 install "pandas>=1.5.1"
 pip3 install "torch>=2.0.0"
 pip3 install "polars>=0.16.14"
