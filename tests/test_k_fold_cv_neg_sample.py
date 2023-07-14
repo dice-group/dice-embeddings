@@ -1,12 +1,12 @@
 from dicee.executer import Execute
 import sys
 import pytest
-from dicee.config import Args
+from dicee.config import Arguments
 
 class TestCV_NegSample:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_conex_NegSample(self):
-        args = Args()
+        args = Arguments()
         args.model = 'ConEx'
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'
@@ -23,7 +23,7 @@ class TestCV_NegSample:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult_NegSample(self):
-        args = Args()
+        args = Arguments()
         args.model = 'QMult'
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'
@@ -40,7 +40,7 @@ class TestCV_NegSample:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_convq_NegSample(self):
-        args = Args()
+        args = Arguments()
         args.model = 'ConvQ'
         args.scoring_technique = 'NegSample'
         args.path_dataset_folder = 'KGs/Family'
@@ -57,7 +57,7 @@ class TestCV_NegSample:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_omult_NegSample(self):
-        args = Args()
+        args = Arguments()
         args.model = 'OMult'
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'
@@ -74,7 +74,7 @@ class TestCV_NegSample:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_convo_NegSample(self):
-        args = Args()
+        args = Arguments()
         args.model = 'ConvO'
         args.scoring_technique = 'NegSample'
         args.path_dataset_folder = 'KGs/Family'
@@ -89,7 +89,7 @@ class TestCV_NegSample:
         Execute(args).start()
 
     def test_distmult_NegSample(self):
-        args = Args()
+        args = Arguments()
         args.model = 'DistMult'
         args.scoring_technique = 'NegSample'
         args.path_dataset_folder = 'KGs/Family'
@@ -105,7 +105,7 @@ class TestCV_NegSample:
         Execute(args).start()
 
     def test_complex_NegSample(self):
-        args = Args()
+        args = Arguments()
         args.model = 'ComplEx'
         args.scoring_technique = 'NegSample'
         args.path_dataset_folder = 'KGs/Family'

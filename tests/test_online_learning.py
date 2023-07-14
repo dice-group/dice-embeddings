@@ -4,12 +4,12 @@ import torch
 import pytest
 import argparse
 import os
-from dicee.config import Args
+from dicee.config import Arguments
 
 class TestRegressionOnlineLearning:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_umls(self):
-        args = Args()
+        args = Arguments()
         args.model = 'AConEx'
         args.scoring_technique = 'KvsSample'
         args.optim = 'Adam'

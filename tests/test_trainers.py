@@ -1,11 +1,11 @@
 from dicee.executer import Execute
-from dicee.config import Args
+from dicee.config import Arguments
 import pytest
 
 class TestCallback:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_conex_torch_cpu_trainer(self):
-        args = Args()
+        args = Arguments()
         args.model = 'AConEx'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -19,7 +19,7 @@ class TestCallback:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_aconex_pl_trainer(self):
-        args = Args()
+        args = Arguments()
         args.model = 'AConEx'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'

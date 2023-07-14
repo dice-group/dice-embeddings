@@ -1,12 +1,12 @@
 from dicee.executer import Execute
 import sys
 import pytest
-from dicee.config import Args
+from dicee.config import Arguments
 
 class TestReadFewOnly:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult_kvsall(self):
-        args = Args()
+        args = Arguments()
         args.model = 'QMult'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -28,7 +28,7 @@ class TestReadFewOnly:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult_1vsall(self):
-        args = Args()  # get_default_arguments([])
+        args = Arguments()  # get_default_arguments([])
         args.model = 'QMult'
         args.num_epochs = 1
         args.scoring_technique = '1vsAll'
@@ -50,7 +50,7 @@ class TestReadFewOnly:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult_neg_sampling(self):
-        args = Args()  # get_default_arguments([])
+        args = Arguments()  # get_default_arguments([])
         args.model = 'QMult'
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'

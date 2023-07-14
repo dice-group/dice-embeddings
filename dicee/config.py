@@ -13,7 +13,11 @@ class ParseDict(argparse.Action):
             getattr(namespace, self.dest)[key] = value
 
 
-class Args:
+class Arguments:
+    """ @TODO:
+    1. Renamed to Arguments()
+    Make it iterable ?
+    """
     def __init__(self):
         self.path_dataset_folder: str = 'KGs/UMLS'
         self.save_embeddings_as_csv: bool = False
@@ -51,4 +55,9 @@ class Args:
         self.sample_triples_ratio = None
         self.read_only_few = None
         self.pykeen_model_kwargs: ParseDict = dict()
-        self.use_SLCWALitModule: None = False
+
+    def __iter__(self):
+        # Iterate
+        for k,v in self.__dict__.items():
+            yield k,v
+

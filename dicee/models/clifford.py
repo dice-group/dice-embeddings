@@ -228,7 +228,7 @@ class Keci(BaseKGE):
         self.r = int(self.r)
         self.requires_grad_for_interactions = True
         print(f'r:{self.r}\t p:{self.p}\t q:{self.q}')
-
+        # Initialize parameters for dimension scaling
         if self.p > 0:
             self.p_coefficients = torch.nn.Embedding(num_embeddings=1,embedding_dim=self.p)
             torch.nn.init.zeros_(self.p_coefficients.weight)
@@ -531,47 +531,46 @@ class Keci(BaseKGE):
 
     def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
         """
-        Kvsall training
-
-        (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .
-        (2) Construct head entity and relation embeddings according to Cl_{p,q}(\mathbb{R}^d) .
-        (3) Perform Cl multiplication
-        (4) Inner product of (3) and all entity embeddings
 
         Parameter
         ---------
-        x: torch.LongTensor with (n,2) shape
+        x: torch.LongTensor with (n,3) shape
 
         Returns
         -------
-        torch.FloatTensor with (n, |E|) shape
+        torch.FloatTensor with (n) shape
         """
         # (1) Retrieve real-valued embedding vectors.
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
         # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations
         h0, hp, hq = self.construct_cl_multivector(head_ent_emb, r=self.r, p=self.p, q=self.q)
         r0, rp, rq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
-        t0, tp, tq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
-
+        t0, tp, tq = self.construct_cl_multivector(tail_ent_emb, r=self.r, p=self.p, q=self.q)
         h0, hp, hq, h0, rp, rq = self.apply_coefficients(h0, hp, hq, h0, rp, rq)
         # (4) Compute a triple score based on interactions described by the basis 1. Eq. 20
-        h0r0t0 = torch.einsum('br, br->b', h0 * r0, t0)
+        h0r0t0 = torch.einsum('br, br -> b', h0 * r0, t0)
 
         # (5) Compute a triple score based on interactions described by the bases of p {e_1, ..., e_p}. Eq. 21
         if self.p > 0:
-            hp_rp_t0 = torch.einsum('brp, brp  -> b', hp * rp, t0)
-            h0_rp_tp = torch.einsum('brp, brp -> b', torch.einsum('br,  brp -> brp', h0, rp), tp)
-            hp_r0_tp = torch.einsum('brp, brp -> b', torch.einsum('brp, br  -> brp', hp, r0), tp)
+            # Second term in Eq.16
+            hp_rp_t0 = torch.einsum('brp, br  -> b', hp * rp, t0)
+            # Eq. 17
+            # b=e
+            h0_rp_tp = torch.einsum('brp, erp -> b', torch.einsum('br,  brp -> brp', h0, rp), tp)
+            hp_r0_tp = torch.einsum('brp, erp -> b', torch.einsum('brp, br  -> brp', hp, r0), tp)
+
             score_p = hp_rp_t0 + h0_rp_tp + hp_r0_tp
         else:
             score_p = 0
 
         # (5) Compute a triple score based on interactions described by the bases of q {e_{p+1}, ..., e_{p+q}}. Eq. 22
         if self.q > 0:
-            h0_rq_tq = torch.einsum('brq, brq -> b', torch.einsum('br,  brq -> brq', h0, rq), tq)
-            hq_r0_tq = torch.einsum('brq, brq -> b', torch.einsum('brq, br  -> brq', hq, r0), tq)
-            hq_rq_t0 = torch.einsum('brq, brq  -> b', hq * rq, t0)
-            score_q = h0_rq_tq + hq_r0_tq - hq_rq_t0
+            # Third item in Eq 16.
+            hq_rq_t0 = torch.einsum('brq, br  -> b', hq * rq, t0)
+            # Eq. 18.
+            h0_rq_tq = torch.einsum('br, brq  -> b', h0, rq*tq)
+            r0_hq_tq = torch.einsum('br, brq  -> b', r0, hq*tq)
+            score_q = - hq_rq_t0 + (h0_rq_tq + r0_hq_tq)
         else:
             score_q = 0
 

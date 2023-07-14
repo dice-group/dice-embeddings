@@ -2,12 +2,12 @@ from dicee.executer import Execute, ContinuousExecute
 from dicee.knowledge_graph_embeddings import KGE
 import pytest
 import os
-from dicee.config import Args
+from dicee.config import Arguments
 
 class TestEnsembleConstruction:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
-        args = Args()
+        args = Arguments()
         args.model = 'QMult'
         args.scoring_technique = 'KvsAll'
         args.optim = 'Adam'

@@ -1,13 +1,13 @@
 from dicee.executer import Execute
 import sys
 import pytest
-from dicee.config import Args
+from dicee.config import Arguments
 
 
 class TestDefaultParams:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_distmult(self):
-        args = Args()
+        args = Arguments()
         args.path_dataset_folder = 'KGs/UMLS'
         args.trainer = 'torchCPUTrainer'
         args.model = 'Pykeen_DistMult'
@@ -27,7 +27,7 @@ class TestDefaultParams:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_complex(self):
-        args = Args()
+        args = Arguments()
         args.path_dataset_folder = 'KGs/UMLS'
         args.trainer = 'torchCPUTrainer'
         args.model = 'Pykeen_ComplEx'
@@ -47,7 +47,7 @@ class TestDefaultParams:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_quate(self):
-        args = Args()
+        args = Arguments()
         args.path_dataset_folder = 'KGs/UMLS'
         args.trainer = 'torchCPUTrainer'
         args.model = 'Pykeen_QuatE'
@@ -68,7 +68,7 @@ class TestDefaultParams:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_mure(self):
-        args = Args()
+        args = Arguments()
         args.path_dataset_folder = 'KGs/UMLS'
         args.trainer = 'torchCPUTrainer'
         args.model = 'Pykeen_MuRE'
