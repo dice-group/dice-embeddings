@@ -34,6 +34,7 @@ def initialize_trainer(args, callbacks):
         print('Initializing Pytorch-lightning Trainer', end='\t')
         # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
         return pl.Trainer.from_argparse_args(args,
+                                             callbacks=callbacks,
                                              strategy=DDPStrategy(find_unused_parameters=False))
     else:
         print('Initialize TorchTrainer CPU Trainer', end='\t')

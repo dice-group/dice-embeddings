@@ -190,7 +190,7 @@ def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
     return train_set
 
 
-def save_checkpoint_model(trainer, model, path: str) -> None:
+def save_checkpoint_model(model, path: str) -> None:
     """ Store Pytorch model into disk"""
     if isinstance(model, BaseKGE):
         try:
@@ -222,8 +222,7 @@ def store(trainer,
     assert len(model_name) > 1
 
     # (1) Save pytorch model in trained_model .
-    save_checkpoint_model(trainer=trainer,
-                          model=trained_model, path=full_storage_path + f'/{model_name}.pt')
+    save_checkpoint_model(model=trained_model, path=full_storage_path + f'/{model_name}.pt')
     if save_as_csv:
         entity_emb, relation_ebm = trained_model.get_embeddings()
         entity_to_idx = pickle.load(open(full_storage_path + '/entity_to_idx.p', 'rb'))

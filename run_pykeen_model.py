@@ -44,12 +44,11 @@ def train_eval(args):
     print('Val:', dataset.validation.num_triples)
     print('Test:', dataset.testing.num_triples)
     if args.model == 'DistMult':
-        model = DistMult(triples_factory=dataset.training, embedding_dim=args.embedding_dim, random_seed=1#,regularizer=None,entity_constrainer=None
-                         )
+        model = DistMult(triples_factory=dataset.training, embedding_dim=args.embedding_dim, random_seed=1,regularizer=None,entity_constrainer=None)
     elif args.model == 'ComplEx':
-        model = ComplEx(triples_factory=dataset.training, embedding_dim=args.embedding_dim, random_seed=1)
+        model = ComplEx(triples_factory=dataset.training, embedding_dim=args.embedding_dim, random_seed=1,regularizer=None,entity_constrainer=None)
     elif args.model == 'QuatE':
-        model = QuatE(triples_factory=dataset.training, embedding_dim=args.embedding_dim, random_seed=1)
+        model = QuatE(triples_factory=dataset.training, embedding_dim=args.embedding_dim, random_seed=1,regularizer=None,entity_constrainer=None)
     else:
         raise NotImplementedError()
 
