@@ -89,10 +89,10 @@ class KGESaveCallback(AbstractCallback):
     def on_fit_end(self, *args, **kwargs):
         pass
 
-    def on_epoch_end(self, trainer, pl_module):
+    def on_epoch_end(self, model, trainer, **kwargs):
         if self.epoch_counter % self.every_x_epoch == 0 and self.epoch_counter > 1:
             print(f'\nStoring model {self.epoch_counter}...')
-            save_checkpoint_model(pl_module,
+            save_checkpoint_model(model,
                                   path=self.path + f'/model_at_{str(self.epoch_counter)}_epoch_{str(str(datetime.datetime.now()))}.pt')
         self.epoch_counter += 1
 

@@ -70,8 +70,7 @@ pyreverse dicee/trainer && dot -Tpng -x classes.dot -o trainer.png && eog traine
 <details> <summary> Details</summary>
 
 1. TransE, DistMult, ComplEx, ConEx, QMult, OMult, ConvO, ConvQ, Keci
-
-2. All models implemented in Pykeen, e.g. Pykeen_QuatE
+2. All 44 models available in https://github.com/pykeen/pykeen#models
 
 > For more, please refer to `examples`.
 </details>
@@ -130,14 +129,15 @@ from dicee import KGE
 pre_trained_kge = KGE(path='ConEx')
 missing_triples = pre_trained_kge.find_missing_triples(confidence=0.95, entities=[''], relations=[''])
 ```
-### Conjunctive Query Answering
+### Complex Query Answering
+The beam search technique proposed in [Complex Query Answering with Neural Link Predictors](https://arxiv.org/abs/2011.03459)
 ```python
 from dicee import KGE
 # (1) Load a pretrained KGE model on KGs/Family
 pretrained_model = KGE(path='Experiments/2022-12-08 11:46:33.654677')
-# (2) Answer the following conjunctive query question: To whom a sibling of F9M167 is married to?
+# (2) Query: ?P : \exist Married(P,E) \land hasSibling(E, F9M167) (To whom a sibling of F9M167 is married to?   
 # (3) Decompose (2) into two query
-# (3.1) Who is a sibling of F9M167? => {F9F141,F9M157}
+# (3.1) Who is a sibling of F9M167? => hasSibling(E, F9M167) => {F9F141,F9M157}
 # (3.2) To whom a results of (3.1) is married to ? {F9M142, F9F158}
 pretrained_model.predict_conjunctive_query(entity='<http://www.benchmark.org/family#F9M167>',
                                           relations=['<http://www.benchmark.org/family#hasSibling>',
