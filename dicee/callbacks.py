@@ -282,3 +282,27 @@ class KronE(AbstractCallback):
 
         else:
             raise NotImplementedError('Normalizer should be reinitialized')
+
+
+class GN(AbstractCallback):
+    '''
+    Adding Gaussian Noise into Inputs/Parameters
+    '''
+
+    def __init__(self, std: float = 0.1, epoch_ratio: int = None):
+        super().__init__()
+        self.std = std
+        self.epoch_ratio = epoch_ratio if epoch_ratio is not None else 1
+        self.epoch_counter = 0
+
+    def on_train_epoch_end(self, trainer, model):
+        if self.epoch_counter % self.epoch_ratio == 0:
+            print('ADD noise')
+
+            with torch.no_grad():
+                # Access the parameters
+                for param in model.parameters():
+                    noise_mat = torch.normal(mean=0, std=self.std, size=param.shape, device=model.device)
+                    param.add_(noise_mat)
+
+        self.epoch_counter += 1

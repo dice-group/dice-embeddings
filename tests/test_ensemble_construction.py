@@ -2,7 +2,7 @@ from dicee.executer import Execute, ContinuousExecute
 from dicee.knowledge_graph_embeddings import KGE
 import pytest
 import os
-from dicee.config import Args
+from dicee.config import Namespace as Args
 
 class TestEnsembleConstruction:
     @pytest.mark.filterwarnings('ignore::UserWarning')
