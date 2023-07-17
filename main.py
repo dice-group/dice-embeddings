@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import json
 from dicee.executer import Execute
 import pytorch_lightning as pl
