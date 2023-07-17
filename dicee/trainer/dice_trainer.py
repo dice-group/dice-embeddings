@@ -49,8 +49,7 @@ def get_callbacks(args):
                                  path=args.full_storage_path),
                  AccumulateEpochLossCallback(path=args.full_storage_path)
                  ]
-    # python main.py --num_epochs 10 --callbacks '{"FPPE":"None"}'
-    # python main.py --num_epochs 10 --callbacks '{"PPE":"None"}'
+    
     if isinstance(args.callbacks, list):
         return callbacks
     for k, v in args.callbacks.items():
@@ -70,47 +69,7 @@ def get_callbacks(args):
             callbacks.append(Eval(path=args.full_storage_path))
 
     return callbacks
-    exit(1)
-    for i in args.callbacks:
-        if i == "GN":
-            callbacks.append(GN(std=0.1))
-        elif i == 'KronE':
-            callbacks.append(KronE())
-        elif i == 'Search':
-            callbacks.append(Search(num_epochs=args.num_epochs, embedding_dim=args.embedding_dim))
-        # @TODO: Rename it
-        elif i == 'Eval':
-            callbacks.append(Eval(path=args.full_storage_path))
-        elif 'FPPE' in i:
-            if i == 'FPPE':
-                callbacks.append(
-                    FPPE(num_epochs=args.num_epochs, path=args.full_storage_path, last_percent_to_consider=None))
-            elif 'FPPE' == i[:4] and len(i) > 3:
-                name, param = i[:4], i[4:]
-                assert name == 'FPPE'
-                assert int(param)
-                callbacks.append(FPPE(num_epochs=args.num_epochs,
-                                      path=args.full_storage_path,
-                                      last_percent_to_consider=int(param)))
-            else:
-                raise KeyError(f'Unexpected input for callbacks ***\t{i}\t***')
-        elif 'PPE' in i:
-            if "PPE" == i:
-                callbacks.append(
-                    PPE(num_epochs=args.num_epochs, path=args.full_storage_path, last_percent_to_consider=None))
-            elif 'PPE' == i[:3] and len(i) > 3:
-                name, param = i[:3], i[3:]
-                assert name == 'PPE'
-                assert int(param)
-                callbacks.append(PPE(num_epochs=args.num_epochs,
-                                     path=args.full_storage_path,
-                                     last_percent_to_consider=int(param)))
-            else:
-                raise KeyError(f'Unexpected input for callbacks ***\t{i}\t***')
-        else:
-            raise KeyError(f'Unexpected input for callbacks ***\t{i}\t***')
-
-    return callbacks
+   
 
 
 class DICE_Trainer:
