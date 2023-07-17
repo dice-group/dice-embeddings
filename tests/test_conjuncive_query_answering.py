@@ -1,16 +1,15 @@
-from dicee.executer import Execute, ContinuousExecute
+from dicee.executer import Execute
 from dicee.knowledge_graph_embeddings import KGE
 from dicee.knowledge_graph import KG
-from dicee.config import Namespace as Args
+from dicee.config import Namespace
 import pytest
-import argparse
 import os
 
 
 class TestKGEInteractive:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_missing_triples_and_conjunctive_query_answering(self):
-        args = Args()
+        args = Namespace()
         args.model = 'AConEx'
         args.scoring_technique = 'KvsAll'
         args.optim = 'Adam'

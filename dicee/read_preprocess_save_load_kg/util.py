@@ -5,10 +5,7 @@ import glob
 import time
 import functools
 import pandas as pd
-from dicee.static_funcs import numpy_data_type_changer
-import concurrent
 import pickle
-import sys
 import os
 import psutil
 
@@ -21,7 +18,8 @@ def timeit(func):
         end_time = time.perf_counter()
         total_time = end_time - start_time
         print(
-            f'Took {total_time:.4f} seconds | Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB')
+            f'Took {total_time:.4f} seconds'
+            f'|Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB')
         return result
 
     return timeit_wrapper
@@ -66,7 +64,7 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
 @timeit
 def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None):
     print(f'*** Reading {data_path} with Pandas ***')
-    if data_path[-3:] in ['txt', 'csv','zst']:
+    if data_path[-3:] in ['txt', 'csv', 'zst']:
         print('Reading with pandas.read_csv with sep ** s+ ** ...')
         df = pd.read_csv(data_path,
                          sep="\s+",
@@ -194,7 +192,8 @@ def load_with_pandas(self) -> None:
 
     self.kg.num_relations = len(self.kg.relation_to_idx)
     print(
-        '[3 / 4] Converting integer and relation mappings from from pandas dataframe to dictionaries for an easy access...',
+        '[3 / 4] Converting integer and relation mappings '
+        'from from pandas dataframe to dictionaries for an easy access...',
     )
     start_time = time.time()
     self.kg.entity_to_idx = self.kg.entity_to_idx.to_dict()['entity']
@@ -216,61 +215,6 @@ def load_with_pandas(self) -> None:
     try:
         print('[6 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
         self.kg.test_set = pd.read_parquet(self.kg.deserialize_flag + '/idx_test_df.gzip').values
-        print('Done!\n')
-    except FileNotFoundError:
-        print('No test data found\n')
-        self.kg.test_set = None
-
-    if self.kg.eval_model:
-        if self.kg.valid_set is not None and self.kg.test_set is not None:
-            # 16. Create a bijection mapping from subject-relation pairs to tail entities.
-            data = np.concatenate([self.kg.train_set, self.kg.valid_set, self.kg.test_set])
-        else:
-            data = self.kg.train_set
-        print('[7 / 4] Creating er,re, and ee type vocabulary for evaluation...')
-        start_time = time.time()
-        self.kg.er_vocab = get_er_vocab(data)
-        self.kg.re_vocab = get_re_vocab(data)
-        # 17. Create a bijection mapping from subject-object pairs to relations.
-        self.kg.ee_vocab = get_ee_vocab(data)
-        self.kg.domain_constraints_per_rel, self.kg.range_constraints_per_rel = create_constraints(
-            self.kg.train_set)
-        print(f'Done !\t{time.time() - start_time:.3f} seconds\n')
-
-
-@timeit
-def load_with_polars(deserialize_flag):
-    print(f'Deserialization Path: {deserialize_flag}\n')
-    entity_to_idx = polars.read_parquet(deserialize_flag + '/entity_to_idx')
-    relation_to_idx = polars.read_parquet(deserialize_flag + '/relation_to_idx')
-
-    print(entity_to_idx)
-    exit(1)
-    self.kg.entity_to_idx = dict(
-        zip(self.kg.entity_to_idx['entity'].to_list(), list(range(len(self.kg.entity_to_idx)))))
-    self.kg.relation_to_idx = dict(
-        zip(self.kg.relation_to_idx['relation'].to_list(), list(range(len(self.kg.relation_to_idx)))))
-
-    self.kg.train_set = polars.read_parquet(self.kg.deserialize_flag + '/idx_train_df').to_numpy()
-    self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
-                                                num=max(self.kg.num_entities, self.kg.num_relations))
-
-    try:
-        print('[5 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
-        self.kg.valid_set = polars.read_parquet(self.kg.deserialize_flag + '/idx_valid_df').to_numpy()
-        self.kg.valid_set = numpy_data_type_changer(self.kg.valid_set,
-                                                    num=max(self.kg.num_entities, self.kg.num_relations))
-
-        print('Done!\n')
-    except FileNotFoundError:
-        print('No valid data found!\n')
-        self.kg.valid_set = None
-
-    try:
-        print('[6 / 4] Deserializing integer mapped data and mapping it to numpy ndarray...')
-        self.kg.test_set = polars.read_parquet(self.kg.deserialize_flag + '/idx_test_df').to_numpy()
-        self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
-                                                   num=max(self.kg.num_entities, self.kg.num_relations))
         print('Done!\n')
     except FileNotFoundError:
         print('No test data found\n')
@@ -360,23 +304,20 @@ def dataset_sanity_checking(train_set: np.ndarray, num_entities: int, num_relati
     try:
         assert n > 0
     except AssertionError:
-        print('Size of the training dataset must be greater than 0.')
-        exit(1)
+        raise AssertionError('Size of the training dataset must be greater than 0.')
+
     try:
         assert num_entities >= max(train_set[:, 0]) and num_entities >= max(train_set[:, 2])
     except AssertionError:
-        print(
-            f'Entity Indexing Error:\nMax ID of a subject or object entity in train set:{max(train_set[:, 0])} or {max(train_set[:, 2])} is greater than num_entities:{num_entities}')
-        print('Exiting...')
-        exit(1)
+        raise AssertionError(
+            f'Entity Indexing Error:\n'
+            f'Max ID of a subject or object entity in train set:'
+            f'{max(train_set[:, 0])} or {max(train_set[:, 2])} is greater than num_entities:{num_entities}')
     try:
         assert num_relations >= max(train_set[:, 1])
     except AssertionError:
         print(
-            f'Relation Indexing Error:\nMax ID of a relation in train set:{max(train_set[:, 1])} is greater than num_entities:{num_relations}')
-        print('Exiting...')
-        exit(1)
+            f'Relation Indexing Error:\n'
+            f'Max ID of a relation in train set:{max(train_set[:, 1])} is greater than num_entities:{num_relations}')
     # 13. Sanity checking: data types
     assert isinstance(train_set[0], np.ndarray)
-    # assert isinstance(train_set[0][0], np.int64) and isinstance(train_set[0][1], np.int64)
-    # assert isinstance(train_set[0][2], np.int64)

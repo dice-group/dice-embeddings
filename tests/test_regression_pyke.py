@@ -1,11 +1,11 @@
 from dicee.executer import Execute
 import pytest
-from dicee.config import Namespace as Args
+from dicee.config import Namespace
 
 class TestRegressionPyke:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'Pyke'
         args.path_dataset_folder = 'KGs/UMLS'
         args.optim = 'Adam'
@@ -18,4 +18,4 @@ class TestRegressionPyke:
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'NegSample'
         args.eval_model = None
-        result = Execute(args).start()
+        Execute(args).start()

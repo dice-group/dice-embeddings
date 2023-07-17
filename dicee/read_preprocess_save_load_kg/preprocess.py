@@ -1,5 +1,8 @@
-from .util import *
-
+import pandas as pd
+import time
+import polars
+from .util import create_recipriocal_triples, timeit, index_triples_with_pandas, dataset_sanity_checking
+from dicee.static_funcs import numpy_data_type_changer
 
 class PreprocessKG:
     """ Preprocess the data in memory """
@@ -125,7 +128,7 @@ class PreprocessKG:
         try:
             assert isinstance(self.kg.train_set, polars.DataFrame)
         except TypeError:
-            raise TypeError(f"{type(kg.train_set)}")
+            raise TypeError(f"{type(self.kg.train_set)}")
         assert isinstance(self.kg.valid_set, polars.DataFrame) or self.kg.valid_set is None
         assert isinstance(self.kg.test_set, polars.DataFrame) or self.kg.test_set is None
 
@@ -178,24 +181,6 @@ class PreprocessKG:
             return data.with_columns([polars.col("subject").apply(lambda x: self.kg.entity_to_idx[x]),
                                       polars.col("relation").apply(lambda x: self.kg.relation_to_idx[x]),
                                       polars.col("object").apply(lambda x: self.kg.entity_to_idx[x])])
-
-        @timeit
-        def from_polars_to_numpy():
-            """ Map str stored in a polars Dataframe to int"""
-            # https://github.com/pola-rs/polars/issues/5973#issuecomment-1373781420
-            mapper_entity = polars.DataFrame(
-                {"keys": list(self.kg.entity_to_idx.keys()), "values": list(self.kg.entity_to_idx.values())})
-            mapper_relation = polars.DataFrame(
-                {"keys": list(self.kg.relation_to_idx.keys()), "values": list(self.kg.relation_to_idx.values())})
-
-            print(self.kg.train_set[:, "subject"].join(mapper_entity, on="subject", how="left").to_series(1))
-            exit(1)
-
-            self.kg.train_set = self.kg.train_set.select(
-                [polars.col("subject").to_frame("keys").join(mapper_entity, on="keys", how="left").to_series(1),
-                 polars.col("relation").to_frame("keys").join(mapper_relation, on="keys", how="left").to_series(1),
-                 polars.col("subject").to_frame("keys").join(mapper_entity, on="keys", how="left").to_series(1)]
-            ).to_numpy()
 
         @timeit
         def from_pandas_to_numpy(df):
@@ -257,7 +242,8 @@ class PreprocessKG:
         print('Creating a mapping from entities to integer indexes...')
         # (5) Create a bijection mapping from entities of (2) to integer indexes.
         # ravel('K') => Return a contiguous flattened array.
-        # ‘K’ means to read the elements in the order they occur in memory, except for reversing the data when strides are negative.
+        # ‘K’ means to read the elements in the order they occur in memory,
+        # except for reversing the data when strides are negative.
         ordered_list = pd.unique(df_str_kg[['subject', 'object']].values.ravel('K')).tolist()
         self.kg.entity_to_idx = {k: i for i, k in enumerate(ordered_list)}
         # 5. Create a bijection mapping  from relations to integer indexes.
@@ -300,18 +286,11 @@ class PreprocessKG:
         """ (1) Add reciprocal triples (2) Add noisy triples """
         # (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
         if self.kg.add_reciprical and self.kg.eval_model:
-            print(
-                '[3.1 / 14] Add reciprocal triples to train, validation, and test sets, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}',
-            )
+            print('[3.1 / 14] Add reciprocal triples '
+                  'to train, validation, and test sets, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}')
             self.kg.train_set = create_recipriocal_triples(self.kg.train_set)
             if self.kg.valid_set is not None:
                 self.kg.valid_set = create_recipriocal_triples(self.kg.valid_set)
             if self.kg.test_set is not None:
                 self.kg.test_set = create_recipriocal_triples(self.kg.test_set)
             print('Done !\n')
-
-        # (2) Extend KG with triples where entities and relations are randomly sampled.
-        if None:
-            print(f'[4 / 14] Adding noisy triples...')
-            self.kg.train_set = add_noisy_triples(self.kg.train_set, self.kg.add_noise_rate)
-            print('Done!\n')

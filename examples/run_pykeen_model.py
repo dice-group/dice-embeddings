@@ -1,18 +1,13 @@
-import pykeen.evaluation.rank_based_evaluator
-from pykeen.datasets import UMLS, Kinships
-from pykeen.models import ERModel, DistMult, Model, ComplEx, QuatE
+from pykeen.datasets import UMLS
+from pykeen.models import DistMult, ComplEx, QuatE
 from pykeen.sampling import BasicNegativeSampler
 from torch.optim import Adam
 import time
-import torch
 from pykeen.training import LCWATrainingLoop, SLCWATrainingLoop
-from pykeen.evaluation import LCWAEvaluationLoop, RankBasedEvaluator
+from pykeen.evaluation import RankBasedEvaluator
 
-from dicee.executer import Execute
 import pytorch_lightning as pl
-from dicee.config import ParseDict
 import argparse
-from pykeen.utils import set_random_seed
 
 
 def get_default_arguments():

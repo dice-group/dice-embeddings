@@ -1,9 +1,6 @@
 # Disclaimer: This module is written by one and only andrej karpathy
 # https://github.com/karpathy/nn-zero-to-hero
 import math
-import numpy as np
-import matplotlib.pyplot as plt
-import graphviz
 from graphviz import Digraph
 import warnings
 warnings.filterwarnings('ignore')

@@ -1,8 +1,7 @@
 import torch
 import numpy as np
 import json
-import sys
-from .static_funcs import timeit, pickle
+from .static_funcs import pickle
 
 
 class Evaluator:
@@ -347,10 +346,10 @@ class Evaluator:
 
             # 4. Compute Hit@N
             for hits_level in range(1, 11):
-                I = 1 if filt_head_entity_rank <= hits_level else 0
-                I += 1 if filt_tail_entity_rank <= hits_level else 0
-                if I > 0:
-                    hits.setdefault(hits_level, []).append(I)
+                res = 1 if filt_head_entity_rank <= hits_level else 0
+                res += 1 if filt_tail_entity_rank <= hits_level else 0
+                if res > 0:
+                    hits.setdefault(hits_level, []).append(res)
 
         mean_reciprocal_rank = sum(reciprocal_ranks) / (float(len(triple_idx) * 2))
 

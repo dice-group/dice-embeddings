@@ -1,10 +1,7 @@
-import time
-from abc import ABCMeta
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import DataLoader
 import numpy as np
 import torch
 import pytorch_lightning as pl
-import random
 from typing import Dict, List
 from .static_preprocess_funcs import mapping_from_first_two_cols_to_third
 from .static_funcs import timeit, load_pickle
@@ -29,7 +26,7 @@ def input_data_type_checking(train_set_idx, valid_set_idx, test_set_idx, entity_
 def create_tensor(x: np.ndarray):
     str_type = str(np.dtype(x.dtype))
     if str_type == 'int8':
-        return torh.CharTensor(x)
+        return torch.CharTensor(x)
     elif str_type == 'int16':
         return torch.ShortTensor(x)
     elif str_type == 'int32':
@@ -92,7 +89,7 @@ def construct_dataset(*, train_set: np.ndarray,
         train_set = KvsAll(train_set, entity_idxs=entity_to_idx, relation_idxs=relation_to_idx,
                            form=form_of_labelling, label_smoothing_rate=label_smoothing_rate)
     else:
-        raise KeyError(f'{label} illegal input.')
+        raise KeyError('Illegal input.')
     return train_set
 
 

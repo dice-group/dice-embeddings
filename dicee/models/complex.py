@@ -1,6 +1,6 @@
-from .base_model import *
-from ..types import torch, Tuple
-
+from typing import Tuple
+import torch
+from .base_model import BaseKGE
 
 class ConEx(BaseKGE):
     """ Convolutional ComplEx Knowledge Graph Embeddings"""

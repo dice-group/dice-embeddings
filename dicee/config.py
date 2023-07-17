@@ -12,6 +12,7 @@ class ParseDict(argparse.Action):
                 continue
             getattr(namespace, self.dest)[key] = value
 
+
 class Namespace(argparse.Namespace):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -51,5 +52,8 @@ class Namespace(argparse.Namespace):
         self.sample_triples_ratio = None
         self.read_only_few = None
         self.pykeen_model_kwargs: ParseDict = dict()
-        self.use_SLCWALitModule: None = False
 
+    def __iter__(self):
+        # Iterate
+        for k, v in self.__dict__.items():
+            yield k, v

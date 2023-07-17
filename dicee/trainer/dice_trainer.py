@@ -1,17 +1,15 @@
-import time
 import pytorch_lightning as pl
 import gc
 from typing import Union
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
-from dicee.callbacks import *
+from dicee.callbacks import PPE,FPPE, Eval, KronE, PrintCallback,KGESaveCallback,AccumulateEpochLossCallback, GN
 from dicee.dataset_classes import construct_dataset, reload_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
 from ..static_funcs import timeit
 import os
 import torch
-import numpy as np
 from pytorch_lightning.strategies import DDPStrategy
 import pandas as pd
 from sklearn.model_selection import KFold
@@ -49,7 +47,6 @@ def get_callbacks(args):
                                  path=args.full_storage_path),
                  AccumulateEpochLossCallback(path=args.full_storage_path)
                  ]
-    
     if isinstance(args.callbacks, list):
         return callbacks
     for k, v in args.callbacks.items():
@@ -63,11 +60,8 @@ def get_callbacks(args):
                 PPE(num_epochs=args.num_epochs, path=args.full_storage_path, last_percent_to_consider=v.get('last_percent_to_consider')))
         elif k == 'KronE':
             callbacks.append(KronE())
-        elif k == 'Search':# ?
-            callbacks.append(Search(num_epochs=args.num_epochs, embedding_dim=args.embedding_dim))
-        elif k == 'Eval': # ?
-            callbacks.append(Eval(path=args.full_storage_path))
-
+        else:
+            raise RuntimeError('Incorrect callback')
     return callbacks
    
 

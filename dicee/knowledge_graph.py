@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Union
+from typing import List
 import numpy as np
 from .read_preprocess_save_load_kg import ReadFromDisk, PreprocessKG, LoadSaveToDisk
 import sys
@@ -17,7 +17,8 @@ class KG:
         :param path_for_deserialization: A path of a folder containing previously parsed data
         :param num_core: Number of subprocesses used for data loading
         :param add_reciprical: A flag for applying reciprocal data augmentation technique
-        :param eval_model: A flag indicating whether evaluation will be applied. If no eval, then entity relation mappings will be deleted to free memory.
+        :param eval_model: A flag indicating whether evaluation will be applied.
+        If no eval, then entity relation mappings will be deleted to free memory.
         :param add_noise_rate: Add say 10% noise in the input data
         sample_triples_ratio
         """
@@ -54,8 +55,10 @@ class KG:
         self.description_of_input = f'\n------------------- Description of Dataset {self.data_dir} -------------------'
         self.description_of_input += f'\nNumber of entities:{self.num_entities}' \
                                      f'\nNumber of relations:{self.num_relations}' \
-                                     f'\nNumber of triples on train set:{len(self.train_set)}' \
-                                     f'\nNumber of triples on valid set:{len(self.valid_set) if self.valid_set is not None else 0}' \
+                                     f'\nNumber of triples on train set:' \
+                                     f'{len(self.train_set)}' \
+                                     f'\nNumber of triples on valid set:' \
+                                     f'{len(self.valid_set) if self.valid_set is not None else 0}' \
                                      f'\nNumber of triples on test set:{len(self.test_set) if self.test_set is not None else 0}\n'
         self.description_of_input += f"Entity Index:{sys.getsizeof(self.entity_to_idx) / 1_000_000_000:.5f} in GB\n"
         self.description_of_input += f"Relation Index:{sys.getsizeof(self.relation_to_idx) / 1_000_000_000:.5f} in GB\n"

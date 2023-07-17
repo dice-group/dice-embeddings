@@ -1,11 +1,11 @@
 from dicee.executer import Execute
 import sys
 import pytest
-from dicee.config import Namespace as Args
+from dicee.config import Namespace
 
 
 def template(model_name):
-    args = Args()
+    args = Namespace()
     args.path_dataset_folder = "KGs/UMLS"
     args.trainer = "torchCPUTrainer"
     args.model = model_name
@@ -21,7 +21,6 @@ def template(model_name):
     args.read_only_few = None
     args.num_folds_for_cv = None
     return args
-
 
 
 # @pytest.mark.parametrize(
@@ -46,11 +45,11 @@ def template(model_name):
 #         assert 0.999 >= result["Train"]["MRR"] >= 0.94
 #     elif args.model == "Pykeen_MuRE":
 #         assert 0.88 >= result["Train"]["MRR"] >= 0.82
-        
+
 @pytest.mark.parametrize("model_name", ["Pykeen_DistMult",
-    "Pykeen_ComplEx",
-    "Pykeen_QuatE",
-    "Pykeen_MuRE",])
+                                        "Pykeen_ComplEx",
+                                        "Pykeen_QuatE",
+                                        "Pykeen_MuRE", ])
 class TestClass:
     def test_defaultParameters_case(self, model_name):
         args = template(model_name)
@@ -66,10 +65,9 @@ class TestClass:
 
     def test_GNCallback_case(self, model_name):
         args = template(model_name)
-        args.callbacks = {'GN':{"std":0.1}}
+        args.callbacks = {'GN': {"std": 0.1}}
         Execute(args).start()
-       
-        
-        
-        
-    
+
+
+
+

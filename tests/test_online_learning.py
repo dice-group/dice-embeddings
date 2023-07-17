@@ -2,14 +2,13 @@ from dicee.executer import Execute
 from dicee.knowledge_graph_embeddings import KGE
 import torch
 import pytest
-import argparse
 import os
-from dicee.config import Namespace as Args
+from dicee.config import Namespace
 
 class TestRegressionOnlineLearning:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_umls(self):
-        args = Args()
+        args = Namespace()
         args.model = 'AConEx'
         args.scoring_technique = 'KvsSample'
         args.optim = 'Adam'

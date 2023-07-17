@@ -1,12 +1,11 @@
 from dicee.executer import Execute
-import sys
 import pytest
-from dicee.config import Namespace as Args
+from dicee.config import Namespace
 
 class TestPolyak:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_polyak_qmult_k_vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'QMult'
         args.path_dataset_folder = 'KGs/UMLS'
         args.optim = 'Adam'
@@ -36,7 +35,7 @@ class TestPolyak:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_polyak_qmult_k_vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'QMult'
         args.path_dataset_folder = 'KGs/UMLS'
         args.optim = 'Adam'

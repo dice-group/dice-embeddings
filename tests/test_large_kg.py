@@ -1,11 +1,11 @@
 from dicee.executer import Execute
 import pytest
-from dicee.config import Namespace as Args
+from dicee.config import Namespace
 
 class TestRegressionDistMult:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'DistMult'
         args.path_dataset_folder = 'KGs/WN18RR'
         args.optim = 'Adam'
@@ -31,7 +31,7 @@ class TestRegressionDistMult:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_neg_sample(self):
-        args = Args()
+        args = Namespace()
         args.model = 'DistMult'
         args.path_dataset_folder = 'KGs/WN18RR'
         args.optim = 'Adam'

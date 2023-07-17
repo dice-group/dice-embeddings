@@ -1,10 +1,10 @@
 from dicee.executer import Execute
 import pytest
-from dicee.config import Namespace as Args
+from dicee.config import Namespace
 class TestCV_KvsAll:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_shallom_kvs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'Shallom'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -26,7 +26,7 @@ class TestCV_KvsAll:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_conex_kvs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'ConEx'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -48,7 +48,7 @@ class TestCV_KvsAll:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult_kvs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'QMult'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -70,7 +70,7 @@ class TestCV_KvsAll:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_convq_kvs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'ConvQ'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -92,7 +92,7 @@ class TestCV_KvsAll:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_omult_kvs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'OMult'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -114,7 +114,7 @@ class TestCV_KvsAll:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_convo_kvs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'ConvO'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -133,7 +133,7 @@ class TestCV_KvsAll:
         Execute(args).start()
 
     def test_distmult_kvs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'DistMult'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
@@ -151,7 +151,7 @@ class TestCV_KvsAll:
         Execute(args).start()
 
     def test_complex_kvs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'ComplEx'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
