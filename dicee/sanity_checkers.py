@@ -1,5 +1,4 @@
 import os
-import numpy as np
 import glob
 
 
@@ -10,7 +9,7 @@ def sanity_checking_with_arguments(args):
         print(f'embedding_dim must be strictly positive. Currently:{args.embedding_dim}')
         raise
 
-    if not (args.scoring_technique in ['KvsSample', 'KvsAll', 'NegSample', '1vsAll', 'Pyke']):
+    if args.scoring_technique not in ['KvsSample', 'KvsAll', 'NegSample', '1vsAll', 'Pyke']:
         raise KeyError(f'Invalid training strategy => {args.scoring_technique}.')
 
     assert args.learning_rate > 0
@@ -33,8 +32,9 @@ def sanity_checking_with_arguments(args):
         """ all is good we have xxx/train.txt"""
     else:
         raise ValueError(
-            f'Data format is not recognized.\nThe path_dataset_folder parameter **{args.path_dataset_folder}** must lead to (a) **folder/train.txt** or *** triples stored in the parquet format')
-    #assert isinstance(args.eval, bool)
+            f'Data format is not recognized.'
+            f'\nThe path_dataset_folder parameter **{args.path_dataset_folder}** must lead to'
+            f'(a) **folder/train.txt** or *** triples stored in the parquet format')
 
 
 def config_kge_sanity_checking(args, dataset):

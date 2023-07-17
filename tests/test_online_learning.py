@@ -2,7 +2,6 @@ from dicee.executer import Execute
 from dicee.knowledge_graph_embeddings import KGE
 import torch
 import pytest
-import argparse
 import os
 from dicee.config import Arguments
 

@@ -1,5 +1,4 @@
 from dicee.executer import Execute
-import sys
 import pytest
 from dicee import KGE
 from dicee.static_funcs import random_prediction

@@ -1,4 +1,4 @@
-from ..types import torch
+import torch
 from .base_model import BaseKGE
 
 
@@ -108,10 +108,11 @@ class OMult(BaseKGE):
         # Prepare all entities.
         emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 = torch.hsplit(
             self.entity_embeddings.weight, 8)
-        emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 = emb_tail_e0.transpose(
-            1, 0), emb_tail_e1.transpose(1, 0), emb_tail_e2.transpose(1, 0), emb_tail_e3.transpose(1,
-                                                                                                   0), emb_tail_e4.transpose(
-            1, 0), emb_tail_e5.transpose(1, 0), emb_tail_e6.transpose(1, 0), emb_tail_e7.transpose(1, 0)
+        emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 \
+            = emb_tail_e0.transpose(1, 0), emb_tail_e1.transpose(1, 0), \
+              emb_tail_e2.transpose(1, 0), emb_tail_e3.transpose(1,0), \
+              emb_tail_e4.transpose(1, 0), emb_tail_e5.transpose(1, 0), \
+              emb_tail_e6.transpose(1, 0), emb_tail_e7.transpose(1, 0)
 
         # (4)
         # (4.4) Inner product
@@ -240,10 +241,10 @@ class ConvO(BaseKGE):
 
         emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 = torch.hsplit(
             self.entity_embeddings.weight, 8)
-        emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 = emb_tail_e0.transpose(
-            1, 0), emb_tail_e1.transpose(1, 0), emb_tail_e2.transpose(1, 0), emb_tail_e3.transpose(1,
-                                                                                                   0), emb_tail_e4.transpose(
-            1, 0), emb_tail_e5.transpose(1, 0), emb_tail_e6.transpose(1, 0), emb_tail_e7.transpose(1, 0)
+        emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 = \
+            emb_tail_e0.transpose(1, 0), emb_tail_e1.transpose(1, 0), \
+            emb_tail_e2.transpose(1, 0), emb_tail_e3.transpose(1,0), \
+            emb_tail_e4.transpose(1, 0), emb_tail_e5.transpose(1, 0), emb_tail_e6.transpose(1, 0), emb_tail_e7.transpose(1, 0)
 
         # (4)
         # (4.4) Inner product
@@ -371,11 +372,11 @@ class AConvO(BaseKGE):
             O_2=(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4,
                  emb_rel_e5, emb_rel_e6, emb_rel_e7))
 
-        emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 = torch.hsplit(
-            self.entity_embeddings.weight, 8)
-        emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 = emb_tail_e0.transpose(
-            1, 0), emb_tail_e1.transpose(1, 0), emb_tail_e2.transpose(1, 0), emb_tail_e3.transpose(1,
-                                                                                                   0), emb_tail_e4.transpose(
+        emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 = \
+            torch.hsplit(self.entity_embeddings.weight, 8)
+        emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 = \
+            emb_tail_e0.transpose(1, 0), emb_tail_e1.transpose(1, 0), \
+            emb_tail_e2.transpose(1, 0), emb_tail_e3.transpose(1,0), emb_tail_e4.transpose(
             1, 0), emb_tail_e5.transpose(1, 0), emb_tail_e6.transpose(1, 0), emb_tail_e7.transpose(1, 0)
 
         # (4)

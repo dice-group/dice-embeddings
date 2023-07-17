@@ -1,76 +1,10 @@
-from pykeen.contrib.lightning import LCWALitModule, SLCWALitModule
-from pykeen.triples.triples_factory import TriplesFactory
 import torch
 import torch.utils.data
-from pykeen import predict
 import numpy as np
-from typing import Dict, Tuple
-from .base_model import *
+from typing import Tuple,Union
 import pickle
 from pykeen.models import model_resolver
-from pykeen.training import LCWATrainingLoop, SLCWATrainingLoop
-from pykeen.models import model_resolver
-# LCWALitModule
-import pytorch_lightning
 from .base_model import BaseKGE
-
-
-# @ TODO: Temp solution for the deployment
-class MyERModel:
-    def __init__(self, name: str, args: dict):
-        self.name = name
-        self.args = args
-        self.model = None
-
-    def load_state_dict(self, weights):
-        """
-        model = pykeen.models.ERModel(triples_factory=TriplesFactory(mapped_triples=load_numpy(self.args['full_storage_path']+'/train_set.npy'),
-                                                                     entity_to_id=load_pickle(file_path=self.args['full_storage_path']+'/entity_to_idx.p'),
-                                                                     relation_to_id=load_pickle(file_path=self.args['full_storage_path']+'/relation_to_idx.p')),
-                                      entity_representations=self.weights,
-                                      relation_representations=None,
-                                      interaction=interaction_resolver.make(actual_name),
-                                      )
-        """
-        # @TODO: Find a way to parse models
-        from pykeen.models import QuatE
-        from pykeen.contrib.lightning import LitModule
-        """
-        # dataset
-        dataset: HintOrType[Dataset] = "nations",
-        dataset_kwargs: OptionalKwargs = None,
-        mode: Optional[InductiveMode] = None,
-        # model
-        model: HintOrType[Model] = "distmult",
-        model_kwargs: OptionalKwargs = None,
-        # stored outside of the training loop / optimizer to give access to auto-tuning from Lightning
-        batch_size: int = 32,
-        learning_rate: float = 1.0e-03,
-        label_smoothing: float = 0.0,
-        # optimizer
-        optimizer: HintOrType[torch.optim.Optimizer] = None,
-        optimizer_kwargs: OptionalKwargs = None,
-        """
-        self.model = model_resolver.make(self.name, embedding_dim=self.args["embedding_dim"],
-                                         random_seed=0,
-                                         triples_factory=TriplesFactory(
-                                             mapped_triples=load_numpy(
-                                                 self.args['full_storage_path'] + '/train_set.npy'),
-                                             entity_to_id=load_pickle(
-                                                 file_path=self.args['full_storage_path'] + '/entity_to_idx.p'),
-                                             relation_to_id=load_pickle(
-                                                 file_path=self.args['full_storage_path'] + '/relation_to_idx.p')))
-        self.model.load_state_dict(weights)
-
-    def parameters(self):
-        for i in self.model.parameters():
-            yield i
-
-    def eval(self):
-        self.model.eval()
-
-    def __call__(self, x: torch.LongTensor):
-        return self.model(mode=None, h_indices=x[:, 0], r_indices=x[:, 1], t_indices=x[:, 2])
 
 def load_numpy(path) -> np.ndarray:
     print('Loading indexed training data...', end='')

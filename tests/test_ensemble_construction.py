@@ -1,4 +1,4 @@
-from dicee.executer import Execute, ContinuousExecute
+from dicee.executer import Execute
 from dicee.knowledge_graph_embeddings import KGE
 import pytest
 import os
@@ -34,5 +34,5 @@ class TestEnsembleConstruction:
         assert os.path.isdir(result['path_experiment_folder'])
 
         # (1) Load single model
-        pre_trained_kge = KGE(path=result['path_experiment_folder'])
-        pre_trained_kge = KGE(path=result['path_experiment_folder'], construct_ensemble=True)
+        KGE(path=result['path_experiment_folder'])
+        KGE(path=result['path_experiment_folder'], construct_ensemble=True)

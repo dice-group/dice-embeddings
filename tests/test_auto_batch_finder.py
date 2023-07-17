@@ -1,6 +1,4 @@
-from dicee.executer import Execute
 from dicee.config import Arguments
-from dicee.knowledge_graph_embeddings import KGE
 import pytest
 
 

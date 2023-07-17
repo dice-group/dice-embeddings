@@ -1,5 +1,5 @@
 from .base_model import BaseKGE
-from ..types import torch
+import torch
 
 
 class CMult(BaseKGE):
@@ -179,8 +179,8 @@ class CMult(BaseKGE):
         elif (self.p == 2 and self.q == 0) or (self.p == 0 and self.q == 2):
             ab0, ab1, ab2, ab12 = ab
             c0, c1, c2, c12 = torch.hsplit(self.entity_embeddings.weight, 4)
-            return torch.mm(ab0, c0.transpose(1, 0)) + torch.mm(ab1, c1.transpose(1, 0)) + torch.mm(ab2, c2.transpose(1,
-                                                                                                                      0)) + torch.mm(
+            return torch.mm(ab0, c0.transpose(1, 0)) + \
+                   torch.mm(ab1, c1.transpose(1, 0)) + torch.mm(ab2, c2.transpose(1,0)) + torch.mm(
                 ab12, c12.transpose(1, 0))
         elif self.p == 3 and self.q == 0:
 
@@ -190,15 +190,14 @@ class CMult(BaseKGE):
             return torch.mm(ab0, c0.transpose(1, 0)) \
                    + torch.mm(ab1, c1.transpose(1, 0)) \
                    + torch.mm(ab2, c2.transpose(1, 0)) \
-                   + torch.mm(ab3, c3.transpose(1, 0)) + torch.mm(ab12, c3.transpose(1, 0)) + torch.mm(ab13,
-                                                                                                       c13.transpose(1,
-                                                                                                                     0)) \
+                   + torch.mm(ab3, c3.transpose(1, 0)) + \
+                   torch.mm(ab12, c3.transpose(1, 0)) + torch.mm(ab13,c13.transpose(1,0)) \
                    + torch.mm(ab23, c23.transpose(1, 0)) + torch.mm(ab123, c123.transpose(1, 0))
         elif self.p == 1 and self.q == 1:
             ab0, ab1, ab2, ab12 = ab
             c0, c1, c2, c12 = torch.hsplit(self.entity_embeddings.weight, 4)
-            return torch.mm(ab0, c0.transpose(1, 0)) + torch.mm(ab1, c1.transpose(1, 0)) + torch.mm(ab2, c2.transpose(1,
-                                                                                                                      0)) + torch.mm(
+            return torch.mm(ab0, c0.transpose(1, 0)) + torch.mm(ab1, c1.transpose(1, 0)) + \
+                   torch.mm(ab2, c2.transpose(1,0)) + torch.mm(
                 ab12, c12.transpose(1, 0))
 
         else:

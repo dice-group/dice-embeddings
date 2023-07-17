@@ -1,5 +1,4 @@
 from dicee.executer import Execute
-import sys
 import pytest
 from dicee.config import Arguments
 

@@ -19,7 +19,7 @@ class TestPolyak:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_pandas_as_backend(self):
-        args = get_default_arguments([])
+        args = Arguments()
         args.path_dataset_folder = 'KGs/UMLS'
         args.backend = 'pandas'
         Execute(args).start()

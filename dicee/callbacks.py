@@ -1,17 +1,12 @@
 import datetime
-import math
 import time
 import numpy as np
 import torch
 
 import dicee.models.base_model
-from .static_funcs import save_checkpoint_model, exponential_function, save_pickle, load_pickle
+from .static_funcs import save_checkpoint_model, exponential_function, save_pickle
 from .abstracts import AbstractCallback, AbstractPPECallback
-from typing import Optional
-import os
 import pandas as pd
-import torch.nn.functional as F
-import matplotlib.pyplot as plt
 
 
 class AccumulateEpochLossCallback(AbstractCallback):
@@ -93,7 +88,8 @@ class KGESaveCallback(AbstractCallback):
         if self.epoch_counter % self.every_x_epoch == 0 and self.epoch_counter > 1:
             print(f'\nStoring model {self.epoch_counter}...')
             save_checkpoint_model(model,
-                                  path=self.path + f'/model_at_{str(self.epoch_counter)}_epoch_{str(str(datetime.datetime.now()))}.pt')
+                                  path=self.path + f'/model_at_{str(self.epoch_counter)}_'
+                                                   f'epoch_{str(str(datetime.datetime.now()))}.pt')
         self.epoch_counter += 1
 
 
@@ -159,7 +155,7 @@ class PPE(AbstractPPECallback):
     def __init__(self, num_epochs, path, last_percent_to_consider=None):
         super().__init__(num_epochs, path, last_percent_to_consider)
         self.alphas = np.ones(self.num_ensemble_coefficient) / self.num_ensemble_coefficient
-        print(f"Equal Ensemble Coefficients:", self.alphas)
+        print("Equal Ensemble Coefficients:", self.alphas)
 
 
 class FPPE(AbstractPPECallback):

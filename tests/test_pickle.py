@@ -15,7 +15,7 @@ class TestPickle:
         args.trainer = 'torchCPUTrainer'
         executor.start()
         pickle.dump(executor.trained_model, open("trained_model.p", "wb"))
-        pickled_trained_model = pickle.load(open("trained_model.p", "rb"))
+        pickle.load(open("trained_model.p", "rb"))
         os.remove('trained_model.p')
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -28,7 +28,7 @@ class TestPickle:
         args.trainer = 'torchCPUTrainer'
         executor.start()
         pickle.dump(executor.trained_model, open("trained_model.p", "wb"))
-        pickled_trained_model = pickle.load(open("trained_model.p", "rb"))
+        pickle.load(open("trained_model.p", "rb"))
         os.remove('trained_model.p')
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -42,7 +42,7 @@ class TestPickle:
         args.trainer = 'torchCPUTrainer'
         executor.start()
         pickle.dump(executor.trained_model, open("trained_model.p", "wb"))
-        pickled_trained_model = pickle.load(open("trained_model.p", "rb"))
+        pickle.load(open("trained_model.p", "rb"))
         os.remove('trained_model.p')
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -55,7 +55,7 @@ class TestPickle:
         args.trainer = 'torchCPUTrainer'
         executor.start()
         pickle.dump(executor.trained_model, open("trained_model.p", "wb"))
-        pickled_trained_model = pickle.load(open("trained_model.p", "rb"))
+        pickle.load(open("trained_model.p", "rb"))
         os.remove('trained_model.p')
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -68,5 +68,5 @@ class TestPickle:
         args.trainer = 'torchCPUTrainer'
         executor.start()
         pickle.dump(executor.trained_model, open("trained_model.p", "wb"))
-        pickled_trained_model = pickle.load(open("trained_model.p", "rb"))
+        pickle.load(open("trained_model.p", "rb"))
         os.remove('trained_model.p')

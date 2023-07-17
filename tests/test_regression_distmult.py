@@ -46,7 +46,7 @@ class TestRegressionDistMult:
         args.normalization = 'LayerNorm'
         args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
-        result = Execute(args).start()
+        Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):

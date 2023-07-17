@@ -1,31 +1,19 @@
 import numpy as np
-import pykeen.models
 import torch
 import datetime
-from .types import Tuple
-from .models import *
+from typing import Tuple, List
+from .models import CMult, Pyke, DistMult, KeciBase, Keci, TransE, \
+    ComplEx, AConEx, AConvO, AConvQ, ConvQ, ConvO, ConEx, QMult, OMult, Shallom
 from .models.pykeen_models import PykeenKGE
-from .models.base_model import BaseKGE
 import time
 import pandas as pd
 import json
 import glob
-import pandas
-import polars
 import functools
 import os
 import psutil
-import torch
-import datetime
-from .types import Tuple
 from .models.base_model import BaseKGE
-import time
-import json
-import glob
-import pandas
-import polars
 import pickle
-import pytorch_lightning as pl
 from pykeen.datasets.base import EagerDataset
 from pykeen.triples.triples_factory import TriplesFactory
 
@@ -38,7 +26,8 @@ def timeit(func):
         end_time = time.perf_counter()
         total_time = end_time - start_time
         print(
-            f'Took {total_time:.4f} seconds | Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB')
+            f'Took {total_time:.4f} seconds'
+            f'|Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB')
         return result
 
     return timeit_wrapper
@@ -168,6 +157,12 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, pd.Dat
     return model, entity_to_idx, relation_to_idx
 
 
+def save_numpy_ndarray(*, data: np.ndarray, file_path: str):
+    n, d = data.shape
+    assert n > 0
+    assert d == 3
+    with open(file_path, 'wb') as f:
+        np.save(f, data)
 def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
     """
     Detect most efficient data type for a given triples
@@ -296,7 +291,10 @@ def get_pykeen_model(model_name: str, args, dataset):
         # (1) Load a pretrained Pykeen Model
         return PykeenKGE(model_name=actual_name,
                          dataset=EagerDataset(
-                             training=TriplesFactory(load_numpy(args['full_storage_path']+'/train_set.npy'), load_pickle(file_path=args['full_storage_path']+'/entity_to_idx.p'), load_pickle(file_path=args['full_storage_path']+'/relation_to_idx.p')),
+                             training=TriplesFactory(
+                                 load_numpy(args['full_storage_path'] + '/train_set.npy'),
+                                 load_pickle(file_path=args['full_storage_path'] + '/entity_to_idx.p'),
+                                 load_pickle(file_path=args['full_storage_path'] + '/relation_to_idx.p')),
                              testing=None), args=args)
     elif args['scoring_technique'] in ['KvsAll', "NegSample"]:
         return PykeenKGE(model_name=actual_name,
@@ -362,16 +360,6 @@ def intialize_model(args: dict, dataset=None) -> Tuple[object, str]:
     elif model_name == 'CMult':
         model = CMult(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif model_name == 'FMult':
-        model = FMult(args=args)
-        form_of_labelling = 'EntityPrediction'
-    elif model_name == 'FMult2':
-        model = FMult2(args=args)
-        form_of_labelling = 'EntityPrediction'
-    elif model_name == 'GFMult':
-        model = GFMult(args=args)
-        form_of_labelling = 'EntityPrediction'
-    # elif for PYKEEN https://github.com/dice-group/dice-embeddings/issues/54
     else:
         raise ValueError
     return model, form_of_labelling
@@ -392,17 +380,10 @@ def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
     :param path:
     :return:
     """
+    # @TODO: Do we need it ?!
     try:
         df = pd.DataFrame(embeddings, index=indexes)
-        del embeddings
-        num_mb = df.memory_usage(index=True, deep=True).sum() / (10 ** 6)
-        if num_mb > 10 ** 6:
-            df = dd.from_pandas(df, npartitions=len(df) / 100)
-            # PARQUET wants columns to be stn
-            df.columns = df.columns.astype(str)
-            df.to_parquet(path)
-        else:
-            df.to_csv(path)
+        df.to_csv(path)
     except KeyError or AttributeError as e:
         print('Exception occurred at saving entity embeddings. Computation will continue')
         print(e)
@@ -489,140 +470,6 @@ def norm_p_value(p_values, variant):
         norm_p_values = p_values.scatter_(1, torch.max(p_values, dim=-1).indices.unsqueeze(-1),
                                           torch.ones_like(p_values))
     return norm_p_values
-
-
-def is_in_credal_set(p_hat, pi):
-    if len(p_hat.shape) == 1:
-        p_hat = p_hat.unsqueeze(0)
-    if len(pi.shape) == 1:
-        pi = pi.unsqueeze(0)
-
-    c = torch.cumsum(torch.flip(p_hat, dims=[-1]), dim=-1)
-    rev_pi = torch.flip(pi, dims=[-1])
-    return torch.all(c <= rev_pi, dim=-1)
-
-
-def gen_lr(p_hat, pi):
-    if len(p_hat.shape) < 2:
-        p_hat = p_hat.unsqueeze(0)
-    if len(pi.shape) < 2:
-        pi = pi.unsqueeze(0)
-
-    with torch.no_grad():
-        # Sort values
-        sorted_pi_rt = pi.sort(descending=True)
-
-        sorted_pi = sorted_pi_rt.values
-        sorted_p_hat = torch.gather(p_hat, 1, sorted_pi_rt.indices)
-
-        def search_fn(sorted_p_hat, sorted_pi, sorted_pi_rt_ind):
-            result_probs = torch.zeros_like(sorted_p_hat)
-
-            for i in range(sorted_p_hat.shape[0]):
-                # Search for loss
-                proj = torch.zeros_like(sorted_p_hat[i])
-
-                j = sorted_p_hat[i].shape[0] - 1
-                while j >= 0:
-                    lookahead = det_lookahead(sorted_p_hat[i], sorted_pi[i], j, proj)
-                    proj[lookahead:j + 1] = sorted_p_hat[i][lookahead:j + 1] / torch.sum(
-                        sorted_p_hat[i][lookahead:j + 1]) * (
-                                                    sorted_pi[i][lookahead] - torch.sum(proj[j + 1:]))
-
-                    j = lookahead - 1
-
-                # e-arrange projection again according to original order
-                proj = proj[sorted_pi_rt_ind[i].sort().indices]
-
-                result_probs[i] = proj
-            return result_probs
-
-        is_c_set = is_in_credal_set(sorted_p_hat, sorted_pi)
-
-        sorted_p_hat_non_c = sorted_p_hat[~is_c_set]
-        sorted_pi_non_c = sorted_pi[~is_c_set]
-        sorted_pi_ind_c = sorted_pi_rt.indices[~is_c_set]
-
-        result_probs = torch.zeros_like(sorted_p_hat)
-        result_probs[~is_c_set] = search_fn(sorted_p_hat_non_c, sorted_pi_non_c, sorted_pi_ind_c)
-        result_probs[is_c_set] = p_hat[is_c_set]
-
-    p_hat = torch.clip(p_hat, 1e-5, 1.)
-    result_probs = torch.clip(result_probs, 1e-5, 1.)
-
-    divergence = F.kl_div(p_hat.log(), result_probs, log_target=False, reduction="none")
-    divergence = torch.sum(divergence, dim=-1)
-
-    result = torch.where(is_c_set, torch.zeros_like(divergence), divergence)
-
-    return torch.mean(result)
-
-
-def det_lookahead(p_hat, pi, ref_idx, proj, precision=1e-5):
-    for i in range(ref_idx):
-        prop = p_hat[i:ref_idx + 1] / torch.sum(p_hat[i:ref_idx + 1])
-        prop *= (pi[i] - torch.sum(proj[ref_idx + 1:]))
-
-        # Check violation
-        violates = False
-        # TODO: Make this more efficient by using cumsum
-        for j in range(len(prop)):
-            if (torch.sum(prop[j:]) + torch.sum(proj[ref_idx + 1:])) > (torch.max(pi[i + j:]) + precision):
-                violates = True
-                break
-
-        if not violates:
-            return i
-
-    return ref_idx
-
-
-def construct_p_values(non_conf_scores, preds, non_conf_score_fn):
-    num_class = preds.shape[1]
-    tmp_non_conf = torch.zeros([preds.shape[0], num_class]).detach()
-    p_values = torch.zeros([preds.shape[0], num_class]).detach()
-    for clz in range(num_class):
-        tmp_non_conf[:, clz] = non_conf_score_fn(preds, torch.tensor(clz).repeat(preds.shape[0]))
-        p_values[:, clz] = p_value(non_conf_scores, tmp_non_conf[:, clz])
-    return p_values
-
-
-def non_conformity_score_prop(predictions, targets) -> torch.Tensor:
-    if len(predictions.shape) == 1:
-        predictions = predictions.unsqueeze(0)
-    if len(targets.shape) == 1:
-        targets = targets.unsqueeze(1)
-
-    class_val = torch.gather(predictions, 1, targets.type(torch.int64))
-    num_class = predictions.shape[1]
-
-    # Exclude the target class here
-    indices = torch.arange(0, num_class).view(1, -1).repeat(predictions.shape[0], 1)
-    mask = torch.zeros_like(indices).bool()
-    mask.scatter_(1, targets.type(torch.int64), True)
-
-    selected_predictions = predictions[~mask].view(-1, args.num_classes - 1)
-
-    return torch.max(selected_predictions, dim=-1).values.squeeze() / (
-            class_val.squeeze() + args.non_conf_score_prop_gamma + 1e-5)
-
-
-def non_conformity_score_diff(predictions, targets) -> torch.Tensor:
-    if len(predictions.shape) == 1:
-        predictions = predictions.unsqueeze(0)
-    if len(targets.shape) == 1:
-        targets = targets.unsqueeze(1)
-    num_class = predictions.shape[1]
-    class_val = torch.gather(predictions, 1, targets.type(torch.int64))
-
-    # Exclude the target class here
-    indices = torch.arange(0, num_class).view(1, -1).repeat(predictions.shape[0], 1)
-    mask = torch.zeros_like(indices).bool()
-    mask.scatter_(1, targets.type(torch.int64), True)
-
-    selected_predictions = predictions[~mask].view(-1, num_class - 1)
-
-    return torch.max(selected_predictions - class_val, dim=-1).values
 
 
 @timeit

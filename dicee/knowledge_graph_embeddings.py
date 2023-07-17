@@ -1,7 +1,4 @@
-import os
-import time
 from typing import List, Tuple, Set, Iterable, Dict
-import pandas as pd
 import torch
 from torch import optim
 from torch.utils.data import DataLoader
@@ -499,7 +496,7 @@ class KGE(BaseInteractiveKGE):
         self.set_model_train_mode()
         if optimizer is None:
             optimizer = optim.Adam(self.model.parameters(), lr=0.1)
-        print(f'Iteration starts...')
+        print('Iteration starts...')
         # (4) Train.
         for epoch in range(iteration):
             optimizer.zero_grad()
@@ -543,10 +540,14 @@ class KGE(BaseInteractiveKGE):
             loss = self.model.loss(outputs, labels)
             if len(idx_tails) > 0:
                 print(
-                    f"Iteration:{epoch}\t Loss:{loss.item()}\t Avg. Logits for correct tails: {outputs[0, idx_tails].flatten().mean().detach()}")
+                    f"Iteration:{epoch}\t"
+                    f"Loss:{loss.item()}\t"
+                    f"Avg. Logits for correct tails: {outputs[0, idx_tails].flatten().mean().detach()}")
             else:
                 print(
-                    f"Iteration:{epoch}\t Loss:{loss.item()}\t Avg. Logits for all negatives: {outputs[0].flatten().mean().detach()}")
+                    f"Iteration:{epoch}\t"
+                    f"Loss:{loss.item()}\t"
+                    f"Avg. Logits for all negatives: {outputs[0].flatten().mean().detach()}")
 
             loss.backward()
             optimizer.step()

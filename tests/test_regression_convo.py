@@ -1,5 +1,4 @@
 from dicee.executer import Execute
-import sys
 import pytest
 from dicee.config import Arguments
 
@@ -24,7 +23,7 @@ class TestRegressionConvO:
         args.normalization = 'LayerNorm'
         args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
-        result = Execute(args).start()
+        Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
@@ -46,7 +45,7 @@ class TestRegressionConvO:
         args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
         args.scoring_technique = '1vsAll'
-        result = Execute(args).start()
+        Execute(args).start()
 
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
@@ -69,4 +68,4 @@ class TestRegressionConvO:
         args.normalization = 'LayerNorm'
         args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
-        result = Execute(args).start()
+        Execute(args).start()

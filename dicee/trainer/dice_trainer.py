@@ -1,17 +1,15 @@
-import time
 import pytorch_lightning as pl
 import gc
 from typing import Union
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
-from dicee.callbacks import *
+from dicee.callbacks import PPE,FPPE, Eval, KronE, PrintCallback,KGESaveCallback,AccumulateEpochLossCallback
 from dicee.dataset_classes import construct_dataset, reload_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
 from ..static_funcs import timeit
 import os
 import torch
-import numpy as np
 from pytorch_lightning.strategies import DDPStrategy
 import pandas as pd
 from sklearn.model_selection import KFold
@@ -51,9 +49,6 @@ def get_callbacks(args):
     for i in args.callbacks:
         if i=='KronE':
             callbacks.append(KronE())
-        elif i=='Search':
-            callbacks.append(Search(num_epochs=args.num_epochs,embedding_dim=args.embedding_dim))
-        # @TODO: Rename it
         elif i=='Eval':
             callbacks.append(Eval(path=args.full_storage_path))
         elif 'FPPE' in i:
@@ -208,7 +203,8 @@ class DICE_Trainer:
             self.trainer.evaluator=self.evaluator
             self.trainer.dataset = dataset
             self.trainer.form_of_labelling = form_of_labelling
-            self.trainer.fit(model, train_dataloaders=self.initialize_dataloader(self.initialize_dataset(dataset, form_of_labelling)))
+            self.trainer.fit(model, train_dataloaders=self.initialize_dataloader(
+                self.initialize_dataset(dataset, form_of_labelling)))
             return model, form_of_labelling
 
     def k_fold_cross_validation(self, dataset) -> Tuple[BaseKGE, str]:

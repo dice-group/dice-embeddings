@@ -1,9 +1,8 @@
-from dicee.executer import Execute, ContinuousExecute, get_default_arguments
+from dicee.executer import Execute
 from dicee.knowledge_graph_embeddings import KGE
 from dicee.knowledge_graph import KG
 from dicee.config import Arguments
 import pytest
-import argparse
 import os
 
 

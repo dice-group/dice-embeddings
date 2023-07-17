@@ -1,5 +1,5 @@
-from .util import *
-
+from .util import read_from_disk
+import glob
 class ReadFromDisk:
     """Read the data from disk into memory"""
 

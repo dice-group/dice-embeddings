@@ -1,6 +1,7 @@
 from .base_model import BaseKGE
-from .static_funcs import quaternion_mul
-from ..types import Tuple, Union, torch, np
+from typing import Tuple
+import torch
+import numpy as np
 
 
 class DistMult(BaseKGE):

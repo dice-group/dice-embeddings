@@ -18,4 +18,4 @@ class TestRegressionPyke:
         args.feature_map_dropout_rate = 0.0
         args.scoring_technique = 'NegSample'
         args.eval_model = None
-        result = Execute(args).start()
+        Execute(args).start()
