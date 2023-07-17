@@ -2,7 +2,7 @@ from dicee.executer import Execute
 import os
 import pickle
 import pytest
-from dicee.config import Args
+from dicee.config import Namespace as Args
 
 class TestPickle:
     @pytest.mark.filterwarnings('ignore::UserWarning')

@@ -1,7 +1,7 @@
 from dicee.executer import Execute, ContinuousExecute, get_default_arguments
 from dicee.knowledge_graph_embeddings import KGE
 from dicee.knowledge_graph import KG
-from dicee.config import Args
+from dicee.config import Namespace as Args
 import pytest
 import argparse
 import os

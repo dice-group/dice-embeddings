@@ -1,6 +1,6 @@
 from dicee.executer import Execute
 import pytest
-from dicee.config import Args
+from dicee.config import Namespace as Args
 
 class TestRegressionPyke:
     @pytest.mark.filterwarnings('ignore::UserWarning')

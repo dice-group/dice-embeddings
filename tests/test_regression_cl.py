@@ -1,7 +1,6 @@
 from dicee.executer import Execute, ContinuousExecute
 import pytest
-from dicee.config import Args
-
+from dicee.config import Namespace as Args
 class TestRegressionAConEx:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):

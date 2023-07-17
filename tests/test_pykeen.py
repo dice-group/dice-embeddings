@@ -1,8 +1,7 @@
 from dicee.executer import Execute
 import sys
 import pytest
-from dicee.config import Args
-
+from dicee.config import Namespace as Args
 
 class TestDefaultParams:
     @pytest.mark.filterwarnings('ignore::UserWarning')

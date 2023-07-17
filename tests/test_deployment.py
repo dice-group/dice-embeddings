@@ -3,7 +3,7 @@ import sys
 import pytest
 from dicee import KGE
 from dicee.static_funcs import random_prediction
-from dicee.config import Args
+from dicee.config import Namespace as Args
 
 class TestDefaultParams:
     @pytest.mark.filterwarnings('ignore::UserWarning')

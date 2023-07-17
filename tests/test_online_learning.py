@@ -4,7 +4,7 @@ import torch
 import pytest
 import argparse
 import os
-from dicee.config import Args
+from dicee.config import Namespace as Args
 
 class TestRegressionOnlineLearning:
     @pytest.mark.filterwarnings('ignore::UserWarning')

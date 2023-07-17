@@ -1,5 +1,5 @@
 from dicee.executer import Execute
-from dicee.config import Args
+from dicee.config import Namespace as Args
 import pytest
 
 class TestCallback:
