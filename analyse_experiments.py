@@ -25,7 +25,8 @@ for path in sub_folder_str_paths:
         with open(input_str_path + path + '/configuration.json', 'r') as f:
             config = json.load(f)
             config = {i: config[i] for i in
-                      ['model', 'full_storage_path', 'embedding_dim', 'normalization', 'num_epochs', 'batch_size', 'lr',
+                      ['model', 'full_storage_path', 'embedding_dim',
+                       'normalization', 'num_epochs', 'batch_size', 'lr',
                        'callbacks',
                        'scoring_technique',
                        'path_dataset_folder', 'p', 'q']}
