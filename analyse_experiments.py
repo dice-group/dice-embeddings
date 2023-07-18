@@ -29,7 +29,7 @@ for path in sub_folder_str_paths:
                        'callbacks',
                        'scoring_technique',
                        'path_dataset_folder', 'p', 'q']}
-    except:
+    except FileNotFoundError:
         print('Exception occured at reading config')
         continue
 
@@ -37,7 +37,7 @@ for path in sub_folder_str_paths:
         with open(input_str_path + path + '/report.json', 'r') as f:
             report = json.load(f)
             report = {i: report[i] for i in ['Runtime','NumParam']}
-    except:
+    except FileNotFoundError:
         print('Exception occured at reading report')
         continue
 
@@ -47,16 +47,13 @@ for path in sub_folder_str_paths:
             # print(eval_report)
             # exit(1)
             # eval_report = {i: str(eval_report[i]) for i in ['Train', 'Val', 'Test']}
-    except:
+    except FileNotFoundError:
         print('Exception occured at reading eval_report')
         continue
 
     config.update(eval_report)
     config.update(report)
     experiments.append(config)
-
-    # exit(1)
-    # results.setdefault(config['model'], [str(config) + '\n' + str(eval_report) + '\n' + str(report)]).append(str(config) + '\n' + str(eval_report) + '\n' + str(report))
 
 
 # need a class to hold all params
