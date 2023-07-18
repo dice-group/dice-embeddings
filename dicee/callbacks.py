@@ -192,10 +192,11 @@ class FPPE(AbstractPPECallback):
 
 
 class Eval(AbstractCallback):
-    def __init__(self, path):
+    def __init__(self, path, epoch_ratio: int = None):
         super().__init__()
         self.path = path
         self.reports = []
+        self.epoch_ratio = epoch_ratio if epoch_ratio is not None else 1
         self.epoch_counter = 0
 
     def on_fit_start(self, trainer, model):
@@ -221,11 +222,15 @@ class Eval(AbstractCallback):
         """
 
     def on_train_epoch_end(self, trainer, model):
-        model.eval()
-        report = trainer.evaluator.eval(dataset=trainer.dataset, trained_model=model,
-                                        form_of_labelling=trainer.form_of_labelling, during_training=True)
-        model.train()
-        self.reports.append(report)
+        self.epoch_counter+=1
+        if self.epoch_counter % self.epoch_ratio == 0:
+            model.eval()
+            report = trainer.evaluator.eval(dataset=trainer.dataset, trained_model=model,
+                                            form_of_labelling=trainer.form_of_labelling, during_training=True)
+            model.train()
+            self.reports.append(report)
+
+
 
     def on_train_batch_end(self, *args, **kwargs):
         return

@@ -3,7 +3,7 @@ import gc
 from typing import Union
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
-from dicee.callbacks import PPE,FPPE, Eval, KronE, PrintCallback,KGESaveCallback,AccumulateEpochLossCallback, GN
+from dicee.callbacks import PPE,FPPE, Eval, KronE, PrintCallback, KGESaveCallback,AccumulateEpochLossCallback, GN
 from dicee.dataset_classes import construct_dataset, reload_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
@@ -54,12 +54,16 @@ def get_callbacks(args):
             callbacks.append(GN(std=v['std'], epoch_ratio=v.get('epoch_ratio')))
         elif k=='FPP':
             callbacks.append(
-                FPPE(num_epochs=args.num_epochs, path=args.full_storage_path, last_percent_to_consider=v.get('last_percent_to_consider')))
+                FPPE(num_epochs=args.num_epochs, path=args.full_storage_path,
+                     last_percent_to_consider=v.get('last_percent_to_consider')))
         elif k=='PPE':
             callbacks.append(
-                PPE(num_epochs=args.num_epochs, path=args.full_storage_path, last_percent_to_consider=v.get('last_percent_to_consider')))
+                PPE(num_epochs=args.num_epochs, path=args.full_storage_path,
+                    last_percent_to_consider=v.get('last_percent_to_consider')))
         elif k == 'KronE':
             callbacks.append(KronE())
+        elif k == 'Eval':
+            callbacks.append(Eval(path=args.full_storage_path,epoch_ratio=v.get('epoch_ratio')))
         else:
             raise RuntimeError('Incorrect callback')
     return callbacks
