@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.9", "3.10", "3.11"]
 
     steps:
       - uses: actions/checkout@v3
@@ -24,8 +24,8 @@ jobs:
       - name: Lint with ruff
         run: |
           ruff --format=github --select=F63,F7,F82 --target-version=py310 dicee/.
-      #    # default set of ruff rules with GitHub Annotations
-      #    ruff --format=github --target-version=py37 .
-      #- name: Test with pytest
-      #  run: |
-      #    pytest
+      - name: Test with pytest
+        run: |
+          wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
+          unzip KGs.zip
+          pytest -p no:warnings -x
