@@ -53,7 +53,7 @@ class PrintCallback(AbstractCallback):
             message = f'{training_time / (60 * 60):.3f} hours.'
         else:
             message = f'{training_time:.3f} seconds.'
-        print(f"Done ! It took {message}\n")
+        print(f"Training Runtime: {message}\n")
 
     def on_train_batch_end(self, *args, **kwargs):
         return
