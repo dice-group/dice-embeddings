@@ -399,16 +399,16 @@ def random_prediction(pre_trained_kge):
     head_entity = pre_trained_kge.sample_entity(1)
     relation = pre_trained_kge.sample_relation(1)
     tail_entity = pre_trained_kge.sample_entity(1)
-    triple_score = pre_trained_kge.triple_score(head_entity=head_entity,
-                                                relation=relation,
-                                                tail_entity=tail_entity)
+    triple_score = pre_trained_kge.triple_score(h=head_entity,
+                                                r=relation,
+                                                t=tail_entity)
     return f'( {head_entity[0]},{relation[0]}, {tail_entity[0]} )', pd.DataFrame({'Score': triple_score})
 
 
 def deploy_triple_prediction(pre_trained_kge, str_subject, str_predicate, str_object):
-    triple_score = pre_trained_kge.triple_score(head_entity=[str_subject],
-                                                relation=[str_predicate],
-                                                tail_entity=[str_object])
+    triple_score = pre_trained_kge.triple_score(h=[str_subject],
+                                                r=[str_predicate],
+                                                t=[str_object])
     return f'( {str_subject}, {str_predicate}, {str_object} )', pd.DataFrame({'Score': triple_score})
 
 
@@ -416,7 +416,7 @@ def deploy_tail_entity_prediction(pre_trained_kge, str_subject, str_predicate, t
     if pre_trained_kge.model.name == 'Shallom':
         print('Tail entity prediction is not available for Shallom')
         raise NotImplementedError
-    scores, entity = pre_trained_kge.predict_topk(head_entity=[str_subject], relation=[str_predicate], topk=top_k)
+    scores, entity = pre_trained_kge.predict_topk(h=[str_subject], r=[str_predicate], topk=top_k)
     return f'(  {str_subject},  {str_predicate}, ? )', pd.DataFrame({'Entity': entity, 'Score': scores})
 
 
@@ -425,12 +425,12 @@ def deploy_head_entity_prediction(pre_trained_kge, str_object, str_predicate, to
         print('Head entity prediction is not available for Shallom')
         raise NotImplementedError
 
-    scores, entity = pre_trained_kge.predict_topk(tail_entity=[str_object], relation=[str_predicate], topk=top_k)
+    scores, entity = pre_trained_kge.predict_topk(t=[str_object], r=[str_predicate], topk=top_k)
     return f'(  ?,  {str_predicate}, {str_object} )', pd.DataFrame({'Entity': entity, 'Score': scores})
 
 
 def deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k):
-    scores, relations = pre_trained_kge.predict_topk(head_entity=[str_subject], tail_entity=[str_object], topk=top_k)
+    scores, relations = pre_trained_kge.predict_topk(h=[str_subject], t=[str_object], topk=top_k)
     return f'(  {str_subject}, ?, {str_object} )', pd.DataFrame({'Relations': relations, 'Score': scores})
 
 
@@ -481,24 +481,6 @@ def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
     vocab_to_idx.to_parquet(path_for_serialization + f'/{name}', compression='gzip', engine='pyarrow')
     print('Done !\n')
 
-
-def create_folder(folder_name: str = None) -> None:
-    """ Create a folder in a local story"""
-    assert isinstance(folder_name, str)
-    assert len(folder_name) > 0
-
-    directory = os.getcwd() + "/" + folder_name
-
-    print(directory)
-    exit(1)
-    # folder_name = str(datetime.datetime.now())
-    folder_name = str(datetime.datetime.now()).replace(":", "-")
-    # path_of_folder = directory + folder_name
-    path_of_folder = os.path.join(directory, folder_name)
-    os.makedirs(path_of_folder)
-    return path_of_folder
-
-
 def create_experiment_folder(folder_name='Experiments'):
     directory = os.getcwd() + "/" + folder_name + "/"
     # folder_name = str(datetime.datetime.now())
@@ -520,11 +502,12 @@ def continual_training_setup_executor(executor) -> None:
         # (4.1) If it is continual, then store new models on previous path.
         executor.storage_path = executor.args.full_storage_path
     else:
-        # Create folder
+        # Create a single directory containing KGE and all related data
         if executor.args.absolute_path_to_store:
             os.makedirs(executor.args.absolute_path_to_store, exist_ok=False)
             executor.args.full_storage_path=executor.args.absolute_path_to_store
         else:
+            # Create a parent and subdirectory.
             executor.args.full_storage_path = create_experiment_folder(folder_name=executor.args.storage_path)
         executor.storage_path = executor.args.full_storage_path
         with open(executor.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
