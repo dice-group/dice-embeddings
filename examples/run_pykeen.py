@@ -8,6 +8,10 @@ from pykeen.evaluation import RankBasedEvaluator
 
 import pytorch_lightning as pl
 import argparse
+import warnings
+
+warnings.filterwarnings(action="ignore", category=DeprecationWarning)
+warnings.filterwarnings(action="ignore", category=UserWarning)
 
 
 def get_default_arguments():
@@ -24,6 +28,11 @@ def get_default_arguments():
     parser.add_argument('--scoring_technique', default='NegSample', help="KvsAll, NegSample")
     parser.add_argument('--neg_ratio', type=int, default=1,
                         help='The number of negative triples generated per positive triple.')
+    parser.add_argument('--random_seed', type=int, default=1,
+                        help='The number of negative triples generated per positive triple.')
+    parser.add_argument('--num_core', type=int, default=4)
+    parser.add_argument("--eval_model", type=str, default=None)
+
     return parser.parse_args()
 
 
@@ -34,19 +43,21 @@ def train_eval(args):
     else:
         raise NotImplementedError()
 
-    print(dataset)
-    print('Train:', dataset.training.num_triples)
-    print('Val:', dataset.validation.num_triples)
-    print('Test:', dataset.testing.num_triples)
+    # print(dataset)
+    # print('Train:', dataset.training.num_triples)
+    # print('Val:', dataset.validation.num_triples)
+    # print('Test:', dataset.testing.num_triples)
     if args.model == 'DistMult':
-        model = DistMult(triples_factory=dataset.training, embedding_dim=args.embedding_dim, random_seed=1,regularizer=None,entity_constrainer=None)
+        model = DistMult(triples_factory=dataset.training, embedding_dim=args.embedding_dim,
+                         random_seed=args.random_seed, regularizer=None, entity_constrainer=None)
     elif args.model == 'ComplEx':
-        model = ComplEx(triples_factory=dataset.training, embedding_dim=args.embedding_dim, random_seed=1,regularizer=None,entity_constrainer=None)
+        model = ComplEx(triples_factory=dataset.training, embedding_dim=args.embedding_dim,
+                        random_seed=args.random_seed, regularizer=None, entity_constrainer=None)
     elif args.model == 'QuatE':
-        model = QuatE(triples_factory=dataset.training, embedding_dim=args.embedding_dim, random_seed=1,regularizer=None,entity_constrainer=None)
+        model = QuatE(triples_factory=dataset.training, embedding_dim=args.embedding_dim,
+                      random_seed=args.random_seed)
     else:
         raise NotImplementedError()
-
     optimizer = Adam(params=model.get_grad_params())
     if args.scoring_technique == 'KvsAll':
         # LCWA => KvsAll.
@@ -65,11 +76,13 @@ def train_eval(args):
     else:
         raise KeyError('Invalid Argument')
 
-    training_loop.train(triples_factory=dataset.training, num_epochs=args.num_epochs, batch_size=args.batch_size)
+    training_loop.train(triples_factory=dataset.training, num_epochs=args.num_epochs, batch_size=args.batch_size,
+                        num_workers=args.num_core)
 
     report_time = time.time() - start_time
     print('Total Training Time:', report_time)
-    test(model, dataset, args)
+    if args.eval_model:
+        test(model, dataset, args)
 
 
 def test(model, dataset, args):

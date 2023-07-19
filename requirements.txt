@@ -9,3 +9,4 @@ psutil>=5.9.4
 pytorch-lightning==1.6.4
 pykeen==1.10.1
 zstandard>=0.21.0
+ruff

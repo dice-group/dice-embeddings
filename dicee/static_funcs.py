@@ -163,6 +163,8 @@ def save_numpy_ndarray(*, data: np.ndarray, file_path: str):
     assert d == 3
     with open(file_path, 'wb') as f:
         np.save(f, data)
+
+
 def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
     """
     Detect most efficient data type for a given triples
@@ -480,6 +482,23 @@ def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
     print('Done !\n')
 
 
+def create_folder(folder_name: str = None) -> None:
+    """ Create a folder in a local story"""
+    assert isinstance(folder_name, str)
+    assert len(folder_name) > 0
+
+    directory = os.getcwd() + "/" + folder_name
+
+    print(directory)
+    exit(1)
+    # folder_name = str(datetime.datetime.now())
+    folder_name = str(datetime.datetime.now()).replace(":", "-")
+    # path_of_folder = directory + folder_name
+    path_of_folder = os.path.join(directory, folder_name)
+    os.makedirs(path_of_folder)
+    return path_of_folder
+
+
 def create_experiment_folder(folder_name='Experiments'):
     directory = os.getcwd() + "/" + folder_name + "/"
     # folder_name = str(datetime.datetime.now())
@@ -490,13 +509,23 @@ def create_experiment_folder(folder_name='Experiments'):
     return path_of_folder
 
 
-def continual_training_setup_executor(executor):
+def continual_training_setup_executor(executor) -> None:
+    """
+    storage_path:str A path leading to a parent directory, where a subdirectory containing KGE related data
+
+    full_storage_path:str A path leading to a subdirectory containing KGE related data
+
+    """
     if executor.is_continual_training:
         # (4.1) If it is continual, then store new models on previous path.
         executor.storage_path = executor.args.full_storage_path
     else:
-        # (4.2) Create a folder for the experiments.
-        executor.args.full_storage_path = create_experiment_folder(folder_name=executor.args.storage_path)
+        # Create folder
+        if executor.args.absolute_path_to_store:
+            os.makedirs(executor.args.absolute_path_to_store, exist_ok=False)
+            executor.args.full_storage_path=executor.args.absolute_path_to_store
+        else:
+            executor.args.full_storage_path = create_experiment_folder(folder_name=executor.args.storage_path)
         executor.storage_path = executor.args.full_storage_path
         with open(executor.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
             temp = vars(executor.args)

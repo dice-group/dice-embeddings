@@ -166,7 +166,7 @@ class Execute:
     def write_report(self):
         # Report total runtime.
         self.report['Runtime'] = time.time() - self.start_time
-        print(f"Total computation time: {self.report['Runtime']:.3f} seconds")
+        print(f"Total Runtime: {self.report['Runtime']:.3f} seconds")
         with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
             json.dump(self.report, file_descriptor, indent=4)
 
