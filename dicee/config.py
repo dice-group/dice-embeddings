@@ -19,6 +19,7 @@ class Namespace(argparse.Namespace):
         self.path_dataset_folder: str = 'KGs/UMLS'
         self.save_embeddings_as_csv: bool = False
         self.storage_path: str = 'Experiments'
+        self.absolute_path_to_store: str = None
         self.model: str = "Keci"
         self.p: int = 0
         self.q: int = 1
