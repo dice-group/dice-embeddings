@@ -206,15 +206,15 @@ class KGE(BaseInteractiveKGE):
             scores = self.predict_missing_head_entity(r, t).flatten()
             if self.apply_semantic_constraint:
                 # filter the scores
-                for th, i in enumerate(relation):
+                for th, i in enumerate(r):
                     scores[self.domain_constraints_per_rel[self.relation_to_idx[i]]] = -torch.inf
 
             sort_scores, sort_idxs = torch.topk(scores, topk)
             return torch.sigmoid(sort_scores), [self.idx_to_entity[i] for i in sort_idxs.tolist()]
         # (3) Predict missing relation given a head entity and a tail entity.
         elif r is None:
-            assert head_entity is not None
-            assert tail_entity is not None
+            assert h is not None
+            assert t is not None
             # h ? t
             scores = self.predict_missing_relations(h, t).flatten()
             sort_scores, sort_idxs = torch.topk(scores, topk)
@@ -227,7 +227,7 @@ class KGE(BaseInteractiveKGE):
             scores = self.predict_missing_tail_entity(h, r).flatten()
             if self.apply_semantic_constraint:
                 # filter the scores
-                for th, i in enumerate(relation):
+                for th, i in enumerate(r):
                     scores[self.range_constraints_per_rel[self.relation_to_idx[i]]] = -torch.inf
             sort_scores, sort_idxs = torch.topk(scores, topk)
             return torch.sigmoid(sort_scores), [self.idx_to_entity[i] for i in sort_idxs.tolist()]
