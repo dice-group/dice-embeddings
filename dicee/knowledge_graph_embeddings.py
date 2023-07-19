@@ -125,41 +125,41 @@ class KGE(BaseInteractiveKGE):
                      torch.LongTensor([self.relation_to_idx[i] for i in relation]).unsqueeze(-1)), dim=1)
         return self.model.forward(x)
 
-    def predict(self, *, head_entities: List[str] = None, relations: List[str] = None, tail_entities: List[str] = None):
+    def predict(self, *, h: List[str] = None, r: List[str] = None, t: List[str] = None):
         # (1) Sanity checking.
-        if head_entities is not None:
-            assert isinstance(head_entities, list)
-            assert isinstance(head_entities[0], str)
-        if relations is not None:
-            assert isinstance(relations, list)
-            assert isinstance(relations[0], str)
-        if tail_entities is not None:
-            assert isinstance(tail_entities, list)
-            assert isinstance(tail_entities[0], str)
+        if h is not None:
+            assert isinstance(h, list)
+            assert isinstance(h[0], str)
+        if r is not None:
+            assert isinstance(r, list)
+            assert isinstance(r[0], str)
+        if t is not None:
+            assert isinstance(t, list)
+            assert isinstance(t[0], str)
         # (2) Predict missing head entity given a relation and a tail entity.
-        if head_entities is None:
-            assert relations is not None
-            assert tail_entities is not None
+        if h is None:
+            assert r is not None
+            assert t is not None
             # ? r, t
-            scores = self.predict_missing_head_entity(relations, tail_entities)
+            scores = self.predict_missing_head_entity(r, t)
         # (3) Predict missing relation given a head entity and a tail entity.
-        elif relations is None:
-            assert head_entities is not None
-            assert tail_entities is not None
+        elif r is None:
+            assert h is not None
+            assert t is not None
             # h ? t
-            scores = self.predict_missing_relations(head_entities, tail_entities)
+            scores = self.predict_missing_relations(h, t)
         # (4) Predict missing tail entity given a head entity and a relation
-        elif tail_entities is None:
-            assert head_entities is not None
-            assert relations is not None
+        elif t is None:
+            assert h is not None
+            assert r is not None
             # h r ?
-            scores = self.predict_missing_tail_entity(head_entities, relations)
+            scores = self.predict_missing_tail_entity(h, r)
         else:
-            assert len(head_entities) == len(relations) == len(tail_entities)
-            scores = self.triple_score(head_entities, relations, tail_entities)
+            assert len(h) == len(r) == len(t)
+            scores = self.triple_score(h, r, t)
         return torch.sigmoid(scores)
 
-    def predict_topk(self, *, head_entity: List[str] = None, relation: List[str] = None, tail_entity: List[str] = None,
+    def predict_topk(self, *, h: List[str] = None, r: List[str] = None, t: List[str] = None,
                      topk: int = 10):
         """
         Predict missing item in a given triple.
@@ -192,18 +192,18 @@ class KGE(BaseInteractiveKGE):
         """
 
         # (1) Sanity checking.
-        if head_entity is not None:
-            assert isinstance(head_entity, list)
-        if relation is not None:
-            assert isinstance(relation, list)
-        if tail_entity is not None:
-            assert isinstance(tail_entity, list)
+        if h is not None:
+            assert isinstance(h, list)
+        if r is not None:
+            assert isinstance(r, list)
+        if t is not None:
+            assert isinstance(t, list)
         # (2) Predict missing head entity given a relation and a tail entity.
-        if head_entity is None:
-            assert relation is not None
-            assert tail_entity is not None
+        if h is None:
+            assert r is not None
+            assert t is not None
             # ? r, t
-            scores = self.predict_missing_head_entity(relation, tail_entity).flatten()
+            scores = self.predict_missing_head_entity(r, t).flatten()
             if self.apply_semantic_constraint:
                 # filter the scores
                 for th, i in enumerate(relation):
@@ -212,19 +212,19 @@ class KGE(BaseInteractiveKGE):
             sort_scores, sort_idxs = torch.topk(scores, topk)
             return torch.sigmoid(sort_scores), [self.idx_to_entity[i] for i in sort_idxs.tolist()]
         # (3) Predict missing relation given a head entity and a tail entity.
-        elif relation is None:
+        elif r is None:
             assert head_entity is not None
             assert tail_entity is not None
             # h ? t
-            scores = self.predict_missing_relations(head_entity, tail_entity).flatten()
+            scores = self.predict_missing_relations(h, t).flatten()
             sort_scores, sort_idxs = torch.topk(scores, topk)
             return torch.sigmoid(sort_scores), [self.idx_to_relations[i] for i in sort_idxs.tolist()]
         # (4) Predict missing tail entity given a head entity and a relation
-        elif tail_entity is None:
-            assert head_entity is not None
-            assert relation is not None
+        elif t is None:
+            assert h is not None
+            assert r is not None
             # h r ?t
-            scores = self.predict_missing_tail_entity(head_entity, relation).flatten()
+            scores = self.predict_missing_tail_entity(h, r).flatten()
             if self.apply_semantic_constraint:
                 # filter the scores
                 for th, i in enumerate(relation):
@@ -234,8 +234,8 @@ class KGE(BaseInteractiveKGE):
         else:
             raise AttributeError('Use triple_score method')
 
-    def triple_score(self, head_entity: List[str] = None, relation: List[str] = None,
-                     tail_entity: List[str] = None, logits=False) -> torch.FloatTensor:
+    def triple_score(self, h: List[str] = None, r: List[str] = None,
+                     t: List[str] = None, logits=False) -> torch.FloatTensor:
         """
         Predict triple score
 
@@ -262,11 +262,11 @@ class KGE(BaseInteractiveKGE):
 
         pytorch tensor of triple score
         """
-        head_entity = torch.LongTensor([self.entity_to_idx[i] for i in head_entity]).reshape(len(head_entity), 1)
-        relation = torch.LongTensor([self.relation_to_idx[i] for i in relation]).reshape(len(relation), 1)
-        tail_entity = torch.LongTensor([self.entity_to_idx[i] for i in tail_entity]).reshape(len(tail_entity), 1)
+        h = torch.LongTensor([self.entity_to_idx[i] for i in h]).reshape(len(h), 1)
+        r = torch.LongTensor([self.relation_to_idx[i] for i in r]).reshape(len(r), 1)
+        t = torch.LongTensor([self.entity_to_idx[i] for i in t]).reshape(len(t), 1)
 
-        x = torch.hstack((head_entity, relation, tail_entity))
+        x = torch.hstack((h, r, t))
         if self.apply_semantic_constraint:
             raise NotImplementedError()
         else:
@@ -328,7 +328,7 @@ class KGE(BaseInteractiveKGE):
         for r in relations:
             # (3.1) if entity is an anchor entity:
             if len(results) == 0:
-                top_ranked_entities = self.predict_topk(head_entity=[entity], relation=[r], topk=topk)[1]
+                top_ranked_entities = self.predict_topk(h=[entity], r=[r], topk=topk)[1]
                 results = set(top_ranked_entities)
                 each_intermediate_result[(hop_counter, entity, r)] = top_ranked_entities
             else:
@@ -336,7 +336,7 @@ class KGE(BaseInteractiveKGE):
                 temp_intermediate_results = set()
                 while results:
                     entity = results.pop()
-                    top_ranked_entities = self.predict_topk(head_entity=[entity], relation=[r], topk=topk)[1]
+                    top_ranked_entities = self.predict_topk(h=[entity], r=[r], topk=topk)[1]
                     temp_intermediate_results |= set(top_ranked_entities)
                     each_intermediate_result[(hop_counter, entity, r)] = top_ranked_entities
                 # (3.3)
@@ -411,8 +411,8 @@ class KGE(BaseInteractiveKGE):
             for str_relation, idx_relation in select(relations, self.relation_to_idx):
                 # (5.2) \forall e \in Entities store a tuple of scoring_func(head,relation,e) and e
                 # (5.3.) Sort (5.2) and return top  tuples
-                predicted_scores, str_tail_entities = self.predict_topk(head_entity=[str_head_entity],
-                                                                        relation=[str_relation], topk=topk)
+                predicted_scores, str_tail_entities = self.predict_topk(h=[str_head_entity],
+                                                                        r=[str_relation], topk=topk)
                 # (5.4) Iterate over 5.3
                 for predicted_score, str_entity in zip(predicted_scores, str_tail_entities):
                     # (5.5) If score is less than 99% ignore it
@@ -475,7 +475,7 @@ class KGE(BaseInteractiveKGE):
                         '3. Checked the random examples box and click submit').launch(share=share)
 
     # @TODO: Do we really need this ?!
-    def train_triples(self, head_entity: List[str], relation: List[str], tail_entity: List[str], labels: List[float],
+    def train_triples(self, h: List[str], r: List[str], t: List[str], labels: List[float],
                       iteration=2, optimizer=None):
         """
 
@@ -487,9 +487,9 @@ class KGE(BaseInteractiveKGE):
         :param lr:
         :return:
         """
-        assert len(head_entity) == len(relation) == len(tail_entity) == len(labels)
+        assert len(h) == len(r) == len(t) == len(labels)
         # (1) From List of strings to TorchLongTensor.
-        x = torch.LongTensor(self.index_triple(head_entity, relation, tail_entity)).reshape(1, 3)
+        x = torch.LongTensor(self.index_triple(h, r, t)).reshape(1, 3)
         # (2) From List of float to Torch Tensor.
         labels = torch.FloatTensor(labels)
         # (3) Train mode.
@@ -512,7 +512,7 @@ class KGE(BaseInteractiveKGE):
             loss = self.model.loss(outputs, labels)
             print(f"Eval Mode:\tLoss:{loss.item()}")
 
-    def train_k_vs_all(self, head_entity, relation, iteration=1, lr=.001):
+    def train_k_vs_all(self, h, r, iteration=1, lr=.001):
         """
         Train k vs all
         :param head_entity:
@@ -521,9 +521,9 @@ class KGE(BaseInteractiveKGE):
         :param lr:
         :return:
         """
-        assert len(head_entity) == 1
+        assert len(h) == 1
         # (1) Construct input and output
-        out = self.construct_input_and_output_k_vs_all(head_entity, relation)
+        out = self.construct_input_and_output_k_vs_all(h, r)
         if out is None:
             return
         x, labels, idx_tails = out
