@@ -49,8 +49,6 @@ class BaseKGE(pytorch_lightning.LightningModule):
         return {'EstimatedSizeMB': (num_params + buffer_size) / 1024 ** 2, 'NumParam': num_params}
 
     def init_params_with_sanity_checking(self):
-        #assert self.args['model'] in ['FMult', 'FMult2', 'CMult', 'Keci', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ',
-        #                              'ConvO', 'AConEx', 'ConEx', 'Shallom', 'TransE', 'Pyke', 'KeciBase', 'GFMult']
         if self.args.get('weight_decay'):
             self.weight_decay = self.args['weight_decay']
         else:
@@ -83,8 +81,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
             self.hidden_dropout_rate = self.args['hidden_dropout_rate']
         else:
             self.hidden_dropout_rate = 0.0
-
-        if self.args['model'] in ['ConvQ', 'ConvO', 'ConEx', 'AConEx', 'AConvQ', 'AConvO']:
+        if self.args.get("model") in ['ConvQ', 'ConvO', 'ConEx', 'AConEx', 'AConvQ', 'AConvO']:
             if self.args.get("kernel_size"):
                 self.kernel_size = self.args['kernel_size']
             else:
@@ -117,15 +114,16 @@ class BaseKGE(pytorch_lightning.LightningModule):
         if self.args.get("optim") in ['Adan', 'NAdam', 'Adam', 'SGD', 'ASGD', 'Sls', 'AdamSLS']:
             self.optimizer_name = self.args['optim']
         else:
-            print(self.args)
-            raise KeyError(f'--optim (***{self.args.get("optim")}***) not found')
+            print(f'--optim (***{self.args.get("optim")}***) not found')
+            self.optimizer_name='Adam'
 
-        if self.args['init_param'] is None:
+        if self.args.get("init_param") is None:
             self.param_init = IdentityClass
         elif self.args['init_param'] == 'xavier_normal':
             self.param_init = torch.nn.init.xavier_normal_
         else:
-            raise KeyError(f'--init_param (***{self.args.get("init_param")}***) not found')
+            print(f'--init_param (***{self.args.get("init_param")}***) not found')
+            self.optimizer_name=IdentityClass
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
         # @TODO why twice data.data.?

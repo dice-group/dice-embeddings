@@ -212,8 +212,8 @@ class Keci(BaseKGE):
         self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
         self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
-        self.p = self.args['p']
-        self.q = self.args['q']
+        self.p = self.args.get("p", 0)
+        self.q = self.args.get("q", 0)
         if self.p is None:
             self.p = 0
         if self.q is None:
@@ -229,10 +229,10 @@ class Keci(BaseKGE):
         print(f'r:{self.r}\t p:{self.p}\t q:{self.q}')
         # Initialize parameters for dimension scaling
         if self.p > 0:
-            self.p_coefficients = torch.nn.Embedding(num_embeddings=1,embedding_dim=self.p)
+            self.p_coefficients = torch.nn.Embedding(num_embeddings=1, embedding_dim=self.p)
             torch.nn.init.zeros_(self.p_coefficients.weight)
         if self.q > 0:
-            self.q_coefficients = torch.nn.Embedding(num_embeddings=1,embedding_dim=self.q)
+            self.q_coefficients = torch.nn.Embedding(num_embeddings=1, embedding_dim=self.q)
             torch.nn.init.zeros_(self.q_coefficients.weight)
 
     def compute_sigma_pp(self, hp, rp):
