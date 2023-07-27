@@ -18,7 +18,7 @@ def get_default_arguments(description=None):
                         help="A directory will be created in a given path,e.g., os.getcwd() + '/Dummy')")
     parser.add_argument("--model", type=str,
                         default="DistMult",
-                        choices=["ConEx", "AConEx", "ConvQ", "AConQ", "ConvO", "AConvO", "QMult",
+                        choices=["ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "ComplEx", "Keci",
                                  "Pykeen_QuatE", "Pykeen_MuRE", "Pykeen_BoxE"],
                         help="Available knowledge graph embedding models. "
