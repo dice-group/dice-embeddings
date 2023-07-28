@@ -1,5 +1,6 @@
 pandas>=1.5.1
 torch>=2.0.0
+torch --index-url https://download.pytorch.org/whl/cpu
 polars>=0.16.14
 scikit-learn>=1.2.2
 pyarrow>=11.0.0
