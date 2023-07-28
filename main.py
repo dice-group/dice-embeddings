@@ -8,7 +8,8 @@ def get_default_arguments(description=None):
     """ Extends pytorch_lightning Trainer's arguments with ours """
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
+    # Data related arguments
+    parser.add_argument("--path_dataset_folder", type=str, default=None,
                         help="The path of a folder containing input data")
     parser.add_argument("--save_embeddings_as_csv", type=bool, default=False,
                         help='A flag for saving embeddings in csv file.')
@@ -16,6 +17,9 @@ def get_default_arguments(description=None):
                         help="Embeddings, model, and any other related data will be stored therein.")
     parser.add_argument("--absolute_path_to_store", type=str, default=None,
                         help="A directory will be created in a given path,e.g., os.getcwd() + '/Dummy')")
+    parser.add_argument("--absolute_path_dataset", type=str, default='KGs/UMLS/train.txt',
+                        help="Absolute path of a file corresponding to the input knowledge graph")
+    # Model related arguments
     parser.add_argument("--model", type=str,
                         default="DistMult",
                         choices=["ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
