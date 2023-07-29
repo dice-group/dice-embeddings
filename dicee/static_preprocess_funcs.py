@@ -74,7 +74,6 @@ def preprocesses_input_args(arg):
     if arg.normalization == 'None':
         arg.normalization = None
     assert arg.normalization in [None, 'LayerNorm', 'BatchNorm1d']
-
     return arg
 
 

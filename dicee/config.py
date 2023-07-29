@@ -53,6 +53,7 @@ class Namespace(argparse.Namespace):
         self.sample_triples_ratio = None
         self.read_only_few = None
         self.pykeen_model_kwargs: ParseDict = dict()
+        self.absolute_path_dataset = None
 
     def __iter__(self):
         # Iterate
