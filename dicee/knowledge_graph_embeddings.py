@@ -1,4 +1,4 @@
-import os
+
 import time
 from typing import List, Tuple, Set, Iterable, Dict
 import pandas as pd
@@ -10,6 +10,8 @@ from .dataset_classes import TriplePredictionDataset
 from .static_funcs import random_prediction, deploy_triple_prediction, deploy_tail_entity_prediction, \
     deploy_relation_prediction, deploy_head_entity_prediction
 import numpy as np
+from dicee.evaluator import Evaluator
+from dicee.load_kge_model.utils import *
 import sys
 
 
@@ -22,6 +24,8 @@ class KGE(BaseInteractiveKGE):
                  apply_semantic_constraint=False):
         super().__init__(path=path, construct_ensemble=construct_ensemble, model_name=model_name,
                          apply_semantic_constraint=apply_semantic_constraint)
+
+
 
     def __str__(self):
         return 'KGE | ' + str(self.model)
@@ -611,3 +615,35 @@ class KGE(BaseInteractiveKGE):
             last_avg_loss_per_triple += self.model.loss(pred, y)
         last_avg_loss_per_triple /= len(train_set)
         print(f'On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple:.3f}')
+
+    
+    def lp_evaluate(self, dataset=None, filtered=True):
+      args_dict = load_args_from_file(self.path) # load args
+      
+      args = DictToObject(args_dict)
+      evaluator = Evaluator(args=args, is_continual_training=True)
+      
+      # model will be set to evaluation mode in Evaluator
+      
+      form_of_labelling = "EntityPrediction"
+      
+      # TODO: some issues in dataset
+      evaluation_set = TriplePredictionDataset(dataset.test_set,
+                                            num_entities=len(dataset.entity_to_idx),
+                                            num_relations=len(dataset.relation_to_idx),
+                                            neg_sample_ratio=args.neg_ratio)
+       
+       
+      evaluator.eval(dataset=evaluation_set, trained_model=self.model,
+                                form_of_labelling=form_of_labelling)
+      
+      return
+    
+
+# class DictToObject:
+#     def __init__(self, dictionary):
+#         for key, value in dictionary.items():
+#             setattr(self, key, value)
+    
+    
+

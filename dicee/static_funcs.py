@@ -670,3 +670,6 @@ def load_numpy(path) -> np.ndarray:
     with open(path, 'rb') as f:
         data = np.load(f)
     return data
+  
+  
+ 

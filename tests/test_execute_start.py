@@ -141,4 +141,5 @@ class TestDefaultParams:
         args.read_only_few = None
         args.num_folds_for_cv = None
         args.trainer = 'torchCPUTrainer'
+        args.eval_model = 'test'
         Execute(args).start()
