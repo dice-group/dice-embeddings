@@ -477,16 +477,6 @@ class KGE(BaseInteractiveKGE):
     # @TODO: Do we really need this ?!
     def train_triples(self, h: List[str], r: List[str], t: List[str], labels: List[float],
                       iteration=2, optimizer=None):
-        """
-
-        :param head_entity:
-        :param relation:
-        :param tail_entity:
-        :param labels:
-        :param iteration:
-        :param lr:
-        :return:
-        """
         assert len(h) == len(r) == len(t) == len(labels)
         # (1) From List of strings to TorchLongTensor.
         x = torch.LongTensor(self.index_triple(h, r, t)).reshape(1, 3)
