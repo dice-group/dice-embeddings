@@ -2,7 +2,6 @@ from pykeen.contrib.lightning import LCWALitModule
 import torch
 from .pykeen_Module import *
 from pykeen.triples.triples_factory import CoreTriplesFactory
-import wandb
 
 class MyLCWALitModule(LCWALitModule,Pykeen_Module):
 
@@ -42,7 +41,7 @@ class MyLCWALitModule(LCWALitModule,Pykeen_Module):
     ) -> torch.utils.data.DataLoader:
         # the parameters of DICE can be passed to the dataloader
         return torch.utils.data.DataLoader(dataset=triples_factory.create_lcwa_instances(), batch_size=self.args['batch_size'], shuffle=True,
-                              num_workers=self.args['num_core'], persistent_workers=True)
+                              num_workers=self.args['num_core'], persistent_workers=False)
 
 
 

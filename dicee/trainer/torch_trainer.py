@@ -8,7 +8,6 @@ import time
 import os
 import psutil
 import pykeen
-import wandb
 
 
 class TorchTrainer(AbstractTrainer):

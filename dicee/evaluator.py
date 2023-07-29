@@ -4,7 +4,6 @@ import json
 import sys
 from .static_funcs import timeit, pickle
 import pykeen
-import wandb
 
 
 class Evaluator:

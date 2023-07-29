@@ -1,7 +1,6 @@
 from pykeen.contrib.lightning import SLCWALitModule
 from .pykeen_Module import *
 from pykeen.triples.triples_factory import CoreTriplesFactory
-import wandb
 
 class MySLCWALitModule(SLCWALitModule, Pykeen_Module):
     def __init__(self, *, model_name: str, args, **kwargs):

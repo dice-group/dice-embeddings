@@ -18,7 +18,6 @@ from dicee.static_preprocess_funcs import preprocesses_input_args
 from dicee.sanity_checkers import *
 from dicee.trainer import DICE_Trainer
 import pytorch_lightning as pl
-import wandb
 
 
 logging.getLogger("pytorch_lightning").setLevel(0)
