@@ -39,7 +39,7 @@ class PykeenKGE(BaseKGE):
         self.model = model_resolver.make(self.name, self.model_kwargs, triples_factory=dataset.training)
         self.loss_history = []
         self.args = args
-        assert self.args.trainer=='PL'
+        assert self.args['trainer']=='PL'
 
     def forward_k_vs_all(self, x: torch.LongTensor):
         return self.model.score_t(x)
