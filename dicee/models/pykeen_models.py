@@ -1,23 +1,33 @@
 import torch
 import torch.utils.data
 import numpy as np
-from typing import Tuple,Union
+from typing import Tuple, Union
 import pickle
 from pykeen.models import model_resolver
 from .base_model import BaseKGE
+
 
 def load_numpy(path) -> np.ndarray:
     print('Loading indexed training data...', end='')
     with open(path, 'rb') as f:
         data = np.load(f)
     return data
+
+
 def load_pickle(*, file_path=str):
     with open(file_path, 'rb') as f:
         return pickle.load(f)
 
 
 class PykeenKGE(BaseKGE):
-    def __init__(self, *, model_name: str, args, dataset):
+    """ A class for using knowledge graph embedding models implemented in Pykeen
+
+    Each model can be trained with KvsAll or NegSample scoring techniques.
+    Each model must be trained with PL
+
+    Using our custom trainers seems to introduce a memory leak.
+    """
+    def __init__(self, args: dict, dataset):
         super().__init__(args)
         self.model_kwargs = {'embedding_dim': args['embedding_dim'],
                              'entity_initializer': None if args['init_param'] is None else torch.nn.init.xavier_normal_,
@@ -25,10 +35,11 @@ class PykeenKGE(BaseKGE):
                              # 'regularizer': None works for ComplEx and DistMult but does not work for QuatE
                              }
         self.model_kwargs.update(args['pykeen_model_kwargs'])
-        self.name = model_name
+        self.name = args['model'].split("_")[1]
         self.model = model_resolver.make(self.name, self.model_kwargs, triples_factory=dataset.training)
         self.loss_history = []
         self.args = args
+        assert self.args.trainer=='PL'
 
     def forward_k_vs_all(self, x: torch.LongTensor):
         return self.model.score_t(x)
@@ -64,7 +75,7 @@ class PykeenKGE(BaseKGE):
     def training_step(self, batch, batch_idx):
         x_batch, y_batch = batch
         yhat_batch = self.forward(x_batch)
-        loss_batch=self.loss_function(yhat_batch, y_batch)
+        loss_batch = self.loss_function(yhat_batch, y_batch)
         return loss_batch + self.model.collect_regularization_term()
 
     def training_epoch_end(self, training_step_outputs):
