@@ -9,7 +9,7 @@ def get_default_arguments(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Data related arguments
-    parser.add_argument("--path_dataset_folder", type=str, default=None,
+    parser.add_argument("--path_dataset_folder", type=str, default="KGs/UMLS",
                         help="The path of a folder containing input data")
     parser.add_argument("--save_embeddings_as_csv", type=bool, default=False,
                         help='A flag for saving embeddings in csv file.')
@@ -17,11 +17,11 @@ def get_default_arguments(description=None):
                         help="Embeddings, model, and any other related data will be stored therein.")
     parser.add_argument("--absolute_path_to_store", type=str, default=None,
                         help="A directory will be created in a given path,e.g., os.getcwd() + '/Dummy')")
-    parser.add_argument("--absolute_path_dataset", type=str, default='KGs/UMLS/train.txt',
+    parser.add_argument("--absolute_path_dataset", type=str, default=None,
                         help="Absolute path of a file corresponding to the input knowledge graph")
     # Model related arguments
     parser.add_argument("--model", type=str,
-                        default="DistMult",
+                        default="Pykeen_QuatE",
                         choices=["ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "ComplEx", "Keci",
                                  "Pykeen_QuatE", "Pykeen_MuRE", "Pykeen_BoxE"],
@@ -44,7 +44,7 @@ def get_default_arguments(description=None):
     parser.add_argument("--trainer", type=str, default='torchCPUTrainer',
                         choices=['torchCPUTrainer', 'PL', 'torchDDP'],
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
-    parser.add_argument('--scoring_technique', default='KvsAll',
+    parser.add_argument('--scoring_technique', default='NegSample',
                         help="Training technique for knowledge graph embedding model",
                         choices=["KvsAll", "1vsAll", "NegSample", "KvsSample"])
     parser.add_argument('--neg_ratio', type=int, default=10,

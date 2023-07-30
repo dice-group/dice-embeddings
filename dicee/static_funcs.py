@@ -274,6 +274,7 @@ def read_or_load_kg(args, cls):
     print('*** Read or Load Knowledge Graph  ***')
     start_time = time.time()
     kg = cls(data_dir=args.path_dataset_folder,
+             absolute_path_dataset=args.absolute_path_dataset,
              add_reciprical=args.apply_reciprical_or_noise,
              eval_model=args.eval_model,
              read_only_few=args.read_only_few,
@@ -288,19 +289,16 @@ def read_or_load_kg(args, cls):
 
 
 def get_pykeen_model(model_name: str, args, dataset):
-    actual_name = model_name.split("_")[1]
     if dataset is None:
         # (1) Load a pretrained Pykeen Model
-        return PykeenKGE(model_name=actual_name,
-                         dataset=EagerDataset(
+        return PykeenKGE(dataset=EagerDataset(
                              training=TriplesFactory(
                                  load_numpy(args['full_storage_path'] + '/train_set.npy'),
                                  load_pickle(file_path=args['full_storage_path'] + '/entity_to_idx.p'),
                                  load_pickle(file_path=args['full_storage_path'] + '/relation_to_idx.p')),
                              testing=None), args=args)
     elif args['scoring_technique'] in ['KvsAll', "NegSample"]:
-        return PykeenKGE(model_name=actual_name,
-                         dataset=EagerDataset(
+        return PykeenKGE(dataset=EagerDataset(
                              training=TriplesFactory(dataset.train_set, dataset.entity_to_idx, dataset.relation_to_idx),
                              testing=None), args=args)
     else:

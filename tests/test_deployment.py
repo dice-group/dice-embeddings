@@ -50,7 +50,7 @@ class TestDefaultParams:
         args.read_only_few = None
         args.backend = 'pandas'
         args.sample_triples_ratio = None
-        args.trainer = 'torchCPUTrainer'
+        args.trainer = 'PL'
         executor = Execute(args)
         executor.start()
 

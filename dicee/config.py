@@ -20,6 +20,7 @@ class Namespace(argparse.Namespace):
         self.save_embeddings_as_csv: bool = False
         self.storage_path: str = 'Experiments'
         self.absolute_path_to_store: str = None
+        self.absolute_path_dataset = None
         self.model: str = "Keci"
         self.p: int = 0
         self.q: int = 1

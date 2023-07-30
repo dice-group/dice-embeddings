@@ -7,7 +7,7 @@ from dicee.config import Namespace
 def template(model_name):
     args = Namespace()
     args.path_dataset_folder = "KGs/UMLS"
-    args.trainer = "torchCPUTrainer"
+    args.trainer = "PL"
     args.model = model_name
     args.num_epochs = 10
     args.batch_size = 256
@@ -61,7 +61,7 @@ class TestClass:
         elif args.model == "Pykeen_QuatE":
             assert 0.999 >= result["Train"]["MRR"] >= 0.94
         elif args.model == "Pykeen_MuRE":
-            assert 0.88 >= result["Train"]["MRR"] >= 0.82
+            assert 0.89 >= result["Train"]["MRR"] >= 0.82
 
     def test_GNCallback_case(self, model_name):
         args = template(model_name)
