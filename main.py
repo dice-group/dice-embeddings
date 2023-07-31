@@ -11,7 +11,7 @@ def get_default_arguments(description=None):
     # Data related arguments
     parser.add_argument("--path_dataset_folder", type=str, default="KGs/UMLS",
                         help="The path of a folder containing input data")
-    parser.add_argument("--save_embeddings_as_csv", type=bool, default=False,
+    parser.add_argument("--save_embeddings_as_csv", action="store_false",
                         help='A flag for saving embeddings in csv file.')
     parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="Embeddings, model, and any other related data will be stored therein.")
@@ -21,7 +21,7 @@ def get_default_arguments(description=None):
                         help="Absolute path of a file corresponding to the input knowledge graph")
     # Model related arguments
     parser.add_argument("--model", type=str,
-                        default="Pykeen_QuatE",
+                        default="Keci",
                         choices=["ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "ComplEx", "Keci",
                                  "Pykeen_QuatE", "Pykeen_MuRE", "Pykeen_BoxE"],
@@ -44,10 +44,10 @@ def get_default_arguments(description=None):
     parser.add_argument("--trainer", type=str, default='torchCPUTrainer',
                         choices=['torchCPUTrainer', 'PL', 'torchDDP'],
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
-    parser.add_argument('--scoring_technique', default='NegSample',
+    parser.add_argument('--scoring_technique', default='KvsAll',
                         help="Training technique for knowledge graph embedding model",
                         choices=["KvsAll", "1vsAll", "NegSample", "KvsSample"])
-    parser.add_argument('--neg_ratio', type=int, default=10,
+    parser.add_argument('--neg_ratio', type=int, default=1,
                         help='The number of negative triples generated per positive triple.')
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
     parser.add_argument('--input_dropout_rate', type=float, default=0.0)

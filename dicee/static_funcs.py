@@ -203,7 +203,7 @@ def save_checkpoint_model(model, path: str) -> None:
 
 def store(trainer,
           trained_model, model_name: str = 'model', full_storage_path: str = None,
-          dataset=None, save_as_csv=False) -> None:
+          dataset=None, save_embeddings_as_csv=False) -> None:
     """
     Store trained_model model and save embeddings into csv file.
     :param trainer: an instance of trainer class
@@ -211,7 +211,7 @@ def store(trainer,
     :param full_storage_path: path to save parameters.
     :param model_name: string representation of the name of the model.
     :param trained_model: an instance of BaseKGE see core.models.base_model .
-    :param save_as_csv: for easy access of embeddings.
+    :param save_embeddings_as_csv: for easy access of embeddings.
     :return:
     """
     assert full_storage_path is not None
@@ -220,7 +220,7 @@ def store(trainer,
 
     # (1) Save pytorch model in trained_model .
     save_checkpoint_model(model=trained_model, path=full_storage_path + f'/{model_name}.pt')
-    if save_as_csv:
+    if save_embeddings_as_csv:
         entity_emb, relation_ebm = trained_model.get_embeddings()
         entity_to_idx = pickle.load(open(full_storage_path + '/entity_to_idx.p', 'rb'))
         entity_str = entity_to_idx.keys()

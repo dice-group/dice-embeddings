@@ -121,12 +121,12 @@ class Execute:
                   trained_model=self.trained_model,
                   model_name='model',
                   full_storage_path=self.storage_path,
-                  save_as_csv=self.args.save_embeddings_as_csv)
+                  save_embeddings_as_csv=self.args.save_embeddings_as_csv)
         else:
             store(trainer=self.trainer,
                   trained_model=self.trained_model,
                   model_name='model_' + str(datetime.datetime.now()),
-                  full_storage_path=self.storage_path, save_as_csv=self.args.save_embeddings_as_csv)
+                  full_storage_path=self.storage_path, save_embeddings_as_csv=self.args.save_embeddings_as_csv)
 
         self.report['path_experiment_folder'] = self.storage_path
         self.report['num_entities'] = self.args.num_entities
