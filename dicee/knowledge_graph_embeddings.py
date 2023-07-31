@@ -628,10 +628,7 @@ class KGE(BaseInteractiveKGE):
       form_of_labelling = "EntityPrediction"
       
       # TODO: some issues in dataset
-      evaluation_set = TriplePredictionDataset(dataset.test_set,
-                                            num_entities=len(dataset.entity_to_idx),
-                                            num_relations=len(dataset.relation_to_idx),
-                                            neg_sample_ratio=args.neg_ratio)
+     
        
        
       evaluator.eval(dataset=evaluation_set, trained_model=self.model,
@@ -640,10 +637,6 @@ class KGE(BaseInteractiveKGE):
       return
     
 
-# class DictToObject:
-#     def __init__(self, dictionary):
-#         for key, value in dictionary.items():
-#             setattr(self, key, value)
-    
+
     
 
