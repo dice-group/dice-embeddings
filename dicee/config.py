@@ -13,11 +13,14 @@ class ParseDict(argparse.Action):
             getattr(namespace, self.dest)[key] = value
 
 
-class Args:
-    def __init__(self):
+class Namespace(argparse.Namespace):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.path_dataset_folder: str = 'KGs/UMLS'
         self.save_embeddings_as_csv: bool = False
         self.storage_path: str = 'Experiments'
+        self.absolute_path_to_store: str = None
+        self.absolute_path_dataset = None
         self.model: str = "Keci"
         self.p: int = 0
         self.q: int = 1
@@ -51,4 +54,8 @@ class Args:
         self.sample_triples_ratio = None
         self.read_only_few = None
         self.pykeen_model_kwargs: ParseDict = dict()
-        self.use_SLCWALitModule: None = False
+
+    def __iter__(self):
+        # Iterate
+        for k, v in self.__dict__.items():
+            yield k, v

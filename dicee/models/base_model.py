@@ -1,5 +1,7 @@
-from ..types import List, Any, Tuple, Union, Dict, np, torch
+from typing import List, Any, Tuple, Union, Dict
 import pytorch_lightning
+import numpy as np
+import torch
 
 
 class BaseKGE(pytorch_lightning.LightningModule):
@@ -47,8 +49,6 @@ class BaseKGE(pytorch_lightning.LightningModule):
         return {'EstimatedSizeMB': (num_params + buffer_size) / 1024 ** 2, 'NumParam': num_params}
 
     def init_params_with_sanity_checking(self):
-        #assert self.args['model'] in ['FMult', 'FMult2', 'CMult', 'Keci', 'DistMult', 'ComplEx', 'QMult', 'OMult', 'ConvQ',
-        #                              'ConvO', 'AConEx', 'ConEx', 'Shallom', 'TransE', 'Pyke', 'KeciBase', 'GFMult']
         if self.args.get('weight_decay'):
             self.weight_decay = self.args['weight_decay']
         else:
@@ -81,8 +81,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
             self.hidden_dropout_rate = self.args['hidden_dropout_rate']
         else:
             self.hidden_dropout_rate = 0.0
-
-        if self.args['model'] in ['ConvQ', 'ConvO', 'ConEx', 'AConEx', 'AConvQ', 'AConvO']:
+        if self.args.get("model") in ['ConvQ', 'ConvO', 'ConEx', 'AConEx', 'AConvQ', 'AConvO']:
             if self.args.get("kernel_size"):
                 self.kernel_size = self.args['kernel_size']
             else:
@@ -115,15 +114,16 @@ class BaseKGE(pytorch_lightning.LightningModule):
         if self.args.get("optim") in ['Adan', 'NAdam', 'Adam', 'SGD', 'ASGD', 'Sls', 'AdamSLS']:
             self.optimizer_name = self.args['optim']
         else:
-            print(self.args)
-            raise KeyError(f'--optim (***{self.args.get("optim")}***) not found')
+            print(f'--optim (***{self.args.get("optim")}***) not found')
+            self.optimizer_name='Adam'
 
-        if self.args['init_param'] is None:
+        if self.args.get("init_param") is None:
             self.param_init = IdentityClass
         elif self.args['init_param'] == 'xavier_normal':
             self.param_init = torch.nn.init.xavier_normal_
         else:
-            raise KeyError(f'--init_param (***{self.args.get("init_param")}***) not found')
+            print(f'--init_param (***{self.args.get("init_param")}***) not found')
+            self.optimizer_name=IdentityClass
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
         # @TODO why twice data.data.?
@@ -153,41 +153,6 @@ class BaseKGE(pytorch_lightning.LightningModule):
             self.selected_optimizer = torch.optim.ASGD(parameters,
                                                        lr=self.learning_rate, lambd=0.0001, alpha=0.75,
                                                        weight_decay=self.weight_decay)
-        elif self.optimizer_name == 'Adan':
-            self.selected_optimizer = Adan(parameters, lr=self.learning_rate, weight_decay=self.weight_decay,
-                                           betas=(0.98, 0.92, 0.99),
-                                           eps=1e-08,
-                                           max_grad_norm=0.0,
-                                           no_prox=False)
-        elif self.optimizer_name == 'Sls':
-            self.selected_optimizer = Sls(params=parameters,
-                                          n_batches_per_epoch=500,
-                                          init_step_size=self.learning_rate,  # 1 originally
-                                          c=0.1,
-                                          beta_b=0.9,
-                                          gamma=2.0,
-                                          beta_f=2.0,
-                                          reset_option=1,
-                                          eta_max=10,
-                                          bound_step_size=True,
-                                          line_search_fn="armijo")
-        elif self.optimizer_name == 'AdamSLS':
-            self.selected_optimizer = AdamSLS(params=parameters,
-                                              n_batches_per_epoch=500,
-                                              init_step_size=self.learning_rate,  # 0.1,0.00001,
-                                              c=0.1,
-                                              gamma=2.0,
-                                              beta=0.999,
-                                              momentum=0.9,
-                                              gv_option='per_param',
-                                              base_opt='adam',
-                                              pp_norm_method='pp_armijo',
-                                              mom_type='standard',
-                                              clip_grad=False,
-                                              beta_b=0.9,
-                                              beta_f=2.0,
-                                              reset_option=1,
-                                              line_search_fn="armijo")
         else:
             raise KeyError()
         return self.selected_optimizer

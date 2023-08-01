@@ -2,14 +2,13 @@ from dicee.executer import Execute
 from dicee.knowledge_graph_embeddings import KGE
 import torch
 import pytest
-import argparse
 import os
-from dicee.config import Args
+from dicee.config import Namespace
 
 class TestRegressionOnlineLearning:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_umls(self):
-        args = Args()
+        args = Namespace()
         args.model = 'AConEx'
         args.scoring_technique = 'KvsSample'
         args.optim = 'Adam'
@@ -31,19 +30,19 @@ class TestRegressionOnlineLearning:
         # Load the model
         pre_trained_kge = KGE(path=result['path_experiment_folder'])
         # (1) Assume that acquired_abnormality,location_of,acquired_abnormality is a false triple
-        first = pre_trained_kge.triple_score(head_entity=["acquired_abnormality"],
-                                             relation=['location_of'],
-                                             tail_entity=["acquired_abnormality"])
+        first = pre_trained_kge.triple_score(h=["acquired_abnormality"],
+                                             r=['location_of'],
+                                             t=["acquired_abnormality"])
 
         # (2) Train the model on (1) with a negative label.
-        pre_trained_kge.train_triples(head_entity=["acquired_abnormality"],
-                                      relation=['location_of'],
-                                      tail_entity=["acquired_abnormality"],
+        pre_trained_kge.train_triples(h=["acquired_abnormality"],
+                                      r=['location_of'],
+                                      t=["acquired_abnormality"],
                                       iteration=1,
                                       optimizer=torch.optim.Adam(params=pre_trained_kge.parameters(), lr=0.01),
                                       labels=[0.0])
         # (3)
-        second = pre_trained_kge.triple_score(head_entity=["acquired_abnormality"],
-                                              relation=['location_of'],
-                                              tail_entity=["acquired_abnormality"])
+        second = pre_trained_kge.triple_score(h=["acquired_abnormality"],
+                                              r=['location_of'],
+                                              t=["acquired_abnormality"])
         assert second < first

@@ -1,14 +1,13 @@
 from dicee.executer import Execute
-import sys
 import pytest
 from dicee import KGE
 from dicee.static_funcs import random_prediction
-from dicee.config import Args
+from dicee.config import Namespace
 
 class TestDefaultParams:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult(self):
-        args = Args()
+        args = Namespace()
         args.model = 'QMult'
         args.optim = 'Adam'
         args.num_epochs = 1
@@ -34,7 +33,7 @@ class TestDefaultParams:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_pykeen_quatE(self):
-        args = Args()
+        args = Namespace()
         args.model = 'Pykeen_QuatE'
         args.optim = 'Adam'
         args.num_epochs = 1
@@ -51,7 +50,7 @@ class TestDefaultParams:
         args.read_only_few = None
         args.backend = 'pandas'
         args.sample_triples_ratio = None
-        args.trainer = 'torchCPUTrainer'
+        args.trainer = 'PL'
         executor = Execute(args)
         executor.start()
 

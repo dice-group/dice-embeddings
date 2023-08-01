@@ -1,10 +1,8 @@
-import time
-
 import numpy as np
 import concurrent
-from .util import *
+from .util import load_pickle, get_er_vocab, get_re_vocab, get_ee_vocab, create_constraints, load_numpy_ndarray
 import os
-import time
+from dicee.static_funcs import save_pickle, save_numpy_ndarray
 
 
 class LoadSaveToDisk:

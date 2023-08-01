@@ -1,11 +1,11 @@
 from dicee.executer import Execute
 import pytest
-from dicee.config import Args
+from dicee.config import Namespace
 
 class TestRegressionQmult:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'QMult'
         args.path_dataset_folder = 'KGs/UMLS'
         args.optim = 'Adam'
@@ -34,7 +34,7 @@ class TestRegressionQmult:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'QMult'
         args.optim = 'Adam'
         args.path_dataset_folder = 'KGs/UMLS'
@@ -63,7 +63,7 @@ class TestRegressionQmult:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):
-        args = Args()
+        args = Namespace()
         args.model = 'QMult'
         args.optim = 'Adam'
         args.path_dataset_folder = 'KGs/UMLS'

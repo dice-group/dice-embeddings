@@ -1,4 +1,3 @@
-import math
 import os
 import datetime
 # import pandas.core.indexes.range
@@ -6,10 +5,8 @@ from .static_funcs import load_model_ensemble, load_model, save_checkpoint_model
 from .static_preprocess_funcs import create_constraints
 import torch
 from typing import List, Tuple
-import pandas as pd
-import numpy as np
 import random
-from abc import ABC, abstractmethod
+from abc import ABC
 import pytorch_lightning
 
 
@@ -173,7 +170,8 @@ class BaseInteractiveKGE:
 
         self.train_set = load_numpy(path=self.path + '/train_set.npy')
         if self.apply_semantic_constraint:
-            self.domain_constraints_per_rel, self.range_constraints_per_rel, self.domain_per_rel, self.range_per_rel = create_constraints(
+            self.domain_constraints_per_rel, self.range_constraints_per_rel, self.domain_per_rel, \
+            self.range_per_rel = create_constraints(
                 self.train_set)
 
     def get_domain_of_relation(self, rel: str) -> List[str]:
