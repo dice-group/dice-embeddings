@@ -4,6 +4,7 @@ import json
 from .static_funcs import pickle
 from .static_funcs_training import evaluate_lp
 
+
 class Evaluator:
     """
         Evaluator class to evaluate KGE models in various downstream tasks
@@ -266,7 +267,8 @@ class Evaluator:
 
         """
         # @TODO: Document this method
-        return evaluate_lp(model=model,triple_idx=triple_idx,num_entities=self.num_entities,er_vocab=self.er_vocab,re_vocab=self.er_vocab,info=info)
+        return evaluate_lp(model, triple_idx, num_entities=self.num_entities,
+                           er_vocab=self.er_vocab,re_vocab=self.re_vocab,info=info)
 
     def dept_evaluate_lp(self, model, triple_idx, info):
         """
