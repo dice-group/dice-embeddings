@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import json
 from .static_funcs import pickle
-
+from .static_funcs_training import evaluate_lp
 
 class Evaluator:
     """
@@ -262,6 +262,13 @@ class Evaluator:
         return results
 
     def evaluate_lp(self, model, triple_idx, info):
+        """
+
+        """
+        # @TODO: Document this method
+        return evaluate_lp(model=model,triple_idx=triple_idx,num_entities=self.num_entities,er_vocab=self.er_vocab,re_vocab=self.er_vocab,info=info)
+
+    def dept_evaluate_lp(self, model, triple_idx, info):
         """
         Evaluate model in a standard link prediction task
 
