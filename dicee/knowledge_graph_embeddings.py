@@ -1,4 +1,3 @@
-
 import time
 from typing import List, Tuple, Set, Iterable, Dict
 import pandas as pd
@@ -7,8 +6,13 @@ from torch import optim
 from torch.utils.data import DataLoader
 from .abstracts import BaseInteractiveKGE
 from .dataset_classes import TriplePredictionDataset
-from .static_funcs import random_prediction, deploy_triple_prediction, deploy_tail_entity_prediction, \
-    deploy_relation_prediction, deploy_head_entity_prediction
+from .static_funcs import (
+    random_prediction,
+    deploy_triple_prediction,
+    deploy_tail_entity_prediction,
+    deploy_relation_prediction,
+    deploy_head_entity_prediction,
+)
 import numpy as np
 from dicee.evaluator import Evaluator
 from dicee.load_kge_model.utils import *
@@ -16,21 +20,29 @@ import sys
 
 
 class KGE(BaseInteractiveKGE):
-    """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
+    """Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
 
     # @TODO: we can download the model if it is not present locally
-    def __init__(self, path, construct_ensemble=False,
-                 model_name=None,
-                 apply_semantic_constraint=False):
-        super().__init__(path=path, construct_ensemble=construct_ensemble, model_name=model_name,
-                         apply_semantic_constraint=apply_semantic_constraint)
-
-
+    def __init__(
+        self,
+        path,
+        construct_ensemble=False,
+        model_name=None,
+        apply_semantic_constraint=False,
+    ):
+        super().__init__(
+            path=path,
+            construct_ensemble=construct_ensemble,
+            model_name=model_name,
+            apply_semantic_constraint=apply_semantic_constraint,
+        )
 
     def __str__(self):
-        return 'KGE | ' + str(self.model)
+        return "KGE | " + str(self.model)
 
-    def predict_missing_head_entity(self, relation: List[str], tail_entity: List[str]) -> Tuple:
+    def predict_missing_head_entity(
+        self, relation: List[str], tail_entity: List[str]
+    ) -> Tuple:
         """
         Given a relation and a tail entity, return top k ranked head entity.
 
@@ -60,13 +72,23 @@ class KGE(BaseInteractiveKGE):
         head_entity = torch.arange(0, len(self.entity_to_idx))
         relation = torch.LongTensor([self.relation_to_idx[i] for i in relation])
         tail_entity = torch.LongTensor([self.entity_to_idx[i] for i in tail_entity])
-        x = torch.stack((head_entity,
-                         relation.repeat(self.num_entities, ),
-                         tail_entity.repeat(self.num_entities, )), dim=1)
+        x = torch.stack(
+            (
+                head_entity,
+                relation.repeat(
+                    self.num_entities,
+                ),
+                tail_entity.repeat(
+                    self.num_entities,
+                ),
+            ),
+            dim=1,
+        )
         return self.model.forward(x)
 
-
-    def predict_missing_relations(self, head_entity: List[str], tail_entity: List[str]) -> Tuple:
+    def predict_missing_relations(
+        self, head_entity: List[str], tail_entity: List[str]
+    ) -> Tuple:
         """
         Given a head entity and a tail entity, return top k ranked relations.
 
@@ -98,15 +120,26 @@ class KGE(BaseInteractiveKGE):
         relation = torch.arange(0, len(self.relation_to_idx))
         tail_entity = torch.LongTensor([self.entity_to_idx[i] for i in tail_entity])
 
-        x = torch.stack((head_entity.repeat(self.num_relations, ),
-                         relation,
-                         tail_entity.repeat(self.num_relations, )), dim=1)
+        x = torch.stack(
+            (
+                head_entity.repeat(
+                    self.num_relations,
+                ),
+                relation,
+                tail_entity.repeat(
+                    self.num_relations,
+                ),
+            ),
+            dim=1,
+        )
         return self.model(x)
         # scores = self.model(x)
         # sort_scores, sort_idxs = torch.topk(scores, topk)
         # return sort_scores, [self.idx_to_relations[i] for i in sort_idxs.tolist()]
 
-    def predict_missing_tail_entity(self, head_entity: List[str], relation: List[str]) -> torch.FloatTensor:
+    def predict_missing_tail_entity(
+        self, head_entity: List[str], relation: List[str]
+    ) -> torch.FloatTensor:
         """
         Given a head entity and a relation, return top k ranked entities
 
@@ -128,11 +161,26 @@ class KGE(BaseInteractiveKGE):
 
         scores
         """
-        x=torch.cat((torch.LongTensor([self.entity_to_idx[i] for i in head_entity]).unsqueeze(-1),
-                     torch.LongTensor([self.relation_to_idx[i] for i in relation]).unsqueeze(-1)), dim=1)
+        x = torch.cat(
+            (
+                torch.LongTensor(
+                    [self.entity_to_idx[i] for i in head_entity]
+                ).unsqueeze(-1),
+                torch.LongTensor([self.relation_to_idx[i] for i in relation]).unsqueeze(
+                    -1
+                ),
+            ),
+            dim=1,
+        )
         return self.model.forward(x)
 
-    def predict(self, *, head_entities: List[str] = None, relations: List[str] = None, tail_entities: List[str] = None):
+    def predict(
+        self,
+        *,
+        head_entities: List[str] = None,
+        relations: List[str] = None,
+        tail_entities: List[str] = None,
+    ):
         # (1) Sanity checking.
         if head_entities is not None:
             assert isinstance(head_entities, list)
@@ -166,8 +214,14 @@ class KGE(BaseInteractiveKGE):
             scores = self.triple_score(head_entities, relations, tail_entities)
         return torch.sigmoid(scores)
 
-    def predict_topk(self, *, head_entity: List[str] = None, relation: List[str] = None, tail_entity: List[str] = None,
-                     topk: int = 10):
+    def predict_topk(
+        self,
+        *,
+        head_entity: List[str] = None,
+        relation: List[str] = None,
+        tail_entity: List[str] = None,
+        topk: int = 10,
+    ):
         """
         Predict missing item in a given triple.
 
@@ -214,10 +268,14 @@ class KGE(BaseInteractiveKGE):
             if self.apply_semantic_constraint:
                 # filter the scores
                 for th, i in enumerate(relation):
-                    scores[self.domain_constraints_per_rel[self.relation_to_idx[i]]] = -torch.inf
+                    scores[
+                        self.domain_constraints_per_rel[self.relation_to_idx[i]]
+                    ] = -torch.inf
 
             sort_scores, sort_idxs = torch.topk(scores, topk)
-            return torch.sigmoid(sort_scores), [self.idx_to_entity[i] for i in sort_idxs.tolist()]
+            return torch.sigmoid(sort_scores), [
+                self.idx_to_entity[i] for i in sort_idxs.tolist()
+            ]
         # (3) Predict missing relation given a head entity and a tail entity.
         elif relation is None:
             assert head_entity is not None
@@ -225,7 +283,9 @@ class KGE(BaseInteractiveKGE):
             # h ? t
             scores = self.predict_missing_relations(head_entity, tail_entity).flatten()
             sort_scores, sort_idxs = torch.topk(scores, topk)
-            return torch.sigmoid(sort_scores), [self.idx_to_relations[i] for i in sort_idxs.tolist()]
+            return torch.sigmoid(sort_scores), [
+                self.idx_to_relations[i] for i in sort_idxs.tolist()
+            ]
         # (4) Predict missing tail entity given a head entity and a relation
         elif tail_entity is None:
             assert head_entity is not None
@@ -235,14 +295,23 @@ class KGE(BaseInteractiveKGE):
             if self.apply_semantic_constraint:
                 # filter the scores
                 for th, i in enumerate(relation):
-                    scores[self.range_constraints_per_rel[self.relation_to_idx[i]]] = -torch.inf
+                    scores[
+                        self.range_constraints_per_rel[self.relation_to_idx[i]]
+                    ] = -torch.inf
             sort_scores, sort_idxs = torch.topk(scores, topk)
-            return torch.sigmoid(sort_scores), [self.idx_to_entity[i] for i in sort_idxs.tolist()]
+            return torch.sigmoid(sort_scores), [
+                self.idx_to_entity[i] for i in sort_idxs.tolist()
+            ]
         else:
-            raise AttributeError('Use triple_score method')
+            raise AttributeError("Use triple_score method")
 
-    def triple_score(self, head_entity: List[str] = None, relation: List[str] = None,
-                     tail_entity: List[str] = None, logits=False) -> torch.FloatTensor:
+    def triple_score(
+        self,
+        head_entity: List[str] = None,
+        relation: List[str] = None,
+        tail_entity: List[str] = None,
+        logits=False,
+    ) -> torch.FloatTensor:
         """
         Predict triple score
 
@@ -269,9 +338,15 @@ class KGE(BaseInteractiveKGE):
 
         pytorch tensor of triple score
         """
-        head_entity = torch.LongTensor([self.entity_to_idx[i] for i in head_entity]).reshape(len(head_entity), 1)
-        relation = torch.LongTensor([self.relation_to_idx[i] for i in relation]).reshape(len(relation), 1)
-        tail_entity = torch.LongTensor([self.entity_to_idx[i] for i in tail_entity]).reshape(len(tail_entity), 1)
+        head_entity = torch.LongTensor(
+            [self.entity_to_idx[i] for i in head_entity]
+        ).reshape(len(head_entity), 1)
+        relation = torch.LongTensor(
+            [self.relation_to_idx[i] for i in relation]
+        ).reshape(len(relation), 1)
+        tail_entity = torch.LongTensor(
+            [self.entity_to_idx[i] for i in tail_entity]
+        ).reshape(len(tail_entity), 1)
 
         x = torch.hstack((head_entity, relation, tail_entity))
         if self.apply_semantic_constraint:
@@ -284,8 +359,13 @@ class KGE(BaseInteractiveKGE):
                 else:
                     return torch.sigmoid(out)
 
-    def predict_conjunctive_query(self, entity: str, relations: List[str], topk: int = 3,
-                                  show_intermediate_results=False) -> Set[str]:
+    def predict_conjunctive_query(
+        self,
+        entity: str,
+        relations: List[str],
+        topk: int = 3,
+        show_intermediate_results=False,
+    ) -> Set[str]:
         """
          Find an answer set for a conjunctive query.
 
@@ -335,7 +415,9 @@ class KGE(BaseInteractiveKGE):
         for r in relations:
             # (3.1) if entity is an anchor entity:
             if len(results) == 0:
-                top_ranked_entities = self.predict_topk(head_entity=[entity], relation=[r], topk=topk)[1]
+                top_ranked_entities = self.predict_topk(
+                    head_entity=[entity], relation=[r], topk=topk
+                )[1]
                 results = set(top_ranked_entities)
                 each_intermediate_result[(hop_counter, entity, r)] = top_ranked_entities
             else:
@@ -343,9 +425,13 @@ class KGE(BaseInteractiveKGE):
                 temp_intermediate_results = set()
                 while results:
                     entity = results.pop()
-                    top_ranked_entities = self.predict_topk(head_entity=[entity], relation=[r], topk=topk)[1]
+                    top_ranked_entities = self.predict_topk(
+                        head_entity=[entity], relation=[r], topk=topk
+                    )[1]
                     temp_intermediate_results |= set(top_ranked_entities)
-                    each_intermediate_result[(hop_counter, entity, r)] = top_ranked_entities
+                    each_intermediate_result[
+                        (hop_counter, entity, r)
+                    ] = top_ranked_entities
                 # (3.3)
                 results = temp_intermediate_results
             hop_counter += 1
@@ -354,9 +440,14 @@ class KGE(BaseInteractiveKGE):
         else:
             return results
 
-    def find_missing_triples(self, confidence: float, entities: List[str] = None, relations: List[str] = None,
-                             topk: int = 10,
-                             at_most: int = sys.maxsize) -> Set:
+    def find_missing_triples(
+        self,
+        confidence: float,
+        entities: List[str] = None,
+        relations: List[str] = None,
+        topk: int = 10,
+        at_most: int = sys.maxsize,
+    ) -> Set:
         """
          Find missing triples
 
@@ -386,7 +477,9 @@ class KGE(BaseInteractiveKGE):
         assert 1.0 >= confidence >= 0.0
         assert topk >= 1
 
-        def select(items: List[str], item_mapping: Dict[str, int]) -> Iterable[Tuple[str, int]]:
+        def select(
+            items: List[str], item_mapping: Dict[str, int]
+        ) -> Iterable[Tuple[str, int]]:
             """
              Get selected entities and their indexes
 
@@ -408,35 +501,52 @@ class KGE(BaseInteractiveKGE):
                 return ((i, item_mapping[i]) for i in items)
 
         extended_triples = set()
-        print(f'Number of entities:{len(self.entity_to_idx)} \t Number of relations:{len(self.relation_to_idx)}')
+        print(
+            f"Number of entities:{len(self.entity_to_idx)} \t Number of relations:{len(self.relation_to_idx)}"
+        )
 
         # (5) Cartesian Product over entities and relations
         # (5.1) Iterate over entities
-        print('Finding missing triples..')
+        print("Finding missing triples..")
         for str_head_entity, idx_entity in select(entities, self.entity_to_idx):
             # (5.1) Iterate over relations
             for str_relation, idx_relation in select(relations, self.relation_to_idx):
                 # (5.2) \forall e \in Entities store a tuple of scoring_func(head,relation,e) and e
                 # (5.3.) Sort (5.2) and return top  tuples
-                predicted_scores, str_tail_entities = self.predict_topk(head_entity=[str_head_entity],
-                                                                        relation=[str_relation], topk=topk)
+                predicted_scores, str_tail_entities = self.predict_topk(
+                    head_entity=[str_head_entity], relation=[str_relation], topk=topk
+                )
                 # (5.4) Iterate over 5.3
-                for predicted_score, str_entity in zip(predicted_scores, str_tail_entities):
+                for predicted_score, str_entity in zip(
+                    predicted_scores, str_tail_entities
+                ):
                     # (5.5) If score is less than 99% ignore it
                     if predicted_score < confidence:
                         break
                     else:
                         # /5.6) False if 0, otherwise 1
                         is_in = np.any(
-                            np.all(self.train_set == [idx_entity, idx_relation, self.entity_to_idx[str_entity]],
-                                   axis=1))
+                            np.all(
+                                self.train_set
+                                == [
+                                    idx_entity,
+                                    idx_relation,
+                                    self.entity_to_idx[str_entity],
+                                ],
+                                axis=1,
+                            )
+                        )
                         # (5.7) If (5.6) is true, ignore it
                         if is_in:
                             continue
                         else:
                             # (5.8) Remember it
-                            extended_triples.add((str_head_entity, str_relation, str_entity))
-                            print(f'Number of found missing triples: {len(extended_triples)}')
+                            extended_triples.add(
+                                (str_head_entity, str_relation, str_entity)
+                            )
+                            print(
+                                f"Number of found missing triples: {len(extended_triples)}"
+                            )
                             if len(extended_triples) == at_most:
                                 return extended_triples
         return extended_triples
@@ -444,46 +554,76 @@ class KGE(BaseInteractiveKGE):
     def deploy(self, share: bool = False, top_k: int = 10):
         import gradio as gr
 
-        def predict(str_subject: str, str_predicate: str, str_object: str, random_examples: bool):
+        def predict(
+            str_subject: str, str_predicate: str, str_object: str, random_examples: bool
+        ):
             if random_examples:
                 return random_prediction(self)
             else:
-                if self.is_seen(entity=str_subject) and self.is_seen(
-                        relation=str_predicate) and self.is_seen(entity=str_object):
-                    """ Triple Prediction """
-                    return deploy_triple_prediction(self, str_subject, str_predicate, str_object)
+                if (
+                    self.is_seen(entity=str_subject)
+                    and self.is_seen(relation=str_predicate)
+                    and self.is_seen(entity=str_object)
+                ):
+                    """Triple Prediction"""
+                    return deploy_triple_prediction(
+                        self, str_subject, str_predicate, str_object
+                    )
 
                 elif self.is_seen(entity=str_subject) and self.is_seen(
-                        relation=str_predicate):
-                    """ Tail Entity Prediction """
-                    return deploy_tail_entity_prediction(self, str_subject, str_predicate, top_k)
+                    relation=str_predicate
+                ):
+                    """Tail Entity Prediction"""
+                    return deploy_tail_entity_prediction(
+                        self, str_subject, str_predicate, top_k
+                    )
                 elif self.is_seen(entity=str_object) and self.is_seen(
-                        relation=str_predicate):
-                    """ Head Entity Prediction """
-                    return deploy_head_entity_prediction(self, str_object, str_predicate, top_k)
-                elif self.is_seen(entity=str_subject) and self.is_seen(entity=str_object):
-                    """ Relation Prediction """
-                    return deploy_relation_prediction(self, str_subject, str_object, top_k)
+                    relation=str_predicate
+                ):
+                    """Head Entity Prediction"""
+                    return deploy_head_entity_prediction(
+                        self, str_object, str_predicate, top_k
+                    )
+                elif self.is_seen(entity=str_subject) and self.is_seen(
+                    entity=str_object
+                ):
+                    """Relation Prediction"""
+                    return deploy_relation_prediction(
+                        self, str_subject, str_object, top_k
+                    )
                 else:
-                    KeyError('Uncovered scenario')
+                    KeyError("Uncovered scenario")
             # If user simply select submit
             return random_prediction(self)
 
         gr.Interface(
             fn=predict,
-            inputs=[gr.inputs.Textbox(lines=1, placeholder=None, label='Subject'),
-                    gr.inputs.Textbox(lines=1, placeholder=None, label='Predicate'),
-                    gr.inputs.Textbox(lines=1, placeholder=None, label='Object'), "checkbox"],
-            outputs=[gr.outputs.Textbox(label='Input Triple'),
-                     gr.outputs.Dataframe(label='Outputs', type='pandas')],
-            title=f'{self.name} Deployment',
-            description='1. Enter a triple to compute its score,\n'
-                        '2. Enter a subject and predicate pair to obtain most likely top ten entities or\n'
-                        '3. Checked the random examples box and click submit').launch(share=share)
+            inputs=[
+                gr.inputs.Textbox(lines=1, placeholder=None, label="Subject"),
+                gr.inputs.Textbox(lines=1, placeholder=None, label="Predicate"),
+                gr.inputs.Textbox(lines=1, placeholder=None, label="Object"),
+                "checkbox",
+            ],
+            outputs=[
+                gr.outputs.Textbox(label="Input Triple"),
+                gr.outputs.Dataframe(label="Outputs", type="pandas"),
+            ],
+            title=f"{self.name} Deployment",
+            description="1. Enter a triple to compute its score,\n"
+            "2. Enter a subject and predicate pair to obtain most likely top ten entities or\n"
+            "3. Checked the random examples box and click submit",
+        ).launch(share=share)
 
     # @TODO: Do we really need this ?!
-    def train_triples(self, head_entity: List[str], relation: List[str], tail_entity: List[str], labels: List[float],
-                      iteration=2, optimizer=None):
+    def train_triples(
+        self,
+        head_entity: List[str],
+        relation: List[str],
+        tail_entity: List[str],
+        labels: List[float],
+        iteration=2,
+        optimizer=None,
+    ):
         """
 
         :param head_entity:
@@ -496,20 +636,24 @@ class KGE(BaseInteractiveKGE):
         """
         assert len(head_entity) == len(relation) == len(tail_entity) == len(labels)
         # (1) From List of strings to TorchLongTensor.
-        x = torch.LongTensor(self.index_triple(head_entity, relation, tail_entity)).reshape(1, 3)
+        x = torch.LongTensor(
+            self.index_triple(head_entity, relation, tail_entity)
+        ).reshape(1, 3)
         # (2) From List of float to Torch Tensor.
         labels = torch.FloatTensor(labels)
         # (3) Train mode.
         self.set_model_train_mode()
         if optimizer is None:
             optimizer = optim.Adam(self.model.parameters(), lr=0.1)
-        print(f'Iteration starts...')
+        print(f"Iteration starts...")
         # (4) Train.
         for epoch in range(iteration):
             optimizer.zero_grad()
             outputs = self.model(x)
             loss = self.model.loss(outputs, labels)
-            print(f"Iteration:{epoch}\t Loss:{loss.item()}\t Outputs:{outputs.detach().mean()}")
+            print(
+                f"Iteration:{epoch}\t Loss:{loss.item()}\t Outputs:{outputs.detach().mean()}"
+            )
             loss.backward()
             optimizer.step()
         # (5) Eval
@@ -519,7 +663,7 @@ class KGE(BaseInteractiveKGE):
             loss = self.model.loss(outputs, labels)
             print(f"Eval Mode:\tLoss:{loss.item()}")
 
-    def train_k_vs_all(self, head_entity, relation, iteration=1, lr=.001):
+    def train_k_vs_all(self, head_entity, relation, iteration=1, lr=0.001):
         """
         Train k vs all
         :param head_entity:
@@ -537,9 +681,9 @@ class KGE(BaseInteractiveKGE):
         # (2) Train mode
         self.set_model_train_mode()
         # (3) Initialize optimizer # SGD considerably faster than ADAM.
-        optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=.00001)
+        optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=0.00001)
 
-        print('\nIteration starts.')
+        print("\nIteration starts.")
         # (3) Iterative training.
         for epoch in range(iteration):
             optimizer.zero_grad()
@@ -547,41 +691,54 @@ class KGE(BaseInteractiveKGE):
             loss = self.model.loss(outputs, labels)
             if len(idx_tails) > 0:
                 print(
-                    f"Iteration:{epoch}\t Loss:{loss.item()}\t Avg. Logits for correct tails: {outputs[0, idx_tails].flatten().mean().detach()}")
+                    f"Iteration:{epoch}\t Loss:{loss.item()}\t Avg. Logits for correct tails: {outputs[0, idx_tails].flatten().mean().detach()}"
+                )
             else:
                 print(
-                    f"Iteration:{epoch}\t Loss:{loss.item()}\t Avg. Logits for all negatives: {outputs[0].flatten().mean().detach()}")
+                    f"Iteration:{epoch}\t Loss:{loss.item()}\t Avg. Logits for all negatives: {outputs[0].flatten().mean().detach()}"
+                )
 
             loss.backward()
             optimizer.step()
-            if loss.item() < .00001:
-                print(f'loss is {loss.item():.3f}. Converged !!!')
+            if loss.item() < 0.00001:
+                print(f"loss is {loss.item():.3f}. Converged !!!")
                 break
         # (4) Eval mode
         self.set_model_eval_mode()
         with torch.no_grad():
             outputs = self.model(x)
             loss = self.model.loss(outputs, labels)
-        print(f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs[0, idx_tails].flatten().detach()}\n")
+        print(
+            f"Eval Mode:Loss:{loss.item():.4f}\t Outputs:{outputs[0, idx_tails].flatten().detach()}\n"
+        )
 
-    def train(self, kg, lr=.1, epoch=10, batch_size=32, neg_sample_ratio=10, num_workers=1) -> None:
-        """ Retrained a pretrain model on an input KG via negative sampling."""
+    def train(
+        self, kg, lr=0.1, epoch=10, batch_size=32, neg_sample_ratio=10, num_workers=1
+    ) -> None:
+        """Retrained a pretrain model on an input KG via negative sampling."""
         # (1) Create Negative Sampling Setting for training
-        print('Creating Dataset...')
-        train_set = TriplePredictionDataset(kg.train_set,
-                                            num_entities=len(kg.entity_to_idx),
-                                            num_relations=len(kg.relation_to_idx),
-                                            neg_sample_ratio=neg_sample_ratio)
+        print("Creating triples...")
+        train_set = TriplePredictionDataset(
+            kg.train_set,
+            num_entities=len(kg.entity_to_idx),
+            num_relations=len(kg.relation_to_idx),
+            neg_sample_ratio=neg_sample_ratio,
+        )
         num_data_point = len(train_set)
-        print('Number of data points: ', num_data_point)
-        train_dataloader = DataLoader(train_set, batch_size=batch_size,
-                                      #  shuffle => to have the data reshuffled at every epoc
-                                      shuffle=True, num_workers=num_workers,
-                                      collate_fn=train_set.collate_fn, pin_memory=True)
+        print("Number of data points: ", num_data_point)
+        train_dataloader = DataLoader(
+            train_set,
+            batch_size=batch_size,
+            #  shuffle => to have the data reshuffled at every epoc
+            shuffle=True,
+            num_workers=num_workers,
+            collate_fn=train_set.collate_fn,
+            pin_memory=True,
+        )
 
         # (2) Go through valid triples + corrupted triples and compute scores.
         # Average loss per triple is stored. This will be used  to indicate whether we learned something.
-        print('First Eval..')
+        print("First Eval..")
         self.set_model_eval_mode()
         first_avg_loss_per_triple = 0
         for x, y in train_dataloader:
@@ -592,8 +749,8 @@ class KGE(BaseInteractiveKGE):
         # (3) Prepare Model for Training
         self.set_model_train_mode()
         optimizer = optim.Adam(self.model.parameters(), lr=lr)
-        print('Training Starts...')
-        for epoch in range(epoch):  # loop over the dataset multiple times
+        print("Training Starts...")
+        for epoch in range(epoch):  # loop over the triples multiple times
             epoch_loss = 0
             for x, y in train_dataloader:
                 # zero the parameter gradients
@@ -604,39 +761,170 @@ class KGE(BaseInteractiveKGE):
                 epoch_loss += loss.item()
                 loss.backward()
                 optimizer.step()
-            print(f'Epoch={epoch}\t Avg. Loss per epoch: {epoch_loss / num_data_point:.3f}')
+            print(
+                f"Epoch={epoch}\t Avg. Loss per epoch: {epoch_loss / num_data_point:.3f}"
+            )
         # (5) Prepare For Saving
         self.set_model_eval_mode()
-        print('Eval starts...')
+        print("Eval starts...")
         # (6) Eval model on training data to check how much an Improvement
         last_avg_loss_per_triple = 0
         for x, y in train_dataloader:
             pred = self.model(x)
             last_avg_loss_per_triple += self.model.loss(pred, y)
         last_avg_loss_per_triple /= len(train_set)
-        print(f'On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple:.3f}')
+        print(
+            f"On average Improvement: {first_avg_loss_per_triple - last_avg_loss_per_triple:.3f}"
+        )
 
-    
-    def lp_evaluate(self, dataset=None, filtered=True):
-      args_dict = load_args_from_file(self.path) # load args
-      
-      args = DictToObject(args_dict)
-      evaluator = Evaluator(args=args, is_continual_training=True)
-      
-      # model will be set to evaluation mode in Evaluator
-      
-      form_of_labelling = "EntityPrediction"
-      
-      # TODO: some issues in dataset
-     
-       
-       
-      evaluator.eval(dataset=evaluation_set, trained_model=self.model,
-                                form_of_labelling=form_of_labelling)
-      
-      return
-    
+    def lp_evaluate(
+        self, triples: list[tuple] = None, kg=None, filtered: bool = False
+    ) -> dict:
+        """
+        Take a list of triples and evaluate them using the pre-trained model.
+        :param triples: list of triples to evaluate
+        :param filtered: whether to use filtered setting or not(by default no filtering is used)
+        :return: a dictionary containing the metrics
+        """
 
+        if triples is None or len(triples) == 0:
+            raise Exception("invalid input triples")
 
-    
+        self.model.eval()  # set to evaluation mode
+        hits = dict()
+        reciprocal_ranks = []
+        if filtered:
+            self.er_vocab = kg.er_vocab
+            self.re_vocab = kg.re_vocab
+            self.ee_vocab = kg.ee_vocab
+            # self.constraints = kg.constraints
 
+        # args_dict = load_args_from_file(self.path)  # load args
+        # args = DictToObject(args_dict)
+        # evaluator = Evaluator(args=args, is_continual_training=True)
+
+        all_entities = torch.arange(0, self.num_entities).long()
+        all_entities = all_entities.reshape(
+            len(all_entities),
+        )
+
+        for (s, p, o) in triples:
+            id_s, id_p, id_o = (
+                self.entity_to_idx[s],
+                self.relation_to_idx[p],
+                self.entity_to_idx[o],
+            )
+
+            # predict tails
+            x = torch.stack(
+                (
+                    torch.tensor(id_s).repeat(
+                        self.num_entities,
+                    ),
+                    torch.tensor(id_p).repeat(self.num_entities),
+                    all_entities,
+                ),
+                dim=1,
+            )
+
+            predictions_tails = self.model.forward_triples(x)
+
+            # predict heads
+            x = torch.stack(
+                (
+                    all_entities,
+                    torch.tensor(id_p).repeat(
+                        self.num_entities,
+                    ),
+                    torch.tensor(id_o).repeat(self.num_entities),
+                ),
+                dim=1,
+            )
+
+            predictions_heads = self.model.forward_triples(x)
+
+            del x
+
+            if filtered:
+
+                # 3. Computed filtered ranks for missing tail entities.
+                # 3.1. Compute filtered tail entity rankings
+                filt_tails = self.er_vocab[(id_s, id_p)]
+                # 3.2 Get the predicted target's score
+                target_value = predictions_tails[id_o].item()
+                # 3.3 Filter scores of all triples containing filtered tail entities
+                predictions_tails[filt_tails] = -np.Inf
+                # 3.3.1 Filter entities outside of the range
+                # if 'constraint' in self.args.eval_model:
+                #     predictions_tails[self.range_constraints_per_rel[r]] = -np.Inf
+                # 3.4 Reset the target's score
+                predictions_tails[id_o] = target_value
+
+            # 3.5. Sort the score
+            _, sort_idxs = torch.sort(predictions_tails, descending=True)
+            sort_idxs = sort_idxs.detach()
+            filt_tail_entity_rank = np.where(sort_idxs == id_o)[0][
+                0
+            ]  # no filter is used
+
+            if filtered:
+
+                # 4. Computed filtered ranks for missing head entities.
+                # 4.1. Retrieve head entities to be filtered
+                filt_heads = self.re_vocab[(id_p, id_o)]
+                # 4.2 Get the predicted target's score
+                target_value = predictions_heads[id_s].item()
+                # 4.3 Filter scores of all triples containing filtered head entities.
+                predictions_heads[filt_heads] = -np.Inf
+                # if isinstance(self.args.eval_model, bool) is False:
+                #     if 'constraint' in self.args.eval_model:
+                #         # 4.3.1 Filter entities that are outside the domain
+                #         predictions_heads[self.domain_constraints_per_rel[r]] = -np.Inf
+                # 4.4 Reset the target's score
+                predictions_heads[id_s] = target_value
+
+            _, sort_idxs = torch.sort(predictions_heads, descending=True)
+            sort_idxs = sort_idxs.detach()
+            filt_head_entity_rank = np.where(sort_idxs == id_s)[0][0]
+
+            # 4. Add 1 to ranks as numpy array first item has the index of 0.
+            filt_head_entity_rank += 1
+            filt_tail_entity_rank += 1
+
+            rr = 1.0 / filt_head_entity_rank + (1.0 / filt_tail_entity_rank)
+            # 5. Store reciprocal ranks.
+            reciprocal_ranks.append(rr)
+            # print(f'{i}.th triple: mean reciprical rank:{rr}')
+
+            # 4. Compute Hit@N
+            for hits_level in range(1, 11):
+                I = 1 if filt_head_entity_rank <= hits_level else 0
+                I += 1 if filt_tail_entity_rank <= hits_level else 0
+                if I > 0:
+                    hits.setdefault(hits_level, []).append(I)
+
+        mean_reciprocal_rank = sum(reciprocal_ranks) / (float(len(triples) * 2))
+
+        if 1 in hits:
+            hit_1 = sum(hits[1]) / (float(len(triples) * 2))
+        else:
+            hit_1 = 0
+
+        if 3 in hits:
+            hit_3 = sum(hits[3]) / (float(len(triples) * 2))
+        else:
+            hit_3 = 0
+
+        if 10 in hits:
+            hit_10 = sum(hits[10]) / (float(len(triples) * 2))
+        else:
+            hit_10 = 0
+
+        results = {
+            "H@1": hit_1,
+            "H@3": hit_3,
+            "H@10": hit_10,
+            "MRR": mean_reciprocal_rank,
+        }
+        print(results)
+        return results
