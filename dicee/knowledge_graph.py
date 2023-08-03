@@ -7,7 +7,7 @@ import sys
 class KG:
     """ Knowledge Graph """
 
-    def __init__(self, data_dir: str = None, absolute_path_dataset:str=None,
+    def __init__(self, data_dir: str = None, path_single_kg:str=None,
                  path_for_deserialization: str = None,
                  add_reciprical: bool = None, eval_model: str = None,
                  read_only_few: int = None, sample_triples_ratio: float = None,
@@ -15,7 +15,7 @@ class KG:
                  entity_to_idx=None, relation_to_idx=None, backend=None):
         """
         :param data_dir: A path of a folder containing the input knowledge graph
-        :param absolute_path_dataset: The path of a single file containing the input knowledge graph
+        :param path_single_kg: The path of a single file containing the input knowledge graph
         :param path_for_deserialization: A path of a folder containing previously parsed data
         :param num_core: Number of subprocesses used for data loading
         :param add_reciprical: A flag for applying reciprocal data augmentation technique
@@ -27,7 +27,7 @@ class KG:
         self.num_entities = None
         self.num_relations = None
         self.data_dir = data_dir
-        self.absolute_path_dataset=absolute_path_dataset
+        self.path_single_kg=path_single_kg
         self.path_for_deserialization = path_for_deserialization
         self.add_reciprical = add_reciprical
         self.eval_model = eval_model

@@ -16,11 +16,17 @@ class ParseDict(argparse.Action):
 class Namespace(argparse.Namespace):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        "The path of a folder containing train.txt, and/or valid.txt and/or test.txt"
         self.path_dataset_folder: str = 'KGs/UMLS'
+        "A flag for saving embeddings in csv file."
         self.save_embeddings_as_csv: bool = False
+        "A directory named with time of execution under --storage_path that contains related data about embeddings."
         self.storage_path: str = 'Experiments'
-        self.absolute_path_to_store: str = None
-        self.absolute_path_dataset = None
+        "A single directory created that contains related data about embeddings."
+        self.path_to_store_single_run: str = None
+        "Path of a file corresponding to the input knowledge graph"
+        self.path_single_kg = None
+        "KGE model"
         self.model: str = "Keci"
         self.p: int = 0
         self.q: int = 1

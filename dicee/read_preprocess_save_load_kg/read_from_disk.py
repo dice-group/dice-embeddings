@@ -20,8 +20,8 @@ class ReadFromDisk:
         -------
         None
         """
-        if self.kg.absolute_path_dataset is not None:
-            self.kg.train_set = read_from_disk(self.kg.absolute_path_dataset, self.kg.read_only_few, self.kg.sample_triples_ratio,
+        if self.kg.path_single_kg is not None:
+            self.kg.train_set = read_from_disk(self.kg.path_single_kg, self.kg.read_only_few, self.kg.sample_triples_ratio,
                                                backend=self.kg.backend)
             self.kg.valid_set = None
             self.kg.test_set=None
