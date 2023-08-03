@@ -49,6 +49,7 @@ pip3 install "psutil>=5.9.4"
 pip3 install "pytorch-lightning==1.6.4"
 pip3 install "pykeen==1.10.1"
 pip3 install "zstandard>=0.21.0"
+pip3 install "rdflib>=7.0.0"
 ```
 To test the Installation
 ```
@@ -66,19 +67,8 @@ pyreverse dicee/trainer && dot -Tpng -x classes.dot -o trainer.png && eog traine
 ```
 </details>
 
-## Docker
-To build the Docker image:
-```
-docker build -t dice-embeddings .
-```
-
-To test the Docker image:
-```
-docker run --rm -v ~/.local/share/dicee/KGs:/dicee/KGs dice-embeddings ./main.py --model AConEx --embedding_dim 16
-```
-
 # Knowledge Graph Embedding Models
-<details> <summary> Details</summary>
+<details> <summary> To see available Models</summary>
 
 1. TransE, DistMult, ComplEx, ConEx, QMult, OMult, ConvO, ConvQ, Keci
 2. All 44 models available in https://github.com/pykeen/pykeen#models
@@ -93,13 +83,27 @@ Train a KGE model and evaluate it on the train, validation, and test sets of the
 ```bash
 python main.py --path_dataset_folder "KGs/UMLS" --model Keci --eval_model "train_val_test"
 ```
+where the data is in the following form
+```bash
+$ head -3 KGs/UMLS/train.txt 
+acquired_abnormality    location_of     experimental_model_of_disease
+anatomical_abnormality  manifestation_of        physiologic_function
+alga    isa     entity
+```
 Train a KGE model by providing the path of a single file and store all parameters under newly created directory
 called `KeciFamilyRun`.
 ```bash
 python main.py --path_single_kg "KGs/Family/train.txt" --model Keci --path_to_store_single_run KeciFamilyRun
 ```
-
-Train a KGE model by providing the endpoint of a triple store.
+where the data is in the following form
+```bash
+$ head -3 KGs/Family/train.txt 
+_:1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#Ontology> .
+<http://www.benchmark.org/family#hasChild> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty> .
+<http://www.benchmark.org/family#hasParent> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07/owl#ObjectProperty> .
+```
+**Apart from n-triples or standard link prediction dataset formats, we support ["owl", "nt", "turtle", "rdf/xml", "n3"]***.
+Moreover, a KGE model can be also trained  by providing **an endpoint of a triple store**.
 ```bash
 python main.py --sparql_endpoint "http://localhost:3030/mutagenesis/" --model Keci
 ```
@@ -190,6 +194,20 @@ Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , i
 - [FB15K-237 ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/FB15K-237.zip)
 - [WN18RR ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/WN18RR.zip)
 - For more please look at [Hobbit Data](https://hobbitdata.informatik.uni-leipzig.de/KGE/)
+
+## Docker
+<details> <summary> Details</summary>
+To build the Docker image:
+```
+docker build -t dice-embeddings .
+```
+
+To test the Docker image:
+```
+docker run --rm -v ~/.local/share/dicee/KGs:/dicee/KGs dice-embeddings ./main.py --model AConEx --embedding_dim 16
+```
+</details>
+
 ### Documentation
 In documents folder, we explained many details about knowledge graphs, knowledge graph embeddings, training strategies and many more background knowledge.
 We continuously work on documenting each and every step to increase the readability of our code.

@@ -16,7 +16,6 @@ def get_default_arguments(description=None):
                         help="An endpoint of a triple store, e.g. 'http://localhost:3030/mutagenesis/'. ")
     parser.add_argument("--path_single_kg", type=str, default=None,
                         help="Path of a file corresponding to the input knowledge graph")
-
     parser.add_argument("--path_to_store_single_run", type=str, default=None,
                         help="A single directory created that contains related data about embeddings.")
     parser.add_argument("--storage_path", type=str, default='Experiments',

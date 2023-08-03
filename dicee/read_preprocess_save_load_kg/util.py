@@ -9,6 +9,7 @@ import pickle
 import os
 import psutil
 import requests
+from rdflib import Graph
 
 
 def timeit(func):
@@ -97,11 +98,15 @@ def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio:
     return df
 
 
-def read_from_disk(data_path, read_only_few: int = None,
+def read_from_disk(data_path: str, read_only_few: int = None,
                    sample_triples_ratio: float = None, backend=None):
     assert backend
     # If path exits
     if glob.glob(data_path):
+        if data_path[data_path.find(".") + 1:] in ["owl", "nt", "turtle", "rdf/xml", "n3", " n-triples"]:
+            return pd.DataFrame(data=[(s, p, o) for s, p, o in Graph().parse(data_path)],
+                                columns=['subject', 'relation', 'object'], dtype=str)
+
         if backend == 'pandas':
             return read_with_pandas(data_path, read_only_few, sample_triples_ratio)
         elif backend == 'polars':
@@ -124,6 +129,7 @@ def read_from_triple_store(endpoint: str = None):
     triples = ([triple['subject']['value'], triple['predicate']['value'], triple['object']['value']] for triple in
                response.json()['results']['bindings'])
     return pd.DataFrame(data=triples, index=None, columns=["subject", "relation", "object"], dtype=str)
+
 
 def get_er_vocab(data, file_path: str = None):
     # head entity and relation
