@@ -274,7 +274,7 @@ def read_or_load_kg(args, cls):
     print('*** Read or Load Knowledge Graph  ***')
     start_time = time.time()
     kg = cls(data_dir=args.path_dataset_folder,
-             absolute_path_dataset=args.absolute_path_dataset,
+             path_single_kg=args.path_single_kg,
              add_reciprical=args.apply_reciprical_or_noise,
              eval_model=args.eval_model,
              read_only_few=args.read_only_few,
@@ -501,9 +501,9 @@ def continual_training_setup_executor(executor) -> None:
         executor.storage_path = executor.args.full_storage_path
     else:
         # Create a single directory containing KGE and all related data
-        if executor.args.absolute_path_to_store:
-            os.makedirs(executor.args.absolute_path_to_store, exist_ok=False)
-            executor.args.full_storage_path=executor.args.absolute_path_to_store
+        if executor.args.path_to_store_single_run:
+            os.makedirs(executor.args.path_to_store_single_run, exist_ok=False)
+            executor.args.full_storage_path=executor.args.path_to_store_single_run
         else:
             # Create a parent and subdirectory.
             executor.args.full_storage_path = create_experiment_folder(folder_name=executor.args.storage_path)

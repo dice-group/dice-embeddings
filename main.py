@@ -11,15 +11,16 @@ def get_default_arguments(description=None):
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Data related arguments
     parser.add_argument("--path_dataset_folder", type=str, default="KGs/UMLS",
-                        help="The path of a folder containing input data")
+                        help="The path of a folder containing train.txt, and/or valid.txt and/or test.txt")
     parser.add_argument("--save_embeddings_as_csv", action="store_false",
-                        help='A flag for saving embeddings in csv file.')
+                        help="A flag for saving embeddings in csv file.")
     parser.add_argument("--storage_path", type=str, default='Experiments',
-                        help="Embeddings, model, and any other related data will be stored therein.")
-    parser.add_argument("--absolute_path_to_store", type=str, default=None,
-                        help="A directory will be created in a given path,e.g., os.getcwd() + '/Dummy')")
-    parser.add_argument("--absolute_path_dataset", type=str, default=None,
-                        help="Absolute path of a file corresponding to the input knowledge graph")
+                        help="A directory named with time of execution under --storage_path "
+                             "that contains related data about embeddings.")
+    parser.add_argument("--path_to_store_single_run", type=str, default=None,
+                        help="A single directory created that contains related data about embeddings.")
+    parser.add_argument("--path_single_kg", type=str, default=None,
+                        help="Path of a file corresponding to the input knowledge graph")
     # Model related arguments
     parser.add_argument("--model", type=str,
                         default="Keci",

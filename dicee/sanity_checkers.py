@@ -21,7 +21,7 @@ def sanity_checking_with_arguments(args):
         print(f'num_folds_for_cv can not be negative. Currently:{args.num_folds_for_cv}')
         raise
     # Check whether is a directory or a file?
-    if args.absolute_path_dataset is not None:
+    if args.path_to_store_single_run is not None:
         assert args.path_dataset_folder is None
     else:
         assert isinstance(args.path_dataset_folder,str)
