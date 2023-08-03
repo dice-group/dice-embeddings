@@ -66,6 +66,17 @@ pyreverse dicee/trainer && dot -Tpng -x classes.dot -o trainer.png && eog traine
 ```
 </details>
 
+## Docker
+To build the Docker image:
+```
+docker build -t dice-embeddings .
+```
+
+To test the Docker image:
+```
+docker run --rm -v ~/.local/share/dicee/KGs:/dicee/KGs dice-embeddings ./main.py --model AConEx --embedding_dim 16
+```
+
 # Knowledge Graph Embedding Models
 <details> <summary> Details</summary>
 
