@@ -12,15 +12,17 @@ def get_default_arguments(description=None):
     # Data related arguments
     parser.add_argument("--path_dataset_folder", type=str, default="KGs/UMLS",
                         help="The path of a folder containing train.txt, and/or valid.txt and/or test.txt")
-    parser.add_argument("--save_embeddings_as_csv", action="store_false",
-                        help="A flag for saving embeddings in csv file.")
-    parser.add_argument("--storage_path", type=str, default='Experiments',
-                        help="A directory named with time of execution under --storage_path "
-                             "that contains related data about embeddings.")
+    parser.add_argument("--sparql_endpoint", type=str, default=None,#'http://localhost:3030/mutagenesis/',
+                        help="An endpoint of a triple store.")
     parser.add_argument("--path_to_store_single_run", type=str, default=None,
                         help="A single directory created that contains related data about embeddings.")
     parser.add_argument("--path_single_kg", type=str, default=None,
                         help="Path of a file corresponding to the input knowledge graph")
+    parser.add_argument("--storage_path", type=str, default='Experiments',
+                        help="A directory named with time of execution under --storage_path "
+                             "that contains related data about embeddings.")
+    parser.add_argument("--save_embeddings_as_csv", action="store_false",
+                        help="A flag for saving embeddings in csv file.")
     # Model related arguments
     parser.add_argument("--model", type=str,
                         default="Keci",

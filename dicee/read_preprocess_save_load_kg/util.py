@@ -8,6 +8,7 @@ import pandas as pd
 import pickle
 import os
 import psutil
+import requests
 
 
 def timeit(func):
@@ -111,6 +112,18 @@ def read_from_disk(data_path, read_only_few: int = None,
         print(f'{data_path} could not found!')
         return None
 
+
+def read_from_triple_store(endpoint: str = None):
+    """ Read triples from triple store into pandas dataframe """
+    assert endpoint is not None
+    assert isinstance(endpoint, str)
+    query = """SELECT ?subject ?predicate ?object WHERE {  ?subject ?predicate ?object}"""
+    response = requests.post(endpoint, data={'query': query})
+    assert response.ok
+    # Generator
+    triples = ([triple['subject']['value'], triple['predicate']['value'], triple['object']['value']] for triple in
+               response.json()['results']['bindings'])
+    return pd.DataFrame(data=triples, index=None, columns=["subject", "relation", "object"], dtype=str)
 
 def get_er_vocab(data, file_path: str = None):
     # head entity and relation
