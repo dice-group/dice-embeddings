@@ -87,17 +87,35 @@ docker run --rm -v ~/.local/share/dicee/KGs:/dicee/KGs dice-embeddings ./main.py
 </details>
 
 # How to Train
-<details> <summary> Details</summary>
+<details> <summary> To see  examples</summary>
 
-> Please refer to `examples`.
+Train a KGE model and evaluate it on the train, validation, and test sets of the UMLS benchmark dataset.
+```bash
+python main.py --path_dataset_folder "KGs/UMLS" --model Keci --eval_model "train_val_test"
+```
+Train a KGE model by providing the path of a single file and store all parameters under newly created directory
+called `KeciFamilyRun`.
+```bash
+python main.py --path_single_kg "KGs/Family/train.txt" --model Keci --path_to_store_single_run KeciFamilyRun
+```
+
+Train a KGE model by providing the endpoint of a triple store.
+```bash
+python main.py --sparql_endpoint "http://localhost:3030/mutagenesis/" --model Keci
+```
+For more, please refer to `examples`.
 </details>
 
 
 # How to Deploy
+<details> <summary> To see a single line of code</summary>
+
 ```python
 from dicee import KGE
 KGE(path='...').deploy(share=True,top_k=10)
 ```
+</details>
+
 <details> <summary> To see the interface of the webservice</summary>
 <img src="dicee/lp.png" alt="Italian Trulli">
 </details>
