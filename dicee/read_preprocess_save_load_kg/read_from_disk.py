@@ -1,4 +1,4 @@
-from .util import read_from_disk
+from .util import read_from_disk,read_from_triple_store
 import glob
 class ReadFromDisk:
     """Read the data from disk into memory"""
@@ -21,10 +21,17 @@ class ReadFromDisk:
         None
         """
         if self.kg.path_single_kg is not None:
-            self.kg.train_set = read_from_disk(self.kg.path_single_kg, self.kg.read_only_few, self.kg.sample_triples_ratio,
+            self.kg.train_set = read_from_disk(self.kg.path_single_kg,
+                                               self.kg.read_only_few,
+                                               self.kg.sample_triples_ratio,
                                                backend=self.kg.backend)
             self.kg.valid_set = None
-            self.kg.test_set=None
+            self.kg.test_set = None
+        elif self.kg.sparql_endpoint:
+            self.kg.train_set=read_from_triple_store(endpoint=self.kg.sparql_endpoint)
+            self.kg.valid_set = None
+            self.kg.test_set = None
+
         else:
             for i in glob.glob(self.kg.data_dir + '/*'):
                 if 'train' in i:

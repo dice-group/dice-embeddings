@@ -26,6 +26,8 @@ class Namespace(argparse.Namespace):
         self.path_to_store_single_run: str = None
         "Path of a file corresponding to the input knowledge graph"
         self.path_single_kg = None
+        "An endpoint of a triple store."
+        self.sparql_endpoint = None
         "KGE model"
         self.model: str = "Keci"
         self.p: int = 0

@@ -7,7 +7,9 @@ import sys
 class KG:
     """ Knowledge Graph """
 
-    def __init__(self, data_dir: str = None, path_single_kg:str=None,
+    def __init__(self, data_dir: str = None,
+                 sparql_endpoint:str=None,
+                 path_single_kg:str=None,
                  path_for_deserialization: str = None,
                  add_reciprical: bool = None, eval_model: str = None,
                  read_only_few: int = None, sample_triples_ratio: float = None,
@@ -15,6 +17,7 @@ class KG:
                  entity_to_idx=None, relation_to_idx=None, backend=None):
         """
         :param data_dir: A path of a folder containing the input knowledge graph
+        : param sparql_endpoint: An endpoint of a triple store
         :param path_single_kg: The path of a single file containing the input knowledge graph
         :param path_for_deserialization: A path of a folder containing previously parsed data
         :param num_core: Number of subprocesses used for data loading
@@ -24,6 +27,7 @@ class KG:
         :param add_noise_rate: Add say 10% noise in the input data
         sample_triples_ratio
         """
+        self.sparql_endpoint=sparql_endpoint
         self.num_entities = None
         self.num_relations = None
         self.data_dir = data_dir

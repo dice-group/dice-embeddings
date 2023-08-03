@@ -10,17 +10,20 @@ def get_default_arguments(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Data related arguments
-    parser.add_argument("--path_dataset_folder", type=str, default="KGs/UMLS",
+    parser.add_argument("--path_dataset_folder", type=str, default=None,
                         help="The path of a folder containing train.txt, and/or valid.txt and/or test.txt")
-    parser.add_argument("--save_embeddings_as_csv", action="store_false",
-                        help="A flag for saving embeddings in csv file.")
+    parser.add_argument("--sparql_endpoint", type=str, default=None,
+                        help="An endpoint of a triple store, e.g. 'http://localhost:3030/mutagenesis/'. ")
+    parser.add_argument("--path_single_kg", type=str, default=None,
+                        help="Path of a file corresponding to the input knowledge graph")
+
+    parser.add_argument("--path_to_store_single_run", type=str, default=None,
+                        help="A single directory created that contains related data about embeddings.")
     parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="A directory named with time of execution under --storage_path "
                              "that contains related data about embeddings.")
-    parser.add_argument("--path_to_store_single_run", type=str, default=None,
-                        help="A single directory created that contains related data about embeddings.")
-    parser.add_argument("--path_single_kg", type=str, default=None,
-                        help="Path of a file corresponding to the input knowledge graph")
+    parser.add_argument("--save_embeddings_as_csv", action="store_false",
+                        help="A flag for saving embeddings in csv file.")
     # Model related arguments
     parser.add_argument("--model", type=str,
                         default="Keci",
@@ -67,7 +70,7 @@ def get_default_arguments(description=None):
                         help='Number of folds in k-fold cross validation.'
                              'If >2 ,no evaluation scenario is applied implies no evaluation.')
     parser.add_argument("--eval_model", type=str, default="train_val_test",
-                        choices=["train", "train_val", "train_val_tset", "test"],
+                        choices=["train", "train_val", "train_val_test", "test"],
                         help='Evaluating link prediction performance on data splits. ')
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
                         help='At every X number of epochs model will be saved. If None, we save 4 times.')
