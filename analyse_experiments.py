@@ -131,8 +131,8 @@ class Experiment:
                  test_mrr=self.test_mrr, test_h1=self.test_h1,
                  test_h3=self.test_h3, test_h10=self.test_h10,
                  runtime=self.runtime,
-                 params=self.num_params
-                 #callbacks=self.callbacks,
+                 params=self.num_params,
+                 callbacks=self.callbacks,
                  #normalization=self.normalization,
                  #embeddingdim=self.embedding_dim
                  )
@@ -148,6 +148,6 @@ for i in experiments:
 df = counter.to_df()
 pd.set_option("display.precision", 3)
 #print(df)
-#print(df.to_latex(index=False,float_format="%.3f"))
+print(df.to_latex(index=False,float_format="%.3f"))
 
 print(df.to_markdown(index=False))
