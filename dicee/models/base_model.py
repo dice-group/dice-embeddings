@@ -115,7 +115,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
             self.optimizer_name = self.args['optim']
         else:
             print(f'--optim (***{self.args.get("optim")}***) not found')
-            self.optimizer_name='Adam'
+            self.optimizer_name = 'Adam'
 
         if self.args.get("init_param") is None:
             self.param_init = IdentityClass
@@ -123,7 +123,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
             self.param_init = torch.nn.init.xavier_normal_
         else:
             print(f'--init_param (***{self.args.get("init_param")}***) not found')
-            self.optimizer_name=IdentityClass
+            self.optimizer_name = IdentityClass
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
         # @TODO why twice data.data.?
@@ -167,7 +167,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
             raise KeyError()
 
     def loss_function(self, yhat_batch, y_batch):
-        return self.loss(input=yhat_batch, target=y_batch)
+        return self.loss(yhat_batch, y_batch)
 
     def forward_triples(self, *args, **kwargs):
         raise ValueError(f'MODEL:{self.name} does not have forward_triples function')
@@ -200,6 +200,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
             else:
                 return self.forward_sequence(x=x)
 
+    """
     def training_step(self, batch, batch_idx):
         if len(batch) == 2:
             x_batch, y_batch = batch
@@ -212,6 +213,13 @@ class BaseKGE(pytorch_lightning.LightningModule):
             raise ValueError('Unexpected batch shape..')
         train_loss = self.loss_function(yhat_batch=yhat_batch, y_batch=y_batch)
         return train_loss
+    """
+
+    def training_step(self, batch, batch_idx=None):
+        x_batch, y_batch = batch
+        yhat_batch = self.forward(x_batch)
+        loss_batch = self.loss_function(yhat_batch, y_batch)
+        return loss_batch
 
     def training_epoch_end(self, training_step_outputs):
         batch_losses = [i['loss'].item() for i in training_step_outputs]
@@ -220,6 +228,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         """
+        @ TODO
         # from torchmetrics import Accuracy as accuracy
         if len(batch) == 4:
             h, r, t, y_batch = batch
@@ -235,6 +244,8 @@ class BaseKGE(pytorch_lightning.LightningModule):
 
     def validation_epoch_end(self, outputs: List[Any]) -> None:
         """
+        @ TODO
+
         x = [[x['val_acc'], x['val_loss']] for x in outputs]
         avg_val_acc, avg_loss = torch.tensor(x).mean(dim=0)[:]
         self.log('avg_loss_per_epoch', avg_loss, on_epoch=True, prog_bar=True)
@@ -243,6 +254,8 @@ class BaseKGE(pytorch_lightning.LightningModule):
 
     def test_step(self, batch, batch_idx):
         """
+        @ TODO
+
         if len(batch) == 4:
             h, r, t, y_batch = batch
             predictions = self.forward_triples(h, r, t)
@@ -255,6 +268,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
 
     def test_epoch_end(self, outputs: List[Any]):
         """
+        @ TODO
         avg_test_accuracy = torch.stack([x['test_accuracy'] for x in outputs]).mean()
         self.log('avg_test_accuracy', avg_test_accuracy, on_epoch=True, prog_bar=True)
         """

@@ -57,7 +57,7 @@ class TorchTrainer(AbstractTrainer):
             # (2) Do not accumulate gradient, zero the gradients per batch.
             self.optimizer.zero_grad(set_to_none=True)
         # (3) Loss Forward and Backward w.r.t the batch.
-        return self.compute_forward_loss_backward(x_batch, y_batch).item()
+        return self.compute_forward_loss_backward(x_batch, y_batch)
 
     def _run_epoch(self, epoch: int) -> float:
         """
@@ -121,6 +121,7 @@ class TorchTrainer(AbstractTrainer):
         self.train_dataloaders = train_dataloaders
         self.loss_function = model.loss_function
         self.optimizer = self.model.configure_optimizers()
+        self.training_step=self.model.training_step
         # (1) Start running callbacks
         self.on_fit_start(self, self.model)
 
@@ -176,15 +177,10 @@ class TorchTrainer(AbstractTrainer):
             batch_loss = self.optimizer.step(closure=lambda: self.loss_function(self.model(x_batch), y_batch))
             return batch_loss
         else:
-            # (1) Forward and Backpropagate the gradient of (3) w.r.t. parameters.
-            yhat_batch = self.model(x_batch)
-            # (2) Compute the batch loss
-            batch_loss = self.loss_function(yhat_batch, y_batch)
-            # (3) Backward pass
+            batch_loss=self.training_step(batch=(x_batch, y_batch))
             batch_loss.backward()
-            # (4) Parameter update
             self.optimizer.step()
-            return batch_loss
+            return batch_loss.item()
 
     def extract_input_outputs_set_device(self, batch: list) -> Tuple:
         """
