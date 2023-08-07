@@ -25,10 +25,10 @@ def get_default_arguments(description=None):
                         help="A flag for saving embeddings in csv file.")
     # Model related arguments
     parser.add_argument("--model", type=str,
-                        default="Keci",
+                        default="Pykeen_QuatE",
                         choices=["ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "ComplEx", "Keci",
-                                 "Pykeen_QuatE", "Pykeen_MuRE", "Pykeen_BoxE"],
+                                 "Pykeen_DistMult", "Pykeen_QuatE", "Pykeen_MuRE", "Pykeen_BoxE"],
                         help="Available knowledge graph embedding models. "
                              "To use other knowledge graph embedding models available in python, e.g.,"
                              "**Pykeen_BoxE** and add this into choices")
@@ -48,10 +48,10 @@ def get_default_arguments(description=None):
     parser.add_argument("--trainer", type=str, default='torchCPUTrainer',
                         choices=['torchCPUTrainer', 'PL', 'torchDDP'],
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
-    parser.add_argument('--scoring_technique', default='KvsAll',
+    parser.add_argument('--scoring_technique', default='NegSample',
                         help="Training technique for knowledge graph embedding model",
                         choices=["KvsAll", "1vsAll", "NegSample", "KvsSample"])
-    parser.add_argument('--neg_ratio', type=int, default=1,
+    parser.add_argument('--neg_ratio', type=int, default=2,
                         help='The number of negative triples generated per positive triple.')
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
     parser.add_argument('--input_dropout_rate', type=float, default=0.0)
@@ -79,11 +79,13 @@ def get_default_arguments(description=None):
                         help="# of output channels in convolution")
     parser.add_argument("--num_core", type=int, default=4,
                         help='Number of cores to be used. 0 implies using single CPU')
-    parser.add_argument("--seed_for_computation", type=int, default=0,
+    parser.add_argument("--seed_for_computation", type=int, default=1,
                         help='Seed for all, see pl seed_everything().')
     parser.add_argument("--sample_triples_ratio", type=float, default=None, help='Sample input data.')
     parser.add_argument("--read_only_few", type=int, default=None,
                         help='READ only first N triples. If 0, read all.')
+    parser.add_argument("--add_noise_rate", type=float, default=0.0,
+                        help='Add x % of noisy triples into training dataset.')
     parser.add_argument('--p', type=int, default=0,
                         help='P for Clifford Algebra')
     parser.add_argument('--q', type=int, default=0,
