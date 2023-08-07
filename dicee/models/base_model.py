@@ -111,7 +111,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
             self.normalizer_class = IdentityClass
         else:
             raise NotImplementedError()
-        if self.args.get("optim") in ['Adan', 'NAdam', 'Adam', 'SGD', 'ASGD', 'Sls', 'AdamSLS']:
+        if self.args.get("optim") in ['NAdam', 'Adam', 'SGD']:
             self.optimizer_name = self.args['optim']
         else:
             print(f'--optim (***{self.args.get("optim")}***) not found')
@@ -156,7 +156,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
         else:
             raise KeyError()
         return self.selected_optimizer
-
+    """
     def get_optimizer_class(self):
         # default params in pytorch.
         if self.optimizer_name == 'SGD':
@@ -165,7 +165,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
             return torch.optim.Adam
         else:
             raise KeyError()
-
+    """
     def loss_function(self, yhat_batch, y_batch):
         return self.loss(yhat_batch, y_batch)
 

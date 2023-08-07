@@ -62,10 +62,14 @@ class PykeenKGE(BaseKGE):
         # (1) Retrieve embeddings of heads and relations +  apply Dropout & Normalization if given.
         h, r = self.get_head_relation_representation(x)
         # (2) Reshape (1).
-        h = h.reshape(len(x), self.embedding_dim, self.last_dim)
-        r = r.reshape(len(x), self.embedding_dim, self.last_dim)
+        if self.last_dim>0:
+            h = h.reshape(len(x), self.embedding_dim, self.last_dim)
+            r = r.reshape(len(x), self.embedding_dim, self.last_dim)
         # (3) Reshape all entities.
-        t = self.entity_embeddings.weight.reshape(self.num_entities, self.embedding_dim, self.last_dim)
+        if self.last_dim>0:
+            t = self.entity_embeddings.weight.reshape(self.num_entities, self.embedding_dim, self.last_dim)
+        else:
+            t=self.entity_embeddings.weight
         # (4) Call the score_t from interactions to generate triple scores.
         return self.interaction.score_t(h=h, r=r, all_entities=t, slice_size=1)
 
@@ -73,9 +77,10 @@ class PykeenKGE(BaseKGE):
         # (1) Retrieve embeddings of heads, relations and tails and apply Dropout & Normalization if given.
         h, r, t = self.get_triple_representation(x)
         # (2) Reshape (1).
-        h = h.reshape(len(x), self.embedding_dim, self.last_dim)
-        r = r.reshape(len(x), self.embedding_dim, self.last_dim)
-        t = t.reshape(len(x), self.embedding_dim, self.last_dim)
+        if self.last_dim>0:
+            h = h.reshape(len(x), self.embedding_dim, self.last_dim)
+            r = r.reshape(len(x), self.embedding_dim, self.last_dim)
+            t = t.reshape(len(x), self.embedding_dim, self.last_dim)
         # (3) Compute the triple score
         return self.interaction.score(h=h, r=r, t=t, slice_size=None, slice_dim=0)
 
