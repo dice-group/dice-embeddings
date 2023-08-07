@@ -222,15 +222,13 @@ class Eval(AbstractCallback):
         """
 
     def on_train_epoch_end(self, trainer, model):
-        self.epoch_counter+=1
+        self.epoch_counter += 1
         if self.epoch_counter % self.epoch_ratio == 0:
             model.eval()
             report = trainer.evaluator.eval(dataset=trainer.dataset, trained_model=model,
                                             form_of_labelling=trainer.form_of_labelling, during_training=True)
             model.train()
             self.reports.append(report)
-
-
 
     def on_train_batch_end(self, *args, **kwargs):
         return
@@ -296,11 +294,30 @@ class GN(AbstractCallback):
         self.epoch_ratio = epoch_ratio if epoch_ratio is not None else 1
         self.epoch_counter = 0
 
-    def on_train_epoch_end(self, trainer, model):
+    def on_train_epoch_start(self, trainer, model):
         if self.epoch_counter % self.epoch_ratio == 0:
             with torch.no_grad():
                 # Access the parameters
                 for param in model.parameters():
                     noise_mat = torch.normal(mean=0, std=self.std, size=param.shape, device=model.device)
+                    param.add_(noise_mat)
+        self.epoch_counter += 1
+
+
+class RN(AbstractCallback):
+    """ Adding Uniform at Random Noise into Inputs/Parameters """
+
+    def __init__(self, std: float = 0.1, epoch_ratio: int = None):
+        super().__init__()
+        self.std = std
+        self.epoch_ratio = epoch_ratio if epoch_ratio is not None else 1
+        self.epoch_counter = 0
+
+    def on_train_epoch_start(self, trainer, model):
+        if self.epoch_counter % self.epoch_ratio == 0:
+            with torch.no_grad():
+                # Access the parameters
+                for param in model.parameters():
+                    noise_mat = torch.rand(size=param.shape) * self.std
                     param.add_(noise_mat)
         self.epoch_counter += 1

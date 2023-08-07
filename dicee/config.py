@@ -30,6 +30,8 @@ class Namespace(argparse.Namespace):
         self.sparql_endpoint = None
         "KGE model"
         self.model: str = "Keci"
+        " The ratio of added random triples into training dataset"
+        self.add_noise_rate: float = None
         self.p: int = 0
         self.q: int = 1
         self.optim: str = 'Adam'

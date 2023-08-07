@@ -14,9 +14,6 @@ import os
 import psutil
 from .models.base_model import BaseKGE
 import pickle
-from pykeen.datasets.base import EagerDataset
-from pykeen.triples.triples_factory import TriplesFactory
-
 
 def timeit(func):
     @functools.wraps(func)
@@ -274,6 +271,7 @@ def read_or_load_kg(args, cls):
     print('*** Read or Load Knowledge Graph  ***')
     start_time = time.time()
     kg = cls(data_dir=args.path_dataset_folder,
+             add_noise_rate=args.add_noise_rate,
              sparql_endpoint=args.sparql_endpoint,
              path_single_kg=args.path_single_kg,
              add_reciprical=args.apply_reciprical_or_noise,
@@ -292,16 +290,9 @@ def read_or_load_kg(args, cls):
 def get_pykeen_model(model_name: str, args, dataset):
     if dataset is None:
         # (1) Load a pretrained Pykeen Model
-        return PykeenKGE(dataset=EagerDataset(
-                             training=TriplesFactory(
-                                 load_numpy(args['full_storage_path'] + '/train_set.npy'),
-                                 load_pickle(file_path=args['full_storage_path'] + '/entity_to_idx.p'),
-                                 load_pickle(file_path=args['full_storage_path'] + '/relation_to_idx.p')),
-                             testing=None), args=args)
+        return PykeenKGE(args=args)
     elif args['scoring_technique'] in ['KvsAll', "NegSample"]:
-        return PykeenKGE(dataset=EagerDataset(
-                             training=TriplesFactory(dataset.train_set, dataset.entity_to_idx, dataset.relation_to_idx),
-                             testing=None), args=args)
+        return PykeenKGE(args=args)
     else:
         raise NotImplementedError("Incorrect scoring technique")
 
@@ -362,7 +353,7 @@ def intialize_model(args: dict, dataset=None) -> Tuple[object, str]:
         model = CMult(args=args)
         form_of_labelling = 'EntityPrediction'
     else:
-        raise ValueError
+        raise ValueError(f"--model_name: {model_name} is not found.")
     return model, form_of_labelling
 
 
