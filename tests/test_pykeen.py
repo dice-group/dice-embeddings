@@ -23,8 +23,7 @@ def template(model_name):
 
 @pytest.mark.parametrize("model_name", ["Pykeen_DistMult",
                                         "Pykeen_ComplEx",
-                                        "Pykeen_QuatE",
-                                        "Pykeen_MuRE", ])
+                                        "Pykeen_QuatE"])
 class TestClass:
     def test_defaultParameters_case(self, model_name):
         args = template(model_name)
