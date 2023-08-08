@@ -41,6 +41,7 @@ class PykeenKGE(BaseKGE):
                              'entity_initializer': None if args['init_param'] is None else torch.nn.init.xavier_normal_,
                              # 'entity_constrainer': None, for complex doesn't work but for distmult does
                              # 'regularizer': None works for ComplEx and DistMult but does not work for QuatE
+                             "random_seed":args["random_seed"]
                              }
         self.model_kwargs.update(args['pykeen_model_kwargs'])
         self.name = args['model'].split("_")[1]
