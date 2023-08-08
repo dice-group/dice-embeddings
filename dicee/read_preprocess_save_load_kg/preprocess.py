@@ -23,7 +23,7 @@ class PreprocessKG:
         """
         if self.kg.backend == 'polars':
             self.preprocess_with_polars()
-        elif self.kg.backend in ['pandas', 'modin']:
+        elif self.kg.backend in ['pandas']:
             self.preprocess_with_pandas()
         else:
             raise KeyError(f'{self.kg.backend} not found')
@@ -177,7 +177,6 @@ class PreprocessKG:
             """ Apply str to int mapping on an input data"""
             # These column assignments are executed in parallel
             # with_colums allows you to create new columns for you analyses.
-            # https://pola-rs.github.io/polars-book/user-guide/quickstart/quick-exploration-guide.html#with_columns
             return data.with_columns([polars.col("subject").apply(lambda x: self.kg.entity_to_idx[x]),
                                       polars.col("relation").apply(lambda x: self.kg.relation_to_idx[x]),
                                       polars.col("object").apply(lambda x: self.kg.entity_to_idx[x])])
