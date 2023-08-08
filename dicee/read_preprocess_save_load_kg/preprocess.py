@@ -24,18 +24,16 @@ class PreprocessKG:
         """
         if self.kg.backend == 'polars':
             self.preprocess_with_polars()
-        elif self.kg.backend in ['pandas']:
+        elif self.kg.backend == 'pandas':
             self.preprocess_with_pandas()
         else:
             raise KeyError(f'{self.kg.backend} not found')
-
-        print('Data Type conversion...')
+        print('Finding suitable integer type for the index...')
         self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
                                                     num=max(self.kg.num_entities, self.kg.num_relations))
         if self.kg.valid_set is not None:
             self.kg.valid_set = numpy_data_type_changer(self.kg.valid_set,
                                                         num=max(self.kg.num_entities, self.kg.num_relations))
-
         if self.kg.test_set is not None:
             self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
                                                        num=max(self.kg.num_entities, self.kg.num_relations))
@@ -122,7 +120,7 @@ class PreprocessKG:
                         pl.col("subject").alias('object')
                     ]))
 
-            print('Adding Reciprocal Triples...', end=' ')
+            print('Adding Reciprocal Triples...')
             adding_reciprocal_triples()
 
         # (2) Type checking
@@ -141,17 +139,17 @@ class PreprocessKG:
                 x.append(test)
             return pl.concat(x)
 
-        print('Concat Splits...', end=' ')
+        print('Concat Splits...')
         df_str_kg = concat_splits(self.kg.train_set, self.kg.valid_set, self.kg.test_set)
 
-        print('Entity Indexing...', end=' ')
+        print('Entity Indexing...')
         self.kg.entity_to_idx = pl.concat((df_str_kg['subject'],
                                            df_str_kg['object'])).unique(maintain_order=True).rename('entity')
-        print('Relation Indexing...', end=' ')
+        print('Relation Indexing...')
         self.kg.relation_to_idx =df_str_kg['relation'].unique(maintain_order=True)
-        print('Creating index for entities...', end=' ')
+        print('Creating index for entities...')
         self.kg.entity_to_idx = {ent: idx for idx, ent in enumerate(self.kg.entity_to_idx.to_list())}
-        print('Creating index for relations...', end=' ')
+        print('Creating index for relations...')
         self.kg.relation_to_idx = {rel: idx for idx, rel in enumerate(self.kg.relation_to_idx.to_list())}
         self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
 

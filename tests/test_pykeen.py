@@ -22,11 +22,10 @@ def template(model_name):
     return args
 
 
-@pytest.mark.parametrize("model_name", ["Pykeen_DistMult",
-                                        "Pykeen_ComplEx", "Pykeen_HolE", "Pykeen_CP", "Pykeen_ProjE",
-                                        "Pykeen_TuckER", "Pykeen_TransR","Pykeen_TransH","Pykeen_TransD",
-                                        "Pykeen_TransE",
-                                        "Pykeen_QuatE", "Pykeen_MuRE", "Pykeen_BoxE", "Pykeen_RotatE"])
+@pytest.mark.parametrize("model_name", ["Pykeen_DistMult", "Pykeen_ComplEx", "Pykeen_HolE", "Pykeen_CP",
+                                        "Pykeen_ProjE", "Pykeen_TuckER", "Pykeen_TransR", "Pykeen_TransH",
+                                        "Pykeen_TransD", "Pykeen_TransE", "Pykeen_QuatE", "Pykeen_MuRE",
+                                        "Pykeen_BoxE", "Pykeen_RotatE"])
 class TestClass:
     def test_defaultParameters_case(self, model_name):
         args = template(model_name)

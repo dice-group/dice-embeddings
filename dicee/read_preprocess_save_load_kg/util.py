@@ -20,10 +20,9 @@ def timeit(func):
         end_time = time.perf_counter()
         total_time = end_time - start_time
         print(
-            f'Took {total_time:.4f} seconds'
-            f'|Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB')
+            f'{func.__name__} took {total_time:.4f} seconds '
+            f'| Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB')
         return result
-
     return timeit_wrapper
 
 
@@ -31,7 +30,7 @@ def timeit(func):
 def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None) -> polars.DataFrame:
     """ Load and Preprocess via Polars """
     print(f'*** Reading {data_path} with Polars ***')
-    # (1) Load the data
+    # (1) Load the data.
     if data_path[-3:] in ['txt', 'csv']:
         print('Reading with polars.read_csv with sep **t** ...')
         df = polars.read_csv(data_path,
@@ -47,9 +46,7 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
             df = polars.read_parquet(data_path, use_pyarrow=True)
         else:
             df = polars.read_parquet(data_path, n_rows=read_only_few)
-
-    print(f'Estimated size of the Polars Dataframe: {df.estimated_size() / 1000000} in MB')
-    # (2) Sample from (1)
+    # (2) Sample from (1).
     if sample_triples_ratio:
         print(f'Subsampling {sample_triples_ratio} of input data {df.shape}...')
         df = df.sample(frac=sample_triples_ratio)
