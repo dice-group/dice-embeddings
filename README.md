@@ -90,9 +90,9 @@ acquired_abnormality    location_of     experimental_model_of_disease
 anatomical_abnormality  manifestation_of        physiologic_function
 alga    isa     entity
 ```
-DDP can be easily used to train models on multi-gpus
+Models can be easily trained in a single node multi-gpu setting
 ```bash
-python main.py --path_dataset_folder "KGs/UMLS" --model Keci --eval_model "train_val_test" --accelerator "gpu" --strategy "ddp"
+python main.py --accelerator "gpu" --strategy "ddp" --path_dataset_folder "KGs/UMLS" --model Keci --eval_model "train_val_test" 
 ```
 
 Train a KGE model by providing the path of a single file and store all parameters under newly created directory
