@@ -12,7 +12,7 @@ def get_default_arguments(description=None):
     # Data related arguments
     parser.add_argument("--path_dataset_folder", type=str, default="KGs/UMLS",
                         help="The path of a folder containing input data")
-    parser.add_argument("--save_embeddings_as_csv", action="store_false",
+    parser.add_argument("--save_embeddings_as_csv", action="store_true",
                         help='A flag for saving embeddings in csv file.')
     parser.add_argument("--storage_path", type=str, default='Experiments',
                         help="Embeddings, model, and any other related data will be stored therein.")
