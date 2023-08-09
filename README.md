@@ -29,15 +29,17 @@ Deploy a pre-trained embedding model without writing a single line of code.
 # Installation
 <details><summary> Details </summary>
 
-``` 
-pip install dicee
-```
-
-or
-
-```
+``` bash
 git clone https://github.com/dice-group/dice-embeddings.git
 conda create -n dice python=3.10 --no-default-packages && conda activate dice
+pip3 install -r requirements.txt
+```
+or
+```bash
+pip install dicee
+```
+or
+```bash
 pip3 install "pandas>=1.5.1"
 pip3 install "torch>=2.0.0"
 pip3 install "polars>=0.16.14"
@@ -50,9 +52,11 @@ pip3 install "pytorch-lightning==1.6.4"
 pip3 install "pykeen==1.10.1"
 pip3 install "zstandard>=0.21.0"
 pip3 install "rdflib>=7.0.0"
+pip3 install "ruff>=0.0.283"
 ```
+
 To test the Installation
-```
+```bash
 wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
 unzip KGs.zip
 pytest -p no:warnings -x # it takes circa 15 minutes
@@ -90,9 +94,9 @@ acquired_abnormality    location_of     experimental_model_of_disease
 anatomical_abnormality  manifestation_of        physiologic_function
 alga    isa     entity
 ```
-DDP can be easily used to train models on multi-gpus
+Models can be easily trained in a single node multi-gpu setting
 ```bash
-python main.py --path_dataset_folder "KGs/UMLS" --model Keci --eval_model "train_val_test" --accelerator "gpu" --strategy "ddp"
+python main.py --accelerator "gpu" --strategy "ddp" --path_dataset_folder "KGs/UMLS" --model Keci --eval_model "train_val_test" 
 ```
 
 Train a KGE model by providing the path of a single file and store all parameters under newly created directory

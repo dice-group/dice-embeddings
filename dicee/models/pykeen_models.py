@@ -39,12 +39,40 @@ class PykeenKGE(BaseKGE):
         super().__init__(args)
         self.model_kwargs = {'embedding_dim': args['embedding_dim'],
                              'entity_initializer': None if args['init_param'] is None else torch.nn.init.xavier_normal_,
-                             # 'entity_constrainer': None, for complex doesn't work but for distmult does
-                             # 'regularizer': None works for ComplEx and DistMult but does not work for QuatE
-                             "random_seed":args["random_seed"]
+                             #"entity_regularizer": None,
+                             #"relation_regularizer": None,
+                             "random_seed": args["random_seed"]
                              }
         self.model_kwargs.update(args['pykeen_model_kwargs'])
         self.name = args['model'].split("_")[1]
+
+        # Solving memory issue of Pykeen models caused by the regularizers
+        # See https://github.com/pykeen/pykeen/issues/1297
+
+        if self.name == "QuatE":
+            self.model_kwargs["entity_regularizer"] = None
+            self.model_kwargs["relation_regularizer"] = None
+        elif self.name == "DistMult":
+            self.model_kwargs["regularizer"] = None
+        elif self.name == "BoxE":
+            pass
+        elif self.name == "CP":
+            # No regularizers
+            pass
+        elif self.name == "HolE":
+            # No regularizers
+            pass
+        elif self.name == "ProjE":
+            # Nothing
+            pass
+        elif self.name == "RotatE":
+            pass
+        elif self.name == "TransE":
+            self.model_kwargs["regularizer"] = None
+        else:
+            print("Pykeen model have a memory leak caused by their implementation of requirlizers")
+            print(f"{self.name} does not seem to have any requirlizer")
+
         self.model = model_resolver. \
             make(self.name, self.model_kwargs, triples_factory=
         collections.namedtuple('triples_factory', ['num_entities', 'num_relations', 'create_inverse_triples'])(
