@@ -322,7 +322,7 @@ class NegSampleDataset(torch.utils.data.Dataset):
         self.neg_sample_ratio = torch.tensor(
             neg_sample_ratio)  # 0 Implies that we do not add negative samples. This is needed during testing and validation
         self.train_set = torch.from_numpy(train_set).unsqueeze(1)
-        #assert num_entities >= max(self.train_set[:, 0]) and num_entities >= max(self.train_set[:, 2])
+        # assert num_entities >= max(self.train_set[:, 0]) and num_entities >= max(self.train_set[:, 2])
         self.length = len(self.train_set)
         self.num_entities = torch.tensor(num_entities)
         self.num_relations = torch.tensor(num_relations)
@@ -335,27 +335,12 @@ class NegSampleDataset(torch.utils.data.Dataset):
 
         triple = self.train_set[idx]
 
-        y = torch.ones(1)
+        corr_entities = torch.randint(0, high=self.num_entities, size=(1,))
+        negative_triple = torch.cat((triple[:, 0], triple[:, 1], corr_entities), dim=0).unsqueeze(0)
 
-
-
-
-
-        negative_triple=torch.cat((triple[:,0],triple[:,1],triple[:,2]),dim=0)
-
-        print(triple.shape)
-        print(negative_triple.shape)
-        exit(1)
-
-        y = torch.ones(0)
-
-        print(triple.shape)
-        x=torch.cat((triple,negative_triple),dim=1)
-
-        print(x)
-        exit(1)
-        # Workaround to create negative triples
-        return triple, y
+        x = torch.cat((triple, negative_triple), dim=0)
+        y=torch.tensor([1.0, 0.0])
+        return x,y
 
 
 class TriplePredictionDataset(torch.utils.data.Dataset):
