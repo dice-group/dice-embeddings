@@ -39,8 +39,8 @@ class PykeenKGE(BaseKGE):
         super().__init__(args)
         self.model_kwargs = {'embedding_dim': args['embedding_dim'],
                              'entity_initializer': None if args['init_param'] is None else torch.nn.init.xavier_normal_,
-                             "entity_regularizer": None,
-                             "relation_regularizer": None,
+                             #"entity_regularizer": None,
+                             #"relation_regularizer": None,
                              "random_seed": args["random_seed"]
                              }
         self.model_kwargs.update(args['pykeen_model_kwargs'])
@@ -53,9 +53,9 @@ class PykeenKGE(BaseKGE):
             self.model_kwargs["entity_regularizer"] = None
             self.model_kwargs["relation_regularizer"] = None
         elif self.name == "DistMult":
-            self.model_kwargs["relation_regularizer"] = None
+            self.model_kwargs["regularizer"] = None
         elif self.name == "BoxE":
-            self.model_kwargs["relation_regularizer"] = None
+            pass
         elif self.name == "CP":
             # No regularizers
             pass
@@ -66,7 +66,7 @@ class PykeenKGE(BaseKGE):
             # Nothing
             pass
         elif self.name == "RotatE":
-            self.model_kwargs["relation_regularizer"] = None
+            pass
         elif self.name == "TransE":
             self.model_kwargs["regularizer"] = None
         else:
