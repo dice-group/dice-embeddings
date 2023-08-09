@@ -1,23 +1,22 @@
-import time
 import pytorch_lightning as pl
 import gc
 from typing import Union
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
-from dicee.callbacks import *
+from dicee.callbacks import PPE, FPPE, Eval, KronE, PrintCallback, KGESaveCallback, AccumulateEpochLossCallback, GN
 from dicee.dataset_classes import construct_dataset, reload_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
 from ..static_funcs import timeit
 import os
 import torch
-import numpy as np
 from pytorch_lightning.strategies import DDPStrategy
 import pandas as pd
 from sklearn.model_selection import KFold
 import copy
 from typing import List, Tuple
 from ..knowledge_graph import KG
+
 
 def initialize_trainer(args, callbacks):
     if args.trainer == 'torchCPUTrainer':
@@ -34,6 +33,7 @@ def initialize_trainer(args, callbacks):
         print('Initializing Pytorch-lightning Trainer', end='\t')
         # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
         return pl.Trainer.from_argparse_args(args,
+                                             callbacks=callbacks,
                                              strategy=DDPStrategy(find_unused_parameters=False))
     else:
         print('Initialize TorchTrainer CPU Trainer', end='\t')
@@ -47,43 +47,25 @@ def get_callbacks(args):
                                  path=args.full_storage_path),
                  AccumulateEpochLossCallback(path=args.full_storage_path)
                  ]
-    for i in args.callbacks:
-        if i=='KronE':
+    if isinstance(args.callbacks, list):
+        return callbacks
+    for k, v in args.callbacks.items():
+        if k == "GN":
+            callbacks.append(GN(std=v['std'], epoch_ratio=v.get('epoch_ratio')))
+        elif k == 'FPP':
+            callbacks.append(
+                FPPE(num_epochs=args.num_epochs, path=args.full_storage_path,
+                     last_percent_to_consider=v.get('last_percent_to_consider')))
+        elif k == 'PPE':
+            callbacks.append(
+                PPE(num_epochs=args.num_epochs, path=args.full_storage_path,
+                    last_percent_to_consider=v.get('last_percent_to_consider')))
+        elif k == 'KronE':
             callbacks.append(KronE())
-        elif i=='Search':
-            callbacks.append(Search(num_epochs=args.num_epochs,embedding_dim=args.embedding_dim))
-        # @TODO: Rename it
-        elif i=='Eval':
-            callbacks.append(Eval(path=args.full_storage_path))
-        elif 'FPPE' in i:
-            if i == 'FPPE':
-                callbacks.append(
-                    FPPE(num_epochs=args.num_epochs, path=args.full_storage_path, last_percent_to_consider=None))
-            elif 'FPPE' == i[:4] and len(i) > 3:
-                name, param = i[:4], i[4:]
-                assert name == 'FPPE'
-                assert int(param)
-                callbacks.append(FPPE(num_epochs=args.num_epochs,
-                                      path=args.full_storage_path,
-                                      last_percent_to_consider=int(param)))
-            else:
-                raise KeyError(f'Unexpected input for callbacks ***\t{i}\t***')
-        elif 'PPE' in i:
-            if "PPE" == i:
-                callbacks.append(
-                    PPE(num_epochs=args.num_epochs, path=args.full_storage_path, last_percent_to_consider=None))
-            elif 'PPE' == i[:3] and len(i) > 3:
-                name, param = i[:3], i[3:]
-                assert name == 'PPE'
-                assert int(param)
-                callbacks.append(PPE(num_epochs=args.num_epochs,
-                                     path=args.full_storage_path,
-                                     last_percent_to_consider=int(param)))
-            else:
-                raise KeyError(f'Unexpected input for callbacks ***\t{i}\t***')
+        elif k == 'Eval':
+            callbacks.append(Eval(path=args.full_storage_path, epoch_ratio=v.get('epoch_ratio')))
         else:
-            raise KeyError(f'Unexpected input for callbacks ***\t{i}\t***')
-
+            raise RuntimeError('Incorrect callback')
     return callbacks
 
 
@@ -109,7 +91,7 @@ class DICE_Trainer:
     report:dict
     """
 
-    def __init__(self, args, is_continual_training, storage_path, evaluator=None,dataset=None):
+    def __init__(self, args, is_continual_training, storage_path, evaluator=None, dataset=None):
         self.report = dict()
         self.args = args
         self.trainer = None
@@ -117,8 +99,8 @@ class DICE_Trainer:
         self.storage_path = storage_path
         # Required for CV.
         self.evaluator = evaluator
-        self.form_of_labelling=None
-        self.dataset=dataset
+        self.form_of_labelling = None
+        self.dataset = dataset
         print(
             f'# of CPUs:{os.cpu_count()} | # of GPUs:{torch.cuda.device_count()} | # of CPUs for dataloader:{self.args.num_core}')
 
@@ -161,7 +143,8 @@ class DICE_Trainer:
     @timeit
     def initialize_or_load_model(self):
         print('Initializing Model...', end='\t')
-        model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path,self.dataset)
+        model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path,
+                                                self.dataset)
         self.report['form_of_labelling'] = form_of_labelling
         assert form_of_labelling in ['EntityPrediction', 'RelationPrediction']
         return model, form_of_labelling
@@ -174,6 +157,7 @@ class DICE_Trainer:
         return torch.utils.data.DataLoader(dataset=dataset, batch_size=self.args.batch_size,
                                            shuffle=True, collate_fn=dataset.collate_fn,
                                            num_workers=self.args.num_core, persistent_workers=False)
+
     @timeit
     def initialize_dataset(self, dataset, form_of_labelling) -> torch.utils.data.Dataset:
         print('Initializing Dataset...', end='\t')
@@ -194,7 +178,7 @@ class DICE_Trainer:
         # @TODO: SaveDataset
         return train_dataset
 
-    def start(self, dataset:KG) -> Tuple[BaseKGE, str]:
+    def start(self, dataset: KG) -> Tuple[BaseKGE, str]:
         """ Train selected model via the selected training strategy """
         print('------------------- Train -------------------')
         # (1) Perform K-fold CV
@@ -204,11 +188,11 @@ class DICE_Trainer:
             self.trainer: Union[TorchTrainer, TorchDDPTrainer, pl.Trainer]
             self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args), plugins=[])
             model, form_of_labelling = self.initialize_or_load_model()
-            self.trainer.evaluator=self.evaluator
+            self.trainer.evaluator = self.evaluator
             self.trainer.dataset = dataset
             self.trainer.form_of_labelling = form_of_labelling
-            print(model)
-            self.trainer.fit(model, train_dataloaders=self.initialize_dataloader(self.initialize_dataset(dataset, form_of_labelling)))
+            self.trainer.fit(model, train_dataloaders=self.initialize_dataloader(
+                self.initialize_dataset(dataset, form_of_labelling)))
             return model, form_of_labelling
 
     def k_fold_cross_validation(self, dataset) -> Tuple[BaseKGE, str]:

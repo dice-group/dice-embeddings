@@ -1,13 +1,13 @@
 from dicee.executer import Execute
-from dicee.config import Args
 from dicee.knowledge_graph_embeddings import KGE
+from dicee.config import Namespace
 import pytest
 
 
 class TestAutoBatchFinder:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_auto_batch_finder(self):
-        args = Args()
+        args = Namespace()
         args.model = 'DistMult'
         args.scoring_technique = 'KvsSample'
         args.optim = 'Adam'
@@ -28,7 +28,7 @@ class TestAutoBatchFinder:
         args.normalization = None
         #result_fast = Execute(args).start()
 
-        args = Args()#get_default_arguments([])
+        args = Namespace()#get_default_arguments([])
         args.model = 'DistMult'
         args.scoring_technique = 'KvsSample'
         args.optim = 'Adam'

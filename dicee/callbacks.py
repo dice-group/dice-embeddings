@@ -1,17 +1,12 @@
 import datetime
-import math
 import time
 import numpy as np
 import torch
 
 import dicee.models.base_model
-from .static_funcs import save_checkpoint_model, exponential_function, save_pickle, load_pickle
+from .static_funcs import save_checkpoint_model, exponential_function, save_pickle
 from .abstracts import AbstractCallback, AbstractPPECallback
-from typing import Optional
-import os
 import pandas as pd
-import torch.nn.functional as F
-import matplotlib.pyplot as plt
 
 
 class AccumulateEpochLossCallback(AbstractCallback):
@@ -58,7 +53,7 @@ class PrintCallback(AbstractCallback):
             message = f'{training_time / (60 * 60):.3f} hours.'
         else:
             message = f'{training_time:.3f} seconds.'
-        print(f"Done ! It took {message}\n")
+        print(f"Training Runtime: {message}\n")
 
     def on_train_batch_end(self, *args, **kwargs):
         return
@@ -89,11 +84,12 @@ class KGESaveCallback(AbstractCallback):
     def on_fit_end(self, *args, **kwargs):
         pass
 
-    def on_epoch_end(self, trainer, pl_module):
+    def on_epoch_end(self, model, trainer, **kwargs):
         if self.epoch_counter % self.every_x_epoch == 0 and self.epoch_counter > 1:
             print(f'\nStoring model {self.epoch_counter}...')
-            save_checkpoint_model(pl_module,
-                                  path=self.path + f'/model_at_{str(self.epoch_counter)}_epoch_{str(str(datetime.datetime.now()))}.pt')
+            save_checkpoint_model(model,
+                                  path=self.path + f'/model_at_{str(self.epoch_counter)}_'
+                                                   f'epoch_{str(str(datetime.datetime.now()))}.pt')
         self.epoch_counter += 1
 
 
@@ -159,7 +155,7 @@ class PPE(AbstractPPECallback):
     def __init__(self, num_epochs, path, last_percent_to_consider=None):
         super().__init__(num_epochs, path, last_percent_to_consider)
         self.alphas = np.ones(self.num_ensemble_coefficient) / self.num_ensemble_coefficient
-        print(f"Equal Ensemble Coefficients:", self.alphas)
+        print("Equal Ensemble Coefficients:", self.alphas)
 
 
 class FPPE(AbstractPPECallback):
@@ -196,10 +192,11 @@ class FPPE(AbstractPPECallback):
 
 
 class Eval(AbstractCallback):
-    def __init__(self, path):
+    def __init__(self, path, epoch_ratio: int = None):
         super().__init__()
         self.path = path
         self.reports = []
+        self.epoch_ratio = epoch_ratio if epoch_ratio is not None else 1
         self.epoch_counter = 0
 
     def on_fit_start(self, trainer, model):
@@ -225,11 +222,15 @@ class Eval(AbstractCallback):
         """
 
     def on_train_epoch_end(self, trainer, model):
-        model.eval()
-        report = trainer.evaluator.eval(dataset=trainer.dataset, trained_model=model,
-                                        form_of_labelling=trainer.form_of_labelling, during_training=True)
-        model.train()
-        self.reports.append(report)
+        self.epoch_counter+=1
+        if self.epoch_counter % self.epoch_ratio == 0:
+            model.eval()
+            report = trainer.evaluator.eval(dataset=trainer.dataset, trained_model=model,
+                                            form_of_labelling=trainer.form_of_labelling, during_training=True)
+            model.train()
+            self.reports.append(report)
+
+
 
     def on_train_batch_end(self, *args, **kwargs):
         return
@@ -282,3 +283,24 @@ class KronE(AbstractCallback):
 
         else:
             raise NotImplementedError('Normalizer should be reinitialized')
+
+
+class GN(AbstractCallback):
+    '''
+    Adding Gaussian Noise into Inputs/Parameters
+    '''
+
+    def __init__(self, std: float = 0.1, epoch_ratio: int = None):
+        super().__init__()
+        self.std = std
+        self.epoch_ratio = epoch_ratio if epoch_ratio is not None else 1
+        self.epoch_counter = 0
+
+    def on_train_epoch_end(self, trainer, model):
+        if self.epoch_counter % self.epoch_ratio == 0:
+            with torch.no_grad():
+                # Access the parameters
+                for param in model.parameters():
+                    noise_mat = torch.normal(mean=0, std=self.std, size=param.shape, device=model.device)
+                    param.add_(noise_mat)
+        self.epoch_counter += 1

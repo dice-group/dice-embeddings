@@ -1,11 +1,11 @@
 from dicee.executer import Execute
 import pytest
-from dicee.config import Args
+from dicee.config import Namespace
 
 class TestRegressionDistMult:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'DistMult'
         args.optim = 'Adam'
         args.path_dataset_folder = 'KGs/UMLS'
@@ -28,7 +28,7 @@ class TestRegressionDistMult:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'DistMult'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
@@ -46,11 +46,11 @@ class TestRegressionDistMult:
         args.normalization = 'LayerNorm'
         args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
-        result = Execute(args).start()
+        Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):
-        args = Args()
+        args = Namespace()
         args.model = 'DistMult'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10

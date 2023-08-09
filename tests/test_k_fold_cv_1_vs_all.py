@@ -1,12 +1,10 @@
 from dicee.executer import Execute
-import sys
 import pytest
-from dicee.config import Args
-
+from dicee.config import Namespace
 class TestCV_1vsAll:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_shallom_1vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'Shallom'
         args.num_epochs = 1
         args.scoring_technique = '1vsAll'
@@ -28,7 +26,7 @@ class TestCV_1vsAll:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_conex_1vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'ConEx'
         args.num_epochs = 1
         args.scoring_technique = '1vsAll'
@@ -50,7 +48,7 @@ class TestCV_1vsAll:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_qmult_1vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'QMult'
         args.num_epochs = 1
         args.scoring_technique = '1vsAll'
@@ -72,7 +70,7 @@ class TestCV_1vsAll:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_convq_1vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'ConvQ'
         args.num_epochs = 1
         args.scoring_technique = '1vsAll'
@@ -94,7 +92,7 @@ class TestCV_1vsAll:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_omult_1vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'OMult'
         args.num_epochs = 1
         args.scoring_technique = '1vsAll'
@@ -116,7 +114,7 @@ class TestCV_1vsAll:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_convo_1vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'ConvO'
         args.num_epochs = 1
         args.scoring_technique = '1vsAll'
@@ -137,7 +135,7 @@ class TestCV_1vsAll:
         Execute(args).start()
 
     def test_distmult_1vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'DistMult'
         args.num_epochs = 1
         args.scoring_technique = '1vsAll'
@@ -158,7 +156,7 @@ class TestCV_1vsAll:
         Execute(args).start()
 
     def test_complex_1vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'ComplEx'
         args.num_epochs = 1
         args.scoring_technique = '1vsAll'

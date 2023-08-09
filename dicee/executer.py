@@ -6,18 +6,18 @@ from types import SimpleNamespace
 import os
 import datetime
 import argparse
-import numpy as np
 from pytorch_lightning import seed_everything
 
 from dicee.knowledge_graph import KG
-from dicee.models.base_model import BaseKGE
 from dicee.evaluator import Evaluator
 # Avoid
-from dicee.static_funcs import *
 from dicee.static_preprocess_funcs import preprocesses_input_args
-from dicee.sanity_checkers import *
 from dicee.trainer import DICE_Trainer
 import pytorch_lightning as pl
+
+from dicee.static_funcs import timeit, continual_training_setup_executor, read_or_load_kg, load_json, store
+from dicee.sanity_checkers import config_kge_sanity_checking
+
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
@@ -121,12 +121,12 @@ class Execute:
                   trained_model=self.trained_model,
                   model_name='model',
                   full_storage_path=self.storage_path,
-                  save_as_csv=self.args.save_embeddings_as_csv)
+                  save_embeddings_as_csv=self.args.save_embeddings_as_csv)
         else:
             store(trainer=self.trainer,
                   trained_model=self.trained_model,
                   model_name='model_' + str(datetime.datetime.now()),
-                  full_storage_path=self.storage_path, save_as_csv=self.args.save_embeddings_as_csv)
+                  full_storage_path=self.storage_path, save_embeddings_as_csv=self.args.save_embeddings_as_csv)
 
         self.report['path_experiment_folder'] = self.storage_path
         self.report['num_entities'] = self.args.num_entities
@@ -166,7 +166,7 @@ class Execute:
     def write_report(self):
         # Report total runtime.
         self.report['Runtime'] = time.time() - self.start_time
-        print(f"Total computation time: {self.report['Runtime']:.3f} seconds")
+        print(f"Total Runtime: {self.report['Runtime']:.3f} seconds")
         with open(self.args.full_storage_path + '/report.json', 'w') as file_descriptor:
             json.dump(self.report, file_descriptor, indent=4)
 
@@ -315,7 +315,8 @@ def get_default_arguments(description=None):
     parser.add_argument("--normalization", type=str, default="None", help="[LayerNorm, BatchNorm1d, None]")
     parser.add_argument("--init_param", type=str, default=None, help="[xavier_normal, None]")
     parser.add_argument("--gradient_accumulation_steps", type=int, default=0,
-                        help="e.g. gradient_accumulation_steps=2 implies that gradients are accumulated at every second mini-batch")
+                        help="e.g. gradient_accumulation_steps=2 implies that gradients are accumulated "
+                             "at every second mini-batch")
     parser.add_argument('--num_folds_for_cv', type=int, default=0,
                         help='Number of folds in k-fold cross validation.'
                              'If >2 ,no evaluation scenario is applied implies no evaluation.')

@@ -1,127 +1,84 @@
-from pykeen.contrib.lightning import LCWALitModule, SLCWALitModule
-from pykeen.triples.triples_factory import CoreTriplesFactory
 import torch
 import torch.utils.data
-from pykeen import predict
 import numpy as np
-from typing import Dict, Tuple
-from .base_model import *
+from typing import Tuple, Union
+import pickle
+from pykeen.models import model_resolver
+from .base_model import BaseKGE
 
 
-class Pykeen_Module:
-    def __init__(self, model_name, optimizer) -> None:
-        self.name = model_name
-        self.selected_optimizer = optimizer
-
-    def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
-
-        """
-        Get the entity and relation embeddings representtaion from the model.
-        """
-
-        relation_embedd = []
-        entity_embedd = []
-
-        if hasattr(self.model, "base") and hasattr(self.model.base, "relation_representations") and len(
-                self.model.base.relation_representations) != 0:
-            for embedd_item in self.model.base.relation_representations:
-                relation_embedd.append(embedd_item().data.detach())
-
-        if (
-                hasattr(self.model, "relation_representations")
-                and len(self.model.relation_representations) != 0
-        ):
-            for embedd_item in self.model.relation_representations:
-                relation_embedd.append(embedd_item().data.detach())
-
-        # if len(relation_embedd) == 1:
-        #     relation_embedd = relation_embedd[0]
-
-        if hasattr(self.model, "base") and hasattr(self.model.base, "entity_representations") and len(
-                self.model.base.entity_representations) != 0:
-            for embedd_item in self.model.base.entity_representations:
-                entity_embedd.append(embedd_item().data.detach())
-
-        if (
-                hasattr(self.model, "entity_representations")
-                and len(self.model.entity_representations) != 0
-        ):
-            for embedd_item in self.model.entity_representations:
-                entity_embedd.append(embedd_item().data.detach())
-
-        # if len(entity_embedd) == 1:
-        #     entity_embedd = entity_embedd[0]
-
-        return (
-            entity_embedd,
-            relation_embedd,
-        )
-
-    def forward_triples(self, x: torch.Tensor, h_prediction=False, t_prediction=False) -> torch.FloatTensor:
-        # the tensors here is inference tensors and can't be modified in-place outside InferenceMode.
-        # https://twitter.com/PyTorch/status/1437838242418671620?s=20&t=8pEheJu4kRaLyJHBBLUvZA (solution)
-        # torch_max_mem will be used by default. If the tensors are not moved to cuda, a warning will occur
-        # https://pykeen.readthedocs.io/en/latest/reference/predict.html#predict-triples-df (migration guide)
-        if t_prediction:
-            predictions_tails = predict.predict_target(model=self.model, head=x[0, 0].item(), relation=x[0, 1].item(),
-                                                       targets=x[:, 2])
-
-            _df = predictions_tails.df.sort_values(by=['tail_id'])
-            return torch.tensor(_df.score, dtype=torch.float64)
-
-        if h_prediction:
-            predictions_heads = predict.predict_target(model=self.model, relation=x[0, 1].item(), tail=x[0, 2].item(),
-                                                       targets=x[:, 0])
-            # for row in predictions_heads.df.iterrows():
-            #     lst[int(row['head_id'])] = row['score']
-            _df = predictions_heads.df.sort_values(by=['head_id'])
-            # return lst
-            return torch.tensor(_df.score, dtype=torch.float64)
-
-        # return predict.predict_triples(model=self.model, triples=x.to("cuda"),).scores.clone()
-
-    def mem_of_model(self) -> Dict:
-        """ Size of model in MB and number of params"""
-        # https://discuss.pytorch.org/t/finding-model-size/130275/2
-        # (2) Store NumParam and EstimatedSizeMB
-        num_params = sum(p.numel() for p in self.parameters())
-        # Not quite sure about EstimatedSizeMB ?
-        buffer_size = 0
-        for buffer in self.buffers():
-            buffer_size += buffer.nelement() * buffer.element_size()
-        return {'EstimatedSizeMB': (num_params + buffer_size) / 1024 ** 2, 'NumParam': num_params}
+def load_numpy(path) -> np.ndarray:
+    print('Loading indexed training data...', end='')
+    with open(path, 'rb') as f:
+        data = np.load(f)
+    return data
 
 
-class MyLCWALitModule(LCWALitModule, Pykeen_Module):
+def load_pickle(*, file_path=str):
+    with open(file_path, 'rb') as f:
+        return pickle.load(f)
 
-    def __init__(self, *, model_name: str, args, **kwargs):
-        Pykeen_Module.__init__(self, model_name, kwargs['optimizer'])
-        super().__init__(**kwargs)
+
+class PykeenKGE(BaseKGE):
+    """ A class for using knowledge graph embedding models implemented in Pykeen
+
+    Each model can be trained with KvsAll or NegSample scoring techniques.
+    Each model must be trained with PL
+
+    Using our custom trainers seems to introduce a memory leak.
+    """
+    def __init__(self, args: dict, dataset):
+        super().__init__(args)
+        self.model_kwargs = {'embedding_dim': args['embedding_dim'],
+                             'entity_initializer': None if args['init_param'] is None else torch.nn.init.xavier_normal_,
+                             # 'entity_constrainer': None, for complex doesn't work but for distmult does
+                             # 'regularizer': None works for ComplEx and DistMult but does not work for QuatE
+                             }
+        self.model_kwargs.update(args['pykeen_model_kwargs'])
+        self.name = args['model'].split("_")[1]
+        self.model = model_resolver.make(self.name, self.model_kwargs, triples_factory=dataset.training)
         self.loss_history = []
         self.args = args
-        self.train_dataloaders = self.train_dataloader()
+        assert self.args['trainer']=='PL'
 
-    @property
-    def loss_function(self):
-        return self.loss
+    def forward_k_vs_all(self, x: torch.LongTensor):
+        return self.model.score_t(x)
 
-    def _dataloader(
-            self, triples_factory: CoreTriplesFactory, shuffle: bool = False
-    ) -> torch.utils.data.DataLoader:
-        return torch.utils.data.DataLoader(dataset=triples_factory.create_lcwa_instances(),
-                                           batch_size=self.args['batch_size'], shuffle=True,
-                                           num_workers=self.args['num_core'],
-                                           )
+    def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx):
+        raise NotImplementedError()
 
+    def forward_triples(self, x: torch.LongTensor):
+        return self.model.score_hrt(x).flatten()
 
-class MySLCWALitModule(SLCWALitModule, Pykeen_Module):
-    def __init__(self, *, model_name: str, args, **kwargs):
-        Pykeen_Module.__init__(self, model_name, kwargs['optimizer'])
-        super().__init__(**kwargs)
-        self.loss_history = []
-        self.args = args
-        self.train_dataloaders = self.train_dataloader()
+    def forward(self, x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]],
+                y_idx: torch.LongTensor = None):
+        """
 
-    @property
-    def loss_function(self):
-        return self.loss
+        :param x: a batch of inputs
+        :param y_idx: index of selected output labels.
+        :return:
+        """
+        if isinstance(x, tuple):
+            x, y_idx = x
+            return self.forward_k_vs_sample(x=x, target_entity_idx=y_idx)
+        else:
+            batch_size, dim = x.shape
+            if dim == 3:
+                return self.forward_triples(x)
+            elif dim == 2:
+                # h, y = x[0], x[1]
+                # Note that y can be relation or tail entity.
+                return self.forward_k_vs_all(x=x)
+            else:
+                return self.forward_sequence(x=x)
+
+    def training_step(self, batch, batch_idx):
+        x_batch, y_batch = batch
+        yhat_batch = self.forward(x_batch)
+        loss_batch = self.loss_function(yhat_batch, y_batch)
+        return loss_batch + self.model.collect_regularization_term()
+
+    def training_epoch_end(self, training_step_outputs):
+        batch_losses = [i['loss'].item() for i in training_step_outputs]
+        avg = sum(batch_losses) / len(batch_losses)
+        self.loss_history.append(avg)

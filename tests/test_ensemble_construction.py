@@ -1,13 +1,13 @@
-from dicee.executer import Execute, ContinuousExecute
+from dicee.executer import Execute
 from dicee.knowledge_graph_embeddings import KGE
 import pytest
 import os
-from dicee.config import Args
+from dicee.config import Namespace
 
 class TestEnsembleConstruction:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'QMult'
         args.scoring_technique = 'KvsAll'
         args.optim = 'Adam'
@@ -34,5 +34,5 @@ class TestEnsembleConstruction:
         assert os.path.isdir(result['path_experiment_folder'])
 
         # (1) Load single model
-        pre_trained_kge = KGE(path=result['path_experiment_folder'])
-        pre_trained_kge = KGE(path=result['path_experiment_folder'], construct_ensemble=True)
+        KGE(path=result['path_experiment_folder'])
+        KGE(path=result['path_experiment_folder'], construct_ensemble=True)

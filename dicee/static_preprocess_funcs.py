@@ -1,15 +1,9 @@
 import functools
-import polars
-import pandas as pd
 import numpy as np
 from typing import Tuple
-import glob
 import time
 from collections import defaultdict
 from .sanity_checkers import sanity_checking_with_arguments
-import os
-import multiprocessing
-import concurrent
 
 enable_log = False
 
@@ -39,49 +33,48 @@ def timeit(func):
     return timeit_wrapper
 
 
-def preprocesses_input_args(arg):
+def preprocesses_input_args(args):
     """ Sanity Checking in input arguments """
     # To update the default value of Trainer in pytorch-lightnings
-    arg.max_epochs = arg.num_epochs
-    arg.min_epochs = arg.num_epochs
-    assert arg.weight_decay >= 0.0
-    arg.learning_rate = arg.lr
-    arg.deterministic = True
+    args.max_epochs = args.num_epochs
+    args.min_epochs = args.num_epochs
+    assert args.weight_decay >= 0.0
+    args.learning_rate = args.lr
+    args.deterministic = True
 
-    assert arg.init_param in ['xavier_normal', None]
+    assert args.init_param in ['xavier_normal', None]
 
     # Below part will be investigated
-    arg.check_val_every_n_epoch = 10 ** 6  # ,i.e., no eval
-    arg.logger = False
+    #args.check_val_every_n_epoch = 10 ** 6  # ,i.e., no eval
+    args.logger = False
     try:
-        assert arg.eval_model in [None, 'None', 'train', 'val', 'test', 'train_val', 'train_test', 'val_test',
+        assert args.eval_model in [None, 'None', 'train', 'val', 'test', 'train_val', 'train_test', 'val_test',
                                   'train_val_test']
     except AssertionError:
-        raise AssertionError(f'Unexpected input for eval_model ***\t{arg.eval_model}\t***')
+        raise AssertionError(f'Unexpected input for eval_model ***\t{args.eval_model}\t***')
 
-    if arg.eval_model == 'None':
-        arg.eval_model = None
+    if args.eval_model == 'None':
+        args.eval_model = None
 
     # reciprocal checking
-    if arg.scoring_technique in ['KvsSample', 'KvsAll', '1vsAll', 'Pyke']:
-        arg.apply_reciprical_or_noise = True
-    elif arg.scoring_technique == 'NegSample':
-        arg.apply_reciprical_or_noise = False
+    if args.scoring_technique in ['KvsSample', 'KvsAll', '1vsAll', 'Pyke']:
+        args.apply_reciprical_or_noise = True
+    elif args.scoring_technique == 'NegSample':
+        args.apply_reciprical_or_noise = False
     else:
-        raise KeyError(f'Unexpected input for scoring_technique.\t{arg.scoring_technique}')
+        raise KeyError(f'Unexpected input for scoring_technique.\t{args.scoring_technique}')
 
-    if arg.sample_triples_ratio is not None:
-        assert 1.0 >= arg.sample_triples_ratio >= 0.0
+    if args.sample_triples_ratio is not None:
+        assert 1.0 >= args.sample_triples_ratio >= 0.0
 
-    assert arg.backend in ["modin", "pandas", "polars"]
-    sanity_checking_with_arguments(arg)
-    if arg.model == 'Shallom':
-        arg.scoring_technique = 'KvsAll'
-    if arg.normalization == 'None':
-        arg.normalization = None
-    assert arg.normalization in [None, 'LayerNorm', 'BatchNorm1d']
-
-    return arg
+    assert args.backend in ["pandas", "polars"]
+    sanity_checking_with_arguments(args)
+    if args.model == 'Shallom':
+        args.scoring_technique = 'KvsAll'
+    if args.normalization == 'None':
+        args.normalization = None
+    assert args.normalization in [None, 'LayerNorm', 'BatchNorm1d']
+    return args
 
 
 @timeit

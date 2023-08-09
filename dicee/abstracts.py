@@ -1,15 +1,13 @@
-import math
 import os
 import datetime
 # import pandas.core.indexes.range
-from .static_funcs import load_model_ensemble, load_model, save_checkpoint_model,load_numpy
+from .static_funcs import load_model_ensemble, load_model, save_checkpoint_model, load_numpy
 from .static_preprocess_funcs import create_constraints
 import torch
 from typing import List, Tuple
-import pandas as pd
-import numpy as np
 import random
-from abc import ABC, abstractmethod
+from abc import ABC
+import pytorch_lightning
 
 
 class AbstractTrainer:
@@ -170,9 +168,10 @@ class BaseInteractiveKGE:
         self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
         self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
 
-        self.train_set=load_numpy(path=self.path + '/train_set.npy')
+        self.train_set = load_numpy(path=self.path + '/train_set.npy')
         if self.apply_semantic_constraint:
-            self.domain_constraints_per_rel, self.range_constraints_per_rel, self.domain_per_rel, self.range_per_rel = create_constraints(
+            self.domain_constraints_per_rel, self.range_constraints_per_rel, self.domain_per_rel, \
+            self.range_per_rel = create_constraints(
                 self.train_set)
 
     def get_domain_of_relation(self, rel: str) -> List[str]:
@@ -339,7 +338,7 @@ class BaseInteractiveKGE:
         return self.model.parameters()
 
 
-class AbstractCallback(ABC):
+class AbstractCallback(ABC, pytorch_lightning.callbacks.Callback):
     """
     Abstract class for Callback class for knowledge graph embedding models
 
@@ -415,7 +414,7 @@ class AbstractCallback(ABC):
         """
         pass
 
-    def on_train_batch_end(self, trainer, model):
+    def on_train_batch_end(self, *args, **kwargs):
         """
         Call at the end of each mini-batch during the training.
 
@@ -432,7 +431,7 @@ class AbstractCallback(ABC):
         """
         pass
 
-    def on_fit_end(self, trainer, model):
+    def on_fit_end(self, *args, **kwargs):
         """
         Call at the end of the training.
 

@@ -1,47 +1,19 @@
-import os
 import numpy as np
 import torch
 import datetime
-from .types import Tuple
-from .models import *
-from .models.pykeen_models import MyLCWALitModule, MySLCWALitModule
-from .models.base_model import BaseKGE
+from typing import Tuple, List
+from .models import CMult, Pyke, DistMult, KeciBase, Keci, TransE, \
+    ComplEx, AConEx, AConvO, AConvQ, ConvQ, ConvO, ConEx, QMult, OMult, Shallom
+from .models.pykeen_models import PykeenKGE
 import time
 import pandas as pd
 import json
 import glob
-import pandas
-import polars
 import functools
-import pickle
 import os
 import psutil
-
-import os
-import torch
-import datetime
-from .types import Tuple
 from .models.base_model import BaseKGE
-import time
-import json
-import glob
-import pandas
-import polars
-import functools
 import pickle
-import os
-import psutil
-import pytorch_lightning as pl
-from typing import AnyStr
-
-"""
-from pykeen.datasets.literal_base import NumericPathDataset
-from pykeen.contrib.lightning import LitModule
-from pykeen.models.nbase import ERModel
-from pykeen.nn.modules import interaction_resolver
-from pykeen.datasets.base import PathDataset, EagerDataset
-from pykeen.triples.triples_factory import CoreTriplesFactory, TriplesFactory
-"""
 from pykeen.datasets.base import EagerDataset
 from pykeen.triples.triples_factory import TriplesFactory
 
@@ -54,7 +26,8 @@ def timeit(func):
         end_time = time.perf_counter()
         total_time = end_time - start_time
         print(
-            f'Took {total_time:.4f} seconds | Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB')
+            f'Took {total_time:.4f} seconds'
+            f'|Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB')
         return result
 
     return timeit_wrapper
@@ -64,7 +37,7 @@ def save_pickle(*, data: object, file_path=str):
     pickle.dump(data, open(file_path, "wb"))
 
 
-def load_pickle(*, file_path=str):
+def load_pickle(file_path=str):
     with open(file_path, 'rb') as f:
         return pickle.load(f)
 
@@ -184,6 +157,14 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, pd.Dat
     return model, entity_to_idx, relation_to_idx
 
 
+def save_numpy_ndarray(*, data: np.ndarray, file_path: str):
+    n, d = data.shape
+    assert n > 0
+    assert d == 3
+    with open(file_path, 'wb') as f:
+        np.save(f, data)
+
+
 def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
     """
     Detect most efficient data type for a given triples
@@ -206,19 +187,23 @@ def numpy_data_type_changer(train_set: np.ndarray, num: int) -> np.ndarray:
     return train_set
 
 
-def save_checkpoint_model(trainer, model, path: str) -> None:
+def save_checkpoint_model(model, path: str) -> None:
     """ Store Pytorch model into disk"""
-    try:
-        torch.save(model.state_dict(), path)
-    except ReferenceError as e:
-        print(e)
-        print(model.name)
-        print('Could not save the model correctly')
+    if isinstance(model, BaseKGE):
+        try:
+            torch.save(model.state_dict(), path)
+        except ReferenceError as e:
+            print(e)
+            print(model.name)
+            print('Could not save the model correctly')
+    else:
+        # Pykeen
+        torch.save(model.model.state_dict(), path)
 
 
 def store(trainer,
           trained_model, model_name: str = 'model', full_storage_path: str = None,
-          dataset=None, save_as_csv=False) -> None:
+          dataset=None, save_embeddings_as_csv=False) -> None:
     """
     Store trained_model model and save embeddings into csv file.
     :param trainer: an instance of trainer class
@@ -226,7 +211,7 @@ def store(trainer,
     :param full_storage_path: path to save parameters.
     :param model_name: string representation of the name of the model.
     :param trained_model: an instance of BaseKGE see core.models.base_model .
-    :param save_as_csv: for easy access of embeddings.
+    :param save_embeddings_as_csv: for easy access of embeddings.
     :return:
     """
     assert full_storage_path is not None
@@ -234,9 +219,8 @@ def store(trainer,
     assert len(model_name) > 1
 
     # (1) Save pytorch model in trained_model .
-    save_checkpoint_model(trainer=trainer,
-                          model=trained_model, path=full_storage_path + f'/{model_name}.pt')
-    if save_as_csv:
+    save_checkpoint_model(model=trained_model, path=full_storage_path + f'/{model_name}.pt')
+    if save_embeddings_as_csv:
         entity_emb, relation_ebm = trained_model.get_embeddings()
         entity_to_idx = pickle.load(open(full_storage_path + '/entity_to_idx.p', 'rb'))
         entity_str = entity_to_idx.keys()
@@ -290,6 +274,7 @@ def read_or_load_kg(args, cls):
     print('*** Read or Load Knowledge Graph  ***')
     start_time = time.time()
     kg = cls(data_dir=args.path_dataset_folder,
+             absolute_path_dataset=args.absolute_path_dataset,
              add_reciprical=args.apply_reciprical_or_noise,
              eval_model=args.eval_model,
              read_only_few=args.read_only_few,
@@ -304,107 +289,20 @@ def read_or_load_kg(args, cls):
 
 
 def get_pykeen_model(model_name: str, args, dataset):
-    actual_name = model_name.split("_")[1]
-    # initialize model by name or by interaction function
-    if "interaction" in model_name.lower():
-        #@ TODO: not quite sure why this is needed.
-        relation_representations = None
-        entity_representations = None
-        intection_kwargs = args["interaction_kwargs"]
-
-        # using class_resolver to find out the corresponding shape of interaction
-        # https://pykeen.readthedocs.io/en/latest/tutorial/using_resolvers.html#using-resolvers
-        interaction_instance = interaction_resolver.make(actual_name, intection_kwargs)
-        if hasattr(interaction_instance, "relation_shape"):
-            list_len = len(interaction_instance.relation_shape)
-            relation_representations = [None for x in range(list_len)]
-
-        if hasattr(interaction_instance, "entity_shape"):
-            list_len = len(interaction_instance.entity_shape)
-            entity_representations = [None for x in range(list_len)]
-
-        # get interaction model
-        interaction_model = ERModel(
-            random_seed=args["seed_for_computation"],
-            triples_factory=_dataset.training,
-            entity_representations=entity_representations,
-            relation_representations=relation_representations,
-            interaction=actual_name,
-            entity_representations_kwargs=dict(
-                embedding_dim=args["embedding_dim"],
-                dropout=args["input_dropout_rate"],
-            ),
-            relation_representations_kwargs=dict(
-                embedding_dim=args["embedding_dim"],
-                dropout=args["input_dropout_rate"],
-            ),
-            interaction_kwargs=args["interaction_kwargs"],
-        )
-        passed_model = interaction_model
-    else:
-        passed_model = actual_name
     if dataset is None:
-        # To use a trained pykeen model
-        return MyLCWALitModule(
-            model=passed_model,
-            model_name=actual_name,
-            learning_rate=args["lr"],
-            optimizer=args["optim"],
-            model_kwargs=args["pykeen_model_kwargs"],
-            batch_size=args["batch_size"],
-            args=args,
-        )
-    # initialize module for pytorch-lightning trainer
-    if args['scoring_technique'] == 'KvsAll':
-        _dataset = EagerDataset(training=TriplesFactory(dataset.train_set, dataset.entity_to_idx,dataset.relation_to_idx), testing=None)
-        return MyLCWALitModule(
-            model=passed_model,
-            dataset=_dataset,
-            model_name=actual_name,
-            learning_rate=args["lr"],
-            optimizer=args["optim"],
-            model_kwargs=args["pykeen_model_kwargs"],
-            batch_size=args["batch_size"],
-            args=args,
-        )
+        # (1) Load a pretrained Pykeen Model
+        return PykeenKGE(dataset=EagerDataset(
+                             training=TriplesFactory(
+                                 load_numpy(args['full_storage_path'] + '/train_set.npy'),
+                                 load_pickle(file_path=args['full_storage_path'] + '/entity_to_idx.p'),
+                                 load_pickle(file_path=args['full_storage_path'] + '/relation_to_idx.p')),
+                             testing=None), args=args)
+    elif args['scoring_technique'] in ['KvsAll', "NegSample"]:
+        return PykeenKGE(dataset=EagerDataset(
+                             training=TriplesFactory(dataset.train_set, dataset.entity_to_idx, dataset.relation_to_idx),
+                             testing=None), args=args)
     else:
-        raise NotImplementedError("Please use KvsAll")
-
-    if args["use_SLCWALitModule"]:
-        if "kvsall".lower() in args["scoring_technique"].lower():
-            raise NotImplementedError(
-                "kvsall is not supported by SLCWA. Please use LCWA instead."
-            )
-        else:
-            model = MySLCWALitModule(
-                dataset=_dataset,
-                model=passed_model,
-                model_name=actual_name,
-                model_kwargs=args["pykeen_model_kwargs"],
-                learning_rate=args["lr"],
-                optimizer=args["optim"],
-                batch_size=args["batch_size"],
-                args=args,
-                negative_sampler="basic",
-                negative_sampler_kwargs=dict(filtered=False, num_negs_per_pos=args["neg_ratio"]),
-            )
-    else:
-        if "NegSample".lower() in args["scoring_technique"].lower():
-            raise NotImplementedError(
-                "NegSample is not supported by LCWA. Please use SLCWA instead."
-            )
-        else:
-            model = MyLCWALitModule(
-                dataset=_dataset,
-                model=passed_model,
-                model_name=actual_name,
-                learning_rate=args["lr"],
-                optimizer=args["optim"],
-                model_kwargs=args["pykeen_model_kwargs"],
-                batch_size=args["batch_size"],
-                args=args,
-            )
-    return model
+        raise NotImplementedError("Incorrect scoring technique")
 
 
 def intialize_model(args: dict, dataset=None) -> Tuple[object, str]:
@@ -462,16 +360,6 @@ def intialize_model(args: dict, dataset=None) -> Tuple[object, str]:
     elif model_name == 'CMult':
         model = CMult(args=args)
         form_of_labelling = 'EntityPrediction'
-    elif model_name == 'FMult':
-        model = FMult(args=args)
-        form_of_labelling = 'EntityPrediction'
-    elif model_name == 'FMult2':
-        model = FMult2(args=args)
-        form_of_labelling = 'EntityPrediction'
-    elif model_name == 'GFMult':
-        model = GFMult(args=args)
-        form_of_labelling = 'EntityPrediction'
-    # elif for PYKEEN https://github.com/dice-group/dice-embeddings/issues/54
     else:
         raise ValueError
     return model, form_of_labelling
@@ -492,17 +380,10 @@ def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
     :param path:
     :return:
     """
+    # @TODO: Do we need it ?!
     try:
         df = pd.DataFrame(embeddings, index=indexes)
-        del embeddings
-        num_mb = df.memory_usage(index=True, deep=True).sum() / (10 ** 6)
-        if num_mb > 10 ** 6:
-            df = dd.from_pandas(df, npartitions=len(df) / 100)
-            # PARQUET wants columns to be stn
-            df.columns = df.columns.astype(str)
-            df.to_parquet(path)
-        else:
-            df.to_csv(path)
+        df.to_csv(path)
     except KeyError or AttributeError as e:
         print('Exception occurred at saving entity embeddings. Computation will continue')
         print(e)
@@ -516,16 +397,16 @@ def random_prediction(pre_trained_kge):
     head_entity = pre_trained_kge.sample_entity(1)
     relation = pre_trained_kge.sample_relation(1)
     tail_entity = pre_trained_kge.sample_entity(1)
-    triple_score = pre_trained_kge.triple_score(head_entity=head_entity,
-                                                relation=relation,
-                                                tail_entity=tail_entity)
+    triple_score = pre_trained_kge.triple_score(h=head_entity,
+                                                r=relation,
+                                                t=tail_entity)
     return f'( {head_entity[0]},{relation[0]}, {tail_entity[0]} )', pd.DataFrame({'Score': triple_score})
 
 
 def deploy_triple_prediction(pre_trained_kge, str_subject, str_predicate, str_object):
-    triple_score = pre_trained_kge.triple_score(head_entity=[str_subject],
-                                                relation=[str_predicate],
-                                                tail_entity=[str_object])
+    triple_score = pre_trained_kge.triple_score(h=[str_subject],
+                                                r=[str_predicate],
+                                                t=[str_object])
     return f'( {str_subject}, {str_predicate}, {str_object} )', pd.DataFrame({'Score': triple_score})
 
 
@@ -533,7 +414,7 @@ def deploy_tail_entity_prediction(pre_trained_kge, str_subject, str_predicate, t
     if pre_trained_kge.model.name == 'Shallom':
         print('Tail entity prediction is not available for Shallom')
         raise NotImplementedError
-    scores, entity = pre_trained_kge.predict_topk(head_entity=[str_subject], relation=[str_predicate], topk=top_k)
+    scores, entity = pre_trained_kge.predict_topk(h=[str_subject], r=[str_predicate], topk=top_k)
     return f'(  {str_subject},  {str_predicate}, ? )', pd.DataFrame({'Entity': entity, 'Score': scores})
 
 
@@ -542,12 +423,12 @@ def deploy_head_entity_prediction(pre_trained_kge, str_object, str_predicate, to
         print('Head entity prediction is not available for Shallom')
         raise NotImplementedError
 
-    scores, entity = pre_trained_kge.predict_topk(tail_entity=[str_object], relation=[str_predicate], topk=top_k)
+    scores, entity = pre_trained_kge.predict_topk(t=[str_object], r=[str_predicate], topk=top_k)
     return f'(  ?,  {str_predicate}, {str_object} )', pd.DataFrame({'Entity': entity, 'Score': scores})
 
 
 def deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k):
-    scores, relations = pre_trained_kge.predict_topk(head_entity=[str_subject], tail_entity=[str_object], topk=top_k)
+    scores, relations = pre_trained_kge.predict_topk(h=[str_subject], t=[str_object], topk=top_k)
     return f'(  {str_subject}, ?, {str_object} )', pd.DataFrame({'Relations': relations, 'Score': scores})
 
 
@@ -591,140 +472,6 @@ def norm_p_value(p_values, variant):
     return norm_p_values
 
 
-def is_in_credal_set(p_hat, pi):
-    if len(p_hat.shape) == 1:
-        p_hat = p_hat.unsqueeze(0)
-    if len(pi.shape) == 1:
-        pi = pi.unsqueeze(0)
-
-    c = torch.cumsum(torch.flip(p_hat, dims=[-1]), dim=-1)
-    rev_pi = torch.flip(pi, dims=[-1])
-    return torch.all(c <= rev_pi, dim=-1)
-
-
-def gen_lr(p_hat, pi):
-    if len(p_hat.shape) < 2:
-        p_hat = p_hat.unsqueeze(0)
-    if len(pi.shape) < 2:
-        pi = pi.unsqueeze(0)
-
-    with torch.no_grad():
-        # Sort values
-        sorted_pi_rt = pi.sort(descending=True)
-
-        sorted_pi = sorted_pi_rt.values
-        sorted_p_hat = torch.gather(p_hat, 1, sorted_pi_rt.indices)
-
-        def search_fn(sorted_p_hat, sorted_pi, sorted_pi_rt_ind):
-            result_probs = torch.zeros_like(sorted_p_hat)
-
-            for i in range(sorted_p_hat.shape[0]):
-                # Search for loss
-                proj = torch.zeros_like(sorted_p_hat[i])
-
-                j = sorted_p_hat[i].shape[0] - 1
-                while j >= 0:
-                    lookahead = det_lookahead(sorted_p_hat[i], sorted_pi[i], j, proj)
-                    proj[lookahead:j + 1] = sorted_p_hat[i][lookahead:j + 1] / torch.sum(
-                        sorted_p_hat[i][lookahead:j + 1]) * (
-                                                    sorted_pi[i][lookahead] - torch.sum(proj[j + 1:]))
-
-                    j = lookahead - 1
-
-                # e-arrange projection again according to original order
-                proj = proj[sorted_pi_rt_ind[i].sort().indices]
-
-                result_probs[i] = proj
-            return result_probs
-
-        is_c_set = is_in_credal_set(sorted_p_hat, sorted_pi)
-
-        sorted_p_hat_non_c = sorted_p_hat[~is_c_set]
-        sorted_pi_non_c = sorted_pi[~is_c_set]
-        sorted_pi_ind_c = sorted_pi_rt.indices[~is_c_set]
-
-        result_probs = torch.zeros_like(sorted_p_hat)
-        result_probs[~is_c_set] = search_fn(sorted_p_hat_non_c, sorted_pi_non_c, sorted_pi_ind_c)
-        result_probs[is_c_set] = p_hat[is_c_set]
-
-    p_hat = torch.clip(p_hat, 1e-5, 1.)
-    result_probs = torch.clip(result_probs, 1e-5, 1.)
-
-    divergence = F.kl_div(p_hat.log(), result_probs, log_target=False, reduction="none")
-    divergence = torch.sum(divergence, dim=-1)
-
-    result = torch.where(is_c_set, torch.zeros_like(divergence), divergence)
-
-    return torch.mean(result)
-
-
-def det_lookahead(p_hat, pi, ref_idx, proj, precision=1e-5):
-    for i in range(ref_idx):
-        prop = p_hat[i:ref_idx + 1] / torch.sum(p_hat[i:ref_idx + 1])
-        prop *= (pi[i] - torch.sum(proj[ref_idx + 1:]))
-
-        # Check violation
-        violates = False
-        # TODO: Make this more efficient by using cumsum
-        for j in range(len(prop)):
-            if (torch.sum(prop[j:]) + torch.sum(proj[ref_idx + 1:])) > (torch.max(pi[i + j:]) + precision):
-                violates = True
-                break
-
-        if not violates:
-            return i
-
-    return ref_idx
-
-
-def construct_p_values(non_conf_scores, preds, non_conf_score_fn):
-    num_class = preds.shape[1]
-    tmp_non_conf = torch.zeros([preds.shape[0], num_class]).detach()
-    p_values = torch.zeros([preds.shape[0], num_class]).detach()
-    for clz in range(num_class):
-        tmp_non_conf[:, clz] = non_conf_score_fn(preds, torch.tensor(clz).repeat(preds.shape[0]))
-        p_values[:, clz] = p_value(non_conf_scores, tmp_non_conf[:, clz])
-    return p_values
-
-
-def non_conformity_score_prop(predictions, targets) -> torch.Tensor:
-    if len(predictions.shape) == 1:
-        predictions = predictions.unsqueeze(0)
-    if len(targets.shape) == 1:
-        targets = targets.unsqueeze(1)
-
-    class_val = torch.gather(predictions, 1, targets.type(torch.int64))
-    num_class = predictions.shape[1]
-
-    # Exclude the target class here
-    indices = torch.arange(0, num_class).view(1, -1).repeat(predictions.shape[0], 1)
-    mask = torch.zeros_like(indices).bool()
-    mask.scatter_(1, targets.type(torch.int64), True)
-
-    selected_predictions = predictions[~mask].view(-1, args.num_classes - 1)
-
-    return torch.max(selected_predictions, dim=-1).values.squeeze() / (
-            class_val.squeeze() + args.non_conf_score_prop_gamma + 1e-5)
-
-
-def non_conformity_score_diff(predictions, targets) -> torch.Tensor:
-    if len(predictions.shape) == 1:
-        predictions = predictions.unsqueeze(0)
-    if len(targets.shape) == 1:
-        targets = targets.unsqueeze(1)
-    num_class = predictions.shape[1]
-    class_val = torch.gather(predictions, 1, targets.type(torch.int64))
-
-    # Exclude the target class here
-    indices = torch.arange(0, num_class).view(1, -1).repeat(predictions.shape[0], 1)
-    mask = torch.zeros_like(indices).bool()
-    mask.scatter_(1, targets.type(torch.int64), True)
-
-    selected_predictions = predictions[~mask].view(-1, num_class - 1)
-
-    return torch.max(selected_predictions - class_val, dim=-1).values
-
-
 @timeit
 def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
     # @TODO: This function should take any DASK/Pandas DataFrame or Series.
@@ -732,22 +479,34 @@ def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
     vocab_to_idx.to_parquet(path_for_serialization + f'/{name}', compression='gzip', engine='pyarrow')
     print('Done !\n')
 
-
 def create_experiment_folder(folder_name='Experiments'):
-    directory = os.getcwd() + '/' + folder_name + '/'
-    folder_name = str(datetime.datetime.now())
-    path_of_folder = directory + folder_name
+    directory = os.getcwd() + "/" + folder_name + "/"
+    # folder_name = str(datetime.datetime.now())
+    folder_name = str(datetime.datetime.now()).replace(":", "-")
+    # path_of_folder = directory + folder_name
+    path_of_folder = os.path.join(directory, folder_name)
     os.makedirs(path_of_folder)
     return path_of_folder
 
 
-def continual_training_setup_executor(executor):
+def continual_training_setup_executor(executor) -> None:
+    """
+    storage_path:str A path leading to a parent directory, where a subdirectory containing KGE related data
+
+    full_storage_path:str A path leading to a subdirectory containing KGE related data
+
+    """
     if executor.is_continual_training:
         # (4.1) If it is continual, then store new models on previous path.
         executor.storage_path = executor.args.full_storage_path
     else:
-        # (4.2) Create a folder for the experiments.
-        executor.args.full_storage_path = create_experiment_folder(folder_name=executor.args.storage_path)
+        # Create a single directory containing KGE and all related data
+        if executor.args.absolute_path_to_store:
+            os.makedirs(executor.args.absolute_path_to_store, exist_ok=False)
+            executor.args.full_storage_path=executor.args.absolute_path_to_store
+        else:
+            # Create a parent and subdirectory.
+            executor.args.full_storage_path = create_experiment_folder(folder_name=executor.args.storage_path)
         executor.storage_path = executor.args.full_storage_path
         with open(executor.args.full_storage_path + '/configuration.json', 'w') as file_descriptor:
             temp = vars(executor.args)

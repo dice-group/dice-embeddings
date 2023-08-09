@@ -1,6 +1,6 @@
-from .base_model import *
+import torch
 from .static_funcs import quaternion_mul
-from ..types import torch
+from .base_model import BaseKGE
 
 def quaternion_mul_with_unit_norm(*, Q_1, Q_2):
     a_h, b_h, c_h, d_h = Q_1  # = {a_h + b_h i + c_h j + d_h k : a_r, b_r, c_r, d_r \in R^k}
@@ -66,9 +66,8 @@ class QMult(BaseKGE):
                                                     Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
 
         emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(self.entity_embeddings.weight, 4)
-        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = emb_tail_real.transpose(1, 0), emb_tail_i.transpose(1,
-                                                                                                                0), emb_tail_j.transpose(
-            1, 0), emb_tail_k.transpose(1, 0)
+        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = emb_tail_real.transpose(1, 0), emb_tail_i.transpose(1,0), \
+                                                            emb_tail_j.transpose(1, 0), emb_tail_k.transpose(1, 0)
 
         # (3)
         # (3.1) Inner product
@@ -211,8 +210,8 @@ class ConvQ(BaseKGE):
                                                     Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
         # Prepare all entity embeddings.
         emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(self.entity_embeddings.weight, 4)
-        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = emb_tail_real.transpose(1, 0), emb_tail_i.transpose(1,
-                                                                                                                0), emb_tail_j.transpose(
+        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = emb_tail_real.transpose(1, 0), \
+                                                            emb_tail_i.transpose(1,0), emb_tail_j.transpose(
             1, 0), emb_tail_k.transpose(1, 0)
 
         # (4)
@@ -315,8 +314,8 @@ class AConvQ(BaseKGE):
                                                     Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
         # Prepare all entity embeddings.
         emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(self.entity_embeddings.weight, 4)
-        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = emb_tail_real.transpose(1, 0), emb_tail_i.transpose(1,
-                                                                                                                0), emb_tail_j.transpose(
+        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = emb_tail_real.transpose(1, 0), \
+                                                            emb_tail_i.transpose(1,0), emb_tail_j.transpose(
             1, 0), emb_tail_k.transpose(1, 0)
 
         # (4)

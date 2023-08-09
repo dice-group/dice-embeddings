@@ -37,7 +37,7 @@ or
 
 ```
 git clone https://github.com/dice-group/dice-embeddings.git
-conda create -n dice python=3.11 --no-default-packages && conda activate dice
+conda create -n dice python=3.10 --no-default-packages && conda activate dice
 pip3 install "pandas>=1.5.1"
 pip3 install "torch>=2.0.0"
 pip3 install "polars>=0.16.14"
@@ -66,12 +66,22 @@ pyreverse dicee/trainer && dot -Tpng -x classes.dot -o trainer.png && eog traine
 ```
 </details>
 
+## Docker
+To build the Docker image:
+```
+docker build -t dice-embeddings .
+```
+
+To test the Docker image:
+```
+docker run --rm -v ~/.local/share/dicee/KGs:/dicee/KGs dice-embeddings ./main.py --model AConEx --embedding_dim 16
+```
+
 # Knowledge Graph Embedding Models
 <details> <summary> Details</summary>
 
 1. TransE, DistMult, ComplEx, ConEx, QMult, OMult, ConvO, ConvQ, Keci
-
-2. All models implemented in Pykeen, e.g. Pykeen_QuatE
+2. All 44 models available in https://github.com/pykeen/pykeen#models
 
 > For more, please refer to `examples`.
 </details>
@@ -104,25 +114,25 @@ from dicee import KGE
 # (1) Load a pretrained ConEx on DBpedia 
 pre_trained_kge = KGE(path='ConEx')
 
-pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Ulm"]) # tensor([0.9309])
-pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/German_Empire"]) # tensor([0.9981])
-pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Kingdom_of_Württemberg"]) # tensor([0.9994])
-pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Germany"]) # tensor([0.9498])
-pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/France"]) # very low
-pre_trained_kge.triple_score(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Italy"]) # very low
+pre_trained_kge.triple_score(h=["http://dbpedia.org/resource/Albert_Einstein"],r=["http://dbpedia.org/ontology/birthPlace"],t=["http://dbpedia.org/resource/Ulm"]) # tensor([0.9309])
+pre_trained_kge.triple_score(h=["http://dbpedia.org/resource/Albert_Einstein"],r=["http://dbpedia.org/ontology/birthPlace"],t=["http://dbpedia.org/resource/German_Empire"]) # tensor([0.9981])
+pre_trained_kge.triple_score(h=["http://dbpedia.org/resource/Albert_Einstein"],r=["http://dbpedia.org/ontology/birthPlace"],t=["http://dbpedia.org/resource/Kingdom_of_Württemberg"]) # tensor([0.9994])
+pre_trained_kge.triple_score(h=["http://dbpedia.org/resource/Albert_Einstein"],r=["http://dbpedia.org/ontology/birthPlace"],t=["http://dbpedia.org/resource/Germany"]) # tensor([0.9498])
+pre_trained_kge.triple_score(h=["http://dbpedia.org/resource/Albert_Einstein"],r=["http://dbpedia.org/ontology/birthPlace"],t=["http://dbpedia.org/resource/France"]) # very low
+pre_trained_kge.triple_score(h=["http://dbpedia.org/resource/Albert_Einstein"],r=["http://dbpedia.org/ontology/birthPlace"],t=["http://dbpedia.org/resource/Italy"]) # very low
 ```
 ### Relation Prediction
 ```python
 from dicee import KGE
 pre_trained_kge = KGE(path='ConEx')
-pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],tail_entity=["http://dbpedia.org/resource/Ulm"])
+pre_trained_kge.predict_topk(h=["http://dbpedia.org/resource/Albert_Einstein"],t=["http://dbpedia.org/resource/Ulm"])
 ```
 ### Entity Prediction
 ```python
 from dicee import KGE
 pre_trained_kge = KGE(path='ConEx')
-pre_trained_kge.predict_topk(head_entity=["http://dbpedia.org/resource/Albert_Einstein"],relation=["http://dbpedia.org/ontology/birthPlace"]) 
-pre_trained_kge.predict_topk(relation=["http://dbpedia.org/ontology/birthPlace"],tail_entity=["http://dbpedia.org/resource/Albert_Einstein"]) 
+pre_trained_kge.predict_topk(h=["http://dbpedia.org/resource/Albert_Einstein"],r=["http://dbpedia.org/ontology/birthPlace"]) 
+pre_trained_kge.predict_topk(r=["http://dbpedia.org/ontology/birthPlace"],t=["http://dbpedia.org/resource/Albert_Einstein"]) 
 ```
 ### Finding Missing Triples
 ```python
@@ -130,14 +140,15 @@ from dicee import KGE
 pre_trained_kge = KGE(path='ConEx')
 missing_triples = pre_trained_kge.find_missing_triples(confidence=0.95, entities=[''], relations=[''])
 ```
-### Conjunctive Query Answering
+### Complex Query Answering
+The beam search technique proposed in [Complex Query Answering with Neural Link Predictors](https://arxiv.org/abs/2011.03459)
 ```python
 from dicee import KGE
 # (1) Load a pretrained KGE model on KGs/Family
 pretrained_model = KGE(path='Experiments/2022-12-08 11:46:33.654677')
-# (2) Answer the following conjunctive query question: To whom a sibling of F9M167 is married to?
+# (2) Query: ?P : \exist Married(P,E) \land hasSibling(E, F9M167) (To whom a sibling of F9M167 is married to?   
 # (3) Decompose (2) into two query
-# (3.1) Who is a sibling of F9M167? => {F9F141,F9M157}
+# (3.1) Who is a sibling of F9M167? => hasSibling(E, F9M167) => {F9F141,F9M157}
 # (3.2) To whom a results of (3.1) is married to ? {F9M142, F9F158}
 pretrained_model.predict_conjunctive_query(entity='<http://www.benchmark.org/family#F9M167>',
                                           relations=['<http://www.benchmark.org/family#hasSibling>',

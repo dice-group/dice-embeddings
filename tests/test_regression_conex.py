@@ -1,11 +1,11 @@
 from dicee.executer import Execute
 import pytest
-from dicee.config import Args
+from dicee.config import Namespace
 
 class TestRegressionConEx:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'ConEx'
         args.scoring_technique = 'KvsAll'
         args.optim = 'Adam'
@@ -31,7 +31,7 @@ class TestRegressionConEx:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'ConEx'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
@@ -56,7 +56,7 @@ class TestRegressionConEx:
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):
-        args = Args()
+        args = Namespace()
         args.model = 'ConEx'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 50

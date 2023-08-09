@@ -1,12 +1,11 @@
 from dicee.executer import Execute
-import sys
 import pytest
-from dicee.config import Args
+from dicee.config import Namespace
 
 class TestRegressionConvO:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'ConvO'
         args.scoring_technique = 'KvsAll'
         args.path_dataset_folder = 'KGs/UMLS'
@@ -24,11 +23,11 @@ class TestRegressionConvO:
         args.normalization = 'LayerNorm'
         args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
-        result = Execute(args).start()
+        Execute(args).start()
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):
-        args = Args()
+        args = Namespace()
         args.model = 'ConvO'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
@@ -46,12 +45,12 @@ class TestRegressionConvO:
         args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
         args.scoring_technique = '1vsAll'
-        result = Execute(args).start()
+        Execute(args).start()
 
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling(self):
-        args = Args()
+        args = Namespace()
         args.model = 'ConvO'
         args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
@@ -69,4 +68,4 @@ class TestRegressionConvO:
         args.normalization = 'LayerNorm'
         args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
-        result = Execute(args).start()
+        Execute(args).start()

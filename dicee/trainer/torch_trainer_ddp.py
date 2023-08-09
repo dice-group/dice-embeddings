@@ -1,17 +1,11 @@
 import os
-import sys
 import torch
 import time
-import torch.multiprocessing as mp
 from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.distributed.optim import ZeroRedundancyOptimizer
 
-import numpy as np
 from dicee.abstracts import AbstractTrainer
 from dicee.static_funcs_training import efficient_zero_grad
-from torch.utils.data import Dataset, DataLoader
-import pandas as pd
-from torch.distributed import init_process_group, destroy_process_group
+from torch.utils.data import DataLoader
 
 
 # DDP with gradiant accumulation https://gist.github.com/mcarilli/bf013d2d2f4b4dd21ade30c9b52d5e2e
@@ -72,26 +66,6 @@ class TorchDDPTrainer(AbstractTrainer):
         torch.distributed.destroy_process_group()
         self.on_fit_end(self, model)
 
-    def old_fit(self, *args, **kwargs):
-        """ Train model        """
-        assert len(args) == 1
-        model, = args
-        # (1) Run the fit the start callback.
-        self.on_fit_start(self, model)
-        # (2) Compute the world size nodes * gpus.
-        world_size = self.attributes.num_nodes * torch.cuda.device_count()
-        # @TODO: torchrun is required
-        # https://pytorch.org/tutorials/beginner/ddp_series_fault_tolerance.html
-        # https://github.com/pytorch/examples/blob/main/distributed/ddp-tutorial-series/multinode.py
-        # (3) Spawn the function across processes. nprocs => 1 process for each GPU.
-        mp.spawn(fn=distributed_training,
-                 args=(world_size, model, kwargs['train_dataloaders'], self.callbacks, self.attributes),
-                 nprocs=world_size,
-                 join=True, )
-        model.load_state_dict(torch.load("model.pt", map_location=torch.device('cpu')))
-        os.remove('model.pt')
-        self.on_fit_end(self, model)
-
 
 class NodeTrainer:
     def __init__(self,
@@ -116,8 +90,13 @@ class NodeTrainer:
         print(f'Global Rank {self.global_rank}\t Local Rank:{self.local_rank}')
         print(self.model)
         print(self.optimizer)
-        print(
-                f'Global:{self.global_rank} | Local:{self.local_rank} | NumOfDataPoints:{len(self.train_dataset_loader.dataset)} | NumOfEpochs:{self.num_epochs} | LearningRate:{self.model.module.learning_rate} | BatchSize:{self.train_dataset_loader.batch_size} | EpochBatchsize:{len(self.train_dataset_loader)}')
+        print(f'Global:{self.global_rank}'
+              f'|Local:{self.local_rank}'
+              f'|NumOfDataPoints:{len(self.train_dataset_loader.dataset)}'
+              f'|NumOfEpochs:{self.num_epochs}'
+              f'|LearningRate:{self.model.module.learning_rate}'
+              f'|BatchSize:{self.train_dataset_loader.batch_size}'
+              f'|EpochBatchsize:{len(self.train_dataset_loader)}')
 
         self.loss_history = []
 
@@ -143,7 +122,6 @@ class NodeTrainer:
                 self.local_rank)
             return (x_batch, y_idx_batch), y_batch
         else:
-            print(len(batch))
             raise ValueError('Unexpected batch shape..')
 
     def _run_epoch(self, epoch):
@@ -161,10 +139,21 @@ class NodeTrainer:
             if True:  # self.local_rank == self.global_rank==0:
                 if construct_mini_batch_time:
                     print(
-                        f"Global:{self.global_rank} | Local:{self.local_rank} | Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec | BatchConst.:{construct_mini_batch_time:.2f}sec")
+                        f"Global:{self.global_rank}"
+                        f"|Local:{self.local_rank}"
+                        f"|Epoch:{epoch + 1}"
+                        f"|Batch:{i + 1}"
+                        f"|Loss:{batch_loss}"
+                        f"|ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec|"
+                        f"BatchConst.:{construct_mini_batch_time:.2f}sec")
                 else:
                     print(
-                        f"Global:{self.global_rank} | Local:{self.local_rank} | Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
+                        f"Global:{self.global_rank}"
+                        f"|Local:{self.local_rank}"
+                        f"|Epoch:{epoch + 1}"
+                        f"|Batch:{i + 1}"
+                        f"|Loss:{batch_loss}"
+                        f"|ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
             construct_mini_batch_time = time.time()
         return epoch_loss / (i + 1)
 
@@ -179,34 +168,6 @@ class NodeTrainer:
                 self.model.module.loss_history.append(epoch_loss)
                 for c in self.callbacks:
                     c.on_train_epoch_end(None, self.model.module)
-
-
-def distributed_training(rank: int, world_size, model, train_dataset_loader, callbacks, args):
-    """
-    distributed_training is called as the entrypoint of the spawned process.
-    This function must be defined at the top level of a module so it can be pickled and spawned.
-    This is a requirement imposed by multiprocessing.
-    args: dictionary
-    callbacks:list of callback objects
-    The function is called as ``fn(i, *args)``, where ``i`` is the process index and ``args`` is the passed through tuple of arguments.
-    """
-    dist.init_process_group(backend='nccl', rank=rank, world_size=world_size)
-    # (1) Create DATA LOADER.
-    train_dataset_loader = DataLoader(train_dataset_loader.dataset, batch_size=args.batch_size,
-                                      pin_memory=True, shuffle=False, num_workers=args.num_core,
-                                      persistent_workers=False, collate_fn=train_dataset_loader.dataset.collate_fn,
-                                      sampler=torch.utils.data.distributed.DistributedSampler(
-                                          train_dataset_loader.dataset))
-
-    # (2) Initialize OPTIMIZER.
-    optimizer = model.configure_optimizers()
-    # (3) Create a static DDB Trainer.
-    trainer = DDPTrainer(model, train_dataset_loader, optimizer, rank, callbacks, args.num_epochs)
-    trainer.train()
-    if rank == 0:
-        trainer.model.loss_history = trainer.loss_history
-        torch.save(trainer.model.module.state_dict(), "model.pt")
-    dist.destroy_process_group()
 
 
 class DDPTrainer:
@@ -229,7 +190,11 @@ class DDPTrainer:
         print(self.model)
         print(self.optimizer)
         print(
-            f'NumOfDataPoints:{len(self.train_dataset_loader.dataset)} | NumOfEpochs:{self.num_epochs} | LearningRate:{self.model.module.learning_rate} | BatchSize:{self.train_dataset_loader.batch_size} | EpochBatchsize:{len(self.train_dataset_loader)}')
+            f'NumOfDataPoints:{len(self.train_dataset_loader.dataset)}'
+            f'|NumOfEpochs:{self.num_epochs}'
+            f'|LearningRate:{self.model.module.learning_rate}'
+            f'|BatchSize:{self.train_dataset_loader.batch_size}'
+            f'|EpochBatchsize:{len(self.train_dataset_loader)}')
 
         self.loss_history = []
 
@@ -257,7 +222,6 @@ class DDPTrainer:
                 self.gpu_id)
             return (x_batch, y_idx_batch), y_batch
         else:
-            print(len(batch))
             raise ValueError('Unexpected batch shape..')
 
     def _run_epoch(self, epoch):
@@ -275,10 +239,15 @@ class DDPTrainer:
             if self.gpu_id == 0:
                 if construct_mini_batch_time:
                     print(
-                        f"Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec | BatchConst.:{construct_mini_batch_time:.2f}sec")
+                        f"Epoch:{epoch + 1}|Batch:{i + 1}"
+                        f"|Loss:{batch_loss}"
+                        f"|ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec"
+                        f"|BatchConst.:{construct_mini_batch_time:.2f}sec")
                 else:
                     print(
-                        f"Epoch:{epoch + 1} | Batch:{i + 1} | Loss:{batch_loss} |ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
+                        f"Epoch:{epoch + 1}|Batch:{i + 1}"
+                        f"|Loss:{batch_loss}"
+                        f"|ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
             construct_mini_batch_time = time.time()
         return epoch_loss / (i + 1)
 
