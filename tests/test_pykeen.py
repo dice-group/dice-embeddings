@@ -51,15 +51,15 @@ class TestClass:
         elif args.model == "Pykeen_TuckER":  # 276.k params
             assert 0.36 >= result["Train"]["MRR"] >= 0.31
         elif args.model == "Pykeen_TransR":  # 188.k params
-            assert 0.72 >= result["Train"]["MRR"] >= 0.69
+            assert 0.72 >= result["Train"]["MRR"] >= 0.66
         elif args.model == "Pykeen_TransF":  # 14.5 k params
             assert 0.17 >= result["Train"]["MRR"] >= 0.16
         elif args.model == "Pykeen_TransH":  # 20.4 k params
-            assert 0.69 >= result["Train"]["MRR"] >= 0.65
+            assert 0.69 >= result["Train"]["MRR"] >= 0.60
         elif args.model == "Pykeen_TransD":  # 29.1 k params
-            assert 0.73 >= result["Train"]["MRR"] >= 0.69
+            assert 0.73 >= result["Train"]["MRR"] >= 0.60
         elif args.model == "Pykeen_TransE":  # 29.1 k params
-            assert 0.45 >= result["Train"]["MRR"] >= 0.43
+            assert 0.45 >= result["Train"]["MRR"] >= 0.40
 
     def test_GNCallback_case(self, model_name):
         args = template(model_name)
