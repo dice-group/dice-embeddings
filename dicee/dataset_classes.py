@@ -254,7 +254,7 @@ class KvsSampleDataset(torch.utils.data.Dataset):
                  label_smoothing_rate: float = 0.0):
         super().__init__()
         assert isinstance(train_set, np.ndarray)
-        assert isinstance(neg_sample_ratio,int)
+        assert isinstance(neg_sample_ratio, int)
         self.train_data = train_set
         self.num_entities = num_entities
         self.num_relations = num_relations
@@ -312,6 +312,50 @@ class KvsSampleDataset(torch.utils.data.Dataset):
         # (6) Create binary labels.
         y_vec = torch.cat((torch.ones(len(positives_idx)), torch.zeros(len(negative_idx))), 0)
         return x, y_idx, y_vec
+
+
+class NegSampleDataset(torch.utils.data.Dataset):
+    def __init__(self, train_set: np.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1):
+        assert isinstance(train_set, np.ndarray)
+        # https://pytorch.org/docs/stable/data.html#multi-process-data-loading
+        # TLDL; replace Python objects with non-refcounted representations such as Pandas, Numpy or PyArrow objects
+        self.neg_sample_ratio = torch.tensor(
+            neg_sample_ratio)  # 0 Implies that we do not add negative samples. This is needed during testing and validation
+        self.train_set = torch.from_numpy(train_set).unsqueeze(1)
+        #assert num_entities >= max(self.train_set[:, 0]) and num_entities >= max(self.train_set[:, 2])
+        self.length = len(self.train_set)
+        self.num_entities = torch.tensor(num_entities)
+        self.num_relations = torch.tensor(num_relations)
+
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self, idx):
+        # Generate negative sample
+
+        triple = self.train_set[idx]
+
+        y = torch.ones(1)
+
+
+
+
+
+        negative_triple=torch.cat((triple[:,0],triple[:,1],triple[:,2]),dim=0)
+
+        print(triple.shape)
+        print(negative_triple.shape)
+        exit(1)
+
+        y = torch.ones(0)
+
+        print(triple.shape)
+        x=torch.cat((triple,negative_triple),dim=1)
+
+        print(x)
+        exit(1)
+        # Workaround to create negative triples
+        return triple, y
 
 
 class TriplePredictionDataset(torch.utils.data.Dataset):
@@ -424,7 +468,6 @@ class TriplePredictionDataset(torch.utils.data.Dataset):
         label = torch.cat((label, label_head_corr, label_tail_corr, label_rel_corr), 0)
         """
         return x, label
-
 
 
 class CVDataModule(pl.LightningDataModule):
