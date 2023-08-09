@@ -29,8 +29,8 @@ class AbstractTrainer:
         self.callbacks = callbacks
         self.is_global_zero = True
         # Set True to use Model summary callback of pl.
-        torch.manual_seed(self.attributes.seed_for_computation)
-        torch.cuda.manual_seed_all(self.attributes.seed_for_computation)
+        torch.manual_seed(self.attributes.random_seed)
+        torch.cuda.manual_seed_all(self.attributes.random_seed)
 
     def on_fit_start(self, *args, **kwargs):
         """

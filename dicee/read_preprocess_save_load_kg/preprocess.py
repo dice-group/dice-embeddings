@@ -1,8 +1,9 @@
 import pandas as pd
 import time
-import polars
+import polars as pl
 from .util import create_recipriocal_triples, timeit, index_triples_with_pandas, dataset_sanity_checking
 from dicee.static_funcs import numpy_data_type_changer
+
 
 class PreprocessKG:
     """ Preprocess the data in memory """
@@ -23,18 +24,16 @@ class PreprocessKG:
         """
         if self.kg.backend == 'polars':
             self.preprocess_with_polars()
-        elif self.kg.backend in ['pandas', 'modin']:
+        elif self.kg.backend == 'pandas':
             self.preprocess_with_pandas()
         else:
             raise KeyError(f'{self.kg.backend} not found')
-
-        print('Data Type conversion...')
+        print('Finding suitable integer type for the index...')
         self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
                                                     num=max(self.kg.num_entities, self.kg.num_relations))
         if self.kg.valid_set is not None:
             self.kg.valid_set = numpy_data_type_changer(self.kg.valid_set,
                                                         num=max(self.kg.num_entities, self.kg.num_relations))
-
         if self.kg.test_set is not None:
             self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
                                                        num=max(self.kg.num_entities, self.kg.num_relations))
@@ -102,35 +101,35 @@ class PreprocessKG:
                 """ Add reciprocal triples """
                 # (1.1) Add reciprocal triples into training set
                 self.kg.train_set.extend(self.kg.train_set.select([
-                    polars.col("object").alias('subject'),
-                    polars.col("relation").apply(lambda x: x + '_inverse'),
-                    polars.col("subject").alias('object')
+                    pl.col("object").alias('subject'),
+                    pl.col("relation").apply(lambda x: x + '_inverse'),
+                    pl.col("subject").alias('object')
                 ]))
                 if self.kg.valid_set is not None:
                     # (1.2) Add reciprocal triples into valid_set set.
                     self.kg.valid_set.extend(self.kg.valid_set.select([
-                        polars.col("object").alias('subject'),
-                        polars.col("relation").apply(lambda x: x + '_inverse'),
-                        polars.col("subject").alias('object')
+                        pl.col("object").alias('subject'),
+                        pl.col("relation").apply(lambda x: x + '_inverse'),
+                        pl.col("subject").alias('object')
                     ]))
                 if self.kg.test_set is not None:
                     # (1.2) Add reciprocal triples into test set.
                     self.kg.test_set.extend(self.kg.test_set.select([
-                        polars.col("object").alias('subject'),
-                        polars.col("relation").apply(lambda x: x + '_inverse'),
-                        polars.col("subject").alias('object')
+                        pl.col("object").alias('subject'),
+                        pl.col("relation").apply(lambda x: x + '_inverse'),
+                        pl.col("subject").alias('object')
                     ]))
 
-            print('Adding Reciprocal Triples...', end=' ')
+            print('Adding Reciprocal Triples...')
             adding_reciprocal_triples()
 
         # (2) Type checking
         try:
-            assert isinstance(self.kg.train_set, polars.DataFrame)
+            assert isinstance(self.kg.train_set, pl.DataFrame)
         except TypeError:
             raise TypeError(f"{type(self.kg.train_set)}")
-        assert isinstance(self.kg.valid_set, polars.DataFrame) or self.kg.valid_set is None
-        assert isinstance(self.kg.test_set, polars.DataFrame) or self.kg.test_set is None
+        assert isinstance(self.kg.valid_set, pl.DataFrame) or self.kg.valid_set is None
+        assert isinstance(self.kg.test_set, pl.DataFrame) or self.kg.test_set is None
 
         def concat_splits(train, val, test):
             x = [train]
@@ -138,75 +137,39 @@ class PreprocessKG:
                 x.append(val)
             if test is not None:
                 x.append(test)
-            return polars.concat(x)
+            return pl.concat(x)
 
-        print('Concat Splits...', end=' ')
+        print('Concat Splits...')
         df_str_kg = concat_splits(self.kg.train_set, self.kg.valid_set, self.kg.test_set)
 
-        @timeit
-        def entity_index():
-            """ Create a mapping from str representation of entities/nodes to integers"""
-            # Entity Index: {'a':1, 'b':2} :
-            return polars.concat((df_str_kg['subject'], df_str_kg['object'])).unique(maintain_order=True).rename(
-                'entity')
-
-        print('Entity Indexing...', end=' ')
-        self.kg.entity_to_idx = entity_index()
-
-        @timeit
-        def relation_index():
-            """ Create a mapping from str representation of relations/edges to integers"""
-            # Relation Index: {'r1':1, 'r2:'2}
-            return df_str_kg['relation'].unique(maintain_order=True)
-
-        print('Relation Indexing...', end=' ')
-        self.kg.relation_to_idx = relation_index()
-        # On YAGO3-10     # 2.90427 and 0.00065 MB,
-        # print(f'Est. size of entity_to_idx in Polars:{self.kg.entity_to_idx.estimated_size(unit="mb"):.5f} in MB')
-        # print(f'Est. of relation_to_idx in Polars:{self.kg.relation_to_idx.estimated_size(unit="mb"):.5f} in MB')
-        self.kg.entity_to_idx = dict(zip(self.kg.entity_to_idx.to_list(), list(range(len(self.kg.entity_to_idx)))))
-        self.kg.relation_to_idx = dict(
-            zip(self.kg.relation_to_idx.to_list(), list(range(len(self.kg.relation_to_idx)))))
-        # On YAGO3-10, 5.24297 in MB and 0.00118 in MB
-        # print(f'Estimated size of entity_to_idx in Python dict:{sys.getsizeof(self.kg.entity_to_idx) / 1000000 :.5f} in MB')
-        # print(f'Estimated size of relation_to_idx in Python dict:{sys.getsizeof(self.kg.relation_to_idx) / 1000000 :.5f} in MB')
+        print('Entity Indexing...')
+        self.kg.entity_to_idx = pl.concat((df_str_kg['subject'],
+                                           df_str_kg['object'])).unique(maintain_order=True).rename('entity')
+        print('Relation Indexing...')
+        self.kg.relation_to_idx =df_str_kg['relation'].unique(maintain_order=True)
+        print('Creating index for entities...')
+        self.kg.entity_to_idx = {ent: idx for idx, ent in enumerate(self.kg.entity_to_idx.to_list())}
+        print('Creating index for relations...')
+        self.kg.relation_to_idx = {rel: idx for idx, rel in enumerate(self.kg.relation_to_idx.to_list())}
         self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
 
-        # using this requires more time and more mem. Maybe there is a bug somewhere in polars.
-        def indexer(data):
-            """ Apply str to int mapping on an input data"""
-            # These column assignments are executed in parallel
-            # with_colums allows you to create new columns for you analyses.
-            # https://pola-rs.github.io/polars-book/user-guide/quickstart/quick-exploration-guide.html#with_columns
-            return data.with_columns([polars.col("subject").apply(lambda x: self.kg.entity_to_idx[x]),
-                                      polars.col("relation").apply(lambda x: self.kg.relation_to_idx[x]),
-                                      polars.col("object").apply(lambda x: self.kg.entity_to_idx[x])])
-
-        @timeit
-        def from_pandas_to_numpy(df):
-            # Index pandas dataframe?
-            print(f'Convering data to Pandas {df.shape}...')
-            df = df.to_pandas()
-            # Index pandas dataframe?
-            print(f'Indexing Training Data {df.shape}...')
-            return index_triples_with_pandas(df, entity_to_idx=self.kg.entity_to_idx,
-                                             relation_to_idx=self.kg.relation_to_idx).to_numpy()
-
         print(f'Indexing Training Data {self.kg.train_set.shape}...')
-        self.kg.train_set = from_pandas_to_numpy(self.kg.train_set)
-        # self.kg.train_set = from_polars_to_numpy()
-        # we may try vaex to speed up pandas
-        # https://stackoverflow.com/questions/69971992/vaex-apply-does-not-work-when-using-dataframe-columns
-
-        print(f'Estimated size of train_set in Numpy: {self.kg.train_set.nbytes / 1_000_000_000 :.5f} in GB')
+        self.kg.train_set = self.kg.train_set.with_columns(
+            pl.col("subject").map_dict(self.kg.entity_to_idx).alias("subject"),
+            pl.col("relation").map_dict(self.kg.relation_to_idx).alias("relation"),
+            pl.col("object").map_dict(self.kg.entity_to_idx).alias("object")).to_numpy()
         if self.kg.valid_set is not None:
             print(f'Indexing Val Data {self.kg.valid_set.shape}...')
-            self.kg.valid_set = from_pandas_to_numpy(self.kg.valid_set)
-            print(f'Estimated size of valid_set in Numpy: {self.kg.valid_set.nbytes / 1_000_000_000:.5f} in GB')
+            self.kg.valid_set = self.kg.valid_set.with_columns(
+                pl.col("subject").map_dict(self.kg.entity_to_idx).alias("subject"),
+                pl.col("relation").map_dict(self.kg.relation_to_idx).alias("relation"),
+                pl.col("object").map_dict(self.kg.entity_to_idx).alias("object")).to_numpy()
         if self.kg.test_set is not None:
             print(f'Indexing Test Data {self.kg.test_set.shape}...')
-            self.kg.test_set = from_pandas_to_numpy(self.kg.test_set)
-            print(f'Estimated size of test_set in Numpy: {self.kg.test_set.nbytes / 1_000_000_000:.5f} in GB')
+            self.kg.test_set = self.kg.test_set.with_columns(
+                pl.col("subject").map_dict(self.kg.entity_to_idx).alias("subject"),
+                pl.col("relation").map_dict(self.kg.relation_to_idx).alias("relation"),
+                pl.col("object").map_dict(self.kg.entity_to_idx).alias("object")).to_numpy()
         print(f'*** Preprocessing Train Data:{self.kg.train_set.shape} with Polars DONE ***')
 
     def sequential_vocabulary_construction(self) -> None:

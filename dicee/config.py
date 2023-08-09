@@ -60,7 +60,8 @@ class Namespace(argparse.Namespace):
         self.kernel_size: int = 3
         self.num_of_output_channels: int = 32
         self.num_core: int = 0
-        self.seed_for_computation: int = 0
+        "Random Seed"
+        self.random_seed: int = 0
         self.sample_triples_ratio = None
         self.read_only_few = None
         self.pykeen_model_kwargs: ParseDict = dict()

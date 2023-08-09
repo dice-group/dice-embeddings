@@ -25,10 +25,10 @@ class TorchTrainer(AbstractTrainer):
         self.loss_function = None
         self.optimizer = None
         self.model = None
-        self.is_global_zero = True
         self.train_dataloaders = None
-        torch.manual_seed(self.attributes.seed_for_computation)
-        torch.cuda.manual_seed_all(self.attributes.seed_for_computation)
+        self.training_step=None
+        torch.manual_seed(self.attributes.random_seed)
+        torch.cuda.manual_seed_all(self.attributes.random_seed)
         if self.attributes.gpus and torch.cuda.is_available():
             self.device = torch.device(f'cuda:{self.attributes.gpus}' if torch.cuda.is_available() else 'cpu')
         else:
@@ -139,7 +139,7 @@ class TorchTrainer(AbstractTrainer):
             avg_epoch_loss = self._run_epoch(epoch)
             print(f"Epoch:{epoch + 1} "
                   f"| Loss:{avg_epoch_loss:.8f} "
-                  f"| Runtime:{(time.time() - start_time) / 60:.3f}mins")
+                  f"| Runtime:{(time.time() - start_time) / 60:.3f} mins")
             # Autobatch Finder: Double the current batch size if memory allows and repeat this process at mast 5 times.
             if self.attributes.auto_batch_finder and psutil.virtual_memory().percent < 30.0 and counter < 5:
                 self.train_dataloaders = DataLoader(dataset=self.train_dataloaders.dataset,

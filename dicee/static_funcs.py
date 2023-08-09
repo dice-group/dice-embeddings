@@ -23,8 +23,8 @@ def timeit(func):
         end_time = time.perf_counter()
         total_time = end_time - start_time
         print(
-            f'Took {total_time:.4f} seconds'
-            f'|Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB')
+            f'Took {total_time:.4f} secs '
+            f'| Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB')
         return result
 
     return timeit_wrapper

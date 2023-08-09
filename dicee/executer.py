@@ -36,7 +36,7 @@ class Execute:
         # (1) Process arguments and sanity checking.
         self.args = preprocesses_input_args(args)
         # (2) Ensure reproducibility.
-        seed_everything(args.seed_for_computation, workers=True)
+        seed_everything(args.random_seed, workers=True)
         # (3) Set the continual training flag
         self.is_continual_training = continuous_training
         # (4) Create an experiment folder or use the previous one
