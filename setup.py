@@ -17,6 +17,7 @@ setup(
         "zstandard>=0.21.0",
         "pytest>=7.2.2",
         "psutil>=5.9.4",
+        "ruff>=0.0.284",
         "gradio>=3.23.0",
         "rdflib>=7.0.0"],
     author='Caglar Demir',

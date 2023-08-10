@@ -40,19 +40,19 @@ pip install dicee
 ```
 or
 ```bash
-pip3 install "pandas>=1.5.1"
 pip3 install "torch>=2.0.0"
+pip3 install "pandas>=1.5.1"
 pip3 install "polars>=0.16.14"
 pip3 install "scikit-learn>=1.2.2"
 pip3 install "pyarrow>=11.0.0"
-pip3 install "pytest>=7.2.2"
-pip3 install "gradio>=3.23.0"
-pip3 install "psutil>=5.9.4"
 pip3 install "pytorch-lightning==1.6.4"
 pip3 install "pykeen==1.10.1"
 pip3 install "zstandard>=0.21.0"
+pip3 install "pytest>=7.2.2"
+pip3 install "psutil>=5.9.4"
+pip3 install "ruff>=0.0.284"
+pip3 install "gradio>=3.23.0"
 pip3 install "rdflib>=7.0.0"
-pip3 install "ruff>=0.0.283"
 ```
 
 To test the Installation
