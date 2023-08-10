@@ -3,7 +3,7 @@ import gc
 from typing import Union
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
-from dicee.callbacks import PPE, FPPE, Eval, KronE, PrintCallback, KGESaveCallback, AccumulateEpochLossCallback, GN
+from dicee.callbacks import PPE, FPPE, Eval, KronE, PrintCallback, KGESaveCallback, AccumulateEpochLossCallback, GN, RN
 from dicee.dataset_classes import construct_dataset, reload_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
@@ -31,7 +31,6 @@ def initialize_trainer(args, callbacks):
             return TorchTrainer(args, callbacks=callbacks)
     elif args.trainer == 'PL':
         print('Initializing Pytorch-lightning Trainer', end='\t')
-        # Pytest with PL problem https://github.com/pytest-dev/pytest/discussions/7995
         return pl.Trainer.from_argparse_args(args,
                                              callbacks=callbacks,
                                              strategy=DDPStrategy(find_unused_parameters=False))
@@ -52,6 +51,8 @@ def get_callbacks(args):
     for k, v in args.callbacks.items():
         if k == "GN":
             callbacks.append(GN(std=v['std'], epoch_ratio=v.get('epoch_ratio')))
+        elif k=='RN':
+            callbacks.append(RN(std=v['std'], epoch_ratio=v.get('epoch_ratio')))
         elif k == 'FPP':
             callbacks.append(
                 FPPE(num_epochs=args.num_epochs, path=args.full_storage_path,
@@ -91,7 +92,7 @@ class DICE_Trainer:
     report:dict
     """
 
-    def __init__(self, args, is_continual_training, storage_path, evaluator=None, dataset=None):
+    def __init__(self, args, is_continual_training, storage_path, evaluator=None):
         self.report = dict()
         self.args = args
         self.trainer = None
@@ -100,7 +101,6 @@ class DICE_Trainer:
         # Required for CV.
         self.evaluator = evaluator
         self.form_of_labelling = None
-        self.dataset = dataset
         print(
             f'# of CPUs:{os.cpu_count()} | # of GPUs:{torch.cuda.device_count()} | # of CPUs for dataloader:{self.args.num_core}')
 
@@ -143,8 +143,7 @@ class DICE_Trainer:
     @timeit
     def initialize_or_load_model(self):
         print('Initializing Model...', end='\t')
-        model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path,
-                                                self.dataset)
+        model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         self.report['form_of_labelling'] = form_of_labelling
         assert form_of_labelling in ['EntityPrediction', 'RelationPrediction']
         return model, form_of_labelling

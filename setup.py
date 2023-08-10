@@ -4,7 +4,7 @@ with open('README.md', 'r') as fh:
 setup(
     name='dicee',
     description='Dice embedding is an hardware-agnostic framework for large-scale knowledge graph embedding applications',
-    version='0.0.4',
+    version='0.0.5',
     packages=find_packages(),
     install_requires=[
         "torch>=2.0.0",
@@ -17,7 +17,9 @@ setup(
         "zstandard>=0.21.0",
         "pytest>=7.2.2",
         "psutil>=5.9.4",
-        "gradio>=3.23.0"],
+        "ruff>=0.0.284",
+        "gradio>=3.23.0",
+        "rdflib>=7.0.0"],
     author='Caglar Demir',
     author_email='caglardemir8@gmail.com',
     url='https://github.com/dice-group/dice-embeddings',

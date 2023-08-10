@@ -44,12 +44,13 @@ def preprocesses_input_args(args):
 
     assert args.init_param in ['xavier_normal', None]
 
-    # Below part will be investigated
-    #args.check_val_every_n_epoch = 10 ** 6  # ,i.e., no eval
+    # No need to eval. Investigate runtime performance
+    args.check_val_every_n_epoch = 10 ** 6  # ,i.e., no eval
+    assert args.add_noise_rate is None or isinstance(args.add_noise_rate, float)
     args.logger = False
     try:
         assert args.eval_model in [None, 'None', 'train', 'val', 'test', 'train_val', 'train_test', 'val_test',
-                                  'train_val_test']
+                                   'train_val_test']
     except AssertionError:
         raise AssertionError(f'Unexpected input for eval_model ***\t{args.eval_model}\t***')
 
@@ -105,7 +106,8 @@ def create_constraints(triples: np.ndarray) -> Tuple[dict, dict, dict, dict]:
         set_of_entities.add(e1)
         set_of_relations.add(p)
         set_of_entities.add(e2)
-    print(f'Creating constraints based on {len(set_of_relations)} relations and {len(set_of_entities)} entities...', end='\t')
+    print(f'Creating constraints based on {len(set_of_relations)} relations and {len(set_of_entities)} entities...',
+          end='\t')
     for rel in set_of_relations:
         range_constraints_per_rel[rel] = list(set_of_entities - range_per_rel[rel])
         domain_constraints_per_rel[rel] = list(set_of_entities - domain_per_rel[rel])

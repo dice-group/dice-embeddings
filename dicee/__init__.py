@@ -3,4 +3,5 @@ from .static_funcs import *  # noqa
 from .trainer import DICE_Trainer  # noqa
 from .knowledge_graph_embeddings import KGE  # noqa
 from .executer import Execute # noqa
-__version__ = '0.0.4'
+from .dataset_classes import * # noqa
+__version__ = '0.0.5'

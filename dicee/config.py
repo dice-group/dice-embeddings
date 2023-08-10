@@ -16,12 +16,22 @@ class ParseDict(argparse.Action):
 class Namespace(argparse.Namespace):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        "The path of a folder containing train.txt, and/or valid.txt and/or test.txt"
         self.path_dataset_folder: str = 'KGs/UMLS'
+        "A flag for saving embeddings in csv file."
         self.save_embeddings_as_csv: bool = False
+        "A directory named with time of execution under --storage_path that contains related data about embeddings."
         self.storage_path: str = 'Experiments'
-        self.absolute_path_to_store: str = None
-        self.absolute_path_dataset = None
+        "A single directory created that contains related data about embeddings."
+        self.path_to_store_single_run: str = None
+        "Path of a file corresponding to the input knowledge graph"
+        self.path_single_kg = None
+        "An endpoint of a triple store."
+        self.sparql_endpoint = None
+        "KGE model"
         self.model: str = "Keci"
+        " The ratio of added random triples into training dataset"
+        self.add_noise_rate: float = None
         self.p: int = 0
         self.q: int = 1
         self.optim: str = 'Adam'
@@ -50,7 +60,8 @@ class Namespace(argparse.Namespace):
         self.kernel_size: int = 3
         self.num_of_output_channels: int = 32
         self.num_core: int = 0
-        self.seed_for_computation: int = 0
+        "Random Seed"
+        self.random_seed: int = 0
         self.sample_triples_ratio = None
         self.read_only_few = None
         self.pykeen_model_kwargs: ParseDict = dict()

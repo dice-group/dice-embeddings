@@ -36,7 +36,7 @@ class Execute:
         # (1) Process arguments and sanity checking.
         self.args = preprocesses_input_args(args)
         # (2) Ensure reproducibility.
-        seed_everything(args.seed_for_computation, workers=True)
+        seed_everything(args.random_seed, workers=True)
         # (3) Set the continual training flag
         self.is_continual_training = continuous_training
         # (4) Create an experiment folder or use the previous one
@@ -198,9 +198,7 @@ class Execute:
         self.trainer = DICE_Trainer(args=self.args,
                                     is_continual_training=self.is_continual_training,
                                     storage_path=self.storage_path,
-                                    evaluator=self.evaluator,
-                                    dataset=self.dataset  # only used for Pykeen's models
-                                    )
+                                    evaluator=self.evaluator)
         # (4) Start the training
         self.trained_model, form_of_labelling = self.trainer.start(dataset=self.dataset)
         return self.end(form_of_labelling)

@@ -33,7 +33,8 @@ class DistMult(BaseKGE):
         t = self.entity_embeddings(target_entity_idx).transpose(1, 2)
         return torch.bmm(hr, t).squeeze(1)
 
-
+    def score(self,h,r,t):
+        return (self.hidden_dropout(self.hidden_normalizer(h * r)) * t).sum(dim=1)
 class TransE(BaseKGE):
     """
     Translating Embeddings for Modeling
