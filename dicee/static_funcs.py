@@ -40,7 +40,7 @@ def load_pickle(file_path=str):
 
 
 # @TODO: Could these funcs can be merged?
-def select_model(args: dict, is_continual_training: bool = None, storage_path: str = None, dataset=None):
+def select_model(args: dict, is_continual_training: bool = None, storage_path: str = None):
     isinstance(args, dict)
     assert len(args) > 0
     assert isinstance(is_continual_training, bool)
@@ -58,7 +58,7 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
             print(f"{storage_path}/model.pt is not found. The model will be trained with random weights")
         return model, _
     else:
-        return intialize_model(args, dataset)
+        return intialize_model(args)
 
 
 def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[object, dict, dict]:
@@ -194,13 +194,11 @@ def save_checkpoint_model(model, path: str) -> None:
             print(model.name)
             print('Could not save the model correctly')
     else:
-        # Pykeen
         torch.save(model.model.state_dict(), path)
 
 
 def store(trainer,
-          trained_model, model_name: str = 'model', full_storage_path: str = None,
-          dataset=None, save_embeddings_as_csv=False) -> None:
+          trained_model, model_name: str = 'model', full_storage_path: str = None, save_embeddings_as_csv=False) -> None:
     """
     Store trained_model model and save embeddings into csv file.
     :param trainer: an instance of trainer class
@@ -287,22 +285,12 @@ def read_or_load_kg(args, cls):
     return kg
 
 
-def get_pykeen_model(model_name: str, args, dataset):
-    if dataset is None:
-        # (1) Load a pretrained Pykeen Model
-        return PykeenKGE(args=args)
-    elif args['scoring_technique'] in ['KvsAll', "NegSample"]:
-        return PykeenKGE(args=args)
-    else:
-        raise NotImplementedError("Incorrect scoring technique")
-
-
-def intialize_model(args: dict, dataset=None) -> Tuple[object, str]:
+def intialize_model(args: dict) -> Tuple[object, str]:
     # @TODO: Apply construct_krone as callback? or use KronE_QMult as a prefix.
     # @TODO: Remove form_of_labelling
     model_name = args['model']
     if "pykeen" in model_name.lower():
-        model = get_pykeen_model(model_name, args, dataset)
+        model = PykeenKGE(args=args)
         form_of_labelling = "EntityPrediction"
     elif model_name == 'Shallom':
         model = Shallom(args=args)
