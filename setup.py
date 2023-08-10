@@ -4,7 +4,7 @@ with open('README.md', 'r') as fh:
 setup(
     name='dicee',
     description='Dice embedding is an hardware-agnostic framework for large-scale knowledge graph embedding applications',
-    version='0.0.4',
+    version='0.0.5',
     packages=find_packages(),
     install_requires=[
         "torch>=2.0.0",
