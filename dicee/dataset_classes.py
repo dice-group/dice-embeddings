@@ -157,7 +157,7 @@ class KvsAll(torch.utils.data.Dataset):
        label_smoothing_rate
            ?
 
-
+        # @TODO: one can create h,r where labels are all 0s.
 
        Returns
        -------
@@ -331,16 +331,20 @@ class NegSampleDataset(torch.utils.data.Dataset):
         return self.length
 
     def __getitem__(self, idx):
-        # Generate negative sample
-
+        # (1) Get a triple
         triple = self.train_set[idx]
-
+        # (2) Sample an entity
         corr_entities = torch.randint(0, high=self.num_entities, size=(1,))
-        negative_triple = torch.cat((triple[:, 0], triple[:, 1], corr_entities), dim=0).unsqueeze(0)
-
+        # (3) Flip a coin
+        if torch.rand(1) >= 0.5:
+            # (3.1) Corrupt (1) via tail
+            negative_triple = torch.cat((triple[:, 0], triple[:, 1], corr_entities), dim=0).unsqueeze(0)
+        else:
+            # (3.1) Corrupt (1) via head
+            negative_triple = torch.cat((corr_entities, triple[:, 1], triple[:, 2]), dim=0).unsqueeze(0)
         x = torch.cat((triple, negative_triple), dim=0)
-        y=torch.tensor([1.0, 0.0])
-        return x,y
+        y = torch.tensor([1.0, 0.0])
+        return x, y
 
 
 class TriplePredictionDataset(torch.utils.data.Dataset):
