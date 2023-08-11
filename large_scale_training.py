@@ -1,3 +1,8 @@
+"""
+Example script to train KGE models via model parallel with GPU-off-loading
+"""
+from typing import Tuple
+import os
 import torch
 import dicee
 from dicee import Keci
@@ -7,92 +12,239 @@ import time
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-"""
-r:10	 p:0	 q:1
-Keci(
-  (loss): BCEWithLogitsLoss()
-  (normalize_head_entity_embeddings): IdentityClass()
-  (normalize_relation_embeddings): IdentityClass()
-  (normalize_tail_entity_embeddings): IdentityClass()
-  (hidden_normalizer): IdentityClass()
-  (input_dp_ent_real): Dropout(p=0.0, inplace=False)
-  (input_dp_rel_real): Dropout(p=0.0, inplace=False)
-  (hidden_dropout): Dropout(p=0.0, inplace=False)
-  (entity_embeddings): Embedding(257938325, 20)
-  (relation_embeddings): Embedding(54811, 20)
-  (q_coefficients): Embedding(1, 1)
-)
-   | Name                             | Type              | Params
-------------------------------------------------------------------------
-0  | loss                             | BCEWithLogitsLoss | 0     
-1  | normalize_head_entity_embeddings | IdentityClass     | 0     
-2  | normalize_relation_embeddings    | IdentityClass     | 0     
-3  | normalize_tail_entity_embeddings | IdentityClass     | 0     
-4  | hidden_normalizer                | IdentityClass     | 0     
-5  | input_dp_ent_real                | Dropout           | 0     
-6  | input_dp_rel_real                | Dropout           | 0     
-7  | hidden_dropout                   | Dropout           | 0     
-8  | entity_embeddings                | Embedding         | 5.2 B 
-9  | relation_embeddings              | Embedding         | 1.1 M 
-10 | q_coefficients                   | Embedding         | 1     
-------------------------------------------------------------------------
-5.2 B     Trainable params
-0         Non-trainable params
-5.2 B     Total params
-20,639.451Total estimated model params size (MB)
-r:10	 p:0	 q:1
-took 42.364829778671265
-OptimizedModule(
-  (_orig_mod): Keci(
-    (loss): BCEWithLogitsLoss()
-    (normalize_head_entity_embeddings): IdentityClass()
-    (normalize_relation_embeddings): IdentityClass()
-    (normalize_tail_entity_embeddings): IdentityClass()
-    (hidden_normalizer): IdentityClass()
-    (input_dp_ent_real): Dropout(p=0.0, inplace=False)
-    (input_dp_rel_real): Dropout(p=0.0, inplace=False)
-    (hidden_dropout): Dropout(p=0.0, inplace=False)
-    (entity_embeddings): Embedding(257938325, 20)
-    (relation_embeddings): Embedding(54811, 20)
-    (q_coefficients): Embedding(1, 1)
-  )
-)
-Optimizer...
-Training...
-  0%|          | 0/111 [00:00<?, ?it/s]Batch Loss:1.1785708665847778	Forward-Backward-Update: 60.76826333999634
-  1%|          | 1/111 [09:31<17:27:08, 571.17s/it]Batch Loss:1.111355185508728	Forward-Backward-Update: 37.08943176269531
-  2%|▏         | 2/111 [10:09<7:48:22, 257.82s/it] Batch Loss:1.0394731760025024	Forward-Backward-Update: 34.5961971282959
-  3%|▎         | 3/111 [10:45<4:41:41, 156.50s/it]Batch Loss:0.9841560125350952	Forward-Backward-Update: 33.15920901298523
-  4%|▎         | 4/111 [11:21<3:14:09, 108.88s/it]Batch Loss:0.9383040070533752	Forward-Backward-Update: 33.949097871780396
-  5%|▍         | 5/111 [11:56<2:25:26, 82.33s/it] Batch Loss:0.8980816006660461	Forward-Backward-Update: 33.626163721084595
-  5%|▌         | 6/111 [12:31<1:55:54, 66.24s/it]Batch Loss:0.8625831007957458	Forward-Backward-Update: 34.746774196624756
-  6%|▋         | 7/111 [13:07<1:37:41, 56.36s/it]Batch Loss:0.8332152962684631	Forward-Backward-Update: 33.99446940422058
-  7%|▋         | 8/111 [13:43<1:25:14, 49.66s/it]Batch Loss:0.8098770976066589	Forward-Backward-Update: 33.45107460021973
-  8%|▊         | 9/111 [14:17<1:16:30, 45.01s/it]Batch Loss:0.7909269332885742	Forward-Backward-Update: 33.88880896568298
-  9%|▉         | 10/111 [14:53<1:10:40, 41.98s/it]Batch Loss:0.7751095294952393	Forward-Backward-Update: 34.984283685684204
- 10%|▉         | 11/111 [15:30<1:07:47, 40.67s/it]Batch Loss:0.7614863514900208	Forward-Backward-Update: 33.006606578826904
- 11%|█         | 12/111 [16:05<1:03:55, 38.74s/it]Batch Loss:0.7502735257148743	Forward-Backward-Update: 34.53621578216553
- 12%|█▏        | 13/111 [16:44<1:03:35, 38.93s/it]Batch Loss:0.7408137321472168	Forward-Backward-Update: 34.38044762611389
- 13%|█▎        | 14/111 [17:20<1:01:23, 37.97s/it]Batch Loss:0.7331563234329224	Forward-Backward-Update: 34.358346939086914
- 14%|█▎        | 15/111 [17:55<59:39, 37.29s/it]  Batch Loss:0.7268505692481995	Forward-Backward-Update: 32.88389492034912
+import argparse
+from argparse import ArgumentParser
 
+
+def input_arguments():
+    parser = ArgumentParser()
+    # General
+    parser.add_argument("--path_kg", type=str, default=None,  # "kinship.parquet.snappy",
+                        help="path parquet formatted polars dataframe")
+    parser.add_argument("--path_idx_kg", type=str, default="data.npy",
+                        help="path to numpy ndarray")
+    parser.add_argument("--path_checkpoint", type=str, default="Keci_1_99.torch"
+                        )
+    parser.add_argument("--path_checkpoint2", type=str, default="Keci_2_90.torch")
+
+    parser.add_argument("--batch_size", type=int, default=1024)
+    parser.add_argument("--neg_sample_ratio", type=float, default=1.0)
+    parser.add_argument("--embedding_dim", type=int, default=100)
+    parser.add_argument("--num_epochs", type=int, default=100)
+
+    return parser.parse_args()
+
+
+def get_data(args) -> Tuple[np.ndarray, int, int]:
+    if args.path_kg:
+        """ do this """
+        print("Reading KG...\n")
+        start_time = time.time()
+        data = pl.read_parquet(args.path_kg)
+        print(f"took {time.time() - start_time}")
+        print("Unique entities...")
+        start_time = time.time()
+        unique_entities = pl.concat((data.get_column('subject'), data.get_column('object'))).unique().rename(
+            'entity')
+        # @TODO Store unique_relations
+        unique_entities = unique_entities.to_list()
+        print(f"took {time.time() - start_time}")
+
+        print("Unique relations...")
+        start_time = time.time()
+        unique_relations = data.unique(subset=["relation"]).select("relation").to_series()
+        # @TODO Store unique_relations
+        unique_entities = unique_entities
+
+        print(f"took {time.time() - start_time}")
+
+        print("Entity index mapping...")
+        start_time = time.time()
+        entity_to_idx = {ent: idx for idx, ent in enumerate(unique_entities)}
+        print(f"took {time.time() - start_time}")
+
+        print("Relation index mapping...")
+        start_time = time.time()
+        rel_to_idx = {rel: idx for idx, rel in enumerate(unique_relations)}
+        print(f"took {time.time() - start_time}")
+
+        print("Constructing training data...")
+        start_time = time.time()
+        data = data.with_columns(pl.col("subject").map_dict(entity_to_idx).alias("subject"),
+                                 pl.col("relation").map_dict(rel_to_idx).alias("relation"),
+                                 pl.col("object").map_dict(entity_to_idx).alias("object")).to_numpy()
+        print(f"took {time.time() - start_time}")
+
+        num_entities = len(unique_entities)
+        num_relations = len(unique_relations)
+
+        with open("data.npy", 'wb') as f:
+            np.save(f, data)
+
+        return data, num_entities, num_relations
+
+    elif args.path_idx_kg:
+        print("Loading the index numpy KG..\n")
+        with open("data.npy", 'rb') as f:
+            data = np.load(f)
+
+        num_entities = 1 + max(max(data[:, 0]), max(data[:, 2]))
+        num_relations = 1 + max(data[:, 1])
+        return data, num_entities, num_relations
+    else:
+        raise RuntimeError
+
+
+def init_model(args, num_entities, num_relations):
+    start_time = time.time()
+    model1 = Keci(
+        args={"optim": "Adam", "p": 0, "q": 1, "num_entities": num_entities, "num_relations": num_relations,
+              "embedding_dim": args.embedding_dim, 'learning_rate': 0.1})
+    model2 = Keci(
+        args={"optim": "Adam", "p": 0, "q": 1, "num_entities": num_entities, "num_relations": num_relations,
+              "embedding_dim": args.embedding_dim, 'learning_rate': 0.1})
+    print(f"took {time.time() - start_time}")
+    return (model1, model2), (model1.configure_optimizers(), model2.configure_optimizers())
+
+
+def get_model(args, num_entities: int, num_relations: int):
+    # Initialize |GPUs| models on a single node
+    models, optimizers = init_model(args, num_entities, num_relations)
+    if args.path_checkpoint:
+        """ Load the checkpoint"""
+        # update models
+        model1, model2 = models
+        opt1, opt2 = optimizers
+
+        checkpoint1 = torch.load(args.path_checkpoint)
+        model1.load_state_dict(checkpoint1['model_state_dict'])
+        opt1.load_state_dict(checkpoint1['optimizer_state_dict'])
+
+        checkpoint2 = torch.load(args.path_checkpoint2)
+        model2.load_state_dict(checkpoint2['model_state_dict'])
+        opt2.load_state_dict(checkpoint2['optimizer_state_dict'])
+        models = (model1, model2)
+        optimizers = (opt1, opt2)
+    return models, optimizers
+
+
+def get_train_loader(args):
+    data: np.ndarray
+    data, num_ent, num_rel = get_data(args)
+    data: torch.utils.data.DataLoader
+
+    data: NegSampleDataset
+    data = NegSampleDataset(train_set=data,
+                            num_entities=num_ent, num_relations=num_rel,
+                            neg_sample_ratio=1.0)
+    data: torch.utils.data.DataLoader
+    data = torch.utils.data.DataLoader(dataset=data, batch_size=args.batch_size, shuffle=True,
+                                       num_workers=os.cpu_count() - 1)
+    return data, num_ent, num_rel
+
+
+def run(args):
+    # (1) Get training data
+    dataloader: torch.utils.data.DataLoader
+    dataloader, num_ent, num_rel = get_train_loader(args)
+    num_triples = len(dataloader.dataset)
+    print('Number of triples', num_triples)
+    models, optimizers = get_model(args, num_ent, num_rel)
+
+    model1, model2 = models
+
+    model1 = torch.compile(model1)
+    model2 = torch.compile(model2)
+    opt1, opt2 = optimizers
+
+    # Define the loss function
+    loss_function = model1.loss_function
+    print("Training...")
+
+    device1 = "cpu"  # "cuda:0"
+    device2 = "cpu"  # "cuda:1"
+    for e in range(args.num_epochs):
+        epoch_loss = 0
+
+        for ith, (x, y) in enumerate(tqdm(dataloader)):
+            # (1) Shape the batch
+            x = x.flatten(start_dim=0, end_dim=1)
+            y = y.flatten(start_dim=0, end_dim=1)
+            # (2) Empty the gradients
+            opt1.zero_grad(set_to_none=True)
+            opt2.zero_grad(set_to_none=True)
+            # (3) Forward Backward and Parameter Update
+            start_time = time.time()
+            # (3.1) Select embeddings of triples
+            h1, r1, t1 = model1.get_triple_representation(x)
+            # (3.2) Move (3.1) into a single GPU
+            if "cuda" in device1:
+                h1, r1, t1, y = h1.pin_memory().to(device1, non_blocking=True), r1.pin_memory().to(device1,
+                                                                                                   non_blocking=True), t1.pin_memory().to(
+                    device1, non_blocking=True), y.pin_memory().to(device1, non_blocking=True)
+            # (3.3) Compute triple score (Forward Pass)
+            yhat1 = model1.score(h1, r1, t1)
+
+            # (3.4) Select second part of the embeddings of triples
+            h2, r2, t2 = model2.get_triple_representation(x)
+            if "cuda" in device2:
+                # (3.5) Move (3.4) into a single GPU
+                h2, r2, t2 = h2.pin_memory().to(device2, non_blocking=True), r2.pin_memory().to(device2,
+                                                                                                non_blocking=True), t2.pin_memory().to(
+                    device2, non_blocking=True)
+            # 3.6 Forward Pass
+            yhat2 = model2.score(h2, r2, t2).to(device1)
+
+            # (4) Composite Prediction
+            yhat = yhat1 + yhat2
+
+            # (5.) Compute Loss
+            batch_loss = loss_function(yhat, y)
+            # (6.) Compute gradients (Backward Pass)
+            batch_loss.backward()
+            # (3.6) Update parameters
+            opt1.step()
+            opt2.step()
+            # (3.7) Update epoch loss
+            batch_loss = batch_loss.item()
+            epoch_loss += batch_loss
+            if ith % 5 == 0:
+                print(f"Batch Loss:{batch_loss}\tForward-Backward-Update: {time.time() - start_time}")
+
+        print(f"Epoch loss:{epoch_loss}")
+        print('Saving..')
+        torch.save({
+            'model_state_dict': model1._orig_mod.state_dict(),
+            'optimizer_state_dict': opt1.state_dict(),
+        }, f"{model1._orig_mod.name}_1_{e}.torch")
+
+        torch.save({
+            'model_state_dict': model2._orig_mod.state_dict(),
+            'optimizer_state_dict': opt2.state_dict(),
+        }, f"{model1._orig_mod.name}_2_{e}.torch")
+
+    print('DONE')
+
+
+if __name__ == '__main__':
+    run(input_arguments())
+
+# Note mode1 and model2 keci with p=0, q=1
+# model1 real_m1:[] complex_m1[]
+# model2 real_m2:[] complex_m2[]
+# y1 y2
+# Final model = real_m1[],real_m2[], complex_m1[] complex_m2[]
 """
 
 if False:
     print("Reading KG...\n")
     start_time = time.time()
     data = pl.read_parquet("dbpedia-2022-12-nt.parquet.snappy")
-#data = pl.read_csv("KGs/UMLS/train.txt",
-#                   has_header=False,
-#                   low_memory=False,
-#                   columns=[0, 1, 2],
-#                   dtypes=[pl.Utf8],  # str
-#                   new_columns=['subject', 'relation', 'object'],
-#                   separator="\t")
     print(f"took {time.time() - start_time}")
     print("Unique entities...")
     start_time = time.time()
-    unique_entities = pl.concat((data.get_column('subject'), data.get_column('object'))).unique().rename('entity').to_list()
+    unique_entities = pl.concat((data.get_column('subject'), data.get_column('object'))).unique().rename(
+        'entity').to_list()
     print(f"took {time.time() - start_time}")
 
     print("Unique relations...")
@@ -113,14 +265,12 @@ if False:
     print("Constructing training data...")
     start_time = time.time()
     data = data.with_columns(pl.col("subject").map_dict(entity_to_idx).alias("subject"),
-                         pl.col("relation").map_dict(rel_to_idx).alias("relation"),
-                         pl.col("object").map_dict(entity_to_idx).alias("object")).to_numpy()
+                             pl.col("relation").map_dict(rel_to_idx).alias("relation"),
+                             pl.col("object").map_dict(entity_to_idx).alias("object")).to_numpy()
     print(f"took {time.time() - start_time}")
 
-    num_entities=len(unique_entities)
-    num_relations=len(unique_relations)
-
-
+    num_entities = len(unique_entities)
+    num_relations = len(unique_relations)
 
     with open("data.npy", 'wb') as f:
         np.save(f, data)
@@ -129,22 +279,24 @@ else:
     with open("data.npy", 'rb') as f:
         data = np.load(f)
 
-    num_entities=1+max(max(data[:,0]),max(data[:,2]))
-    num_relations=1+max(data[:,1])
+    num_entities = 1 + max(max(data[:, 0]), max(data[:, 2]))
+    num_relations = 1 + max(data[:, 1])
 
 data = NegSampleDataset(train_set=data,
                         num_entities=num_entities, num_relations=num_relations,
                         neg_sample_ratio=1.0)
-data = torch.utils.data.DataLoader(data, batch_size=10_000_000, shuffle=True,num_workers=30)
+data = torch.utils.data.DataLoader(data, batch_size=10_000_000, shuffle=True, num_workers=os.cpu_count() - 1)
 print("KGE model...")
 start_time = time.time()
 
 # Model Parallel 1
-model1 = Keci(args={"optim":"Adam","p":0,"q":1,"num_entities": num_entities, "num_relations": num_relations,"embedding_dim": 20, 'learning_rate': 0.1})
+model1 = Keci(args={"optim": "Adam", "p": 0, "q": 1, "num_entities": num_entities, "num_relations": num_relations,
+                    "embedding_dim": 20, 'learning_rate': 0.1})
 print(model1)
 print(model1.summarize())
 # Model Parallel 2
-model2 = Keci(args={"optim":"Adam","p":0,"q":1,"num_entities": num_entities, "num_relations": num_relations,"embedding_dim": 20, 'learning_rate': 0.1})
+model2 = Keci(args={"optim": "Adam", "p": 0, "q": 1, "num_entities": num_entities, "num_relations": num_relations,
+                    "embedding_dim": 20, 'learning_rate': 0.1})
 # Compute both models
 model1 = torch.compile(model1)
 model2 = torch.compile(model2)
@@ -159,9 +311,9 @@ optimizer2 = model2.configure_optimizers()
 loss_function = model1.loss_function
 print("Training...")
 
-num_epochs=10
-device1="cuda:0"
-device2="cuda:1"
+num_epochs = 10
+device1 = "cuda:0"
+device2 = "cuda:1"
 for e in range(num_epochs):
     epoch_loss = 0
 
@@ -173,24 +325,27 @@ for e in range(num_epochs):
         optimizer.zero_grad(set_to_none=True)
         optimizer2.zero_grad(set_to_none=True)
         # (3) Forward Backward and Parameter Update
-        start_time=time.time()
+        start_time = time.time()
         # (3.1) Select embeddings of triples
-        h1,r1,t1=model1.get_triple_representation(x)
+        h1, r1, t1 = model1.get_triple_representation(x)
         # (3.2) Move (3.1) into a single GPU
-        h1,r1,t1,y=h1.pin_memory().to(device1, non_blocking=True),r1.pin_memory().to(device1, non_blocking=True),t1.pin_memory().to(device1, non_blocking=True),y.pin_memory().to(device1, non_blocking=True)
+        h1, r1, t1, y = h1.pin_memory().to(device1, non_blocking=True), r1.pin_memory().to(device1,
+                                                                                           non_blocking=True), t1.pin_memory().to(
+            device1, non_blocking=True), y.pin_memory().to(device1, non_blocking=True)
         # (3.3) Compute triple score (Forward Pass)
-        yhat1 = model1.score(h1,r1,t1)
-        
-        # (3.4) Select second part of the embeddings of triples
-        h2,r2,t2=model2.get_triple_representation(x)
-        # (3.5) Move (3.4) into a single GPU
-        h2,r2,t2=h2.pin_memory().to(device2, non_blocking=True),r2.pin_memory().to(device2, non_blocking=True),t2.pin_memory().to(device2, non_blocking=True)
-        # 3.6 Forward Pass
-        yhat2 = model2.score(h2,r2,t2).to(device1)
-        
-        # (4) Composite Prediction
-        yhat=(yhat1 + yhat2)/2   
+        yhat1 = model1.score(h1, r1, t1)
 
+        # (3.4) Select second part of the embeddings of triples
+        h2, r2, t2 = model2.get_triple_representation(x)
+        # (3.5) Move (3.4) into a single GPU
+        h2, r2, t2 = h2.pin_memory().to(device2, non_blocking=True), r2.pin_memory().to(device2,
+                                                                                        non_blocking=True), t2.pin_memory().to(
+            device2, non_blocking=True)
+        # 3.6 Forward Pass
+        yhat2 = model2.score(h2, r2, t2).to(device1)
+
+        # (4) Composite Prediction
+        yhat = (yhat1 + yhat2) / 2
 
         # (5.) Compute Loss
         batch_loss = loss_function(yhat, y)
@@ -200,24 +355,25 @@ for e in range(num_epochs):
         optimizer.step()
         optimizer2.step()
         # (3.7) Update epoch loss
-        batch_loss=batch_loss.item()
+        batch_loss = batch_loss.item()
         epoch_loss += batch_loss
-        print(f"Batch Loss:{batch_loss}\tForward-Backward-Update: {time.time()-start_time}")
-    
+        print(f"Batch Loss:{batch_loss}\tForward-Backward-Update: {time.time() - start_time}")
+
     print(epoch_loss / len(data))
     print('Saving')
     torch.save({
-            'epoch': num_epochs,
-            'model_state_dict': model1._orig_mod.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'loss': epoch_loss,
-            }, f"{model1._orig_mod.name}_1_{e}.torch")
+        'epoch': num_epochs,
+        'model_state_dict': model1._orig_mod.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+        'loss': epoch_loss,
+    }, f"{model1._orig_mod.name}_1_{e}.torch")
 
     torch.save({
-            'epoch': num_epochs,
-            'model_state_dict': model2._orig_mod.state_dict(),
-            'optimizer_state_dict': optimizer2.state_dict(),
-            'loss': epoch_loss,
-            }, f"{model1._orig_mod.name}_2_{e}.torch")
+        'epoch': num_epochs,
+        'model_state_dict': model2._orig_mod.state_dict(),
+        'optimizer_state_dict': optimizer2.state_dict(),
+        'loss': epoch_loss,
+    }, f"{model1._orig_mod.name}_2_{e}.torch")
 
 print('DONE')
+"""
