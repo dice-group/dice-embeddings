@@ -10,7 +10,7 @@ import numpy as np
 if True:
     print("Reading KG...")
     start_time = time.time()
-    data = pl.read_parquet("dbpedia-2022-12-nt.parquet.snappy",n_rows=10000)
+    data = pl.read_parquet("../dbpedia-2022-12-nt.parquet.snappy")
 #data = pl.read_csv("KGs/UMLS/train.txt",
 #                   has_header=False,
 #                   low_memory=False,
@@ -63,13 +63,13 @@ else:
 data = NegSampleDataset(train_set=data,
                         num_entities=num_entities, num_relations=num_relations,
                         neg_sample_ratio=1.0)
-data = torch.utils.data.DataLoader(data, batch_size=1024, shuffle=True)
+data = torch.utils.data.DataLoader(data, batch_size=100_000, shuffle=True)
 print("KGE model...")
 start_time = time.time()
-model1 = DistMult(args={"optim":"SGD","num_entities": num_entities, "num_relations": num_relations,"embedding_dim": 10, 'learning_rate': 0.001})
+model1 = DistMult(args={"optim":"Adam","num_entities": num_entities, "num_relations": num_relations,"embedding_dim": 20, 'learning_rate': 0.001})
 print(model1)
-model2 = DistMult(args={"optim":"SGD","num_entities": num_entities, "num_relations": num_relations,"embedding_dim": 10, 'learning_rate': 0.001})
-print(model2)
+#model2 = DistMult(args={"optim":"SGD","num_entities": num_entities, "num_relations": num_relations,"embedding_dim": 10, 'learning_rate': 0.001})
+#print(model2)
 
 #model1 = torch.compile(model1)
 #model2 = torch.compile(model2)
@@ -84,13 +84,15 @@ print(f"took {time.time() - start_time}")
 print("Optimizer...")
 start_time = time.time()
 optim1 = model1.configure_optimizers()
-optim2 = model2.configure_optimizers()
+#optim2 = model2.configure_optimizers()
 
 from tqdm import tqdm
 
 
 loss_function = model1.loss_function
 print("Training...")
+
+
 for e in range(1):
     epoch_loss = 0
 
@@ -99,18 +101,30 @@ for e in range(1):
         x = x.flatten(start_dim=0, end_dim=1)
         y = y.flatten(start_dim=0, end_dim=1)
         optim1.zero_grad(set_to_none=True)
-        optim2.zero_grad(set_to_none=True)
+        #optim2.zero_grad(set_to_none=True)
 
         start_time=time.time()
         # CPU
+        h1,r1,t1=model1.get_triple_representation(x)
+        #h2,r2,t2=model2.get_triple_representation(x)
         
-        yhat=(model1.score(*model1.get_triple_representation(x)) + model2.score(*model2.get_triple_representation(x)))/2
+        h1=h1.to("cuda:0")
+        r1=r1.to("cuda:0")
+        t1=t1.to("cuda:0")
+
+        #h2=h2.to("cuda:1")
+        #r2=r2.to("cuda:1")
+        #t2=t2.to("cuda:1")
+        
+        y=y.to("cuda:0")
+        yhat = model1.score(h1,r1,t1)
+        #yhat=(model1.score(h1,r1,t1) + model2.score(h2,r2,t2).to("cuda:0"))/2
 
         batch_positive_loss = loss_function(yhat, y)
         epoch_loss += batch_positive_loss.item()
         batch_positive_loss.backward()
         optim1.step()
-        optim2.step()
+        #optim2.step()
 
     print(epoch_loss / len(data))
 
