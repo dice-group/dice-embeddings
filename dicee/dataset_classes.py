@@ -320,9 +320,8 @@ class NegSampleDataset(torch.utils.data.Dataset):
         # https://pytorch.org/docs/stable/data.html#multi-process-data-loading
         # TLDL; replace Python objects with non-refcounted representations such as Pandas, Numpy or PyArrow objects
         self.neg_sample_ratio = torch.tensor(
-            neg_sample_ratio)  # 0 Implies that we do not add negative samples. This is needed during testing and validation
+            neg_sample_ratio)  
         self.train_set = torch.from_numpy(train_set).unsqueeze(1)
-        # assert num_entities >= max(self.train_set[:, 0]) and num_entities >= max(self.train_set[:, 2])
         self.length = len(self.train_set)
         self.num_entities = torch.tensor(num_entities)
         self.num_relations = torch.tensor(num_relations)
