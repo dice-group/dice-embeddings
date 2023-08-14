@@ -34,4 +34,4 @@ jobs:
            sphinx-apidoc -o docs dicee/ && make -C docs/ html
       - name: Run ghp-import
         run: | 
-          mv docs/_build/html docs/ && ghp-import -n -p -f docs
+          mv docs/_build/html docs/ && ghp-import -n -p -f docs/html
