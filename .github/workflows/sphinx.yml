@@ -29,13 +29,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Create apidoc
-        run: |
-          sphinx-apidoc -o documents dicee/
-
       - name: Build HTML
         run: |
-           make -C documents/ html
+           sphinx-apidoc -o documents dicee/ && make -C documents/ html
       - name: Run ghp-import
         run: | 
           ghp-import -n -p -f documents/_build/html
