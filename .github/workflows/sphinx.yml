@@ -34,8 +34,9 @@ jobs:
           sphinx-apidoc -o documents dicee/
 
       - name: Build HTML
-        run: | 
-          cd documents && make html
+        run: |
+        working-directory: ./documents  
+          make html
       - name: Run ghp-import
         run: | 
           ghp-import -n -p -f documents/_build/html
