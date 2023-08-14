@@ -35,8 +35,7 @@ jobs:
 
       - name: Build HTML
         run: |
-        working-directory: ./documents  
-          make html
+           make -C documents/ html
       - name: Run ghp-import
         run: | 
           ghp-import -n -p -f documents/_build/html
