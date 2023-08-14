@@ -1,0 +1,553 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" />
+
+    <!-- Generated with Sphinx 6.2.1 and Furo 2023.07.26 -->
+        <title>dicee.read_preprocess_save_load_kg package - DICE Embeddings 0.0.6 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f8f8f8;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">DICE Embeddings 0.0.6 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  
+  <span class="sidebar-brand-text">DICE Embeddings 0.0.6 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          <section id="dicee-read-preprocess-save-load-kg-package">
+<h1>dicee.read_preprocess_save_load_kg package<a class="headerlink" href="#dicee-read-preprocess-save-load-kg-package" title="Permalink to this heading">#</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this heading">#</a></h2>
+</section>
+<section id="module-dicee.read_preprocess_save_load_kg.preprocess">
+<span id="dicee-read-preprocess-save-load-kg-preprocess-module"></span><h2>dicee.read_preprocess_save_load_kg.preprocess module<a class="headerlink" href="#module-dicee.read_preprocess_save_load_kg.preprocess" title="Permalink to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.preprocess.</span></span><span class="sig-name descname"><span class="pre">PreprocessKG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Preprocess the data in memory</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.apply_reciprical_or_noise">
+<span class="sig-name descname"><span class="pre">apply_reciprical_or_noise</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.apply_reciprical_or_noise"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.apply_reciprical_or_noise" title="Permalink to this definition">#</a></dt>
+<dd><ol class="arabic simple">
+<li><p>Add reciprocal triples (2) Add noisy triples</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.preprocess_with_pandas">
+<span class="sig-name descname"><span class="pre">preprocess_with_pandas</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.preprocess_with_pandas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.preprocess_with_pandas" title="Permalink to this definition">#</a></dt>
+<dd><p>Preprocess train, valid and test datasets stored in knowledge graph instance with pandas</p>
+<ol class="arabic simple">
+<li><p>Add recipriocal or noisy triples</p></li>
+<li><p>Construct vocabulary</p></li>
+<li><p>Index datasets</p></li>
+</ol>
+<section id="parameter">
+<h3>Parameter<a class="headerlink" href="#parameter" title="Permalink to this heading">#</a></h3>
+</section>
+<section id="returns">
+<h3>Returns<a class="headerlink" href="#returns" title="Permalink to this heading">#</a></h3>
+<p>None</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.preprocess_with_polars">
+<span class="sig-name descname"><span class="pre">preprocess_with_polars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.preprocess_with_polars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.preprocess_with_polars" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.remove_triples_from_train_with_condition">
+<span class="sig-name descname"><span class="pre">remove_triples_from_train_with_condition</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.remove_triples_from_train_with_condition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.remove_triples_from_train_with_condition" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.sequential_vocabulary_construction">
+<span class="sig-name descname"><span class="pre">sequential_vocabulary_construction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.sequential_vocabulary_construction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.sequential_vocabulary_construction" title="Permalink to this definition">#</a></dt>
+<dd><ol class="arabic simple">
+<li><p>Read input data into memory</p></li>
+<li><p>Remove triples with a condition</p></li>
+<li><dl class="simple">
+<dt>Serialize vocabularies in a pandas dataframe where</dt><dd><p>=&gt; the index is integer and
+=&gt; a single column is string (e.g. URI)</p>
+</dd>
+</dl>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.start" title="Permalink to this definition">#</a></dt>
+<dd><p>Preprocess train, valid and test datasets stored in knowledge graph instance</p>
+<section id="id1">
+<h3>Parameter<a class="headerlink" href="#id1" title="Permalink to this heading">#</a></h3>
+</section>
+<section id="id2">
+<h3>Returns<a class="headerlink" href="#id2" title="Permalink to this heading">#</a></h3>
+<p>None</p>
+</section>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-dicee.read_preprocess_save_load_kg.read_from_disk">
+<span id="dicee-read-preprocess-save-load-kg-read-from-disk-module"></span><h2>dicee.read_preprocess_save_load_kg.read_from_disk module<a class="headerlink" href="#module-dicee.read_preprocess_save_load_kg.read_from_disk" title="Permalink to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.read_from_disk.</span></span><span class="sig-name descname"><span class="pre">ReadFromDisk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Read the data from disk into memory</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.add_noisy_triples">
+<span class="sig-name descname"><span class="pre">add_noisy_triples</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk.add_noisy_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.add_noisy_triples" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.start" title="Permalink to this definition">#</a></dt>
+<dd><p>Read a knowledge graph from disk into memory</p>
+<p>Data will be available at the train_set, test_set, valid_set attributes of kg object.</p>
+<section id="id3">
+<h3>Parameter<a class="headerlink" href="#id3" title="Permalink to this heading">#</a></h3>
+</section>
+<section id="id4">
+<h3>Returns<a class="headerlink" href="#id4" title="Permalink to this heading">#</a></h3>
+<p>None</p>
+</section>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-dicee.read_preprocess_save_load_kg.save_load_disk">
+<span id="dicee-read-preprocess-save-load-kg-save-load-disk-module"></span><h2>dicee.read_preprocess_save_load_kg.save_load_disk module<a class="headerlink" href="#module-dicee.read_preprocess_save_load_kg.save_load_disk" title="Permalink to this heading">#</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.save_load_disk.</span></span><span class="sig-name descname"><span class="pre">LoadSaveToDisk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk" title="Permalink to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.load">
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.load" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.save" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-dicee.read_preprocess_save_load_kg.util">
+<span id="dicee-read-preprocess-save-load-kg-util-module"></span><h2>dicee.read_preprocess_save_load_kg.util module<a class="headerlink" href="#module-dicee.read_preprocess_save_load_kg.util" title="Permalink to this heading">#</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.create_constraints">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">create_constraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">triples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/util.html#create_constraints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.create_constraints" title="Permalink to this definition">#</a></dt>
+<dd><ol class="arabic simple">
+<li><p>Extract domains and ranges of relations</p></li>
+</ol>
+<p>(2) Store a mapping from relations to entities that are outside of the domain and range.
+Crete constrainted entities based on the range of relations
+:param triples:
+:return:
+Tuple[dict, dict]</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.create_recipriocal_triples">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">create_recipriocal_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/util.html#create_recipriocal_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.create_recipriocal_triples" title="Permalink to this definition">#</a></dt>
+<dd><p>Add inverse triples into dask dataframe
+:param x:
+:return:</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.dataset_sanity_checking">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">dataset_sanity_checking</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_set</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_entities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_relations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/util.html#dataset_sanity_checking"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.dataset_sanity_checking" title="Permalink to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_set</strong> – </p></li>
+<li><p><strong>num_entities</strong> – </p></li>
+<li><p><strong>num_relations</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.get_ee_vocab">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">get_ee_vocab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/util.html#get_ee_vocab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.get_ee_vocab" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.get_er_vocab">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">get_er_vocab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/util.html#get_er_vocab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.get_er_vocab" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.get_re_vocab">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">get_re_vocab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/util.html#get_re_vocab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.get_re_vocab" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.index_triples_with_pandas">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">index_triples_with_pandas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entity_to_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relation_to_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/util.html#index_triples_with_pandas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.index_triples_with_pandas" title="Permalink to this definition">#</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>train_set</strong> – pandas dataframe</p></li>
+<li><p><strong>entity_to_idx</strong> – a mapping from str to integer index</p></li>
+<li><p><strong>relation_to_idx</strong> – a mapping from str to integer index</p></li>
+<li><p><strong>num_core</strong> – number of cores to be used</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>indexed triples, i.e., pandas dataframe</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.load_numpy_ndarray">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">load_numpy_ndarray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/util.html#load_numpy_ndarray"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.load_numpy_ndarray" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.load_pickle">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">load_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path=&lt;class</span> <span class="pre">'str'&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/util.html#load_pickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.load_pickle" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.load_with_pandas">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">load_with_pandas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/util.html#load_with_pandas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.load_with_pandas" title="Permalink to this definition">#</a></dt>
+<dd><p>Deserialize data</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.read_from_disk">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">read_from_disk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only_few</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_triples_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/util.html#read_from_disk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.read_from_disk" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.read_from_triple_store">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">read_from_triple_store</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">endpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/util.html#read_from_triple_store"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.read_from_triple_store" title="Permalink to this definition">#</a></dt>
+<dd><p>Read triples from triple store into pandas dataframe</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.read_with_pandas">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">read_with_pandas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only_few</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_triples_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/util.html#read_with_pandas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.read_with_pandas" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.read_with_polars">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">read_with_polars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only_few</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_triples_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/util.html#read_with_polars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.read_with_polars" title="Permalink to this definition">#</a></dt>
+<dd><p>Load and Preprocess via Polars</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.save_numpy_ndarray">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">save_numpy_ndarray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/util.html#save_numpy_ndarray"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.save_numpy_ndarray" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.save_pickle">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">save_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data:</span> <span class="pre">object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path=&lt;class</span> <span class="pre">'str'&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/util.html#save_pickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.save_pickle" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.timeit">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">timeit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dicee/read_preprocess_save_load_kg/util.html#timeit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.timeit" title="Permalink to this definition">#</a></dt>
+<dd></dd></dl>
+
+</section>
+<section id="module-dicee.read_preprocess_save_load_kg">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-dicee.read_preprocess_save_load_kg" title="Permalink to this heading">#</a></h2>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2023, Caglar Demir
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">dicee.read_preprocess_save_load_kg package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-dicee.read_preprocess_save_load_kg.preprocess">dicee.read_preprocess_save_load_kg.preprocess module</a><ul>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG"><code class="docutils literal notranslate"><span class="pre">PreprocessKG</span></code></a><ul>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.apply_reciprical_or_noise"><code class="docutils literal notranslate"><span class="pre">PreprocessKG.apply_reciprical_or_noise()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.preprocess_with_pandas"><code class="docutils literal notranslate"><span class="pre">PreprocessKG.preprocess_with_pandas()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.preprocess_with_polars"><code class="docutils literal notranslate"><span class="pre">PreprocessKG.preprocess_with_polars()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.remove_triples_from_train_with_condition"><code class="docutils literal notranslate"><span class="pre">PreprocessKG.remove_triples_from_train_with_condition()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.sequential_vocabulary_construction"><code class="docutils literal notranslate"><span class="pre">PreprocessKG.sequential_vocabulary_construction()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.start"><code class="docutils literal notranslate"><span class="pre">PreprocessKG.start()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-dicee.read_preprocess_save_load_kg.read_from_disk">dicee.read_preprocess_save_load_kg.read_from_disk module</a><ul>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk"><code class="docutils literal notranslate"><span class="pre">ReadFromDisk</span></code></a><ul>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.add_noisy_triples"><code class="docutils literal notranslate"><span class="pre">ReadFromDisk.add_noisy_triples()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.start"><code class="docutils literal notranslate"><span class="pre">ReadFromDisk.start()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-dicee.read_preprocess_save_load_kg.save_load_disk">dicee.read_preprocess_save_load_kg.save_load_disk module</a><ul>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk"><code class="docutils literal notranslate"><span class="pre">LoadSaveToDisk</span></code></a><ul>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.load"><code class="docutils literal notranslate"><span class="pre">LoadSaveToDisk.load()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.save"><code class="docutils literal notranslate"><span class="pre">LoadSaveToDisk.save()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-dicee.read_preprocess_save_load_kg.util">dicee.read_preprocess_save_load_kg.util module</a><ul>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.create_constraints"><code class="docutils literal notranslate"><span class="pre">create_constraints()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.create_recipriocal_triples"><code class="docutils literal notranslate"><span class="pre">create_recipriocal_triples()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.dataset_sanity_checking"><code class="docutils literal notranslate"><span class="pre">dataset_sanity_checking()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.get_ee_vocab"><code class="docutils literal notranslate"><span class="pre">get_ee_vocab()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.get_er_vocab"><code class="docutils literal notranslate"><span class="pre">get_er_vocab()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.get_re_vocab"><code class="docutils literal notranslate"><span class="pre">get_re_vocab()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.index_triples_with_pandas"><code class="docutils literal notranslate"><span class="pre">index_triples_with_pandas()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.load_numpy_ndarray"><code class="docutils literal notranslate"><span class="pre">load_numpy_ndarray()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.load_pickle"><code class="docutils literal notranslate"><span class="pre">load_pickle()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.load_with_pandas"><code class="docutils literal notranslate"><span class="pre">load_with_pandas()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.read_from_disk"><code class="docutils literal notranslate"><span class="pre">read_from_disk()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.read_from_triple_store"><code class="docutils literal notranslate"><span class="pre">read_from_triple_store()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.read_with_pandas"><code class="docutils literal notranslate"><span class="pre">read_with_pandas()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.read_with_polars"><code class="docutils literal notranslate"><span class="pre">read_with_polars()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.save_numpy_ndarray"><code class="docutils literal notranslate"><span class="pre">save_numpy_ndarray()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.save_pickle"><code class="docutils literal notranslate"><span class="pre">save_pickle()</span></code></a></li>
+<li><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.timeit"><code class="docutils literal notranslate"><span class="pre">timeit()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-dicee.read_preprocess_save_load_kg">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/scripts/furo.js"></script>
+    </body>
+</html>

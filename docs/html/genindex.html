@@ -1,0 +1,1504 @@
+<!doctype html>
+<html class="no-js" lang="en">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="#" /><link rel="search" title="Search" href="search.html" />
+
+    <!-- Generated with Sphinx 6.2.1 and Furo 2023.07.26 --><title>Index - DICE Embeddings 0.0.6 documentation</title>
+<link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=369552022d0b975c8e74270ce6eabe0fb7978f24" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f8f8f8;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-half" viewBox="0 0 24 24">
+    <title>Auto light/dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M13 12h5" />
+      <path d="M13 15h4" />
+      <path d="M13 18h1" />
+      <path d="M13 9h4" />
+      <path d="M13 6h1" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="index.html"><div class="brand">DICE Embeddings 0.0.6 documentation</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
+  
+  
+  <span class="sidebar-brand-text">DICE Embeddings 0.0.6 documentation</span>
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main">
+          
+<section class="genindex-section">
+  <h1 id="index">Index</h1>
+  <div class="genindex-jumpbox"><a href="#A"><strong>A</strong></a> | <a href="#B"><strong>B</strong></a> | <a href="#C"><strong>C</strong></a> | <a href="#D"><strong>D</strong></a> | <a href="#E"><strong>E</strong></a> | <a href="#F"><strong>F</strong></a> | <a href="#G"><strong>G</strong></a> | <a href="#I"><strong>I</strong></a> | <a href="#K"><strong>K</strong></a> | <a href="#L"><strong>L</strong></a> | <a href="#M"><strong>M</strong></a> | <a href="#N"><strong>N</strong></a> | <a href="#O"><strong>O</strong></a> | <a href="#P"><strong>P</strong></a> | <a href="#Q"><strong>Q</strong></a> | <a href="#R"><strong>R</strong></a> | <a href="#S"><strong>S</strong></a> | <a href="#T"><strong>T</strong></a> | <a href="#U"><strong>U</strong></a> | <a href="#V"><strong>V</strong></a> | <a href="#W"><strong>W</strong></a></div>
+</section>
+<section id="A" class="genindex-section">
+  <h2>A</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.html#dicee.abstracts.AbstractCallback">AbstractCallback (class in dicee.abstracts)</a>
+</li>
+        <li><a href="dicee.html#dicee.abstracts.AbstractPPECallback">AbstractPPECallback (class in dicee.abstracts)</a>
+</li>
+        <li><a href="dicee.html#dicee.abstracts.AbstractTrainer">AbstractTrainer (class in dicee.abstracts)</a>
+</li>
+        <li><a href="dicee.html#dicee.callbacks.AccumulateEpochLossCallback">AccumulateEpochLossCallback (class in dicee.callbacks)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.complex.AConEx">AConEx (class in dicee.models.complex)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.octonion.AConvO">AConvO (class in dicee.models.octonion)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.models.html#dicee.models.quaternion.AConvQ">AConvQ (class in dicee.models.quaternion)</a>
+</li>
+        <li><a href="dicee.html#dicee.abstracts.BaseInteractiveKGE.add_new_entity_embeddings">add_new_entity_embeddings() (dicee.abstracts.BaseInteractiveKGE method)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.add_noisy_triples">add_noisy_triples() (dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk method)</a>
+
+        <ul>
+          <li><a href="dicee.html#dicee.static_funcs.add_noisy_triples">(in module dicee.static_funcs)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.models.html#dicee.models.clifford.Keci.apply_coefficients">apply_coefficients() (dicee.models.clifford.Keci method)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.apply_reciprical_or_noise">apply_reciprical_or_noise() (dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="B" class="genindex-section">
+  <h2>B</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.html#dicee.abstracts.BaseInteractiveKGE">BaseInteractiveKGE (class in dicee.abstracts)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE">BaseKGE (class in dicee.models.base_model)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.html#dicee.callbacks.KronE.batch_kronecker_product">batch_kronecker_product() (dicee.callbacks.KronE static method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.function_space.FMult2.build_chain_funcs">build_chain_funcs() (dicee.models.function_space.FMult2 method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.function_space.FMult2.build_func">build_func() (dicee.models.function_space.FMult2 method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="C" class="genindex-section">
+  <h2>C</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.models.html#dicee.models.function_space.FMult.chain_func">chain_func() (dicee.models.function_space.FMult method)</a>
+
+        <ul>
+          <li><a href="dicee.models.html#dicee.models.function_space.GFMult.chain_func">(dicee.models.function_space.GFMult method)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.models.html#dicee.models.clifford.CMult.clifford_mul">clifford_mul() (dicee.models.clifford.CMult method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.clifford.Keci.clifford_multiplication">clifford_multiplication() (dicee.models.clifford.Keci method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.clifford.CMult">CMult (class in dicee.models.clifford)</a>
+</li>
+        <li><a href="dicee.html#dicee.dataset_classes.TriplePredictionDataset.collate_fn">collate_fn() (dicee.dataset_classes.TriplePredictionDataset method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.complex.ComplEx">ComplEx (class in dicee.models.complex)</a>
+</li>
+        <li><a href="dicee.html#dicee.callbacks.compute_convergence">compute_convergence() (in module dicee.callbacks)</a>
+</li>
+        <li><a href="dicee.trainer.html#dicee.trainer.torch_trainer.TorchTrainer.compute_forward_loss_backward">compute_forward_loss_backward() (dicee.trainer.torch_trainer.TorchTrainer method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.function_space.FMult.compute_func">compute_func() (dicee.models.function_space.FMult method)</a>
+
+        <ul>
+          <li><a href="dicee.models.html#dicee.models.function_space.FMult2.compute_func">(dicee.models.function_space.FMult2 method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.function_space.GFMult.compute_func">(dicee.models.function_space.GFMult method)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.models.html#dicee.models.clifford.Keci.compute_sigma_pp">compute_sigma_pp() (dicee.models.clifford.Keci method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.clifford.Keci.compute_sigma_pq">compute_sigma_pq() (dicee.models.clifford.Keci method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.clifford.Keci.compute_sigma_qq">compute_sigma_qq() (dicee.models.clifford.Keci method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.complex.ConEx">ConEx (class in dicee.models.complex)</a>
+</li>
+        <li><a href="dicee.html#dicee.sanity_checkers.config_kge_sanity_checking">config_kge_sanity_checking() (in module dicee.sanity_checkers)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.configure_optimizers">configure_optimizers() (dicee.models.base_model.BaseKGE method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.clifford.Keci.construct_cl_multivector">construct_cl_multivector() (dicee.models.clifford.Keci method)</a>
+</li>
+        <li><a href="dicee.html#dicee.dataset_classes.construct_dataset">construct_dataset() (in module dicee.dataset_classes)</a>
+</li>
+        <li><a href="dicee.html#dicee.abstracts.BaseInteractiveKGE.construct_input_and_output">construct_input_and_output() (dicee.abstracts.BaseInteractiveKGE method)</a>
+</li>
+        <li><a href="dicee.html#dicee.executer.ContinuousExecute.continual_start">continual_start() (dicee.executer.ContinuousExecute method)</a>
+
+        <ul>
+          <li><a href="dicee.trainer.html#dicee.trainer.dice_trainer.DICE_Trainer.continual_start">(dicee.trainer.dice_trainer.DICE_Trainer method)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.html#dicee.static_funcs.continual_training_setup_executor">continual_training_setup_executor() (in module dicee.static_funcs)</a>
+</li>
+        <li><a href="dicee.html#dicee.executer.ContinuousExecute">ContinuousExecute (class in dicee.executer)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.octonion.ConvO">ConvO (class in dicee.models.octonion)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.quaternion.ConvQ">ConvQ (class in dicee.models.quaternion)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.util.create_constraints">create_constraints() (in module dicee.read_preprocess_save_load_kg.util)</a>
+
+        <ul>
+          <li><a href="dicee.html#dicee.static_preprocess_funcs.create_constraints">(in module dicee.static_preprocess_funcs)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.html#dicee.static_funcs.create_experiment_folder">create_experiment_folder() (in module dicee.static_funcs)</a>
+</li>
+        <li><a href="dicee.html#dicee.callbacks.PseudoLabellingCallback.create_random_data">create_random_data() (dicee.callbacks.PseudoLabellingCallback method)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.util.create_recipriocal_triples">create_recipriocal_triples() (in module dicee.read_preprocess_save_load_kg.util)</a>
+</li>
+        <li><a href="dicee.html#dicee.dataset_classes.create_tensor">create_tensor() (in module dicee.dataset_classes)</a>
+</li>
+        <li><a href="dicee.html#dicee.helper_classes.CustomArg">CustomArg (class in dicee.helper_classes)</a>
+</li>
+        <li><a href="dicee.html#dicee.dataset_classes.CVDataModule">CVDataModule (class in dicee.dataset_classes)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="D" class="genindex-section">
+  <h2>D</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.util.dataset_sanity_checking">dataset_sanity_checking() (in module dicee.read_preprocess_save_load_kg.util)</a>
+</li>
+        <li><a href="dicee.trainer.html#dicee.trainer.torch_trainer_ddp.DDPTrainer">DDPTrainer (class in dicee.trainer.torch_trainer_ddp)</a>
+</li>
+        <li><a href="dicee.html#dicee.knowledge_graph_embeddings.KGE.deploy">deploy() (dicee.knowledge_graph_embeddings.KGE method)</a>
+</li>
+        <li><a href="dicee.html#dicee.static_funcs.deploy_head_entity_prediction">deploy_head_entity_prediction() (in module dicee.static_funcs)</a>
+</li>
+        <li><a href="dicee.html#dicee.static_funcs.deploy_relation_prediction">deploy_relation_prediction() (in module dicee.static_funcs)</a>
+</li>
+        <li><a href="dicee.html#dicee.static_funcs.deploy_tail_entity_prediction">deploy_tail_entity_prediction() (in module dicee.static_funcs)</a>
+</li>
+        <li><a href="dicee.html#dicee.static_funcs.deploy_triple_prediction">deploy_triple_prediction() (in module dicee.static_funcs)</a>
+</li>
+        <li><a href="dicee.html#dicee.evaluator.Evaluator.dept_evaluate_lp">dept_evaluate_lp() (dicee.evaluator.Evaluator method)</a>
+</li>
+        <li><a href="dicee.trainer.html#dicee.trainer.dice_trainer.DICE_Trainer">DICE_Trainer (class in dicee.trainer.dice_trainer)</a>
+</li>
+        <li>
+    dicee
+
+        <ul>
+          <li><a href="dicee.html#module-dicee">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.abstracts
+
+        <ul>
+          <li><a href="dicee.html#module-dicee.abstracts">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.callbacks
+
+        <ul>
+          <li><a href="dicee.html#module-dicee.callbacks">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.config
+
+        <ul>
+          <li><a href="dicee.html#module-dicee.config">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.dataset_classes
+
+        <ul>
+          <li><a href="dicee.html#module-dicee.dataset_classes">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.evaluator
+
+        <ul>
+          <li><a href="dicee.html#module-dicee.evaluator">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.executer
+
+        <ul>
+          <li><a href="dicee.html#module-dicee.executer">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.helper_classes
+
+        <ul>
+          <li><a href="dicee.html#module-dicee.helper_classes">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.knowledge_graph
+
+        <ul>
+          <li><a href="dicee.html#module-dicee.knowledge_graph">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.knowledge_graph_embeddings
+
+        <ul>
+          <li><a href="dicee.html#module-dicee.knowledge_graph_embeddings">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.models
+
+        <ul>
+          <li><a href="dicee.models.html#module-dicee.models">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.models.base_model
+
+        <ul>
+          <li><a href="dicee.models.html#module-dicee.models.base_model">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.models.clifford
+
+        <ul>
+          <li><a href="dicee.models.html#module-dicee.models.clifford">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.models.complex
+
+        <ul>
+          <li><a href="dicee.models.html#module-dicee.models.complex">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.models.function_space
+
+        <ul>
+          <li><a href="dicee.models.html#module-dicee.models.function_space">module</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li>
+    dicee.models.octonion
+
+        <ul>
+          <li><a href="dicee.models.html#module-dicee.models.octonion">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.models.pykeen_models
+
+        <ul>
+          <li><a href="dicee.models.html#module-dicee.models.pykeen_models">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.models.quaternion
+
+        <ul>
+          <li><a href="dicee.models.html#module-dicee.models.quaternion">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.models.real
+
+        <ul>
+          <li><a href="dicee.models.html#module-dicee.models.real">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.models.static_funcs
+
+        <ul>
+          <li><a href="dicee.models.html#module-dicee.models.static_funcs">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.read_preprocess_save_load_kg
+
+        <ul>
+          <li><a href="dicee.read_preprocess_save_load_kg.html#module-dicee.read_preprocess_save_load_kg">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.read_preprocess_save_load_kg.preprocess
+
+        <ul>
+          <li><a href="dicee.read_preprocess_save_load_kg.html#module-dicee.read_preprocess_save_load_kg.preprocess">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.read_preprocess_save_load_kg.read_from_disk
+
+        <ul>
+          <li><a href="dicee.read_preprocess_save_load_kg.html#module-dicee.read_preprocess_save_load_kg.read_from_disk">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.read_preprocess_save_load_kg.save_load_disk
+
+        <ul>
+          <li><a href="dicee.read_preprocess_save_load_kg.html#module-dicee.read_preprocess_save_load_kg.save_load_disk">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.read_preprocess_save_load_kg.util
+
+        <ul>
+          <li><a href="dicee.read_preprocess_save_load_kg.html#module-dicee.read_preprocess_save_load_kg.util">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.sanity_checkers
+
+        <ul>
+          <li><a href="dicee.html#module-dicee.sanity_checkers">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.static_funcs
+
+        <ul>
+          <li><a href="dicee.html#module-dicee.static_funcs">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.static_funcs_training
+
+        <ul>
+          <li><a href="dicee.html#module-dicee.static_funcs_training">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.static_preprocess_funcs
+
+        <ul>
+          <li><a href="dicee.html#module-dicee.static_preprocess_funcs">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.trainer
+
+        <ul>
+          <li><a href="dicee.trainer.html#module-dicee.trainer">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.trainer.dice_trainer
+
+        <ul>
+          <li><a href="dicee.trainer.html#module-dicee.trainer.dice_trainer">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.trainer.torch_trainer
+
+        <ul>
+          <li><a href="dicee.trainer.html#module-dicee.trainer.torch_trainer">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.trainer.torch_trainer_ddp
+
+        <ul>
+          <li><a href="dicee.trainer.html#module-dicee.trainer.torch_trainer_ddp">module</a>
+</li>
+        </ul></li>
+        <li>
+    dicee.types
+
+        <ul>
+          <li><a href="dicee.html#module-dicee.types">module</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.models.html#dicee.models.real.DistMult">DistMult (class in dicee.models.real)</a>
+</li>
+        <li><a href="dicee.html#dicee.evaluator.Evaluator.dummy_eval">dummy_eval() (dicee.evaluator.Evaluator method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="E" class="genindex-section">
+  <h2>E</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.html#dicee.static_funcs_training.efficient_zero_grad">efficient_zero_grad() (in module dicee.static_funcs_training)</a>
+</li>
+        <li><a href="dicee.html#dicee.executer.Execute.end">end() (dicee.executer.Execute method)</a>
+</li>
+        <li><a href="dicee.html#dicee.knowledge_graph.KG.entities_str">entities_str (dicee.knowledge_graph.KG property)</a>
+</li>
+        <li><a href="dicee.html#dicee.callbacks.estimate_q">estimate_q() (in module dicee.callbacks)</a>
+</li>
+        <li><a href="dicee.html#dicee.callbacks.Eval">Eval (class in dicee.callbacks)</a>
+</li>
+        <li><a href="dicee.html#dicee.evaluator.Evaluator.eval">eval() (dicee.evaluator.Evaluator method)</a>
+</li>
+        <li><a href="dicee.html#dicee.knowledge_graph_embeddings.KGE.eval_lp_performance">eval_lp_performance() (dicee.knowledge_graph_embeddings.KGE method)</a>
+</li>
+        <li><a href="dicee.html#dicee.evaluator.Evaluator.eval_rank_of_head_and_tail_entity">eval_rank_of_head_and_tail_entity() (dicee.evaluator.Evaluator method)</a>
+</li>
+        <li><a href="dicee.html#dicee.evaluator.Evaluator.eval_with_data">eval_with_data() (dicee.evaluator.Evaluator method)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.html#dicee.evaluator.Evaluator.eval_with_vs_all">eval_with_vs_all() (dicee.evaluator.Evaluator method)</a>
+</li>
+        <li><a href="dicee.html#dicee.evaluator.Evaluator.evaluate_lp">evaluate_lp() (dicee.evaluator.Evaluator method)</a>
+
+        <ul>
+          <li><a href="dicee.html#dicee.static_funcs_training.evaluate_lp">(in module dicee.static_funcs_training)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.html#dicee.evaluator.Evaluator.evaluate_lp_k_vs_all">evaluate_lp_k_vs_all() (dicee.evaluator.Evaluator method)</a>
+</li>
+        <li><a href="dicee.html#dicee.evaluator.Evaluator">Evaluator (class in dicee.evaluator)</a>
+</li>
+        <li><a href="dicee.html#dicee.executer.Execute">Execute (class in dicee.executer)</a>
+</li>
+        <li><a href="dicee.html#dicee.static_funcs.exponential_function">exponential_function() (in module dicee.static_funcs)</a>
+</li>
+        <li><a href="dicee.trainer.html#dicee.trainer.torch_trainer_ddp.DDPTrainer.extract_input_outputs">extract_input_outputs() (dicee.trainer.torch_trainer_ddp.DDPTrainer method)</a>
+
+        <ul>
+          <li><a href="dicee.trainer.html#dicee.trainer.torch_trainer_ddp.NodeTrainer.extract_input_outputs">(dicee.trainer.torch_trainer_ddp.NodeTrainer method)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.trainer.html#dicee.trainer.torch_trainer.TorchTrainer.extract_input_outputs_set_device">extract_input_outputs_set_device() (dicee.trainer.torch_trainer.TorchTrainer method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="F" class="genindex-section">
+  <h2>F</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.html#dicee.knowledge_graph_embeddings.KGE.find_missing_triples">find_missing_triples() (dicee.knowledge_graph_embeddings.KGE method)</a>
+</li>
+        <li><a href="dicee.trainer.html#dicee.trainer.torch_trainer.TorchTrainer.fit">fit() (dicee.trainer.torch_trainer.TorchTrainer method)</a>
+
+        <ul>
+          <li><a href="dicee.trainer.html#dicee.trainer.torch_trainer_ddp.TorchDDPTrainer.fit">(dicee.trainer.torch_trainer_ddp.TorchDDPTrainer method)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.models.html#dicee.models.function_space.FMult">FMult (class in dicee.models.function_space)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.function_space.FMult2">FMult2 (class in dicee.models.function_space)</a>
+</li>
+        <li><a href="dicee.html#dicee.helper_classes.LabelRelaxationLoss.forward">forward() (dicee.helper_classes.LabelRelaxationLoss method)</a>
+
+        <ul>
+          <li><a href="dicee.html#dicee.helper_classes.LabelSmoothingLossCanonical.forward">(dicee.helper_classes.LabelSmoothingLossCanonical method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.forward">(dicee.models.base_model.BaseKGE method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.base_model.IdentityClass.forward">(dicee.models.base_model.IdentityClass static method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.pykeen_models.PykeenKGE.forward">(dicee.models.pykeen_models.PykeenKGE method)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.forward_k_vs_all">forward_k_vs_all() (dicee.models.base_model.BaseKGE method)</a>
+
+        <ul>
+          <li><a href="dicee.models.html#dicee.models.clifford.CMult.forward_k_vs_all">(dicee.models.clifford.CMult method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.clifford.Keci.forward_k_vs_all">(dicee.models.clifford.Keci method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.complex.AConEx.forward_k_vs_all">(dicee.models.complex.AConEx method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.complex.ComplEx.forward_k_vs_all">(dicee.models.complex.ComplEx method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.complex.ConEx.forward_k_vs_all">(dicee.models.complex.ConEx method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.octonion.AConvO.forward_k_vs_all">(dicee.models.octonion.AConvO method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.octonion.ConvO.forward_k_vs_all">(dicee.models.octonion.ConvO method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.octonion.OMult.forward_k_vs_all">(dicee.models.octonion.OMult method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.pykeen_models.PykeenKGE.forward_k_vs_all">(dicee.models.pykeen_models.PykeenKGE method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.quaternion.AConvQ.forward_k_vs_all">(dicee.models.quaternion.AConvQ method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.quaternion.ConvQ.forward_k_vs_all">(dicee.models.quaternion.ConvQ method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.quaternion.QMult.forward_k_vs_all">(dicee.models.quaternion.QMult method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.real.DistMult.forward_k_vs_all">(dicee.models.real.DistMult method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.real.Shallom.forward_k_vs_all">(dicee.models.real.Shallom method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.real.TransE.forward_k_vs_all">(dicee.models.real.TransE method)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.forward_k_vs_sample">forward_k_vs_sample() (dicee.models.base_model.BaseKGE method)</a>
+
+        <ul>
+          <li><a href="dicee.models.html#dicee.models.clifford.Keci.forward_k_vs_sample">(dicee.models.clifford.Keci method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.complex.AConEx.forward_k_vs_sample">(dicee.models.complex.AConEx method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.complex.ConEx.forward_k_vs_sample">(dicee.models.complex.ConEx method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.pykeen_models.PykeenKGE.forward_k_vs_sample">(dicee.models.pykeen_models.PykeenKGE method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.quaternion.QMult.forward_k_vs_sample">(dicee.models.quaternion.QMult method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.real.DistMult.forward_k_vs_sample">(dicee.models.real.DistMult method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.models.html#dicee.models.clifford.Keci.forward_k_vs_with_explicit">forward_k_vs_with_explicit() (dicee.models.clifford.Keci method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.forward_triples">forward_triples() (dicee.models.base_model.BaseKGE method)</a>
+
+        <ul>
+          <li><a href="dicee.models.html#dicee.models.clifford.CMult.forward_triples">(dicee.models.clifford.CMult method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.clifford.Keci.forward_triples">(dicee.models.clifford.Keci method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.complex.AConEx.forward_triples">(dicee.models.complex.AConEx method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.complex.ComplEx.forward_triples">(dicee.models.complex.ComplEx method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.complex.ConEx.forward_triples">(dicee.models.complex.ConEx method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.function_space.FMult.forward_triples">(dicee.models.function_space.FMult method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.function_space.FMult2.forward_triples">(dicee.models.function_space.FMult2 method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.function_space.GFMult.forward_triples">(dicee.models.function_space.GFMult method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.octonion.AConvO.forward_triples">(dicee.models.octonion.AConvO method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.octonion.ConvO.forward_triples">(dicee.models.octonion.ConvO method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.octonion.OMult.forward_triples">(dicee.models.octonion.OMult method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.pykeen_models.PykeenKGE.forward_triples">(dicee.models.pykeen_models.PykeenKGE method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.quaternion.AConvQ.forward_triples">(dicee.models.quaternion.AConvQ method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.quaternion.ConvQ.forward_triples">(dicee.models.quaternion.ConvQ method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.quaternion.QMult.forward_triples">(dicee.models.quaternion.QMult method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.real.DistMult.forward_triples">(dicee.models.real.DistMult method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.real.Pyke.forward_triples">(dicee.models.real.Pyke method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.real.Shallom.forward_triples">(dicee.models.real.Shallom method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.real.TransE.forward_triples">(dicee.models.real.TransE method)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.html#dicee.callbacks.FPPE">FPPE (class in dicee.callbacks)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.function_space.FMult2.function">function() (dicee.models.function_space.FMult2 method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="G" class="genindex-section">
+  <h2>G</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.trainer.html#dicee.trainer.dice_trainer.get_callbacks">get_callbacks() (in module dicee.trainer.dice_trainer)</a>
+</li>
+        <li><a href="dicee.html#dicee.executer.get_default_arguments">get_default_arguments() (in module dicee.executer)</a>
+</li>
+        <li><a href="dicee.html#dicee.abstracts.BaseInteractiveKGE.get_domain_of_relation">get_domain_of_relation() (dicee.abstracts.BaseInteractiveKGE method)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.util.get_ee_vocab">get_ee_vocab() (in module dicee.read_preprocess_save_load_kg.util)</a>
+
+        <ul>
+          <li><a href="dicee.html#dicee.static_preprocess_funcs.get_ee_vocab">(in module dicee.static_preprocess_funcs)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.get_embeddings">get_embeddings() (dicee.models.base_model.BaseKGE method)</a>
+
+        <ul>
+          <li><a href="dicee.models.html#dicee.models.real.Shallom.get_embeddings">(dicee.models.real.Shallom method)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.html#dicee.abstracts.BaseInteractiveKGE.get_entity_embeddings">get_entity_embeddings() (dicee.abstracts.BaseInteractiveKGE method)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.util.get_er_vocab">get_er_vocab() (in module dicee.read_preprocess_save_load_kg.util)</a>
+
+        <ul>
+          <li><a href="dicee.html#dicee.static_preprocess_funcs.get_er_vocab">(in module dicee.static_preprocess_funcs)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.get_head_relation_representation">get_head_relation_representation() (dicee.models.base_model.BaseKGE method)</a>
+</li>
+        <li><a href="dicee.html#dicee.callbacks.KronE.get_kronecker_triple_representation">get_kronecker_triple_representation() (dicee.callbacks.KronE method)</a>
+</li>
+        <li><a href="dicee.html#dicee.abstracts.BaseInteractiveKGE.get_range_of_relation">get_range_of_relation() (dicee.abstracts.BaseInteractiveKGE method)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.util.get_re_vocab">get_re_vocab() (in module dicee.read_preprocess_save_load_kg.util)</a>
+
+        <ul>
+          <li><a href="dicee.html#dicee.static_preprocess_funcs.get_re_vocab">(in module dicee.static_preprocess_funcs)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.html#dicee.abstracts.BaseInteractiveKGE.get_relation_embeddings">get_relation_embeddings() (dicee.abstracts.BaseInteractiveKGE method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.get_triple_representation">get_triple_representation() (dicee.models.base_model.BaseKGE method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.function_space.GFMult">GFMult (class in dicee.models.function_space)</a>
+</li>
+        <li><a href="dicee.html#dicee.callbacks.GN">GN (class in dicee.callbacks)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="I" class="genindex-section">
+  <h2>I</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.models.html#dicee.models.base_model.IdentityClass">IdentityClass (class in dicee.models.base_model)</a>
+</li>
+        <li><a href="dicee.html#dicee.abstracts.BaseInteractiveKGE.index_triple">index_triple() (dicee.abstracts.BaseInteractiveKGE method)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.util.index_triples_with_pandas">index_triples_with_pandas() (in module dicee.read_preprocess_save_load_kg.util)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.init_params_with_sanity_checking">init_params_with_sanity_checking() (dicee.models.base_model.BaseKGE method)</a>
+</li>
+        <li><a href="dicee.trainer.html#dicee.trainer.dice_trainer.DICE_Trainer.initialize_dataloader">initialize_dataloader() (dicee.trainer.dice_trainer.DICE_Trainer method)</a>
+</li>
+        <li><a href="dicee.trainer.html#dicee.trainer.dice_trainer.DICE_Trainer.initialize_dataset">initialize_dataset() (dicee.trainer.dice_trainer.DICE_Trainer method)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.trainer.html#dicee.trainer.dice_trainer.DICE_Trainer.initialize_or_load_model">initialize_or_load_model() (dicee.trainer.dice_trainer.DICE_Trainer method)</a>
+</li>
+        <li><a href="dicee.trainer.html#dicee.trainer.dice_trainer.DICE_Trainer.initialize_trainer">initialize_trainer() (dicee.trainer.dice_trainer.DICE_Trainer method)</a>
+
+        <ul>
+          <li><a href="dicee.trainer.html#dicee.trainer.dice_trainer.initialize_trainer">(in module dicee.trainer.dice_trainer)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.html#dicee.dataset_classes.input_data_type_checking">input_data_type_checking() (in module dicee.dataset_classes)</a>
+</li>
+        <li><a href="dicee.html#dicee.static_funcs.intialize_model">intialize_model() (in module dicee.static_funcs)</a>
+</li>
+        <li><a href="dicee.html#dicee.abstracts.BaseInteractiveKGE.is_seen">is_seen() (dicee.abstracts.BaseInteractiveKGE method)</a>
+</li>
+        <li><a href="dicee.html#dicee.sanity_checkers.is_sparql_endpoint_alive">is_sparql_endpoint_alive() (in module dicee.sanity_checkers)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="K" class="genindex-section">
+  <h2>K</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.trainer.html#dicee.trainer.dice_trainer.DICE_Trainer.k_fold_cross_validation">k_fold_cross_validation() (dicee.trainer.dice_trainer.DICE_Trainer method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.clifford.Keci">Keci (class in dicee.models.clifford)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.clifford.KeciBase">KeciBase (class in dicee.models.clifford)</a>
+</li>
+        <li><a href="dicee.html#dicee.knowledge_graph.KG">KG (class in dicee.knowledge_graph)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.html#dicee.knowledge_graph_embeddings.KGE">KGE (class in dicee.knowledge_graph_embeddings)</a>
+</li>
+        <li><a href="dicee.html#dicee.callbacks.KGESaveCallback">KGESaveCallback (class in dicee.callbacks)</a>
+</li>
+        <li><a href="dicee.html#dicee.callbacks.KronE">KronE (class in dicee.callbacks)</a>
+</li>
+        <li><a href="dicee.html#dicee.dataset_classes.KvsAll">KvsAll (class in dicee.dataset_classes)</a>
+</li>
+        <li><a href="dicee.html#dicee.dataset_classes.KvsSampleDataset">KvsSampleDataset (class in dicee.dataset_classes)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="L" class="genindex-section">
+  <h2>L</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.html#dicee.helper_classes.LabelRelaxationLoss">LabelRelaxationLoss (class in dicee.helper_classes)</a>
+</li>
+        <li><a href="dicee.html#dicee.helper_classes.LabelSmoothingLossCanonical">LabelSmoothingLossCanonical (class in dicee.helper_classes)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.load">load() (dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk method)</a>
+</li>
+        <li><a href="dicee.html#dicee.executer.Execute.load_indexed_data">load_indexed_data() (dicee.executer.Execute method)</a>
+</li>
+        <li><a href="dicee.html#dicee.static_funcs.load_json">load_json() (in module dicee.static_funcs)</a>
+</li>
+        <li><a href="dicee.html#dicee.static_funcs.load_model">load_model() (in module dicee.static_funcs)</a>
+</li>
+        <li><a href="dicee.html#dicee.static_funcs.load_model_ensemble">load_model_ensemble() (in module dicee.static_funcs)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.pykeen_models.load_numpy">load_numpy() (in module dicee.models.pykeen_models)</a>
+
+        <ul>
+          <li><a href="dicee.html#dicee.static_funcs.load_numpy">(in module dicee.static_funcs)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.util.load_numpy_ndarray">load_numpy_ndarray() (in module dicee.read_preprocess_save_load_kg.util)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.pykeen_models.load_pickle">load_pickle() (in module dicee.models.pykeen_models)</a>
+
+        <ul>
+          <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.util.load_pickle">(in module dicee.read_preprocess_save_load_kg.util)</a>
+</li>
+          <li><a href="dicee.html#dicee.static_funcs.load_pickle">(in module dicee.static_funcs)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.util.load_with_pandas">load_with_pandas() (in module dicee.read_preprocess_save_load_kg.util)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk">LoadSaveToDisk (class in dicee.read_preprocess_save_load_kg.save_load_disk)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.loss_function">loss_function() (dicee.models.base_model.BaseKGE method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="M" class="genindex-section">
+  <h2>M</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.html#dicee.static_preprocess_funcs.mapping_from_first_two_cols_to_third">mapping_from_first_two_cols_to_third() (in module dicee.static_preprocess_funcs)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.mem_of_model">mem_of_model() (dicee.models.base_model.BaseKGE method)</a>
+</li>
+        <li><a href="dicee.html#dicee.config.Namespace.model">model (dicee.config.Namespace attribute)</a>
+</li>
+        <li>
+    module
+
+        <ul>
+          <li><a href="dicee.html#module-dicee">dicee</a>
+</li>
+          <li><a href="dicee.html#module-dicee.abstracts">dicee.abstracts</a>
+</li>
+          <li><a href="dicee.html#module-dicee.callbacks">dicee.callbacks</a>
+</li>
+          <li><a href="dicee.html#module-dicee.config">dicee.config</a>
+</li>
+          <li><a href="dicee.html#module-dicee.dataset_classes">dicee.dataset_classes</a>
+</li>
+          <li><a href="dicee.html#module-dicee.evaluator">dicee.evaluator</a>
+</li>
+          <li><a href="dicee.html#module-dicee.executer">dicee.executer</a>
+</li>
+          <li><a href="dicee.html#module-dicee.helper_classes">dicee.helper_classes</a>
+</li>
+          <li><a href="dicee.html#module-dicee.knowledge_graph">dicee.knowledge_graph</a>
+</li>
+          <li><a href="dicee.html#module-dicee.knowledge_graph_embeddings">dicee.knowledge_graph_embeddings</a>
+</li>
+          <li><a href="dicee.models.html#module-dicee.models">dicee.models</a>
+</li>
+          <li><a href="dicee.models.html#module-dicee.models.base_model">dicee.models.base_model</a>
+</li>
+          <li><a href="dicee.models.html#module-dicee.models.clifford">dicee.models.clifford</a>
+</li>
+          <li><a href="dicee.models.html#module-dicee.models.complex">dicee.models.complex</a>
+</li>
+          <li><a href="dicee.models.html#module-dicee.models.function_space">dicee.models.function_space</a>
+</li>
+          <li><a href="dicee.models.html#module-dicee.models.octonion">dicee.models.octonion</a>
+</li>
+          <li><a href="dicee.models.html#module-dicee.models.pykeen_models">dicee.models.pykeen_models</a>
+</li>
+          <li><a href="dicee.models.html#module-dicee.models.quaternion">dicee.models.quaternion</a>
+</li>
+          <li><a href="dicee.models.html#module-dicee.models.real">dicee.models.real</a>
+</li>
+          <li><a href="dicee.models.html#module-dicee.models.static_funcs">dicee.models.static_funcs</a>
+</li>
+          <li><a href="dicee.read_preprocess_save_load_kg.html#module-dicee.read_preprocess_save_load_kg">dicee.read_preprocess_save_load_kg</a>
+</li>
+          <li><a href="dicee.read_preprocess_save_load_kg.html#module-dicee.read_preprocess_save_load_kg.preprocess">dicee.read_preprocess_save_load_kg.preprocess</a>
+</li>
+          <li><a href="dicee.read_preprocess_save_load_kg.html#module-dicee.read_preprocess_save_load_kg.read_from_disk">dicee.read_preprocess_save_load_kg.read_from_disk</a>
+</li>
+          <li><a href="dicee.read_preprocess_save_load_kg.html#module-dicee.read_preprocess_save_load_kg.save_load_disk">dicee.read_preprocess_save_load_kg.save_load_disk</a>
+</li>
+          <li><a href="dicee.read_preprocess_save_load_kg.html#module-dicee.read_preprocess_save_load_kg.util">dicee.read_preprocess_save_load_kg.util</a>
+</li>
+          <li><a href="dicee.html#module-dicee.sanity_checkers">dicee.sanity_checkers</a>
+</li>
+          <li><a href="dicee.html#module-dicee.static_funcs">dicee.static_funcs</a>
+</li>
+          <li><a href="dicee.html#module-dicee.static_funcs_training">dicee.static_funcs_training</a>
+</li>
+          <li><a href="dicee.html#module-dicee.static_preprocess_funcs">dicee.static_preprocess_funcs</a>
+</li>
+          <li><a href="dicee.trainer.html#module-dicee.trainer">dicee.trainer</a>
+</li>
+          <li><a href="dicee.trainer.html#module-dicee.trainer.dice_trainer">dicee.trainer.dice_trainer</a>
+</li>
+          <li><a href="dicee.trainer.html#module-dicee.trainer.torch_trainer">dicee.trainer.torch_trainer</a>
+</li>
+          <li><a href="dicee.trainer.html#module-dicee.trainer.torch_trainer_ddp">dicee.trainer.torch_trainer_ddp</a>
+</li>
+          <li><a href="dicee.html#module-dicee.types">dicee.types</a>
+</li>
+        </ul></li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="N" class="genindex-section">
+  <h2>N</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.html#dicee.abstracts.BaseInteractiveKGE.name">name (dicee.abstracts.BaseInteractiveKGE property)</a>
+</li>
+        <li><a href="dicee.html#dicee.config.Namespace">Namespace (class in dicee.config)</a>
+</li>
+        <li><a href="dicee.html#dicee.dataset_classes.NegSampleDataset">NegSampleDataset (class in dicee.dataset_classes)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.trainer.html#dicee.trainer.torch_trainer_ddp.NodeTrainer">NodeTrainer (class in dicee.trainer.torch_trainer_ddp)</a>
+</li>
+        <li><a href="dicee.html#dicee.static_funcs.norm_p_value">norm_p_value() (in module dicee.static_funcs)</a>
+</li>
+        <li><a href="dicee.html#dicee.config.Namespace.num_core">num_core (dicee.config.Namespace attribute)</a>
+</li>
+        <li><a href="dicee.html#dicee.static_funcs.numpy_data_type_changer">numpy_data_type_changer() (in module dicee.static_funcs)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="O" class="genindex-section">
+  <h2>O</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.models.html#dicee.models.octonion.octonion_mul">octonion_mul() (in module dicee.models.octonion)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.octonion.octonion_mul_norm">octonion_mul_norm() (in module dicee.models.octonion)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.octonion.OMult">OMult (class in dicee.models.octonion)</a>
+</li>
+        <li><a href="dicee.html#dicee.callbacks.KGESaveCallback.on_epoch_end">on_epoch_end() (dicee.callbacks.KGESaveCallback method)</a>
+
+        <ul>
+          <li><a href="dicee.html#dicee.callbacks.PseudoLabellingCallback.on_epoch_end">(dicee.callbacks.PseudoLabellingCallback method)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.html#dicee.abstracts.AbstractCallback.on_fit_end">on_fit_end() (dicee.abstracts.AbstractCallback method)</a>
+
+        <ul>
+          <li><a href="dicee.html#dicee.abstracts.AbstractPPECallback.on_fit_end">(dicee.abstracts.AbstractPPECallback method)</a>
+</li>
+          <li><a href="dicee.html#dicee.abstracts.AbstractTrainer.on_fit_end">(dicee.abstracts.AbstractTrainer method)</a>
+</li>
+          <li><a href="dicee.html#dicee.callbacks.AccumulateEpochLossCallback.on_fit_end">(dicee.callbacks.AccumulateEpochLossCallback method)</a>
+</li>
+          <li><a href="dicee.html#dicee.callbacks.Eval.on_fit_end">(dicee.callbacks.Eval method)</a>
+</li>
+          <li><a href="dicee.html#dicee.callbacks.KGESaveCallback.on_fit_end">(dicee.callbacks.KGESaveCallback method)</a>
+</li>
+          <li><a href="dicee.html#dicee.callbacks.PrintCallback.on_fit_end">(dicee.callbacks.PrintCallback method)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.html#dicee.abstracts.AbstractCallback.on_fit_start">on_fit_start() (dicee.abstracts.AbstractCallback method)</a>
+
+        <ul>
+          <li><a href="dicee.html#dicee.abstracts.AbstractPPECallback.on_fit_start">(dicee.abstracts.AbstractPPECallback method)</a>
+</li>
+          <li><a href="dicee.html#dicee.abstracts.AbstractTrainer.on_fit_start">(dicee.abstracts.AbstractTrainer method)</a>
+</li>
+          <li><a href="dicee.html#dicee.callbacks.Eval.on_fit_start">(dicee.callbacks.Eval method)</a>
+</li>
+          <li><a href="dicee.html#dicee.callbacks.KGESaveCallback.on_fit_start">(dicee.callbacks.KGESaveCallback method)</a>
+</li>
+          <li><a href="dicee.html#dicee.callbacks.KronE.on_fit_start">(dicee.callbacks.KronE method)</a>
+</li>
+          <li><a href="dicee.html#dicee.callbacks.PrintCallback.on_fit_start">(dicee.callbacks.PrintCallback method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.html#dicee.abstracts.AbstractCallback.on_init_end">on_init_end() (dicee.abstracts.AbstractCallback method)</a>
+</li>
+        <li><a href="dicee.html#dicee.abstracts.AbstractCallback.on_init_start">on_init_start() (dicee.abstracts.AbstractCallback method)</a>
+</li>
+        <li><a href="dicee.html#dicee.abstracts.AbstractCallback.on_train_batch_end">on_train_batch_end() (dicee.abstracts.AbstractCallback method)</a>
+
+        <ul>
+          <li><a href="dicee.html#dicee.abstracts.AbstractPPECallback.on_train_batch_end">(dicee.abstracts.AbstractPPECallback method)</a>
+</li>
+          <li><a href="dicee.html#dicee.abstracts.AbstractTrainer.on_train_batch_end">(dicee.abstracts.AbstractTrainer method)</a>
+</li>
+          <li><a href="dicee.html#dicee.callbacks.Eval.on_train_batch_end">(dicee.callbacks.Eval method)</a>
+</li>
+          <li><a href="dicee.html#dicee.callbacks.KGESaveCallback.on_train_batch_end">(dicee.callbacks.KGESaveCallback method)</a>
+</li>
+          <li><a href="dicee.html#dicee.callbacks.PrintCallback.on_train_batch_end">(dicee.callbacks.PrintCallback method)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.html#dicee.abstracts.AbstractCallback.on_train_epoch_end">on_train_epoch_end() (dicee.abstracts.AbstractCallback method)</a>
+
+        <ul>
+          <li><a href="dicee.html#dicee.abstracts.AbstractPPECallback.on_train_epoch_end">(dicee.abstracts.AbstractPPECallback method)</a>
+</li>
+          <li><a href="dicee.html#dicee.abstracts.AbstractTrainer.on_train_epoch_end">(dicee.abstracts.AbstractTrainer method)</a>
+</li>
+          <li><a href="dicee.html#dicee.callbacks.Eval.on_train_epoch_end">(dicee.callbacks.Eval method)</a>
+</li>
+          <li><a href="dicee.html#dicee.callbacks.KGESaveCallback.on_train_epoch_end">(dicee.callbacks.KGESaveCallback method)</a>
+</li>
+          <li><a href="dicee.html#dicee.callbacks.PrintCallback.on_train_epoch_end">(dicee.callbacks.PrintCallback method)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.html#dicee.callbacks.GN.on_train_epoch_start">on_train_epoch_start() (dicee.callbacks.GN method)</a>
+
+        <ul>
+          <li><a href="dicee.html#dicee.callbacks.RN.on_train_epoch_start">(dicee.callbacks.RN method)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.html#dicee.dataset_classes.OnevsAllDataset">OnevsAllDataset (class in dicee.dataset_classes)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="P" class="genindex-section">
+  <h2>P</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.html#dicee.static_funcs.p_value">p_value() (in module dicee.static_funcs)</a>
+</li>
+        <li><a href="dicee.html#dicee.abstracts.BaseInteractiveKGE.parameters">parameters() (dicee.abstracts.BaseInteractiveKGE method)</a>
+</li>
+        <li><a href="dicee.html#dicee.config.ParseDict">ParseDict (class in dicee.config)</a>
+</li>
+        <li><a href="dicee.html#dicee.config.Namespace.path_dataset_folder">path_dataset_folder (dicee.config.Namespace attribute)</a>
+</li>
+        <li><a href="dicee.html#dicee.config.Namespace.path_single_kg">path_single_kg (dicee.config.Namespace attribute)</a>
+</li>
+        <li><a href="dicee.html#dicee.config.Namespace.path_to_store_single_run">path_to_store_single_run (dicee.config.Namespace attribute)</a>
+</li>
+        <li><a href="dicee.html#dicee.callbacks.PPE">PPE (class in dicee.callbacks)</a>
+</li>
+        <li><a href="dicee.html#dicee.knowledge_graph_embeddings.KGE.predict">predict() (dicee.knowledge_graph_embeddings.KGE method)</a>
+</li>
+        <li><a href="dicee.html#dicee.knowledge_graph_embeddings.KGE.predict_conjunctive_query">predict_conjunctive_query() (dicee.knowledge_graph_embeddings.KGE method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.predict_dataloader">predict_dataloader() (dicee.models.base_model.BaseKGE method)</a>
+</li>
+        <li><a href="dicee.html#dicee.knowledge_graph_embeddings.KGE.predict_missing_head_entity">predict_missing_head_entity() (dicee.knowledge_graph_embeddings.KGE method)</a>
+</li>
+        <li><a href="dicee.html#dicee.knowledge_graph_embeddings.KGE.predict_missing_relations">predict_missing_relations() (dicee.knowledge_graph_embeddings.KGE method)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.html#dicee.knowledge_graph_embeddings.KGE.predict_missing_tail_entity">predict_missing_tail_entity() (dicee.knowledge_graph_embeddings.KGE method)</a>
+</li>
+        <li><a href="dicee.html#dicee.knowledge_graph_embeddings.KGE.predict_topk">predict_topk() (dicee.knowledge_graph_embeddings.KGE method)</a>
+</li>
+        <li><a href="dicee.html#dicee.dataset_classes.CVDataModule.prepare_data">prepare_data() (dicee.dataset_classes.CVDataModule method)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.preprocess_with_pandas">preprocess_with_pandas() (dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG method)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.preprocess_with_polars">preprocess_with_polars() (dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG method)</a>
+</li>
+        <li><a href="dicee.html#dicee.static_preprocess_funcs.preprocesses_input_args">preprocesses_input_args() (in module dicee.static_preprocess_funcs)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG">PreprocessKG (class in dicee.read_preprocess_save_load_kg.preprocess)</a>
+</li>
+        <li><a href="dicee.trainer.html#dicee.trainer.torch_trainer_ddp.print_peak_memory">print_peak_memory() (in module dicee.trainer.torch_trainer_ddp)</a>
+</li>
+        <li><a href="dicee.html#dicee.callbacks.PrintCallback">PrintCallback (class in dicee.callbacks)</a>
+</li>
+        <li><a href="dicee.html#dicee.callbacks.PseudoLabellingCallback">PseudoLabellingCallback (class in dicee.callbacks)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.real.Pyke">Pyke (class in dicee.models.real)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.pykeen_models.PykeenKGE">PykeenKGE (class in dicee.models.pykeen_models)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="Q" class="genindex-section">
+  <h2>Q</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.models.html#dicee.models.quaternion.QMult">QMult (class in dicee.models.quaternion)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.models.html#dicee.models.static_funcs.quaternion_mul">quaternion_mul() (in module dicee.models.static_funcs)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.quaternion.quaternion_mul_with_unit_norm">quaternion_mul_with_unit_norm() (in module dicee.models.quaternion)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="R" class="genindex-section">
+  <h2>R</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.html#dicee.static_funcs.random_prediction">random_prediction() (in module dicee.static_funcs)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.util.read_from_disk">read_from_disk() (in module dicee.read_preprocess_save_load_kg.util)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.util.read_from_triple_store">read_from_triple_store() (in module dicee.read_preprocess_save_load_kg.util)</a>
+</li>
+        <li><a href="dicee.html#dicee.static_funcs.read_or_load_kg">read_or_load_kg() (in module dicee.static_funcs)</a>
+</li>
+        <li><a href="dicee.html#dicee.executer.Execute.read_preprocess_index_serialize_data">read_preprocess_index_serialize_data() (dicee.executer.Execute method)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.util.read_with_pandas">read_with_pandas() (in module dicee.read_preprocess_save_load_kg.util)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.util.read_with_polars">read_with_polars() (in module dicee.read_preprocess_save_load_kg.util)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk">ReadFromDisk (class in dicee.read_preprocess_save_load_kg.read_from_disk)</a>
+</li>
+        <li><a href="dicee.html#dicee.knowledge_graph.KG.relations_str">relations_str (dicee.knowledge_graph.KG property)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.html#dicee.dataset_classes.reload_dataset">reload_dataset() (in module dicee.dataset_classes)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.remove_triples_from_train_with_condition">remove_triples_from_train_with_condition() (dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.complex.AConEx.residual_convolution">residual_convolution() (dicee.models.complex.AConEx method)</a>
+
+        <ul>
+          <li><a href="dicee.models.html#dicee.models.complex.ConEx.residual_convolution">(dicee.models.complex.ConEx method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.octonion.AConvO.residual_convolution">(dicee.models.octonion.AConvO method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.octonion.ConvO.residual_convolution">(dicee.models.octonion.ConvO method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.quaternion.AConvQ.residual_convolution">(dicee.models.quaternion.AConvQ method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.quaternion.ConvQ.residual_convolution">(dicee.models.quaternion.ConvQ method)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.html#dicee.callbacks.RN">RN (class in dicee.callbacks)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="S" class="genindex-section">
+  <h2>S</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.html#dicee.abstracts.BaseInteractiveKGE.sample_entity">sample_entity() (dicee.abstracts.BaseInteractiveKGE method)</a>
+</li>
+        <li><a href="dicee.html#dicee.abstracts.BaseInteractiveKGE.sample_relation">sample_relation() (dicee.abstracts.BaseInteractiveKGE method)</a>
+</li>
+        <li><a href="dicee.html#dicee.sanity_checkers.sanity_checking_with_arguments">sanity_checking_with_arguments() (in module dicee.sanity_checkers)</a>
+</li>
+        <li><a href="dicee.html#dicee.abstracts.BaseInteractiveKGE.save">save() (dicee.abstracts.BaseInteractiveKGE method)</a>
+
+        <ul>
+          <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.save">(dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk method)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.html#dicee.abstracts.AbstractTrainer.save_checkpoint">save_checkpoint() (dicee.abstracts.AbstractTrainer static method)</a>
+</li>
+        <li><a href="dicee.html#dicee.static_funcs.save_checkpoint_model">save_checkpoint_model() (in module dicee.static_funcs)</a>
+</li>
+        <li><a href="dicee.html#dicee.static_funcs.save_embeddings">save_embeddings() (in module dicee.static_funcs)</a>
+</li>
+        <li><a href="dicee.html#dicee.config.Namespace.save_embeddings_as_csv">save_embeddings_as_csv (dicee.config.Namespace attribute)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.util.save_numpy_ndarray">save_numpy_ndarray() (in module dicee.read_preprocess_save_load_kg.util)</a>
+
+        <ul>
+          <li><a href="dicee.html#dicee.static_funcs.save_numpy_ndarray">(in module dicee.static_funcs)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.util.save_pickle">save_pickle() (in module dicee.read_preprocess_save_load_kg.util)</a>
+
+        <ul>
+          <li><a href="dicee.html#dicee.static_funcs.save_pickle">(in module dicee.static_funcs)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.html#dicee.executer.Execute.save_trained_model">save_trained_model() (dicee.executer.Execute method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.clifford.CMult.score">score() (dicee.models.clifford.CMult method)</a>
+
+        <ul>
+          <li><a href="dicee.models.html#dicee.models.clifford.Keci.score">(dicee.models.clifford.Keci method)</a>
+</li>
+          <li><a href="dicee.models.html#dicee.models.real.DistMult.score">(dicee.models.real.DistMult method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.html#dicee.static_funcs.select_model">select_model() (in module dicee.static_funcs)</a>
+</li>
+        <li><a href="dicee.html#dicee.static_funcs.semi_supervised_split">semi_supervised_split() (in module dicee.static_funcs)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.sequential_vocabulary_construction">sequential_vocabulary_construction() (dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG method)</a>
+</li>
+        <li><a href="dicee.html#dicee.abstracts.BaseInteractiveKGE.set_model_eval_mode">set_model_eval_mode() (dicee.abstracts.BaseInteractiveKGE method)</a>
+</li>
+        <li><a href="dicee.html#dicee.abstracts.BaseInteractiveKGE.set_model_train_mode">set_model_train_mode() (dicee.abstracts.BaseInteractiveKGE method)</a>
+</li>
+        <li><a href="dicee.html#dicee.dataset_classes.CVDataModule.setup">setup() (dicee.dataset_classes.CVDataModule method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.real.Shallom">Shallom (class in dicee.models.real)</a>
+</li>
+        <li><a href="dicee.html#dicee.config.Namespace.sparql_endpoint">sparql_endpoint (dicee.config.Namespace attribute)</a>
+</li>
+        <li><a href="dicee.html#dicee.executer.Execute.start">start() (dicee.executer.Execute method)</a>
+
+        <ul>
+          <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG.start">(dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG method)</a>
+</li>
+          <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.start">(dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk method)</a>
+</li>
+          <li><a href="dicee.trainer.html#dicee.trainer.dice_trainer.DICE_Trainer.start">(dicee.trainer.dice_trainer.DICE_Trainer method)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.html#dicee.config.Namespace.storage_path">storage_path (dicee.config.Namespace attribute)</a>
+</li>
+        <li><a href="dicee.html#dicee.static_funcs.store">store() (in module dicee.static_funcs)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="T" class="genindex-section">
+  <h2>T</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.test_dataloader">test_dataloader() (dicee.models.base_model.BaseKGE method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.test_epoch_end">test_epoch_end() (dicee.models.base_model.BaseKGE method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.test_step">test_step() (dicee.models.base_model.BaseKGE method)</a>
+</li>
+        <li><a href="dicee.read_preprocess_save_load_kg.html#dicee.read_preprocess_save_load_kg.util.timeit">timeit() (in module dicee.read_preprocess_save_load_kg.util)</a>
+
+        <ul>
+          <li><a href="dicee.html#dicee.static_funcs.timeit">(in module dicee.static_funcs)</a>
+</li>
+          <li><a href="dicee.html#dicee.static_preprocess_funcs.timeit">(in module dicee.static_preprocess_funcs)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.trainer.html#dicee.trainer.torch_trainer_ddp.TorchDDPTrainer">TorchDDPTrainer (class in dicee.trainer.torch_trainer_ddp)</a>
+</li>
+        <li><a href="dicee.trainer.html#dicee.trainer.torch_trainer.TorchTrainer">TorchTrainer (class in dicee.trainer.torch_trainer)</a>
+</li>
+        <li><a href="dicee.html#dicee.knowledge_graph_embeddings.KGE.train">train() (dicee.knowledge_graph_embeddings.KGE method)</a>
+
+        <ul>
+          <li><a href="dicee.trainer.html#dicee.trainer.torch_trainer_ddp.DDPTrainer.train">(dicee.trainer.torch_trainer_ddp.DDPTrainer method)</a>
+</li>
+          <li><a href="dicee.trainer.html#dicee.trainer.torch_trainer_ddp.NodeTrainer.train">(dicee.trainer.torch_trainer_ddp.NodeTrainer method)</a>
+</li>
+        </ul></li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.html#dicee.dataset_classes.CVDataModule.train_dataloader">train_dataloader() (dicee.dataset_classes.CVDataModule method)</a>
+
+        <ul>
+          <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.train_dataloader">(dicee.models.base_model.BaseKGE method)</a>
+</li>
+        </ul></li>
+        <li><a href="dicee.html#dicee.knowledge_graph_embeddings.KGE.train_k_vs_all">train_k_vs_all() (dicee.knowledge_graph_embeddings.KGE method)</a>
+</li>
+        <li><a href="dicee.html#dicee.knowledge_graph_embeddings.KGE.train_triples">train_triples() (dicee.knowledge_graph_embeddings.KGE method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.training_epoch_end">training_epoch_end() (dicee.models.base_model.BaseKGE method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.training_step">training_step() (dicee.models.base_model.BaseKGE method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.real.TransE">TransE (class in dicee.models.real)</a>
+</li>
+        <li><a href="dicee.html#dicee.dataset_classes.CVDataModule.transfer_batch_to_device">transfer_batch_to_device() (dicee.dataset_classes.CVDataModule method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.function_space.FMult2.trapezoid">trapezoid() (dicee.models.function_space.FMult2 method)</a>
+</li>
+        <li><a href="dicee.html#dicee.knowledge_graph_embeddings.KGE.triple_score">triple_score() (dicee.knowledge_graph_embeddings.KGE method)</a>
+</li>
+        <li><a href="dicee.html#dicee.dataset_classes.TriplePredictionDataset">TriplePredictionDataset (class in dicee.dataset_classes)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="U" class="genindex-section">
+  <h2>U</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.html#dicee.helper_classes.CustomArg.update">update() (dicee.helper_classes.CustomArg method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="V" class="genindex-section">
+  <h2>V</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.val_dataloader">val_dataloader() (dicee.models.base_model.BaseKGE method)</a>
+</li>
+        <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.validation_epoch_end">validation_epoch_end() (dicee.models.base_model.BaseKGE method)</a>
+</li>
+    </ul></td>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.models.html#dicee.models.base_model.BaseKGE.validation_step">validation_step() (dicee.models.base_model.BaseKGE method)</a>
+</li>
+        <li><a href="dicee.html#dicee.evaluator.Evaluator.vocab_preparation">vocab_preparation() (dicee.evaluator.Evaluator method)</a>
+</li>
+        <li><a href="dicee.html#dicee.static_funcs.vocab_to_parquet">vocab_to_parquet() (in module dicee.static_funcs)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+<section id="W" class="genindex-section">
+  <h2>W</h2>
+  <table style="width: 100%" class="indextable genindextable"><tr>
+    <td style="width: 33%; vertical-align: top;"><ul>
+        <li><a href="dicee.html#dicee.executer.Execute.write_report">write_report() (dicee.executer.Execute method)</a>
+</li>
+    </ul></td>
+  </tr></table>
+</section>
+
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          
+          
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 2023, Caglar Demir
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer no-toc">
+      
+      
+      
+    </aside>
+  </div>
+</div><script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/scripts/furo.js"></script>
+    </body>
+</html>
