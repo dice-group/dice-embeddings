@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 with open('README.md', 'r') as fh:
     long_description = fh.read()
 setup(
-    name='dicee',
-    description='Dice embedding is an hardware-agnostic framework for large-scale knowledge graph embedding applications',
-    version='0.0.5',
+    name="dicee",
+    description="Dice embedding is an hardware-agnostic framework for large-scale knowledge graph embedding applications",
+    version="0.0.6",
     packages=find_packages(),
     install_requires=[
         "torch>=2.0.0",
