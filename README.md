@@ -27,7 +27,7 @@ With our framework, practitioners can directly use PytorchLightning for model pa
 **Why [Hugging-face Gradio](https://huggingface.co/gradio)?**
 Deploy a pre-trained embedding model without writing a single line of code.
 
-## For more please visit [dice-group.github.io/dice-embeddings](dice-group.github.io/dice-embeddings)!
+## For more please visit [dice-embeddings](https://dice-group.github.io/dice-embeddings/)!
 
 ## Installation
 <details><summary> Details </summary>
