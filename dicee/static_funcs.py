@@ -15,6 +15,7 @@ import psutil
 from .models.base_model import BaseKGE
 import pickle
 
+
 def timeit(func):
     @functools.wraps(func)
     def timeit_wrapper(*args, **kwargs):
@@ -61,18 +62,23 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
         return intialize_model(args)
 
 
-def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[object, dict, dict]:
+def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[object, dict, dict]:
     """ Load weights and initialize pytorch module from namespace arguments"""
     print(f'Loading model {model_name}...', end=' ')
     start_time = time.time()
+    configs=dict()
     # (1) Load weights..
     weights = torch.load(path_of_experiment_folder + f'/{model_name}', torch.device('cpu'))
-    # (2) Loading input configuration..
-    configs = load_json(path_of_experiment_folder + '/configuration.json')
-    # (3) Loading the report of a training process.
-    report = load_json(path_of_experiment_folder + '/report.json')
-    configs["num_entities"] = report["num_entities"]
-    configs["num_relations"] = report["num_relations"]
+    num_ent, ent_dim = weights['entity_embeddings.weight'].shape
+    num_rel, rel_dim = weights['relation_embeddings.weight'].shape
+    assert ent_dim==rel_dim
+    # (2) Loading input configuration.
+    try:
+        configs = load_json(path_of_experiment_folder + '/configuration.json')
+    except FileNotFoundError:
+        print('Config file not found')
+    configs["num_entities"] = num_ent
+    configs["num_relations"] = num_rel
     print(f'Done! It took {time.time() - start_time:.3f}')
     # (4) Select the model
     model, _ = intialize_model(configs)
@@ -84,6 +90,7 @@ def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[object
     model.eval()
     start_time = time.time()
     print('Loading entity and relation indexes...', end=' ')
+    # Maybe ? https://docs.python.org/3/library/mmap.html
     with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
         entity_to_idx = pickle.load(f)
     with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
@@ -198,11 +205,11 @@ def save_checkpoint_model(model, path: str) -> None:
 
 
 def store(trainer,
-          trained_model, model_name: str = 'model', full_storage_path: str = None, save_embeddings_as_csv=False) -> None:
+          trained_model, model_name: str = 'model', full_storage_path: str = None,
+          save_embeddings_as_csv=False) -> None:
     """
     Store trained_model model and save embeddings into csv file.
     :param trainer: an instance of trainer class
-    :param dataset: an instance of KG see core.knowledge_graph.
     :param full_storage_path: path to save parameters.
     :param model_name: string representation of the name of the model.
     :param trained_model: an instance of BaseKGE see core.models.base_model .
@@ -288,6 +295,7 @@ def read_or_load_kg(args, cls):
 def intialize_model(args: dict) -> Tuple[object, str]:
     # @TODO: Apply construct_krone as callback? or use KronE_QMult as a prefix.
     # @TODO: Remove form_of_labelling
+    print(f"Initializing {args['model']}...")
     model_name = args['model']
     if "pykeen" in model_name.lower():
         model = PykeenKGE(args=args)
@@ -360,14 +368,11 @@ def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
     :param path:
     :return:
     """
-    # @TODO: Do we need it ?!
     try:
-        df = pd.DataFrame(embeddings, index=indexes)
-        df.to_csv(path)
+        pd.DataFrame(embeddings, index=indexes).to_csv(path)
     except KeyError or AttributeError as e:
         print('Exception occurred at saving entity embeddings. Computation will continue')
         print(e)
-    del df
 
 
 def random_prediction(pre_trained_kge):
@@ -459,6 +464,7 @@ def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
     vocab_to_idx.to_parquet(path_for_serialization + f'/{name}', compression='gzip', engine='pyarrow')
     print('Done !\n')
 
+
 def create_experiment_folder(folder_name='Experiments'):
     directory = os.getcwd() + "/" + folder_name + "/"
     # folder_name = str(datetime.datetime.now())
@@ -483,7 +489,7 @@ def continual_training_setup_executor(executor) -> None:
         # Create a single directory containing KGE and all related data
         if executor.args.path_to_store_single_run:
             os.makedirs(executor.args.path_to_store_single_run, exist_ok=False)
-            executor.args.full_storage_path=executor.args.path_to_store_single_run
+            executor.args.full_storage_path = executor.args.path_to_store_single_run
         else:
             # Create a parent and subdirectory.
             executor.args.full_storage_path = create_experiment_folder(folder_name=executor.args.storage_path)
