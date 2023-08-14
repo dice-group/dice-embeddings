@@ -31,7 +31,7 @@ jobs:
 
       - name: Build HTML
         run: |
-           sphinx-apidoc -o documents dicee/ && make -C documents/ html
+           sphinx-apidoc -o docs dicee/ && make -C docs/ html
       - name: Run ghp-import
         run: | 
-          ghp-import -n -p -f documents/_build/html
+          ghp-import -n -p -f docs/_build/html
