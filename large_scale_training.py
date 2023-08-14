@@ -212,7 +212,7 @@ def run(args):
     # @TODO: Ensure the multi-node training
     for e in range(args.num_epochs):
         epoch_loss = 0
-        print(f"Epoch:{e}"}
+        print(f"Epoch:{e}")
         for ith, (x, y) in enumerate(tqdm(dataloader)):
             # (1) Shape the batch
             x = x.flatten(start_dim=0, end_dim=1)
