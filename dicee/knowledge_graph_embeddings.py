@@ -7,6 +7,7 @@ from .dataset_classes import TriplePredictionDataset
 from .static_funcs import random_prediction, deploy_triple_prediction, deploy_tail_entity_prediction, \
     deploy_relation_prediction, deploy_head_entity_prediction, load_pickle
 from .static_funcs_training import evaluate_lp
+from .static_preprocess_funcs import create_constraints
 import numpy as np
 import sys
 
@@ -17,8 +18,14 @@ class KGE(BaseInteractiveKGE):
     def __init__(self, path, construct_ensemble=False,
                  model_name=None,
                  apply_semantic_constraint=False):
-        super().__init__(path=path, construct_ensemble=construct_ensemble, model_name=model_name,
-                         apply_semantic_constraint=apply_semantic_constraint)
+        super().__init__(path=path, construct_ensemble=construct_ensemble, model_name=model_name)
+        # See https://numpy.org/doc/stable/reference/generated/numpy.memmap.html
+        self.train_set = np.load(file=path + '/train_set.npy', mmap_mode='r')
+
+        if apply_semantic_constraint:
+            (self.domain_constraints_per_rel, self.range_constraints_per_rel,
+             self.domain_per_rel, self.range_per_rel) = create_constraints(self.train_set)
+
 
     def __str__(self):
         return "KGE | " + str(self.model)
@@ -431,6 +438,12 @@ class KGE(BaseInteractiveKGE):
                     if predicted_score < confidence:
                         break
                     else:
+                        # (5.8) Remember it
+                        extended_triples.add((str_head_entity, str_relation, str_entity))
+                        print(f'Number of found missing triples: {len(extended_triples)}')
+                        if len(extended_triples) == at_most:
+                            return extended_triples
+                        # No need to store a large KG into memory
                         # /5.6) False if 0, otherwise 1
                         is_in = np.any(
                             np.all(self.train_set == [idx_entity, idx_relation, self.entity_to_idx[str_entity]],
