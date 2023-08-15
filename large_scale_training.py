@@ -18,19 +18,18 @@ import pickle
 
 def input_arguments():
     parser = ArgumentParser()
-    # General
     parser.add_argument("--path_kg", type=str, default=None,  # "kinship.parquet.snappy",
                         help="path parquet formatted polars dataframe")
     parser.add_argument("--path_idx_kg", type=str, default="seed_models/data.npy",
                         help="path to numpy ndarray")
-    parser.add_argument("--path_checkpoint", type=str, default="seed_models/Keci_1_7.torch"
+    parser.add_argument("--path_checkpoint", type=str, default="seed_models/Keci_1_9.torch"
                         )
-    parser.add_argument("--path_checkpoint2", type=str, default="seed_models/Keci_2_7.torch")
+    parser.add_argument("--path_checkpoint2", type=str, default="seed_models/Keci_2_9.torch")
 
     parser.add_argument("--batch_size", type=int, default=10_000_000)
     parser.add_argument("--neg_sample_ratio", type=float, default=1.0)
     parser.add_argument("--embedding_dim", type=int, default=20)
-    parser.add_argument("--num_epochs", type=int, default=25)
+    parser.add_argument("--num_epochs", type=int, default=3)
 
     return parser.parse_args()
 
@@ -133,10 +132,10 @@ def init_model(args, num_entities, num_relations):
     print('Initializing models...')
     model1 = Keci(
         args={"optim": "Adam", "p": 0, "q": 1, "num_entities": num_entities, "num_relations": num_relations,
-              "embedding_dim": args.embedding_dim, 'learning_rate': 0.1})
+              "embedding_dim": args.embedding_dim, 'learning_rate': 0.01})
     model2 = Keci(
         args={"optim": "Adam", "p": 0, "q": 1, "num_entities": num_entities, "num_relations": num_relations,
-              "embedding_dim": args.embedding_dim, 'learning_rate': 0.1})
+            "embedding_dim": args.embedding_dim, 'learning_rate': 0.01})
     print(f"took {time.time() - start_time}")
     return (model1, model2), (model1.configure_optimizers(), model2.configure_optimizers())
 
@@ -253,7 +252,7 @@ def run(args):
             epoch_loss += numpy_batch_loss
             if ith % 1 == 0: # init an argument
                 print(f"\tBatch Loss:{numpy_batch_loss}\tForward-Backward-Update: {time.time() - start_time}")
-    
+    print(f"Epoch:{e}\tEpoch Loss:{epoch_loss}")
     print("Saving....")
     start_time=time.time()
     torch.save({
@@ -270,151 +269,8 @@ def run(args):
 if __name__ == '__main__':
     run(input_arguments())
 
-# Post Processing
+# @TODO Post Processing
 # Note mode1 and model2 keci with p=0, q=1
 # model1 real_m1:[] complex_m1[]
 # model2 real_m2:[] complex_m2[]
 # y1 y2 => Final model = real_m1[],real_m2[], complex_m1[] complex_m2[]
-"""
-
-if False:
-    print("Reading KG...\n")
-    start_time = time.time()
-    data = pl.read_parquet("dbpedia-2022-12-nt.parquet.snappy")
-    print(f"took {time.time() - start_time}")
-    print("Unique entities...")
-    start_time = time.time()
-    unique_entities = pl.concat((data.get_column('subject'), data.get_column('object'))).unique().rename(
-        'entity').to_list()
-    print(f"took {time.time() - start_time}")
-
-    print("Unique relations...")
-    start_time = time.time()
-    unique_relations = data.unique(subset=["relation"]).select("relation").to_series().to_list()
-    print(f"took {time.time() - start_time}")
-
-    print("Entity index mapping...")
-    start_time = time.time()
-    entity_to_idx = {ent: idx for idx, ent in enumerate(unique_entities)}
-    print(f"took {time.time() - start_time}")
-
-    print("Relation index mapping...")
-    start_time = time.time()
-    rel_to_idx = {rel: idx for idx, rel in enumerate(unique_relations)}
-    print(f"took {time.time() - start_time}")
-
-    print("Constructing training data...")
-    start_time = time.time()
-    data = data.with_columns(pl.col("subject").map_dict(entity_to_idx).alias("subject"),
-                             pl.col("relation").map_dict(rel_to_idx).alias("relation"),
-                             pl.col("object").map_dict(entity_to_idx).alias("object")).to_numpy()
-    print(f"took {time.time() - start_time}")
-
-    num_entities = len(unique_entities)
-    num_relations = len(unique_relations)
-
-    with open("data.npy", 'wb') as f:
-        np.save(f, data)
-else:
-    print("Loading the index numpy KG..\n")
-    with open("data.npy", 'rb') as f:
-        data = np.load(f)
-
-    num_entities = 1 + max(max(data[:, 0]), max(data[:, 2]))
-    num_relations = 1 + max(data[:, 1])
-
-data = NegSampleDataset(train_set=data,
-                        num_entities=num_entities, num_relations=num_relations,
-                        neg_sample_ratio=1.0)
-data = torch.utils.data.DataLoader(data, batch_size=10_000_000, shuffle=True, num_workers=os.cpu_count() - 1)
-print("KGE model...")
-start_time = time.time()
-
-# Model Parallel 1
-model1 = Keci(args={"optim": "Adam", "p": 0, "q": 1, "num_entities": num_entities, "num_relations": num_relations,
-                    "embedding_dim": 20, 'learning_rate': 0.1})
-print(model1)
-print(model1.summarize())
-# Model Parallel 2
-model2 = Keci(args={"optim": "Adam", "p": 0, "q": 1, "num_entities": num_entities, "num_relations": num_relations,
-                    "embedding_dim": 20, 'learning_rate': 0.1})
-# Compute both models
-model1 = torch.compile(model1)
-model2 = torch.compile(model2)
-print(f"took {time.time() - start_time}")
-print(model1)
-print("Optimizer...")
-start_time = time.time()
-# Initialize optimizers
-optimizer = model1.configure_optimizers()
-optimizer2 = model2.configure_optimizers()
-# Define the loss function
-loss_function = model1.loss_function
-print("Training...")
-
-num_epochs = 10
-device1 = "cuda:0"
-device2 = "cuda:1"
-for e in range(num_epochs):
-    epoch_loss = 0
-
-    for (x, y) in tqdm(data):
-        # (1) Shape the batch
-        x = x.flatten(start_dim=0, end_dim=1)
-        y = y.flatten(start_dim=0, end_dim=1)
-        # (2) Empty the gradients
-        optimizer.zero_grad(set_to_none=True)
-        optimizer2.zero_grad(set_to_none=True)
-        # (3) Forward Backward and Parameter Update
-        start_time = time.time()
-        # (3.1) Select embeddings of triples
-        h1, r1, t1 = model1.get_triple_representation(x)
-        # (3.2) Move (3.1) into a single GPU
-        h1, r1, t1, y = h1.pin_memory().to(device1, non_blocking=True), r1.pin_memory().to(device1,
-                                                                                           non_blocking=True), t1.pin_memory().to(
-            device1, non_blocking=True), y.pin_memory().to(device1, non_blocking=True)
-        # (3.3) Compute triple score (Forward Pass)
-        yhat1 = model1.score(h1, r1, t1)
-
-        # (3.4) Select second part of the embeddings of triples
-        h2, r2, t2 = model2.get_triple_representation(x)
-        # (3.5) Move (3.4) into a single GPU
-        h2, r2, t2 = h2.pin_memory().to(device2, non_blocking=True), r2.pin_memory().to(device2,
-                                                                                        non_blocking=True), t2.pin_memory().to(
-            device2, non_blocking=True)
-        # 3.6 Forward Pass
-        yhat2 = model2.score(h2, r2, t2).to(device1)
-
-        # (4) Composite Prediction
-        yhat = (yhat1 + yhat2) / 2
-
-        # (5.) Compute Loss
-        batch_loss = loss_function(yhat, y)
-        # (6.) Compute gradients (Backward Pass)
-        batch_loss.backward()
-        # (3.6) Update parameters
-        optimizer.step()
-        optimizer2.step()
-        # (3.7) Update epoch loss
-        batch_loss = batch_loss.item()
-        epoch_loss += batch_loss
-        print(f"Batch Loss:{batch_loss}\tForward-Backward-Update: {time.time() - start_time}")
-
-    print(epoch_loss / len(data))
-    print('Saving')
-    torch.save({
-        'epoch': num_epochs,
-        'model_state_dict': model1._orig_mod.state_dict(),
-        'optimizer_state_dict': optimizer.state_dict(),
-        'loss': epoch_loss,
-    }, f"{model1._orig_mod.name}_1_{e}.torch")
-
-    torch.save({
-        'epoch': num_epochs,
-        'model_state_dict': model2._orig_mod.state_dict(),
-        'optimizer_state_dict': optimizer2.state_dict(),
-        'loss': epoch_loss,
-    }, f"{model1._orig_mod.name}_2_{e}.torch")
-
-print('DONE')
-"""
