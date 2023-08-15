@@ -4,7 +4,6 @@ from dicee.abstracts import AbstractTrainer
 import time
 import os
 import psutil
-from torch.utils.data import DataLoader
 
 
 class TorchTrainer(AbstractTrainer):
@@ -132,7 +131,6 @@ class TorchTrainer(AbstractTrainer):
               f'| LearningRate:{self.model.learning_rate} '
               f'| BatchSize:{self.train_dataloaders.batch_size} '
               f'| EpochBatchsize:{len(train_dataloaders)}' )
-        counter = 0
         for epoch in range(self.attributes.max_epochs):
             start_time = time.time()
 
