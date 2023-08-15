@@ -35,7 +35,9 @@ def input_arguments():
     return parser.parse_args()
 
 class MultiEpochsDataLoader(torch.utils.data.DataLoader):
-    """ To avoid the excessive time spent to fetch the first batch at each new epoch"""
+    """ To avoid the excessive time spent to fetch the first batch at each new epoch
+    See https://discuss.pytorch.org/t/enumerate-dataloader-slow/87778/2
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._DataLoader__initialized = False

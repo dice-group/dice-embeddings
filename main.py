@@ -11,7 +11,7 @@ def get_default_arguments(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Data related arguments
-    parser.add_argument("--path_dataset_folder", type=str, default=None,
+    parser.add_argument("--path_dataset_folder", type=str, default="KGs/UMLS",
                         help="The path of a folder containing train.txt, and/or valid.txt and/or test.txt"
                              ",e.g., KGs/UMLS")
     parser.add_argument("--sparql_endpoint", type=str, default=None,
@@ -43,7 +43,7 @@ def get_default_arguments(description=None):
     parser.add_argument('--embedding_dim', type=int, default=64,
                         help='Number of dimensions for an embedding vector. ')
     parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. ')
-    parser.add_argument('--batch_size', type=int, default=256, help='Mini batch size')
+    parser.add_argument('--batch_size', type=int, default=256, help='Mini batch size. If None, automatic batch finder is applied')
     parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument('--callbacks', type=json.loads, default={},
                         help=' {"PPE":{ "last_percent_to_consider": 10}}, {"GN": {"std":0.1}}')
@@ -95,8 +95,6 @@ def get_default_arguments(description=None):
                         help='P for Clifford Algebra')
     parser.add_argument('--q', type=int, default=0,
                         help='Q for Clifford Algebra')
-    parser.add_argument('--auto_batch_finder', type=bool, default=False,
-                        help='Find a batch size w.r.t. computational budgets')
     parser.add_argument("--pykeen_model_kwargs", nargs='*', action=ParseDict,
                         default={},
                         help='Additional parameters '

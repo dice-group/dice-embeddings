@@ -1,5 +1,5 @@
 import argparse
-from abstracts import AbstractCallback
+from .abstracts import AbstractCallback
 
 class ParseDict(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
