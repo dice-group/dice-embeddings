@@ -122,7 +122,6 @@ python main.py --sparql_endpoint "http://localhost:3030/mutagenesis/" --model Ke
 For more, please refer to `examples`.
 </details>
 
-
 ## How to Deploy
 <details> <summary> To see a single line of code</summary>
 
@@ -197,7 +196,6 @@ from dicee import KGE
 pretrained_model = KGE(path='Experiments/2022-12-08 11:46:33.654677')
 pretrained_model.learn_concepts(pos={''},neg={''},topk=1)
 ```
-
 
 ## Pre-trained Models
 Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , if you lack hardware resources to obtain embeddings of a specific knowledge Graph.

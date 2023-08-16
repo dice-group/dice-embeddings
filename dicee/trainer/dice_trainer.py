@@ -188,6 +188,7 @@ class DICE_Trainer:
             self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args), plugins=[])
             model, form_of_labelling = self.initialize_or_load_model()
             self.trainer.evaluator = self.evaluator
+            # @TODO Why do we need to sent the dataset ?
             self.trainer.dataset = dataset
             self.trainer.form_of_labelling = form_of_labelling
             self.trainer.fit(model, train_dataloaders=self.initialize_dataloader(

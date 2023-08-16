@@ -330,18 +330,20 @@ class NegSampleDataset(torch.utils.data.Dataset):
         return self.length
 
     def __getitem__(self, idx):
-        # (1) Get a triple
+        # (1) Get a triple.
         triple = self.train_set[idx]
-        # (2) Sample an entity
+        # (2) Sample an entity.
         corr_entities = torch.randint(0, high=self.num_entities, size=(1,))
         # (3) Flip a coin
         if torch.rand(1) >= 0.5:
-            # (3.1) Corrupt (1) via tail
+            # (3.1) Corrupt (1) via tai.
             negative_triple = torch.cat((triple[:, 0], triple[:, 1], corr_entities), dim=0).unsqueeze(0)
         else:
-            # (3.1) Corrupt (1) via head
+            # (3.1) Corrupt (1) via head.
             negative_triple = torch.cat((corr_entities, triple[:, 1], triple[:, 2]), dim=0).unsqueeze(0)
+        # (4) Concat positive and negative triples.
         x = torch.cat((triple, negative_triple), dim=0)
+        # (5) Concat labels of (4).
         y = torch.tensor([1.0, 0.0])
         return x, y
 
