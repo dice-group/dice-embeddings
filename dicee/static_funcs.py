@@ -66,17 +66,13 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[o
     """ Load weights and initialize pytorch module from namespace arguments"""
     print(f'Loading model {model_name}...', end=' ')
     start_time = time.time()
-    configs=dict()
     # (1) Load weights..
     weights = torch.load(path_of_experiment_folder + f'/{model_name}', torch.device('cpu'))
     num_ent, ent_dim = weights['entity_embeddings.weight'].shape
     num_rel, rel_dim = weights['relation_embeddings.weight'].shape
     assert ent_dim==rel_dim
     # (2) Loading input configuration.
-    try:
-        configs = load_json(path_of_experiment_folder + '/configuration.json')
-    except FileNotFoundError:
-        print('Config file not found')
+    configs = load_json(path_of_experiment_folder + '/configuration.json')
     configs["num_entities"] = num_ent
     configs["num_relations"] = num_rel
     print(f'Done! It took {time.time() - start_time:.3f}')
@@ -354,9 +350,12 @@ def intialize_model(args: dict) -> Tuple[object, str]:
 
 
 def load_json(p: str) -> dict:
-    assert os.path.isfile(p)
-    with open(p, 'r') as r:
-        args = json.load(r)
+    try:
+        with open(p, 'r') as r:
+            args = json.load(r)
+    except FileNotFoundError:
+        print('Config file not found')
+        args=dict
     return args
 
 
