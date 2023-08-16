@@ -83,8 +83,7 @@ def config_kge_sanity_checking(args, dataset):
     Sanity checking for input hyperparams.
     :return:
     """
-    if args.batch_size > len(dataset.train_set):
-        args.batch_size = len(dataset.train_set)
+    assert isinstance(args.batch_size, int) or args.batch_size is None
     if args.model == 'Shallom' and args.scoring_technique == 'NegSample':
         print(
             'Shallom can not be trained with Negative Sampling. Scoring technique is changed to KvsALL')

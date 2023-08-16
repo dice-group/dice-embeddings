@@ -1,8 +1,7 @@
-#!/usr/bin/env python3
 import json
-from dicee.executer import Execute
+from .executer import Execute
 import pytorch_lightning as pl
-from dicee.config import ParseDict
+from .config import ParseDict
 import argparse
 
 
@@ -11,7 +10,7 @@ def get_default_arguments(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Data related arguments
-    parser.add_argument("--path_dataset_folder", type=str, default="KGs/UMLS",
+    parser.add_argument("--path_dataset_folder", type=str, default=None,
                         help="The path of a folder containing train.txt, and/or valid.txt and/or test.txt"
                              ",e.g., KGs/UMLS")
     parser.add_argument("--sparql_endpoint", type=str, default=None,

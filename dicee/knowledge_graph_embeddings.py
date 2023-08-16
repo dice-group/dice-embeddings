@@ -1,3 +1,4 @@
+import os.path
 from typing import List, Tuple, Set, Iterable, Dict
 import torch
 from torch import optim
@@ -20,7 +21,9 @@ class KGE(BaseInteractiveKGE):
                  apply_semantic_constraint=False):
         super().__init__(path=path, construct_ensemble=construct_ensemble, model_name=model_name)
         # See https://numpy.org/doc/stable/reference/generated/numpy.memmap.html
-        self.train_set = np.load(file=path + '/train_set.npy', mmap_mode='r')
+        # If file exists
+        if os.path.exists(path + '/train_set.npy'):
+            self.train_set = np.load(file=path + '/train_set.npy', mmap_mode='r')
 
         if apply_semantic_constraint:
             (self.domain_constraints_per_rel, self.range_constraints_per_rel,

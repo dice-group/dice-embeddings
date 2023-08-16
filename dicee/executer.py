@@ -200,6 +200,7 @@ class Execute:
                                     storage_path=self.storage_path,
                                     evaluator=self.evaluator)
         # (4) Start the training
+        # @TODO: Why do we need to pass self.dataset as an input?
         self.trained_model, form_of_labelling = self.trainer.start(dataset=self.dataset)
         return self.end(form_of_labelling)
 
