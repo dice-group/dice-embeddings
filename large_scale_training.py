@@ -18,13 +18,13 @@ import pickle
 
 def input_arguments():
     parser = ArgumentParser()
-    parser.add_argument("--path_kg", type=str, default=None,  # "kinship.parquet.snappy",
+    parser.add_argument("--path_kg", type=str, default="dbpedia-2022-12-nt-wo-lit-polars.parquet.snappy",
                         help="path parquet formatted polars dataframe")
     parser.add_argument("--path_idx_kg", type=str, default="seed_models/data.npy",
                         help="path to numpy ndarray")
-    parser.add_argument("--path_checkpoint", type=str, default="seed_models/Keci_1_9.torch"
+    parser.add_argument("--path_checkpoint", type=str, default="a"
                         )
-    parser.add_argument("--path_checkpoint2", type=str, default="seed_models/Keci_2_9.torch")
+    parser.add_argument("--path_checkpoint2", type=str, default="b")
 
     parser.add_argument("--batch_size", type=int, default=10_000_000)
     parser.add_argument("--neg_sample_ratio", type=float, default=1.0)
@@ -77,14 +77,15 @@ def get_data(args) -> Tuple[np.ndarray, int, int]:
         start_time = time.time()
         unique_entities = pl.concat((data.get_column('subject'), data.get_column('object'))).unique().rename(
             'entity')
+        print(f"Number of unique entities:{len(unique_entities)}")
         unique_entities = unique_entities.to_list()
         print(f"took {time.time() - start_time}")
 
         print("Unique relations...")
         start_time = time.time()
         unique_relations = data.unique(subset=["relation"]).select("relation").to_series()
-        unique_entities = unique_entities
-
+        print(f"Number of unique relations:{len(unique_relations)}")
+        unique_relations = unique_relations.to_list()
         print(f"took {time.time() - start_time}")
 
         print("Entity index mapping...")
@@ -97,9 +98,8 @@ def get_data(args) -> Tuple[np.ndarray, int, int]:
         print("Relation index mapping...")
         start_time = time.time()
         rel_to_idx = {rel: idx for idx, rel in enumerate(unique_relations)}
-        pickle.dump(rel_to_idx, open("rel_to_idx.p", "wb")) 
+        pickle.dump(rel_to_idx, open("relation_to_idx.p","wb")) 
         print(f"took {time.time() - start_time}")
-
         print("Constructing training data...")
         start_time = time.time()
         data = data.with_columns(pl.col("subject").map_dict(entity_to_idx).alias("subject"),
