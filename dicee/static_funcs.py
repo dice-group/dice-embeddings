@@ -73,11 +73,9 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[o
     assert ent_dim==rel_dim
     # (2) Loading input configuration.
     configs = load_json(path_of_experiment_folder + '/configuration.json')
-    
-    
     configs["num_entities"] = num_ent
     configs["num_relations"] = num_rel
-    configs["embedding_dim"] = ent_dim
+    #configs["embedding_dim"] = ent_dim
 
     print(f'Done! It took {time.time() - start_time:.3f}')
     # (4) Select the model
@@ -367,7 +365,7 @@ def load_json(p: str) -> dict:
             args = json.load(r)
     except FileNotFoundError:
         print('Config file not found')
-        args=dict()
+        exit(1)
     return args
 
 
