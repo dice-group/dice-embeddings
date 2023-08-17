@@ -11,12 +11,16 @@ import logging
 import os
 
 
+
 def set_logger(save_path, query_name, print_on_screen=False):
     '''
     Write logs to checkpoint and console
     '''
 
     log_file = os.path.join(save_path, '%s.log' % (query_name))
+
+    for handler in logging.root.handlers[:]:
+        logging.root.removeHandler(handler)
 
     logging.basicConfig(
         format='%(asctime)s %(levelname)-8s %(message)s',
@@ -40,7 +44,7 @@ def set_global_seed(seed):
 
 def index_dataset(dataset_name, force=False):
     print('Indexing dataset {0}'.format(dataset_name))
-    base_path = 'data/{0}/'.format(dataset_name)
+    base_path = 'KGs/{0}/'.format(dataset_name)
     # files = ['train.txt', 'valid.txt', 'test.txt']
     # indexified_files = ['train_indexified.txt', 'valid_indexified.txt', 'test_indexified.txt']
     files = ['train.txt']
@@ -161,13 +165,13 @@ def write_links(dataset, ent_out, small_ent_out, max_ans_num, name):
             else:
                 num_more_answer += 1
 
-    with open('./data/%s/%s-queries.pkl' % (dataset, name), 'wb') as f:
+    with open('./KGs/%s/%s-queries.pkl' % (dataset, name), 'wb') as f:
         pickle.dump(queries, f)
-    with open('./data/%s/%s-tp-answers.pkl' % (dataset, name), 'wb') as f:
+    with open('./KGs/%s/%s-tp-answers.pkl' % (dataset, name), 'wb') as f:
         pickle.dump(tp_answers, f)
-    with open('./data/%s/%s-fn-answers.pkl' % (dataset, name), 'wb') as f:
+    with open('./KGs/%s/%s-fn-answers.pkl' % (dataset, name), 'wb') as f:
         pickle.dump(fn_answers, f)
-    with open('./data/%s/%s-fp-answers.pkl' % (dataset, name), 'wb') as f:
+    with open('./KGs/%s/%s-fp-answers.pkl' % (dataset, name), 'wb') as f:
         pickle.dump(fp_answers, f)
     print(num_more_answer)
 
@@ -181,6 +185,7 @@ def ground_queries(dataset, query_structure, ent_in, ent_out, small_ent_in, smal
     fp_answers = defaultdict(set)
     fn_answers = defaultdict(set)
     s0 = time.time()
+
     old_num_sampled = -1
     while num_sampled < gen_num:
         if num_sampled != 0:
@@ -201,13 +206,17 @@ def ground_queries(dataset, query_structure, ent_in, ent_out, small_ent_in, smal
         num_try += 1
         empty_query_structure = deepcopy(query_structure)
         answer = random.sample(ent_in.keys(), 1)[0]
-        # sample a random entity from the set of all entities that have at least one incoming edge.
+
+
         broken_flag = fill_query(empty_query_structure, ent_in, ent_out, answer, ent2id, rel2id)
+
         if broken_flag:
             num_broken += 1
             continue
         query = empty_query_structure
+
         answer_set = achieve_answer(query, ent_in, ent_out)
+
         small_answer_set = achieve_answer(query, small_ent_in, small_ent_out)
         if len(answer_set) == 0:
             num_empty += 1
@@ -244,20 +253,20 @@ def ground_queries(dataset, query_structure, ent_in, ent_out, small_ent_in, smal
                                                                     np.mean(fn_ans_num), np.std(fn_ans_num)))
 
     name_to_save = '%s-%s' % (mode, query_name)
-    with open('./data/%s/%s-queries.pkl' % (dataset, name_to_save), 'wb') as f:
+    with open('./KGs/%s/%s-queries.pkl' % (dataset, name_to_save), 'wb') as f:
         pickle.dump(queries, f)
-    with open('./data/%s/%s-fp-answers.pkl' % (dataset, name_to_save), 'wb') as f:
+    with open('./KGs/%s/%s-fp-answers.pkl' % (dataset, name_to_save), 'wb') as f:
         pickle.dump(fp_answers, f)
-    with open('./data/%s/%s-fn-answers.pkl' % (dataset, name_to_save), 'wb') as f:
+    with open('./KGs/%s/%s-fn-answers.pkl' % (dataset, name_to_save), 'wb') as f:
         pickle.dump(fn_answers, f)
-    with open('./data/%s/%s-tp-answers.pkl' % (dataset, name_to_save), 'wb') as f:
+    with open('./KGs/%s/%s-tp-answers.pkl' % (dataset, name_to_save), 'wb') as f:
         pickle.dump(tp_answers, f)
     return queries, tp_answers, fp_answers, fn_answers
 
 
 def generate_queries(dataset, query_structures, gen_num, max_ans_num, gen_train, gen_valid, gen_test, query_names,
                      save_name):
-    base_path = './data/%s' % dataset
+    base_path = './KGs/%s' % dataset
     indexified_files = ['train_id.txt', 'valid_id.txt', 'test_id.txt']
     if gen_train or gen_valid:
         train_ent_in, train_ent_out = construct_graph(base_path, indexified_files[:1])  # ent_in
@@ -303,7 +312,7 @@ def generate_queries(dataset, query_structures, gen_num, max_ans_num, gen_train,
         exit(-1)
 
     name_to_save = query_name
-    set_logger("./data/{}/".format(dataset), name_to_save)
+    set_logger("./KGs/{}/".format(dataset), name_to_save)
 
     num_sampled, num_try, num_repeat, num_more_answer, num_broken, num_empty = 0, 0, 0, 0, 0, 0
     train_ans_num = []
@@ -386,8 +395,9 @@ def fill_query(query_structure, ent_in, ent_out, answer, ent2id, rel2id):
                     structure_set.add(list2tuple(query_structure[i]))
                 if len(structure_set) < len(same_structure[structure]):
                     return True
+
 def achieve_answer(query, ent_in, ent_out):
-    print("Debug: ", query)
+    # print("Debug: ", query)
     assert type(query[-1]) == list
     all_relation_flag = True
     for ele in query[-1]:
@@ -426,26 +436,29 @@ def achieve_answer(query, ent_in, ent_out):
 @click.option('--dataset', default="UMLS")
 @click.option('--seed', default=0)
 @click.option('--gen_train_num', default=5000)
-@click.option('--gen_valid_num', default=24)
+@click.option('--gen_valid_num', default=5000)
 @click.option('--gen_test_num', default=10)
 @click.option('--max_ans_num', default=1e6)
 @click.option('--reindex', is_flag=True, default=False)
 @click.option('--gen_train', is_flag=True, default=False)
 @click.option('--gen_valid', is_flag=True, default=False)
-@click.option('--gen_test', is_flag=True, default=True)
-@click.option('--gen_id', default=11)
-@click.option('--save_name', is_flag=True, default=True)
+@click.option('--gen_test', is_flag=True, default=False)
+@click.option('--gen_id', default=7)
+@click.option('--save_name', is_flag=True, default=False)
 @click.option('--index_only', is_flag=True, default=False)
-@click.option('--gen_all', is_flag=True, default=True)
+@click.option('--gen_all_positive', is_flag=True, default=False)
+@click.option('--gen_all_negative', is_flag=True, default=False)
+@click.option('--gen_all', is_flag=True, default=False)
 def main(dataset, seed, gen_train_num, gen_valid_num, gen_test_num, max_ans_num, reindex, gen_train, gen_valid,
-         gen_test, gen_id, save_name, index_only, gen_all):
-    # print(f"gen_id: {gen_id}")
+         gen_test, gen_id, save_name, index_only,gen_all_positive,gen_all_negative,gen_all):
+
+    """ Query sampler from BETA-E """
     train_num_dict = {'FB15k': 273710, "FB15k-237": 149689, "NELL": 107982, "UMLS": 5216, "Countries-S1": 1111}
     valid_num_dict = {'FB15k': 8000, "FB15k-237": 5000, "NELL": 4000, "UMLS": 661, "Countries-S1": 24}
     test_num_dict = {'FB15k': 8000, "FB15k-237": 5000, "NELL": 4000, "UMLS": 661, "Countries-S1": 24}
     if gen_train and gen_train_num == 0:
         if 'FB15k-237' in dataset:
-            gen_train_num = 300
+            gen_train_num = 149689
         elif 'FB15k' in dataset:
             gen_train_num = 273710
         elif 'NELL' in dataset:
@@ -454,7 +467,7 @@ def main(dataset, seed, gen_train_num, gen_valid_num, gen_test_num, max_ans_num,
             gen_train_num = train_num_dict[dataset]
     if gen_valid and gen_valid_num == 0:
         if 'FB15k-237' in dataset:
-            gen_valid_num = 20
+            gen_valid_num = 5000
         elif 'FB15k' in dataset:
             gen_valid_num = 8000
         elif 'NELL' in dataset:
@@ -463,7 +476,7 @@ def main(dataset, seed, gen_train_num, gen_valid_num, gen_test_num, max_ans_num,
             gen_valid_num = valid_num_dict[dataset]
     if gen_test and gen_test_num == 0:
         if 'FB15k-237' in dataset:
-            gen_test_num = 20
+            gen_test_num = 5000
         elif 'FB15k' in dataset:
             gen_test_num = 8000
         elif 'NELL' in dataset:
@@ -497,20 +510,46 @@ def main(dataset, seed, gen_train_num, gen_valid_num, gen_test_num, max_ans_num,
         [[[e, [r]], [e, [r]], [u]], [r]]
     ]
     query_names = ['1p', '2p', '3p', '2i', '3i', 'pi', 'ip', '2in', '3in', 'pin', 'pni', 'inp', '2u', 'up']
-    # for idx, query_structure in enumerate(query_structures):
-    #     generate_queries(dataset, [query_structure], [gen_train_num, gen_valid_num, gen_test_num], max_ans_num,
-    #                      gen_train, gen_valid, gen_test, [query_names[idx]], save_name)
-    generate_queries(dataset, query_structures[gen_id:gen_id + 1], [gen_train_num, gen_valid_num, gen_test_num],
-                     max_ans_num, gen_train, gen_valid, gen_test, query_names[gen_id:gen_id + 1], save_name)
-    # if gen_all:
-    #     for idx, query_structure in enumerate(query_structures):
-    #         generate_queries(dataset, [query_structure], [gen_train_num, gen_valid_num, gen_test_num], max_ans_num,
-    #                          gen_train, gen_valid, gen_test, [query_names[idx]], save_name)
-    # else:
-    #     generate_queries(dataset, query_structures[gen_id:gen_id + 1], [gen_train_num, gen_valid_num, gen_test_num],
-    #                      max_ans_num, gen_train, gen_valid, gen_test, query_names[gen_id:gen_id + 1], save_name)
-    #
+    if gen_all_positive:
+        gen_id = 1  # Start from 2p
+        for _ in range(6):  # This will cover 2p, 3p, 2i, 3i, pi, ip
+            if 'UMLS' in dataset and gen_id == 1 and gen_test_num > 1800:
+                print("for 2p queries in UMLS approx 1900 possible with not empty hard answer set")
+                generate_queries(dataset, query_structures[gen_id:gen_id + 1],
+                                 [gen_train_num, gen_valid_num, 1500],
+                                 max_ans_num, gen_train, gen_valid, gen_test, query_names[gen_id:gen_id + 1], save_name)
+            else:
+                generate_queries(dataset, query_structures[gen_id:gen_id + 1],
+                                 [gen_train_num, gen_valid_num, gen_test_num],
+                                 max_ans_num, gen_train, gen_valid, gen_test, query_names[gen_id:gen_id + 1], save_name)
+            gen_id += 1
 
+    if gen_all_negative:
+        gen_id = 7  # Start from the first negative query structure
+        for _ in range(5):  # This will cover 2in, 3in, pin, pni, inp
+            generate_queries(dataset, query_structures[gen_id:gen_id + 1],
+                                 [gen_train_num, gen_valid_num, gen_test_num],
+                                 max_ans_num, gen_train, gen_valid, gen_test, query_names[gen_id:gen_id + 1], save_name)
+            gen_id += 1
+
+    if gen_all:
+        gen_id = 1  # Start from 2p
+        for _ in range(1, len(query_names)):  # This covers all structures except 1p
+            if 'UMLS' in dataset and gen_id == 1 and gen_test_num > 1800:
+                print("for 2p queries in UMLS approx 1900 possible with not empty hard answer set")
+                generate_queries(dataset, query_structures[gen_id:gen_id + 1],
+                                 [gen_train_num, gen_valid_num, 1500],
+                                 max_ans_num, gen_train, gen_valid, gen_test, query_names[gen_id:gen_id + 1], save_name)
+            else:
+                generate_queries(dataset, query_structures[gen_id:gen_id + 1],
+                                 [gen_train_num, gen_valid_num, gen_test_num],
+                                 max_ans_num, gen_train, gen_valid, gen_test, query_names[gen_id:gen_id + 1], save_name)
+            gen_id += 1
+
+
+    else:
+      generate_queries(dataset, query_structures[gen_id:gen_id + 1], [gen_train_num, gen_valid_num, gen_test_num],
+                     max_ans_num, gen_train, gen_valid, gen_test, query_names[gen_id:gen_id + 1], save_name)
 
 if __name__ == '__main__':
     main()

@@ -7,15 +7,21 @@ import sys
 class KG:
     """ Knowledge Graph """
 
-    def __init__(self, data_dir: str = None, absolute_path_dataset:str=None,
+    def __init__(self, data_dir: str = None,
+                 add_noise_rate:float=None,
+                 sparql_endpoint:str=None,
+                 path_single_kg:str=None,
                  path_for_deserialization: str = None,
                  add_reciprical: bool = None, eval_model: str = None,
                  read_only_few: int = None, sample_triples_ratio: float = None,
                  path_for_serialization: str = None,
                  entity_to_idx=None, relation_to_idx=None, backend=None):
         """
+        @TODO: Renzhong, can you please update/modify the docstrings.
         :param data_dir: A path of a folder containing the input knowledge graph
-        :param absolute_path_dataset: The path of a single file containing the input knowledge graph
+        :param add_noise_rate: Noisy triples added into the training adataset by x % of its size.
+        : param sparql_endpoint: An endpoint of a triple store
+        :param path_single_kg: The path of a single file containing the input knowledge graph
         :param path_for_deserialization: A path of a folder containing previously parsed data
         :param num_core: Number of subprocesses used for data loading
         :param add_reciprical: A flag for applying reciprocal data augmentation technique
@@ -24,10 +30,12 @@ class KG:
         :param add_noise_rate: Add say 10% noise in the input data
         sample_triples_ratio
         """
+        self.sparql_endpoint = sparql_endpoint
+        self.add_noise_rate = add_noise_rate
         self.num_entities = None
         self.num_relations = None
         self.data_dir = data_dir
-        self.absolute_path_dataset=absolute_path_dataset
+        self.path_single_kg=path_single_kg
         self.path_for_deserialization = path_for_deserialization
         self.add_reciprical = add_reciprical
         self.eval_model = eval_model
@@ -62,7 +70,8 @@ class KG:
                                      f'{len(self.train_set)}' \
                                      f'\nNumber of triples on valid set:' \
                                      f'{len(self.valid_set) if self.valid_set is not None else 0}' \
-                                     f'\nNumber of triples on test set:{len(self.test_set) if self.test_set is not None else 0}\n'
+                                     f'\nNumber of triples on test set:' \
+                                     f'{len(self.test_set) if self.test_set is not None else 0}\n'
         self.description_of_input += f"Entity Index:{sys.getsizeof(self.entity_to_idx) / 1_000_000_000:.5f} in GB\n"
         self.description_of_input += f"Relation Index:{sys.getsizeof(self.relation_to_idx) / 1_000_000_000:.5f} in GB\n"
         self.description_of_input += f"Train set :{self.train_set.nbytes / 1_000_000_000:.5f} in GB\n"

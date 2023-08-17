@@ -5,10 +5,10 @@ from torch.utils.data import DataLoader
 from .abstracts import BaseInteractiveKGE
 from .dataset_classes import TriplePredictionDataset
 from .static_funcs import random_prediction, deploy_triple_prediction, deploy_tail_entity_prediction, \
-    deploy_relation_prediction, deploy_head_entity_prediction
+    deploy_relation_prediction, deploy_head_entity_prediction, load_pickle
+from .static_funcs_training import evaluate_lp
 import numpy as np
 import sys
-
 
 class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
@@ -21,7 +21,20 @@ class KGE(BaseInteractiveKGE):
                          apply_semantic_constraint=apply_semantic_constraint)
 
     def __str__(self):
-        return 'KGE | ' + str(self.model)
+        return "KGE | " + str(self.model)
+
+    def eval_lp_performance(self, dataset=List[Tuple[str, str, str]], filtered=True):
+        assert isinstance(dataset, list) and len(dataset) > 0
+
+        idx_dataset = np.array(
+            [(self.entity_to_idx[s], self.relation_to_idx[p], self.entity_to_idx[o]) for s, p, o in dataset])
+        if filtered:
+            return evaluate_lp(model=self.model, triple_idx=idx_dataset, num_entities=len(self.entity_to_idx),
+                               er_vocab=load_pickle(self.path + '/er_vocab.p'),
+                               re_vocab=load_pickle(self.path + '/re_vocab.p'))
+        else:
+            return evaluate_lp(model=self.model, triple_idx=idx_dataset, num_entities=len(self.entity_to_idx),
+                               er_vocab=None, re_vocab=None)
 
     def predict_missing_head_entity(self, relation: List[str], tail_entity: List[str]) -> Tuple:
         """
@@ -57,7 +70,6 @@ class KGE(BaseInteractiveKGE):
                          relation.repeat(self.num_entities, ),
                          tail_entity.repeat(self.num_entities, )), dim=1)
         return self.model.forward(x)
-
 
     def predict_missing_relations(self, head_entity: List[str], tail_entity: List[str]) -> Tuple:
         """
@@ -121,8 +133,8 @@ class KGE(BaseInteractiveKGE):
 
         scores
         """
-        x=torch.cat((torch.LongTensor([self.entity_to_idx[i] for i in head_entity]).unsqueeze(-1),
-                     torch.LongTensor([self.relation_to_idx[i] for i in relation]).unsqueeze(-1)), dim=1)
+        x = torch.cat((torch.LongTensor([self.entity_to_idx[i] for i in head_entity]).unsqueeze(-1),
+                       torch.LongTensor([self.relation_to_idx[i] for i in relation]).unsqueeze(-1)), dim=1)
         return self.model.forward(x)
 
     def predict(self, *, h: List[str] = None, r: List[str] = None, t: List[str] = None):
