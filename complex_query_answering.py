@@ -691,7 +691,7 @@ def main(datapath: str, experiment, tnorm: str, neg_norm: str,lambda_: float,k_:
 
     tasks = (
                     # "1p",
-                    #"2p",
+                    "2p",
                     "3p",
                     "2i",
                     "3i",
