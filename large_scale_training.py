@@ -20,16 +20,18 @@ def input_arguments():
     parser = ArgumentParser()
     parser.add_argument("--path_kg", type=str, default="dbpedia-2022-12-nt-wo-lit-polars.parquet.snappy",
                         help="path parquet formatted polars dataframe")
-    parser.add_argument("--path_idx_kg", type=str, default="seed_models/data.npy",
+    parser.add_argument("--path_idx_kg", type=str, default="data.npy",
                         help="path to numpy ndarray")
-    parser.add_argument("--path_checkpoint", type=str, default="a"
+    parser.add_argument("--path_checkpoint", type=str, default="Keci_1_14.torch"
                         )
-    parser.add_argument("--path_checkpoint2", type=str, default="b")
+    parser.add_argument("--path_checkpoint2", type=str, default="Keci_1_14.torch")
 
     parser.add_argument("--batch_size", type=int, default=10_000_000)
     parser.add_argument("--neg_sample_ratio", type=float, default=1.0)
     parser.add_argument("--embedding_dim", type=int, default=20)
-    parser.add_argument("--num_epochs", type=int, default=3)
+    parser.add_argument("--num_epochs", type=int, default=1)
+    parser.add_argument("--read_only", default=None)
+    parser.add_argument("--lr", type=float, default=0.1)
 
     return parser.parse_args()
 
@@ -71,7 +73,7 @@ def get_data(args) -> Tuple[np.ndarray, int, int]:
         """ do this """
         print("Reading KG...\n")
         start_time = time.time()
-        data = pl.read_parquet(args.path_kg)
+        data = pl.read_parquet(source=args.path_kg,n_rows=args.read_only)
         print(f"took {time.time() - start_time}")
         print("Unique entities...")
         start_time = time.time()
@@ -132,10 +134,10 @@ def init_model(args, num_entities, num_relations):
     print('Initializing models...')
     model1 = Keci(
         args={"optim": "Adam", "p": 0, "q": 1, "num_entities": num_entities, "num_relations": num_relations,
-              "embedding_dim": args.embedding_dim, 'learning_rate': 0.01})
+              "embedding_dim": args.embedding_dim, 'learning_rate': args.lr})
     model2 = Keci(
         args={"optim": "Adam", "p": 0, "q": 1, "num_entities": num_entities, "num_relations": num_relations,
-            "embedding_dim": args.embedding_dim, 'learning_rate': 0.01})
+            "embedding_dim": args.embedding_dim, 'learning_rate': args.lr})
     print(f"took {time.time() - start_time}")
     return (model1, model2), (model1.configure_optimizers(), model2.configure_optimizers())
 
@@ -149,15 +151,8 @@ def get_model(args, num_entities: int, num_relations: int):
         model1, model2 = models
         opt1, opt2 = optimizers
 
-        checkpoint1 = torch.load(args.path_checkpoint,map_location='cpu')
-        model1.load_state_dict(checkpoint1['model_state_dict'])
-        # Send the all params in optimizer into cpu?!
-        # Iteratieve over opt1 and send each param into cpu
-        #opt1.load_state_dict(checkpoint1['optimizer_state_dict'])
-
-        checkpoint2 = torch.load(args.path_checkpoint2,map_location='cpu')
-        model2.load_state_dict(checkpoint2['model_state_dict'])
-        #opt2.load_state_dict(checkpoint2['optimizer_state_dict'])
+        model1.load_state_dict(torch.load(args.path_checkpoint,map_location='cpu'))
+        model2.load_state_dict(torch.load(args.path_checkpoint,map_location='cpu'))
         models = (model1, model2)
         optimizers = (opt1, opt2)
     return models, optimizers
@@ -180,6 +175,48 @@ def get_train_loader(args):
     print('Number of triples', len(data.dataset))
     return data, num_ent, num_rel
 
+def run_epoch(loss_function,dataloader,model1,model2,opt1,opt2):
+    device1 = "cuda:0"
+    device2 = "cuda:1"
+    epoch_loss = 0.0
+    for ith, (x, y) in enumerate(tqdm(dataloader)):
+        # (1) Shape the batch
+        x = x.flatten(start_dim=0, end_dim=1)
+        y = y.flatten(start_dim=0, end_dim=1)
+            
+        # (2) Empty the gradients
+        opt1.zero_grad(set_to_none=True)
+        opt2.zero_grad(set_to_none=True)
+            
+        # (3) Forward Backward and Parameter Update
+        start_time = time.time()
+        # (3.1) Select embeddings of triples
+        h1, r1, t1 = model1.get_triple_representation(x)
+        # (3.2) Move (3.1) into a single GPU
+        h1, r1, t1, y = h1.pin_memory().to(device1, non_blocking=True), r1.pin_memory().to(device1,non_blocking=True), t1.pin_memory().to(device1, non_blocking=True), y.pin_memory().to(device1, non_blocking=True)
+        # (3.3) Compute triple score (Forward Pass)
+        yhat1 = model1.score(h1, r1, t1)
+
+        # (3.4) Select second part of the embeddings of triples
+        h2, r2, t2 = model2.get_triple_representation(x)
+        # (3.5) Move (3.4) into a single GPU
+        h2, r2, t2 = h2.pin_memory().to(device2, non_blocking=True), r2.pin_memory().to(device2, non_blocking=True), t2.pin_memory().to(device2, non_blocking=True)
+        # 3.6 Forward Pass
+        yhat2 = model2.score(h2, r2, t2).to(device1)
+        # (3.7) Composite Prediction
+        yhat = yhat1 + yhat2
+        # (3.8) Compute Loss
+        batch_loss = loss_function(yhat, y)
+        # (3.9) Compute gradients (Backward Pass)
+        batch_loss.backward()
+        # (3.10) Update parameters
+        opt1.step()
+        opt2.step()
+        # (4) Update epoch loss
+        numpy_batch_loss = batch_loss.item()
+        epoch_loss += numpy_batch_loss
+        print(f"\tBatch Loss:{numpy_batch_loss}\tForward-Backward-Update: {time.time() - start_time}")
+    print(f"Epoch Loss:{epoch_loss}")
 
 def run(args):
     # (1) Get training data
@@ -213,7 +250,15 @@ def run(args):
     # @TODO: Ensure the multi-node training
     for e in range(args.num_epochs):
         epoch_loss = 0
-        print(f"Epoch:{e}")
+        if e==-1:
+            args.batch_size+=args.batch_size
+            print(f"Increase Batch size to {args.batch_size}")
+            args.batch_size+=args.batch_size
+            dataloader = MultiEpochsDataLoader(dataset=dataloader.dataset,batch_size=args.batch_size, shuffle=True,num_workers=32)
+
+
+        run_epoch(loss_function,dataloader,model1,model2,opt1,opt2)
+        """
         for ith, (x, y) in enumerate(tqdm(dataloader)):
             # (1) Shape the batch
             x = x.flatten(start_dim=0, end_dim=1)
@@ -252,16 +297,16 @@ def run(args):
             epoch_loss += numpy_batch_loss
             if ith % 1 == 0: # init an argument
                 print(f"\tBatch Loss:{numpy_batch_loss}\tForward-Backward-Update: {time.time() - start_time}")
-    print(f"Epoch:{e}\tEpoch Loss:{epoch_loss}")
+        print(f"Epoch:{e}\tEpoch Loss:{epoch_loss}")
+        """
     print("Saving....")
     start_time=time.time()
-    torch.save({
-                'model_state_dict': model1._orig_mod.state_dict(),
-                'optimizer_state_dict': opt1.state_dict()}, f"{model1._orig_mod.name}_1_{e}.torch")
-
-    torch.save({
-                'model_state_dict': model2._orig_mod.state_dict(),
-                'optimizer_state_dict': opt2.state_dict()}, f"{model1._orig_mod.name}_2_{e}.torch")
+    model1.to("cpu")
+    model2.to("cpu")
+    print(model1._orig_mod.state_dict())
+    torch.save(model1._orig_mod.state_dict(),f"{model1._orig_mod.name}_1_{e}.torch")
+    print(model2._orig_mod.state_dict())
+    torch.save(model2._orig_mod.state_dict(),f"{model1._orig_mod.name}_2_{e}.torch")
     print('DONE')
     print(f"took {time.time() - start_time}")
 
