@@ -1,8 +1,10 @@
 **Generate Queries and get test dataset ready** 
-Query creation and mappings for UMLS in KGs folder git
+Query creation and mappings for UMLS in KGs folder 
 
-python mappings.py --datapath "./KGs/UMLS" --map_to_ids --indexify_files 
+python mappings.py --datapath "./KGs/UMLS" --map_to_ids --indexify_files
+
 python create_queries.py --dataset "UMLS" --gen_test_num 10 --gen_test --save_name --gen_all
+
 python mappings.py --datapath "./KGs/UMLS" --unmap_to_text --join_queries --file_type unmapped
 
 
