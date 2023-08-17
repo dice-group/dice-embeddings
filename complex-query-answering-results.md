@@ -1,5 +1,5 @@
-**Generate Queries and get test dataset ready** 
-Query creation and mappings for UMLS in KGs folder 
+**Generate Queries and get test dataset ready**
+(Mappings and Query Creation for UMLS in KGs folder)
 
 python mappings.py --datapath "./KGs/UMLS" --map_to_ids --indexify_files
 
