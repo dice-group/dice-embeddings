@@ -1,9 +1,18 @@
+**Generate Queries and get test dataset ready** 
+Query creation and mappings for UMLS in KGs folder git
 
-python complex_query_answering.py --datapath datapath for queries --experiment pretrained KGE model path --tnorm 'prod' --neg_norm 'yager' --k_ 4 --lambda_ 0.4
+python mappings.py --datapath "./KGs/UMLS" --map_to_ids --indexify_files 
+python create_queries.py --dataset "UMLS" --gen_test_num 10 --gen_test --save_name --gen_all
+python mappings.py --datapath "./KGs/UMLS" --unmap_to_text --join_queries --file_type unmapped
 
-Queries can be created using the complex_query_generation.py and joined using mappings.py 
 
-The table below shows the result for KECI model (embedding_dim=32, epochs=100, p=0, q=1) on UMLS test queries 
+**Complex query answering** 
+
+python complex_query_answering.py --datapath "./KGs/UMLS" --experiment pretrained KGE model path --tnorm 'prod' --neg_norm 'yager' --k_ 4 --lambda_ 0.4
+
+**SOME RESULTS**
+
+The table below shows the result for KECI model (embedding_dim=32, epochs=100, p=0, q=1) on UMLS test queries 5000 for each type  
 
 | Query Name | MRR | H1 | H3 | H10 |
 | ---------- | --- | -- | -- | --- |
