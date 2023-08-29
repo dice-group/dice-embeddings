@@ -149,13 +149,12 @@ class BaseInteractiveKGE:
         self.construct_ensemble = construct_ensemble
         self.apply_semantic_constraint = apply_semantic_constraint
         if construct_ensemble:
-            self.model, self.entity_to_idx, self.relation_to_idx = load_model_ensemble(self.path + '/')
+            self.model, self.entity_to_idx, self.relation_to_idx = load_model_ensemble(self.path)
         else:
             if model_name:
-                self.model, self.entity_to_idx, self.relation_to_idx = load_model(self.path + '/',
-                                                                                  model_name=model_name)
+                self.model, self.entity_to_idx, self.relation_to_idx = load_model(self.path, model_name=model_name)
             else:
-                self.model, self.entity_to_idx, self.relation_to_idx = load_model(self.path + '/')
+                self.model, self.entity_to_idx, self.relation_to_idx = load_model(self.path)
         self.num_entities = len(self.entity_to_idx)
         self.num_relations = len(self.relation_to_idx)
         self.entity_to_idx: dict
