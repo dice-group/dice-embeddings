@@ -32,4 +32,5 @@ jobs:
 
       - name: Run ghp-import
         run: |
-          mv docs/_build/html docs/ && ghp-import -n -p -f docs/html
+          ghp-import -n -p -f docs/_build/html
+# mv docs/_build/html docs/ &&
