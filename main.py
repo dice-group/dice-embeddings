@@ -30,7 +30,7 @@ def get_default_arguments(description=None):
                         default="Keci",
                         choices=["ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "ComplEx", "Keci",
-                                 "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
+                                 "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
                                  "Pykeen_HolE", "Pykeen_ProjE", "Pykeen_RotatE",
                                  "Pykeen_TransE", "Pykeen_TransF", "Pykeen_TransH",
                                  "Pykeen_TransR", "Pykeen_TuckER", "Pykeen_ComplEx"],
@@ -43,7 +43,8 @@ def get_default_arguments(description=None):
     parser.add_argument('--embedding_dim', type=int, default=64,
                         help='Number of dimensions for an embedding vector. ')
     parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. ')
-    parser.add_argument('--batch_size', type=int, default=256, help='Mini batch size. If None, automatic batch finder is applied')
+    parser.add_argument('--batch_size', type=int, default=1024,
+                        help='Mini batch size. If None, automatic batch finder is applied')
     parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument('--callbacks', type=json.loads, default={},
                         help=' {"PPE":{ "last_percent_to_consider": 10}}, {"GN": {"std":0.1}}')
@@ -53,9 +54,9 @@ def get_default_arguments(description=None):
     parser.add_argument("--trainer", type=str, default='torchCPUTrainer',
                         choices=['torchCPUTrainer', 'PL', 'torchDDP'],
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
-    parser.add_argument('--scoring_technique', default='KvsAll',
+    parser.add_argument('--scoring_technique', default="AllvsAll",
                         help="Training technique for knowledge graph embedding model",
-                        choices=["KvsAll", "1vsAll", "NegSample", "KvsSample"])
+                        choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "KvsSample"])
     parser.add_argument('--neg_ratio', type=int, default=0,
                         help='The number of negative triples generated per positive triple.')
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
