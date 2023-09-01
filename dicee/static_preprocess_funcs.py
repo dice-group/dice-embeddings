@@ -6,8 +6,6 @@ from collections import defaultdict
 from .sanity_checkers import sanity_checking_with_arguments
 
 enable_log = False
-
-
 def timeit(func):
     @functools.wraps(func)
     def timeit_wrapper(*args, **kwargs):
@@ -58,7 +56,7 @@ def preprocesses_input_args(args):
         args.eval_model = None
 
     # reciprocal checking
-    if args.scoring_technique in ['KvsSample', 'KvsAll', '1vsAll', 'Pyke']:
+    if args.scoring_technique in ["AllvsAll", "KvsSample", "KvsAll", "1vsAll"]:
         args.apply_reciprical_or_noise = True
     elif args.scoring_technique == 'NegSample':
         args.apply_reciprical_or_noise = False
