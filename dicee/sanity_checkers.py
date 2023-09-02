@@ -21,7 +21,7 @@ def sanity_checking_with_arguments(args):
         print(f'embedding_dim must be strictly positive. Currently:{args.embedding_dim}')
         raise
 
-    if args.scoring_technique not in ['KvsSample', 'KvsAll', 'NegSample', '1vsAll', 'Pyke']:
+    if args.scoring_technique not in ["AllvsAll", "KvsSample", "KvsAll", "NegSample", "1vsAll", "Pyke"]:
         raise KeyError(f'Invalid training strategy => {args.scoring_technique}.')
 
     assert args.learning_rate > 0

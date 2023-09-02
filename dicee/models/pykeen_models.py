@@ -140,19 +140,3 @@ class PykeenKGE(BaseKGE):
 
     def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx):
         raise NotImplementedError()
-
-    def forward(self, x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]],
-                y_idx: torch.LongTensor = None):
-        if isinstance(x, tuple):
-            x, y_idx = x
-            return self.forward_k_vs_sample(x=x, target_entity_idx=y_idx)
-        else:
-            batch_size, dim = x.shape
-            if dim == 3:
-                return self.forward_triples(x)
-            elif dim == 2:
-                # h, y = x[0], x[1]
-                # Note that y can be relation or tail entity.
-                return self.forward_k_vs_all(x=x)
-            else:
-                return self.forward_sequence(x=x)
