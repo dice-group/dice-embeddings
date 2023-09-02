@@ -318,6 +318,6 @@ class RN(AbstractCallback):
             with torch.no_grad():
                 # Access the parameters
                 for param in model.parameters():
-                    noise_mat = torch.rand(size=param.shape) * self.std
+                    noise_mat = torch.rand(size=param.shape,device=model.device) * self.std
                     param.add_(noise_mat)
         self.epoch_counter += 1
