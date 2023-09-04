@@ -554,7 +554,7 @@ class Keci(BaseKGE):
         t0, tp, tq = self.construct_cl_multivector(t, r=self.r, p=self.p, q=self.q)
 
         if self.q > 0:
-            self.q_coefficients = self.q_coefficients.to(h0.device)
+            self.q_coefficients = self.q_coefficients.to(h0.device, non_blocking=True)
 
         h0, hp, hq, h0, rp, rq = self.apply_coefficients(h0, hp, hq, h0, rp, rq)
         # (4) Compute a triple score based on interactions described by the basis 1. Eq. 20
