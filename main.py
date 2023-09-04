@@ -51,7 +51,7 @@ def get_default_arguments(description=None):
     parser.add_argument("--backend", type=str, default='pandas',
                         choices=["pandas", "polars"],
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
-    parser.add_argument("--trainer", type=str, default='torchCPUTrainer',
+    parser.add_argument("--trainer", type=str, default='PL',
                         choices=['torchCPUTrainer', 'PL', 'torchDDP'],
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
     parser.add_argument('--scoring_technique', default="AllvsAll",
