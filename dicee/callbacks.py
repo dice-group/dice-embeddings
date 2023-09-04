@@ -271,8 +271,8 @@ class KronE(AbstractCallback):
         tail_ent_kron_emb = self.batch_kronecker_product(*torch.hsplit(tail_ent_emb, 2))
 
         return torch.cat((head_ent_emb, head_ent_kron_emb), dim=1), \
-               torch.cat((rel_ent_emb, rel_ent_kron_emb), dim=1), \
-               torch.cat((tail_ent_emb, tail_ent_kron_emb), dim=1)
+            torch.cat((rel_ent_emb, rel_ent_kron_emb), dim=1), \
+            torch.cat((tail_ent_emb, tail_ent_kron_emb), dim=1)
 
     def on_fit_start(self, trainer, model):
         if isinstance(model.normalize_head_entity_embeddings, dicee.models.base_model.IdentityClass):
@@ -281,6 +281,41 @@ class KronE(AbstractCallback):
 
         else:
             raise NotImplementedError('Normalizer should be reinitialized')
+
+
+class Perturb(AbstractCallback):
+    def __init__(self, level: str, ratio: float, method: str = None):
+        """
+        level in {input, param, output}
+        ratio in [0,1]
+        method = ?
+        """
+        super().__init__()
+
+        assert level in {"input"}
+        assert ratio >= 0.0
+        self.level = level
+        self.ratio = ratio
+        self.method = method
+
+    def on_train_batch_start(self, trainer, model, batch, batch_idx):
+        # Modifications should be in-place
+        x, y = batch
+        n, _ = x.shape
+        num_of_perturbed_data = int(n * self.ratio)
+        # Sample random integers from 0 to n without replacement and take k of tem
+        random_indices = torch.randperm(n)[:num_of_perturbed_data]
+        if self.level == "input":
+            if torch.rand(1) > 0.5:
+                # Perturb input via heads
+                perturbation = torch.randint(low=0, high=model.num_entities, size=(num_of_perturbed_data,))
+                x[random_indices] = torch.column_stack(
+                    (perturbation, x[:, 1][random_indices]))
+            else:
+                # Perturb input via relations
+                perturbation = torch.randint(low=0, high=model.num_relations, size=(num_of_perturbed_data,))
+                x[random_indices] = torch.column_stack(
+                    (x[:, 0][random_indices], perturbation))
 
 
 class GN(AbstractCallback):
@@ -318,6 +353,6 @@ class RN(AbstractCallback):
             with torch.no_grad():
                 # Access the parameters
                 for param in model.parameters():
-                    noise_mat = torch.rand(size=param.shape,device=model.device) * self.std
+                    noise_mat = torch.rand(size=param.shape) * self.std
                     param.add_(noise_mat)
         self.epoch_counter += 1

@@ -1,7 +1,6 @@
 import torch
 import torch.utils.data
 import numpy as np
-from typing import Tuple, Union
 import pickle
 from pykeen.models import model_resolver
 from .base_model import BaseKGE

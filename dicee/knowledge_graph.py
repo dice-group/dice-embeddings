@@ -8,9 +8,9 @@ class KG:
     """ Knowledge Graph """
 
     def __init__(self, data_dir: str = None,
-                 add_noise_rate:float=None,
-                 sparql_endpoint:str=None,
-                 path_single_kg:str=None,
+                 add_noise_rate: float = None,
+                 sparql_endpoint: str = None,
+                 path_single_kg: str = None,
                  path_for_deserialization: str = None,
                  add_reciprical: bool = None, eval_model: str = None,
                  read_only_few: int = None, sample_triples_ratio: float = None,
@@ -35,7 +35,7 @@ class KG:
         self.num_entities = None
         self.num_relations = None
         self.data_dir = data_dir
-        self.path_single_kg=path_single_kg
+        self.path_single_kg = path_single_kg
         self.path_for_deserialization = path_for_deserialization
         self.add_reciprical = add_reciprical
         self.eval_model = eval_model

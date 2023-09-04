@@ -104,8 +104,6 @@ class Experiment:
 def analyse(args):
     # (2) Get all subfolders
     sub_folder_str_paths = os.listdir(args.dir)
-    results = dict()
-
     experiments = []
     for path in sub_folder_str_paths:
         full_path=args.dir +"/"+path
@@ -134,11 +132,12 @@ def analyse(args):
         counter.save_experiment(i)
 
     df = counter.to_df()
+    df.sort_values(by=['test_mrr'], ascending=False, inplace=True)
     pd.set_option("display.precision", 3)
     # print(df)
     print(df.to_latex(index=False, float_format="%.3f"))
-
-    print(df.to_markdown(index=False))
+    #print(df.to_markdown(index=False))
+    df.to_csv(path_or_buf=args.dir+'/summary.csv')
 
 
 if __name__ == '__main__':
