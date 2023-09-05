@@ -2,9 +2,7 @@
 import json
 from dicee.executer import Execute
 import pytorch_lightning as pl
-from dicee.config import ParseDict
 import argparse
-
 
 def get_default_arguments(description=None):
     """ Extends pytorch_lightning Trainer's arguments with ours """

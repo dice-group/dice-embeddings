@@ -318,20 +318,24 @@ class Perturb(AbstractCallback):
         x, y = batch
         n, _ = x.shape
         num_of_perturbed_data = int(n * self.ratio)
-
-
-        devicee=x.get_device()
+        assert num_of_perturbed_data > 0
+        assert n > 0
+        device = x.get_device()
+        if device == -1:
+            device = "cpu"
         # Sample random integers from 0 to n without replacement and take k of tem
-        random_indices = torch.randperm(n,device=devicee)[:num_of_perturbed_data]
+        random_indices = torch.randperm(n, device=device)[:num_of_perturbed_data]
         if self.level == "input":
             if torch.rand(1) > 0.5:
                 # Perturb input via heads
-                perturbation = torch.randint(low=0, high=model.num_entities, size=(num_of_perturbed_data,),device=devicee)
+                perturbation = torch.randint(low=0, high=model.num_entities, size=(num_of_perturbed_data,),
+                                             device=device)
                 x[random_indices] = torch.column_stack(
                     (perturbation, x[:, 1][random_indices]))
             else:
                 # Perturb input via relations
-                perturbation = torch.randint(low=0, high=model.num_relations, size=(num_of_perturbed_data,),device=devicee)
+                perturbation = torch.randint(low=0, high=model.num_relations, size=(num_of_perturbed_data,),
+                                             device=device)
                 x[random_indices] = torch.column_stack(
                     (x[:, 0][random_indices], perturbation))
         elif self.level == "param":
@@ -348,10 +352,11 @@ class Perturb(AbstractCallback):
                 else:
                     r_selected = r[random_indices]
                     with (torch.no_grad()):
-                        model.relation_embeddings.weight[r_selected] +=torch.normal(mean=0, std=self.scaler,
-                                                                                    size=model.entity_embeddings.weight[
-                                                                                        r_selected].shape,
-                                                                                    device=model.device)
+                        model.relation_embeddings.weight[r_selected] += torch.normal(mean=0, std=self.scaler,
+                                                                                     size=
+                                                                                     model.entity_embeddings.weight[
+                                                                                         r_selected].shape,
+                                                                                     device=model.device)
             elif self.method == "RN":
                 if torch.rand(1) > 0.0:
                     h_selected = h[random_indices]
@@ -367,35 +372,14 @@ class Perturb(AbstractCallback):
                 raise RuntimeError(f"--method is given as {self.method}!")
         elif self.level == "out":
 
-            if self.method=="RN":
+            if self.method == "RN":
                 # Soft Perturb ?
                 perturb = torch.rand(1, device=model.device) * self.scaler
                 # https://pytorch.org/docs/stable/generated/torch.where.html
                 # 1.0 => 1.0 - perturb
                 # 0.0 => perturb
-                batch[1][random_indices]=torch.where(batch[1][random_indices] == 1.0, 1.0-perturb, perturb)
+                batch[1][random_indices] = torch.where(batch[1][random_indices] == 1.0, 1.0 - perturb, perturb)
             else:
                 raise NotImplementedError(f"{self.level}")
         else:
             raise RuntimeError(f"--level is given as {self.level}!")
-
-
-class GN(AbstractCallback):
-    '''
-    Adding Gaussian Noise into Inputs/Parameters
-    '''
-
-    def __init__(self, std: float = 0.1, epoch_ratio: int = None):
-        super().__init__()
-        self.std = std
-        self.epoch_ratio = epoch_ratio if epoch_ratio is not None else 1
-        self.epoch_counter = 0
-
-    def on_train_epoch_start(self, trainer, model):
-        if self.epoch_counter % self.epoch_ratio == 0:
-            with torch.no_grad():
-                # Access the parameters
-                for param in model.parameters():
-                    noise_mat = torch.normal(mean=0, std=self.std, size=param.shape, device=model.device)
-                    param.add_(noise_mat)
-        self.epoch_counter += 1
