@@ -318,17 +318,20 @@ class Perturb(AbstractCallback):
         x, y = batch
         n, _ = x.shape
         num_of_perturbed_data = int(n * self.ratio)
+
+
+        devicee=x.get_device()
         # Sample random integers from 0 to n without replacement and take k of tem
-        random_indices = torch.randperm(n)[:num_of_perturbed_data]
+        random_indices = torch.randperm(n,device=devicee)[:num_of_perturbed_data]
         if self.level == "input":
             if torch.rand(1) > 0.5:
                 # Perturb input via heads
-                perturbation = torch.randint(low=0, high=model.num_entities, size=(num_of_perturbed_data,))
+                perturbation = torch.randint(low=0, high=model.num_entities, size=(num_of_perturbed_data,),device=devicee)
                 x[random_indices] = torch.column_stack(
                     (perturbation, x[:, 1][random_indices]))
             else:
                 # Perturb input via relations
-                perturbation = torch.randint(low=0, high=model.num_relations, size=(num_of_perturbed_data,))
+                perturbation = torch.randint(low=0, high=model.num_relations, size=(num_of_perturbed_data,),device=devicee)
                 x[random_indices] = torch.column_stack(
                     (x[:, 0][random_indices], perturbation))
         elif self.level == "param":

@@ -358,12 +358,8 @@ def intialize_model(args: dict) -> Tuple[object, str]:
 
 
 def load_json(p: str) -> dict:
-    try:
-        with open(p, 'r') as r:
+    with open(p, 'r') as r:
             args = json.load(r)
-    except FileNotFoundError:
-        print('Config file not found')
-        exit(1)
     return args
 
 
