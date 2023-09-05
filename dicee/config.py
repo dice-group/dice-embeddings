@@ -1,18 +1,5 @@
 import argparse
 from .abstracts import AbstractCallback
-
-class ParseDict(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
-        setattr(namespace, self.dest,
-                dict())  # set each name of the attribute to hold the created object(s) as dictionary
-        for value in values:
-            key, value = value.split('=')
-            if value.isdigit():
-                getattr(namespace, self.dest)[key] = int(value)
-                continue
-            getattr(namespace, self.dest)[key] = value
-
-
 class Namespace(argparse.Namespace):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -40,13 +27,13 @@ class Namespace(argparse.Namespace):
         self.optim: str = 'Adam'
         "Optimizer"
 
-        self.embedding_dim: int = 32
+        self.embedding_dim: int = 64
         "Size of continuous vector representation of an entity/relation"
 
         self.num_epochs: int = 100
         "Number of pass over the training data"
 
-        self.batch_size: type[int | None] = 1024
+        self.batch_size: int = 1024
         "Mini-batch size if it is None, an automatic batch finder technique applied"
 
         self.lr: float = 0.1

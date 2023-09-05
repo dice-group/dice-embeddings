@@ -4,7 +4,7 @@ from typing import Union
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
 from dicee.callbacks import (PPE, FPPE, Eval, KronE, PrintCallback, KGESaveCallback, AccumulateEpochLossCallback,
-                             GN, RN, Perturb)
+                             Perturb)
 from dicee.dataset_classes import construct_dataset, reload_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
@@ -55,7 +55,7 @@ def get_callbacks(args):
         elif k=='RN':
             callbacks.append(RN(std=v['std'], epoch_ratio=v.get('epoch_ratio')))
         elif k=="Perturb":
-            callbacks.append(Perturb(level=v.get("level"), ratio=v.get("ratio")))
+            callbacks.append(Perturb(**v))
         elif k == 'FPP':
             callbacks.append(
                 FPPE(num_epochs=args.num_epochs, path=args.full_storage_path,
@@ -138,7 +138,7 @@ class DICE_Trainer:
         return model, form_of_labelling
 
     @timeit
-    def initialize_trainer(self, callbacks: List, plugins: List) -> pl.Trainer:
+    def initialize_trainer(self, callbacks: List) -> pl.Trainer:
         """ Initialize Trainer from input arguments """
         return initialize_trainer(self.args, callbacks)
 
@@ -187,7 +187,7 @@ class DICE_Trainer:
             return self.k_fold_cross_validation(dataset)
         else:
             self.trainer: Union[TorchTrainer, TorchDDPTrainer, pl.Trainer]
-            self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args), plugins=[])
+            self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
             model, form_of_labelling = self.initialize_or_load_model()
             self.trainer.evaluator = self.evaluator
             # @TODO Why do we need to sent the dataset ?
@@ -217,6 +217,7 @@ class DICE_Trainer:
         kf = KFold(n_splits=self.args.num_folds_for_cv, shuffle=True, random_state=1)
         model = None
         eval_folds = []
+        form_of_labelling=None
         # (2) Iterate over (1)
         for (ith, (train_index, test_index)) in enumerate(kf.split(dataset.train_set)):
             # (2.1) Create a new copy for the callbacks
