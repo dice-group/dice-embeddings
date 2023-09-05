@@ -284,19 +284,34 @@ class KronE(AbstractCallback):
 
 
 class Perturb(AbstractCallback):
-    def __init__(self, level: str, ratio: float, method: str = None):
+    """ A callback for a three-Level Perturbation
+
+    Input Perturbation: During training an input x is perturbed by randomly replacing its element.
+    In the context of knowledge graph embedding models, x can denote a triple, a tuple of an entity and a relation,
+    or a tuple of two entities.
+    A perturbation means that a component of x is randomly replaced by an entity or a relation.
+
+    Parameter Perturbation:
+
+    Output Perturbation:
+    """
+
+    def __init__(self, level: str = "input", ratio: float = 0.0, method: str = None, scaler: float = None,
+                 frequency=None):
         """
         level in {input, param, output}
-        ratio in [0,1]
+        ratio:float btw [0,1] a percentage of mini-batch data point to be perturbed.
         method = ?
         """
         super().__init__()
 
-        assert level in {"input"}
+        assert level in {"input", "param", "out"}
         assert ratio >= 0.0
         self.level = level
         self.ratio = ratio
         self.method = method
+        self.scaler = scaler
+        self.frequency = frequency  # per epoch, per mini-batch ?
 
     def on_train_batch_start(self, trainer, model, batch, batch_idx):
         # Modifications should be in-place
@@ -316,6 +331,50 @@ class Perturb(AbstractCallback):
                 perturbation = torch.randint(low=0, high=model.num_relations, size=(num_of_perturbed_data,))
                 x[random_indices] = torch.column_stack(
                     (x[:, 0][random_indices], perturbation))
+        elif self.level == "param":
+            h, r = torch.hsplit(x, 2)
+
+            if self.method == "GN":
+                if torch.rand(1) > 0.0:
+                    h_selected = h[random_indices]
+                    with torch.no_grad():
+                        model.entity_embeddings.weight[h_selected] += torch.normal(mean=0, std=self.scaler,
+                                                                                   size=model.entity_embeddings.weight[
+                                                                                       h_selected].shape,
+                                                                                   device=model.device)
+                else:
+                    r_selected = r[random_indices]
+                    with (torch.no_grad()):
+                        model.relation_embeddings.weight[r_selected] +=torch.normal(mean=0, std=self.scaler,
+                                                                                    size=model.entity_embeddings.weight[
+                                                                                        r_selected].shape,
+                                                                                    device=model.device)
+            elif self.method == "RN":
+                if torch.rand(1) > 0.0:
+                    h_selected = h[random_indices]
+                    with torch.no_grad():
+                        model.entity_embeddings.weight[h_selected] += torch.rand(
+                            size=model.entity_embeddings.weight[h_selected].shape, device=model.device) * self.scaler
+                else:
+                    r_selected = r[random_indices]
+                    with torch.no_grad():
+                        model.relation_embeddings.weight[r_selected] += torch.rand(
+                            size=model.entity_embeddings.weight[r_selected].shape, device=model.device) * self.scaler
+            else:
+                raise RuntimeError(f"--method is given as {self.method}!")
+        elif self.level == "out":
+
+            if self.method=="RN":
+                # Soft Perturb ?
+                perturb = torch.rand(1, device=model.device) * self.scaler
+                # https://pytorch.org/docs/stable/generated/torch.where.html
+                # 1.0 => 1.0 - perturb
+                # 0.0 => perturb
+                batch[1][random_indices]=torch.where(batch[1][random_indices] == 1.0, 1.0-perturb, perturb)
+            else:
+                raise NotImplementedError(f"{self.level}")
+        else:
+            raise RuntimeError(f"--level is given as {self.level}!")
 
 
 class GN(AbstractCallback):
@@ -335,24 +394,5 @@ class GN(AbstractCallback):
                 # Access the parameters
                 for param in model.parameters():
                     noise_mat = torch.normal(mean=0, std=self.std, size=param.shape, device=model.device)
-                    param.add_(noise_mat)
-        self.epoch_counter += 1
-
-
-class RN(AbstractCallback):
-    """ Adding Uniform at Random Noise into Inputs/Parameters """
-
-    def __init__(self, std: float = 0.1, epoch_ratio: int = None):
-        super().__init__()
-        self.std = std
-        self.epoch_ratio = epoch_ratio if epoch_ratio is not None else 1
-        self.epoch_counter = 0
-
-    def on_train_epoch_start(self, trainer, model):
-        if self.epoch_counter % self.epoch_ratio == 0:
-            with torch.no_grad():
-                # Access the parameters
-                for param in model.parameters():
-                    noise_mat = torch.rand(size=param.shape) * self.std
                     param.add_(noise_mat)
         self.epoch_counter += 1
