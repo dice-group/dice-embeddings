@@ -4,6 +4,7 @@ from dicee.executer import Execute
 import pytorch_lightning as pl
 import argparse
 
+
 def get_default_arguments(description=None):
     """ Extends pytorch_lightning Trainer's arguments with ours """
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
@@ -80,7 +81,8 @@ def get_default_arguments(description=None):
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
                         help='At every X number of epochs model will be saved. If None, we save 4 times.')
     parser.add_argument("--label_smoothing_rate", type=float, default=0.0, help='None for not using it.')
-    parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for convolution based models.")
+    parser.add_argument("--kernel_size", type=int, default=3,
+                        help="Square kernel size for convolution based models.")
     parser.add_argument("--num_of_output_channels", type=int, default=2,
                         help="# of output channels in convolution")
     parser.add_argument("--num_core", type=int, default=1,
@@ -96,6 +98,9 @@ def get_default_arguments(description=None):
                         help='P for Clifford Algebra')
     parser.add_argument('--q', type=int, default=0,
                         help='Q for Clifford Algebra')
+    parser.add_argument('--pykeen_model_kwargs', type=int, default=0,
+                        help='Q for Clifford Algebra')
+    parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)
