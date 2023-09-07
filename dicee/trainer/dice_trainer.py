@@ -50,11 +50,7 @@ def get_callbacks(args):
     if isinstance(args.callbacks, list):
         return callbacks
     for k, v in args.callbacks.items():
-        if k == "GN":
-            callbacks.append(GN(std=v['std'], epoch_ratio=v.get('epoch_ratio')))
-        elif k=='RN':
-            callbacks.append(RN(std=v['std'], epoch_ratio=v.get('epoch_ratio')))
-        elif k=="Perturb":
+        if k=="Perturb":
             callbacks.append(Perturb(**v))
         elif k == 'FPP':
             callbacks.append(
@@ -125,7 +121,7 @@ class DICE_Trainer:
         form_of_labelling: str
         """
 
-        self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args), plugins=[])
+        self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
         model, form_of_labelling = self.initialize_or_load_model()
         assert form_of_labelling in ['EntityPrediction', 'RelationPrediction', 'Pyke']
         assert self.args.scoring_technique in ['KvsSample', '1vsAll', 'KvsAll', 'NegSample']
