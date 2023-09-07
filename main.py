@@ -26,7 +26,7 @@ def get_default_arguments(description=None):
                         help="A flag for saving embeddings in csv file.")
     # Model related arguments
     parser.add_argument("--model", type=str,
-                        default="DistMult",
+                        default="Keci",
                         choices=["ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "ComplEx", "Keci",
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
@@ -39,7 +39,7 @@ def get_default_arguments(description=None):
     parser.add_argument('--optim', type=str, default='Adam',
                         help='An optimizer',
                         choices=['Adam', 'SGD'])
-    parser.add_argument('--embedding_dim', type=int, default=64,
+    parser.add_argument('--embedding_dim', type=int, default=32,
                         help='Number of dimensions for an embedding vector. ')
     parser.add_argument("--num_epochs", type=int, default=50, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024,
@@ -55,7 +55,7 @@ def get_default_arguments(description=None):
     parser.add_argument("--trainer", type=str, default='PL',
                         choices=['torchCPUTrainer', 'PL', 'torchDDP'],
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
-    parser.add_argument('--scoring_technique', default="KvsAll",
+    parser.add_argument('--scoring_technique', default="AllvsAll",
                         help="Training technique for knowledge graph embedding model",
                         choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "KvsSample"])
     parser.add_argument('--neg_ratio', type=int, default=0,
@@ -97,8 +97,6 @@ def get_default_arguments(description=None):
     parser.add_argument('--p', type=int, default=0,
                         help='P for Clifford Algebra')
     parser.add_argument('--q', type=int, default=0,
-                        help='Q for Clifford Algebra')
-    parser.add_argument('--pykeen_model_kwargs', type=int, default=0,
                         help='Q for Clifford Algebra')
     parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
     if description is None:
