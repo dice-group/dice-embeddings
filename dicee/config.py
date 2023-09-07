@@ -1,5 +1,7 @@
 import argparse
 from .abstracts import AbstractCallback
+
+
 class Namespace(argparse.Namespace):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -84,7 +86,6 @@ class Namespace(argparse.Namespace):
         self.init_param: str = None
         """ xavier_normal or None"""
 
-
         self.gradient_accumulation_steps: int = 0
         """ Not tested e"""
 
@@ -109,9 +110,14 @@ class Namespace(argparse.Namespace):
         self.random_seed: int = 0
         "Random Seed"
 
-        self.sample_triples_ratio = None
-        self.read_only_few = None
-        self.pykeen_model_kwargs: ParseDict = dict()
+        self.sample_triples_ratio: float = None
+        """Read some triples that are uniformly at random sampled. Ratio being between 0 and 1"""
+
+        self.read_only_few: int = None
+        """Read only first few triples """
+
+        self.pykeen_model_kwargs = dict()
+        """Additional keyword arguments for pykeen models"""
 
     def __iter__(self):
         # Iterate
