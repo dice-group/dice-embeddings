@@ -318,7 +318,8 @@ class Perturb(AbstractCallback):
         x, y = batch
         n, _ = x.shape
         num_of_perturbed_data = int(n * self.ratio)
-        assert num_of_perturbed_data > 0
+        if num_of_perturbed_data ==0:
+            return None
         assert n > 0
         device = x.get_device()
         if device == -1:
@@ -379,6 +380,9 @@ class Perturb(AbstractCallback):
                 # 1.0 => 1.0 - perturb
                 # 0.0 => perturb
                 batch[1][random_indices] = torch.where(batch[1][random_indices] == 1.0, 1.0 - perturb, perturb)
+            elif self.method=="Hard":
+                # Hard flip all
+                batch[1][random_indices] = torch.where(batch[1][random_indices] == 1.0, 0.0, 1.0)
             else:
                 raise NotImplementedError(f"{self.level}")
         else:
