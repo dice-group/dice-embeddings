@@ -1,23 +1,23 @@
 import torch
 import torch.utils.data
-import numpy as np
-import pickle
 from pykeen.models import model_resolver
 from .base_model import BaseKGE
 import collections
 
-
+"""
 def load_numpy(path) -> np.ndarray:
     print('Loading indexed training data...', end='')
     with open(path, 'rb') as f:
         data = np.load(f)
     return data
 
+"""
 
+"""
 def load_pickle(*, file_path=str):
     with open(file_path, 'rb') as f:
         return pickle.load(f)
-
+"""
 
 class PykeenKGE(BaseKGE):
     """ A class for using knowledge graph embedding models implemented in Pykeen
@@ -30,16 +30,12 @@ class PykeenKGE(BaseKGE):
     Pykeen_CP:
     Pykeen_HolE:
     Pykeen_HolE:
-
-    Training Pykeen_QuatE with KvsAll seems to continuously increase the memory usage
     """
 
     def __init__(self, args: dict):
         super().__init__(args)
         self.model_kwargs = {'embedding_dim': args['embedding_dim'],
                              'entity_initializer': None if args['init_param'] is None else torch.nn.init.xavier_normal_,
-                             #"entity_regularizer": None,
-                             #"relation_regularizer": None,
                              "random_seed": args["random_seed"]
                              }
         self.model_kwargs.update(args['pykeen_model_kwargs'])
@@ -69,12 +65,13 @@ class PykeenKGE(BaseKGE):
         elif self.name == "TransE":
             self.model_kwargs["regularizer"] = None
         else:
-            print("Pykeen model have a memory leak caused by their implementation of requirlizers")
-            print(f"{self.name} does not seem to have any requirlizer")
+            print("Pykeen model have a memory leak caused by their implementation of regularizers")
+            print(f"{self.name} does not seem to have any regularizer")
 
         self.model = model_resolver. \
             make(self.name, self.model_kwargs, triples_factory=
-        collections.namedtuple('triples_factory', ['num_entities', 'num_relations', 'create_inverse_triples'])(
+        collections.namedtuple('triples_factory',
+                               ['num_entities', 'num_relations', 'create_inverse_triples'])(
             self.num_entities, self.num_relations, False))
         self.loss_history = []
         self.args = args
@@ -89,16 +86,6 @@ class PykeenKGE(BaseKGE):
                 self.interaction = v
             else:
                 pass
-        """
-        if self.entity_embeddings.embedding_dim == 4 * self.embedding_dim:
-            self.last_dim = 4
-        elif self.entity_embeddings.embedding_dim == 2 * self.embedding_dim:
-            self.last_dim = 2
-        elif self.entity_embeddings.embedding_dim == self.embedding_dim:
-            self.last_dim = 0
-        else:
-            raise NotImplementedError(self.entity_embeddings.embedding_dim)
-        """
 
     def forward_k_vs_all(self, x: torch.LongTensor):
         """
