@@ -2,8 +2,7 @@ import torch
 import torch.utils.data
 from pykeen.models import model_resolver
 from .base_model import BaseKGE
-import collections
-
+from collections import namedtuple
 """
 def load_numpy(path) -> np.ndarray:
     print('Loading indexed training data...', end='')
@@ -70,7 +69,7 @@ class PykeenKGE(BaseKGE):
 
         self.model = model_resolver. \
             make(self.name, self.model_kwargs, triples_factory=
-        collections.namedtuple('triples_factory',
+        namedtuple('triples_factory',
                                ['num_entities', 'num_relations', 'create_inverse_triples'])(
             self.num_entities, self.num_relations, False))
         self.loss_history = []
