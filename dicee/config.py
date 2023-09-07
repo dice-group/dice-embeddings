@@ -32,7 +32,7 @@ class Namespace(argparse.Namespace):
         self.embedding_dim: int = 64
         "Size of continuous vector representation of an entity/relation"
 
-        self.num_epochs: int = 100
+        self.num_epochs: int = 150
         "Number of pass over the training data"
 
         self.batch_size: int = 1024
