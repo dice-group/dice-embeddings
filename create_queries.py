@@ -434,7 +434,7 @@ def achieve_answer(query, ent_in, ent_out):
 
 @click.command()
 @click.option('--dataset', default="UMLS")
-@click.option('--seed', default=0)
+@click.option('--seed', default=42)
 @click.option('--gen_train_num', default=5000)
 @click.option('--gen_valid_num', default=5000)
 @click.option('--gen_test_num', default=10)
@@ -453,6 +453,10 @@ def main(dataset, seed, gen_train_num, gen_valid_num, gen_test_num, max_ans_num,
          gen_test, gen_id, save_name, index_only,gen_all_positive,gen_all_negative,gen_all):
 
     """ Query sampler from BETA-E """
+
+    # Set the global seed for random number generation
+    set_global_seed(seed)
+
     train_num_dict = {'FB15k': 273710, "FB15k-237": 149689, "NELL": 107982, "UMLS": 5216, "Countries-S1": 1111}
     valid_num_dict = {'FB15k': 8000, "FB15k-237": 5000, "NELL": 4000, "UMLS": 661, "Countries-S1": 24}
     test_num_dict = {'FB15k': 8000, "FB15k-237": 5000, "NELL": 4000, "UMLS": 661, "Countries-S1": 24}
