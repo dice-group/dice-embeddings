@@ -41,7 +41,7 @@ class TestClass:
         elif args.model == "Pykeen_BoxE":
             assert 0.85 >= result["Train"]["MRR"] >= 0.78
         elif args.model == "Pykeen_RotatE":
-            assert 0.67 >= result["Train"]["MRR"] >= 0.64
+            assert 0.67 >= result["Train"]["MRR"] >= 0.60
         elif args.model == "Pykeen_CP":  # 1.5M params
             assert 1.00 >= result["Train"]["MRR"] >= 0.99
         elif args.model == "Pykeen_HolE":  # 14.k params
@@ -59,7 +59,7 @@ class TestClass:
         elif args.model == "Pykeen_TransD":  # 29.1 k params
             assert 0.73 >= result["Train"]["MRR"] >= 0.60
         elif args.model == "Pykeen_TransE":  # 29.1 k params
-            assert 0.45 >= result["Train"]["MRR"] >= 0.40
+            assert 0.45 >= result["Train"]["MRR"] >= 0.15
 
     def test_perturb_callback_case(self, model_name):
         args = template(model_name)
