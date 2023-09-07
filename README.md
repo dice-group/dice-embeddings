@@ -43,7 +43,7 @@ pip install dicee
 ```
 To test the Installation
 ```bash
-wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
+wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip --no-check-certificate
 unzip KGs.zip
 pytest -p no:warnings -x # it takes circa 15 minutes
 pytest -p no:warnings --lf # run only the last failed test
