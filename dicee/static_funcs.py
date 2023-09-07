@@ -101,8 +101,6 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[o
     except FileNotFoundError:
         print("relation_to_idx.p not found")
         relation_to_idx=dict()
-    #assert isinstance(entity_to_idx, dict)
-    #assert isinstance(relation_to_idx, dict)
     print(f'Done! It took {time.time() - start_time:.4f}')
     return model, entity_to_idx, relation_to_idx
 
@@ -360,12 +358,8 @@ def intialize_model(args: dict) -> Tuple[object, str]:
 
 
 def load_json(p: str) -> dict:
-    try:
-        with open(p, 'r') as r:
+    with open(p, 'r') as r:
             args = json.load(r)
-    except FileNotFoundError:
-        print('Config file not found')
-        exit(1)
     return args
 
 
@@ -424,46 +418,6 @@ def deploy_head_entity_prediction(pre_trained_kge, str_object, str_predicate, to
 def deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k):
     scores, relations = pre_trained_kge.predict_topk(h=[str_subject], t=[str_object], topk=top_k)
     return f'(  {str_subject}, ?, {str_object} )', pd.DataFrame({'Relations': relations, 'Score': scores})
-
-
-def semi_supervised_split(train_set: np.ndarray, train_split_ratio=None, calibration_split_ratio=None):
-    """
-    Split input triples into three splits
-    1. split corresponds to the first 10% of the input
-    2. split corresponds to the second 10% of the input
-    3. split corresponds to the remaining data.
-    """
-    # Divide train_set into
-    n, d = train_set.shape
-    assert d == 3
-    # (1) Select X % of the first triples for the training.
-    train = train_set[: int(n * train_split_ratio)]
-    # (2) Select remaining first Y % of the triples for the calibration.
-    calibration = train_set[len(train):len(train) + int(n * calibration_split_ratio)]
-    # (3) Consider remaining triples as unlabelled.
-    unlabelled = train_set[-len(train) - len(calibration):]
-    print(f'Shapes:\tTrain{train.shape}\tCalib:{calibration.shape}\tUnlabelled:{unlabelled.shape}')
-    return train, calibration, unlabelled
-
-
-def p_value(non_conf_scores, act_score):
-    if len(act_score.shape) < 2:
-        act_score = act_score.unsqueeze(-1)
-
-    # return (torch.sum(non_conf_scores >= act_score) + 1) / (len(non_conf_scores) + 1)
-    return (torch.sum(non_conf_scores >= act_score, dim=-1) + 1) / (len(non_conf_scores) + 1)
-
-
-def norm_p_value(p_values, variant):
-    if len(p_values.shape) < 2:
-        p_values = p_values.unsqueeze(0)
-
-    if variant == 0:
-        norm_p_values = p_values / (torch.max(p_values, dim=-1).values.unsqueeze(-1))
-    else:
-        norm_p_values = p_values.scatter_(1, torch.max(p_values, dim=-1).indices.unsqueeze(-1),
-                                          torch.ones_like(p_values))
-    return norm_p_values
 
 
 @timeit

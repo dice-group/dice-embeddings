@@ -9,7 +9,7 @@ def get_default_arguments(description=None):
     parser = argparse.ArgumentParser(add_help=False)
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Data related arguments
-    parser.add_argument("--path_experiment_directory", type=str, default="KINSHIP-DistMult-RN/",
+    parser.add_argument("--dir", type=str, default="KINSHIP-DistMult-RN/",
                         help="")
     if description is None:
         return parser.parse_args()
@@ -103,42 +103,24 @@ class Experiment:
 
 def analyse(args):
     # (2) Get all subfolders
-    sub_folder_str_paths = os.listdir(args.path_experiment_directory)
-    results = dict()
-
+    sub_folder_str_paths = os.listdir(args.dir)
     experiments = []
     for path in sub_folder_str_paths:
-        try:
-            with open(args.path_experiment_directory + path + '/configuration.json', 'r') as f:
-                config = json.load(f)
-                config = {i: config[i] for i in
-                          ['model', 'full_storage_path', 'embedding_dim',
-                           'normalization', 'num_epochs', 'batch_size', 'lr',
-                           'callbacks',
-                           'scoring_technique',
-                           "scoring_technique",
-                           'path_dataset_folder', 'p', 'q']}
-        except FileNotFoundError:
-            print('Exception occured at reading config')
-            continue
-
-        try:
-            with open(args.path_experiment_directory + path + '/report.json', 'r') as f:
-                report = json.load(f)
-                report = {i: report[i] for i in ['Runtime', 'NumParam']}
-        except FileNotFoundError:
-            print('Exception occured at reading report')
-            continue
-
-        try:
-            with open(args.path_experiment_directory + path + '/eval_report.json', 'r') as f:
-                eval_report = json.load(f)
-                # print(eval_report)
-                # exit(1)
-                # eval_report = {i: str(eval_report[i]) for i in ['Train', 'Val', 'Test']}
-        except FileNotFoundError:
-            print('Exception occured at reading eval_report')
-            continue
+        full_path=args.dir +"/"+path
+        with open(f'{full_path}/configuration.json', 'r') as f:
+            config = json.load(f)
+            config = {i: config[i] for i in
+                      ['model', 'full_storage_path', 'embedding_dim',
+                       'normalization', 'num_epochs', 'batch_size', 'lr',
+                       'callbacks',
+                       'scoring_technique',
+                       "scoring_technique",
+                       'path_dataset_folder', 'p', 'q']}
+        with open(f'{full_path}/report.json', 'r') as f:
+            report = json.load(f)
+            report = {i: report[i] for i in ['Runtime', 'NumParam']}
+        with open(f'{full_path}/eval_report.json', 'r') as f:
+            eval_report = json.load(f)
 
         config.update(eval_report)
         config.update(report)
@@ -150,11 +132,12 @@ def analyse(args):
         counter.save_experiment(i)
 
     df = counter.to_df()
+    df.sort_values(by=['test_mrr'], ascending=False, inplace=True)
     pd.set_option("display.precision", 3)
     # print(df)
     print(df.to_latex(index=False, float_format="%.3f"))
-
-    print(df.to_markdown(index=False))
+    #print(df.to_markdown(index=False))
+    df.to_csv(path_or_buf=args.dir+'/summary.csv')
 
 
 if __name__ == '__main__':

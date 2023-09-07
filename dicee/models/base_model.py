@@ -156,16 +156,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
         else:
             raise KeyError()
         return self.selected_optimizer
-    """
-    def get_optimizer_class(self):
-        # default params in pytorch.
-        if self.optimizer_name == 'SGD':
-            return torch.optim.SGD
-        elif self.optimizer_name == 'Adam':
-            return torch.optim.Adam
-        else:
-            raise KeyError()
-    """
+
     def loss_function(self, yhat_batch, y_batch):
         return self.loss(yhat_batch, y_batch)
 
@@ -183,7 +174,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
         """
 
         :param x: a batch of inputs
-        :param y_idx: index of selected output labels.
+        :param y_idx: indices of selected outputs.
         :return:
         """
         if isinstance(x, tuple):
@@ -285,10 +276,9 @@ class BaseKGE(pytorch_lightning.LightningModule):
     def train_dataloader(self) -> None:
         pass
 
-    def get_triple_representation(self, indexed_triple):
+    def get_triple_representation(self, idx_hrt):
         # (1) Split input into indexes.
-        idx_head_entity, idx_relation, idx_tail_entity = indexed_triple[:, 0], indexed_triple[:, 1], indexed_triple[:,
-                                                                                                     2]
+        idx_head_entity, idx_relation, idx_tail_entity = idx_hrt[:, 0], idx_hrt[:, 1], idx_hrt[:, 2]
         # (2) Retrieve embeddings & Apply Dropout & Normalization
         head_ent_emb = self.normalize_head_entity_embeddings(
             self.input_dp_ent_real(self.entity_embeddings(idx_head_entity)))

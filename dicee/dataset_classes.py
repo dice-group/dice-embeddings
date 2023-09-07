@@ -85,9 +85,9 @@ def construct_dataset(*, train_set: np.ndarray,
         elif scoring_technique == 'AllvsAll':
             # Multi-label imbalanced.
             train_set = AllvsAll(train_set,
-                               entity_idxs=entity_to_idx,
-                               relation_idxs=relation_to_idx,
-                               label_smoothing_rate=label_smoothing_rate)
+                                 entity_idxs=entity_to_idx,
+                                 relation_idxs=relation_to_idx,
+                                 label_smoothing_rate=label_smoothing_rate)
         else:
             raise ValueError(f'Invalid scoring technique : {scoring_technique}')
     elif form_of_labelling == 'RelationPrediction':
@@ -176,8 +176,9 @@ class KvsAll(torch.utils.data.Dataset):
     >>> a
     ? array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
     """
+
     def __init__(self, train_set_idx: np.ndarray, entity_idxs, relation_idxs, form, store=None,
-                 label_smoothing_rate:float=0.0):
+                 label_smoothing_rate: float = 0.0):
         super().__init__()
         assert len(train_set_idx) > 0
         assert isinstance(train_set_idx, np.ndarray)
@@ -232,6 +233,7 @@ class KvsAll(torch.utils.data.Dataset):
             y_vec = y_vec * (1 - self.label_smoothing_rate) + (1 / y_vec.size(0))
         return self.train_data[idx], y_vec
 
+
 class AllvsAll(torch.utils.data.Dataset):
     """ Creates a dataset for AllvsAll training by inheriting from torch.utils.data.Dataset.
     Let D denote a dataset for AllvsAll training and be defined as D:= {(x,y)_i}_i ^N, where
@@ -279,33 +281,23 @@ class AllvsAll(torch.utils.data.Dataset):
         self.train_target = None
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.collate_fn = None
-
-        self.train_data = None
-        self.train_target = None
-        self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
-        self.collate_fn = None
         # (1) Create a dictionary of training data pints
         # Either from tuple of entities or tuple of an entity and a relation
         self.target_dim = len(entity_idxs)
         # (h,r) => [t]
         store = mapping_from_first_two_cols_to_third(train_set_idx)
+        print("Number of unique pairs:", len(store))
         for i in range(len(entity_idxs)):
             for j in range(len(relation_idxs)):
-                if store.get((i,j),None) is None:
-                    store[(i,j)]=list()
+                if store.get((i, j), None) is None:
+                    store[(i, j)] = list()
+        print("Number of unique augmented pairs:", len(store))
         assert len(store) > 0
-        # Keys in store correspond to integer representation (index) of subject and predicate
-        # Values correspond to a list of integer representations of entities.
         self.train_data = torch.LongTensor(list(store.keys()))
 
         if sum([len(i) for i in store.values()]) == len(store):
-            # if each s,p pair contains at most 1 entity
             self.train_target = np.array(list(store.values()))
-            try:
-                assert isinstance(self.train_target[0], np.ndarray)
-            except IndexError or AssertionError:
-                print(self.train_target)
-                exit(1)
+            assert isinstance(self.train_target[0], np.ndarray)
         else:
             self.train_target = list(store.values())
             assert isinstance(self.train_target[0], list)
@@ -318,13 +310,14 @@ class AllvsAll(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         # 1. Initialize a vector of output.
         y_vec = torch.zeros(self.target_dim)
-        existing_indices=self.train_target[idx]
-        if len(existing_indices)>0:
+        existing_indices = self.train_target[idx]
+        if len(existing_indices) > 0:
             y_vec[self.train_target[idx]] = 1.0
 
         if self.label_smoothing_rate:
             y_vec = y_vec * (1 - self.label_smoothing_rate) + (1 / y_vec.size(0))
         return self.train_data[idx], y_vec
+
 
 class KvsSampleDataset(torch.utils.data.Dataset):
     """
@@ -425,7 +418,7 @@ class NegSampleDataset(torch.utils.data.Dataset):
         # https://pytorch.org/docs/stable/data.html#multi-process-data-loading
         # TLDL; replace Python objects with non-refcounted representations such as Pandas, Numpy or PyArrow objects
         self.neg_sample_ratio = torch.tensor(
-            neg_sample_ratio)  
+            neg_sample_ratio)
         self.train_set = torch.from_numpy(train_set).unsqueeze(1)
         self.length = len(self.train_set)
         self.num_entities = torch.tensor(num_entities)
