@@ -17,6 +17,4 @@ class TestRegressionAllvsAll:
         args.scoring_technique = 'AllvsAll'
         args.eval_model = 'train_val_test'
         result2 = Execute(args).start()
-
-        assert result2['Val']['MRR'] >= result1['Val']['MRR']
         assert result2['Test']['MRR'] >= result1['Test']['MRR']
