@@ -96,6 +96,8 @@ class Namespace(argparse.Namespace):
         """ Evaluate trained model choices:["None", "train", "train_val", "train_val_test", "test"]"""
 
         self.save_model_at_every_epoch: int = None
+        """ Not tested """
+
         self.label_smoothing_rate: float = 0.0
 
         self.kernel_size: int = 3
