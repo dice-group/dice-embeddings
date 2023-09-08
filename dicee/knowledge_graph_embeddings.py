@@ -369,6 +369,91 @@ class KGE(BaseInteractiveKGE):
         else:
             return results
 
+    def answer_multi_hop_query(self,query_structure, query, data, tnorm, neg_norm, lambda_, k_:int):
+        """
+        @ TODO: Define types of inputs
+        @ TODO: Add comments
+        @ TODO: Add returned type
+        """
+        # Use this
+        self.predict()
+        query_name_dict = {
+            ("e", ("r",)): "1p",
+            ("e", ("r", "r")): "2p",
+            ("e", ("r", "r", "r",),): "3p",
+            (("e", ("r",)), ("e", ("r",))): "2i",
+            (("e", ("r",)), ("e", ("r",)), ("e", ("r",))): "3i",
+            ((("e", ("r",)), ("e", ("r",))), ("r",)): "ip",
+            (("e", ("r", "r")), ("e", ("r",))): "pi",
+            # negation
+            (("e", ("r",)), ("e", ("r", "n"))): "2in",
+            (("e", ("r",)), ("e", ("r",)), ("e", ("r", "n"))): "3in",
+            ((("e", ("r",)), ("e", ("r", "n"))), ("r",)): "inp",
+            (("e", ("r", "r")), ("e", ("r", "n"))): "pin",
+            (("e", ("r", "r", "n")), ("e", ("r",))): "pni",
+
+            # union
+            (("e", ("r",)), ("e", ("r",)), ("u",)): "2u",
+            ((("e", ("r",)), ("e", ("r",)), ("u",)), ("r",)): "up",
+
+        }
+        print(query_name_dict)
+        if query_structure == (("e", ("r",)), ("e", ("r", "n"))):
+            # entity_scores = scores_2in(query, tnorm, neg_norm, lambda_)
+            pass
+        #3in
+        elif query_structure == (("e", ("r",)), ("e", ("r",)), ("e", ("r","n"))):
+            # entity_scores = scores_3in(model, query, tnorm, neg_norm, lambda_)
+            pass
+        #pni
+        elif query_structure == (("e", ("r", "r", "n")), ("e", ("r",))):
+            # entity_scores = scores_pni(model, query, tnorm, neg_norm, lambda_, k_)
+            pass
+        #pin
+        elif query_structure == (("e", ("r", "r")), ("e", ("r", "n"))):
+            # entity_scores = scores_pin(model, query, tnorm, neg_norm, lambda_, k_)
+            pass
+        #inp
+        elif query_structure == ((("e", ("r",)), ("e", ("r", "n"))), ("r",)):
+            # entity_scores = scores_inp(model, query, tnorm, neg_norm, lambda_, k_)
+            pass
+        #2p
+        elif query_structure == ("e", ("r", "r")):
+            # entity_scores = scores_2p(model, query, tnorm, k_)
+            pass
+        #3p
+        elif query_structure == ("e", ("r", "r", "r",)):
+            # entity_scores = scores_3p(model, query, tnorm, k_)
+            pass
+        #2i
+        elif query_structure == (("e", ("r",)), ("e", ("r",))):
+            # entity_scores = scores_2i(model, query, tnorm)
+            pass
+        #3i
+        elif query_structure == (("e", ("r",)), ("e", ("r",)), ("e", ("r",))):
+            # entity_scores = scores_3i(model, query, tnorm)
+            pass
+        #pi
+        elif query_structure == (("e", ("r", "r")), ("e", ("r",))):
+            # entity_scores = scores_pi(model, query, tnorm, k_)
+            pass
+        #ip
+        elif query_structure == ((("e", ("r",)), ("e", ("r",))), ("r",)):
+            # entity_scores = scores_ip(model, query, tnorm, k_)
+            pass
+
+        #disjunction
+        #2u
+        elif query_structure == (("e", ("r",)), ("e", ("r",)), ("u",)):
+            # entity_scores = scores_2u(model, query, tnorm)
+            pass
+        #up
+        # here the second tnorm is for t-conorm (used in pairs)
+        elif query_structure == ((("e", ("r",)), ("e", ("r",)), ("u",)), ("r",)):
+            # entity_scores = scores_up(model, query, tnorm, tnorm, k_)
+            pass
+        else:
+            raise RuntimeError(f"Imncorrect query_structure {query_structure}")
     def find_missing_triples(self, confidence: float, entities: List[str] = None, relations: List[str] = None,
                              topk: int = 10,
                              at_most: int = sys.maxsize) -> Set:

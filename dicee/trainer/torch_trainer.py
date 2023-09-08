@@ -88,7 +88,7 @@ class TorchTrainer(AbstractTrainer):
                     f"| ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec "
                     f"| BatchConst.:{construct_mini_batch_time:.2f}sec "
                     f"| Mem. Usage {self.process.memory_info().rss / 1_000_000: .5}MB "
-                    f"avail. {psutil.virtual_memory().percent} %")
+                    f" ({psutil.virtual_memory().percent} %)")
             else:
                 print(
                     f"Epoch:{epoch + 1} "

@@ -1,17 +1,6 @@
 import argparse
 from .abstracts import AbstractCallback
 
-class ParseDict(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=None):
-        setattr(namespace, self.dest,
-                dict())  # set each name of the attribute to hold the created object(s) as dictionary
-        for value in values:
-            key, value = value.split('=')
-            if value.isdigit():
-                getattr(namespace, self.dest)[key] = int(value)
-                continue
-            getattr(namespace, self.dest)[key] = value
-
 
 class Namespace(argparse.Namespace):
     def __init__(self, **kwargs):
@@ -40,13 +29,13 @@ class Namespace(argparse.Namespace):
         self.optim: str = 'Adam'
         "Optimizer"
 
-        self.embedding_dim: int = 32
+        self.embedding_dim: int = 64
         "Size of continuous vector representation of an entity/relation"
 
-        self.num_epochs: int = 100
+        self.num_epochs: int = 150
         "Number of pass over the training data"
 
-        self.batch_size: type[int | None] = 1024
+        self.batch_size: int = 1024
         "Mini-batch size if it is None, an automatic batch finder technique applied"
 
         self.lr: float = 0.1
@@ -97,7 +86,6 @@ class Namespace(argparse.Namespace):
         self.init_param: str = None
         """ xavier_normal or None"""
 
-
         self.gradient_accumulation_steps: int = 0
         """ Not tested e"""
 
@@ -122,9 +110,14 @@ class Namespace(argparse.Namespace):
         self.random_seed: int = 0
         "Random Seed"
 
-        self.sample_triples_ratio = None
-        self.read_only_few = None
-        self.pykeen_model_kwargs: ParseDict = dict()
+        self.sample_triples_ratio: float = None
+        """Read some triples that are uniformly at random sampled. Ratio being between 0 and 1"""
+
+        self.read_only_few: int = None
+        """Read only first few triples """
+
+        self.pykeen_model_kwargs = dict()
+        """Additional keyword arguments for pykeen models"""
 
     def __iter__(self):
         # Iterate
