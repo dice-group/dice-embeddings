@@ -198,10 +198,9 @@ class Execute:
         self.trainer = DICE_Trainer(args=self.args,
                                     is_continual_training=self.is_continual_training,
                                     storage_path=self.storage_path,
-                                    evaluator=self.evaluator,
-                                    dataset=self.dataset  # only used for Pykeen's models
-                                    )
+                                    evaluator=self.evaluator)
         # (4) Start the training
+        # @TODO: Why do we need to pass self.dataset as an input?
         self.trained_model, form_of_labelling = self.trainer.start(dataset=self.dataset)
         return self.end(form_of_labelling)
 

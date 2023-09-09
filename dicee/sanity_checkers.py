@@ -21,7 +21,7 @@ def sanity_checking_with_arguments(args):
         print(f'embedding_dim must be strictly positive. Currently:{args.embedding_dim}')
         raise
 
-    if args.scoring_technique not in ['KvsSample', 'KvsAll', 'NegSample', '1vsAll', 'Pyke']:
+    if args.scoring_technique not in ["AllvsAll", "KvsSample", "KvsAll", "NegSample", "1vsAll", "Pyke"]:
         raise KeyError(f'Invalid training strategy => {args.scoring_technique}.')
 
     assert args.learning_rate > 0
@@ -83,8 +83,7 @@ def config_kge_sanity_checking(args, dataset):
     Sanity checking for input hyperparams.
     :return:
     """
-    if args.batch_size > len(dataset.train_set):
-        args.batch_size = len(dataset.train_set)
+    assert isinstance(args.batch_size, int) or args.batch_size is None
     if args.model == 'Shallom' and args.scoring_technique == 'NegSample':
         print(
             'Shallom can not be trained with Negative Sampling. Scoring technique is changed to KvsALL')

@@ -4,7 +4,6 @@ from dicee.abstracts import AbstractTrainer
 import time
 import os
 import psutil
-from torch.utils.data import DataLoader
 
 
 class TorchTrainer(AbstractTrainer):
@@ -21,12 +20,11 @@ class TorchTrainer(AbstractTrainer):
 
     def __init__(self, args, callbacks):
         super().__init__(args, callbacks)
-        self.use_closure = None
         self.loss_function = None
         self.optimizer = None
         self.model = None
         self.train_dataloaders = None
-        self.training_step=None
+        self.training_step = None
         torch.manual_seed(self.attributes.random_seed)
         torch.cuda.manual_seed_all(self.attributes.random_seed)
         if self.attributes.gpus and torch.cuda.is_available():
@@ -57,7 +55,7 @@ class TorchTrainer(AbstractTrainer):
             # (2) Do not accumulate gradient, zero the gradients per batch.
             self.optimizer.zero_grad(set_to_none=True)
         # (3) Loss Forward and Backward w.r.t the batch.
-        return self.compute_forward_loss_backward(x_batch, y_batch)
+        return self.forward_backward_update(x_batch, y_batch)
 
     def _run_epoch(self, epoch: int) -> float:
         """
@@ -72,6 +70,7 @@ class TorchTrainer(AbstractTrainer):
         epoch_loss = 0
         i = 0
         construct_mini_batch_time = None
+        batch: list
         for i, batch in enumerate(self.train_dataloaders):
             # (1) Extract Input and Outputs and set them on the dice
             x_batch, y_batch = self.extract_input_outputs_set_device(batch)
@@ -89,7 +88,7 @@ class TorchTrainer(AbstractTrainer):
                     f"| ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec "
                     f"| BatchConst.:{construct_mini_batch_time:.2f}sec "
                     f"| Mem. Usage {self.process.memory_info().rss / 1_000_000: .5}MB "
-                    f"avail. {psutil.virtual_memory().percent} %")
+                    f" ({psutil.virtual_memory().percent} %)")
             else:
                 print(
                     f"Epoch:{epoch + 1} "
@@ -121,18 +120,15 @@ class TorchTrainer(AbstractTrainer):
         self.train_dataloaders = train_dataloaders
         self.loss_function = model.loss_function
         self.optimizer = self.model.configure_optimizers()
-        self.training_step=self.model.training_step
+        self.training_step = self.model.training_step
         # (1) Start running callbacks
         self.on_fit_start(self, self.model)
-
-        self.use_closure = False
 
         print(f'NumOfDataPoints:{len(self.train_dataloaders.dataset)} '
               f'| NumOfEpochs:{self.attributes.max_epochs} '
               f'| LearningRate:{self.model.learning_rate} '
               f'| BatchSize:{self.train_dataloaders.batch_size} '
-              f'| EpochBatchsize:{len(train_dataloaders)}' )
-        counter = 0
+              f'| EpochBatchsize:{len(train_dataloaders)}')
         for epoch in range(self.attributes.max_epochs):
             start_time = time.time()
 
@@ -140,6 +136,7 @@ class TorchTrainer(AbstractTrainer):
             print(f"Epoch:{epoch + 1} "
                   f"| Loss:{avg_epoch_loss:.8f} "
                   f"| Runtime:{(time.time() - start_time) / 60:.3f} mins")
+            """
             # Autobatch Finder: Double the current batch size if memory allows and repeat this process at mast 5 times.
             if self.attributes.auto_batch_finder and psutil.virtual_memory().percent < 30.0 and counter < 5:
                 self.train_dataloaders = DataLoader(dataset=self.train_dataloaders.dataset,
@@ -155,12 +152,12 @@ class TorchTrainer(AbstractTrainer):
                     f'| BatchSize:{self.train_dataloaders.batch_size} '
                     f'| EpochBatchsize:{len(train_dataloaders)}')
                 counter += 1
-
+            """
             self.model.loss_history.append(avg_epoch_loss)
             self.on_train_epoch_end(self, self.model)
         self.on_fit_end(self, self.model)
 
-    def compute_forward_loss_backward(self, x_batch: torch.Tensor, y_batch: torch.Tensor) -> torch.Tensor:
+    def forward_backward_update(self, x_batch: torch.Tensor, y_batch: torch.Tensor) -> torch.Tensor:
         """
             Compute forward, loss, backward, and parameter update
 
@@ -173,14 +170,10 @@ class TorchTrainer(AbstractTrainer):
            -------
            batch loss (float)
        """
-        if self.use_closure:
-            batch_loss = self.optimizer.step(closure=lambda: self.loss_function(self.model(x_batch), y_batch))
-            return batch_loss
-        else:
-            batch_loss=self.training_step(batch=(x_batch, y_batch))
-            batch_loss.backward()
-            self.optimizer.step()
-            return batch_loss.item()
+        batch_loss = self.training_step(batch=(x_batch, y_batch))
+        batch_loss.backward()
+        self.optimizer.step()
+        return batch_loss.item()
 
     def extract_input_outputs_set_device(self, batch: list) -> Tuple:
         """

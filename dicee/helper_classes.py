@@ -1,3 +1,6 @@
+
+
+"""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -82,3 +85,4 @@ class LabelRelaxationLoss(nn.Module):
 
         result = torch.where(torch.gt(pred, 1. - self.alpha), torch.zeros_like(divergence), divergence)
         return torch.mean(result)
+"""

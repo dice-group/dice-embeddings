@@ -1,7 +1,7 @@
-#!/usr/bin/env python3
 import json
-from dicee.executer import Execute
+from .executer import Execute
 import pytorch_lightning as pl
+from .config import ParseDict
 import argparse
 
 
@@ -10,7 +10,7 @@ def get_default_arguments(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Data related arguments
-    parser.add_argument("--path_dataset_folder", type=str, default="KGs/UMLS",
+    parser.add_argument("--path_dataset_folder", type=str, default=None,
                         help="The path of a folder containing train.txt, and/or valid.txt and/or test.txt"
                              ",e.g., KGs/UMLS")
     parser.add_argument("--sparql_endpoint", type=str, default=None,
@@ -29,7 +29,7 @@ def get_default_arguments(description=None):
                         default="Keci",
                         choices=["ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "ComplEx", "Keci",
-                                 "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
+                                 "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
                                  "Pykeen_HolE", "Pykeen_ProjE", "Pykeen_RotatE",
                                  "Pykeen_TransE", "Pykeen_TransF", "Pykeen_TransH",
                                  "Pykeen_TransR", "Pykeen_TuckER", "Pykeen_ComplEx"],
@@ -39,25 +39,22 @@ def get_default_arguments(description=None):
     parser.add_argument('--optim', type=str, default='Adam',
                         help='An optimizer',
                         choices=['Adam', 'SGD'])
-    parser.add_argument('--embedding_dim', type=int, default=32,
+    parser.add_argument('--embedding_dim', type=int, default=64,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=50, help='Number of epochs for training. ')
-    parser.add_argument('--batch_size', type=int, default=1024,
-                        help='Mini batch size. If None, automatic batch finder is applied')
+    parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. ')
+    parser.add_argument('--batch_size', type=int, default=256, help='Mini batch size. If None, automatic batch finder is applied')
     parser.add_argument("--lr", type=float, default=0.1)
-    parser.add_argument('--callbacks', type=json.loads,
-                        default={},
-                        help='{"PPE":{ "last_percent_to_consider": 10}}'
-                             '"Perturb": {"level": "out", "ratio": 0.2, "method": "RN", "scaler": 0.3}')
+    parser.add_argument('--callbacks', type=json.loads, default={},
+                        help=' {"PPE":{ "last_percent_to_consider": 10}}, {"GN": {"std":0.1}}')
     parser.add_argument("--backend", type=str, default='pandas',
                         choices=["pandas", "polars"],
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
-    parser.add_argument("--trainer", type=str, default='PL',
+    parser.add_argument("--trainer", type=str, default='torchCPUTrainer',
                         choices=['torchCPUTrainer', 'PL', 'torchDDP'],
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
-    parser.add_argument('--scoring_technique', default="AllvsAll",
+    parser.add_argument('--scoring_technique', default='KvsAll',
                         help="Training technique for knowledge graph embedding model",
-                        choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "KvsSample"])
+                        choices=["KvsAll", "1vsAll", "NegSample", "KvsSample"])
     parser.add_argument('--neg_ratio', type=int, default=0,
                         help='The number of negative triples generated per positive triple.')
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
@@ -81,8 +78,7 @@ def get_default_arguments(description=None):
     parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
                         help='At every X number of epochs model will be saved. If None, we save 4 times.')
     parser.add_argument("--label_smoothing_rate", type=float, default=0.0, help='None for not using it.')
-    parser.add_argument("--kernel_size", type=int, default=3,
-                        help="Square kernel size for convolution based models.")
+    parser.add_argument("--kernel_size", type=int, default=3, help="Square kernel size for convolution based models.")
     parser.add_argument("--num_of_output_channels", type=int, default=2,
                         help="# of output channels in convolution")
     parser.add_argument("--num_core", type=int, default=1,
@@ -98,7 +94,10 @@ def get_default_arguments(description=None):
                         help='P for Clifford Algebra')
     parser.add_argument('--q', type=int, default=0,
                         help='Q for Clifford Algebra')
-    parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
+    parser.add_argument("--pykeen_model_kwargs", nargs='*', action=ParseDict,
+                        default={},
+                        help='Additional parameters '
+                             'to be passed into a knowledge graph embedding model imported from Pykeen')
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)

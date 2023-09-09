@@ -1,3 +1,4 @@
+import os.path
 from typing import List, Tuple, Set, Iterable, Dict
 import torch
 from torch import optim
@@ -7,6 +8,7 @@ from .dataset_classes import TriplePredictionDataset
 from .static_funcs import random_prediction, deploy_triple_prediction, deploy_tail_entity_prediction, \
     deploy_relation_prediction, deploy_head_entity_prediction, load_pickle
 from .static_funcs_training import evaluate_lp
+from .static_preprocess_funcs import create_constraints
 import numpy as np
 import sys
 
@@ -17,8 +19,16 @@ class KGE(BaseInteractiveKGE):
     def __init__(self, path, construct_ensemble=False,
                  model_name=None,
                  apply_semantic_constraint=False):
-        super().__init__(path=path, construct_ensemble=construct_ensemble, model_name=model_name,
-                         apply_semantic_constraint=apply_semantic_constraint)
+        super().__init__(path=path, construct_ensemble=construct_ensemble, model_name=model_name)
+        # See https://numpy.org/doc/stable/reference/generated/numpy.memmap.html
+        # If file exists
+        if os.path.exists(path + '/train_set.npy'):
+            self.train_set = np.load(file=path + '/train_set.npy', mmap_mode='r')
+
+        if apply_semantic_constraint:
+            (self.domain_constraints_per_rel, self.range_constraints_per_rel,
+             self.domain_per_rel, self.range_per_rel) = create_constraints(self.train_set)
+
 
     def __str__(self):
         return "KGE | " + str(self.model)
@@ -359,6 +369,91 @@ class KGE(BaseInteractiveKGE):
         else:
             return results
 
+    def answer_multi_hop_query(self,query_structure, query, data, tnorm, neg_norm, lambda_, k_:int):
+        """
+        @ TODO: Define types of inputs
+        @ TODO: Add comments
+        @ TODO: Add returned type
+        """
+        # Use this
+        self.predict()
+        query_name_dict = {
+            ("e", ("r",)): "1p",
+            ("e", ("r", "r")): "2p",
+            ("e", ("r", "r", "r",),): "3p",
+            (("e", ("r",)), ("e", ("r",))): "2i",
+            (("e", ("r",)), ("e", ("r",)), ("e", ("r",))): "3i",
+            ((("e", ("r",)), ("e", ("r",))), ("r",)): "ip",
+            (("e", ("r", "r")), ("e", ("r",))): "pi",
+            # negation
+            (("e", ("r",)), ("e", ("r", "n"))): "2in",
+            (("e", ("r",)), ("e", ("r",)), ("e", ("r", "n"))): "3in",
+            ((("e", ("r",)), ("e", ("r", "n"))), ("r",)): "inp",
+            (("e", ("r", "r")), ("e", ("r", "n"))): "pin",
+            (("e", ("r", "r", "n")), ("e", ("r",))): "pni",
+
+            # union
+            (("e", ("r",)), ("e", ("r",)), ("u",)): "2u",
+            ((("e", ("r",)), ("e", ("r",)), ("u",)), ("r",)): "up",
+
+        }
+        print(query_name_dict)
+        if query_structure == (("e", ("r",)), ("e", ("r", "n"))):
+            # entity_scores = scores_2in(query, tnorm, neg_norm, lambda_)
+            pass
+        #3in
+        elif query_structure == (("e", ("r",)), ("e", ("r",)), ("e", ("r","n"))):
+            # entity_scores = scores_3in(model, query, tnorm, neg_norm, lambda_)
+            pass
+        #pni
+        elif query_structure == (("e", ("r", "r", "n")), ("e", ("r",))):
+            # entity_scores = scores_pni(model, query, tnorm, neg_norm, lambda_, k_)
+            pass
+        #pin
+        elif query_structure == (("e", ("r", "r")), ("e", ("r", "n"))):
+            # entity_scores = scores_pin(model, query, tnorm, neg_norm, lambda_, k_)
+            pass
+        #inp
+        elif query_structure == ((("e", ("r",)), ("e", ("r", "n"))), ("r",)):
+            # entity_scores = scores_inp(model, query, tnorm, neg_norm, lambda_, k_)
+            pass
+        #2p
+        elif query_structure == ("e", ("r", "r")):
+            # entity_scores = scores_2p(model, query, tnorm, k_)
+            pass
+        #3p
+        elif query_structure == ("e", ("r", "r", "r",)):
+            # entity_scores = scores_3p(model, query, tnorm, k_)
+            pass
+        #2i
+        elif query_structure == (("e", ("r",)), ("e", ("r",))):
+            # entity_scores = scores_2i(model, query, tnorm)
+            pass
+        #3i
+        elif query_structure == (("e", ("r",)), ("e", ("r",)), ("e", ("r",))):
+            # entity_scores = scores_3i(model, query, tnorm)
+            pass
+        #pi
+        elif query_structure == (("e", ("r", "r")), ("e", ("r",))):
+            # entity_scores = scores_pi(model, query, tnorm, k_)
+            pass
+        #ip
+        elif query_structure == ((("e", ("r",)), ("e", ("r",))), ("r",)):
+            # entity_scores = scores_ip(model, query, tnorm, k_)
+            pass
+
+        #disjunction
+        #2u
+        elif query_structure == (("e", ("r",)), ("e", ("r",)), ("u",)):
+            # entity_scores = scores_2u(model, query, tnorm)
+            pass
+        #up
+        # here the second tnorm is for t-conorm (used in pairs)
+        elif query_structure == ((("e", ("r",)), ("e", ("r",)), ("u",)), ("r",)):
+            # entity_scores = scores_up(model, query, tnorm, tnorm, k_)
+            pass
+        else:
+            raise RuntimeError(f"Imncorrect query_structure {query_structure}")
     def find_missing_triples(self, confidence: float, entities: List[str] = None, relations: List[str] = None,
                              topk: int = 10,
                              at_most: int = sys.maxsize) -> Set:
@@ -431,6 +526,12 @@ class KGE(BaseInteractiveKGE):
                     if predicted_score < confidence:
                         break
                     else:
+                        # (5.8) Remember it
+                        extended_triples.add((str_head_entity, str_relation, str_entity))
+                        print(f'Number of found missing triples: {len(extended_triples)}')
+                        if len(extended_triples) == at_most:
+                            return extended_triples
+                        # No need to store a large KG into memory
                         # /5.6) False if 0, otherwise 1
                         is_in = np.any(
                             np.all(self.train_set == [idx_entity, idx_relation, self.entity_to_idx[str_entity]],

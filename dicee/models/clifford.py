@@ -116,6 +116,25 @@ class CMult(BaseKGE):
         else:
             raise NotImplementedError
 
+    def score(self, head_ent_emb, rel_ent_emb, tail_ent_emb):
+        ab = self.clifford_mul(x=head_ent_emb, y=rel_ent_emb, p=self.p, q=self.q)
+
+        if self.p == self.q == 0:
+            return torch.einsum('bd,bd->b', ab, tail_ent_emb)
+        elif (self.p == 1 and self.q == 0) or (self.p == 0 and self.q == 1):
+            ab0, ab1 = ab
+            c0, c1 = torch.hsplit(tail_ent_emb, 2)
+            return torch.einsum('bd,bd->b', ab0, c0) + torch.einsum('bd,bd->b', ab1, c1)
+        elif (self.p == 2 and self.q == 0) or (self.p == 0 and self.q == 2):
+            ab0, ab1, ab2, ab12 = ab
+            c0, c1, c2, c12 = torch.hsplit(tail_ent_emb, 4)
+            return torch.einsum('bd,bd->b', ab0, c0) \
+                + torch.einsum('bd,bd->b', ab1, c1) \
+                + torch.einsum('bd,bd->b', ab2, c2) \
+                + torch.einsum('bd,bd->b', ab12, c12)
+        else:
+            raise NotImplementedError
+
     def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
         """
         Compute batch triple scores
@@ -145,9 +164,9 @@ class CMult(BaseKGE):
             ab0, ab1, ab2, ab12 = ab
             c0, c1, c2, c12 = torch.hsplit(tail_ent_emb, 4)
             return torch.einsum('bd,bd->b', ab0, c0) \
-                   + torch.einsum('bd,bd->b', ab1, c1) \
-                   + torch.einsum('bd,bd->b', ab2, c2) \
-                   + torch.einsum('bd,bd->b', ab12, c12)
+                + torch.einsum('bd,bd->b', ab1, c1) \
+                + torch.einsum('bd,bd->b', ab2, c2) \
+                + torch.einsum('bd,bd->b', ab12, c12)
         else:
             raise NotImplementedError
 
@@ -180,25 +199,25 @@ class CMult(BaseKGE):
             ab0, ab1, ab2, ab12 = ab
             c0, c1, c2, c12 = torch.hsplit(self.entity_embeddings.weight, 4)
             return torch.mm(ab0, c0.transpose(1, 0)) + \
-                   torch.mm(ab1, c1.transpose(1, 0)) + torch.mm(ab2, c2.transpose(1,0)) + torch.mm(
-                ab12, c12.transpose(1, 0))
+                torch.mm(ab1, c1.transpose(1, 0)) + torch.mm(ab2, c2.transpose(1, 0)) + torch.mm(
+                    ab12, c12.transpose(1, 0))
         elif self.p == 3 and self.q == 0:
 
             ab0, ab1, ab2, ab3, ab12, ab13, ab23, ab123 = ab
             c0, c1, c2, c3, c12, c13, c23, c123 = torch.hsplit(self.entity_embeddings.weight, 8)
 
             return torch.mm(ab0, c0.transpose(1, 0)) \
-                   + torch.mm(ab1, c1.transpose(1, 0)) \
-                   + torch.mm(ab2, c2.transpose(1, 0)) \
-                   + torch.mm(ab3, c3.transpose(1, 0)) + \
-                   torch.mm(ab12, c3.transpose(1, 0)) + torch.mm(ab13,c13.transpose(1,0)) \
-                   + torch.mm(ab23, c23.transpose(1, 0)) + torch.mm(ab123, c123.transpose(1, 0))
+                + torch.mm(ab1, c1.transpose(1, 0)) \
+                + torch.mm(ab2, c2.transpose(1, 0)) \
+                + torch.mm(ab3, c3.transpose(1, 0)) + \
+                torch.mm(ab12, c3.transpose(1, 0)) + torch.mm(ab13, c13.transpose(1, 0)) \
+                + torch.mm(ab23, c23.transpose(1, 0)) + torch.mm(ab123, c123.transpose(1, 0))
         elif self.p == 1 and self.q == 1:
             ab0, ab1, ab2, ab12 = ab
             c0, c1, c2, c12 = torch.hsplit(self.entity_embeddings.weight, 4)
             return torch.mm(ab0, c0.transpose(1, 0)) + torch.mm(ab1, c1.transpose(1, 0)) + \
-                   torch.mm(ab2, c2.transpose(1,0)) + torch.mm(
-                ab12, c12.transpose(1, 0))
+                torch.mm(ab2, c2.transpose(1, 0)) + torch.mm(
+                    ab12, c12.transpose(1, 0))
 
         else:
             raise NotImplementedError
@@ -528,6 +547,59 @@ class Keci(BaseKGE):
             sigma_pq = 0
         return h0r0t0 + score_p + score_q + sigma_pp + sigma_qq + sigma_pq
 
+    def score(self, h, r, t):
+        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations
+        h0, hp, hq = self.construct_cl_multivector(h, r=self.r, p=self.p, q=self.q)
+        r0, rp, rq = self.construct_cl_multivector(r, r=self.r, p=self.p, q=self.q)
+        t0, tp, tq = self.construct_cl_multivector(t, r=self.r, p=self.p, q=self.q)
+
+        if self.q > 0:
+            self.q_coefficients = self.q_coefficients.to(h0.device, non_blocking=True)
+
+        h0, hp, hq, h0, rp, rq = self.apply_coefficients(h0, hp, hq, h0, rp, rq)
+        # (4) Compute a triple score based on interactions described by the basis 1. Eq. 20
+        h0r0t0 = torch.einsum('br, br -> b', h0 * r0, t0)
+
+        # (5) Compute a triple score based on interactions described by the bases of p {e_1, ..., e_p}. Eq. 21
+        if self.p > 0:
+            # Second term in Eq.16
+            hp_rp_t0 = torch.einsum('brp, br  -> b', hp * rp, t0)
+            # Eq. 17
+            # b=e
+            h0_rp_tp = torch.einsum('brp, erp -> b', torch.einsum('br,  brp -> brp', h0, rp), tp)
+            hp_r0_tp = torch.einsum('brp, erp -> b', torch.einsum('brp, br  -> brp', hp, r0), tp)
+
+            score_p = hp_rp_t0 + h0_rp_tp + hp_r0_tp
+        else:
+            score_p = 0
+
+        # (5) Compute a triple score based on interactions described by the bases of q {e_{p+1}, ..., e_{p+q}}. Eq. 22
+        if self.q > 0:
+            # Third item in Eq 16.
+            hq_rq_t0 = torch.einsum('brq, br  -> b', hq * rq, t0)
+            # Eq. 18.
+            h0_rq_tq = torch.einsum('br, brq  -> b', h0, rq * tq)
+            r0_hq_tq = torch.einsum('br, brq  -> b', r0, hq * tq)
+            score_q = - hq_rq_t0 + (h0_rq_tq + r0_hq_tq)
+        else:
+            score_q = 0
+
+        if self.p >= 2:
+            sigma_pp = torch.sum(self.compute_sigma_pp(hp, rp), dim=[1, 2]).unsqueeze(-1)
+        else:
+            sigma_pp = 0
+
+        if self.q >= 2:
+            sigma_qq = torch.sum(self.compute_sigma_qq(hq, rq), dim=[1, 2]).unsqueeze(-1)
+        else:
+            sigma_qq = 0
+
+        if self.p >= 2 and self.q >= 2:
+            sigma_pq = torch.sum(self.compute_sigma_pq(hp=hp, hq=hq, rp=rp, rq=rq), dim=[1, 2, 3]).unsqueeze(-1)
+        else:
+            sigma_pq = 0
+        return h0r0t0 + score_p + score_q + sigma_pp + sigma_qq + sigma_pq
+
     def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
         """
 
@@ -567,8 +639,8 @@ class Keci(BaseKGE):
             # Third item in Eq 16.
             hq_rq_t0 = torch.einsum('brq, br  -> b', hq * rq, t0)
             # Eq. 18.
-            h0_rq_tq = torch.einsum('br, brq  -> b', h0, rq*tq)
-            r0_hq_tq = torch.einsum('br, brq  -> b', r0, hq*tq)
+            h0_rq_tq = torch.einsum('br, brq  -> b', h0, rq * tq)
+            r0_hq_tq = torch.einsum('br, brq  -> b', r0, hq * tq)
             score_q = - hq_rq_t0 + (h0_rq_tq + r0_hq_tq)
         else:
             score_q = 0
@@ -645,16 +717,18 @@ class Keci(BaseKGE):
         # (12) Score
         return A_B_C_score + D_E_F_score
 
+
 class KeciBase(Keci):
     " Without learning dimension scaling"
+
     def __init__(self, args):
         super().__init__(args)
         self.name = 'KeciBase'
         self.requires_grad_for_interactions = False
         print(f'r:{self.r}\t p:{self.p}\t q:{self.q}')
         if self.p > 0:
-            self.p_coefficients = torch.nn.Embedding(num_embeddings=1,embedding_dim=self.p)
+            self.p_coefficients = torch.nn.Embedding(num_embeddings=1, embedding_dim=self.p)
             torch.nn.init.ones_(self.p_coefficients.weight)
         if self.q > 0:
-            self.q_coefficients = torch.nn.Embedding(num_embeddings=1,embedding_dim=self.q)
+            self.q_coefficients = torch.nn.Embedding(num_embeddings=1, embedding_dim=self.q)
             torch.nn.init.ones_(self.q_coefficients.weight)

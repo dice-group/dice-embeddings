@@ -26,38 +26,24 @@ With our framework, practitioners can directly use PytorchLightning for model pa
 
 **Why [Hugging-face Gradio](https://huggingface.co/gradio)?**
 Deploy a pre-trained embedding model without writing a single line of code.
-# Installation
+
+## For more please visit [dice-embeddings](https://dice-group.github.io/dice-embeddings/)!
+
+## Installation
 <details><summary> Details </summary>
 
 ``` bash
 git clone https://github.com/dice-group/dice-embeddings.git
-conda create -n dice python=3.10 --no-default-packages && conda activate dice
+conda create -n dice python=3.9 --no-default-packages && conda activate dice
 pip3 install -r requirements.txt
 ```
 or
 ```bash
 pip install dicee
 ```
-or
-```bash
-pip3 install "pandas>=1.5.1"
-pip3 install "torch>=2.0.0"
-pip3 install "polars>=0.16.14"
-pip3 install "scikit-learn>=1.2.2"
-pip3 install "pyarrow>=11.0.0"
-pip3 install "pytest>=7.2.2"
-pip3 install "gradio>=3.23.0"
-pip3 install "psutil>=5.9.4"
-pip3 install "pytorch-lightning==1.6.4"
-pip3 install "pykeen==1.10.1"
-pip3 install "zstandard>=0.21.0"
-pip3 install "rdflib>=7.0.0"
-pip3 install "ruff>=0.0.283"
-```
-
 To test the Installation
 ```bash
-wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip
+wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip --no-check-certificate
 unzip KGs.zip
 pytest -p no:warnings -x # it takes circa 15 minutes
 pytest -p no:warnings --lf # run only the last failed test
@@ -71,7 +57,7 @@ pyreverse dicee/trainer && dot -Tpng -x classes.dot -o trainer.png && eog traine
 ```
 </details>
 
-# Knowledge Graph Embedding Models
+## Knowledge Graph Embedding Models
 <details> <summary> To see available Models</summary>
 
 1. TransE, DistMult, ComplEx, ConEx, QMult, OMult, ConvO, ConvQ, Keci
@@ -80,7 +66,7 @@ pyreverse dicee/trainer && dot -Tpng -x classes.dot -o trainer.png && eog traine
 > For more, please refer to `examples`.
 </details>
 
-# How to Train
+## How to Train
 <details> <summary> To see  examples</summary>
 
 Train a KGE model and evaluate it on the train, validation, and test sets of the UMLS benchmark dataset.
@@ -119,8 +105,7 @@ python main.py --sparql_endpoint "http://localhost:3030/mutagenesis/" --model Ke
 For more, please refer to `examples`.
 </details>
 
-
-# How to Deploy
+## How to Deploy
 <details> <summary> To see a single line of code</summary>
 
 ```python
@@ -133,13 +118,14 @@ KGE(path='...').deploy(share=True,top_k=10)
 <img src="dicee/lp.png" alt="Italian Trulli">
 </details>
 
-## Downstream Applications
-### Triple Classification
-#### Using pre-trained ConEx on DBpedia 03-2022
+### Downstream Applications
+#### Triple Classification
+##### Using pre-trained ConEx on DBpedia 03-2022
 ```bash
 # To download a pretrained ConEx
 mkdir ConEx && cd ConEx && wget -r -nd -np https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpedia/ConEx/ && cd ..
 ```
+**Stay tune for Keci with >10B parameters on DBpedia!**
 ```python
 from dicee import KGE
 # (1) Load a pretrained ConEx on DBpedia 
@@ -194,7 +180,6 @@ pretrained_model = KGE(path='Experiments/2022-12-08 11:46:33.654677')
 pretrained_model.learn_concepts(pos={''},neg={''},topk=1)
 ```
 
-
 ## Pre-trained Models
 Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , if you lack hardware resources to obtain embeddings of a specific knowledge Graph.
 - [DBpedia version: 06-2022 Embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/DBpediaQMultEmbeddings_03_07):
@@ -217,9 +202,6 @@ docker run --rm -v ~/.local/share/dicee/KGs:/dicee/KGs dice-embeddings ./main.py
 ```
 </details>
 
-### Documentation
-In documents folder, we explained many details about knowledge graphs, knowledge graph embeddings, training strategies and many more background knowledge.
-We continuously work on documenting each and every step to increase the readability of our code.
 ## How to cite
 Currently, we are working on our manuscript describing our framework. 
 If you really like our work and want to cite it now, feel free to chose one :) 

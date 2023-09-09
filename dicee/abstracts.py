@@ -1,8 +1,6 @@
 import os
 import datetime
-# import pandas.core.indexes.range
-from .static_funcs import load_model_ensemble, load_model, save_checkpoint_model, load_numpy
-from .static_preprocess_funcs import create_constraints
+from .static_funcs import load_model_ensemble, load_model, save_checkpoint_model
 import torch
 from typing import List, Tuple
 import random
@@ -151,13 +149,12 @@ class BaseInteractiveKGE:
         self.construct_ensemble = construct_ensemble
         self.apply_semantic_constraint = apply_semantic_constraint
         if construct_ensemble:
-            self.model, self.entity_to_idx, self.relation_to_idx = load_model_ensemble(self.path + '/')
+            self.model, self.entity_to_idx, self.relation_to_idx = load_model_ensemble(self.path)
         else:
             if model_name:
-                self.model, self.entity_to_idx, self.relation_to_idx = load_model(self.path + '/',
-                                                                                  model_name=model_name)
+                self.model, self.entity_to_idx, self.relation_to_idx = load_model(self.path, model_name=model_name)
             else:
-                self.model, self.entity_to_idx, self.relation_to_idx = load_model(self.path + '/')
+                self.model, self.entity_to_idx, self.relation_to_idx = load_model(self.path)
         self.num_entities = len(self.entity_to_idx)
         self.num_relations = len(self.relation_to_idx)
         self.entity_to_idx: dict
@@ -167,13 +164,6 @@ class BaseInteractiveKGE:
 
         self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
         self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
-
-        self.train_set = load_numpy(path=self.path + '/train_set.npy')
-        if self.apply_semantic_constraint:
-            self.domain_constraints_per_rel, self.range_constraints_per_rel, self.domain_per_rel, \
-            self.range_per_rel = create_constraints(
-                self.train_set)
-
     def get_domain_of_relation(self, rel: str) -> List[str]:
         x = [self.idx_to_entity[i] for i in self.domain_per_rel[self.relation_to_idx[rel]]]
         res = set(x)

@@ -15,6 +15,7 @@ import psutil
 from .models.base_model import BaseKGE
 import pickle
 
+
 def timeit(func):
     @functools.wraps(func)
     def timeit_wrapper(*args, **kwargs):
@@ -40,7 +41,7 @@ def load_pickle(file_path=str):
 
 
 # @TODO: Could these funcs can be merged?
-def select_model(args: dict, is_continual_training: bool = None, storage_path: str = None, dataset=None):
+def select_model(args: dict, is_continual_training: bool = None, storage_path: str = None):
     isinstance(args, dict)
     assert len(args) > 0
     assert isinstance(is_continual_training, bool)
@@ -58,21 +59,24 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
             print(f"{storage_path}/model.pt is not found. The model will be trained with random weights")
         return model, _
     else:
-        return intialize_model(args, dataset)
+        return intialize_model(args)
 
 
-def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[object, dict, dict]:
+def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[object, dict, dict]:
     """ Load weights and initialize pytorch module from namespace arguments"""
     print(f'Loading model {model_name}...', end=' ')
     start_time = time.time()
     # (1) Load weights..
     weights = torch.load(path_of_experiment_folder + f'/{model_name}', torch.device('cpu'))
-    # (2) Loading input configuration..
+    num_ent, ent_dim = weights['entity_embeddings.weight'].shape
+    num_rel, rel_dim = weights['relation_embeddings.weight'].shape
+    assert ent_dim==rel_dim
+    # (2) Loading input configuration.
     configs = load_json(path_of_experiment_folder + '/configuration.json')
-    # (3) Loading the report of a training process.
-    report = load_json(path_of_experiment_folder + '/report.json')
-    configs["num_entities"] = report["num_entities"]
-    configs["num_relations"] = report["num_relations"]
+    configs["num_entities"] = num_ent
+    configs["num_relations"] = num_rel
+    #configs["embedding_dim"] = ent_dim
+
     print(f'Done! It took {time.time() - start_time:.3f}')
     # (4) Select the model
     model, _ = intialize_model(configs)
@@ -84,12 +88,19 @@ def load_model(path_of_experiment_folder, model_name='model.pt') -> Tuple[object
     model.eval()
     start_time = time.time()
     print('Loading entity and relation indexes...', end=' ')
-    with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
-        entity_to_idx = pickle.load(f)
-    with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
-        relation_to_idx = pickle.load(f)
-    assert isinstance(entity_to_idx, dict)
-    assert isinstance(relation_to_idx, dict)
+    try:
+        # Maybe ? https://docs.python.org/3/library/mmap.html
+        with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
+            entity_to_idx = pickle.load(f)
+    except FileNotFoundError:
+        print("entity_to_idx.p not found")
+        entity_to_idx=dict()
+    try:    
+        with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
+            relation_to_idx = pickle.load(f)
+    except FileNotFoundError:
+        print("relation_to_idx.p not found")
+        relation_to_idx=dict()
     print(f'Done! It took {time.time() - start_time:.4f}')
     return model, entity_to_idx, relation_to_idx
 
@@ -194,17 +205,15 @@ def save_checkpoint_model(model, path: str) -> None:
             print(model.name)
             print('Could not save the model correctly')
     else:
-        # Pykeen
         torch.save(model.model.state_dict(), path)
 
 
 def store(trainer,
           trained_model, model_name: str = 'model', full_storage_path: str = None,
-          dataset=None, save_embeddings_as_csv=False) -> None:
+          save_embeddings_as_csv=False) -> None:
     """
     Store trained_model model and save embeddings into csv file.
     :param trainer: an instance of trainer class
-    :param dataset: an instance of KG see core.knowledge_graph.
     :param full_storage_path: path to save parameters.
     :param model_name: string representation of the name of the model.
     :param trained_model: an instance of BaseKGE see core.models.base_model .
@@ -287,22 +296,13 @@ def read_or_load_kg(args, cls):
     return kg
 
 
-def get_pykeen_model(model_name: str, args, dataset):
-    if dataset is None:
-        # (1) Load a pretrained Pykeen Model
-        return PykeenKGE(args=args)
-    elif args['scoring_technique'] in ['KvsAll', "NegSample"]:
-        return PykeenKGE(args=args)
-    else:
-        raise NotImplementedError("Incorrect scoring technique")
-
-
-def intialize_model(args: dict, dataset=None) -> Tuple[object, str]:
+def intialize_model(args: dict) -> Tuple[object, str]:
     # @TODO: Apply construct_krone as callback? or use KronE_QMult as a prefix.
     # @TODO: Remove form_of_labelling
+    print(f"Initializing {args['model']}...")
     model_name = args['model']
     if "pykeen" in model_name.lower():
-        model = get_pykeen_model(model_name, args, dataset)
+        model = PykeenKGE(args=args)
         form_of_labelling = "EntityPrediction"
     elif model_name == 'Shallom':
         model = Shallom(args=args)
@@ -358,9 +358,8 @@ def intialize_model(args: dict, dataset=None) -> Tuple[object, str]:
 
 
 def load_json(p: str) -> dict:
-    assert os.path.isfile(p)
     with open(p, 'r') as r:
-        args = json.load(r)
+            args = json.load(r)
     return args
 
 
@@ -372,14 +371,11 @@ def save_embeddings(embeddings: np.ndarray, indexes, path: str) -> None:
     :param path:
     :return:
     """
-    # @TODO: Do we need it ?!
     try:
-        df = pd.DataFrame(embeddings, index=indexes)
-        df.to_csv(path)
+        pd.DataFrame(embeddings, index=indexes).to_csv(path)
     except KeyError or AttributeError as e:
         print('Exception occurred at saving entity embeddings. Computation will continue')
         print(e)
-    del df
 
 
 def random_prediction(pre_trained_kge):
@@ -424,52 +420,13 @@ def deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k):
     return f'(  {str_subject}, ?, {str_object} )', pd.DataFrame({'Relations': relations, 'Score': scores})
 
 
-def semi_supervised_split(train_set: np.ndarray, train_split_ratio=None, calibration_split_ratio=None):
-    """
-    Split input triples into three splits
-    1. split corresponds to the first 10% of the input
-    2. split corresponds to the second 10% of the input
-    3. split corresponds to the remaining data.
-    """
-    # Divide train_set into
-    n, d = train_set.shape
-    assert d == 3
-    # (1) Select X % of the first triples for the training.
-    train = train_set[: int(n * train_split_ratio)]
-    # (2) Select remaining first Y % of the triples for the calibration.
-    calibration = train_set[len(train):len(train) + int(n * calibration_split_ratio)]
-    # (3) Consider remaining triples as unlabelled.
-    unlabelled = train_set[-len(train) - len(calibration):]
-    print(f'Shapes:\tTrain{train.shape}\tCalib:{calibration.shape}\tUnlabelled:{unlabelled.shape}')
-    return train, calibration, unlabelled
-
-
-def p_value(non_conf_scores, act_score):
-    if len(act_score.shape) < 2:
-        act_score = act_score.unsqueeze(-1)
-
-    # return (torch.sum(non_conf_scores >= act_score) + 1) / (len(non_conf_scores) + 1)
-    return (torch.sum(non_conf_scores >= act_score, dim=-1) + 1) / (len(non_conf_scores) + 1)
-
-
-def norm_p_value(p_values, variant):
-    if len(p_values.shape) < 2:
-        p_values = p_values.unsqueeze(0)
-
-    if variant == 0:
-        norm_p_values = p_values / (torch.max(p_values, dim=-1).values.unsqueeze(-1))
-    else:
-        norm_p_values = p_values.scatter_(1, torch.max(p_values, dim=-1).indices.unsqueeze(-1),
-                                          torch.ones_like(p_values))
-    return norm_p_values
-
-
 @timeit
 def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
     # @TODO: This function should take any DASK/Pandas DataFrame or Series.
     print(print_into)
     vocab_to_idx.to_parquet(path_for_serialization + f'/{name}', compression='gzip', engine='pyarrow')
     print('Done !\n')
+
 
 def create_experiment_folder(folder_name='Experiments'):
     directory = os.getcwd() + "/" + folder_name + "/"
@@ -495,7 +452,7 @@ def continual_training_setup_executor(executor) -> None:
         # Create a single directory containing KGE and all related data
         if executor.args.path_to_store_single_run:
             os.makedirs(executor.args.path_to_store_single_run, exist_ok=False)
-            executor.args.full_storage_path=executor.args.path_to_store_single_run
+            executor.args.full_storage_path = executor.args.path_to_store_single_run
         else:
             # Create a parent and subdirectory.
             executor.args.full_storage_path = create_experiment_folder(folder_name=executor.args.storage_path)
