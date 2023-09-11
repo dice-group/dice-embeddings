@@ -1,5 +1,5 @@
 import os.path
-from typing import List, Tuple, Set, Iterable, Dict
+from typing import List, Tuple, Set, Iterable, Dict, Union
 import torch
 from torch import optim
 from torch.utils.data import DataLoader
@@ -389,12 +389,36 @@ class KGE(BaseInteractiveKGE):
         elif 'yager' in neg_norm:
             return (1 - torch.pow(tens_1, lambda_)) ** (1 / lambda_)
 
-    def answer_multi_hop_query(self,query_type, query, tnorm, neg_norm, lambda_, k_):
+    def answer_multi_hop_query(self,query_type: str, query: Tuple[Union[str, Tuple[str, str]], ...], tnorm: str, neg_norm: str, lambda_: float, k_: int) -> List[Tuple[str, torch.Tensor]]:
         """
-        @ TODO: Define types of inputs
-        @ TODO: Add comments
+        Find an answer set for EPFO queries including negation and disjunction
 
+        Parameter
+        ----------
+        query_type: str
+        The type of the query, e.g., "2p".
+
+        query: Union[str, Tuple[str, Tuple[str, str]]]
+        The query itself, either a string or a nested tuple.
+
+        tnorm: str
+        The t-norm operator.
+
+        neg_norm: str
+        The negation norm.
+
+        lambda_: float
+        lambda parameter for sugeno and yager negation norms
+
+        k_: int
+        The top-k substitutions for intermediate variables.
+
+        Returns
+        -------
+        List[Tuple[str, torch.Tensor]]
+        Entities and corresponding scores sorted in the descening order of scores
         """
+
 
         query_name_dict = {
             ("e", ("r",)): "1p",
@@ -416,7 +440,7 @@ class KGE(BaseInteractiveKGE):
             ((("e", ("r",)), ("e", ("r",)), ("u",)), ("r",)): "up",
 
         }
-        print(query_name_dict)
+
         # Create an inverse mapping
         inverse_query_name_dict = {v: k for k, v in query_name_dict.items()}
 
