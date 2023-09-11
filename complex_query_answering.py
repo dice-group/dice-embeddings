@@ -73,7 +73,7 @@ def scores_1p(model, queries):
         head, relation = query
 
         # Get scores for the  atom
-        atom1_scores = model.predict(head_entities=[head], relations=[relation[0]]).squeeze()
+        atom1_scores = model.predict(h=[head], r=[relation[0]]).squeeze()
         entity_scores[query]=atom1_scores
 
     return entity_scores
@@ -90,7 +90,7 @@ def scores_2p(model, queries, tnorm: str, k_: int):
 
         # Calculate entity scores for each query
         # Get scores for the first atom
-        atom1_scores = model.predict(head_entities=[head1], relations=[relation1]).squeeze()
+        atom1_scores = model.predict(h=[head1], r=[relation1]).squeeze()
 
         assert len(atom1_scores) == len(model.entity_to_idx)
         k=min(k_,len(model.entity_to_idx))
@@ -108,7 +108,7 @@ def scores_2p(model, queries, tnorm: str, k_: int):
         # Get scores for the second atom
         for head2 in top_k_heads:
             # The score tensor for the current head2
-            atom2_score = model.predict(head_entities=[head2], relations=[relation2])
+            atom2_score = model.predict(h=[head2], r=[relation2])
             # Concatenate the score tensor for the current head2 with the previous scores
             atom2_scores = torch.cat([atom2_scores, atom2_score], dim=0)
 
@@ -131,7 +131,7 @@ def scores_3p(model, queries, tnorm: str, k_: int):
             head1, (relation1, relation2, relation3) = query
 
             # Get scores for the first atom
-            atom1_scores = model.predict(head_entities=[head1], relations=[relation1]).squeeze()
+            atom1_scores = model.predict(h=[head1], r=[relation1]).squeeze()
             k = min(k_, len(model.entity_to_idx))
 
             # Get the top k entities indices for the first atom
@@ -146,7 +146,7 @@ def scores_3p(model, queries, tnorm: str, k_: int):
 
             # Get scores for the second atom
             for head2 in top_k_heads1:
-                atom2_score = model.predict(head_entities=[head2], relations=[relation2])
+                atom2_score = model.predict(h=[head2], r=[relation2])
                 atom2_scores = torch.cat([atom2_scores, atom2_score], dim=0)
 
             # Get the top k entities indices for each head of the second atom
@@ -161,7 +161,7 @@ def scores_3p(model, queries, tnorm: str, k_: int):
             # Get scores for the third atom
             for row in top_k_heads2:
                 for head3 in row:
-                    atom3_score = model.predict(head_entities=[head3], relations=[relation3])
+                    atom3_score = model.predict(h=[head3], r=[relation3])
                     atom3_scores = torch.cat([atom3_scores, atom3_score], dim=0)
 
             topk_scores1_2d = top_k_scores1.unsqueeze(-1).repeat(1,top_k_scores2.shape[1])
@@ -191,9 +191,9 @@ def scores_2i(model, queries, tnorm: str):
 
         # Calculate entity scores for each query
         # Get scores for the first atom
-        atom1_scores = model.predict(head_entities=[head1], relations=[relation1[0]]).squeeze()
+        atom1_scores = model.predict(h=[head1], r=[relation1[0]]).squeeze()
         # Get scores for the second atom
-        atom2_scores = model.predict(head_entities=[head2], relations=[relation2[0]]).squeeze()
+        atom2_scores = model.predict(h=[head2], r=[relation2[0]]).squeeze()
 
         assert len(atom1_scores) == len(model.entity_to_idx)
         combined_scores = []
@@ -215,11 +215,11 @@ def scores_3i(model, queries, tnorm: str):
         head3, relation3 = query[2]
         # Calculate entity scores for each query
         # Get scores for the first atom
-        atom1_scores = model.predict(head_entities=[head1], relations=[relation1[0]]).squeeze()
+        atom1_scores = model.predict(h=[head1], r=[relation1[0]]).squeeze()
         # Get scores for the second atom
-        atom2_scores = model.predict(head_entities=[head2], relations=[relation2[0]]).squeeze()
+        atom2_scores = model.predict(h=[head2], r=[relation2[0]]).squeeze()
         # Get scores for the third atom
-        atom3_scores = model.predict(head_entities=[head3], relations=[relation3[0]]).squeeze()
+        atom3_scores = model.predict(h=[head3], r=[relation3[0]]).squeeze()
 
 
         assert len(atom1_scores) == len(model.entity_to_idx)
@@ -244,7 +244,7 @@ def scores_pi(model, queries, tnorm: str, k_: int):
             head3, relation3=query[1]
             # Calculate entity scores for each query
             # Get scores for the first atom
-            atom1_scores = model.predict(head_entities=[head1], relations=[relation1]).squeeze()
+            atom1_scores = model.predict(h=[head1], r=[relation1]).squeeze()
 
             assert len(atom1_scores) == len(model.entity_to_idx)
             k = min(k_, len(model.entity_to_idx))
@@ -262,7 +262,7 @@ def scores_pi(model, queries, tnorm: str, k_: int):
             # Get scores for the second atom
             for head2 in top_k_heads:
                 # The score tensor for the current head2
-                atom2_score = model.predict(head_entities=[head2], relations=[relation2])
+                atom2_score = model.predict(h=[head2], r=[relation2])
                 # Concatenate the score tensor for the current head2 with the previous scores
                 atom2_scores = torch.cat([atom2_scores, atom2_score], dim=0)
 
@@ -273,7 +273,7 @@ def scores_pi(model, queries, tnorm: str, k_: int):
 
             scores_2p_query, _ = torch.max(inter_scores, dim=0)
 
-            scores_1p_query = model.predict(head_entities=[head3], relations=[relation3[0]]).squeeze()
+            scores_1p_query = model.predict(h=[head3], r=[relation3[0]]).squeeze()
 
 
             combined_scores = t_norm(scores_2p_query, scores_1p_query,tnorm)
@@ -293,9 +293,9 @@ def scores_ip(model, queries, tnorm: str, k_: int):
         relation_1p=query[1]
         # Calculate entity scores for each query
         # Get scores for the first atom
-        atom1_scores = model.predict(head_entities=[head1], relations=[relation1[0]]).squeeze()
+        atom1_scores = model.predict(h=[head1], r=[relation1[0]]).squeeze()
         # Get scores for the second atom
-        atom2_scores = model.predict(head_entities=[head2], relations=[relation2[0]]).squeeze()
+        atom2_scores = model.predict(h=[head2], r=[relation2[0]]).squeeze()
 
         assert len(atom1_scores) == len(model.entity_to_idx)
         combined_scores = []
@@ -319,7 +319,7 @@ def scores_ip(model, queries, tnorm: str, k_: int):
         # Get scores for the second atom
         for head3 in top_k_heads:
             # The score tensor for the current head2
-            atom3_score = model.predict(head_entities=[head3], relations=[relation_1p[0]])
+            atom3_score = model.predict(h=[head3], r=[relation_1p[0]])
             # Concatenate the score tensor for the current head2 with the previous scores
             atom3_scores = torch.cat([atom3_scores, atom3_score], dim=0)
 
@@ -345,9 +345,9 @@ def scores_2u(model, queries, tconorm: str):
 
         # Calculate entity scores for each query
         # Get scores for the first atom
-        atom1_scores = model.predict(head_entities=[head1], relations=[relation1[0]]).squeeze()
+        atom1_scores = model.predict(h=[head1], r=[relation1[0]]).squeeze()
         # Get scores for the second atom
-        atom2_scores = model.predict(head_entities=[head2], relations=[relation2[0]]).squeeze()
+        atom2_scores = model.predict(h=[head2], r=[relation2[0]]).squeeze()
 
         assert len(atom1_scores) == len(model.entity_to_idx)
         combined_scores = []
@@ -372,10 +372,10 @@ def scores_up(model, queries, tnorm: str, tconorm: str, k_: int):
         relation_1p = query[1]
 
         # Get scores for the first atom
-        atom1_scores = model.predict(head_entities=[head1], relations=[relation1[0]]).squeeze()
+        atom1_scores = model.predict(h=[head1], r=[relation1[0]]).squeeze()
 
         # Get scores for the second atom
-        atom2_scores = model.predict(head_entities=[head2], relations=[relation2[0]]).squeeze()
+        atom2_scores = model.predict(h=[head2], r=[relation2[0]]).squeeze()
 
         assert len(atom1_scores) == len(model.entity_to_idx)
 
@@ -396,7 +396,7 @@ def scores_up(model, queries, tnorm: str, tconorm: str, k_: int):
 
         for head3 in top_k_heads:
             # The score tensor for the current head3
-            atom3_score = model.predict(head_entities=[head3], relations=[relation_1p[0]])
+            atom3_score = model.predict(h=[head3], r=[relation_1p[0]])
 
             # Concatenate the score tensor for the current head3 with the previous scores
             atom3_scores = torch.cat([atom3_scores, atom3_score], dim=0)
@@ -421,10 +421,10 @@ def scores_2in(model,queries,tnorm: str,neg_norm: str,lambda_: float):
 
         # Calculate entity scores for each query
         # Get scores for the first atom (positive)
-        atom1_scores = model.predict(head_entities=[head1], relations=[relation1[0]]).squeeze()
+        atom1_scores = model.predict(h=[head1], r=[relation1[0]]).squeeze()
         # Get scores for the second atom (negative)
         #if neg_norm == "standard":
-        predictions = model.predict(head_entities=[head2], relations=[relation2[0]]).squeeze()
+        predictions = model.predict(h=[head2], r=[relation2[0]]).squeeze()
         atom2_scores =negnorm(predictions,lambda_,neg_norm)
 
 
@@ -448,13 +448,13 @@ def scores_3in(model,queries,tnorm: str,neg_norm: str,lambda_: float):
 
         # Calculate entity scores for each query
         # Get scores for the first atom (positive)
-        atom1_scores = model.predict(head_entities=[head1], relations=[relation1[0]]).squeeze()
+        atom1_scores = model.predict(h=[head1], r=[relation1[0]]).squeeze()
         # Get scores for the second atom (negative)
         # modelling standard negation (1-x)
-        atom2_scores = model.predict(head_entities=[head2], relations=[relation2[0]]).squeeze()
+        atom2_scores = model.predict(h=[head2], r=[relation2[0]]).squeeze()
         # Get scores for the third atom
         # if neg_norm == "standard":
-        predictions = model.predict(head_entities=[head3], relations=[relation3[0]]).squeeze()
+        predictions = model.predict(h=[head3], r=[relation3[0]]).squeeze()
         atom3_scores =negnorm(predictions,lambda_,neg_norm)
 
         assert len(atom1_scores) == len(model.entity_to_idx)
@@ -477,10 +477,10 @@ def scores_inp(model,queries,tnorm: str,neg_norm: str,lambda_: float,k_: int):
 
         # Calculate entity scores for each query
         # Get scores for the first atom (positive)
-        atom1_scores = model.predict(head_entities=[head1], relations=[relation1[0]]).squeeze()
+        atom1_scores = model.predict(h=[head1], r=[relation1[0]]).squeeze()
         # Get scores for the second atom (negative)
         # if neg_norm == "standard":
-        predictions = model.predict(head_entities=[head2], relations=[relation2[0]]).squeeze()
+        predictions = model.predict(h=[head2], r=[relation2[0]]).squeeze()
         atom2_scores = negnorm(predictions, lambda_, neg_norm)
 
         assert len(atom1_scores) == len(model.entity_to_idx)
@@ -502,7 +502,7 @@ def scores_inp(model,queries,tnorm: str,neg_norm: str,lambda_: float,k_: int):
         # Get scores for the second atom
         for head3 in top_k_heads:
             # The score tensor for the current head2
-            atom3_score = model.predict(head_entities=[head3], relations=[relation_1p[0]])
+            atom3_score = model.predict(h=[head3], r=[relation_1p[0]])
             # Concatenate the score tensor for the current head2 with the previous scores
             atom3_scores = torch.cat([atom3_scores, atom3_score], dim=0)
 
@@ -525,7 +525,7 @@ def scores_pin(model, queries, tnorm: str, neg_norm: str,lambda_: float,k_: int)
         head3, relation3 = query[1]
         # Calculate entity scores for each query
         # Get scores for the first atom
-        atom1_scores = model.predict(head_entities=[head1], relations=[relation1]).squeeze()
+        atom1_scores = model.predict(h=[head1], r=[relation1]).squeeze()
 
         assert len(atom1_scores) == len(model.entity_to_idx)
         k = min(k_, len(model.entity_to_idx))
@@ -543,7 +543,7 @@ def scores_pin(model, queries, tnorm: str, neg_norm: str,lambda_: float,k_: int)
         # Get scores for the second atom
         for head2 in top_k_heads:
             # The score tensor for the current head2
-            atom2_score = model.predict(head_entities=[head2], relations=[relation2])
+            atom2_score = model.predict(h=[head2], r=[relation2])
             # Concatenate the score tensor for the current head2 with the previous scores
             atom2_scores = torch.cat([atom2_scores, atom2_score], dim=0)
 
@@ -553,7 +553,7 @@ def scores_pin(model, queries, tnorm: str, neg_norm: str,lambda_: float,k_: int)
 
         scores_2p_query, _ = torch.max(inter_scores, dim=0)
 
-        scores_1p_query = model.predict(head_entities=[head3], relations=[relation3[0]]).squeeze()
+        scores_1p_query = model.predict(h=[head3], r=[relation3[0]]).squeeze()
         #taking negation for the e,(r,n) part of query
         neg_scores_1p_query = negnorm(scores_1p_query, lambda_, neg_norm)
         combined_scores = t_norm(scores_2p_query, neg_scores_1p_query, tnorm)
@@ -572,7 +572,7 @@ def scores_pni(model,queries,tnorm: str,neg_norm: str,lambda_: float,k_: int):
         head3, relation3 = query[1]
         # Calculate entity scores for each query
         # Get scores for the first atom
-        atom1_scores = model.predict(head_entities=[head1], relations=[relation1]).squeeze()
+        atom1_scores = model.predict(h=[head1], r=[relation1]).squeeze()
 
         assert len(atom1_scores) == len(model.entity_to_idx)
         k = min(k_, len(model.entity_to_idx))
@@ -591,7 +591,7 @@ def scores_pni(model,queries,tnorm: str,neg_norm: str,lambda_: float,k_: int):
         # Get scores for the second atom
         for head2 in top_k_heads:
             # The score tensor for the current head2
-            atom2_score = model.predict(head_entities=[head2], relations=[relation2])
+            atom2_score = model.predict(h=[head2], r=[relation2])
             neg_atom2_score = negnorm(atom2_score, lambda_, neg_norm)
             # Concatenate the score tensor for the current head2 with the previous scores
             atom2_scores = torch.cat([atom2_scores,neg_atom2_score], dim=0)
@@ -601,7 +601,7 @@ def scores_pni(model,queries,tnorm: str,neg_norm: str,lambda_: float,k_: int):
         inter_scores = t_norm(topk_scores1_expanded, atom2_scores, tnorm)
 
         scores_2pn_query, _ = torch.max(inter_scores, dim=0)
-        scores_1p_query = model.predict(head_entities=[head3], relations=[relation3[0]]).squeeze()
+        scores_1p_query = model.predict(h=[head3], r=[relation3[0]]).squeeze()
 
         combined_scores = t_norm(scores_2pn_query, scores_1p_query, tnorm)
 
