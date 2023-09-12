@@ -100,7 +100,7 @@ def read_from_disk(data_path: str, read_only_few: int = None,
     assert backend
     # If path exits
     if glob.glob(data_path):
-        if data_path[data_path.find(".") + 1:] in ["owl", "nt", "turtle", "rdf/xml", "n3", " n-triples"]:
+        if data_path[data_path.find(".") + 1:] in ["ttl","owl", "nt", "turtle", "rdf/xml", "n3", " n-triples"]:
             return pd.DataFrame(data=[(s, p, o) for s, p, o in Graph().parse(data_path)],
                                 columns=['subject', 'relation', 'object'], dtype=str)
 
