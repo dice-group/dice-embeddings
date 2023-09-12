@@ -100,14 +100,13 @@ def read_from_disk(data_path: str, read_only_few: int = None,
     assert backend
     # If path exits
     if glob.glob(data_path):
-        if data_path[data_path.find(".") + 1:] in ["ttl","owl", "nt", "turtle", "rdf/xml", "n3", " n-triples"]:
-            return pd.DataFrame(data=[(s, p, o) for s, p, o in Graph().parse(data_path)],
-                                columns=['subject', 'relation', 'object'], dtype=str)
-
         if backend == 'pandas':
             return read_with_pandas(data_path, read_only_few, sample_triples_ratio)
         elif backend == 'polars':
             return read_with_polars(data_path, read_only_few, sample_triples_ratio)
+        elif data_path[data_path.find(".") + 1:] in ["ttl", "owl", "nt", "turtle", "rdf/xml", "n3", " n-triples"]:
+            return pd.DataFrame(data=[(s, p, o) for s, p, o in Graph().parse(data_path)],
+                                columns=['subject', 'relation', 'object'], dtype=str)
         else:
             raise NotImplementedError(f'{backend} not found')
     else:
