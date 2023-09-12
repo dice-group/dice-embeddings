@@ -164,6 +164,7 @@ class BaseInteractiveKGE:
 
         self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
         self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
+
     def get_domain_of_relation(self, rel: str) -> List[str]:
         x = [self.idx_to_entity[i] for i in self.domain_per_rel[self.relation_to_idx[rel]]]
         res = set(x)
@@ -475,8 +476,9 @@ class AbstractPPECallback(AbstractCallback):
             param_ensemble = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device(model.device))
             with torch.no_grad():
                 for k, v in model.state_dict().items():
-                    # (2) Update the parameter ensemble model with the current model.
-                    param_ensemble[k] += self.alphas[self.sample_counter] * v
+                    if v.dtype==torch.float:
+                        # (2) Update the parameter ensemble model with the current model.
+                        param_ensemble[k] += self.alphas[self.sample_counter] * v
             # (3) Save the updated parameter ensemble model.
             torch.save(param_ensemble, f=f"{self.path}/trainer_checkpoint_main.pt")
             self.sample_counter += 1

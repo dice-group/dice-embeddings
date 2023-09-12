@@ -1,7 +1,4 @@
 import argparse
-from .abstracts import AbstractCallback
-
-
 class Namespace(argparse.Namespace):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -53,8 +50,8 @@ class Namespace(argparse.Namespace):
         self.gpus = None
         """Number GPUs to be used during training"""
 
-        self.callbacks: list[AbstractCallback] = []
-        """Number GPUs to be used during training"""
+        self.callbacks = dict()
+        """Callbacks, e.g., {"PPE":{ "last_percent_to_consider": 10}}"""
 
         self.backend: str = 'pandas'
         """Backend to read, process, and index input knowledge graph"""
