@@ -503,8 +503,6 @@ class KGE(BaseInteractiveKGE):
             atom1_scores = self.predict(h=[head1], r=[relation1]).squeeze()
 
             assert len(atom1_scores) == len(self.entity_to_idx)
-            k = min(k_, len(self.entity_to_idx))
-
             # sort atom1_scores in descending order and get the top k entities indices
             top_k_scores1, top_k_indices = torch.topk(atom1_scores, k)
 
@@ -544,7 +542,6 @@ class KGE(BaseInteractiveKGE):
             atom1_scores = self.predict(h=[head1], r=[relation1]).squeeze()
 
             assert len(atom1_scores) == len(self.entity_to_idx)
-            k = min(k_, len(self.entity_to_idx))
 
             # sort atom1_scores in descending order and get the top k entities indices
             top_k_scores1, top_k_indices = torch.topk(atom1_scores, k)
@@ -593,7 +590,6 @@ class KGE(BaseInteractiveKGE):
             assert len(atom1_scores) == len(self.entity_to_idx)
 
             scores_2in_query = self.t_norm(atom1_scores, atom2_scores, tnorm)
-            k = min(k_, len(self.entity_to_idx))
 
             # sort atom1_scores in descending order and get the top k entities indices
             top_k_scores1, top_k_indices = torch.topk(scores_2in_query, k)

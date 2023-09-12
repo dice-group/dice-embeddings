@@ -1,7 +1,4 @@
 import argparse
-from .abstracts import AbstractCallback
-
-
 class Namespace(argparse.Namespace):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
