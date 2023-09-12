@@ -236,8 +236,7 @@ Please contact:  ```caglar.demir@upb.de ``` or ```caglardemir8@gmail.com ``` , i
 - [YAGO3-10 ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/YAGO3-10.zip)
 - [FB15K-237 ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/FB15K-237.zip)
 - [WN18RR ConEx embeddings](https://hobbitdata.informatik.uni-leipzig.de/KGE/conex/WN18RR.zip)
-- For more please look at [Hobbit Data](https://hobbitdata.informatik.uni-leipzig.de/KGE/)
-
+- For more please look at [Hobbit Data](https://files.dice-research.org/projects/DiceEmbeddings/)
 ## Docker
 <details> <summary> Details</summary>
 To build the Docker image:
