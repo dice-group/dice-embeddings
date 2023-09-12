@@ -12,6 +12,7 @@ from .static_preprocess_funcs import create_constraints
 import numpy as np
 import sys
 
+
 class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
 
@@ -28,7 +29,6 @@ class KGE(BaseInteractiveKGE):
         if apply_semantic_constraint:
             (self.domain_constraints_per_rel, self.range_constraints_per_rel,
              self.domain_per_rel, self.range_per_rel) = create_constraints(self.train_set)
-
 
     def __str__(self):
         return "KGE | " + str(self.model)
@@ -369,19 +369,19 @@ class KGE(BaseInteractiveKGE):
         else:
             return results
 
-    def t_norm(self,tens_1: torch.Tensor, tens_2: torch.Tensor, tnorm: str = 'min') -> torch.Tensor:
+    def t_norm(self, tens_1: torch.Tensor, tens_2: torch.Tensor, tnorm: str = 'min') -> torch.Tensor:
         if 'min' in tnorm:
             return torch.min(tens_1, tens_2)
         elif 'prod' in tnorm:
             return tens_1 * tens_2
 
-    def t_conorm(self,tens_1: torch.Tensor, tens_2: torch.Tensor, tconorm: str = 'min') -> torch.Tensor:
+    def t_conorm(self, tens_1: torch.Tensor, tens_2: torch.Tensor, tconorm: str = 'min') -> torch.Tensor:
         if 'min' in tconorm:
             return torch.max(tens_1, tens_2)
         elif 'prod' in tconorm:
             return (tens_1 + tens_2) - (tens_1 * tens_2)
 
-    def negnorm(self,tens_1: torch.Tensor, lambda_: float, neg_norm: str = 'standard') -> torch.Tensor:
+    def negnorm(self, tens_1: torch.Tensor, lambda_: float, neg_norm: str = 'standard') -> torch.Tensor:
         if 'standard' in neg_norm:
             return 1 - tens_1
         elif 'sugeno' in neg_norm:
@@ -389,7 +389,8 @@ class KGE(BaseInteractiveKGE):
         elif 'yager' in neg_norm:
             return (1 - torch.pow(tens_1, lambda_)) ** (1 / lambda_)
 
-    def answer_multi_hop_query(self,query_type: str, query: Tuple[Union[str, Tuple[str, str]], ...], tnorm: str, neg_norm: str, lambda_: float, k_: int) -> List[Tuple[str, torch.Tensor]]:
+    def answer_multi_hop_query(self, query_type: str, query: Tuple[Union[str, Tuple[str, str]], ...], tnorm: str,
+                               neg_norm: str="standard", lambda_: float=0.0, k: int=10) -> List[Tuple[str, torch.Tensor]]:
         """
         Find an answer set for EPFO queries including negation and disjunction
 
@@ -410,7 +411,7 @@ class KGE(BaseInteractiveKGE):
         lambda_: float
         lambda parameter for sugeno and yager negation norms
 
-        k_: int
+        k: int
         The top-k substitutions for intermediate variables.
 
         Returns
@@ -418,7 +419,7 @@ class KGE(BaseInteractiveKGE):
         List[Tuple[str, torch.Tensor]]
         Entities and corresponding scores sorted in the descening order of scores
         """
-
+        assert len(self.entity_to_idx) > k >= 0
 
         query_name_dict = {
             ("e", ("r",)): "1p",
@@ -465,14 +466,11 @@ class KGE(BaseInteractiveKGE):
 
             assert len(atom1_scores) == len(self.entity_to_idx)
 
-
             combined_scores = self.t_norm(atom1_scores, atom2_scores, tnorm)
             entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
-            entity_scores = sorted(entity_scores, key=lambda x: x[1], reverse=True)
-
-            return entity_scores
-        #3in
-        elif query_structure == (("e", ("r",)), ("e", ("r",)), ("e", ("r","n"))):
+            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
+        # 3in
+        elif query_structure == (("e", ("r",)), ("e", ("r",)), ("e", ("r", "n"))):
             # entity_scores = scores_3in(model, query, tnorm, neg_norm, lambda_)
             head1, relation1 = query[0]
             head2, relation2 = query[1]
@@ -491,14 +489,11 @@ class KGE(BaseInteractiveKGE):
 
             assert len(atom1_scores) == len(self.entity_to_idx)
 
-
             inter_scores = self.t_norm(atom1_scores, atom2_scores, tnorm)
             combined_scores = self.t_norm(inter_scores, atom3_scores, tnorm)
             entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
-            entity_scores = sorted(entity_scores, key=lambda x: x[1], reverse=True)
-
-            return entity_scores
-        #pni
+            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
+        # pni
         elif query_structure == (("e", ("r", "r", "n")), ("e", ("r",))):
             # entity_scores = scores_pni(model, query, tnorm, neg_norm, lambda_, k_)
             head1, (relation1, relation2, _) = query[0]
@@ -538,10 +533,8 @@ class KGE(BaseInteractiveKGE):
 
             combined_scores = self.t_norm(scores_2pn_query, scores_1p_query, tnorm)
             entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
-            entity_scores = sorted(entity_scores, key=lambda x: x[1], reverse=True)
-
-            return entity_scores
-        #pin
+            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
+        # pin
         elif query_structure == (("e", ("r", "r")), ("e", ("r", "n"))):
             # entity_scores = scores_pin(model, query, tnorm, neg_norm, lambda_, k_)
             head1, (relation1, relation2) = query[0]
@@ -581,11 +574,8 @@ class KGE(BaseInteractiveKGE):
             neg_scores_1p_query = self.negnorm(scores_1p_query, lambda_, neg_norm)
             combined_scores = self.t_norm(scores_2p_query, neg_scores_1p_query, tnorm)
             entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
-            entity_scores = sorted(entity_scores, key=lambda x: x[1], reverse=True)
-
-            return entity_scores
-
-        #inp
+            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
+        # inp
         elif query_structure == ((("e", ("r",)), ("e", ("r", "n"))), ("r",)):
             # entity_scores = scores_inp(model, query, tnorm, neg_norm, lambda_, k_)
             head1, relation1 = query[0][0]
@@ -629,10 +619,9 @@ class KGE(BaseInteractiveKGE):
 
             res, _ = torch.max(combined_scores, dim=0)
             entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), res)]
-            entity_scores = sorted(entity_scores, key=lambda x: x[1], reverse=True)
+            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
 
-            return entity_scores
-        #2p
+        # 2p
         elif query_structure == ("e", ("r", "r")):
             # entity_scores = scores_2p(model, query, tnorm, k_)
             head1, (relation1, relation2) = query
@@ -642,8 +631,6 @@ class KGE(BaseInteractiveKGE):
             atom1_scores = self.predict(h=[head1], r=[relation1]).squeeze()
 
             assert len(atom1_scores) == len(self.entity_to_idx)
-            k = min(k_, len(self.entity_to_idx))
-
             # sort atom1_scores in descending order and get the top k entities indices
             top_k_scores1, top_k_indices = torch.topk(atom1_scores, k)
 
@@ -667,17 +654,14 @@ class KGE(BaseInteractiveKGE):
 
             res, _ = torch.max(combined_scores, dim=0)
             entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), res)]
-            entity_scores = sorted(entity_scores, key=lambda x: x[1], reverse=True)
+            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
 
-            return entity_scores
-        #3p
+        # 3p
         elif query_structure == ("e", ("r", "r", "r",)):
             head1, (relation1, relation2, relation3) = query
 
             # Get scores for the first atom
             atom1_scores = self.predict(h=[head1], r=[relation1]).squeeze()
-            k = min(k_, len(self.entity_to_idx))
-
             # Get the top k entities indices for the first atom
             top_k_scores1, top_k_indices1 = torch.topk(atom1_scores, k)
 
@@ -719,10 +703,8 @@ class KGE(BaseInteractiveKGE):
 
             res, _ = torch.max(combined_scores, dim=0)
             entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), res)]
-            entity_scores = sorted(entity_scores, key=lambda x: x[1], reverse=True)
-
-            return entity_scores
-        #2i
+            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
+        # 2i
         elif query_structure == (("e", ("r",)), ("e", ("r",))):
             # entity_scores = scores_2i(model, query, tnorm)
             head1, relation1 = query[0]
@@ -736,14 +718,10 @@ class KGE(BaseInteractiveKGE):
 
             assert len(atom1_scores) == len(self.entity_to_idx)
 
-
             combined_scores = self.t_norm(atom1_scores, atom2_scores, tnorm)
             entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
-            entity_scores = sorted(entity_scores, key=lambda x: x[1], reverse=True)
-
-            return entity_scores
-            pass
-        #3i
+            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
+        # 3i
         elif query_structure == (("e", ("r",)), ("e", ("r",)), ("e", ("r",))):
             # entity_scores = scores_3i(model, query, tnorm)
             head1, relation1 = query[0]
@@ -759,14 +737,11 @@ class KGE(BaseInteractiveKGE):
 
             assert len(atom1_scores) == len(self.entity_to_idx)
 
-
             inter_scores = self.t_norm(atom1_scores, atom2_scores, tnorm)
             combined_scores = self.t_norm(inter_scores, atom3_scores, tnorm)
             entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
-            entity_scores = sorted(entity_scores, key=lambda x: x[1], reverse=True)
-
-            return entity_scores
-        #pi
+            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
+        # pi
         elif query_structure == (("e", ("r", "r")), ("e", ("r",))):
             # entity_scores = scores_pi(model, query, tnorm, k_)
             head1, (relation1, relation2) = query[0]
@@ -776,8 +751,6 @@ class KGE(BaseInteractiveKGE):
             atom1_scores = self.predict(h=[head1], r=[relation1]).squeeze()
 
             assert len(atom1_scores) == len(self.entity_to_idx)
-            k = min(k_, len(self.entity_to_idx))
-
             # sort atom1_scores in descending order and get the top k entities indices
             top_k_scores1, top_k_indices = torch.topk(atom1_scores, k)
 
@@ -805,10 +778,8 @@ class KGE(BaseInteractiveKGE):
 
             combined_scores = self.t_norm(scores_2p_query, scores_1p_query, tnorm)
             entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
-            entity_scores = sorted(entity_scores, key=lambda x: x[1], reverse=True)
-
-            return entity_scores
-        #ip
+            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
+        # ip
         elif query_structure == ((("e", ("r",)), ("e", ("r",))), ("r",)):
             # entity_scores = scores_ip(model, query, tnorm, k_)
             head1, relation1 = query[0][0]
@@ -822,11 +793,8 @@ class KGE(BaseInteractiveKGE):
 
             assert len(atom1_scores) == len(self.entity_to_idx)
 
-
             scores_2i_query = self.t_norm(atom1_scores, atom2_scores, tnorm)
             # Get the top k entities from the 2i query
-
-            k = min(k_, len(self.entity_to_idx))
 
             # sort atom1_scores in descending order and get the top k entities indices
             top_k_scores1, top_k_indices = torch.topk(scores_2i_query, k)
@@ -853,12 +821,9 @@ class KGE(BaseInteractiveKGE):
             res, _ = torch.max(combined_scores, dim=0)
 
             entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), res)]
-            entity_scores = sorted(entity_scores, key=lambda x: x[1], reverse=True)
-
-            return entity_scores
-
-        #disjunction
-        #2u
+            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
+        # disjunction
+        # 2u
         elif query_structure == (("e", ("r",)), ("e", ("r",)), ("u",)):
             # entity_scores = scores_2u(model, query, tnorm)
             head1, relation1 = query[0]
@@ -872,14 +837,13 @@ class KGE(BaseInteractiveKGE):
 
             assert len(atom1_scores) == len(self.entity_to_idx)
 
-
             combined_scores = self.t_conorm(atom1_scores, atom2_scores, tnorm)
 
             entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
             entity_scores = sorted(entity_scores, key=lambda x: x[1], reverse=True)
 
             return entity_scores
-        #up
+        # up
         # here the second tnorm is for t-conorm (used in pairs)
         elif query_structure == ((("e", ("r",)), ("e", ("r",)), ("u",)), ("r",)):
             # entity_scores = scores_up(model, query, tnorm, tnorm, k_)
@@ -896,9 +860,6 @@ class KGE(BaseInteractiveKGE):
             assert len(atom1_scores) == len(self.entity_to_idx)
 
             scores_2u_query = self.t_conorm(atom1_scores, atom2_scores, tnorm)
-
-            # Get the top k entities from the 2i query
-            k = min(k_, len(self.entity_to_idx))
 
             # Sort atom1_scores in descending order and get the top k entities indices
             top_k_scores1, top_k_indices = torch.topk(scores_2u_query, k)
@@ -922,11 +883,10 @@ class KGE(BaseInteractiveKGE):
 
             res, _ = torch.max(combined_scores, dim=0)
             entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), res)]
-            entity_scores = sorted(entity_scores, key=lambda x: x[1], reverse=True)
-
-            return entity_scores
+            return  sorted(entity_scores, key=lambda x: x[1], reverse=True)
         else:
             raise RuntimeError(f"Incorrect query_structure {query_structure}")
+
     def find_missing_triples(self, confidence: float, entities: List[str] = None, relations: List[str] = None,
                              topk: int = 10,
                              at_most: int = sys.maxsize) -> Set:
