@@ -27,7 +27,7 @@ With our framework, practitioners can directly use PytorchLightning for model pa
 **Why [Hugging-face Gradio](https://huggingface.co/gradio)?**
 Deploy a pre-trained embedding model without writing a single line of code.
 
-## For more please visit [dice-embeddings](dice-group.github.io/dice-embeddings)!
+## For more please visit [dice-embeddings](https://dice-group.github.io/dice-embeddings/)!
 
 ## Installation
 <details><summary> Details </summary>
@@ -118,7 +118,54 @@ KGE(path='...').deploy(share=True,top_k=10)
 <img src="dicee/lp.png" alt="Italian Trulli">
 </details>
 
-### Downstream Applications
+### Complex Query Answering
+The beam search technique proposed in [Complex Query Answering with Neural Link Predictors](https://arxiv.org/abs/2011.03459)
+```python
+from dicee.executer import Execute
+from dicee.config import Namespace
+from dicee.knowledge_graph_embeddings import KGE
+import os
+# (1) Train Clifford Embeddings model with AllvsAll on Family dataset
+args = Namespace()
+args.model = 'Keci'
+args.scoring_technique = "AllvsAll"
+args.path_single_kg = "KGs/Family/train.txt"
+args.num_epochs = 100
+args.batch_size = 1024
+args.lr = 0.1
+args.embedding_dim = 512
+reports=Execute(args).start()
+# (2) Load the pretrained model
+pre_trained_kge = KGE(path=reports['path_experiment_folder'])
+# (3) Complex Query Answering 
+# (3.1) Query: ?P : \exist Married(P,E) \land hasSibling(E, F9M167)
+# (3.2) Natural Language Question: To whom a sibling of F9M167 is married to?
+# (3.3) Who are the siblings of F9M167 ? => F9M167 hasSibling [F9M157, F9F141]
+# (3.4) Whom are (3.3) married to ? [ (F9M157 #married F9F158), (F9F141 #married F9M142) ] 
+# (3.5) Hence, the answer set is  {F9F158, F9M142}
+# (4) Prediction => [('F9M142', tensor(0.9999)),
+# ('F9F158', tensor(0.9997)),
+# ('F9M167', tensor(0.0011))]
+print(pre_trained_kge.answer_multi_hop_query(query_type="2p", query=('<http://www.benchmark.org/family#F9M167>',
+                                                                     ('<http://www.benchmark.org/family#hasSibling>',
+                                                                      '<http://www.benchmark.org/family#married>')),
+                                             tnorm="prod", k=10)[:3])
+
+# (5) Let's make (3) even more difficult 
+# (5.1) Query: ?T : \exist type(T,P) \land Married(P,E) \land hasSibling(E, F9M167)
+# (5.2) Natural Language Question: What are the type of people who are married to a sibling of F9M167?
+# (5.3) #F9M157 is [Brother Father Grandfather Male] and F9M142 is [Male Grandfather Father]
+# (6) Prediction => [('<http://www.benchmark.org/family#Person>', tensor(0.9999)), ('<http://www.benchmark.org/family#Male>', tensor(0.9999)), ('<http://www.benchmark.org/family#Father>', tensor(0.9999))]
+print(pre_trained_kge.answer_multi_hop_query(query_type="3p", query=("<http://www.benchmark.org/family#F9M167>",
+                                                                     ("<http://www.benchmark.org/family#hasSibling>",
+                                                                      "<http://www.benchmark.org/family#married>",
+                                                                      "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>")),
+                                             tnorm="prod", k=10)[:3])
+```
+
+
+
+
 #### Triple Classification
 ##### Using pre-trained ConEx on DBpedia 03-2022
 ```bash
@@ -156,20 +203,6 @@ pre_trained_kge.predict_topk(r=["http://dbpedia.org/ontology/birthPlace"],t=["ht
 from dicee import KGE
 pre_trained_kge = KGE(path='ConEx')
 missing_triples = pre_trained_kge.find_missing_triples(confidence=0.95, entities=[''], relations=[''])
-```
-### Complex Query Answering
-The beam search technique proposed in [Complex Query Answering with Neural Link Predictors](https://arxiv.org/abs/2011.03459)
-```python
-from dicee import KGE
-# (1) Load a pretrained KGE model on KGs/Family
-pretrained_model = KGE(path='Experiments/2022-12-08 11:46:33.654677')
-# (2) Query: ?P : \exist Married(P,E) \land hasSibling(E, F9M167) (To whom a sibling of F9M167 is married to?   
-# (3) Decompose (2) into two query
-# (3.1) Who is a sibling of F9M167? => hasSibling(E, F9M167) => {F9F141,F9M157}
-# (3.2) To whom a results of (3.1) is married to ? {F9M142, F9F158}
-pretrained_model.predict_conjunctive_query(entity='<http://www.benchmark.org/family#F9M167>',
-                                          relations=['<http://www.benchmark.org/family#hasSibling>',
-                                                     '<http://www.benchmark.org/family#married>'], topk=1)
 ```
 
 ### Description Logic Concept Learning (soon)
