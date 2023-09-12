@@ -170,9 +170,6 @@ class DICE_Trainer:
         if self.args.eval_model is None:
             del dataset.train_set
             gc.collect()
-        # pickle.PicklingError: memo id too large for LONG_BINPUT
-        # torch.save(train_loader, self.storage_path + '/TrainDataloader.pth')
-        # @TODO: SaveDataset
         return train_dataset
 
     def start(self, dataset: KG) -> Tuple[BaseKGE, str]:
