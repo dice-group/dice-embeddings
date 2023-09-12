@@ -63,7 +63,7 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
 @timeit
 def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None):
     print(f'*** Reading {data_path} with Pandas ***')
-    if data_path[-3:] in ['txt', 'csv', 'zst']:
+    if data_path[-3:] in ["ttl", 'txt', 'csv', 'zst']:
         print('Reading with pandas.read_csv with sep ** s+ ** ...')
         df = pd.read_csv(data_path,
                          sep="\s+",
