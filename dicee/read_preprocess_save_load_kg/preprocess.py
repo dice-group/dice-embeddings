@@ -1,5 +1,4 @@
 import pandas as pd
-import time
 import polars as pl
 from .util import create_recipriocal_triples, timeit, index_triples_with_pandas, dataset_sanity_checking
 from dicee.static_funcs import numpy_data_type_changer
@@ -62,18 +61,15 @@ class PreprocessKG:
         self.sequential_vocabulary_construction()
         self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
 
-        start_time = time.time()
         # (3) Index datasets
         self.kg.train_set = index_triples_with_pandas(self.kg.train_set,
                                                       self.kg.entity_to_idx,
                                                       self.kg.relation_to_idx)
-        print(f'Done ! {time.time() - start_time:.3f} seconds\n')
         assert isinstance(self.kg.train_set, pd.core.frame.DataFrame)
         self.kg.train_set = self.kg.train_set.values
         self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
                                                     num=max(self.kg.num_entities, self.kg.num_relations))
         dataset_sanity_checking(self.kg.train_set, self.kg.num_entities, self.kg.num_relations)
-        print('Done !\n')
         if self.kg.valid_set is not None:
             self.kg.valid_set = index_triples_with_pandas(self.kg.valid_set, self.kg.entity_to_idx,
                                                           self.kg.relation_to_idx)
@@ -90,8 +86,6 @@ class PreprocessKG:
             dataset_sanity_checking(self.kg.test_set, self.kg.num_entities, self.kg.num_relations)
             self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
                                                        num=max(self.kg.num_entities, self.kg.num_relations))
-            print('Done !\n')
-
     @timeit
     def preprocess_with_polars(self) -> None:
         print(f'*** Preprocessing Train Data:{self.kg.train_set.shape} with Polars ***')
@@ -192,7 +186,7 @@ class PreprocessKG:
         # (4) Remove triples from (1).
         self.remove_triples_from_train_with_condition()
         # Concatenate dataframes.
-        print('\nConcatenating data to obtain index...')
+        print('Concatenating data to obtain index...')
         x = [self.kg.train_set]
         if self.kg.valid_set is not None:
             x.append(self.kg.valid_set)
@@ -200,8 +194,6 @@ class PreprocessKG:
             x.append(self.kg.test_set)
         df_str_kg = pd.concat(x, ignore_index=True)
         del x
-        print('Done !\n')
-
         print('Creating a mapping from entities to integer indexes...')
         # (5) Create a bijection mapping from entities of (2) to integer indexes.
         # ravel('K') => Return a contiguous flattened array.
@@ -212,7 +204,6 @@ class PreprocessKG:
         # 5. Create a bijection mapping  from relations to integer indexes.
         ordered_list = pd.unique(df_str_kg['relation'].values.ravel('K')).tolist()
         self.kg.relation_to_idx = {k: i for i, k in enumerate(ordered_list)}
-        print('Done !\n')
         del ordered_list
 
     def remove_triples_from_train_with_condition(self):
@@ -243,17 +234,14 @@ class PreprocessKG:
             # print('\t after dropping:', df_str_kg.size.compute(scheduler=scheduler_flag))
             print('\t after dropping:', self.kg.train_set.size)  # .compute(scheduler=scheduler_flag))
             del low_frequency_entities
-            print('Done !\n')
-
     def apply_reciprical_or_noise(self) -> None:
         """ (1) Add reciprocal triples (2) Add noisy triples """
         # (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
         if self.kg.add_reciprical and self.kg.eval_model:
-            print('[3.1 / 14] Add reciprocal triples '
+            print('Adding reciprocal triples '
                   'to train, validation, and test sets, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}')
             self.kg.train_set = create_recipriocal_triples(self.kg.train_set)
             if self.kg.valid_set is not None:
                 self.kg.valid_set = create_recipriocal_triples(self.kg.valid_set)
             if self.kg.test_set is not None:
                 self.kg.test_set = create_recipriocal_triples(self.kg.test_set)
-            print('Done !\n')
