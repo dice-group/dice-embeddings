@@ -1,5 +1,4 @@
 import pandas as pd
-import time
 import polars as pl
 from .util import create_recipriocal_triples, timeit, index_triples_with_pandas, dataset_sanity_checking
 from dicee.static_funcs import numpy_data_type_changer
@@ -62,7 +61,6 @@ class PreprocessKG:
         self.sequential_vocabulary_construction()
         self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
 
-        start_time = time.time()
         # (3) Index datasets
         self.kg.train_set = index_triples_with_pandas(self.kg.train_set,
                                                       self.kg.entity_to_idx,
