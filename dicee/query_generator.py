@@ -384,4 +384,8 @@ class QueryGenerator:
 
 
 # Example usage
-
+# from dicee import QueryGenerator
+#
+# q = QueryGenerator(dataset="UMLS",save_path="./KGs/UMLS", seed=42, gen_train=False, gen_valid=False, gen_test=True)
+# query_dict=q.get_queries(query_type="2in",gen_num=10)
+# print(query_dict)
