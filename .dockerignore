@@ -1,0 +1,7 @@
+/.github/
+/documents/
+/examples/
+/tests/
+/.dockerignore
+/Dockerfile
+__pycache__
