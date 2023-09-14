@@ -6,33 +6,63 @@ import random
 import os
 import pickle
 import time
-import logging
 from copy import deepcopy
 
 
 class QueryGenerator:
-    def __init__(self, dataset: str, save_path: str, seed: int, gen_train: bool, gen_valid: bool, gen_test: bool):
+    def __init__(self, dataset: str, seed: int, gen_train: bool, gen_valid: bool, gen_test: bool):
         self.dataset = dataset
-        self.save_path = save_path
+
         self.seed = seed
         self.gen_train = gen_train or False
         self.gen_valid = gen_valid or False
         self.gen_test = gen_test or False
         self.max_ans_num = 1e6
 
-        self.save_name = True
-
+        self.mode = str
         self.ent2id: Dict = {}
         self.rel2id: Dict = {}
         self.ent_in: Dict = {}
         self.ent_out: Dict = {}
+        self.query_structures = [
+            ['e', ['r']],
+            ['e', ['r', 'r']],
+            ['e', ['r', 'r', 'r']],
+            [['e', ['r']], ['e', ['r']]],
+            [['e', ['r']], ['e', ['r']], ['e', ['r']]],
+            [['e', ['r', 'r']], ['e', ['r']]],
+            [[['e', ['r']], ['e', ['r']]], ['r']],
+            [['e', ['r']], ['e', ['r', 'n']]],
+            [['e', ['r']], ['e', ['r']], ['e', ['r', 'n']]],
+            [['e', ['r', 'r']], ['e', ['r', 'n']]],
+            [['e', ['r', 'r', 'n']], ['e', ['r']]],
+            [[['e', ['r']], ['e', ['r', 'n']]], ['r']],
+            # union
+            [['e', ['r']], ['e', ['r']], ['u']],
+            [[['e', ['r']], ['e', ['r']], ['u']], ['r']]
+        ]
+        self.query_names = ['1p', '2p', '3p', '2i', '3i', 'pi', 'ip', '2in', '3in', 'pin', 'pni', 'inp', '2u', 'up']
+
         self.set_global_seed(seed)
 
     def create_mappings(self):
         """ Create ent2id and rel2id dicts for query generation """
+
+        datapath='./KGs/%s' % self.dataset
+        ent2id_path = os.path.join(datapath, "ent2id.pkl")
+        rel2id_path = os.path.join(datapath, "rel2id.pkl")
+
+        # If ent2id and rel2id files already exist, read from them
+        if os.path.exists(ent2id_path) and os.path.exists(rel2id_path):
+            with open(ent2id_path, "rb") as f:
+                self.ent2id = pickle.load(f)
+
+            with open(rel2id_path, "rb") as f:
+                self.rel2id = pickle.load(f)
+            return
+        #Otherise create these files
         ent_set = set()
         rel_set = set()
-        datapath='./KGs/%s' % self.dataset
         with open(os.path.join(datapath, "train.txt"), "r") as f:
             for line in f.readlines():
                 # Split the line and extract entities and relationships
@@ -57,7 +87,15 @@ class QueryGenerator:
     def mapid(self):
         """Convert text triples files into integer id triples for query generation via sampling"""
         datapath='./KGs/%s' % self.dataset
+        train_id_path = os.path.join(datapath, "train_id.txt")
+        valid_id_path = os.path.join(datapath, "valid_id.txt")
+        test_id_path = os.path.join(datapath, "test_id.txt")
 
+        # Check if all three *_id.txt files exist
+        if os.path.exists(train_id_path) and os.path.exists(valid_id_path) and os.path.exists(test_id_path):
+            return
+
+        # If any of the files are missing, recreate all of them
         for file in ["train", "valid", "test"]:
             filepath = os.path.join(datapath, f"{file}.txt")
             filepath2 = os.path.join(datapath, f"{file}_id.txt")
@@ -89,7 +127,8 @@ class QueryGenerator:
 
 
     def construct_graph(self, base_path: str, indexified_files: List[str]) -> Tuple[Dict, Dict]:
-        """ Construct graph from triples
+        """
+        Construct graph from triples
         Returns dicts with incoming and outgoing edges
         """
         ent_in = defaultdict(lambda: defaultdict(set))
@@ -202,7 +241,7 @@ class QueryGenerator:
 
     def ground_queries(self, query_structure: List[Union[str, List]],
                        ent_in: Dict, ent_out: Dict, small_ent_in: Dict, small_ent_out: Dict,
-                       gen_num: int, query_name: str, mode: str):
+                       gen_num: int, query_name: str):
         """Generating queries and achieving answers"""
         num_sampled, num_try, num_repeat, num_more_answer, num_broken, num_no_extra_answer, num_no_extra_negative, num_empty = 0, 0, 0, 0, 0, 0, 0, 0
         tp_ans_num, fp_ans_num, fn_ans_num = [], [], []
@@ -214,12 +253,6 @@ class QueryGenerator:
 
         old_num_sampled = -1
         while num_sampled < gen_num:
-            # if num_sampled % (gen_num // 10) == 0 and num_sampled != old_num_sampled:
-            #     logging.info(
-            #         '%s %s: [%d/%d], avg time: %s, try: %s, repeat: %s, more_answer: %s, broken: %s, no extra: %s, no negative: %s, empty: %s' % (
-            #             mode, query_structure, num_sampled, gen_num, (time.time() - s0) / num_sampled, num_try,
-            #             num_repeat,
-            #             num_more_answer, num_broken, num_no_extra_answer, num_no_extra_negative, num_empty))
 
             num_try += 1
             empty_query_structure = deepcopy(query_structure)
@@ -267,33 +300,203 @@ class QueryGenerator:
             fp_ans_num.append(len(fp_answers[self.list2tuple(query)]))
             fn_ans_num.append(len(fn_answers[self.list2tuple(query)]))
 
-        # logging.info("{} tp max: {}, min: {}, mean: {}, std: {}".format(mode, np.max(tp_ans_num), np.min(tp_ans_num),
-        #                                                                 np.mean(tp_ans_num), np.std(tp_ans_num)))
-        # logging.info("{} fp max: {}, min: {}, mean: {}, std: {}".format(mode, np.max(fp_ans_num), np.min(fp_ans_num),
-        #                                                                 np.mean(fp_ans_num), np.std(fp_ans_num)))
-        # logging.info("{} fn max: {}, min: {}, mean: {}, std: {}".format(mode, np.max(fn_ans_num), np.min(fn_ans_num),
-        #                                                                 np.mean(fn_ans_num), np.std(fn_ans_num)))
-
-        name_to_save = f'{mode}-{query_name}'
-        with open(f'{self.save_path}/{name_to_save}-queries.pkl', 'wb') as f:
-            pickle.dump(queries, f)
-        with open(f'{self.save_path}/{name_to_save}-fp-answers.pkl', 'wb') as f:
-            pickle.dump(fp_answers, f)
-        with open(f'{self.save_path}/{name_to_save}-fn-answers.pkl', 'wb') as f:
-            pickle.dump(fn_answers, f)
-        with open(f'{self.save_path}/{name_to_save}-tp-answers.pkl', 'wb') as f:
-            pickle.dump(tp_answers, f)
 
         return queries, tp_answers, fp_answers, fn_answers
 
-    def generate_queries(self, query_structures: list, gen_num: int, query_type: str):
+    def unmap(self, query_type, queries, tp_answers, fp_answers, fn_answers):
+
+        # Create id2ent dictionary
+        id2ent = {v: k for k, v in self.ent2id.items()}
+        id2rel = {v: k for k, v in self.rel2id.items()}
+
+        # Unmap queries and create a mapping from ID-based queries to text-based queries
+        unmapped_queries_dict = defaultdict(set)
+        query_id_to_text = {}
+        for query_structure_tuple, query_set in queries.items():
+            for query in query_set:
+                unmapped_query = self.unmap_query(query_structure_tuple, query, id2ent, id2rel)
+                unmapped_queries_dict[query_structure_tuple].add(unmapped_query)
+                query_id_to_text[query] = unmapped_query
+
+
+        easy_answers = defaultdict(set)
+        false_positives = defaultdict(set)
+        hard_answers = defaultdict(set)
+        for query, answer_set in tp_answers.items():
+            unmapped_answer_set = {id2ent[answer] for answer in answer_set}
+            easy_answers[query_id_to_text[query]] = unmapped_answer_set
+
+            # Unmap fp_answers and update to false_positives
+        for query, answer_set in fp_answers.items():
+            unmapped_answer_set = {id2ent[answer] for answer in answer_set}
+            false_positives[query_id_to_text[query]] = unmapped_answer_set
+
+            # Unmap fn_answers and update to hard_answers
+        for query, answer_set in fn_answers.items():
+            unmapped_answer_set = {id2ent[answer] for answer in answer_set}
+            hard_answers[query_id_to_text[query]] = unmapped_answer_set
+
+            # Save the unmapped queries and answers
+            name_to_save = f'{query_type}'
+            with open(f'{self.save_path}/{name_to_save}-queries.pkl', 'wb') as f:
+                pickle.dump(unmapped_queries_dict, f)
+            with open(f'{self.save_path}/{name_to_save}-easy-answers.pkl', 'wb') as f:
+                pickle.dump(easy_answers, f)
+            with open(f'{self.save_path}/{name_to_save}-false-positives.pkl', 'wb') as f:
+                pickle.dump(false_positives, f)
+            with open(f'{self.save_path}/{name_to_save}-hard-answers.pkl', 'wb') as f:
+                pickle.dump(hard_answers, f)
+
+            return unmapped_queries_dict, easy_answers, false_positives, hard_answers
+
+
+
+
+    def unmap_query(self,query_structure, query, id2ent, id2rel):
+        # 2i
+        if query_structure == (("e", ("r",)), ("e", ("r",))):
+            ent1, (rel1_id,) = query[0]
+            ent2, (rel2_id,) = query[1]
+            ent1 = id2ent[ent1]
+            ent2 = id2ent[ent2]
+            rel1 = id2rel[rel1_id]
+            rel2 = id2rel[rel2_id]
+            return ((ent1, (rel1,)), (ent2, (rel2,)))
+        # 3i
+        elif query_structure == (("e", ("r",)), ("e", ("r",)), ("e", ("r",))):
+            ent1, (rel1_id,) = query[0]
+            ent2, (rel2_id,) = query[1]
+            ent3, (rel3_id,) = query[2]
+            ent1 = id2ent[ent1]
+            ent2 = id2ent[ent2]
+            ent3 = id2ent[ent3]
+            rel1 = id2rel[rel1_id]
+            rel2 = id2rel[rel2_id]
+            rel3 = id2rel[rel3_id]
+            return ((ent1, (rel1,)), (ent2, (rel2,)), (ent3, (rel3,)))
+        # 2p
+        elif query_structure == ("e", ("r", "r")):
+            ent1, (rel1_id, rel2_id) = query
+            ent1 = id2ent[ent1]
+            rel1 = id2rel[rel1_id]
+            rel2 = id2rel[rel2_id]
+            return (ent1, (rel1, rel2))
+        # 3p
+        elif query_structure == ("e", ("r", "r", "r")):
+            ent1, (rel1_id, rel2_id, rel3_id) = query
+            ent1 = id2ent[ent1]
+            rel1 = id2rel[rel1_id]
+            rel2 = id2rel[rel2_id]
+            rel3 = id2rel[rel3_id]
+            return (ent1, (rel1, rel2, rel3))
+        # pi
+        elif query_structure == (("e", ("r", "r")), ("e", ("r",))):
+            ent1, (rel1_id, rel2_id) = query[0]
+            ent2, (rel3_id,) = query[1]
+            ent1 = id2ent[ent1]
+            ent2 = id2ent[ent2]
+            rel1 = id2rel[rel1_id]
+            rel2 = id2rel[rel2_id]
+            rel3 = id2rel[rel3_id]
+            return ((ent1, (rel1, rel2)), (ent2, (rel3,)))
+        # ip
+        elif query_structure == ((("e", ("r",)), ("e", ("r",))), ("r",)):
+            ent1, (rel1_id,) = query[0][0]
+            ent2, (rel2_id,) = query[0][1]
+            (rel3_id,) = query[1]
+            ent1 = id2ent[ent1]
+            ent2 = id2ent[ent2]
+            rel1 = id2rel[rel1_id]
+            rel2 = id2rel[rel2_id]
+            rel3 = id2rel[rel3_id]
+            return (((ent1, (rel1,)), (ent2, (rel2,))), (rel3,))
+        # negation
+        # 2in
+        elif query_structure == (("e", ("r",)), ("e", ("r", "n"))):
+            ent1, (rel1_id,) = query[0]
+            ent2, (rel2_id, negation) = query[1]
+            ent1 = id2ent[ent1]
+            ent2 = id2ent[ent2]
+            rel1 = id2rel[rel1_id]
+            rel2 = id2rel[rel2_id]
+            return ((ent1, (rel1,)), (ent2, (rel2, "not")))
+        # 3in
+        elif query_structure == (("e", ("r",)), ("e", ("r",)), ("e", ("r", "n"))):
+            ent1, (rel1_id,) = query[0]
+            ent2, (rel2_id,) = query[1]
+            ent3, (rel3_id, negation) = query[2]
+            ent1 = id2ent[ent1]
+            ent2 = id2ent[ent2]
+            ent3 = id2ent[ent3]
+            rel1 = id2rel[rel1_id]
+            rel2 = id2rel[rel2_id]
+            rel3 = id2rel[rel3_id]
+            return ((ent1, (rel1,)), (ent2, (rel2,)), (ent3, (rel3, "not")))
+        # pin
+        elif query_structure == (("e", ("r", "r")), ("e", ("r", "n"))):
+            ent1, (rel1_id, rel2_id) = query[0]
+            ent2, (rel3_id, negation) = query[1]
+            ent1 = id2ent[ent1]
+            ent2 = id2ent[ent2]
+            rel1 = id2rel[rel1_id]
+            rel2 = id2rel[rel2_id]
+            rel3 = id2rel[rel3_id]
+            return ((ent1, (rel1, rel2)), (ent2, (rel3, "not")))
+        # inp
+        elif query_structure == ((("e", ("r",)), ("e", ("r", "n"))), ("r",)):
+            ent1, (rel1_id,) = query[0][0]
+            ent2, (rel2_id, negation) = query[0][1]
+            (rel3_id,) = query[1]
+            ent1 = id2ent[ent1]
+            ent2 = id2ent[ent2]
+            rel1 = id2rel[rel1_id]
+            rel2 = id2rel[rel2_id]
+            rel3 = id2rel[rel3_id]
+            return (((ent1, (rel1,)), (ent2, (rel2, "not"))), (rel3,))
+        # pni
+        elif query_structure == (("e", ("r", "r", "n")), ("e", ("r",))):
+            ent1, (rel1_id, rel2_id, negation) = query[0]
+            ent2, (rel3_id,) = query[1]
+            ent1 = id2ent[ent1]
+            ent2 = id2ent[ent2]
+            rel1 = id2rel[rel1_id]
+            rel2 = id2rel[rel2_id]
+            rel3 = id2rel[rel3_id]
+            return ((ent1, (rel1, rel2, "not")), (ent2, (rel3,)))
+        # union
+        # 2u
+        elif query_structure == (("e", ("r",)), ("e", ("r",)), ("u",)):
+            ent1, (rel1_id,) = query[0]
+            ent2, (rel2_id,) = query[1]
+
+            ent1 = id2ent[ent1]
+            ent2 = id2ent[ent2]
+            rel1 = id2rel[rel1_id]
+            rel2 = id2rel[rel2_id]
+            return ((ent1, (rel1,)), (ent2, (rel2,)), ("union",))
+        # up
+        elif query_structure == ((("e", ("r",)), ("e", ("r",)), ("u",)), ("r",)):
+            ent1, (rel1_id,) = query[0][0]
+            ent2, (rel2_id,) = query[0][1]
+            (rel3_id,) = query[1]
+            ent1 = id2ent[ent1]
+            ent2 = id2ent[ent2]
+            rel1 = id2rel[rel1_id]
+            rel2 = id2rel[rel2_id]
+            rel3 = id2rel[rel3_id]
+            return (((ent1, (rel1,)), (ent2, (rel2,)), ("union",)), (rel3,))
+
+    def generate_queries(self, query_structure: list, gen_num: int, query_type: str):
         """
         Passing incoming and outgoing edges to ground queries depending on mode [train valid or text]
         and getting queries and answers in return
         """
         base_path = './KGs/%s' % self.dataset
         indexified_files = ['train_id.txt', 'valid_id.txt', 'test_id.txt']
-
+        # Create ent2id and rel2id dicts
+        self.create_mappings()
+        self.mapid()
+        #Contruct Graphs to record incoming and outgoing edges
         if self.gen_train or self.gen_valid:
             train_ent_in, train_ent_out = self.construct_graph(base_path, indexified_files[:1])
         if self.gen_valid or self.gen_test:
@@ -303,10 +506,10 @@ class QueryGenerator:
             test_ent_in, test_ent_out = self.construct_graph(base_path, indexified_files[:3])
             test_only_ent_in, test_only_ent_out = self.construct_graph(base_path, indexified_files[2:3])
 
-        assert len(query_structures) == 1
+        assert len(query_structure) == 1
         idx = 0
-        query_structure = query_structures[idx]
-        print('General structure is', query_structure, "with name", query_type)
+        struct = query_structure[idx]
+        print('General structure is', struct, "with name", query_type)
 
         """@Todos look into one hop queries """
         # if query_structure == ['e', ['r']]:
@@ -321,71 +524,75 @@ class QueryGenerator:
         #     return
 
         if self.gen_train:
+            self.mode = 'train'
             train_queries, train_tp_answers, train_fp_answers, train_fn_answers = self.ground_queries(
-                query_structure, train_ent_in, train_ent_out, defaultdict(
-                lambda: defaultdict(set)), defaultdict(lambda: defaultdict(set)), gen_num, query_type, 'train')
-            print('%s queries generated with structure %s' % (gen_num, query_structure))
+                struct, train_ent_in, train_ent_out, defaultdict(
+                lambda: defaultdict(set)), defaultdict(lambda: defaultdict(set)), gen_num, query_type)
+
+
             return train_queries, train_tp_answers, train_fp_answers, train_fn_answers
+
         elif self.gen_valid:
+            self.mode = 'valid'
             valid_queries, valid_tp_answers, valid_fp_answers, valid_fn_answers = self.ground_queries(
-                query_structure, valid_ent_in, valid_ent_out, train_ent_in, train_ent_out, gen_num, query_type, 'valid')
+                struct, valid_ent_in, valid_ent_out, train_ent_in, train_ent_out, gen_num, query_type)
             return valid_queries, valid_tp_answers, valid_fp_answers, valid_fn_answers
+
         elif self.gen_test:
+            self.mode = 'test'
             test_queries, test_tp_answers, test_fp_answers, test_fn_answers = self.ground_queries(
-                query_structure, test_ent_in, test_ent_out, valid_ent_in, valid_ent_out, gen_num, query_type, 'test')
+                struct, test_ent_in, test_ent_out, valid_ent_in, valid_ent_out, gen_num, query_type)
             return test_queries, test_tp_answers, test_fp_answers, test_fn_answers
+        print('%s queries generated with structure %s' % (gen_num, struct))
+    def save_queries(self,query_type: str, gen_num: int, save_path: str):
 
+        # Find the index of query_type in query_names
+        try:
+            gen_id = self.query_names.index(query_type)
+        except ValueError:
+            print(f"Invalid query_type: {query_type}")
+            return []
+        queries, tp_answers, fp_answers, fn_answers = self.generate_queries(self.query_structures[gen_id:gen_id + 1],
+                                                                            gen_num, query_type)
+        unmapped_queries, easy_answers, false_positives, hard_answers = self.unmap(query_type, queries, tp_answers, fp_answers, fn_answers)
 
-
-
+        # Save the unmapped queries and answers
+        name_to_save = f'{self.mode}-{query_type}'
+        with open(f'{save_path}/{name_to_save}-queries.pkl', 'wb') as f:
+            pickle.dump(unmapped_queries, f)
+        with open(f'{save_path}/{name_to_save}-easy-answers.pkl', 'wb') as f:
+            pickle.dump(easy_answers, f)
+        with open(f'{save_path}/{name_to_save}-false-positives.pkl', 'wb') as f:
+            pickle.dump(false_positives, f)
+        with open(f'{save_path}/{name_to_save}-hard-answers.pkl', 'wb') as f:
+            pickle.dump(hard_answers, f)
     def get_queries(self, query_type: str, gen_num: int) :
         """
         Get queries of a specific type.
         @todo Not sure what to return dicts or lists and answers should be returned or not
-        @todo unmap integer dicts of queries and answers to strings
         @todo add comments
         """
 
-        e = 'e'
-        r = 'r'
-        n = 'n'
-        u = 'u'
-        query_structures = [
-            [e, [r]],
-            [e, [r, r]],
-            [e, [r, r, r]],
-            [[e, [r]], [e, [r]]],
-            [[e, [r]], [e, [r]], [e, [r]]],
-            [[e, [r, r]], [e, [r]]],
-            [[[e, [r]], [e, [r]]], [r]],
-            # negation
-            [[e, [r]], [e, [r, n]]],
-            [[e, [r]], [e, [r]], [e, [r, n]]],
-            [[e, [r, r]], [e, [r, n]]],
-            [[e, [r, r, n]], [e, [r]]],
-            [[[e, [r]], [e, [r, n]]], [r]],
-            # union
-            [[e, [r]], [e, [r]], [u]],
-            [[[e, [r]], [e, [r]], [u]], [r]]
-        ]
-        query_names = ['1p', '2p', '3p', '2i', '3i', 'pi', 'ip', '2in', '3in', 'pin', 'pni', 'inp', '2u', 'up']
         # Find the index of query_type in query_names
         try:
-            gen_id = query_names.index(query_type)
+            gen_id = self.query_names.index(query_type)
         except ValueError:
             print(f"Invalid query_type: {query_type}")
             return []
         
-        # Create ent2id and rel2id dicts 
-        self.create_mappings()
-        self.mapid()
-        queries, tp_answers, fp_answers, fn_answers=self.generate_queries(query_structures[gen_id:gen_id+1], gen_num,query_type)
-        return queries
+
+        queries, tp_answers, fp_answers, fn_answers = self.generate_queries(self.query_structures[gen_id:gen_id+1], gen_num,query_type)
+        unmapped_queries, easy_answers, false_positives, hard_answers = self.unmap(query_type, queries, tp_answers,
+                                                                                   fp_answers, fn_answers)
+
+        return unmapped_queries, easy_answers, false_positives, hard_answers
 
 
 # Example usage
 # from dicee import QueryGenerator
-#
 # q = QueryGenerator(dataset="UMLS",save_path="./KGs/UMLS", seed=42, gen_train=False, gen_valid=False, gen_test=True)
-# query_dict=q.get_queries(query_type="2in",gen_num=10)
-# print(query_dict)
+# Either generate queries and save it at the given path
+# q.save_queries(query_type="2in",gen_num=10,save_path= " ")
+# or else
+# query_dict, easy answers, false positives , hard answers=q.get_queries(query_type="2in",gen_num=10)
+# use the dict to answer queries
