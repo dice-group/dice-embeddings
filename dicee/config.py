@@ -1,7 +1,4 @@
 import argparse
-from .abstracts import AbstractCallback
-
-
 class Namespace(argparse.Namespace):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -22,6 +19,9 @@ class Namespace(argparse.Namespace):
 
         self.sparql_endpoint = None
         "An endpoint of a triple store."
+
+        self.save_embeddings_as_csv=True
+        "Embeddings of entities and relations are stored into CSV files to facilitate easy usage."
 
         self.model: str = "Keci"
         "KGE model"
@@ -53,8 +53,8 @@ class Namespace(argparse.Namespace):
         self.gpus = None
         """Number GPUs to be used during training"""
 
-        self.callbacks: list[AbstractCallback] = []
-        """Number GPUs to be used during training"""
+        self.callbacks = dict()
+        """Callbacks, e.g., {"PPE":{ "last_percent_to_consider": 10}}"""
 
         self.backend: str = 'pandas'
         """Backend to read, process, and index input knowledge graph"""
@@ -96,6 +96,8 @@ class Namespace(argparse.Namespace):
         """ Evaluate trained model choices:["None", "train", "train_val", "train_val_test", "test"]"""
 
         self.save_model_at_every_epoch: int = None
+        """ Not tested """
+
         self.label_smoothing_rate: float = 0.0
 
         self.kernel_size: int = 3

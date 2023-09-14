@@ -155,8 +155,6 @@ class PPE(AbstractPPECallback):
     def __init__(self, num_epochs, path, last_percent_to_consider=None):
         super().__init__(num_epochs, path, last_percent_to_consider)
         self.alphas = np.ones(self.num_ensemble_coefficient) / self.num_ensemble_coefficient
-        print("Equal Ensemble Coefficients:", self.alphas)
-
 
 class FPPE(AbstractPPECallback):
     """
