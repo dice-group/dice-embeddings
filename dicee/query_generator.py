@@ -337,17 +337,9 @@ class QueryGenerator:
             hard_answers[query_id_to_text[query]] = unmapped_answer_set
 
             # Save the unmapped queries and answers
-            name_to_save = f'{query_type}'
-            with open(f'{self.save_path}/{name_to_save}-queries.pkl', 'wb') as f:
-                pickle.dump(unmapped_queries_dict, f)
-            with open(f'{self.save_path}/{name_to_save}-easy-answers.pkl', 'wb') as f:
-                pickle.dump(easy_answers, f)
-            with open(f'{self.save_path}/{name_to_save}-false-positives.pkl', 'wb') as f:
-                pickle.dump(false_positives, f)
-            with open(f'{self.save_path}/{name_to_save}-hard-answers.pkl', 'wb') as f:
-                pickle.dump(hard_answers, f)
 
-            return unmapped_queries_dict, easy_answers, false_positives, hard_answers
+
+        return unmapped_queries_dict, easy_answers, false_positives, hard_answers
 
 
 
