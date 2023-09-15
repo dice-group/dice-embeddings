@@ -49,7 +49,7 @@ def get_default_arguments(description=None):
                         help='{"PPE":{ "last_percent_to_consider": 10}}'
                              '"Perturb": {"level": "out", "ratio": 0.2, "method": "RN", "scaler": 0.3}')
     parser.add_argument("--backend", type=str, default='pandas',
-                        choices=["pandas", "polars"],
+                        choices=["pandas", "polars", "rdflib"],
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
     parser.add_argument("--trainer", type=str, default='PL',
                         choices=['torchCPUTrainer', 'PL', 'torchDDP'],

@@ -64,16 +64,16 @@ def sanity_checking_with_arguments(args):
             """ all is good we have xxx/train.txt"""
         else:
             raise ValueError(
-                f'Data format is not recognized.'
-                f'\nThe path_dataset_folder parameter **{args.path_dataset_folder}** must lead to'
-                f'(a) **folder/train.txt** or *** triples stored in the parquet format')
+                f"---path_dataset_folder **{args.path_dataset_folder}** must lead to "
+                f"**folder** containing at least train.txt**. "
+                f"Use --path_single_kg **folder/dataset.format**, if you have a single file.")
     elif args.path_single_kg is not None:
         assert args.path_dataset_folder is None
     elif args.path_dataset_folder is None and args.path_single_kg is None and args.sparql_endpoint is None:
-        raise RuntimeError(f" Following arguments cannot be all None:"
-                           f"path_dataset_folder:{args.path_dataset_folder},\t"
-                           f"path_single_kg:{args.path_single_kg},\t"
-                           f"sparql_endpoint:{args.sparql_endpoint}.")
+        raise RuntimeError(f"One of the following arguments must be given:"
+                           f"--path_dataset_folder:{args.path_dataset_folder},\t"
+                           f"--path_single_kg:{args.path_single_kg},\t"
+                           f"--sparql_endpoint:{args.sparql_endpoint}.")
     else:
         raise RuntimeError('Invalid computation flow!')
 

@@ -56,8 +56,8 @@ class Namespace(argparse.Namespace):
         self.callbacks = dict()
         """Callbacks, e.g., {"PPE":{ "last_percent_to_consider": 10}}"""
 
-        self.backend: str = 'pandas'
-        """Backend to read, process, and index input knowledge graph"""
+        self.backend: str = "pandas"
+        """Backend to read, process, and index input knowledge graph. pandas, polars and rdflib available"""
 
         self.trainer: str = 'torchCPUTrainer'
         """Trainer for knowledge graph embedding model"""
