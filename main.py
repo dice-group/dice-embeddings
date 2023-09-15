@@ -1,5 +1,6 @@
+#!/usr/bin/env python3
 import json
-from .executer import Execute
+from dicee.executer import Execute
 import pytorch_lightning as pl
 import argparse
 
@@ -14,7 +15,7 @@ def get_default_arguments(description=None):
                              ",e.g., KGs/UMLS")
     parser.add_argument("--sparql_endpoint", type=str, default=None,
                         help="An endpoint of a triple store, e.g. 'http://localhost:3030/mutagenesis/'. ")
-    parser.add_argument("--path_single_kg", type=str, default=None,
+    parser.add_argument("--path_single_kg", type=str, default="KGs/UMLS/train.txt",
                         help="Path of a file corresponding to the input knowledge graph")
     parser.add_argument("--path_to_store_single_run", type=str, default=None,
                         help="A single directory created that contains related data about embeddings.")
@@ -40,7 +41,7 @@ def get_default_arguments(description=None):
                         choices=['Adam', 'SGD'])
     parser.add_argument('--embedding_dim', type=int, default=32,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=50, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024,
                         help='Mini batch size. If None, automatic batch finder is applied')
     parser.add_argument("--lr", type=float, default=0.1)
@@ -48,7 +49,7 @@ def get_default_arguments(description=None):
                         default={},
                         help='{"PPE":{ "last_percent_to_consider": 10}}'
                              '"Perturb": {"level": "out", "ratio": 0.2, "method": "RN", "scaler": 0.3}')
-    parser.add_argument("--backend", type=str, default='pandas',
+    parser.add_argument("--backend", type=str, default="rdflib",
                         choices=["pandas", "polars", "rdflib"],
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
     parser.add_argument("--trainer", type=str, default='PL',

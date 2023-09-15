@@ -12,5 +12,5 @@ ruff>=0.0.284
 gradio>=3.23.0
 rdflib>=7.0.0
 sphinx>=7.1.2
-ghp-import
-furo
+ghp-import>=2.1.0
+furo>=2023.08.19

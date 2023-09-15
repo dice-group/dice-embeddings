@@ -23,6 +23,7 @@ def timeit(func):
             f'{func.__name__} took {total_time:.4f} seconds '
             f'| Current Memory Usage {psutil.Process(os.getpid()).memory_info().rss / 1000000: .5} in MB')
         return result
+
     return timeit_wrapper
 
 
@@ -100,15 +101,26 @@ def read_from_disk(data_path: str, read_only_few: int = None,
     assert backend
     # If path exits
     if glob.glob(data_path):
+        # format of the data
+        dformat = data_path[data_path.find(".") + 1:]
+        if dformat in ["ttl", "owl", "turtle", "rdf/xml"] and backend != "rdflib":
+            raise RuntimeError(
+                f"Data with **{dformat}** format cannot be read via --backend pandas or polars. Use --backend rdflib")
+
         if backend == 'pandas':
             return read_with_pandas(data_path, read_only_few, sample_triples_ratio)
         elif backend == 'polars':
             return read_with_polars(data_path, read_only_few, sample_triples_ratio)
-        elif data_path[data_path.find(".") + 1:] in ["ttl", "owl", "nt", "turtle", "rdf/xml", "n3", " n-triples"]:
-            return pd.DataFrame(data=[(s, p, o) for s, p, o in Graph().parse(data_path)],
+        elif backend == "rdflib":
+            try:
+                assert dformat in ["ttl", "owl", "nt", "turtle", "rdf/xml", "n3", " n-triples"]
+            except AssertionError:
+                raise AssertionError(f"--backend {backend} and dataformat **{dformat}** is not matching. "
+                                     f"Use --backend pandas")
+            return pd.DataFrame(data=[(str(s), str(p), str(o)) for s, p, o in Graph().parse(data_path)],
                                 columns=['subject', 'relation', 'object'], dtype=str)
         else:
-            raise NotImplementedError(f'{backend} not found')
+            raise RuntimeError(f'--backend {backend} and {data_path} is not matching')
     else:
         print(f'{data_path} could not found!')
         return None

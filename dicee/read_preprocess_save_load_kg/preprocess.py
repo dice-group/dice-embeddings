@@ -21,9 +21,9 @@ class PreprocessKG:
         -------
         None
         """
-        if self.kg.backend == 'polars':
+        if self.kg.backend == "polars":
             self.preprocess_with_polars()
-        elif self.kg.backend == 'pandas':
+        elif self.kg.backend in ["pandas", "rdflib"]:
             self.preprocess_with_pandas()
         else:
             raise KeyError(f'{self.kg.backend} not found')
@@ -53,8 +53,6 @@ class PreprocessKG:
         -------
         None
         """
-
-        assert self.kg.backend in ['pandas', 'modin']
         # (1)  Add recipriocal or noisy triples.
         self.apply_reciprical_or_noise()
         # (2) Construct integer indexing for entities and relations.

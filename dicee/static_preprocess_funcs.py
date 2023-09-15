@@ -65,8 +65,7 @@ def preprocesses_input_args(args):
 
     if args.sample_triples_ratio is not None:
         assert 1.0 >= args.sample_triples_ratio >= 0.0
-
-    assert args.backend in ["pandas", "polars"]
+    assert args.backend in ["pandas", "polars", "rdflib"]
     sanity_checking_with_arguments(args)
     if args.model == 'Shallom':
         args.scoring_technique = 'KvsAll'
