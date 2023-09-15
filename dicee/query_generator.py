@@ -12,6 +12,7 @@ from copy import deepcopy
 class QueryGenerator:
     def __init__(self, dataset: str, seed: int, gen_train: bool, gen_valid: bool, gen_test: bool):
         self.dataset = dataset
+        """path of the dataset"""
 
         self.seed = seed
         self.gen_train = gen_train or False
@@ -42,13 +43,12 @@ class QueryGenerator:
             [[['e', ['r']], ['e', ['r']], ['u']], ['r']]
         ]
         self.query_names = ['1p', '2p', '3p', '2i', '3i', 'pi', 'ip', '2in', '3in', 'pin', 'pni', 'inp', '2u', 'up']
-
         self.set_global_seed(seed)
 
     def create_mappings(self):
         """ Create ent2id and rel2id dicts for query generation """
 
-        datapath='./KGs/%s' % self.dataset
+        datapath = './KGs/%s' % self.dataset
         ent2id_path = os.path.join(datapath, "ent2id.pkl")
         rel2id_path = os.path.join(datapath, "rel2id.pkl")
 
@@ -60,7 +60,7 @@ class QueryGenerator:
             with open(rel2id_path, "rb") as f:
                 self.rel2id = pickle.load(f)
             return
-        #Otherise create these files
+        # Otherise create these files
         ent_set = set()
         rel_set = set()
         with open(os.path.join(datapath, "train.txt"), "r") as f:
@@ -86,7 +86,7 @@ class QueryGenerator:
 
     def mapid(self):
         """Convert text triples files into integer id triples for query generation via sampling"""
-        datapath='./KGs/%s' % self.dataset
+        datapath = './KGs/%s' % self.dataset
         train_id_path = os.path.join(datapath, "train_id.txt")
         valid_id_path = os.path.join(datapath, "valid_id.txt")
         test_id_path = os.path.join(datapath, "test_id.txt")
@@ -108,7 +108,7 @@ class QueryGenerator:
                     ent2_id = self.ent2id[ent2]
                     out_file.write(f"{ent1_id}\t{rel_id}\t{ent2_id}\n")
 
-    def list2tuple(self,l):
+    def list2tuple(self, l):
         return tuple(self.list2tuple(x) if type(x) == list else x for x in l)
 
     def tuple2list(self, x: Union[List, Tuple]) -> Union[List, Tuple]:
@@ -119,12 +119,11 @@ class QueryGenerator:
             return [self.tuple2list(item) if isinstance(item, tuple) else item for item in x]
         else:
             return x
+
     def set_global_seed(self, seed: int):
         """Set seed"""
         np.random.seed(seed)
         random.seed(seed)
-
-
 
     def construct_graph(self, base_path: str, indexified_files: List[str]) -> Tuple[Dict, Dict]:
         """
@@ -147,8 +146,8 @@ class QueryGenerator:
         return ent_in, ent_out
 
     def fill_query(self, query_structure: List[Union[str, List]],
-                    ent_in: Dict, ent_out: Dict,
-                    answer: int) -> bool:
+                   ent_in: Dict, ent_out: Dict,
+                   answer: int) -> bool:
         """
         Private method for fill_query logic.
         """
@@ -202,7 +201,7 @@ class QueryGenerator:
                         return True
 
     def achieve_answer(self, query: List[Union[str, List]],
-                        ent_in: Dict, ent_out: Dict) -> set:
+                       ent_in: Dict, ent_out: Dict) -> set:
         """
         Private method for achieve_answer logic.
         """
@@ -300,7 +299,6 @@ class QueryGenerator:
             fp_ans_num.append(len(fp_answers[self.list2tuple(query)]))
             fn_ans_num.append(len(fn_answers[self.list2tuple(query)]))
 
-
         return queries, tp_answers, fp_answers, fn_answers
 
     def unmap(self, query_type, queries, tp_answers, fp_answers, fn_answers):
@@ -317,7 +315,6 @@ class QueryGenerator:
                 unmapped_query = self.unmap_query(query_structure_tuple, query, id2ent, id2rel)
                 unmapped_queries_dict[query_structure_tuple].add(unmapped_query)
                 query_id_to_text[query] = unmapped_query
-
 
         easy_answers = defaultdict(set)
         false_positives = defaultdict(set)
@@ -336,13 +333,9 @@ class QueryGenerator:
             unmapped_answer_set = {id2ent[answer] for answer in answer_set}
             hard_answers[query_id_to_text[query]] = unmapped_answer_set
 
-
         return unmapped_queries_dict, easy_answers, false_positives, hard_answers
 
-
-
-
-    def unmap_query(self,query_structure, query, id2ent, id2rel):
+    def unmap_query(self, query_structure, query, id2ent, id2rel):
         # 2i
         if query_structure == (("e", ("r",)), ("e", ("r",))):
             ent1, (rel1_id,) = query[0]
@@ -486,7 +479,7 @@ class QueryGenerator:
         # Create ent2id and rel2id dicts
         self.create_mappings()
         self.mapid()
-        #Contruct Graphs to record incoming and outgoing edges
+        # Contruct Graphs to record incoming and outgoing edges
         if self.gen_train or self.gen_valid:
             train_ent_in, train_ent_out = self.construct_graph(base_path, indexified_files[:1])
         if self.gen_valid or self.gen_test:
@@ -517,8 +510,7 @@ class QueryGenerator:
             self.mode = 'train'
             train_queries, train_tp_answers, train_fp_answers, train_fn_answers = self.ground_queries(
                 struct, train_ent_in, train_ent_out, defaultdict(
-                lambda: defaultdict(set)), defaultdict(lambda: defaultdict(set)), gen_num, query_type)
-
+                    lambda: defaultdict(set)), defaultdict(lambda: defaultdict(set)), gen_num, query_type)
 
             return train_queries, train_tp_answers, train_fp_answers, train_fn_answers
 
@@ -534,7 +526,11 @@ class QueryGenerator:
                 struct, test_ent_in, test_ent_out, valid_ent_in, valid_ent_out, gen_num, query_type)
             return test_queries, test_tp_answers, test_fp_answers, test_fn_answers
         print('%s queries generated with structure %s' % (gen_num, struct))
-    def save_queries(self,query_type: str, gen_num: int, save_path: str):
+
+    def save_queries(self, query_type: str, gen_num: int, save_path: str):
+        """
+
+        """
 
         # Find the index of query_type in query_names
         try:
@@ -544,10 +540,13 @@ class QueryGenerator:
             return []
         queries, tp_answers, fp_answers, fn_answers = self.generate_queries(self.query_structures[gen_id:gen_id + 1],
                                                                             gen_num, query_type)
-        unmapped_queries, easy_answers, false_positives, hard_answers = self.unmap(query_type, queries, tp_answers, fp_answers, fn_answers)
+        unmapped_queries, easy_answers, false_positives, hard_answers = self.unmap(query_type, queries, tp_answers,
+                                                                                   fp_answers, fn_answers)
 
         # Save the unmapped queries and answers
         name_to_save = f'{self.mode}-{query_type}'
+        if not os.path.isdir(save_path):
+            os.makedirs(save_path)
         with open(f'{save_path}/{name_to_save}-queries.pkl', 'wb') as f:
             pickle.dump(unmapped_queries, f)
         with open(f'{save_path}/{name_to_save}-easy-answers.pkl', 'wb') as f:
@@ -556,7 +555,8 @@ class QueryGenerator:
             pickle.dump(false_positives, f)
         with open(f'{save_path}/{name_to_save}-hard-answers.pkl', 'wb') as f:
             pickle.dump(hard_answers, f)
-    def get_queries(self, query_type: str, gen_num: int) :
+
+    def get_queries(self, query_type: str, gen_num: int):
         """
         Get queries of a specific type.
         @todo Not sure what to return dicts or lists and answers should be returned or not
@@ -569,14 +569,13 @@ class QueryGenerator:
         except ValueError:
             print(f"Invalid query_type: {query_type}")
             return []
-        
 
-        queries, tp_answers, fp_answers, fn_answers = self.generate_queries(self.query_structures[gen_id:gen_id+1], gen_num,query_type)
+        queries, tp_answers, fp_answers, fn_answers = self.generate_queries(self.query_structures[gen_id:gen_id + 1],
+                                                                            gen_num, query_type)
         unmapped_queries, easy_answers, false_positives, hard_answers = self.unmap(query_type, queries, tp_answers,
                                                                                    fp_answers, fn_answers)
 
         return unmapped_queries, easy_answers, false_positives, hard_answers
-
 
 # Example usage
 # from dicee import QueryGenerator
