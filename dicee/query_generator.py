@@ -556,6 +556,9 @@ class QueryGenerator:
         with open(f'{save_path}/{name_to_save}-hard-answers.pkl', 'wb') as f:
             pickle.dump(hard_answers, f)
 
+    def load_queries(self,path):
+        raise NotImplementedError()
+
     def get_queries(self, query_type: str, gen_num: int):
         """
         Get queries of a specific type.
