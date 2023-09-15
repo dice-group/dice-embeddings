@@ -336,8 +336,6 @@ class QueryGenerator:
             unmapped_answer_set = {id2ent[answer] for answer in answer_set}
             hard_answers[query_id_to_text[query]] = unmapped_answer_set
 
-            # Save the unmapped queries and answers
-
 
         return unmapped_queries_dict, easy_answers, false_positives, hard_answers
 
@@ -585,6 +583,6 @@ class QueryGenerator:
 # q = QueryGenerator(dataset="UMLS",save_path="./KGs/UMLS", seed=42, gen_train=False, gen_valid=False, gen_test=True)
 # Either generate queries and save it at the given path
 # q.save_queries(query_type="2in",gen_num=10,save_path= " ")
-# or else
-# query_dict, easy answers, false positives , hard answers=q.get_queries(query_type="2in",gen_num=10)
+# or else get it as dicts to answer queries directly using pre_trained_KGE.answer_multi_hop_query(....)
+# query_dict, easy answers, false positives,hard answers=q.get_queries(query_type="2in",gen_num=10)
 # use the dict to answer queries
