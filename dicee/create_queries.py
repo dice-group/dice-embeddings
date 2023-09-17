@@ -43,8 +43,10 @@ def set_global_seed(seed):
 
 
 def index_dataset(dataset_name, force=False):
-    print('Indexing dataset {0}'.format(dataset_name))
-    base_path = 'KGs/{0}/'.format(dataset_name)
+    print('Indexing dataset:',dataset_name)
+    #base_path = 'KGs/{0}/'.format(dataset_name)
+    # "KGs/UMLS/
+    base_path=dataset_name
     # files = ['train.txt', 'valid.txt', 'test.txt']
     # indexified_files = ['train_indexified.txt', 'valid_indexified.txt', 'test_indexified.txt']
     files = ['train.txt']
@@ -165,13 +167,13 @@ def write_links(dataset, ent_out, small_ent_out, max_ans_num, name):
             else:
                 num_more_answer += 1
 
-    with open('./KGs/%s/%s-queries.pkl' % (dataset, name), 'wb') as f:
+    with open('%s/%s-queries.pkl' % (dataset, name), 'wb') as f:
         pickle.dump(queries, f)
-    with open('./KGs/%s/%s-tp-answers.pkl' % (dataset, name), 'wb') as f:
+    with open('%s/%s-tp-answers.pkl' % (dataset, name), 'wb') as f:
         pickle.dump(tp_answers, f)
-    with open('./KGs/%s/%s-fn-answers.pkl' % (dataset, name), 'wb') as f:
+    with open('%s/%s-fn-answers.pkl' % (dataset, name), 'wb') as f:
         pickle.dump(fn_answers, f)
-    with open('./KGs/%s/%s-fp-answers.pkl' % (dataset, name), 'wb') as f:
+    with open('%s/%s-fp-answers.pkl' % (dataset, name), 'wb') as f:
         pickle.dump(fp_answers, f)
     print(num_more_answer)
 
@@ -253,20 +255,21 @@ def ground_queries(dataset, query_structure, ent_in, ent_out, small_ent_in, smal
                                                                     np.mean(fn_ans_num), np.std(fn_ans_num)))
 
     name_to_save = '%s-%s' % (mode, query_name)
-    with open('./KGs/%s/%s-queries.pkl' % (dataset, name_to_save), 'wb') as f:
+    with open('%s/%s-queries.pkl' % (dataset, name_to_save), 'wb') as f:
         pickle.dump(queries, f)
-    with open('./KGs/%s/%s-fp-answers.pkl' % (dataset, name_to_save), 'wb') as f:
+    with open('%s/%s-fp-answers.pkl' % (dataset, name_to_save), 'wb') as f:
         pickle.dump(fp_answers, f)
-    with open('./KGs/%s/%s-fn-answers.pkl' % (dataset, name_to_save), 'wb') as f:
+    with open('%s/%s-fn-answers.pkl' % (dataset, name_to_save), 'wb') as f:
         pickle.dump(fn_answers, f)
-    with open('./KGs/%s/%s-tp-answers.pkl' % (dataset, name_to_save), 'wb') as f:
+    with open('%s/%s-tp-answers.pkl' % (dataset, name_to_save), 'wb') as f:
         pickle.dump(tp_answers, f)
     return queries, tp_answers, fp_answers, fn_answers
 
 
 def generate_queries(dataset, query_structures, gen_num, max_ans_num, gen_train, gen_valid, gen_test, query_names,
                      save_name):
-    base_path = './KGs/%s' % dataset
+    #base_path = './KGs/%s' % dataset
+    base_path = dataset
     indexified_files = ['train_id.txt', 'valid_id.txt', 'test_id.txt']
     if gen_train or gen_valid:
         train_ent_in, train_ent_out = construct_graph(base_path, indexified_files[:1])  # ent_in
@@ -312,7 +315,8 @@ def generate_queries(dataset, query_structures, gen_num, max_ans_num, gen_train,
         exit(-1)
 
     name_to_save = query_name
-    set_logger("./KGs/{}/".format(dataset), name_to_save)
+    #set_logger("./KGs/{}/".format(dataset), name_to_save)
+    #set_logger(save_path=name_to_save,query_name="Gen")
 
     num_sampled, num_try, num_repeat, num_more_answer, num_broken, num_empty = 0, 0, 0, 0, 0, 0
     train_ans_num = []
