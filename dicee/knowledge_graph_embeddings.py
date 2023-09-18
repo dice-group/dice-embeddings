@@ -626,6 +626,16 @@ class KGE(BaseInteractiveKGE):
                 return res
             entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), res)]
             return sorted(entity_scores, key=lambda x: x[1], reverse=True)
+        # 1p
+        elif query_structure == ("e", ("r",)):
+            head1, relation1 = query
+            # Calculate entity scores for each query
+            # Get scores for the first atom
+            atom1_scores = self.predict(h=[head1], r=[relation1[0]]).squeeze()
+            if only_scores:
+                return atom1_scores
+            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), atom1_scores)]
+            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
 
         # 2p
         elif query_structure == ("e", ("r", "r")):
