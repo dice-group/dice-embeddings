@@ -450,7 +450,7 @@ class KGE(BaseInteractiveKGE):
             query_structure = inverse_query_name_dict[query_type]
         else:
             raise ValueError(f"Invalid query type: {query_type}")
-
+        #2in
         if query_structure == (("e", ("r",)), ("e", ("r", "n"))):
             # entity_scores = scores_2in(query, tnorm, neg_norm, lambda_)
             head1, relation1 = query[0]
@@ -620,10 +620,10 @@ class KGE(BaseInteractiveKGE):
             topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(1, atom3_scores.shape[1])
 
             combined_scores = self.t_norm(topk_scores1_expanded, atom3_scores, tnorm)
-            if only_scores:
-                return combined_scores
 
             res, _ = torch.max(combined_scores, dim=0)
+            if only_scores:
+                return res
             entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), res)]
             return sorted(entity_scores, key=lambda x: x[1], reverse=True)
 
@@ -789,6 +789,8 @@ class KGE(BaseInteractiveKGE):
             scores_1p_query = self.predict(h=[head3], r=[relation3[0]]).squeeze()
 
             combined_scores = self.t_norm(scores_2p_query, scores_1p_query, tnorm)
+            if only_scores:
+                return combined_scores
             entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
             return sorted(entity_scores, key=lambda x: x[1], reverse=True)
         # ip
@@ -831,7 +833,7 @@ class KGE(BaseInteractiveKGE):
             combined_scores = self.t_norm(topk_scores1_expanded, atom3_scores, tnorm)
             res, _ = torch.max(combined_scores, dim=0)
             if only_scores:
-                return combined_scores
+                return res
             entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), res)]
             return sorted(entity_scores, key=lambda x: x[1], reverse=True)
         # disjunction
@@ -850,6 +852,8 @@ class KGE(BaseInteractiveKGE):
             assert len(atom1_scores) == len(self.entity_to_idx)
 
             combined_scores = self.t_conorm(atom1_scores, atom2_scores, tnorm)
+            if only_scores:
+                return combined_scores
             entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
             entity_scores = sorted(entity_scores, key=lambda x: x[1], reverse=True)
 
@@ -892,6 +896,8 @@ class KGE(BaseInteractiveKGE):
             topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(1, atom3_scores.shape[1])
             combined_scores = self.t_norm(topk_scores1_expanded, atom3_scores, tnorm)
             res, _ = torch.max(combined_scores, dim=0)
+            if only_scores:
+                return res
             entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), res)]
             return  sorted(entity_scores, key=lambda x: x[1], reverse=True)
         else:
