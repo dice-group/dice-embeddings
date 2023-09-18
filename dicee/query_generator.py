@@ -10,8 +10,8 @@ from copy import deepcopy
 
 
 class QueryGenerator:
-    def __init__(self, dataset: str, seed: int, gen_train: bool, gen_valid: bool, gen_test: bool):
-        self.dataset = dataset
+    def __init__(self, datapath: str, seed: int, gen_train: bool, gen_valid: bool, gen_test: bool):
+        self.dataset = datapath
         """path of the dataset"""
 
         self.seed = seed
@@ -48,7 +48,7 @@ class QueryGenerator:
     def create_mappings(self):
         """ Create ent2id and rel2id dicts for query generation """
 
-        datapath = './KGs/%s' % self.dataset
+        datapath = self.dataset
         ent2id_path = os.path.join(datapath, "ent2id.pkl")
         rel2id_path = os.path.join(datapath, "rel2id.pkl")
 
@@ -86,7 +86,7 @@ class QueryGenerator:
 
     def mapid(self):
         """Convert text triples files into integer id triples for query generation via sampling"""
-        datapath = './KGs/%s' % self.dataset
+        datapath = self.dataset
         train_id_path = os.path.join(datapath, "train_id.txt")
         valid_id_path = os.path.join(datapath, "valid_id.txt")
         test_id_path = os.path.join(datapath, "test_id.txt")
@@ -238,6 +238,23 @@ class QueryGenerator:
                     ent_set = ent_set.union(self.achieve_answer(query[i], ent_in, ent_out))
         return ent_set
 
+    def write_links(self, ent_out, small_ent_out):
+        queries = defaultdict(set)
+        tp_answers = defaultdict(set)
+        fn_answers = defaultdict(set)
+        fp_answers = defaultdict(set)
+        num_more_answer = 0
+        for ent in ent_out:
+            for rel in ent_out[ent]:
+                if len(ent_out[ent][rel]) <= self.max_ans_num:
+                    queries[('e', ('r',))].add((ent, (rel,)))
+                    tp_answers[(ent, (rel,))] = small_ent_out[ent][rel]
+                    fn_answers[(ent, (rel,))] = ent_out[ent][rel]
+                    fp_answers[(ent, (rel,))] = set()
+                else:
+                    num_more_answer += 1
+        return queries, tp_answers, fp_answers, fn_answers
+
     def ground_queries(self, query_structure: List[Union[str, List]],
                        ent_in: Dict, ent_out: Dict, small_ent_in: Dict, small_ent_out: Dict,
                        gen_num: int, query_name: str):
@@ -357,6 +374,12 @@ class QueryGenerator:
             rel2 = id2rel[rel2_id]
             rel3 = id2rel[rel3_id]
             return ((ent1, (rel1,)), (ent2, (rel2,)), (ent3, (rel3,)))
+        #1p
+        elif query_structure == ("e", ("r",)):
+            ent1, (rel1_id,) = query
+            ent1 = id2ent[ent1]
+            rel1 = id2rel[rel1_id]
+            return (ent1, (rel1,))
         # 2p
         elif query_structure == ("e", ("r", "r")):
             ent1, (rel1_id, rel2_id) = query
@@ -474,7 +497,7 @@ class QueryGenerator:
         Passing incoming and outgoing edges to ground queries depending on mode [train valid or text]
         and getting queries and answers in return
         """
-        base_path = './KGs/%s' % self.dataset
+        base_path = self.dataset
         indexified_files = ['train_id.txt', 'valid_id.txt', 'test_id.txt']
         # Create ent2id and rel2id dicts
         self.create_mappings()
@@ -494,17 +517,18 @@ class QueryGenerator:
         struct = query_structure[idx]
         print('General structure is', struct, "with name", query_type)
 
-        """@Todos look into one hop queries """
-        # if query_structure == ['e', ['r']]:
-        #     if self.gen_train:
-        #         self.write_links(train_ent_out, defaultdict(lambda: defaultdict(set)), self.max_ans_num,
-        #                          'train-' + query_name)
-        #     if self.gen_valid:
-        #         self.write_links(valid_only_ent_out, train_ent_out, self.max_ans_num, 'valid-' + query_name)
-        #     if self.gen_test:
-        #         self.write_links(test_only_ent_out, valid_ent_out, self.max_ans_num, 'test-' + query_name)
-        #     print("Link prediction queries created!")
-        #     return
+
+        if query_structure == ['e', ['r']]:
+            if self.gen_train:
+                queries, tp_answers, fp_answers, fn_answers = self.write_links(train_ent_out, defaultdict(lambda: defaultdict(set)),
+                                 'train')
+            if self.gen_valid:
+                queries, tp_answers, fp_answers, fn_answers = self.write_links(valid_only_ent_out, train_ent_out, 'valid')
+            if self.gen_test:
+                queries, tp_answers, fp_answers, fn_answers = self.write_links(test_only_ent_out, valid_ent_out, 'test')
+            print("Link prediction queries created!")
+            return queries, tp_answers, fp_answers, fn_answers
+
 
         if self.gen_train:
             self.mode = 'train'
