@@ -29,24 +29,21 @@ class QueryGenerator:
         self.rel2id: Dict = rel2id
         self.ent_in: Dict = {}
         self.ent_out: Dict = {}
-        self.query_structures = [
-            ['e', ['r']],
-            ['e', ['r', 'r']],
-            ['e', ['r', 'r', 'r']],
-            [['e', ['r']], ['e', ['r']]],
-            [['e', ['r']], ['e', ['r']], ['e', ['r']]],
-            [['e', ['r', 'r']], ['e', ['r']]],
-            [[['e', ['r']], ['e', ['r']]], ['r']],
-            [['e', ['r']], ['e', ['r', 'n']]],
-            [['e', ['r']], ['e', ['r']], ['e', ['r', 'n']]],
-            [['e', ['r', 'r']], ['e', ['r', 'n']]],
-            [['e', ['r', 'r', 'n']], ['e', ['r']]],
-            [[['e', ['r']], ['e', ['r', 'n']]], ['r']],
-            # union
-            [['e', ['r']], ['e', ['r']], ['u']],
-            [[['e', ['r']], ['e', ['r']], ['u']], ['r']]
-        ]
-        self.query_names = ['1p', '2p', '3p', '2i', '3i', 'pi', 'ip', '2in', '3in', 'pin', 'pni', 'inp', '2u', 'up']
+        self.query_name_to_struct = {"1p": ['e', ['r']],
+                                     "2p": ['e', ['r', 'r']],
+                                     "3p": ['e', ['r', 'r', 'r']],
+                                     "2i": [['e', ['r']], ['e', ['r']]],
+                                     "3i": [['e', ['r']], ['e', ['r']], ['e', ['r']]],
+                                     "pi": [['e', ['r', 'r']], ['e', ['r']]],
+                                     "ip": [[['e', ['r']], ['e', ['r']]], ['r']],
+                                     "2in": [['e', ['r']], ['e', ['r', 'n']]],
+                                     "3in": [['e', ['r']], ['e', ['r']], ['e', ['r', 'n']]],
+                                     "pin": [['e', ['r', 'r']], ['e', ['r', 'n']]],
+                                     "pni": [['e', ['r', 'r', 'n']], ['e', ['r']]],
+                                     "inp": [[['e', ['r']], ['e', ['r', 'n']]], ['r']],
+                                     # union
+                                     "2u": [['e', ['r']], ['e', ['r']], ['u']],
+                                     "up": [[['e', ['r']], ['e', ['r']], ['u']], ['r']]}
         self.set_global_seed(seed)
 
     def list2tuple(self, l):
@@ -71,21 +68,22 @@ class QueryGenerator:
         Construct graph from triples
         Returns dicts with incoming and outgoing edges
         """
-        # @TODO Add explanations
-        ent_in = defaultdict(lambda: defaultdict(set))
-        ent_out = defaultdict(lambda: defaultdict(set))
+        # Mapping from tail entity and a relation to heads.
+        tail_relation_to_heads = defaultdict(lambda: defaultdict(set))
+        # Mapping from head and relation to tails.
+        head_relation_to_tails = defaultdict(lambda: defaultdict(set))
 
         for path in paths:
             with open(path, "r") as f:
                 for line in f:
                     h, r, t = map(str, line.strip().split("\t"))
-                    ent_in[self.ent2id[t]][self.rel2id[r]].add(self.ent2id[h])
-                    ent_out[self.ent2id[h]][self.rel2id[r]].add(self.ent2id[t])
+                    tail_relation_to_heads[self.ent2id[t]][self.rel2id[r]].add(self.ent2id[h])
+                    head_relation_to_tails[self.ent2id[h]][self.rel2id[r]].add(self.ent2id[t])
 
-        self.ent_in = ent_in
-        self.ent_out = ent_out
+        self.ent_in = tail_relation_to_heads
+        self.ent_out = head_relation_to_tails
 
-        return ent_in, ent_out
+        return tail_relation_to_heads, head_relation_to_tails
 
     def fill_query(self, query_structure: List[Union[str, List]],
                    ent_in: Dict, ent_out: Dict,
@@ -208,22 +206,20 @@ class QueryGenerator:
         tp_answers = defaultdict(set)
         fp_answers = defaultdict(set)
         fn_answers = defaultdict(set)
-        s0 = time.time()
-        # @TODO: old_num_sampled is not used
-        old_num_sampled = -1
+
+        # @TODO: Incorrect reasoning: It can enter an infinite loop
         while num_sampled < gen_num:
-
+            if num_try == 100_000:
+                break
             num_try += 1
-            empty_query_structure = deepcopy(query_structure)
+            # @TODO: Why do we need a deep copy here ?
+            query = deepcopy(query_structure)
             answer = random.sample(list(ent_in.keys()), 1)[0]
-
-            broken_flag = self.fill_query(empty_query_structure, ent_in, ent_out, answer)
+            broken_flag = self.fill_query(query, ent_in, ent_out, answer)
 
             if broken_flag:
                 num_broken += 1
                 continue
-
-            query = empty_query_structure
 
             answer_set = self.achieve_answer(query, ent_in, ent_out)
             small_answer_set = self.achieve_answer(query, small_ent_in, small_ent_out)
@@ -243,6 +239,7 @@ class QueryGenerator:
 
             if max(len(answer_set - small_answer_set), len(small_answer_set - answer_set)) > self.max_ans_num:
                 num_more_answer += 1
+                print(num_more_answer)
                 continue
 
             if self.list2tuple(query) in queries[self.list2tuple(query_structure)]:
@@ -435,40 +432,30 @@ class QueryGenerator:
             rel3 = id2rel[rel3_id]
             return (((ent1, (rel1,)), (ent2, (rel2,)), ("union",)), (rel3,))
 
-    def generate_queries(self, query_structure: list, gen_num: int, query_type: str):
+    def generate_queries(self, query_struct, gen_num: int, query_type: str):
         """
         Passing incoming and outgoing edges to ground queries depending on mode [train valid or text]
         and getting queries and answers in return
         """
+        train_tail_relation_to_heads, train_head_relation_to_tails = self.construct_graph(paths=[self.train_path])
+        val_tail_relation_to_heads, val_head_relation_to_tails = self.construct_graph(
+            paths=[self.train_path, self.val_path])
+        # ?!
+        valid_only_ent_in, valid_only_ent_out = self.construct_graph(paths=[self.val_path, self.test_path])
 
-        assert len(query_structure) == 1
-        idx = 0
-        struct = query_structure[idx]
-        print('General structure is', struct, "with name", query_type)
-
-        if self.gen_valid:
-            train_ent_in, train_ent_out = self.construct_graph(paths=[self.train_path])
-        if self.gen_valid or self.gen_test:
-            valid_ent_in, valid_ent_out = self.construct_graph(paths=[self.train_path, self.val_path])
-            valid_only_ent_in, valid_only_ent_out = self.construct_graph(paths=[self.val_path, self.test_path])
-        if self.gen_test:
-            test_ent_in, test_ent_out = self.construct_graph(paths=[self.train_path, self.val_path, self.test_path])
-            test_only_ent_in, test_only_ent_out = self.construct_graph(paths=[self.test_path])
-
-        if self.gen_valid:
-            self.mode = 'valid'
-            valid_queries, valid_tp_answers, valid_fp_answers, valid_fn_answers = self.ground_queries(
-                struct, valid_ent_in, valid_ent_out, train_ent_in, train_ent_out, gen_num, query_type)
-            print('%s queries generated with structure %s' % (gen_num, struct))
-            return valid_queries, valid_tp_answers, valid_fp_answers, valid_fn_answers
-        elif self.gen_test:
-            self.mode = 'test'
-            test_queries, test_tp_answers, test_fp_answers, test_fn_answers = self.ground_queries(
-                struct, test_ent_in, test_ent_out, valid_ent_in, valid_ent_out, gen_num, query_type)
-            print('%s queries generated with structure %s' % (gen_num, struct))
-            return test_queries, test_tp_answers, test_fp_answers, test_fn_answers
-        else:
-            raise RuntimeError
+        test_tail_relation_to_heads, test_head_relation_to_tails = self.construct_graph(
+            paths=[self.train_path, self.val_path, self.test_path])
+        # ?!
+        test_only_ent_in, test_only_ent_out = self.construct_graph(paths=[self.test_path])
+        self.mode = 'test'
+        test_queries, test_tp_answers, test_fp_answers, test_fn_answers = self.ground_queries(
+            query_struct, test_tail_relation_to_heads, test_head_relation_to_tails, val_tail_relation_to_heads,
+            val_head_relation_to_tails, gen_num, query_type)
+        # @TODO: test_queries has keys that are tuple ,e.g. ('e', ('r',))
+        # Yet, query structure defined as a list ['e', ['r']].
+        # Fix this inconsistency
+        print(f"General structure is {query_struct} with name {query_type}. Number of queries generated: {len(test_tp_answers)}")
+        return test_queries, test_tp_answers, test_fp_answers, test_fn_answers
 
     def save_queries(self, query_type: str, gen_num: int, save_path: str):
         """
@@ -503,16 +490,9 @@ class QueryGenerator:
         raise NotImplementedError()
 
     def get_queries(self, query_type: str, gen_num: int):
-        """
-        Get queries of a specific type.
-        @todo Not sure what to return dicts or lists and answers should be returned or not
-        @todo add comments
-        """
-        gen_id = self.query_names.index(query_type)
 
-        queries, tp_answers, fp_answers, fn_answers = self.generate_queries(self.query_structures[gen_id:gen_id + 1],
+        queries, tp_answers, fp_answers, fn_answers = self.generate_queries(self.query_name_to_struct[query_type],
                                                                             gen_num, query_type)
         unmapped_queries, easy_answers, false_positives, hard_answers = self.unmap(query_type, queries, tp_answers,
                                                                                    fp_answers, fn_answers)
-
         return unmapped_queries, easy_answers, false_positives, hard_answers
