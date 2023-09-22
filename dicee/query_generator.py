@@ -10,9 +10,10 @@ from copy import deepcopy
 
 
 class QueryGenerator:
-    def __init__(self, datapath: str, seed: int, gen_train: bool, gen_valid: bool, gen_test: bool):
+    def __init__(self, datapath: str, ent2id, rel2id, seed: int, gen_train: bool, gen_valid: bool, gen_test: bool):
         self.dataset = datapath
         """path of the dataset"""
+
 
         self.seed = seed
         self.gen_train = gen_train or False
@@ -21,8 +22,8 @@ class QueryGenerator:
         self.max_ans_num = 1e6
 
         self.mode = str
-        self.ent2id: Dict = {}
-        self.rel2id: Dict = {}
+        self.ent2id: Dict = ent2id
+        self.rel2id: Dict = rel2id
         self.ent_in: Dict = {}
         self.ent_out: Dict = {}
         self.query_structures = [
@@ -130,15 +131,16 @@ class QueryGenerator:
         Construct graph from triples
         Returns dicts with incoming and outgoing edges
         """
+        # @TODO Add explanations
         ent_in = defaultdict(lambda: defaultdict(set))
         ent_out = defaultdict(lambda: defaultdict(set))
 
         for filename in indexified_files:
             with open(f"{base_path}/{filename}", "r") as f:
                 for line in f:
-                    h, r, t = map(int, line.strip().split("\t"))
-                    ent_out[h][r].add(t)
-                    ent_in[t][r].add(h)
+                    h, r, t = map(str, line.strip().split("\t"))
+                    ent_in[self.ent2id[t]][self.rel2id[r]].add(self.ent2id[h])
+                    ent_out[self.ent2id[h]][self.rel2id[r]].add(self.ent2id[t])
 
         self.ent_in = ent_in
         self.ent_out = ent_out
@@ -498,10 +500,9 @@ class QueryGenerator:
         and getting queries and answers in return
         """
         base_path = self.dataset
-        indexified_files = ['train_id.txt', 'valid_id.txt', 'test_id.txt']
+        indexified_files = ['train.txt', 'valid.txt', 'test.txt']
         # Create ent2id and rel2id dicts
-        self.create_mappings()
-        self.mapid()
+        # self.mapid()
         # Contruct Graphs to record incoming and outgoing edges
         if self.gen_train or self.gen_valid:
             train_ent_in, train_ent_out = self.construct_graph(base_path, indexified_files[:1])
