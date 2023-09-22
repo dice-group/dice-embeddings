@@ -10,15 +10,18 @@ from copy import deepcopy
 
 
 class QueryGenerator:
-    def __init__(self, datapath: str, ent2id, rel2id, seed: int, gen_train: bool, gen_valid: bool, gen_test: bool):
-        self.dataset = datapath
-        """path of the dataset"""
+    def __init__(self, train_path, val_path: str, test_path: str, ent2id, rel2id, seed: int,
+                 gen_valid: bool = False,
+                 gen_test: bool = True):
 
+        self.train_path = train_path
+        self.val_path = val_path
+        self.test_path = test_path
+        self.gen_valid = gen_valid
+        self.gen_test = gen_test
 
         self.seed = seed
-        self.gen_train = gen_train or False
-        self.gen_valid = gen_valid or False
-        self.gen_test = gen_test or False
+
         self.max_ans_num = 1e6
 
         self.mode = str
@@ -46,69 +49,6 @@ class QueryGenerator:
         self.query_names = ['1p', '2p', '3p', '2i', '3i', 'pi', 'ip', '2in', '3in', 'pin', 'pni', 'inp', '2u', 'up']
         self.set_global_seed(seed)
 
-    def create_mappings(self):
-        """ Create ent2id and rel2id dicts for query generation """
-
-        datapath = self.dataset
-        ent2id_path = os.path.join(datapath, "ent2id.pkl")
-        rel2id_path = os.path.join(datapath, "rel2id.pkl")
-
-        # If ent2id and rel2id files already exist, read from them
-        if os.path.exists(ent2id_path) and os.path.exists(rel2id_path):
-            with open(ent2id_path, "rb") as f:
-                self.ent2id = pickle.load(f)
-
-            with open(rel2id_path, "rb") as f:
-                self.rel2id = pickle.load(f)
-            return
-        # Otherise create these files
-        ent_set = set()
-        rel_set = set()
-        with open(os.path.join(datapath, "train.txt"), "r") as f:
-            for line in f.readlines():
-                # Split the line and extract entities and relationships
-                ent1, rel, ent2 = line.strip().split('\t')
-
-                # Add entities and relationships to their respective sets
-                ent_set.add(ent1)
-                ent_set.add(ent2)
-                rel_set.add(rel)
-
-        # Create ent2id and rel2id dictionaries
-        self.ent2id = {ent: idx for idx, ent in enumerate(ent_set)}
-        self.rel2id = {rel: idx for idx, rel in enumerate(rel_set)}
-
-        # Save ent2id and rel2id dictionaries to pickle files
-        with open(os.path.join(datapath, "ent2id.pkl"), "wb") as f:
-            pickle.dump(self.ent2id, f)
-
-        with open(os.path.join(datapath, "rel2id.pkl"), "wb") as f:
-            pickle.dump(self.rel2id, f)
-
-    def mapid(self):
-        """Convert text triples files into integer id triples for query generation via sampling"""
-        datapath = self.dataset
-        train_id_path = os.path.join(datapath, "train_id.txt")
-        valid_id_path = os.path.join(datapath, "valid_id.txt")
-        test_id_path = os.path.join(datapath, "test_id.txt")
-
-        # Check if all three *_id.txt files exist
-        if os.path.exists(train_id_path) and os.path.exists(valid_id_path) and os.path.exists(test_id_path):
-            return
-
-        # If any of the files are missing, recreate all of them
-        for file in ["train", "valid", "test"]:
-            filepath = os.path.join(datapath, f"{file}.txt")
-            filepath2 = os.path.join(datapath, f"{file}_id.txt")
-
-            with open(filepath, "r") as in_file, open(filepath2, "w") as out_file:
-                for line in in_file:
-                    ent1, rel, ent2 = line.strip().split('\t')
-                    ent1_id = self.ent2id[ent1]
-                    rel_id = self.rel2id[rel]
-                    ent2_id = self.ent2id[ent2]
-                    out_file.write(f"{ent1_id}\t{rel_id}\t{ent2_id}\n")
-
     def list2tuple(self, l):
         return tuple(self.list2tuple(x) if type(x) == list else x for x in l)
 
@@ -126,7 +66,7 @@ class QueryGenerator:
         np.random.seed(seed)
         random.seed(seed)
 
-    def construct_graph(self, base_path: str, indexified_files: List[str]) -> Tuple[Dict, Dict]:
+    def construct_graph(self, paths: List[str]) -> Tuple[Dict, Dict]:
         """
         Construct graph from triples
         Returns dicts with incoming and outgoing edges
@@ -135,8 +75,8 @@ class QueryGenerator:
         ent_in = defaultdict(lambda: defaultdict(set))
         ent_out = defaultdict(lambda: defaultdict(set))
 
-        for filename in indexified_files:
-            with open(f"{base_path}/{filename}", "r") as f:
+        for path in paths:
+            with open(path, "r") as f:
                 for line in f:
                     h, r, t = map(str, line.strip().split("\t"))
                     ent_in[self.ent2id[t]][self.rel2id[r]].add(self.ent2id[h])
@@ -241,6 +181,7 @@ class QueryGenerator:
         return ent_set
 
     def write_links(self, ent_out, small_ent_out):
+        # @TODO: Explain why this is needed
         queries = defaultdict(set)
         tp_answers = defaultdict(set)
         fn_answers = defaultdict(set)
@@ -268,7 +209,7 @@ class QueryGenerator:
         fp_answers = defaultdict(set)
         fn_answers = defaultdict(set)
         s0 = time.time()
-
+        # @TODO: old_num_sampled is not used
         old_num_sampled = -1
         while num_sampled < gen_num:
 
@@ -376,7 +317,7 @@ class QueryGenerator:
             rel2 = id2rel[rel2_id]
             rel3 = id2rel[rel3_id]
             return ((ent1, (rel1,)), (ent2, (rel2,)), (ent3, (rel3,)))
-        #1p
+        # 1p
         elif query_structure == ("e", ("r",)):
             ent1, (rel1_id,) = query
             ent1 = id2ent[ent1]
@@ -499,58 +440,35 @@ class QueryGenerator:
         Passing incoming and outgoing edges to ground queries depending on mode [train valid or text]
         and getting queries and answers in return
         """
-        base_path = self.dataset
-        indexified_files = ['train.txt', 'valid.txt', 'test.txt']
-        # Create ent2id and rel2id dicts
-        # self.mapid()
-        # Contruct Graphs to record incoming and outgoing edges
-        if self.gen_train or self.gen_valid:
-            train_ent_in, train_ent_out = self.construct_graph(base_path, indexified_files[:1])
-        if self.gen_valid or self.gen_test:
-            valid_ent_in, valid_ent_out = self.construct_graph(base_path, indexified_files[:2])
-            valid_only_ent_in, valid_only_ent_out = self.construct_graph(base_path, indexified_files[1:2])
-        if self.gen_test:
-            test_ent_in, test_ent_out = self.construct_graph(base_path, indexified_files[:3])
-            test_only_ent_in, test_only_ent_out = self.construct_graph(base_path, indexified_files[2:3])
 
         assert len(query_structure) == 1
         idx = 0
         struct = query_structure[idx]
         print('General structure is', struct, "with name", query_type)
 
+        if self.gen_valid:
+            train_ent_in, train_ent_out = self.construct_graph(paths=[self.train_path])
+        if self.gen_valid or self.gen_test:
+            valid_ent_in, valid_ent_out = self.construct_graph(paths=[self.train_path, self.val_path])
+            valid_only_ent_in, valid_only_ent_out = self.construct_graph(paths=[self.val_path, self.test_path])
+        if self.gen_test:
+            test_ent_in, test_ent_out = self.construct_graph(paths=[self.train_path, self.val_path, self.test_path])
+            test_only_ent_in, test_only_ent_out = self.construct_graph(paths=[self.test_path])
 
-        if query_structure == ['e', ['r']]:
-            if self.gen_train:
-                queries, tp_answers, fp_answers, fn_answers = self.write_links(train_ent_out, defaultdict(lambda: defaultdict(set)),
-                                 'train')
-            if self.gen_valid:
-                queries, tp_answers, fp_answers, fn_answers = self.write_links(valid_only_ent_out, train_ent_out, 'valid')
-            if self.gen_test:
-                queries, tp_answers, fp_answers, fn_answers = self.write_links(test_only_ent_out, valid_ent_out, 'test')
-            print("Link prediction queries created!")
-            return queries, tp_answers, fp_answers, fn_answers
-
-
-        if self.gen_train:
-            self.mode = 'train'
-            train_queries, train_tp_answers, train_fp_answers, train_fn_answers = self.ground_queries(
-                struct, train_ent_in, train_ent_out, defaultdict(
-                    lambda: defaultdict(set)), defaultdict(lambda: defaultdict(set)), gen_num, query_type)
-
-            return train_queries, train_tp_answers, train_fp_answers, train_fn_answers
-
-        elif self.gen_valid:
+        if self.gen_valid:
             self.mode = 'valid'
             valid_queries, valid_tp_answers, valid_fp_answers, valid_fn_answers = self.ground_queries(
                 struct, valid_ent_in, valid_ent_out, train_ent_in, train_ent_out, gen_num, query_type)
+            print('%s queries generated with structure %s' % (gen_num, struct))
             return valid_queries, valid_tp_answers, valid_fp_answers, valid_fn_answers
-
         elif self.gen_test:
             self.mode = 'test'
             test_queries, test_tp_answers, test_fp_answers, test_fn_answers = self.ground_queries(
                 struct, test_ent_in, test_ent_out, valid_ent_in, valid_ent_out, gen_num, query_type)
+            print('%s queries generated with structure %s' % (gen_num, struct))
             return test_queries, test_tp_answers, test_fp_answers, test_fn_answers
-        print('%s queries generated with structure %s' % (gen_num, struct))
+        else:
+            raise RuntimeError
 
     def save_queries(self, query_type: str, gen_num: int, save_path: str):
         """
@@ -581,7 +499,7 @@ class QueryGenerator:
         with open(f'{save_path}/{name_to_save}-hard-answers.pkl', 'wb') as f:
             pickle.dump(hard_answers, f)
 
-    def load_queries(self,path):
+    def load_queries(self, path):
         raise NotImplementedError()
 
     def get_queries(self, query_type: str, gen_num: int):
@@ -590,13 +508,7 @@ class QueryGenerator:
         @todo Not sure what to return dicts or lists and answers should be returned or not
         @todo add comments
         """
-
-        # Find the index of query_type in query_names
-        try:
-            gen_id = self.query_names.index(query_type)
-        except ValueError:
-            print(f"Invalid query_type: {query_type}")
-            return []
+        gen_id = self.query_names.index(query_type)
 
         queries, tp_answers, fp_answers, fn_answers = self.generate_queries(self.query_structures[gen_id:gen_id + 1],
                                                                             gen_num, query_type)
@@ -604,12 +516,3 @@ class QueryGenerator:
                                                                                    fp_answers, fn_answers)
 
         return unmapped_queries, easy_answers, false_positives, hard_answers
-
-# Example usage
-# from dicee import QueryGenerator
-# q = QueryGenerator(dataset="UMLS", seed=42, gen_train=False, gen_valid=False, gen_test=True)
-# Either generate queries and save it at the given path
-# q.save_queries(query_type="2in",gen_num=10,save_path= " ")
-# or else get it as dicts to answer queries directly using pre_trained_KGE.answer_multi_hop_query(....)
-# query_dict, easy answers, false positives,hard answers=q.get_queries(query_type="2in",gen_num=10)
-# use the dict to answer queries

@@ -14,7 +14,7 @@ args.model = 'DistMult'
 args.scoring_technique = "KvsAll"
 # args.path_single_kg = "KGs/UMLS/train.txt"
 args.path_dataset_folder = "KGs/UMLS"
-args.num_epochs = 1
+args.num_epochs = 10
 args.batch_size = 1024
 args.lr = 0.1
 args.embedding_dim = 512
@@ -23,17 +23,17 @@ reports = Execute(args).start()
 pre_trained_kge = KGE(path=reports['path_experiment_folder'])
 # (3) Generate queries of a particular type depending on the flag
 qg = QueryGenerator(
-datapath="KGs/UMLS",
-    #train_path="KGs/UMLS/train.txt",
-    #val_path="KGs/UMLS/valid.txt",
-    #test_path="KGs/UMLS/test.txt",
-    ent2id=pre_trained_kge.entity_to_idx,rel2id=pre_trained_kge.relation_to_idx, seed=0,gen_valid=False,gen_train=False,gen_test=True)
+    train_path="KGs/UMLS/train.txt",
+    val_path="KGs/UMLS/valid.txt",
+    test_path="KGs/UMLS/test.txt",
+    ent2id=pre_trained_kge.entity_to_idx,
+    rel2id=pre_trained_kge.relation_to_idx, seed=1)
 # Generate queries for the following type and asnwer the queries
 query_names = ['1p', '2p', '3p', '2i', '3i', 'pi', 'ip', '2in', '3in', 'pin', 'pni', 'inp', '2u', 'up']
 for query_type in query_names:
     # Generates n queries with answers
     query_structs_and_queries, easy_answers, false_positives, hard_answers = qg.get_queries(query_type=query_type,
-                                                                                            gen_num=10)
+                                                                                            gen_num=100)
     # Iterate over query types
     for query_structure, queries in query_structs_and_queries.items():
         entity_scores = dict()
