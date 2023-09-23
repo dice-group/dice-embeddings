@@ -389,8 +389,10 @@ class KGE(BaseInteractiveKGE):
         elif 'yager' in neg_norm:
             return (1 - torch.pow(tens_1, lambda_)) ** (1 / lambda_)
 
-    def answer_multi_hop_query(self, query_type: str, query: Tuple[Union[str, Tuple[str, str]], ...], tnorm: str="prod",
-                               neg_norm: str="standard", lambda_: float=0.0, k: int=10,only_scores=False) -> List[Tuple[str, torch.Tensor]]:
+    def answer_multi_hop_query(self, query_type: str = None, query: Tuple[Union[str, Tuple[str, str]], ...] = None,
+                               queries: List[Tuple[Union[str, Tuple[str, str]], ...]] = None, tnorm: str = "prod",
+                               neg_norm: str = "standard", lambda_: float = 0.0, k: int = 10, only_scores=False) -> \
+            List[Tuple[str, torch.Tensor]]:
         """
         Find an answer set for EPFO queries including negation and disjunction
 
@@ -401,6 +403,8 @@ class KGE(BaseInteractiveKGE):
 
         query: Union[str, Tuple[str, Tuple[str, str]]]
         The query itself, either a string or a nested tuple.
+
+        queries: List of Tuple[Union[str, Tuple[str, str]], ...]
 
         tnorm: str
         The t-norm operator.
@@ -419,6 +423,16 @@ class KGE(BaseInteractiveKGE):
         List[Tuple[str, torch.Tensor]]
         Entities and corresponding scores sorted in the descening order of scores
         """
+
+        if queries is not None:
+            results = []
+            for i in queries:
+                assert query is None
+                results.append(
+                    self.answer_multi_hop_query(query_type=query_type, query=i, tnorm=tnorm, neg_norm=neg_norm,
+                                                lambda_=lambda_, k=k, only_scores=only_scores))
+            return results
+
         assert len(self.entity_to_idx) > k >= 0
 
         query_name_dict = {
@@ -450,7 +464,7 @@ class KGE(BaseInteractiveKGE):
             query_structure = inverse_query_name_dict[query_type]
         else:
             raise ValueError(f"Invalid query type: {query_type}")
-        #2in
+        # 2in
         if query_structure == (("e", ("r",)), ("e", ("r", "n"))):
             # entity_scores = scores_2in(query, tnorm, neg_norm, lambda_)
             head1, relation1 = query[0]
@@ -909,7 +923,7 @@ class KGE(BaseInteractiveKGE):
             if only_scores:
                 return res
             entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), res)]
-            return  sorted(entity_scores, key=lambda x: x[1], reverse=True)
+            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
         else:
             raise RuntimeError(f"Incorrect query_structure {query_structure}")
 

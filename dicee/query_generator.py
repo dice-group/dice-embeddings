@@ -7,6 +7,8 @@ import os
 import pickle
 import time
 from copy import deepcopy
+import json
+from .static_funcs import save_pickle, load_pickle
 
 
 class QueryGenerator:
@@ -454,7 +456,8 @@ class QueryGenerator:
         # @TODO: test_queries has keys that are tuple ,e.g. ('e', ('r',))
         # Yet, query structure defined as a list ['e', ['r']].
         # Fix this inconsistency
-        print(f"General structure is {query_struct} with name {query_type}. Number of queries generated: {len(test_tp_answers)}")
+        print(
+            f"General structure is {query_struct} with name {query_type}. Number of queries generated: {len(test_tp_answers)}")
         return test_queries, test_tp_answers, test_fp_answers, test_fn_answers
 
     def save_queries(self, query_type: str, gen_num: int, save_path: str):
@@ -496,3 +499,19 @@ class QueryGenerator:
         unmapped_queries, easy_answers, false_positives, hard_answers = self.unmap(query_type, queries, tp_answers,
                                                                                    fp_answers, fn_answers)
         return unmapped_queries, easy_answers, false_positives, hard_answers
+
+    @staticmethod
+    def save_queries_and_answers(path: str, data: List[Tuple[str, Tuple[defaultdict]]]) -> None:
+        """ Save Queries into Disk"""
+        save_pickle(file_path=path, data=data)
+
+    @staticmethod
+    def load_queries_and_answers(path: str) -> List[Tuple[str, Tuple[defaultdict]]]:
+        """ Load Queries from Disk to Memory"""
+        print("Loading...")
+        data = load_pickle(file_path=path)
+        assert isinstance(data, list)
+        assert isinstance(data[0], tuple)
+        assert isinstance(data[0][0], str)
+        assert isinstance(data[0][1], tuple)
+        return data

@@ -477,7 +477,7 @@ def load_numpy(path) -> np.ndarray:
         data = np.load(f)
     return data
 
-def evaluate(model, scores, easy_answers, hard_answers):
+def evaluate(entity_to_idx, scores, easy_answers, hard_answers):
     """
     Evaluate multi hop query answering on different query types
     """
@@ -487,10 +487,11 @@ def evaluate(model, scores, easy_answers, hard_answers):
     total_h3 = 0
     total_h10 = 0
     num_queries = len(scores)
-
+    # @TODO: Dictionary keys do not need to be in order, zip(entity_to_idx.keys(), entity_score) is not a viable solution
+    # @TODO: Although it is working
+    # @TODO: Use pytorch to obtain the entities sorted in the descending order of scores
     for query, entity_score in scores.items():
-        assert len(entity_score) == len(model.entity_to_idx)
-        entity_scores = [(ei, s) for ei, s in zip(model.entity_to_idx.keys(), entity_score)]
+        entity_scores = [(ei, s) for ei, s in zip(entity_to_idx.keys(), entity_score)]
         entity_scores = sorted(entity_scores, key=lambda x: x[1], reverse=True)
 
         # Extract corresponding easy and hard answers
