@@ -1,3 +1,18 @@
+""" Multi-hop Query answering via neural link predictors
+
+Here, we show how to
+(1) Train a neural link predictor is trained on a single hop queries and
+(2) Answer multi-hop queries with (1).
+
+Structure of this example as follows
+pip install dicee
+
+(1) Train a neural link predictor and save it into disk
+(2) Load (1) from disk into memory
+(3) Generate multi-hop queries
+(4) Answer multi-hop queries
+(5) Report results
+"""
 from dicee import QueryGenerator
 from dicee.executer import Execute
 from dicee.config import Namespace
@@ -22,21 +37,20 @@ for kge_name in ["DistMult", "ComplEx", "Keci", "Pykeen_QuatE", "Pykeen_MuRE"]:
     args.lr = 0.1
     args.embedding_dim = 128
     reports = Execute(args).start()
+
     # (2) Load the pretrained model
     pre_trained_kge = KGE(path=reports['path_experiment_folder'])
     configs = load_json(reports['path_experiment_folder'] + '/report.json')
     num_param = configs["NumParam"]
     runtime = configs["Runtime"]
 
-    # (3) Generate queries of a particular type depending on the flag
+    # (3) Generate multi-hop queries
     qg = QueryGenerator(
         train_path="KGs/UMLS/train.txt",
         val_path="KGs/UMLS/valid.txt",
         test_path="KGs/UMLS/test.txt",
         ent2id=pre_trained_kge.entity_to_idx,
         rel2id=pre_trained_kge.relation_to_idx, seed=1)
-    # Generate queries for the following type and answer the queries
-
     if queries_saved is False:
         # To generate Queries Queries and Answers
         queries_and_answers = [(q, qg.get_queries(query_type=q, gen_num=100)) for q in
@@ -44,10 +58,11 @@ for kge_name in ["DistMult", "ComplEx", "Keci", "Pykeen_QuatE", "Pykeen_MuRE"]:
                                 'up']]
         qg.save_queries_and_answers(path="Queries", data=queries_and_answers)
         queries_saved = True
-    # Load saved queries and answers
+
     queries_and_answers = qg.load_queries_and_answers(path="Queries")
 
     results_kge = []
+    # (4) Answer multi-hop queries with a neural link predictor
     for query_type, (query_structs_and_queries, easy_answers, false_positives, hard_answers) in queries_and_answers:
         for _, queries in query_structs_and_queries.items():
             # Compute query scores for all entities given queries
@@ -62,7 +77,7 @@ for kge_name in ["DistMult", "ComplEx", "Keci", "Pykeen_QuatE", "Pykeen_MuRE"]:
             results_kge.append([query_type, len(queries), mrr, h1, h3, h10])
     df = pd.DataFrame(results_kge, columns=["Query", "Size", "MRR", "H1", "H3", "H10"])
     data_frames_results.append((kge_name, num_param, runtime, df))
-
+# (5)
 for kge_name, num_param, runtime, df in data_frames_results:
     print(kge_name, num_param, runtime)
     print(df[["MRR", "H1", "H3", "H10"]].mean())
