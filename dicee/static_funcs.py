@@ -3,7 +3,7 @@ import torch
 import datetime
 from typing import Tuple, List
 from .models import CMult, Pyke, DistMult, KeciBase, Keci, TransE, \
-    ComplEx, AConEx, AConvO, AConvQ, ConvQ, ConvO, ConEx, QMult, OMult, Shallom
+    ComplEx, AConEx, AConvO, AConvQ, ConvQ, ConvO, ConEx, QMult, OMult, Shallom,Keci_r
 from .models.pykeen_models import PykeenKGE
 import time
 import pandas as pd
@@ -351,6 +351,9 @@ def intialize_model(args: dict) -> Tuple[object, str]:
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'CMult':
         model = CMult(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'Keci_r':
+        model = Keci_r(args=args)
         form_of_labelling = 'EntityPrediction'
     else:
         raise ValueError(f"--model_name: {model_name} is not found.")
