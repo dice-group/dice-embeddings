@@ -8,7 +8,8 @@ class TestCV_KvsAll:
         args.model = 'Shallom'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
-        args.path_dataset_folder = 'KGs/Family'
+        args.path_single_kg = 'KGs/Family/family-benchmark_rich_background.owl'
+        args.backend="rdflib"
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
@@ -19,7 +20,6 @@ class TestCV_KvsAll:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.eval_model = 'train'
-        args.backend = 'pandas'  # Error with polars because sep="\s" should be a single byte character, but is 2 bytes long.
         args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
         Execute(args).start()
@@ -30,7 +30,8 @@ class TestCV_KvsAll:
         args.model = 'ConEx'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
-        args.path_dataset_folder = 'KGs/Family'
+        args.path_single_kg = 'KGs/Family/family-benchmark_rich_background.owl'
+        args.backend="rdflib"
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
@@ -41,7 +42,6 @@ class TestCV_KvsAll:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.eval_model = 'train'
-        args.backend = 'pandas'  # Error with polars because sep="\s" should be a single byte character, but is 2 bytes long.
         args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
         Execute(args).start()
@@ -52,7 +52,8 @@ class TestCV_KvsAll:
         args.model = 'QMult'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
-        args.path_dataset_folder = 'KGs/Family'
+        args.path_single_kg = 'KGs/Family/family-benchmark_rich_background.owl'
+        args.backend="rdflib"
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
@@ -63,7 +64,6 @@ class TestCV_KvsAll:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.eval_model = 'train'
-        args.backend = 'pandas'  # Error with polars because sep="\s" should be a single byte character, but is 2 bytes long.
         args.trainer = 'torchCPUTrainer'
         args.num_folds_for_cv = 3
         Execute(args).start()
@@ -74,7 +74,8 @@ class TestCV_KvsAll:
         args.model = 'ConvQ'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
-        args.path_dataset_folder = 'KGs/Family'
+        args.path_single_kg = 'KGs/Family/family-benchmark_rich_background.owl'
+        args.backend="rdflib"
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
@@ -85,7 +86,6 @@ class TestCV_KvsAll:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.eval_model = 'train'
-        args.backend = 'pandas'  # Error with polars becasue sep="\s" should be a single byte character, but is 2 bytes long.
         args.num_folds_for_cv = 3
         args.trainer = 'torchCPUTrainer'
         Execute(args).start()
@@ -96,7 +96,8 @@ class TestCV_KvsAll:
         args.model = 'OMult'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
-        args.path_dataset_folder = 'KGs/Family'
+        args.path_single_kg = 'KGs/Family/family-benchmark_rich_background.owl'
+        args.backend="rdflib"
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
@@ -106,7 +107,6 @@ class TestCV_KvsAll:
         args.feature_map_dropout_rate = 0.0
         args.read_only_few = None
         args.sample_triples_ratio = None
-        args.backend = 'pandas'  # Error with polars becasue sep="\s" should be a single byte character, but is 2 bytes long.
         args.eval_model = 'train'
         args.num_folds_for_cv = 3
         args.trainer = 'torchCPUTrainer'
@@ -118,7 +118,8 @@ class TestCV_KvsAll:
         args.model = 'ConvO'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
-        args.path_dataset_folder = 'KGs/Family'
+        args.path_single_kg = 'KGs/Family/family-benchmark_rich_background.owl'
+        args.backend="rdflib"
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
@@ -127,7 +128,6 @@ class TestCV_KvsAll:
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
         args.eval_model = 'train'
-        args.backend = 'pandas'  # Error with polars becasue sep="\s" should be a single byte character, but is 2 bytes long.
         args.num_folds_for_cv = 3
         args.trainer = 'torchCPUTrainer'
         Execute(args).start()
@@ -137,7 +137,8 @@ class TestCV_KvsAll:
         args.model = 'DistMult'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
-        args.path_dataset_folder = 'KGs/Family'
+        args.path_single_kg = 'KGs/Family/family-benchmark_rich_background.owl'
+        args.backend="rdflib"
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
@@ -146,7 +147,6 @@ class TestCV_KvsAll:
         args.sample_triples_ratio = None
         args.eval_model = 'train'
         args.num_folds_for_cv = 3
-        args.backend = 'pandas'  # Error with polars becasue sep="\s" should be a single byte character, but is 2 bytes long.
         args.trainer = 'torchCPUTrainer'
         Execute(args).start()
 
@@ -155,12 +155,12 @@ class TestCV_KvsAll:
         args.model = 'ComplEx'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
-        args.path_dataset_folder = 'KGs/Family'
+        args.path_single_kg = 'KGs/Family/family-benchmark_rich_background.owl'
+        args.backend="rdflib"
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
         args.embedding_dim = 32
-        args.backend = 'pandas'  # Error with polars because sep="\s" should be a single byte character, but is 2 bytes long.
         args.eval_model = 'train'
         args.num_folds_for_cv = 3
         args.trainer = 'torchCPUTrainer'
