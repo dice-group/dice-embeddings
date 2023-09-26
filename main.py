@@ -26,7 +26,7 @@ def get_default_arguments(description=None):
                         help="A flag for saving embeddings in csv file.")
     # Model related arguments
     parser.add_argument("--model", type=str,
-                        default="Keci_r",
+                        default="Keci",
                         choices=["ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "ComplEx", "Keci",
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
@@ -96,7 +96,7 @@ def get_default_arguments(description=None):
                         help='Add x % of noisy triples into training dataset.')
     parser.add_argument('--p', type=int, default=1,
                         help='P for Clifford Algebra')
-    parser.add_argument('--q', type=int, default=1,
+    parser.add_argument('--q', type=int, default=0,
                         help='Q for Clifford Algebra')
     parser.add_argument('--r', type=int, default=1,
                         help='Q for Clifford Algebra')
