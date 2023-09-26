@@ -375,6 +375,22 @@ class KGE(BaseInteractiveKGE):
         elif 'prod' in tnorm:
             return tens_1 * tens_2
 
+    def tensor_t_norm(self, subquery_scores: torch.FloatTensor, tnorm: str = "min") -> torch.FloatTensor:
+        """
+        Compute T-norm over [0,1] ^{n \times d} where n denotes the number of hops and d denotes number of entities
+        """
+        if "min" == tnorm:
+            return torch.min(subquery_scores, dim=0)
+        elif "prod" == tnorm:
+            print(subquery_scores.shape)
+            print(subquery_scores[:, :10])
+            # Take the last row of the cumulative product over subquery scores
+            print(torch.cumprod(subquery_scores, dim=0)[-1, :10])
+            exit(1)
+            return torch.cumprod(subquery_scores, dim=0)[-1, :]
+        else:
+            raise NotImplementedError(f"{tnorm} is not implemented")
+
     def t_conorm(self, tens_1: torch.Tensor, tens_2: torch.Tensor, tconorm: str = 'min') -> torch.Tensor:
         if 'min' in tconorm:
             return torch.max(tens_1, tens_2)
@@ -388,6 +404,15 @@ class KGE(BaseInteractiveKGE):
             return (1 - tens_1) / (1 + lambda_ * tens_1)
         elif 'yager' in neg_norm:
             return (1 - torch.pow(tens_1, lambda_)) ** (1 / lambda_)
+
+    def __single_hop_query_answering(self, query: Tuple[str, Tuple[str, ...]]):
+        head, relation = query
+        assert len(relation) == 1
+        return self.predict(h=[head], r=[relation[0]])
+
+    def __return_answers_and_scores(self, query_score_of_all_entities, k: int):
+        query_score_of_all_entities = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), query_score_of_all_entities)]
+        return sorted(query_score_of_all_entities, key=lambda x: x[1], reverse=True)[:k]
 
     def answer_multi_hop_query(self, query_type: str = None, query: Tuple[Union[str, Tuple[str, str]], ...] = None,
                                queries: List[Tuple[Union[str, Tuple[str, str]], ...]] = None, tnorm: str = "prod",
@@ -433,7 +458,7 @@ class KGE(BaseInteractiveKGE):
                                                 lambda_=lambda_, k=k, only_scores=only_scores))
             return results
 
-        assert len(self.entity_to_idx) > k >= 0
+        assert len(self.entity_to_idx) >= k >= 0
 
         query_name_dict = {
             ("e", ("r",)): "1p",
@@ -464,8 +489,59 @@ class KGE(BaseInteractiveKGE):
             query_structure = inverse_query_name_dict[query_type]
         else:
             raise ValueError(f"Invalid query type: {query_type}")
+
+        # 1p
+        if query_structure == ("e", ("r",)):
+            atom1_scores = self.__single_hop_query_answering(query=query).squeeze()
+            if only_scores:
+                return atom1_scores
+            return self.__return_answers_and_scores(atom1_scores, k)
+        # 2p
+        elif query_structure == ("e", ("r", "r",)):
+            # ?M : \exist A. r1(e,A) \land r2(A,M)
+            head1, (relation1, relation2) = query
+            top_k_scores1 = []
+            atom2_scores = []
+            # (1) Iterate over top k substitutes of A in the first hop query: r1(e,A) s.t. A<-a
+            for top_k_entity, score_of_e_r1_a in self.answer_multi_hop_query(query_type="1p",
+                                                                             query=(head1, (relation1,)),
+                                                                             tnorm=tnorm,
+                                                                             k=k):
+                top_k_scores1.append(score_of_e_r1_a)
+                # () Scores for all entities E
+                atom2_scores.append(self.predict(h=[top_k_entity], r=[relation2]))
+            # k by E tensor
+            atom2_scores = torch.cat(atom2_scores, dim=0)
+            topk_scores1_expanded = torch.FloatTensor(top_k_scores1).view(-1, 1).repeat(1, atom2_scores.shape[1])
+            query_scores, _ = torch.max(self.t_norm(topk_scores1_expanded, atom2_scores, tnorm), dim=0)
+            if only_scores:
+                return query_scores
+            else:
+                return self.__return_answers_and_scores(query_scores, k)
+        # 3p
+        elif query_structure == ("e", ("r", "r", "r",)):
+            # @TODO: explain the query and answering
+            head1, (relation1, relation2, relation3) = query
+            top_k_scores1 = []
+            atom2_scores = []
+            # (1) Iterate over top k substitutes of A in the first hop query: r1(e,A) s.t. A<-a
+            for top_k_entity, score_of_e_r1_a in self.answer_multi_hop_query(query_type="2p",
+                                                                             query=(head1, (relation1, relation2)),
+                                                                             tnorm=tnorm,
+                                                                             k=k):
+                top_k_scores1.append(score_of_e_r1_a)
+                # () Scores for all entities E
+                atom2_scores.append(self.predict(h=[top_k_entity], r=[relation3]))
+            # k by E tensor
+            atom2_scores = torch.cat(atom2_scores, dim=0)
+            topk_scores1_expanded = torch.FloatTensor(top_k_scores1).view(-1, 1).repeat(1, atom2_scores.shape[1])
+            query_scores, _ = torch.max(self.t_norm(topk_scores1_expanded, atom2_scores, tnorm), dim=0)
+            if only_scores:
+                return query_scores
+            else:
+                return self.__return_answers_and_scores(query_scores, k)
         # 2in
-        if query_structure == (("e", ("r",)), ("e", ("r", "n"))):
+        elif query_structure == (("e", ("r",)), ("e", ("r", "n"))):
             # entity_scores = scores_2in(query, tnorm, neg_norm, lambda_)
             head1, relation1 = query[0]
             head2, relation2 = query[1]
@@ -635,102 +711,6 @@ class KGE(BaseInteractiveKGE):
 
             combined_scores = self.t_norm(topk_scores1_expanded, atom3_scores, tnorm)
 
-            res, _ = torch.max(combined_scores, dim=0)
-            if only_scores:
-                return res
-            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), res)]
-            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
-        # 1p
-        elif query_structure == ("e", ("r",)):
-            head1, relation1 = query
-            # Calculate entity scores for each query
-            # Get scores for the first atom
-            atom1_scores = self.predict(h=[head1], r=[relation1[0]]).squeeze()
-            if only_scores:
-                return atom1_scores
-            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), atom1_scores)]
-            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
-
-        # 2p
-        elif query_structure == ("e", ("r", "r")):
-            # entity_scores = scores_2p(model, query, tnorm, k_)
-            head1, (relation1, relation2) = query
-
-            # Calculate entity scores for each query
-            # Get scores for the first atom
-            atom1_scores = self.predict(h=[head1], r=[relation1]).squeeze()
-
-            assert len(atom1_scores) == len(self.entity_to_idx)
-            # sort atom1_scores in descending order and get the top k entities indices
-            top_k_scores1, top_k_indices = torch.topk(atom1_scores, k)
-
-            # using model.entity_to_idx.keys() take the name of entities from topk heads 2
-            entity_to_idx_keys = list(self.entity_to_idx.keys())
-            top_k_heads = [entity_to_idx_keys[idx.item()] for idx in top_k_indices]
-
-            # Initialize an empty tensor
-            atom2_scores = torch.empty(0, len(self.entity_to_idx)).to(atom1_scores.device)
-
-            # Get scores for the second atom
-            for head2 in top_k_heads:
-                # The score tensor for the current head2
-                atom2_score = self.predict(h=[head2], r=[relation2])
-                # Concatenate the score tensor for the current head2 with the previous scores
-                atom2_scores = torch.cat([atom2_scores, atom2_score], dim=0)
-
-            topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(1, atom2_scores.shape[1])
-
-            combined_scores = self.t_norm(topk_scores1_expanded, atom2_scores, tnorm)
-            res, _ = torch.max(combined_scores, dim=0)
-            if only_scores:
-                return res
-            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), res)]
-            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
-
-        # 3p
-        elif query_structure == ("e", ("r", "r", "r",)):
-            head1, (relation1, relation2, relation3) = query
-
-            # Get scores for the first atom
-            atom1_scores = self.predict(h=[head1], r=[relation1]).squeeze()
-            # Get the top k entities indices for the first atom
-            top_k_scores1, top_k_indices1 = torch.topk(atom1_scores, k)
-
-            # Get the name of entities from top k heads for the first atom
-            entity_to_idx_keys = list(self.entity_to_idx.keys())
-            top_k_heads1 = [entity_to_idx_keys[idx.item()] for idx in top_k_indices1]
-
-            # Initialize an empty tensor for the second atom scores
-            atom2_scores = torch.empty(0, len(self.entity_to_idx)).to(atom1_scores.device)
-
-            # Get scores for the second atom
-            for head2 in top_k_heads1:
-                atom2_score = self.predict(h=[head2], r=[relation2])
-                atom2_scores = torch.cat([atom2_scores, atom2_score], dim=0)
-
-            # Get the top k entities indices for each head of the second atom
-            top_k_scores2, top_k_indices2 = torch.topk(atom2_scores, k, dim=1)
-
-            # Get the name of entities from top k heads for each head of the second atom
-            top_k_heads2 = [[entity_to_idx_keys[idx.item()] for idx in row] for row in top_k_indices2]
-
-            # Initialize an empty tensor for the third atom scores
-            atom3_scores = torch.empty(0, len(self.entity_to_idx)).to(atom1_scores.device)
-
-            # Get scores for the third atom
-            for row in top_k_heads2:
-                for head3 in row:
-                    atom3_score = self.predict(h=[head3], r=[relation3])
-                    atom3_scores = torch.cat([atom3_scores, atom3_score], dim=0)
-
-            topk_scores1_2d = top_k_scores1.unsqueeze(-1).repeat(1, top_k_scores2.shape[1])
-            topk_scores1_expanded = topk_scores1_2d.view(-1, 1).repeat(1, atom3_scores.shape[1])
-            topk_scores2_expanded = top_k_scores2.view(-1, 1).repeat(1, atom3_scores.shape[1])
-
-            inter_scores = self.t_norm(topk_scores1_expanded, topk_scores2_expanded, tnorm)
-            # atom3_scores_flattened = atom3_scores.view(-1)
-
-            combined_scores = self.t_norm(inter_scores, atom3_scores, tnorm)
             res, _ = torch.max(combined_scores, dim=0)
             if only_scores:
                 return res
