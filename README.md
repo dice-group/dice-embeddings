@@ -43,9 +43,8 @@ pip install dicee
 ```
 To test the Installation
 ```bash
-wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip --no-check-certificate
-unzip KGs.zip
-pytest -p no:warnings -x # it takes circa 15 minutes
+wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate && unzip KGs.zip
+pytest -p no:warnings -x # Runs >114 tests leading to > 15 mins
 pytest -p no:warnings --lf # run only the last failed test
 pytest -p no:warnings --ff # to run the failures first and then the rest of the tests.
 ```
@@ -126,47 +125,70 @@ For more, please refer to `examples`.
 <details> <summary> To see a code snippet </summary>
 
 ```python
+# pip install dicee
+# wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip --no-check-certificate & unzip KGs.zip
 from dicee.executer import Execute
 from dicee.config import Namespace
 from dicee.knowledge_graph_embeddings import KGE
-import os
-# (1) Train Clifford Embeddings model with AllvsAll on Family dataset
+from dicee import QueryGenerator
+from dicee.static_funcs import evaluate
+from dicee.static_funcs import load_pickle
+from dicee.static_funcs import load_json
+# (1) Train a KGE model
 args = Namespace()
 args.model = 'Keci'
+args.optim = 'Adam'
 args.scoring_technique = "AllvsAll"
-args.path_single_kg = "KGs/Family/train.txt"
-args.num_epochs = 100
+args.path_single_kg = "KGs/Family/family-benchmark_rich_background.owl"
+args.backend = "rdflib"
+args.num_epochs = 200
 args.batch_size = 1024
 args.lr = 0.1
 args.embedding_dim = 512
-reports=Execute(args).start()
-# (2) Load the pretrained model
-pre_trained_kge = KGE(path=reports['path_experiment_folder'])
-# (3) Complex Query Answering 
-# (3.1) Query: ?P : \exist Married(P,E) \land hasSibling(E, F9M167)
-# (3.2) Natural Language Question: To whom a sibling of F9M167 is married to?
-# (3.3) Who are the siblings of F9M167 ? => F9M167 hasSibling [F9M157, F9F141]
-# (3.4) Whom are (3.3) married to ? [ (F9M157 #married F9F158), (F9F141 #married F9M142) ] 
-# (3.5) Hence, the answer set is  {F9F158, F9M142}
-# (4) Prediction => [('F9M142', tensor(0.9999)),
-# ('F9F158', tensor(0.9997)),
-# ('F9M167', tensor(0.0011))]
-print(pre_trained_kge.answer_multi_hop_query(query_type="2p", query=('<http://www.benchmark.org/family#F9M167>',
-                                                                     ('<http://www.benchmark.org/family#hasSibling>',
-                                                                      '<http://www.benchmark.org/family#married>')),
-                                             tnorm="prod", k=10)[:3])
+result = Execute(args).start()
+# (2) Load the pre-trained model
+pre_trained_kge = KGE(path=result['path_experiment_folder'])
+# (3) Single-hop query answering
+# Query: ?E : \exist E.hasSibling(E, F9M167)
+# Question: Who are the siblings of F9M167?
+# Answer: [F9M157, F9F141], as (F9M167, hasSibling, F9M157) and (F9M167, hasSibling, F9F141)
+predictions = pre_trained_kge.answer_multi_hop_query(query_type="1p",
+                                                     query=('http://www.benchmark.org/family#F9M167',
+                                                            ('http://www.benchmark.org/family#hasSibling',)),
+                                                     tnorm="min", k=3)
+top_entities = [topk_entity for topk_entity, query_score in predictions]
+assert "http://www.benchmark.org/family#F9F141" in top_entities
+assert "http://www.benchmark.org/family#F9M157" in top_entities
+# (2) Two-hop query answering
+# Query: ?D : \exist E.Married(D, E) \land hasSibling(E, F9M167)
+# Question: To whom a sibling of F9M167 is married to?
+# Answer: [F9F158, F9M142] as (F9M157 #married F9F158) and (F9F141 #married F9M142)
+predictions = pre_trained_kge.answer_multi_hop_query(query_type="2p",
+                                                     query=("http://www.benchmark.org/family#F9M167",
+                                                            ("http://www.benchmark.org/family#hasSibling",
+                                                             "http://www.benchmark.org/family#married")),
+                                                     tnorm="min", k=3)
+top_entities = [topk_entity for topk_entity, query_score in predictions]
+assert "http://www.benchmark.org/family#F9M142" in top_entities
+assert "http://www.benchmark.org/family#F9F158" in top_entities
+# (3) Three-hop query answering
+# Query: ?T : \exist D.type(D,T) \land Married(D,E) \land hasSibling(E, F9M167)
+# Question: What are the type of people who are married to a sibling of F9M167?
+# (3) Answer: [Person, Male, Father] since  F9M157 is [Brother Father Grandfather Male] and F9M142 is [Male Grandfather Father]
 
-# (5) Let's make (3) even more difficult 
-# (5.1) Query: ?T : \exist type(T,P) \land Married(P,E) \land hasSibling(E, F9M167)
-# (5.2) Natural Language Question: What are the type of people who are married to a sibling of F9M167?
-# (5.3) #F9M157 is [Brother Father Grandfather Male] and F9M142 is [Male Grandfather Father]
-# (6) Prediction => [('<http://www.benchmark.org/family#Person>', tensor(0.9999)), ('<http://www.benchmark.org/family#Male>', tensor(0.9999)), ('<http://www.benchmark.org/family#Father>', tensor(0.9999))]
-print(pre_trained_kge.answer_multi_hop_query(query_type="3p", query=("<http://www.benchmark.org/family#F9M167>",
-                                                                     ("<http://www.benchmark.org/family#hasSibling>",
-                                                                      "<http://www.benchmark.org/family#married>",
-                                                                      "<http://www.w3.org/1999/02/22-rdf-syntax-ns#type>")),
-                                             tnorm="prod", k=10)[:3])
+predictions = pre_trained_kge.answer_multi_hop_query(query_type="3p", query=("http://www.benchmark.org/family#F9M167",
+                                                                             (
+                                                                             "http://www.benchmark.org/family#hasSibling",
+                                                                             "http://www.benchmark.org/family#married",
+                                                                             "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")),
+                                                     tnorm="min", k=5)
+top_entities = [topk_entity for topk_entity, query_score in predictions]
+print(top_entities)
+assert "http://www.benchmark.org/family#Person" in top_entities
+assert "http://www.benchmark.org/family#Father" in top_entities
+assert "http://www.benchmark.org/family#Male" in top_entities
 ```
+For more, please refer to `examples/multi_hop_query_answering`.
 </details>
 
 ## Predicting Missing Links
