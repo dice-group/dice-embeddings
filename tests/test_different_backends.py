@@ -12,7 +12,7 @@ class TestPolyak:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_pandas_rdf_as_backend(self):
         args = Namespace()
-        args.path_dataset_folder = 'KGs/Family/family-benchmark_rich_background.owl'
+        args.path_single_kg = 'KGs/Family/family-benchmark_rich_background.owl'
         args.backend = 'rdflib'
         Execute(args).start()
 
