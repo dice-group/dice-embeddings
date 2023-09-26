@@ -25,6 +25,5 @@ jobs:
           ruff --format=github --select=F63,F7,F82 --target-version=py39 dicee/.
       - name: Test with pytest
         run: |
-          wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip --no-check-certificate
-          unzip KGs.zip
+          wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate && unzip KGs.zip
           pytest -p no:warnings -x
