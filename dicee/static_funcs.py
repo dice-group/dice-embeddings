@@ -476,3 +476,61 @@ def load_numpy(path) -> np.ndarray:
     with open(path, 'rb') as f:
         data = np.load(f)
     return data
+
+def evaluate(entity_to_idx, scores, easy_answers, hard_answers):
+    """
+    Evaluate multi hop query answering on different query types
+    """
+    # Calculate MRR considering the hard and easy answers
+    total_mrr = 0
+    total_h1 = 0
+    total_h3 = 0
+    total_h10 = 0
+    num_queries = len(scores)
+    # @TODO: Dictionary keys do not need to be in order, zip(entity_to_idx.keys(), entity_score) is not a viable solution
+    # @TODO: Although it is working
+    # @TODO: Use pytorch to obtain the entities sorted in the descending order of scores
+    for query, entity_score in scores.items():
+        entity_scores = [(ei, s) for ei, s in zip(entity_to_idx.keys(), entity_score)]
+        entity_scores = sorted(entity_scores, key=lambda x: x[1], reverse=True)
+
+        # Extract corresponding easy and hard answers
+        easy_ans = easy_answers[query]
+        hard_ans = hard_answers[query]
+        easy_answer_indices = [idx for idx, (entity, _) in enumerate(entity_scores) if entity in easy_ans]
+        hard_answer_indices = [idx for idx, (entity, _) in enumerate(entity_scores) if entity in hard_ans]
+
+        answer_indices = easy_answer_indices + hard_answer_indices
+
+        cur_ranking = np.array(answer_indices)
+
+        # Sort by position in the ranking; indices for (easy + hard) answers
+        cur_ranking, indices = np.sort(cur_ranking), np.argsort(cur_ranking)
+        num_easy = len(easy_ans)
+        num_hard = len(hard_ans)
+
+        # Indices with hard answers only
+        masks = indices >= num_easy
+
+        # Reduce ranking for each answer entity by the amount of (easy+hard) answers appearing before it
+        answer_list = np.arange(num_hard + num_easy, dtype=float)
+        cur_ranking = cur_ranking - answer_list + 1
+
+        # Only take indices that belong to the hard answers
+        cur_ranking = cur_ranking[masks]
+        # print(cur_ranking)
+        mrr = np.mean(1.0 / cur_ranking)
+        h1 = np.mean((cur_ranking <= 1).astype(float))
+        h3 = np.mean((cur_ranking <= 3).astype(float))
+        h10 = np.mean((cur_ranking <= 10).astype(float))
+        total_mrr += mrr
+        total_h1 += h1
+        total_h3 += h3
+        total_h10 += h10
+    # average for all queries of a type
+    avg_mrr = total_mrr / num_queries
+    avg_h1 = total_h1 / num_queries
+    avg_h3 = total_h3 / num_queries
+    avg_h10 = total_h10 / num_queries
+
+    return avg_mrr, avg_h1, avg_h3, avg_h10

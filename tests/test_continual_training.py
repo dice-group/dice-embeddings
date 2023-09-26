@@ -13,7 +13,7 @@ class TestRegressionCL:
         args.model = 'QMult'
         args.scoring_technique = 'KvsAll'
         args.optim = 'Adam'
-        args.path_dataset_folder = 'KGs/Family'
+        args.path_dataset_folder = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.1
@@ -36,7 +36,7 @@ class TestRegressionCL:
     def test_negative_sampling_Family(self):
         args = Namespace()
         args.model = 'QMult'
-        args.path_dataset_folder = 'KGs/Family'
+        args.path_dataset_folder = 'KGs/UMLS'
         args.scoring_technique = 'KvsAll'
         args.optim = 'Adam'
         args.num_epochs = 1
@@ -50,7 +50,6 @@ class TestRegressionCL:
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
         args.trainer = 'torchCPUTrainer'
-        args.backend = 'pandas'  # Error with polars because sep="\s" should be a single byte character, but is 2 bytes long.
         result = Execute(args).start()
         assert os.path.isdir(result['path_experiment_folder'])
         pre_trained_kge = KGE(path=result['path_experiment_folder'])
