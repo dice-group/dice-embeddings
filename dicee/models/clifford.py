@@ -732,3 +732,70 @@ class KeciBase(Keci):
         if self.q > 0:
             self.q_coefficients = torch.nn.Embedding(num_embeddings=1, embedding_dim=self.q)
             torch.nn.init.ones_(self.q_coefficients.weight)
+
+
+class Keci_r(BaseKGE): # embedding with polynomials 
+    def __init__(self,args):
+        super().__init__(args)
+        self.name = 'Keci_r'
+        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
+        self.p = self.args.get("p", 0)
+        self.q = self.args.get("q", 0)
+        self.r = self.args.get("r",0)
+
+    def forward_triples(self, idx_triple): 
+
+        head_ent_emb, rel_emb, tail_ent_emb = self.get_triple_representation(idx_triple)
+
+        
+        score = self.sums(head_ent_emb,rel_emb,tail_ent_emb)
+        
+        return score
+
+
+    def cl_pqr(self, a,p,q,r):
+
+        #num1 = 2**(p+q+r) #'''total number of vector in cl_pqr then after choose the first p+q+r+1 vectors'''
+        num1 = 1 + p + q + r
+        a1 = torch.hsplit(a,num1)
+        # b1 = torch.hsplit(a,num2)
+
+        return a1
+    
+    def sums(self,h,r,t):
+
+        list_h_emb = self.cl_pqr(h,self.p,self.q,self.r)
+        list_r_emb = self.cl_pqr(r,self.p,self.q,self.r)
+        list_t_emb = self.cl_pqr(t,self.p,self.q,self.r)
+
+        h_0 = list_h_emb[0] #h_i = list_h_emb[i] similarly for r and t 
+        r_0 = list_r_emb[0]
+        t_0 = list_t_emb[0]
+
+        h_0r_0t_0=list_h_emb[0]*list_r_emb[0]*list_t_emb[0]
+
+        s0 = h_0r_0t_0.sum(dim= 1)
+        s1 = 0
+        s2 = 0
+        s3 = 0
+        s4 = 0
+        s5 = 0 
+        for i in range(1,self.p+1): #\sum_{1}^{p}t_0r_ih_i
+
+            s1 += (t_0*(list_h_emb[i]*list_r_emb[i])).sum(dim=1)
+            s3 += (h_0*(list_r_emb[i]*list_t_emb[i]) + r_0*(list_h_emb[i]*list_t_emb[i])).sum(dim=1)
+
+        for i in range(self.p+1,self.p+self.q+1): #\sum_{p+1}^{p+q}t_0r_ih_i
+
+            s2 += (t_0*(list_h_emb[i]*list_r_emb[i])).sum(dim=1) 
+            s4 += (h_0*(list_r_emb[i]*list_t_emb[i]) + r_0*(list_h_emb[i]*list_t_emb[i])).sum(dim=1) 
+
+        for i in range(self.p+self.q+1,self.p+self.q+self.r+1):
+            s5 += (h_0*(list_r_emb[i]*list_t_emb[i]) + r_0*(list_h_emb[i]*list_t_emb[i])).sum(dim=1)
+
+
+        score = s0+s1-s2+s3+s4+s5
+
+        return score
+
