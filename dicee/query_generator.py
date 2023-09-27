@@ -46,8 +46,9 @@ class QueryGenerator:
                                      "up": [[['e', ['r']], ['e', ['r']], ['u']], ['r']]}
         self.set_global_seed(seed)
 
-    def list2tuple(self, l):
-        return tuple(self.list2tuple(x) if type(x) == list else x for x in l)
+    def list2tuple(self, list_data):
+        # @TODO: add description
+        return tuple(self.list2tuple(x) if isinstance(x, list) else x for x in list_data)
 
     def tuple2list(self, x: Union[List, Tuple]) -> Union[List, Tuple]:
         """
@@ -91,7 +92,7 @@ class QueryGenerator:
         """
         Private method for fill_query logic.
         """
-        assert type(query_structure[-1]) == list
+        assert isinstance(query_structure[-1], list)
         all_relation_flag = True
         for ele in query_structure[-1]:
             if ele not in ['r', 'n']:
@@ -144,16 +145,18 @@ class QueryGenerator:
                        ent_in: Dict, ent_out: Dict) -> set:
         """
         Private method for achieve_answer logic.
+        @TODO: Document the code
         """
-        assert type(query[-1]) == list
+        assert isinstance(query[-1], list)
         all_relation_flag = True
         for ele in query[-1]:
-            # @TODO: Use isinstance() instead of type(.)
-            if (type(ele) != int) or (ele == -1):
+            # @TODO: unclear
+            if isinstance(ele,int) or (ele == -1):
                 all_relation_flag = False
                 break
         if all_relation_flag:
-            if isinstance(query[0],int) == int:
+            if isinstance(query[0], int):
+                # @TODO: unclear
                 ent_set = set([query[0]])
             else:
                 ent_set = self.achieve_answer(query[0], ent_in, ent_out)
