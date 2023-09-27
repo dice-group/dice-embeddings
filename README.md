@@ -99,7 +99,6 @@ Models can be easily trained in a single node multi-gpu setting
 ```bash
 python -m dicee.run --accelerator "gpu" --strategy "ddp" --path_dataset_folder "KGs/UMLS" --model Keci --eval_model "train_val_test" 
 ```
-
 Train a KGE model by providing the path of a single file and store all parameters under newly created directory
 called `KeciFamilyRun`.
 ```bash
@@ -120,13 +119,12 @@ python -m dicee.run --sparql_endpoint "http://localhost:3030/mutagenesis/" --mod
 For more, please refer to `examples`.
 </details>
 
-
 ## Answering Complex Queries 
 <details> <summary> To see a code snippet </summary>
 
 ```python
 # pip install dicee
-# wget https://hobbitdata.informatik.uni-leipzig.de/KG/KGs.zip --no-check-certificate & unzip KGs.zip
+# wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate & unzip KGs.zip
 from dicee.executer import Execute
 from dicee.config import Namespace
 from dicee.knowledge_graph_embeddings import KGE
@@ -137,6 +135,8 @@ from dicee.static_funcs import load_json
 # (1) Train a KGE model
 args = Namespace()
 args.model = 'Keci'
+args.p=0
+args.q=1
 args.optim = 'Adam'
 args.scoring_technique = "AllvsAll"
 args.path_single_kg = "KGs/Family/family-benchmark_rich_background.owl"
@@ -200,11 +200,11 @@ from dicee import KGE
 # (2) Load a pretrained model
 pre_trained_kge = KGE(path='..')
 # (3) Predict missing links through head entity rankings
-pre_trained_kge.predict_topk(h=[".."],r=[".."])
+pre_trained_kge.predict_topk(h=[".."],r=[".."],topk=10)
 # (4) Predict missing links through relation rankings
-pre_trained_kge.predict_topk(h=[".."],t=[".."])
+pre_trained_kge.predict_topk(h=[".."],t=[".."],topk=10)
 # (5) Predict missing links through tail entity rankings
-pre_trained_kge.predict_topk(r=[".."],t=[".."])
+pre_trained_kge.predict_topk(r=[".."],t=[".."],topk=10)
 ```
 
 </details>
@@ -271,11 +271,23 @@ Currently, we are working on our manuscript describing our framework.
 If you really like our work and want to cite it now, feel free to chose one :) 
 ```
 # Keci
-Accepted at ECML. Stay tuned for the manuscript!
-
-# LitCQD (will be included soon)
-Accepted at ECML. Stay tuned for the manuscript!
-
+@inproceedings{demir2023clifford,
+  title={Clifford Embeddings--A Generalized Approach for Embedding in Normed Algebras},
+  author={Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
+  booktitle={Joint European Conference on Machine Learning and Knowledge Discovery in Databases},
+  pages={567--582},
+  year={2023},
+  organization={Springer}
+}
+# LitCQD
+@inproceedings{demir2023litcqd,
+  title={LitCQD: Multi-Hop Reasoning in Incomplete Knowledge Graphs with Numeric Literals},
+  author={Demir, Caglar and Wiebesiek, Michel and Lu, Renzhong and Ngonga Ngomo, Axel-Cyrille and Heindorf, Stefan},
+  booktitle={Joint European Conference on Machine Learning and Knowledge Discovery in Databases},
+  pages={617--633},
+  year={2023},
+  organization={Springer}
+}
 # DICE Embedding Framework
 @article{demir2022hardware,
   title={Hardware-agnostic computation for large-scale knowledge graph embeddings},
@@ -284,7 +296,6 @@ Accepted at ECML. Stay tuned for the manuscript!
   year={2022},
   publisher={Elsevier}
 }
-
 # KronE
 @inproceedings{demir2022kronecker,
   title={Kronecker decomposition for knowledge graph embeddings},
@@ -309,7 +320,6 @@ Accepted at ECML. Stay tuned for the manuscript!
   pdf = 	 {https://proceedings.mlr.press/v157/demir21a/demir21a.pdf},
   url = 	 {https://proceedings.mlr.press/v157/demir21a.html},
 }
-
 # ConEx
 @inproceedings{demir2021convolutional,
 title={Convolutional Complex Knowledge Graph Embeddings},
@@ -317,7 +327,6 @@ author={Caglar Demir and Axel-Cyrille Ngonga Ngomo},
 booktitle={Eighteenth Extended Semantic Web Conference - Research Track},
 year={2021},
 url={https://openreview.net/forum?id=6T45-4TFqaX}}
-
 # Shallom
 @inproceedings{demir2021shallow,
   title={A shallow neural model for relation prediction},
