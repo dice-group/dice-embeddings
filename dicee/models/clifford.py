@@ -746,28 +746,31 @@ class Keci_r(BaseKGE): # embedding with polynomials
 
     def forward_triples(self, idx_triple): 
 
+
         head_ent_emb, rel_emb, tail_ent_emb = self.get_triple_representation(idx_triple)
 
+        list_h_emb = torch.stack(self.cl_pqr(head_ent_emb))
+        list_r_emb = torch.stack(self.cl_pqr(rel_emb))
+        list_t_emb = torch.stack(self.cl_pqr(tail_ent_emb))
         
-        score = self.sums(head_ent_emb,rel_emb,tail_ent_emb)
-        
+        sigma_0t, sigma_pt, sigma_qt, sigma_rt = self.compute_sigmas_single(list_h_emb,list_r_emb,list_t_emb)
+        sigma_pp, sigma_qq, sigma_rr, sigma_pq, sigma_pr, sigma_qr = self.compute_sigmas_multivect(list_h_emb,list_r_emb)
+
+        score = sigma_0t + sigma_pt + sigma_qt + sigma_rt + (sigma_pp + sigma_qq + sigma_rr + sigma_pq + sigma_pr + sigma_qr)
+
         return score
 
 
-    def cl_pqr(self, a,p,q,r):
+    def cl_pqr(self, a):
 
         #num1 = 2**(p+q+r) #'''total number of vector in cl_pqr then after choose the first p+q+r+1 vectors'''
-        num1 = 1 + p + q + r
+        num1 = 1 + self.p + self.q + self.r
         a1 = torch.hsplit(a,num1)
         # b1 = torch.hsplit(a,num2)
 
         return a1
     
-    def sums(self,h,r,t):
-
-        list_h_emb = self.cl_pqr(h,self.p,self.q,self.r)
-        list_r_emb = self.cl_pqr(r,self.p,self.q,self.r)
-        list_t_emb = self.cl_pqr(t,self.p,self.q,self.r)
+    def compute_sigmas_single(self,list_h_emb,list_r_emb,list_t_emb):
 
         h_0 = list_h_emb[0] #h_i = list_h_emb[i] similarly for r and t 
         r_0 = list_r_emb[0]
@@ -794,8 +797,51 @@ class Keci_r(BaseKGE): # embedding with polynomials
         for i in range(self.p+self.q+1,self.p+self.q+self.r+1):
             s5 += (h_0*(list_r_emb[i]*list_t_emb[i]) + r_0*(list_h_emb[i]*list_t_emb[i])).sum(dim=1)
 
+          
+        sigma_0t = s0 + s1 - s2
+        sigma_pt = s3
+        sigma_qt = s4
+        sigma_rt = s5
 
-        score = s0+s1-s2+s3+s4+s5
+        return sigma_0t,sigma_pt,sigma_qt,sigma_rt
+    
+    def compute_sigmas_multivect(self,list_h_emb,list_r_emb):
 
-        return score
+        p = self.p
+        q = self.q
+        r = self.r
+
+        Spp = 0
+        for i in range(1,p):
+            for j in range(i+1,p+1):
+                Spp +=  (list_h_emb[i]*list_r_emb[j] -list_h_emb[j]*list_r_emb[i]).sum(dim=-1)
+
+        Sqq = 0
+        for i in range(p+1,p+q):
+            for j in range(i+1,p+q+1):
+                Sqq +=  (list_h_emb[i]*list_r_emb[j] -list_h_emb[j]*list_r_emb[i]).sum(dim=-1)
+
+        Srr = 0
+        for i in range(p+q+1,p+q+r):
+            for j in range(i+1,p+q+r+1):
+                Srr +=  (list_h_emb[i]*list_r_emb[j] -list_h_emb[j]*list_r_emb[i]).sum(dim=-1)
+
+        Spq = 0
+        for i in range(1,p+1):
+            for j in range(p+1,p+q+1):
+                Spq +=  (list_h_emb[i]*list_r_emb[j] -list_h_emb[j]*list_r_emb[i]).sum(dim=-1)
+
+        Spr = 0
+        for i in range(1,p+1):
+            for j in range(p+q+1,p+q+r+1):
+                Spr +=  (list_h_emb[i]*list_r_emb[j] -list_h_emb[j]*list_r_emb[i]).sum(dim=-1)
+
+        Sqr = 0
+        for i in range(p+1,p+q+1):
+            for j in range(p+q+1,p+q+r+1):
+                Sqr +=  (list_h_emb[i]*list_r_emb[j] -list_h_emb[j]*list_r_emb[i]).sum(dim=-1)
+
+        return Spp, Sqq, Srr, Spr, Spq, Sqr
+
+        
 
