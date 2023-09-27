@@ -232,7 +232,8 @@ class KGE(BaseInteractiveKGE):
                     scores[self.domain_constraints_per_rel[self.relation_to_idx[i]]] = -torch.inf
 
             sort_scores, sort_idxs = torch.topk(scores, topk)
-            return torch.sigmoid(sort_scores), [self.idx_to_entity[i] for i in sort_idxs.tolist()]
+            return [(self.idx_to_entity[idx_top_entity], scores.item()) for idx_top_entity, scores in zip(sort_idxs.tolist(),torch.sigmoid(sort_scores))]
+
         # (3) Predict missing relation given a head entity and a tail entity.
         elif r is None:
             assert h is not None
@@ -240,7 +241,9 @@ class KGE(BaseInteractiveKGE):
             # h ? t
             scores = self.predict_missing_relations(h, t).flatten()
             sort_scores, sort_idxs = torch.topk(scores, topk)
-            return torch.sigmoid(sort_scores), [self.idx_to_relations[i] for i in sort_idxs.tolist()]
+            return [(self.idx_to_relations[idx_top_entity], scores.item()) for idx_top_entity, scores in
+                zip(sort_idxs.tolist(), torch.sigmoid(sort_scores))]
+
         # (4) Predict missing tail entity given a head entity and a relation
         elif t is None:
             assert h is not None
@@ -252,7 +255,8 @@ class KGE(BaseInteractiveKGE):
                 for th, i in enumerate(r):
                     scores[self.range_constraints_per_rel[self.relation_to_idx[i]]] = -torch.inf
             sort_scores, sort_idxs = torch.topk(scores, topk)
-            return torch.sigmoid(sort_scores), [self.idx_to_entity[i] for i in sort_idxs.tolist()]
+            return [(self.idx_to_entity[idx_top_entity],scores.item()) for idx_top_entity, scores in
+                    zip(sort_idxs.tolist(),torch.sigmoid(sort_scores))]
         else:
             raise AttributeError('Use triple_score method')
 

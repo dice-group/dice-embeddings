@@ -1,3 +1,4 @@
+# Deprecated
 from dicee import KGE
 import numpy as np
 import pickle

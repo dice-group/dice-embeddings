@@ -1,3 +1,4 @@
+# Deprecated
 import pickle
 import os.path as osp
 import numpy as np
@@ -6,7 +7,6 @@ from collections import defaultdict
 import random
 from copy import deepcopy
 import time
-import pdb
 import logging
 import os
 
@@ -92,13 +92,13 @@ def index_dataset(dataset_name, force=False):
                         id2ent[entid] = e2
                         entid += 1
 
-                    if not rel in rel2id.keys():
+                    if rel not in rel2id.keys():
                         rel2id[rel] = relid
                         id2rel[relid] = rel
                         assert relid % 2 == 0
                         relid += 1
 
-                    if not rel_reverse in rel2id.keys():
+                    if rel_reverse not in rel2id.keys():
                         rel2id[rel_reverse] = relid
                         id2rel[relid] = rel_reverse
                         assert relid % 2 == 1
@@ -292,7 +292,7 @@ def generate_queries(dataset, query_structures, gen_num, max_ans_num, gen_train,
     valid_fp_answers = defaultdict(set)
     valid_fn_answers = defaultdict(set)
     test_queries = defaultdict(set)
-    test_answers = defaultdict(set)
+    defaultdict(set)
     test_tp_answers = defaultdict(set)
     test_fp_answers = defaultdict(set)
     test_fn_answers = defaultdict(set)
@@ -314,13 +314,11 @@ def generate_queries(dataset, query_structures, gen_num, max_ans_num, gen_train,
         print("link prediction created!")
         exit(-1)
 
-    name_to_save = query_name
     #set_logger("./KGs/{}/".format(dataset), name_to_save)
     #set_logger(save_path=name_to_save,query_name="Gen")
 
     num_sampled, num_try, num_repeat, num_more_answer, num_broken, num_empty = 0, 0, 0, 0, 0, 0
-    train_ans_num = []
-    s0 = time.time()
+    time.time()
     if gen_train:
         train_queries, train_tp_answers, train_fp_answers, train_fn_answers = ground_queries(dataset, query_structure,
                                                                                              train_ent_in,

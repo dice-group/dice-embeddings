@@ -1,3 +1,4 @@
+# # Deprecated
 import pickle
 import click
 from collections import defaultdict
@@ -46,7 +47,7 @@ def joinqueries(datapath,file_type):
             file_data = pickle.load(f)
         combined_queries.update(file_data)
         #os.remove(file_path)  # Remove the intermediate file
-    with open(os.path.join(datapath, f'test-queries.pkl'), 'wb') as f:
+    with open(os.path.join(datapath, 'test-queries.pkl'), 'wb') as f:
         pickle.dump(combined_queries, f)
 
     # Combine easy and hard answers
@@ -116,7 +117,7 @@ def unmap(datapath,query_type,query_structures):
         ((("e", ("r",)), ("e", ("r",)), ("u",)), ("r",)): "up",
 
     }
-    name_query_dict = {value: key for key, value in query_name_dict.items()}
+    {value: key for key, value in query_name_dict.items()}
     # query_names = ['1p', '2p', '3p', '2i', '3i', 'pi', 'ip', '2in', '3in', 'pin', 'pni', 'inp', '2u', 'up']
     # query_structure_tuple=name_query_dict[query_structure]
     for query_structure in query_structures:

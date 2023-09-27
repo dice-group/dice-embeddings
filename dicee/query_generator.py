@@ -5,9 +5,7 @@ import numpy as np
 import random
 import os
 import pickle
-import time
 from copy import deepcopy
-import json
 from .static_funcs import save_pickle, load_pickle
 
 
@@ -150,11 +148,12 @@ class QueryGenerator:
         assert type(query[-1]) == list
         all_relation_flag = True
         for ele in query[-1]:
+            # @TODO: Use isinstance() instead of type(.)
             if (type(ele) != int) or (ele == -1):
                 all_relation_flag = False
                 break
         if all_relation_flag:
-            if type(query[0]) == int:
+            if isinstance(query[0],int) == int:
                 ent_set = set([query[0]])
             else:
                 ent_set = self.achieve_answer(query[0], ent_in, ent_out)
@@ -202,7 +201,8 @@ class QueryGenerator:
                        ent_in: Dict, ent_out: Dict, small_ent_in: Dict, small_ent_out: Dict,
                        gen_num: int, query_name: str):
         """Generating queries and achieving answers"""
-        num_sampled, num_try, num_repeat, num_more_answer, num_broken, num_no_extra_answer, num_no_extra_negative, num_empty = 0, 0, 0, 0, 0, 0, 0, 0
+        (num_sampled, num_try, num_repeat, num_more_answer, num_broken, num_no_extra_answer,
+         num_no_extra_negative, num_empty) = 0, 0, 0, 0, 0, 0, 0, 0
         tp_ans_num, fp_ans_num, fn_ans_num = [], [], []
         queries = defaultdict(set)
         tp_answers = defaultdict(set)
