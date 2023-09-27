@@ -3,20 +3,6 @@ import torch.utils.data
 from pykeen.models import model_resolver
 from .base_model import BaseKGE
 from collections import namedtuple
-"""
-def load_numpy(path) -> np.ndarray:
-    print('Loading indexed training data...', end='')
-    with open(path, 'rb') as f:
-        data = np.load(f)
-    return data
-
-"""
-
-"""
-def load_pickle(*, file_path=str):
-    with open(file_path, 'rb') as f:
-        return pickle.load(f)
-"""
 
 class PykeenKGE(BaseKGE):
     """ A class for using knowledge graph embedding models implemented in Pykeen
@@ -39,11 +25,12 @@ class PykeenKGE(BaseKGE):
                              }
         self.model_kwargs.update(args['pykeen_model_kwargs'])
         self.name = args['model'].split("_")[1]
-
         # Solving memory issue of Pykeen models caused by the regularizers
         # See https://github.com/pykeen/pykeen/issues/1297
-
-        if self.name == "QuatE":
+        if self.name=="MuRE":
+            "No Regularizer =>  no Memory Leakage"
+            # https://pykeen.readthedocs.io/en/stable/api/pykeen.models.MuRE.html
+        elif self.name == "QuatE":
             self.model_kwargs["entity_regularizer"] = None
             self.model_kwargs["relation_regularizer"] = None
         elif self.name == "DistMult":
@@ -124,4 +111,4 @@ class PykeenKGE(BaseKGE):
         return self.model.score_hrt(hrt_batch=x, mode=None).flatten()
 
     def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx):
-        raise NotImplementedError()
+        raise NotImplementedError(f"KvsSample has not yet implemented for {self.name}")
