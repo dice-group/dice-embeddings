@@ -303,76 +303,6 @@ class KGE(BaseInteractiveKGE):
                 else:
                     return torch.sigmoid(out)
 
-    def predict_conjunctive_query(self, entity: str, relations: List[str], topk: int = 3,
-                                  show_intermediate_results=False) -> Set[str]:
-        """
-         Find an answer set for a conjunctive query.
-
-         A graphical explanation is shown below
-                                                    -> result_1
-                                -> e_i,relations[1] -> result_2
-                                                    -> result_3
-
-                                                    -> result_4
-         entity, relations[0]   -> e_j,relations[1] -> result_5
-                                                    -> result_7
-
-                                                    -> result_8
-                                -> e_k,relations[1] -> result_9
-                                                    -> result_10
-
-        Parameter
-        ---------
-        entity: str
-
-        String representation of a selected/anchor entity.
-
-        relations: List[str]
-
-        String representations of selected relations.
-
-        topk: int
-
-        Highest ranked k item.
-
-        Returns: Tuple
-        ---------
-
-        Highest K scores and entities
-        """
-
-        assert isinstance(entity, str)
-        assert isinstance(relations, list)
-        assert len(entity) >= 1
-        assert len(relations) >= 1
-        # (1) An entity set.
-        results = set()
-        # (2) Bookkeeping.
-        each_intermediate_result = dict()
-        hop_counter = 0
-        # (3) Iterate over each relation.
-        for r in relations:
-            # (3.1) if entity is an anchor entity:
-            if len(results) == 0:
-                top_ranked_entities = self.predict_topk(h=[entity], r=[r], topk=topk)[1]
-                results = set(top_ranked_entities)
-                each_intermediate_result[(hop_counter, entity, r)] = top_ranked_entities
-            else:
-                # (3.2) Iterative over intermediate results
-                temp_intermediate_results = set()
-                while results:
-                    entity = results.pop()
-                    top_ranked_entities = self.predict_topk(h=[entity], r=[r], topk=topk)[1]
-                    temp_intermediate_results |= set(top_ranked_entities)
-                    each_intermediate_result[(hop_counter, entity, r)] = top_ranked_entities
-                # (3.3)
-                results = temp_intermediate_results
-            hop_counter += 1
-        if show_intermediate_results is True:
-            return results, each_intermediate_result
-        else:
-            return results
-
     def t_norm(self, tens_1: torch.Tensor, tens_2: torch.Tensor, tnorm: str = 'min') -> torch.Tensor:
         if 'min' in tnorm:
             return torch.min(tens_1, tens_2)
@@ -975,10 +905,9 @@ class KGE(BaseInteractiveKGE):
             for str_relation, idx_relation in select(relations, self.relation_to_idx):
                 # (5.2) \forall e \in Entities store a tuple of scoring_func(head,relation,e) and e
                 # (5.3.) Sort (5.2) and return top  tuples
-                predicted_scores, str_tail_entities = self.predict_topk(h=[str_head_entity],
-                                                                        r=[str_relation], topk=topk)
+                predictions = self.predict_topk(h=[str_head_entity], r=[str_relation], topk=topk)
                 # (5.4) Iterate over 5.3
-                for predicted_score, str_entity in zip(predicted_scores, str_tail_entities):
+                for str_entity, predicted_score in predictions:
                     # (5.5) If score is less than 99% ignore it
                     if predicted_score < confidence:
                         break
