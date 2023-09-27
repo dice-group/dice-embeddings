@@ -734,7 +734,7 @@ class KeciBase(Keci):
             torch.nn.init.ones_(self.q_coefficients.weight)
 
 
-class Keci_r(BaseKGE): # embedding with polynomials 
+class Keci_r(BaseKGE): # Extending cl_pq to cl_pqr
     def __init__(self,args):
         super().__init__(args)
         self.name = 'Keci_r'
@@ -749,9 +749,9 @@ class Keci_r(BaseKGE): # embedding with polynomials
 
         head_ent_emb, rel_emb, tail_ent_emb = self.get_triple_representation(idx_triple)
 
-        list_h_emb = torch.stack(self.cl_pqr(head_ent_emb))
-        list_r_emb = torch.stack(self.cl_pqr(rel_emb))
-        list_t_emb = torch.stack(self.cl_pqr(tail_ent_emb))
+        list_h_emb = self.cl_pqr(head_ent_emb)
+        list_r_emb = self.cl_pqr(rel_emb)
+        list_t_emb = self.cl_pqr(tail_ent_emb)
         
         sigma_0t, sigma_pt, sigma_qt, sigma_rt = self.compute_sigmas_single(list_h_emb,list_r_emb,list_t_emb)
         sigma_pp, sigma_qq, sigma_rr, sigma_pq, sigma_pr, sigma_qr = self.compute_sigmas_multivect(list_h_emb,list_r_emb)
@@ -763,85 +763,104 @@ class Keci_r(BaseKGE): # embedding with polynomials
 
     def cl_pqr(self, a):
 
-        #num1 = 2**(p+q+r) #'''total number of vector in cl_pqr then after choose the first p+q+r+1 vectors'''
+        ''' Input: tensor(batch_size, emb_dim) ----> output: tensor(batch_size, emb_dim/(1+p+q+r)).
+
+        1) takes a tensor of size (batch_size, emb_dim), split it into 1 + p + q +r components, hence 1+p+q+r must be a divisor 
+        of the emb_dim. 
+        2) Return a list of the 1+p+q+r components vectors, each are tensors of size (batch_size, emb_dim/(1+p+q+r)) '''
+
+        #num1 = 2**(p+q+r) #total number of vector in cl_pqr then after choose the first p+q+r+1 vectors
         num1 = 1 + self.p + self.q + self.r
         a1 = torch.hsplit(a,num1)
-        # b1 = torch.hsplit(a,num2)
-
-        return a1
+       
+        return torch.stack(a1)
     
     def compute_sigmas_single(self,list_h_emb,list_r_emb,list_t_emb):
+
+        '''here we compute all the sums with no others vectors interaction taken with the scalar product with t, that is,
+        1) s0 = h_0r_0t_0
+        2) s1 = \sum_{i=1}^{p}h_ir_it_0
+        3) s2 = \sum_{j=p+1}^{p+q}h_jr_jt_0
+        4) s3 = \sum_{i=1}^{q}(h_0r_it_i + h_ir_0t_i)
+        5) s4 = \sum_{i=p+1}^{p+q}(h_0r_it_i + h_ir_0t_i)
+        5) s5 = \sum_{i=p+q+1}^{p+q+r}(h_0r_it_i + h_ir_0t_i)
+        
+        and return:
+        
+        *) sigma_0t = \sigma_0 \cdot t_0 = s0 + s1 -s2
+        *) s3, s4 and s5'''
+
+        p = self.p
+        q = self.q
+        r = self.r 
 
         h_0 = list_h_emb[0] #h_i = list_h_emb[i] similarly for r and t 
         r_0 = list_r_emb[0]
         t_0 = list_t_emb[0]
 
-        h_0r_0t_0=list_h_emb[0]*list_r_emb[0]*list_t_emb[0]
+        s0 = (h_0 * r_0 * t_0).sum(dim = 1)
 
-        s0 = h_0r_0t_0.sum(dim= 1)
-        s1 = 0
-        s2 = 0
-        s3 = 0
-        s4 = 0
-        s5 = 0 
-        for i in range(1,self.p+1): #\sum_{1}^{p}t_0r_ih_i
+        s1 = (t_0 * (list_h_emb[1:p+1] * list_r_emb[1:p+1])).sum(dim=[-1,0])
 
-            s1 += (t_0*(list_h_emb[i]*list_r_emb[i])).sum(dim=1)
-            s3 += (h_0*(list_r_emb[i]*list_t_emb[i]) + r_0*(list_h_emb[i]*list_t_emb[i])).sum(dim=1)
+        s2 = (t_0 * (list_h_emb[p+1:p+q+1] * list_r_emb[p+1:p+q+1])).sum(dim=[-1,0])
 
-        for i in range(self.p+1,self.p+self.q+1): #\sum_{p+1}^{p+q}t_0r_ih_i
+        s3 = (h_0*(list_r_emb[1:p+1]*list_t_emb[1:p+1]) + r_0*(list_h_emb[1:p+1]*list_t_emb[1:p+1])).sum(dim=[-1,0])
 
-            s2 += (t_0*(list_h_emb[i]*list_r_emb[i])).sum(dim=1) 
-            s4 += (h_0*(list_r_emb[i]*list_t_emb[i]) + r_0*(list_h_emb[i]*list_t_emb[i])).sum(dim=1) 
-
-        for i in range(self.p+self.q+1,self.p+self.q+self.r+1):
-            s5 += (h_0*(list_r_emb[i]*list_t_emb[i]) + r_0*(list_h_emb[i]*list_t_emb[i])).sum(dim=1)
-
-          
+        s4 = (h_0*(list_r_emb[p+1:p+q+1]*list_t_emb[p+1:p+q+1]) + r_0*(list_h_emb[p+1:p+q+1]*list_t_emb[p+1:p+q+1])).sum(dim=[-1,0])
+        
+        s5 =  (h_0*(list_r_emb[p+q+1:p+q+r+1]*list_t_emb[p+q+1:p+q+r+1]) + r_0*(list_h_emb[p+q+1:p+q+r+1]*list_t_emb[p+q+1:p+q+r+1])).sum(dim=[-1,0])
+    
         sigma_0t = s0 + s1 - s2
-        sigma_pt = s3
-        sigma_qt = s4
-        sigma_rt = s5
 
-        return sigma_0t,sigma_pt,sigma_qt,sigma_rt
+        return sigma_0t,s3,s4,s5
     
     def compute_sigmas_multivect(self,list_h_emb,list_r_emb):
+
+        '''Here we compute and return all the sums with vectors interaction for the same and different bases.
+
+           For same bases vectors interaction we have
+
+           1) \sigma_pp = \sum_{i=1}^{p-1}\sum_{i'=i+1}^{p}(h_ir_{i'}-h_{i'}r_i) (models the interactions between e_i and e_i' for 1 <= i, i' <= p)
+           2) \sigma_qq = \sum_{j=p+1}^{p+q-1}\sum_{j'=j+1}^{p+q}(h_jr_{j'}-h_{j'} (models the interactions between e_j and e_j' for p+1 <= j, j' <= p+q)
+           3) \sigma_rr = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(h_kr_{k'}-h_{k'}r_k) (models the interactions between e_k and e_k' for p+q+1 <= k, k' <= p+q+r) 
+           
+           For different base vector interactions, we have
+           
+           4) \sigma_pq = \sum_{i=1}^{p}\sum_{j=p+1}^{p+q}(h_ir_j - h_jr_i) (interactionsn between e_i and e_j for 1<=i <=p and p+1<= j <= p+q)
+           5) \sigma_pr = \sum_{i=1}^{p}\sum_{k=p+q+1}^{p+q+r}(h_ir_k - h_kr_i) (interactionsn between e_i and e_k for 1<=i <=p and p+q+1<= k <= p+q+r)
+           6) \sigma_qr = \sum_{j=p+1}^{p+q}\sum_{j=p+q+1}^{p+q+r}(h_jr_k - h_kr_j) (interactionsn between e_j and e_k for p+1 <= j <=p+q and p+q+1<= j <= p+q+r)
+           
+           '''
 
         p = self.p
         q = self.q
         r = self.r
 
-        Spp = 0
-        for i in range(1,p):
-            for j in range(i+1,p+1):
-                Spp +=  (list_h_emb[i]*list_r_emb[j] -list_h_emb[j]*list_r_emb[i]).sum(dim=-1)
+        if p>0:
+            indices_i = torch.arange(1,p)
+            sigma_pp = ((list_h_emb[indices_i] * list_r_emb[indices_i+1].sum(dim=0))- (list_h_emb[indices_i+1].sum(dim=0) * list_r_emb[indices_i])).sum(dim=[-1,0])
+        else:
+            indices_i = []
+            sigma_pp = 0
+        if q>0:
+            indices_j = torch.arange(p+1,p+q)
+            sigma_qq = ((list_h_emb[indices_j] * list_r_emb[indices_j+1].sum(dim=0))- (list_h_emb[indices_j+1].sum(dim=0) * list_r_emb[indices_j])).sum(dim=[-1,0])
+        else:
+            indices_j=[]
+            sigma_qq = 0
+        if r>0:
+            indices_k = torch.arange(p+q+1,p+q+r)
+            sigma_rr = ((list_h_emb[indices_k] * list_r_emb[indices_k+1].sum(dim=0))- (list_h_emb[indices_k+1].sum(dim=0) * list_r_emb[indices_k])).sum(dim=[-1,0])
+        else:
+            indices_k = []
+            sigma_rr = 0
 
-        Sqq = 0
-        for i in range(p+1,p+q):
-            for j in range(i+1,p+q+1):
-                Sqq +=  (list_h_emb[i]*list_r_emb[j] -list_h_emb[j]*list_r_emb[i]).sum(dim=-1)
+        
+        sigma_pq = ((list_h_emb[indices_i] * list_r_emb[indices_j].sum(dim=0)) - (list_h_emb[indices_j].sum(dim=0) * list_r_emb[indices_i])).sum(dim=[-1,0])
+        sigma_pr = ((list_h_emb[indices_i] * list_r_emb[indices_k].sum(dim=0)) - (list_h_emb[indices_k].sum(dim=0) * list_r_emb[indices_i])).sum(dim=[-1,0])
+        sigma_qr = ((list_h_emb[indices_j] * list_r_emb[indices_k].sum(dim=0)) - (list_h_emb[indices_k].sum(dim=0) * list_r_emb[indices_j])).sum(dim=[-1,0])
 
-        Srr = 0
-        for i in range(p+q+1,p+q+r):
-            for j in range(i+1,p+q+r+1):
-                Srr +=  (list_h_emb[i]*list_r_emb[j] -list_h_emb[j]*list_r_emb[i]).sum(dim=-1)
 
-        Spq = 0
-        for i in range(1,p+1):
-            for j in range(p+1,p+q+1):
-                Spq +=  (list_h_emb[i]*list_r_emb[j] -list_h_emb[j]*list_r_emb[i]).sum(dim=-1)
-
-        Spr = 0
-        for i in range(1,p+1):
-            for j in range(p+q+1,p+q+r+1):
-                Spr +=  (list_h_emb[i]*list_r_emb[j] -list_h_emb[j]*list_r_emb[i]).sum(dim=-1)
-
-        Sqr = 0
-        for i in range(p+1,p+q+1):
-            for j in range(p+q+1,p+q+r+1):
-                Sqr +=  (list_h_emb[i]*list_r_emb[j] -list_h_emb[j]*list_r_emb[i]).sum(dim=-1)
-
-        return Spp, Sqq, Srr, Spr, Spq, Sqr
-
+        return sigma_pp,sigma_qq,sigma_rr,sigma_pq,sigma_pr,sigma_qr
         
 
