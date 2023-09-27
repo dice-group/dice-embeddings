@@ -1,6 +1,7 @@
 import torch
 from .static_funcs import quaternion_mul
-from .base_model import BaseKGE
+from .base_model import BaseKGE, IdentityClass
+
 
 def quaternion_mul_with_unit_norm(*, Q_1, Q_2):
     a_h, b_h, c_h, d_h = Q_1  # = {a_h + b_h i + c_h j + d_h k : a_r, b_r, c_r, d_r \in R^k}
@@ -27,20 +28,97 @@ class QMult(BaseKGE):
         self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
         self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
         self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
+        self.explicit = True
+        if self.explicit is False:
+            _1, _i, _j, _k = 0, 1, 2, 3
+            self.multiplication_table = torch.zeros(4, 4, 4)
+            for i, j, k, v in [
+                # 1 * ? = ?; ? * 1 = ?
+                (_1, _1, _1, 1),
+                (_1, _i, _i, 1),
+                (_1, _j, _j, 1),
+                (_1, _k, _k, 1),
+                (_i, _1, _i, 1),
+                (_j, _1, _j, 1),
+                (_k, _1, _k, 1),
+                # i**2 = j**2 = k**2 = -1
+                (_i, _i, _1, -1),
+                (_j, _j, _1, -1),
+                (_k, _k, _1, -1),
+                # i * j = k; i * k = -j
+                (_i, _j, _k, 1),
+                (_i, _k, _j, -1),
+                # j * i = -k, j * k = i
+                (_j, _i, _k, -1),
+                (_j, _k, _i, 1),
+                # k * i = j; k * j = -i
+                (_k, _i, _j, 1),
+                (_k, _j, _i, -1),
+            ]:
+                self.multiplication_table[i, j, k] = v
+
+    def quaternion_multiplication_followed_by_inner_product(self, h, r, t):
+        """
+        :param h: shape: (`*batch_dims`, dim)
+            The head representations.
+        :param r: shape: (`*batch_dims`, dim)
+            The head representations.
+        :param t: shape: (`*batch_dims`, dim)
+            The tail representations.
+        :return:
+            Triple scores.
+        """
+        n, d = h.shape
+        h = h.reshape(n, d // 4, 4)
+        r = r.reshape(n, d // 4, 4)
+        t = t.reshape(n, d // 4, 4)
+        return -torch.einsum("...di, ...dj, ...dk, ijk -> ...", h, r, t, self.multiplication_table)
+
+    @staticmethod
+    def quaternion_normalizer(x: torch.FloatTensor) -> torch.FloatTensor:
+        r"""
+        Normalize the length of relation vectors, if the forward constraint has not been applied yet.
+
+        Absolute value of a quaternion
+
+        .. math::
+
+            |a + bi + cj + dk| = \sqrt{a^2 + b^2 + c^2 + d^2}
+
+        L2 norm of quaternion vector:
+
+        .. math::
+            \|x\|^2 = \sum_{i=1}^d |x_i|^2
+                     = \sum_{i=1}^d (x_i.re^2 + x_i.im_1^2 + x_i.im_2^2 + x_i.im_3^2)
+        :param x:
+            The vector.
+
+        :return:
+            The normalized vector.
+        """
+        # Normalize relation embeddings
+        shape = x.shape
+        x = x.view(*shape[:-1], -1, 4)
+        x = torch.nn.functional.normalize(x, p=2, dim=-1)
+        return x.view(*shape)
 
     def forward_triples(self, indexed_triple: torch.Tensor) -> torch.Tensor:
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(indexed_triple)
+
+        # (1.1) If No normalization set, we need to apply quaternion normalization
+        if isinstance(self.normalize_relation_embeddings, IdentityClass):
+            rel_ent_emb = self.quaternion_normalizer(rel_ent_emb)
+        if self.explicit is False:
+            return self.quaternion_multiplication_followed_by_inner_product(head_ent_emb, rel_ent_emb, tail_ent_emb)
         # (2) Split (1) into real and imaginary parts.
         emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(head_ent_emb, 4)
         emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k = torch.hsplit(rel_ent_emb, 4)
         emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(tail_ent_emb, 4)
-
         # (2)
         # (2.1) Apply quaternion multiplication on (1.1) and (2.1).
         r_val, i_val, j_val, k_val = quaternion_mul(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
                                                     Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
-
         # (3)
         # (3.1) Inner product
         real_score = torch.sum(r_val * emb_tail_real, dim=1)
@@ -59,6 +137,9 @@ class QMult(BaseKGE):
 
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
+        # (1.1) If No normalization set, we need to apply quaternion normalization
+        if isinstance(self.normalize_relation_embeddings, IdentityClass):
+            rel_ent_emb = self.quaternion_normalizer(rel_ent_emb)
         # (2) Split (1) into real and imaginary parts.
         emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(head_ent_emb, 4)
         emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k = torch.hsplit(rel_ent_emb, 4)
@@ -66,8 +147,8 @@ class QMult(BaseKGE):
                                                     Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
 
         emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(self.entity_embeddings.weight, 4)
-        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = emb_tail_real.transpose(1, 0), emb_tail_i.transpose(1,0), \
-                                                            emb_tail_j.transpose(1, 0), emb_tail_k.transpose(1, 0)
+        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = emb_tail_real.transpose(1, 0), emb_tail_i.transpose(1, 0), \
+            emb_tail_j.transpose(1, 0), emb_tail_k.transpose(1, 0)
 
         # (3)
         # (3.1) Inner product
@@ -88,6 +169,10 @@ class QMult(BaseKGE):
 
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
+        # (1.1) If No normalization set, we need to apply quaternion normalization
+        if isinstance(self.normalize_relation_embeddings, IdentityClass):
+            rel_ent_emb = self.quaternion_normalizer(rel_ent_emb)
+
         # (2) Split (1) into real and imaginary parts.
         emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(head_ent_emb, 4)
         emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k = torch.hsplit(rel_ent_emb, 4)
@@ -116,6 +201,7 @@ class QMult(BaseKGE):
         k_score = torch.bmm(k_val, emb_tail_k)
 
         return (real_score + i_score + j_score + k_score).squeeze(1)
+
 
 class ConvQ(BaseKGE):
     """ Convolutional Quaternion Knowledge Graph Embeddings
@@ -211,7 +297,7 @@ class ConvQ(BaseKGE):
         # Prepare all entity embeddings.
         emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(self.entity_embeddings.weight, 4)
         emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = emb_tail_real.transpose(1, 0), \
-                                                            emb_tail_i.transpose(1,0), emb_tail_j.transpose(
+            emb_tail_i.transpose(1, 0), emb_tail_j.transpose(
             1, 0), emb_tail_k.transpose(1, 0)
 
         # (4)
@@ -222,6 +308,7 @@ class ConvQ(BaseKGE):
         k_score = torch.mm(conv_imag_k * k_val, emb_tail_k)
 
         return real_score + i_score + j_score + k_score
+
 
 class AConvQ(BaseKGE):
     """ Additive Convolutional Quaternion Knowledge Graph Embeddings """
@@ -315,7 +402,7 @@ class AConvQ(BaseKGE):
         # Prepare all entity embeddings.
         emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(self.entity_embeddings.weight, 4)
         emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = emb_tail_real.transpose(1, 0), \
-                                                            emb_tail_i.transpose(1,0), emb_tail_j.transpose(
+            emb_tail_i.transpose(1, 0), emb_tail_j.transpose(
             1, 0), emb_tail_k.transpose(1, 0)
 
         # (4)
