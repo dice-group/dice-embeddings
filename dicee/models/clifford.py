@@ -763,7 +763,7 @@ class Keci_r(BaseKGE): # Extending cl_pq to cl_pqr
 
     def cl_pqr(self, a):
 
-        ''' Input: tensor(batch_size, emb_dim) ----> output: tensor(batch_size, emb_dim/(1+p+q+r)).
+        ''' Input: tensor(batch_size, emb_dim) ----> output: tensor with 1+p+q+r components with size (batch_size, emb_dim/(1+p+q+r)) each.
 
         1) takes a tensor of size (batch_size, emb_dim), split it into 1 + p + q +r components, hence 1+p+q+r must be a divisor 
         of the emb_dim. 
