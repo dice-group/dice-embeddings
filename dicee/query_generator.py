@@ -47,7 +47,15 @@ class QueryGenerator:
         self.set_global_seed(seed)
 
     def list2tuple(self, list_data):
-        # @TODO: add description
+        """
+            Recursively convert a nested list into a nested tuple.
+
+            Args:
+                list_data (list): A possibly nested list.
+
+            Returns:
+                tuple: A nested tuple converted from the input list.
+        """
         return tuple(self.list2tuple(x) if isinstance(x, list) else x for x in list_data)
 
     def tuple2list(self, x: Union[List, Tuple]) -> Union[List, Tuple]:
@@ -144,46 +152,88 @@ class QueryGenerator:
     def achieve_answer(self, query: List[Union[str, List]],
                        ent_in: Dict, ent_out: Dict) -> set:
         """
-        Private method for achieve_answer logic.
-        @TODO: Document the code
+            Computes a set of entities that match the given query criteria based on the provided graph.
+
+            Args:
+                query (List[Union[str, List]]): The query structure with entities, relations, and special tokens.
+                ent_in (Dict): Incoming edges for entities.
+                ent_out (Dict): Outgoing edges for entities.
+
+            Returns:
+                set: Entities that satisfy the query criteria.
         """
+
+        # Check if the last element of the query is list, indicating a set of relations or sub-queries
         assert isinstance(query[-1], list)
+
         all_relation_flag = True
+
         for ele in query[-1]:
-            # @TODO: unclear
-            if isinstance(ele,int) or (ele == -1):
+            # Check if all elements in last part are relation IDs or negations, without any union indicator (-1).
+            if (not isinstance(ele, int)) or (ele == -1):
                 all_relation_flag = False
                 break
+
         if all_relation_flag:
+            # If the last part of the query contains only relations or negations
             if isinstance(query[0], int):
-                # @TODO: unclear
+                # If the first element is an entity, consider it as the starting point
                 ent_set = set([query[0]])
             else:
+                # Otherwise, recursively compute the entities that match the sub-query
                 ent_set = self.achieve_answer(query[0], ent_in, ent_out)
+
+            # Traverse through the relations in the last part of the query
             for i in range(len(query[-1])):
+                # If the relation is a negation, consider all entities except those in the current set
                 if query[-1][i] == -2:
                     ent_set = set(range(len(ent_in))) - ent_set
                 else:
+                    # Otherwise, update the entity set based on the outgoing edges for the current relation
                     ent_set_traverse = set()
                     for ent in ent_set:
                         ent_set_traverse = ent_set_traverse.union(ent_out[ent][query[-1][i]])
                     ent_set = ent_set_traverse
+
         else:
+            # If the last part of the query contains other structures (like intersection tuple or unions)
             ent_set = self.achieve_answer(query[0], ent_in, ent_out)
+
             union_flag = False
+            # If the last element is a union token, set the flag to true
             if len(query[-1]) == 1 and query[-1][0] == -1:
                 union_flag = True
+
+            # Traverse the rest of the query
             for i in range(1, len(query)):
                 if not union_flag:
+                    # If not a union, intersect the current entity set with the result of the sub-query
                     ent_set = ent_set.intersection(self.achieve_answer(query[i], ent_in, ent_out))
                 else:
+                    # If it's a union, combine the current entity set with the result of the sub-query
                     if i == len(query) - 1:
                         continue
                     ent_set = ent_set.union(self.achieve_answer(query[i], ent_in, ent_out))
+
         return ent_set
 
     def write_links(self, ent_out, small_ent_out):
-        # @TODO: Explain why this is needed
+        """
+            Generates '1p' type queries from entities' outgoing edges.
+
+            Given an entity and relation,
+            we directly look up the links using the structure `ent_out[ent][rel]`. This is because
+            1p queries inherently represent direct relationships, and thus, the target entities
+            can be fetched directly from our knowledge graph without needing to perform complex reasoning.
+
+            Args:
+                ent_out: Outgoing edges for entities in the full dataset.
+                small_ent_out: Outgoing edges for entities in a smaller dataset.
+
+            Returns:
+                queries, tp_answers, fn_answers, fp_answers: Generated queries and corresponding answers.
+        """
+
         queries = defaultdict(set)
         tp_answers = defaultdict(set)
         fn_answers = defaultdict(set)
@@ -212,12 +262,20 @@ class QueryGenerator:
         fp_answers = defaultdict(set)
         fn_answers = defaultdict(set)
 
-        # @TODO: Incorrect reasoning: It can enter an infinite loop
+
         while num_sampled < gen_num:
-            if num_try == 100_000:
+            # Threshold for the number of tries
+            if num_try == 1000000:
+                print('%s %s: [%d/%d], avg time: %s, try: %s, repeat: %s: more_answer: %s, broken: %s, no extra: %s, no negative: %s empty: %s' % (
+                self.mode,
+                query_structure,
+                num_sampled, gen_num, num_try, num_repeat, num_more_answer,
+                num_broken, num_no_extra_answer, num_no_extra_negative, num_empty), end='\r')
+                print("query generation with hard answers not equal to 0 not possible , try with a lesser number of queries or different dataset")
                 break
+
             num_try += 1
-            # @TODO: Why do we need a deep copy here ?
+            # use a deep copy to ensure the integrity of the original structure for subsequent iterations
             query = deepcopy(query_structure)
             answer = random.sample(list(ent_in.keys()), 1)[0]
             broken_flag = self.fill_query(query, ent_in, ent_out, answer)
@@ -228,11 +286,11 @@ class QueryGenerator:
 
             answer_set = self.achieve_answer(query, ent_in, ent_out)
             small_answer_set = self.achieve_answer(query, small_ent_in, small_ent_out)
-
+            # check if the answer set is empty for the given query
             if len(answer_set) == 0:
                 num_empty += 1
                 continue
-
+            # check if no hard answers are found
             if len(answer_set - small_answer_set) == 0:
                 num_no_extra_answer += 1
                 continue
@@ -241,7 +299,7 @@ class QueryGenerator:
                 if len(small_answer_set - answer_set) == 0:
                     num_no_extra_negative += 1
                     continue
-
+            # check if the answers generated are greater than maximum number of answers
             if max(len(answer_set - small_answer_set), len(small_answer_set - answer_set)) > self.max_ans_num:
                 num_more_answer += 1
                 print(num_more_answer)
@@ -250,7 +308,10 @@ class QueryGenerator:
             if self.list2tuple(query) in queries[self.list2tuple(query_structure)]:
                 num_repeat += 1
                 continue
-
+            # Convert generated queries from list to tuple format:
+            # - Tuples are hashable: Suitable for dictionary keys.
+            # - Immutable nature ensures data consistency.
+            # - Provides a standardized format for subsequent operations.
             queries[self.list2tuple(query_structure)].add(self.list2tuple(query))
             tp_answers[self.list2tuple(query)] = small_answer_set
             fp_answers[self.list2tuple(query)] = small_answer_set - answer_set
@@ -445,27 +506,39 @@ class QueryGenerator:
         train_tail_relation_to_heads, train_head_relation_to_tails = self.construct_graph(paths=[self.train_path])
         val_tail_relation_to_heads, val_head_relation_to_tails = self.construct_graph(
             paths=[self.train_path, self.val_path])
-        # ?!
-        valid_only_ent_in, valid_only_ent_out = self.construct_graph(paths=[self.val_path, self.test_path])
+        # needed for 1p valid queries
+        valid_only_ent_in, valid_only_ent_out = self.construct_graph(paths=[self.val_path])
 
         test_tail_relation_to_heads, test_head_relation_to_tails = self.construct_graph(
             paths=[self.train_path, self.val_path, self.test_path])
-        # ?!
+        # needed for 1p test queries
         test_only_ent_in, test_only_ent_out = self.construct_graph(paths=[self.test_path])
-        self.mode = 'test'
-        test_queries, test_tp_answers, test_fp_answers, test_fn_answers = self.ground_queries(
-            query_struct, test_tail_relation_to_heads, test_head_relation_to_tails, val_tail_relation_to_heads,
-            val_head_relation_to_tails, gen_num, query_type)
-        # @TODO: test_queries has keys that are tuple ,e.g. ('e', ('r',))
-        # Yet, query structure defined as a list ['e', ['r']].
-        # Fix this inconsistency
-        print(
-            f"General structure is {query_struct} with name {query_type}. Number of queries generated: {len(test_tp_answers)}")
-        return test_queries, test_tp_answers, test_fp_answers, test_fn_answers
+        if query_struct == ['e', ['r']]:
+            if self.gen_train:
+                queries, tp_answers, fp_answers, fn_answers = self.write_links(train_head_relation_to_tails,
+                                                                               defaultdict(lambda: defaultdict(set)),
+                                                                               'train')
+            if self.gen_valid:
+                queries, tp_answers, fp_answers, fn_answers = self.write_links(valid_only_ent_out, train_head_relation_to_tails,
+                                                                               'valid')
+            if self.gen_test:
+                queries, tp_answers, fp_answers, fn_answers = self.write_links(test_only_ent_out, val_head_relation_to_tails, 'test')
+            print("Link prediction queries created!")
+            return queries, tp_answers, fp_answers, fn_answers
+
+        elif self.gen_test:
+            self.mode = 'test'
+            test_queries, test_tp_answers, test_fp_answers, test_fn_answers = self.ground_queries(
+                query_struct, test_tail_relation_to_heads, test_head_relation_to_tails, val_tail_relation_to_heads,
+                val_head_relation_to_tails, gen_num, query_type)
+
+            print(
+                f"General structure is {query_struct} with name {query_type}. Number of queries generated: {len(test_tp_answers)}")
+            return test_queries, test_tp_answers, test_fp_answers, test_fn_answers
 
     def save_queries(self, query_type: str, gen_num: int, save_path: str):
         """
-
+        Generate queries with corresponding answers and  save them at the given path
         """
 
         # Find the index of query_type in query_names
