@@ -1,6 +1,4 @@
 import subprocess
-import sys
-from static_funcs_training import evaluate_lp
 import json
 import pandas as pd
 
@@ -8,9 +6,8 @@ parameter_values = [0,1]
 
 results = dict()
 
-evaluate_lp_outputs = []
 df = pd.DataFrame()
-
+i = 0 #for indexing
 for p in parameter_values:
     for q in parameter_values:
         for r in parameter_values:
@@ -20,13 +17,17 @@ for p in parameter_values:
                                 ,"--q",str(q), "--r", str(r), "--neg_ratio",str(50),"--batch_size",str(32),"--num_epochs",str(100)],stdout=subprocess.PIPE,universal_newlines=True,)
                 eval_output = subprocess_output.stdout.strip()
 
-                eval_output = eval_output[-147:-30]
+                result_output = eval_output[-147:-30]
+                #print(result_output)
 
-                #print(eval_output)
+                time_output = eval_output[-29:-1]
+                #print(time_output)
+                parts = time_output.split()
+                run_time = float(parts[-2])
 
-                start_index = eval_output.find("{")
+                start_index = result_output.find("{")
 
-                data_str = eval_output[start_index:]
+                data_str = result_output[start_index:]
 
                 data_str = data_str.replace("'", "\"")
 
@@ -34,14 +35,15 @@ for p in parameter_values:
 
                 results.update({'p':p,'q':q,'r':r})
                 results.update(data_dict)
+                results.update({'time(s)': run_time})
                 
-                dfi = pd.DataFrame(results, index = [0])
+                dfi = pd.DataFrame(results, index = [i])
 
                 df = pd.concat([df,dfi])
 
+                i += 1
+
 print(df)          
 
-
-#print(evaluate_lp_outputs)
     
     
