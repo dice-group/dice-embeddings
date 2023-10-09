@@ -1,6 +1,7 @@
 import subprocess
 import json
 import pandas as pd
+from keci_r_MRR import MRR
 
 parameter_values = [0,1]
 
@@ -45,5 +46,112 @@ for p in parameter_values:
 
 print(df)          
 
-    
-    
+'''Gradient based searching parameters'''
+
+(opt_p, opt_q, opt_r) = (1,1,1)
+p0, q0, r0 = 1, 1, 1
+max_MRR = 0
+l = []
+d = 1
+
+for p in range(p0, d):
+  for q in range(q0, d):
+    for r in range(q0, d):
+      if ((p,q,r) not in l) & (16%(1+p+q+r)==0):
+        l.append((p, q, r))
+        Mrr = MRR(p,q,r)
+
+        if Mrr > max_MRR:
+          max_MRR = Mrr
+          (opt_p, opt_q, opt_r) = (p,q,r)
+
+for p in range(p0, -1, -1):
+  for q in range(q0, -1, -1):
+    for r in range(q0, -1, -1):
+      if ((p,q,r) not in l) & (16%(1+p+q+r)==0):
+        l.append((p, q, r))
+        Mrr = MRR(p,q,r)
+
+        if Mrr > max_MRR:
+          max_MRR = Mrr
+          (opt_p, opt_q, opt_r) = (p,q,r)
+
+for p in range(p0, d):
+  for q in range(q0, -1, -1):
+    for r in range(r0, -1, -1):
+      if ((p,q,r) not in l) & (16%(1+p+q+r)==0):
+        l.append((p, q, r))
+        Mrr = MRR(p,q,r)
+
+        if Mrr > max_MRR:
+          max_MRR = Mrr
+          (opt_p, opt_q, opt_r) = (p,q,r)
+
+for p in range(p0, -1, -1):
+  for q in range(q0, d):
+    for r in range(r0, -1, -1):
+      if ((p,q,r) not in l) & (16%(1+p+q+r)==0):
+        l.append((p, q, r))
+        Mrr = MRR(p,q,r)
+
+        if Mrr > max_MRR:
+          max_MRR = Mrr
+          (opt_p, opt_q, opt_r) = (p,q,r)
+
+
+for p in range(p0, -1, -1):
+  for q in range(q0, -1, -1):
+    for r in range(r0, d):
+      if ((p,q,r) not in l) & (16%(1+p+q+r)==0):
+        l.append((p, q, r))
+        Mrr = MRR(p,q,r)
+
+        if Mrr > max_MRR:
+          max_MRR = Mrr
+          (opt_p, opt_q, opt_r) = (p,q,r)
+
+
+for p in range(p0, d):
+  for q in range(q0, d):
+    for r in range(r0, -1, -1):
+      if ((p,q,r) not in l) & (16%(1+p+q+r)==0):
+        l.append((p, q, r))
+        Mrr = MRR(p,q,r)
+
+        if Mrr > max_MRR:
+          max_MRR = Mrr
+          (opt_p, opt_q, opt_r) = (p,q,r)
+
+
+for p in range(p0, d):
+  for q in range(q0, -1, -1):
+    for r in range(r0, d):
+      if ((p,q,r) not in l) & (16%(1+p+q+r)==0):
+        l.append((p, q, r))
+        Mrr = MRR(p,q,r)
+
+        if Mrr > max_MRR:
+          max_MRR = Mrr
+          (opt_p, opt_q, opt_r) = (p,q,r)
+
+
+for p in range(p0, -1, -1):
+  for q in range(q0, d):
+    for r in range(r0, d):
+      if ((p,q,r) not in l) & (16%(1+p+q+r)==0):
+        l.append((p, q, r))
+        Mrr = MRR(p,q,r)
+
+        if Mrr > max_MRR:
+          max_MRR = Mrr
+          (opt_p, opt_q, opt_r) = (p,q,r)
+
+print(l)
+print(max_MRR)
+print((opt_p,opt_q,opt_r))
+
+
+        
+
+        
+
