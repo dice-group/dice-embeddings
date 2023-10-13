@@ -55,7 +55,8 @@ class OMult(BaseKGE):
     def octonion_normalizer(self, emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6,
                             emb_rel_e7):
         denominator = torch.sqrt(
-            emb_rel_e0 ** 2 + emb_rel_e1 ** 2 + emb_rel_e2 ** 2 + emb_rel_e3 ** 2 + emb_rel_e4 ** 2 + emb_rel_e5 ** 2 + emb_rel_e6 ** 2 + emb_rel_e7 ** 2)
+            emb_rel_e0 ** 2 + emb_rel_e1 ** 2 + emb_rel_e2 ** 2 + emb_rel_e3 ** 2 + emb_rel_e4 ** 2
+            + emb_rel_e5 ** 2 + emb_rel_e6 ** 2 + emb_rel_e7 ** 2)
         y0 = emb_rel_e0 / denominator
         y1 = emb_rel_e1 / denominator
         y2 = emb_rel_e2 / denominator
@@ -77,7 +78,11 @@ class OMult(BaseKGE):
             rel_ent_emb,
             8)
         if isinstance(self.normalize_relation_embeddings, IdentityClass):
-            emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7 = self.octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
+            (emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4,
+             emb_rel_e5, emb_rel_e6, emb_rel_e7) = self.octonion_normalizer(emb_rel_e0,
+                                                                            emb_rel_e1, emb_rel_e2, emb_rel_e3,
+                                                                            emb_rel_e4, emb_rel_e5, emb_rel_e6,
+                                                                            emb_rel_e7)
 
         emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 = torch.hsplit(
             tail_ent_emb, 8)
@@ -116,8 +121,11 @@ class OMult(BaseKGE):
             rel_ent_emb,
             8)
         if isinstance(self.normalize_relation_embeddings, IdentityClass):
-            emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7 = self.octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
-
+            (emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3,
+             emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7) = self.octonion_normalizer(emb_rel_e0, emb_rel_e1,
+                                                                                        emb_rel_e2, emb_rel_e3,
+                                                                                        emb_rel_e4, emb_rel_e5,
+                                                                                        emb_rel_e6, emb_rel_e7)
 
         # (3)Apply octonion multiplication
         e0, e1, e2, e3, e4, e5, e6, e7 = octonion_mul(
@@ -163,10 +171,12 @@ class ConvO(BaseKGE):
         self.bn_conv2d = torch.nn.BatchNorm2d(self.num_of_output_channels)
         self.norm_fc1 = self.normalizer_class(self.embedding_dim)
         self.feature_map_dropout = torch.nn.Dropout2d(self.feature_map_dropout_rate)
+
     def octonion_normalizer(self, emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6,
                             emb_rel_e7):
         denominator = torch.sqrt(
-            emb_rel_e0 ** 2 + emb_rel_e1 ** 2 + emb_rel_e2 ** 2 + emb_rel_e3 ** 2 + emb_rel_e4 ** 2 + emb_rel_e5 ** 2 + emb_rel_e6 ** 2 + emb_rel_e7 ** 2)
+            emb_rel_e0 ** 2 + emb_rel_e1 ** 2 + emb_rel_e2 ** 2 + emb_rel_e3 ** 2 + emb_rel_e4 ** 2 +
+            emb_rel_e5 ** 2 + emb_rel_e6 ** 2 + emb_rel_e7 ** 2)
         y0 = emb_rel_e0 / denominator
         y1 = emb_rel_e1 / denominator
         y2 = emb_rel_e2 / denominator
@@ -212,9 +222,13 @@ class ConvO(BaseKGE):
             rel_ent_emb,
             8)
         if isinstance(self.normalize_relation_embeddings, IdentityClass):
-            emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7 = self.octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
+            (emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3,
+             emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7) = self.octonion_normalizer(
+                emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3,
+                emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
 
-        emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 = torch.hsplit(
+        (emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3,
+         emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7) = torch.hsplit(
             tail_ent_emb, 8)
 
         # (2) Apply convolution operation on (1.1) and (1.2).
@@ -260,8 +274,10 @@ class ConvO(BaseKGE):
             rel_ent_emb,
             8)
         if isinstance(self.normalize_relation_embeddings, IdentityClass):
-            emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7 = self.octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
-
+            (emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3,
+             emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7) = self.octonion_normalizer(
+                emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3,
+                emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
 
         # (2) Apply convolution operation on (1.1) and (1.2).
         O_3 = self.residual_convolution(O_1=(emb_head_e0, emb_head_e1, emb_head_e2, emb_head_e3,
@@ -317,10 +333,12 @@ class AConvO(BaseKGE):
         self.bn_conv2d = torch.nn.BatchNorm2d(self.num_of_output_channels)
         self.norm_fc1 = self.normalizer_class(self.embedding_dim)
         self.feature_map_dropout = torch.nn.Dropout2d(self.feature_map_dropout_rate)
+
     def octonion_normalizer(self, emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6,
                             emb_rel_e7):
         denominator = torch.sqrt(
-            emb_rel_e0 ** 2 + emb_rel_e1 ** 2 + emb_rel_e2 ** 2 + emb_rel_e3 ** 2 + emb_rel_e4 ** 2 + emb_rel_e5 ** 2 + emb_rel_e6 ** 2 + emb_rel_e7 ** 2)
+            emb_rel_e0 ** 2 + emb_rel_e1 ** 2 + emb_rel_e2 ** 2 +
+            emb_rel_e3 ** 2 + emb_rel_e4 ** 2 + emb_rel_e5 ** 2 + emb_rel_e6 ** 2 + emb_rel_e7 ** 2)
         y0 = emb_rel_e0 / denominator
         y1 = emb_rel_e1 / denominator
         y2 = emb_rel_e2 / denominator
@@ -366,9 +384,14 @@ class AConvO(BaseKGE):
             rel_ent_emb,
             8)
         if isinstance(self.normalize_relation_embeddings, IdentityClass):
-            emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7 = self.octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
+            (emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4,
+             emb_rel_e5, emb_rel_e6, emb_rel_e7) = self.octonion_normalizer(emb_rel_e0, emb_rel_e1,
+                                                                            emb_rel_e2, emb_rel_e3,
+                                                                            emb_rel_e4, emb_rel_e5,
+                                                                            emb_rel_e6, emb_rel_e7)
 
-        emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 = torch.hsplit(
+        (emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6,
+         emb_tail_e7) = torch.hsplit(
             tail_ent_emb, 8)
 
         # (2) Apply convolution operation on (1.1) and (1.2).
@@ -408,14 +431,18 @@ class AConvO(BaseKGE):
         head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
         # (2) Split (1) into real and imaginary parts.
         # (2) Split (1) into real and imaginary parts.
-        emb_head_e0, emb_head_e1, emb_head_e2, emb_head_e3, emb_head_e4, emb_head_e5, emb_head_e6, emb_head_e7 = torch.hsplit(
+        (emb_head_e0, emb_head_e1, emb_head_e2, emb_head_e3, emb_head_e4,
+         emb_head_e5, emb_head_e6, emb_head_e7) = torch.hsplit(
             head_ent_emb, 8)
         emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7 = torch.hsplit(
             rel_ent_emb,
             8)
         if isinstance(self.normalize_relation_embeddings, IdentityClass):
-            emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7 = self.octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
-
+            (emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3,
+             emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7) = self.octonion_normalizer(emb_rel_e0, emb_rel_e1,
+                                                                                        emb_rel_e2, emb_rel_e3,
+                                                                                        emb_rel_e4, emb_rel_e5,
+                                                                                        emb_rel_e6, emb_rel_e7)
 
         # (2) Apply convolution operation on (1.1) and (1.2).
         O_3 = self.residual_convolution(O_1=(emb_head_e0, emb_head_e1, emb_head_e2, emb_head_e3,

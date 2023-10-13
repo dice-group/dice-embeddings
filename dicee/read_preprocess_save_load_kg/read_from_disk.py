@@ -53,7 +53,7 @@ class ReadFromDisk:
                 else:
                     print(f'Unrecognized data {i}')
         else:
-            raise RuntimeError(f"Invalid data:{self.kg.data_dir}\t{self.kg.sparql_endpoint}\t{path_single_kg}")
+            raise RuntimeError(f"Invalid data:{self.kg.data_dir}\t{self.kg.sparql_endpoint}\t{self.kg.path_single_kg}")
 
     def add_noisy_triples_into_training(self):
         num_noisy_triples = int(len(self.kg.train_set) * self.kg.add_noise_rate)

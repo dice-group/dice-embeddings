@@ -123,7 +123,8 @@ class Evaluator:
 
     def dummy_eval(self, trained_model, form_of_labelling: str):
 
-        if self.is_continual_training: self.__load_and_set_mappings()
+        if self.is_continual_training:
+            self.__load_and_set_mappings()
 
         train_set, valid_set, test_set = self.__load_indexed_datasets()
 
