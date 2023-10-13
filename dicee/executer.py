@@ -18,7 +18,6 @@ import pytorch_lightning as pl
 from dicee.static_funcs import timeit, continual_training_setup_executor, read_or_load_kg, load_json, store
 from dicee.sanity_checkers import config_kge_sanity_checking
 
-
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 os.environ["TORCH_DISTRIBUTED_DEBUG"] = "INFO"
@@ -133,7 +132,7 @@ class Execute:
         self.report['num_relations'] = self.args.num_relations
         self.report['path_experiment_folder'] = self.storage_path
 
-    def end(self, form_of_labelling) -> dict:
+    def end(self, form_of_labelling: str) -> dict:
         """
         End training
 
@@ -163,7 +162,8 @@ class Execute:
             self.write_report()
             return {**self.report, **self.evaluator.report}
 
-    def write_report(self):
+    def write_report(self)-> None:
+        """ Report training related information in a report.json file """
         # Report total runtime.
         self.report['Runtime'] = time.time() - self.start_time
         print(f"Total Runtime: {self.report['Runtime']:.3f} seconds")
@@ -200,7 +200,6 @@ class Execute:
                                     storage_path=self.storage_path,
                                     evaluator=self.evaluator)
         # (4) Start the training
-        # @TODO: Why do we need to pass self.dataset as an input?
         self.trained_model, form_of_labelling = self.trainer.start(dataset=self.dataset)
         return self.end(form_of_labelling)
 
@@ -275,7 +274,7 @@ def get_default_arguments(description=None):
     """ Extends pytorch_lightning Trainer's arguments with ours """
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
-    parser.add_argument("--path_dataset_folder", type=str, default='KGs/UMLS',
+    parser.add_argument("--dataset_dir", type=str, default='KGs/UMLS',
                         help="The path of a folder containing input data")
     parser.add_argument("--save_embeddings_as_csv", type=bool, default=False,
                         help='A flag for saving embeddings in csv file.')

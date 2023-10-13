@@ -11,7 +11,7 @@ class TestAutoBatchFinder:
         args.model = 'DistMult'
         args.scoring_technique = 'KvsSample'
         args.optim = 'Adam'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 100
         args.batch_size = 32
         args.lr = 0.1

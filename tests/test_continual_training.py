@@ -13,7 +13,7 @@ class TestRegressionCL:
         args.model = 'QMult'
         args.scoring_technique = 'KvsAll'
         args.optim = 'Adam'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.1
@@ -29,14 +29,14 @@ class TestRegressionCL:
         result = Execute(args).start()
         assert os.path.isdir(result['path_experiment_folder'])
         pre_trained_kge = KGE(path=result['path_experiment_folder'])
-        kg = KG(data_dir=args.path_dataset_folder)
+        kg = KG(dataset_dir=args.dataset_dir)
         pre_trained_kge.train(kg, epoch=1, batch_size=args.batch_size)
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_negative_sampling_Family(self):
         args = Namespace()
         args.model = 'QMult'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.scoring_technique = 'KvsAll'
         args.optim = 'Adam'
         args.num_epochs = 1
@@ -53,6 +53,6 @@ class TestRegressionCL:
         result = Execute(args).start()
         assert os.path.isdir(result['path_experiment_folder'])
         pre_trained_kge = KGE(path=result['path_experiment_folder'])
-        kg = KG(args.path_dataset_folder, entity_to_idx=pre_trained_kge.entity_to_idx,
+        kg = KG(args.dataset_dir, entity_to_idx=pre_trained_kge.entity_to_idx,
                 relation_to_idx=pre_trained_kge.relation_to_idx)
         pre_trained_kge.train(kg, epoch=1, batch_size=args.batch_size)

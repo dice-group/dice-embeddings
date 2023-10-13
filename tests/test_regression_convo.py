@@ -8,7 +8,7 @@ class TestRegressionConvO:
         args = Namespace()
         args.model = 'ConvO'
         args.scoring_technique = 'KvsAll'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.1
@@ -29,7 +29,7 @@ class TestRegressionConvO:
     def test_1_vs_all(self):
         args = Namespace()
         args.model = 'ConvO'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.1
@@ -52,7 +52,7 @@ class TestRegressionConvO:
     def test_negative_sampling(self):
         args = Namespace()
         args.model = 'ConvO'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
         args.eval_model = 'train_val_test'

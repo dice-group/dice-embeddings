@@ -6,7 +6,7 @@ from dicee.config import Namespace
 
 def template(model_name):
     args = Namespace()
-    args.path_dataset_folder = "KGs/UMLS"
+    args.dataset_dir = "KGs/UMLS"
     args.trainer = "PL"
     args.model = model_name
     args.num_epochs = 10

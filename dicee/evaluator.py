@@ -3,7 +3,7 @@ import numpy as np
 import json
 from .static_funcs import pickle
 from .static_funcs_training import evaluate_lp
-
+from typing import Tuple
 
 class Evaluator:
     """
@@ -70,6 +70,7 @@ class Evaluator:
 
     # @timeit
     def eval(self, dataset, trained_model, form_of_labelling, during_training=False) -> None:
+        # @TODO: Why this reassigment ?
         self.during_training = during_training
         # (1) Exit, if the flag is not set
         if self.args.eval_model is None:
@@ -99,13 +100,7 @@ class Evaluator:
                 json.dump(self.report, file_descriptor, indent=4)
         return {k: v for k, v in self.report.items()}
 
-    def dummy_eval(self, trained_model, form_of_labelling):
-
-        if self.is_continual_training:
-            self.er_vocab = pickle.load(open(self.args.full_storage_path + "/er_vocab.p", "rb"))
-            self.re_vocab = pickle.load(open(self.args.full_storage_path + "/re_vocab.p", "rb"))
-            self.ee_vocab = pickle.load(open(self.args.full_storage_path + "/ee_vocab.p", "rb"))
-
+    def __load_indexed_datasets(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         if 'train' in self.args.eval_model:
             train_set = np.load(self.args.full_storage_path + "/train_set.npy")
         else:
@@ -119,6 +114,19 @@ class Evaluator:
             test_set = np.load(self.args.full_storage_path + "/test_set.npy")
         else:
             test_set = None
+        return train_set, valid_set, test_set
+
+    def __load_and_set_mappings(self):
+        self.er_vocab = pickle.load(open(self.args.full_storage_path + "/er_vocab.p", "rb"))
+        self.re_vocab = pickle.load(open(self.args.full_storage_path + "/re_vocab.p", "rb"))
+        self.ee_vocab = pickle.load(open(self.args.full_storage_path + "/ee_vocab.p", "rb"))
+
+    def dummy_eval(self, trained_model, form_of_labelling: str):
+
+        if self.is_continual_training:
+            self.__load_and_set_mappings()
+
+        train_set, valid_set, test_set = self.__load_indexed_datasets()
 
         if self.args.scoring_technique == 'NegSample':
             self.eval_rank_of_head_and_tail_entity(train_set=train_set,
@@ -153,20 +161,19 @@ class Evaluator:
 
     def eval_with_vs_all(self, *, train_set, valid_set=None, test_set=None, trained_model, form_of_labelling) -> None:
         """ Evaluate model after reciprocal triples are added """
-        # 4. Test model on the training dataset if it is needed.
         if 'train' in self.args.eval_model:
             res = self.evaluate_lp_k_vs_all(trained_model, train_set,
                                             info=f'Evaluate {trained_model.name} on Train set',
                                             form_of_labelling=form_of_labelling)
             self.report['Train'] = res
 
-        # 5. Test model on the validation and test dataset if it is needed.
         if 'val' in self.args.eval_model:
             if valid_set is not None:
                 res = self.evaluate_lp_k_vs_all(trained_model, valid_set,
                                                 f'Evaluate {trained_model.name} on Validation set',
                                                 form_of_labelling=form_of_labelling)
                 self.report['Val'] = res
+
         if test_set is not None and 'test' in self.args.eval_model:
             res = self.evaluate_lp_k_vs_all(trained_model, test_set,
                                             f'Evaluate {trained_model.name} on Test set',
@@ -268,119 +275,7 @@ class Evaluator:
         """
         # @TODO: Document this method
         return evaluate_lp(model, triple_idx, num_entities=self.num_entities,
-                           er_vocab=self.er_vocab,re_vocab=self.re_vocab,info=info)
-
-    def dept_evaluate_lp(self, model, triple_idx, info):
-        """
-        Evaluate model in a standard link prediction task
-
-        for each triple
-        the rank is computed by taking the mean of the filtered missing head entity rank and
-        the filtered missing tail entity rank
-        :param model:
-        :param triple_idx:
-        :param info:
-        :return:
-        """
-        model.eval()
-        print(info)
-        print(f'Num of triples {len(triple_idx)}')
-        print('** Evaluation without batching')
-        hits = dict()
-        reciprocal_ranks = []
-        # Iterate over test triples
-        all_entities = torch.arange(0, self.num_entities).long()
-        all_entities = all_entities.reshape(len(all_entities), )
-        # Iterating one by one is not good when you are using batch norm
-        for i in range(0, len(triple_idx)):
-            # (1) Get a triple (head entity, relation, tail entity
-            data_point = triple_idx[i]
-            h, r, t = data_point[0], data_point[1], data_point[2]
-
-            # (2) Predict missing heads and tails
-            x = torch.stack((torch.tensor(h).repeat(self.num_entities, ),
-                             torch.tensor(r).repeat(self.num_entities, ),
-                             all_entities), dim=1)
-
-            predictions_tails = model.forward_triples(x)
-            x = torch.stack((all_entities,
-                             torch.tensor(r).repeat(self.num_entities, ),
-                             torch.tensor(t).repeat(self.num_entities)
-                             ), dim=1)
-
-            predictions_heads = model.forward_triples(x)
-            del x
-
-            # 3. Computed filtered ranks for missing tail entities.
-            # 3.1. Compute filtered tail entity rankings
-            filt_tails = self.er_vocab[(h, r)]
-            # 3.2 Get the predicted target's score
-            target_value = predictions_tails[t].item()
-            # 3.3 Filter scores of all triples containing filtered tail entities
-            predictions_tails[filt_tails] = -np.Inf
-            # 3.3.1 Filter entities outside of the range
-            if 'constraint' in self.args.eval_model:
-                predictions_tails[self.range_constraints_per_rel[r]] = -np.Inf
-            # 3.4 Reset the target's score
-            predictions_tails[t] = target_value
-            # 3.5. Sort the score
-            _, sort_idxs = torch.sort(predictions_tails, descending=True)
-            sort_idxs = sort_idxs.detach()
-            filt_tail_entity_rank = np.where(sort_idxs == t)[0][0]
-
-            # 4. Computed filtered ranks for missing head entities.
-            # 4.1. Retrieve head entities to be filtered
-            filt_heads = self.re_vocab[(r, t)]
-            # 4.2 Get the predicted target's score
-            target_value = predictions_heads[h].item()
-            # 4.3 Filter scores of all triples containing filtered head entities.
-            predictions_heads[filt_heads] = -np.Inf
-            if isinstance(self.args.eval_model, bool) is False:
-                if 'constraint' in self.args.eval_model:
-                    # 4.3.1 Filter entities that are outside the domain
-                    predictions_heads[self.domain_constraints_per_rel[r]] = -np.Inf
-            predictions_heads[h] = target_value
-            _, sort_idxs = torch.sort(predictions_heads, descending=True)
-            sort_idxs = sort_idxs.detach()
-            filt_head_entity_rank = np.where(sort_idxs == h)[0][0]
-
-            # 4. Add 1 to ranks as numpy array first item has the index of 0.
-            filt_head_entity_rank += 1
-            filt_tail_entity_rank += 1
-
-            rr = 1.0 / filt_head_entity_rank + (1.0 / filt_tail_entity_rank)
-            # 5. Store reciprocal ranks.
-            reciprocal_ranks.append(rr)
-            # print(f'{i}.th triple: mean reciprical rank:{rr}')
-
-            # 4. Compute Hit@N
-            for hits_level in range(1, 11):
-                res = 1 if filt_head_entity_rank <= hits_level else 0
-                res += 1 if filt_tail_entity_rank <= hits_level else 0
-                if res > 0:
-                    hits.setdefault(hits_level, []).append(res)
-
-        mean_reciprocal_rank = sum(reciprocal_ranks) / (float(len(triple_idx) * 2))
-
-        if 1 in hits:
-            hit_1 = sum(hits[1]) / (float(len(triple_idx) * 2))
-        else:
-            hit_1 = 0
-
-        if 3 in hits:
-            hit_3 = sum(hits[3]) / (float(len(triple_idx) * 2))
-        else:
-            hit_3 = 0
-
-        if 10 in hits:
-            hit_10 = sum(hits[10]) / (float(len(triple_idx) * 2))
-        else:
-            hit_10 = 0
-
-        results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10,
-                   'MRR': mean_reciprocal_rank}
-        print(results)
-        return results
+                           er_vocab=self.er_vocab, re_vocab=self.re_vocab, info=info)
 
     def eval_with_data(self, dataset, trained_model, triple_idx: np.ndarray, form_of_labelling: str):
         self.vocab_preparation(dataset)
