@@ -10,12 +10,12 @@ def get_default_arguments(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Data related arguments
-    parser.add_argument("--path_dataset_folder", type=str, default=None,
+    parser.add_argument("--path_dataset_folder", type=str, default="/home/dice/Desktop/dice-embeddings/KGs/UMLS",
                         help="The path of a folder containing train.txt, and/or valid.txt and/or test.txt"
                              ",e.g., KGs/UMLS")
     parser.add_argument("--sparql_endpoint", type=str, default=None,
                         help="An endpoint of a triple store, e.g. 'http://localhost:3030/mutagenesis/'. ")
-    parser.add_argument("--path_single_kg", type=str, default="KGs/UMLS/train.txt",
+    parser.add_argument("--path_single_kg", type=str, default=None,#"KGs/UMLS/train.txt",
                         help="Path of a file corresponding to the input knowledge graph")
     parser.add_argument("--path_to_store_single_run", type=str, default=None,
                         help="A single directory created that contains related data about embeddings.")
@@ -42,7 +42,7 @@ def get_default_arguments(description=None):
     parser.add_argument('--embedding_dim', type=int, default=16,
                         help='Number of dimensions for an embedding vector. ')
     parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
-    parser.add_argument('--batch_size', type=int, default=1024,
+    parser.add_argument('--batch_size', type=int, default=128,
                         help='Mini batch size. If None, automatic batch finder is applied')
     parser.add_argument("--lr", type=float, default=0.01)
     parser.add_argument('--callbacks', type=json.loads,
@@ -52,13 +52,13 @@ def get_default_arguments(description=None):
     parser.add_argument("--backend", type=str, default="pandas",
                         choices=["pandas", "polars", "rdflib"],
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
-    parser.add_argument("--trainer", type=str, default='torchCPUTrainer',
+    parser.add_argument("--trainer", type=str, default='PL',
                         choices=['torchCPUTrainer', 'PL', 'torchDDP'],
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
     parser.add_argument('--scoring_technique', default="NegSample",
                         help="Training technique for knowledge graph embedding model",
                         choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "KvsSample"])
-    parser.add_argument('--neg_ratio', type=int, default=0,
+    parser.add_argument('--neg_ratio', type=int, default=50,
                         help='The number of negative triples generated per positive triple.')
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
     parser.add_argument('--input_dropout_rate', type=float, default=0.0)
@@ -85,7 +85,7 @@ def get_default_arguments(description=None):
                         help="Square kernel size for convolution based models.")
     parser.add_argument("--num_of_output_channels", type=int, default=2,
                         help="# of output channels in convolution")
-    parser.add_argument("--num_core", type=int, default=1,
+    parser.add_argument("--num_core", type=int, default=2,
                         help='Number of cores to be used. 0 implies using single CPU')
     parser.add_argument("--random_seed", type=int, default=0,
                         help='Seed for all, see pl seed_everything().')
@@ -96,9 +96,9 @@ def get_default_arguments(description=None):
                         help='Add x % of noisy triples into training dataset.')
     parser.add_argument('--p', type=int, default=1,
                         help='P for Clifford Algebra')
-    parser.add_argument('--q', type=int, default=0,
+    parser.add_argument('--q', type=int, default=1,
                         help='Q for Clifford Algebra')
-    parser.add_argument('--r', type=int, default=0,
+    parser.add_argument('--r', type=int, default=1,
                         help='Q for Clifford Algebra')
     parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
     if description is None:
