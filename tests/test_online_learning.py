@@ -12,7 +12,7 @@ class TestRegressionOnlineLearning:
         args.model = 'AConEx'
         args.scoring_technique = 'KvsSample'
         args.optim = 'Adam'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 0
         args.batch_size = 1024
         args.lr = 0.1

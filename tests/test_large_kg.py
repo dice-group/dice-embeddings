@@ -7,7 +7,7 @@ class TestRegressionDistMult:
     def test_k_vs_all(self):
         args = Namespace()
         args.model = 'DistMult'
-        args.path_dataset_folder = 'KGs/WN18RR'
+        args.dataset_dir = 'KGs/WN18RR'
         args.optim = 'Adam'
         args.num_epochs = 0
         args.batch_size = 32
@@ -33,7 +33,7 @@ class TestRegressionDistMult:
     def test_neg_sample(self):
         args = Namespace()
         args.model = 'DistMult'
-        args.path_dataset_folder = 'KGs/WN18RR'
+        args.dataset_dir = 'KGs/WN18RR'
         args.optim = 'Adam'
         args.num_epochs = 0
         args.batch_size = 32

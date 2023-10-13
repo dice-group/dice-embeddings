@@ -9,7 +9,7 @@ class TestReadFewOnly:
         args.model = 'QMult'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
@@ -31,7 +31,7 @@ class TestReadFewOnly:
         args.model = 'QMult'
         args.num_epochs = 1
         args.scoring_technique = '1vsAll'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
@@ -53,7 +53,7 @@ class TestReadFewOnly:
         args.model = 'QMult'
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01

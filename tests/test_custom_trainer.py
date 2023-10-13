@@ -10,7 +10,7 @@ class TestDefaultParams:
         args.model = 'Shallom'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
@@ -30,7 +30,7 @@ class TestDefaultParams:
         args.model = 'ConEx'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
@@ -50,7 +50,7 @@ class TestDefaultParams:
         args.model = 'QMult'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
@@ -69,7 +69,7 @@ class TestDefaultParams:
         args.model = 'ConvQ'
         args.num_epochs = 1
         args.scoring_technique = 'KvsAll'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
@@ -90,7 +90,7 @@ class TestDefaultParams:
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'
         args.neg_ratio = 1
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
@@ -111,7 +111,7 @@ class TestDefaultParams:
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'
         args.neg_ratio = 1
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01
@@ -131,7 +131,7 @@ class TestDefaultParams:
         args.num_epochs = 1
         args.scoring_technique = 'NegSample'
         args.neg_ratio = 1
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 10
         args.batch_size = 1024
         args.lr = 0.01

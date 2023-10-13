@@ -7,7 +7,7 @@ class TestRegressionPyke:
     def test_k_vs_all(self):
         args = Namespace()
         args.model = 'Pyke'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.optim = 'Adam'
         args.num_epochs = 5
         args.batch_size = 1024

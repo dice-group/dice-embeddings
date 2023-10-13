@@ -2,7 +2,7 @@ import argparse
 class Namespace(argparse.Namespace):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.path_dataset_folder: str = 'KGs/UMLS'
+        self.dataset_dir: str = 'KGs/UMLS'
         "The path of a folder containing train.txt, and/or valid.txt and/or test.txt"
 
         self.save_embeddings_as_csv: bool = False
