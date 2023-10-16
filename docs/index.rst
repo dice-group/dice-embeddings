@@ -19,13 +19,13 @@ Welcome to DICE Embeddings!
    .. code-block:: bash
 
       // 1 CPU
-      (dicee) $ dice --dataset_dir KGs/UMLS
+      (dicee) $ dicee --dataset_dir KGs/UMLS
       // 10 CPU
-      (dicee) $ dice --dataset_dir KGs/UMLS --num_core 10
+      (dicee) $ dicee --dataset_dir KGs/UMLS --num_core 10
       // Distributed Data Parallel (DDP) with all GPUs
-      (dicee) $ dice --trainer PL --accelerator gpu --strategy ddp --dataset_dir KGs/UMLS
+      (dicee) $ dicee --trainer PL --accelerator gpu --strategy ddp --dataset_dir KGs/UMLS
       // Model Parallel with all GPUs and low precision
-      (dicee) $ dice --trainer PL --accelerator gpu --strategy deepspeed_stage_3 --dataset_dir KGs/UMLS --precision 16
+      (dicee) $ dicee --trainer PL --accelerator gpu --strategy deepspeed_stage_3 --dataset_dir KGs/UMLS --precision 16
       // DDP with all GPUs on two nodes (felis and nebula):
       (dicee) cdemir@felis  $ torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula -m dicee.run --trainer torchDDP --dataset_dir KGs/UMLS
       (dicee) cdemir@nebula $ torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula -m dicee.run --trainer torchDDP --dataset_dir KGs/UMLS

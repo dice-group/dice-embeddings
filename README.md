@@ -94,11 +94,11 @@ alga    isa     entity
 ```
 A KGE model can also be trained from the command line
 ```bash
-dice --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
+dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
 ```
 Models can be easily trained in a single node multi-gpu setting
 ```bash
-dice --accelerator "gpu" --strategy "ddp" --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" 
+dicee --accelerator "gpu" --strategy "ddp" --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" 
 ```
 Similarly, models can be easily trained in a multi-node multi-gpu setting
 ```bash
@@ -109,7 +109,7 @@ torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_bac
 Train a KGE model by providing the path of a single file and store all parameters under newly created directory
 called `KeciFamilyRun`.
 ```bash
-dice --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --path_to_store_single_run KeciFamilyRun --backend rdflib
+dicee --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --path_to_store_single_run KeciFamilyRun --backend rdflib
 ```
 where the data is in the following form
 ```bash
@@ -121,7 +121,7 @@ _:1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://www.w3.org/2002/07
 **Apart from n-triples or standard link prediction dataset formats, we support ["owl", "nt", "turtle", "rdf/xml", "n3"]***.
 Moreover, a KGE model can be also trained  by providing **an endpoint of a triple store**.
 ```bash
-dice --sparql_endpoint "http://localhost:3030/mutagenesis/" --model Keci
+dicee --sparql_endpoint "http://localhost:3030/mutagenesis/" --model Keci
 ```
 For more, please refer to `examples`.
 </details>
