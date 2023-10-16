@@ -74,14 +74,15 @@ from dicee.executer import Execute
 from dicee.config import Namespace
 args = Namespace()
 args.model = 'Keci'
-args.scoring_technique = "AllvsAll"
-args.path_dataset_folder = "KGs/UMLS/"
-args.path_to_store_single_run="Keci_UMLS"
+args.scoring_technique = "KvsAll"  # 1vsAll, or AllvsAll, or NegSample
+args.dataset_dir = "KGs/UMLS/"
+args.path_to_store_single_run = "Keci_UMLS"
 args.num_epochs = 100
 args.embedding_dim = 32
+args.batch_size = 1024
 reports = Execute(args).start()
-# reports["Train"]["MRR"] =>0.97089
-# reports["Test"]["MRR"] => 0.8197
+print(reports["Train"]["MRR"]) # => 0.9912
+print(reports["Test"]["MRR"]) # => 0.8155
 # See the Keci_UMLS folder embeddings and all other files
 ```
 where the data is in the following form
@@ -93,16 +94,16 @@ alga    isa     entity
 ```
 A KGE model can also be trained from the command line
 ```bash
-python -m dicee.run --path_dataset_folder "KGs/UMLS" --model Keci --eval_model "train_val_test"
+python -m dicee.run --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
 ```
 Models can be easily trained in a single node multi-gpu setting
 ```bash
-python -m dicee.run --accelerator "gpu" --strategy "ddp" --path_dataset_folder "KGs/UMLS" --model Keci --eval_model "train_val_test" 
+python -m dicee.run --accelerator "gpu" --strategy "ddp" --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" 
 ```
 Train a KGE model by providing the path of a single file and store all parameters under newly created directory
 called `KeciFamilyRun`.
 ```bash
-python -m dicee.run --path_single_kg "KGs/Family/train.txt" --model Keci --path_to_store_single_run KeciFamilyRun
+ python -m dicee.run --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --path_to_store_single_run KeciFamilyRun --backend rdflib
 ```
 where the data is in the following form
 ```bash
