@@ -98,7 +98,7 @@ dice --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
 ```
 Models can be easily trained in a single node multi-gpu setting
 ```bash
-python -m dicee.run --accelerator "gpu" --strategy "ddp" --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" 
+dice --accelerator "gpu" --strategy "ddp" --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" 
 ```
 Train a KGE model by providing the path of a single file and store all parameters under newly created directory
 called `KeciFamilyRun`.
