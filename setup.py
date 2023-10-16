@@ -27,6 +27,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "License :: OSI Approved :: MIT License"],
     python_requires='>=3.9',
+    entry_points={"console_scripts": ["dice = dicee.run:main"]},
     long_description=long_description,
     long_description_content_type="text/markdown",
 )
