@@ -8,7 +8,7 @@ class TestRegressionOmult:
         args = Namespace()
         args.model = 'OMult'
         args.optim = 'Adam'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 50
         args.batch_size = 1024
         args.lr = 0.01
@@ -33,7 +33,7 @@ class TestRegressionOmult:
         args = Namespace()
         args.model = 'OMult'
         args.optim = 'Adam'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 50
         args.batch_size = 1024
         args.lr = 0.01
@@ -60,7 +60,7 @@ class TestRegressionOmult:
         args = Namespace()
         args.model = 'OMult'
         args.optim = 'Adam'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 50
         args.batch_size = 1024
         args.lr = 0.01

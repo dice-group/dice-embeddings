@@ -7,7 +7,7 @@ class TestRegressionQmult:
     def test_k_vs_all(self):
         args = Namespace()
         args.model = 'QMult'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.optim = 'Adam'
         args.num_epochs = 50
         args.batch_size = 1024
@@ -37,7 +37,7 @@ class TestRegressionQmult:
         args = Namespace()
         args.model = 'QMult'
         args.optim = 'Adam'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 50
         args.batch_size = 1024
         args.lr = 0.01
@@ -66,7 +66,7 @@ class TestRegressionQmult:
         args = Namespace()
         args.model = 'QMult'
         args.optim = 'Adam'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 50
         args.batch_size = 1024
         args.lr = 0.1

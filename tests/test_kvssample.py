@@ -7,7 +7,7 @@ class TestRegressionQmult:
     def test_k_vs_sample(self):
         args = Namespace()
         args.model = 'QMult'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.optim = 'Adam'
         args.num_epochs = 10
         args.batch_size = 1024
@@ -34,7 +34,7 @@ class TestRegressionQmult:
     def test_k_vs_sample_regression(self):
         args = Namespace()
         args.model = 'AConEx'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.optim = 'Adam'
         args.num_epochs = 10
         args.batch_size = 1024

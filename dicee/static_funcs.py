@@ -279,7 +279,7 @@ def add_noisy_triples(train_set: pd.DataFrame, add_noise_rate: float) -> pd.Data
 def read_or_load_kg(args, cls):
     print('*** Read or Load Knowledge Graph  ***')
     start_time = time.time()
-    kg = cls(data_dir=args.path_dataset_folder,
+    kg = cls(dataset_dir=args.dataset_dir,
              add_noise_rate=args.add_noise_rate,
              sparql_endpoint=args.sparql_endpoint,
              path_single_kg=args.path_single_kg,

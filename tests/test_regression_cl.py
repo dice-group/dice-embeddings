@@ -8,7 +8,7 @@ class TestRegressionAConEx:
         args.model = 'AConEx'
         args.scoring_technique = 'KvsSample'
         args.optim = 'Adam'
-        args.path_dataset_folder = 'KGs/UMLS'
+        args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 5
         args.batch_size = 4096
         args.lr = 0.1

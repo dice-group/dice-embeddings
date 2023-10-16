@@ -7,7 +7,7 @@ import sys
 class KG:
     """ Knowledge Graph """
 
-    def __init__(self, data_dir: str = None,
+    def __init__(self, dataset_dir: str = None,
                  add_noise_rate: float = None,
                  sparql_endpoint: str = None,
                  path_single_kg: str = None,
@@ -17,8 +17,7 @@ class KG:
                  path_for_serialization: str = None,
                  entity_to_idx=None, relation_to_idx=None, backend=None):
         """
-        @TODO: Renzhong, can you please update/modify the docstrings.
-        :param data_dir: A path of a folder containing the input knowledge graph
+        :param dataset_dir: A path of a folder containing train.txt, valid.txt, test.text
         :param add_noise_rate: Noisy triples added into the training adataset by x % of its size.
         : param sparql_endpoint: An endpoint of a triple store
         :param path_single_kg: The path of a single file containing the input knowledge graph
@@ -34,7 +33,7 @@ class KG:
         self.add_noise_rate = add_noise_rate
         self.num_entities = None
         self.num_relations = None
-        self.data_dir = data_dir
+        self.dataset_dir = dataset_dir
         self.path_single_kg = path_single_kg
         self.path_for_deserialization = path_for_deserialization
         self.add_reciprical = add_reciprical
@@ -63,7 +62,7 @@ class KG:
         self._describe()
 
     def _describe(self) -> None:
-        self.description_of_input = f'\n------------------- Description of Dataset {self.data_dir} -------------------'
+        self.description_of_input = f'\n------------------- Description of Dataset {self.dataset_dir} -------------------'
         self.description_of_input += f'\nNumber of entities:{self.num_entities}' \
                                      f'\nNumber of relations:{self.num_relations}' \
                                      f'\nNumber of triples on train set:' \
