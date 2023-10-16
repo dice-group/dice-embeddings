@@ -2,13 +2,13 @@ import argparse
 class Namespace(argparse.Namespace):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.dataset_dir: str = 'KGs/UMLS'
+        self.dataset_dir: str = None
         "The path of a folder containing train.txt, and/or valid.txt and/or test.txt"
 
         self.save_embeddings_as_csv: bool = False
         "A flag for saving embeddings in csv file."
 
-        self.storage_path: str = 'Experiments'
+        self.storage_path: str = "Experiments"
         "A directory named with time of execution under --storage_path that contains related data about embeddings."
 
         self.path_to_store_single_run: str = None
