@@ -7,32 +7,43 @@ import os
 
 class Keci_exp:
 
-    def __init__(self, emb_dim : int , path_main : str):
+    def __init__(self, emb_dim: int , path_main: str, folder_name: str, Experiments_path: str):
 
-        self.parameter_values = range(emb_dim+1)
+        '''Inputs: 
+           em_dim: embedding dimension
+           path_main: path to the main.py file
+           folder_name: name of the folder that will contain the experimentions
+           Experiments_path: path were the experiments will be saved.'''
+
         self.path_main = path_main
-        # self.num_epochs = num_epochs
-        # self.batch_size = batch_size
-        # self.neg_ratio = neg_ratio
+        self.Experiments_path = Experiments_path
+        self.folder_name = folder_name
+        # self.num_epochs = num_epochs(250)
+        # self.batch_size = batch_size(128)
+        # self.neg_ratio = neg_ratio(50)
         self.emb_dim = emb_dim
         self.results = dict()
         
 
-    def results_keci(self) -> pd.DataFrame :
-        '''This function store the performance of the Keci_r model into a dataframe for all possible values of p,q,r in [0, emb_dim]'''
+    def results_keci(self, parameter_values:list) -> pd.DataFrame :
+        '''This function store the performance of the Keci_r model into a dataframe for all possible values of p,q,r in parameter_values.
+           If not specified, parameter_values =[0,1,...,emb_dim] '''
 
-        for p in self.parameter_values:
-            for q in self.parameter_values:
-                for r in self.parameter_values:
+        if parameter_values == None:
+            parameter_values  = range(self.emb_dim+1)
+
+        for p in parameter_values:
+            for q in parameter_values:
+                for r in parameter_values:
                 
-                    if 16%(p+q+r+1) == 0:
+                    if self.emb_dim%(p+q+r+1) == 0:
                            
-                        folder_name = f"keci_{p}{q}{r}"
-                        folder_path = os.path.join("Experiments", folder_name)
-                        subprocess.run(["python", self.path_main,"--p",str(p) ,"--q",str(q), "--r", str(r),"--storage_path",folder_path,"--num_epochs",str(1)])
+                        folder_name = f"{p}_{q}_{r}"
+                        folder_path = os.path.join(self.folder_name, folder_name)
+                        subprocess.run(["python", self.path_main,"--p",str(p) ,"--q",str(q), "--r", str(r),"--storage_path",folder_path])
                             
 
-        experiments_path = '/home/dice/Desktop/dice-embeddings/Experiments'
+        experiments_path = self.Experiments_path
         
         data = []
 
@@ -71,12 +82,12 @@ class Keci_exp:
 
 
 
-    def params_search(self, start_point = (1,1,1)):
+    def params_search(self, start_point = (1,1,1)) -> tuple:
          
         '''Gradient based searching parameters starting at a fixed point named start point.
         Default starting point is (1,1,1)
-        NB: here the best performance is achieved with the highest MRR
-        Return a tuple with the best triple (p,q,r), the corresponding MRR and the list of all the other configurations.'''
+        NB: here the best performance is achieved with the highest MRR on the test data
+        Return a tuple with the best triple (p,q,r), the corresponding MRR and the list of all the other triples (p,q,r).'''
 
         (opt_p, opt_q, opt_r) = start_point
         p0, q0, r0 = opt_p, opt_q, opt_r
@@ -87,7 +98,7 @@ class Keci_exp:
         for p in range(p0, d):
             for q in range(q0, d):
                 for r in range(q0, d):
-                    if ((p,q,r) not in l) & (16%(1+p+q+r)==0):
+                    if ((p,q,r) not in l) & (self.emb_dim%(1+p+q+r)==0):
                         l.append((p, q, r))
                         Mrr = self.MRR(p,q,r)
 
@@ -98,7 +109,7 @@ class Keci_exp:
         for p in range(p0, -1, -1):
             for q in range(q0, -1, -1):
                 for r in range(q0, -1, -1):
-                    if ((p,q,r) not in l) & (16%(1+p+q+r)==0):
+                    if ((p,q,r) not in l) & (self.emb_dim%(1+p+q+r)==0):
                         l.append((p, q, r))
                         Mrr = self.MRR(p,q,r)
 
@@ -109,7 +120,7 @@ class Keci_exp:
         for p in range(p0, d):
             for q in range(q0, -1, -1):
                 for r in range(r0, -1, -1):
-                    if ((p,q,r) not in l) & (16%(1+p+q+r)==0):
+                    if ((p,q,r) not in l) & (self.emb_dim%(1+p+q+r)==0):
                         l.append((p, q, r))
                         Mrr = self.MRR(p,q,r)
 
@@ -120,7 +131,7 @@ class Keci_exp:
         for p in range(p0, -1, -1):
             for q in range(q0, d):
                 for r in range(r0, -1, -1):
-                    if ((p,q,r) not in l) & (16%(1+p+q+r)==0):
+                    if ((p,q,r) not in l) & (self.emb_dim%(1+p+q+r)==0):
                         l.append((p, q, r))
                         Mrr = self.MRR(p,q,r)
 
@@ -132,7 +143,7 @@ class Keci_exp:
         for p in range(p0, -1, -1):
             for q in range(q0, -1, -1):
                 for r in range(r0, d):
-                    if ((p,q,r) not in l) & (16%(1+p+q+r)==0):
+                    if ((p,q,r) not in l) & (self.emb_dim%(1+p+q+r)==0):
                         l.append((p, q, r))
                         Mrr = self.MRR(p,q,r)
 
@@ -144,7 +155,7 @@ class Keci_exp:
         for p in range(p0, d):
             for q in range(q0, d):
                 for r in range(r0, -1, -1):
-                    if ((p,q,r) not in l) & (16%(1+p+q+r)==0):
+                    if ((p,q,r) not in l) & (self.emb_dim%(1+p+q+r)==0):
                         l.append((p, q, r))
                         Mrr = self.MRR(p,q,r)
 
@@ -156,7 +167,7 @@ class Keci_exp:
         for p in range(p0, d):
             for q in range(q0, -1, -1):
                 for r in range(r0, d):
-                    if ((p,q,r) not in l) & (16%(1+p+q+r)==0):
+                    if ((p,q,r) not in l) & (self.emb_dim%(1+p+q+r)==0):
                         l.append((p, q, r))
                         Mrr = self.MRR(p,q,r)
 
@@ -168,7 +179,7 @@ class Keci_exp:
         for p in range(p0, -1, -1):
             for q in range(q0, d):
                 for r in range(r0, d):
-                    if ((p,q,r) not in l) & (16%(1+p+q+r)==0):
+                    if ((p,q,r) not in l) & (self.emb_dim%(1+p+q+r)==0):
                         l.append((p, q, r))
                         Mrr = self.MRR(p,q,r)
 
@@ -182,10 +193,10 @@ class Keci_exp:
         '''Return the achieved MRR of Keci_r for a fixed p,q and r on the train data set'''
 
         
-        folder_name = f"keci_{p}{q}{r}"
-        folder_path = os.path.join("Experiments", folder_name)
-        subprocess.run(["python", self.path_main,"--p",str(p) ,"--q",str(q), "--r", str(r),"--storage_path",folder_path,"--num_epochs",str(1)])
-
+        folder_name = f"{p}_{q}_{r}"
+        folder_path = os.path.join(self.folder_name, folder_name)
+        subprocess.run(["python", self.path_main,"--p",str(p) ,"--q",str(q), "--r", str(r),"--storage_path",folder_path])
+            
         experiments_path = folder_path
 
         for folder in os.listdir(experiments_path):
@@ -194,10 +205,11 @@ class Keci_exp:
                 folder_path = os.path.join(experiments_path, folder)
                 report_path = os.path.join(folder_path, 'eval_report.json')
 
+
                 if os.path.exists(report_path):
                     with open(report_path, 'r') as file:
                         report_data = json.load(file)
 
-        return report_data['Train']['MRR']
+        return report_data['Test']['MRR']
 
 
