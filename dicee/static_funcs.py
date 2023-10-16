@@ -75,7 +75,6 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[o
     configs = load_json(path_of_experiment_folder + '/configuration.json')
     configs["num_entities"] = num_ent
     configs["num_relations"] = num_rel
-    #configs["embedding_dim"] = ent_dim
 
     print(f'Done! It took {time.time() - start_time:.3f}')
     # (4) Select the model
