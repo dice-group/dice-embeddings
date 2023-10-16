@@ -100,6 +100,12 @@ Models can be easily trained in a single node multi-gpu setting
 ```bash
 dice --accelerator "gpu" --strategy "ddp" --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" 
 ```
+Similarly, models can be easily trained in a multi-node multi-gpu setting
+```bash
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula -m dicee.run --trainer torchDDP --dataset_dir KGs/UMLS
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula -m dicee.run --trainer torchDDP --dataset_dir KGs/UMLS
+```
+
 Train a KGE model by providing the path of a single file and store all parameters under newly created directory
 called `KeciFamilyRun`.
 ```bash
