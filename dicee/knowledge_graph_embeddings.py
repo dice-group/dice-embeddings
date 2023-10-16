@@ -376,7 +376,8 @@ class KGE(BaseInteractiveKGE):
     def __single_hop_query_answering(self, query: Tuple[str, Tuple[str, ...]]):
         head, relation = query
         assert len(relation) == 1
-        return self.predict(h=[head], r=[relation[0]])
+        # scores for all entities
+        return self.predict(h=head, r=relation[0])
 
     def __return_answers_and_scores(self, query_score_of_all_entities, k: int):
         query_score_of_all_entities = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), query_score_of_all_entities)]
@@ -476,10 +477,10 @@ class KGE(BaseInteractiveKGE):
                                                                              tnorm=tnorm,
                                                                              k=k):
                 top_k_scores1.append(score_of_e_r1_a)
-                # () Scores for all entities E
-                atom2_scores.append(self.predict(h=[top_k_entity], r=[relation2]))
+                # (.) Scores for all entities E
+                atom2_scores.append(self.predict(h=top_k_entity, r=relation2))
             # k by E tensor
-            atom2_scores = torch.cat(atom2_scores, dim=0)
+            atom2_scores = torch.vstack(atom2_scores)
             topk_scores1_expanded = torch.FloatTensor(top_k_scores1).view(-1, 1).repeat(1, atom2_scores.shape[1])
             query_scores, _ = torch.max(self.t_norm(topk_scores1_expanded, atom2_scores, tnorm), dim=0)
             if only_scores:
@@ -501,7 +502,7 @@ class KGE(BaseInteractiveKGE):
                 # () Scores for all entities E
                 atom2_scores.append(self.predict(h=[top_k_entity], r=[relation3]))
             # k by E tensor
-            atom2_scores = torch.cat(atom2_scores, dim=0)
+            atom2_scores = torch.vstack(atom2_scores)
             topk_scores1_expanded = torch.FloatTensor(top_k_scores1).view(-1, 1).repeat(1, atom2_scores.shape[1])
             query_scores, _ = torch.max(self.t_norm(topk_scores1_expanded, atom2_scores, tnorm), dim=0)
             if only_scores:

@@ -151,7 +151,7 @@ class QueryGenerator:
         all_relation_flag = True
         for ele in query[-1]:
             # @TODO: unclear
-            if isinstance(ele,int) or (ele == -1):
+            if not isinstance(ele, int) or (ele == -1):
                 all_relation_flag = False
                 break
         if all_relation_flag:
