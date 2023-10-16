@@ -102,5 +102,8 @@ def get_default_arguments(description=None):
         return parser.parse_args()
     return parser.parse_args(description)
 
-if __name__ == '__main__':
+def main():
     Execute(get_default_arguments()).start()
+
+if __name__ == '__main__':
+    main()
