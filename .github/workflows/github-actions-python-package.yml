@@ -22,7 +22,7 @@ jobs:
           pip install -r requirements.txt
       - name: Lint with ruff
         run: |
-          ruff -- --format=github --select=F63,F7,F82 --target-version=py39 dicee/.
+          ruff  dicee/
       - name: Test with pytest
         run: |
           wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate && unzip KGs.zip
