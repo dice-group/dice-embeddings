@@ -35,7 +35,7 @@ Deploy a pre-trained embedding model without writing a single line of code.
 ``` bash
 git clone https://github.com/dice-group/dice-embeddings.git
 conda create -n dice python=3.9 --no-default-packages && conda activate dice
-pip3 install -r requirements.txt
+cd dice-embeddings && pip3 install -r requirements.txt
 ```
 or
 ```bash
@@ -311,7 +311,6 @@ If you really like our work and want to cite it now, feel free to chose one :)
   pages={1--10},
   year={2022}
 }
-
 # QMult, OMult, ConvQ, ConvO
 @InProceedings{pmlr-v157-demir21a,
   title = 	 {Convolutional Hypercomplex Embeddings for Link Prediction},
