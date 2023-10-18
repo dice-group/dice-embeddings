@@ -313,35 +313,42 @@ class Perturb(AbstractCallback):
 
     def on_train_batch_start(self, trainer, model, batch, batch_idx):
         # Modifications should be in-place
+        # (1) Extract the input and output data points in a given batch.
         x, y = batch
         n, _ = x.shape
+        assert n > 0
+        # (2) Compute the number of perturbed data points.
         num_of_perturbed_data = int(n * self.ratio)
         if num_of_perturbed_data ==0:
             return None
-        assert n > 0
+        # (3) Detect the device on which data points reside
         device = x.get_device()
         if device == -1:
             device = "cpu"
-        # Sample random integers from 0 to n without replacement and take k of tem
+        # (4) Sample random integers from 0 to n without replacement and take k of tem
         random_indices = torch.randperm(n, device=device)[:num_of_perturbed_data]
+        # (5) Apply perturbation depending on the level.
         if self.level == "input":
+            # (5.1) Apply input level perturbation.
             if torch.rand(1) > 0.5:
-                # Perturb input via heads
+                # (5.1.1) Perturb input via heads
                 perturbation = torch.randint(low=0, high=model.num_entities, size=(num_of_perturbed_data,),
                                              device=device)
                 x[random_indices] = torch.column_stack(
                     (perturbation, x[:, 1][random_indices]))
             else:
-                # Perturb input via relations
+                # (5.1.2) Perturb input via heads
                 perturbation = torch.randint(low=0, high=model.num_relations, size=(num_of_perturbed_data,),
                                              device=device)
                 x[random_indices] = torch.column_stack(
                     (x[:, 0][random_indices], perturbation))
         elif self.level == "param":
+            # (5.2) Apply Parameter level perturbation.
             h, r = torch.hsplit(x, 2)
-
+            # (5.2.1) Apply Gaussian Perturbation
             if self.method == "GN":
                 if torch.rand(1) > 0.0:
+                    # (5.2.1.1) Apply Gaussian Perturbation on heads.
                     h_selected = h[random_indices]
                     with torch.no_grad():
                         model.entity_embeddings.weight[h_selected] += torch.normal(mean=0, std=self.scaler,
@@ -349,6 +356,7 @@ class Perturb(AbstractCallback):
                                                                                        h_selected].shape,
                                                                                    device=model.device)
                 else:
+                    # (5.2.1.2) Apply Gaussian Perturbation on relations.
                     r_selected = r[random_indices]
                     with (torch.no_grad()):
                         model.relation_embeddings.weight[r_selected] += torch.normal(mean=0, std=self.scaler,
@@ -356,13 +364,16 @@ class Perturb(AbstractCallback):
                                                                                      model.entity_embeddings.weight[
                                                                                          r_selected].shape,
                                                                                      device=model.device)
+            # (5.2.2) Apply Random Perturbation
             elif self.method == "RN":
                 if torch.rand(1) > 0.0:
+                    # (5.2.2.1) Apply Random Perturbation on heads.
                     h_selected = h[random_indices]
                     with torch.no_grad():
                         model.entity_embeddings.weight[h_selected] += torch.rand(
                             size=model.entity_embeddings.weight[h_selected].shape, device=model.device) * self.scaler
                 else:
+                    # (5.2.2.2) Apply Random Perturbation on relations.
                     r_selected = r[random_indices]
                     with torch.no_grad():
                         model.relation_embeddings.weight[r_selected] += torch.rand(
@@ -370,16 +381,18 @@ class Perturb(AbstractCallback):
             else:
                 raise RuntimeError(f"--method is given as {self.method}!")
         elif self.level == "out":
-
-            if self.method == "RN":
-                # Soft Perturb ?
+            # (5.3) Apply output level perturbation.
+            if self.method == "Soft":
+                # (5.3) Output level soft perturbation resembles label smoothing.
+                # (5.3.1) Compute the perturbation rate.
                 perturb = torch.rand(1, device=model.device) * self.scaler
                 # https://pytorch.org/docs/stable/generated/torch.where.html
                 # 1.0 => 1.0 - perturb
                 # 0.0 => perturb
+                # (5.3.2) Reduces 1s and increases 0s via (5.2.1)
                 batch[1][random_indices] = torch.where(batch[1][random_indices] == 1.0, 1.0 - perturb, perturb)
             elif self.method=="Hard":
-                # Hard flip all
+                # (5.3) Output level hard perturbation flips 1s to 0 and 0s to 1s.
                 batch[1][random_indices] = torch.where(batch[1][random_indices] == 1.0, 0.0, 1.0)
             else:
                 raise NotImplementedError(f"{self.level}")
