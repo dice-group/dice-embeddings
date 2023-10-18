@@ -41,9 +41,12 @@ or
 ```bash
 pip install dicee
 ```
-To test the Installation
+## Download Knowledge Graphs
 ```bash
 wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate && unzip KGs.zip
+```
+To test the Installation
+```bash
 pytest -p no:warnings -x # Runs >114 tests leading to > 15 mins
 pytest -p no:warnings --lf # run only the last failed test
 pytest -p no:warnings --ff # to run the failures first and then the rest of the tests.

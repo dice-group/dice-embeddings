@@ -71,8 +71,8 @@ def validate_knowledge_graph(args):
 
 
     elif args.dataset_dir is None and args.path_single_kg is None and args.sparql_endpoint is None:
-        raise RuntimeError(f"One of the following arguments must be given:"
-                           f"--path_dataset_folder:{args.dataset_dir},\t"
+        raise RuntimeError(f"One of the following arguments must be given: "
+                           f"--dataset_dir:{args.dataset_dir},\t"
                            f"--path_single_kg:{args.path_single_kg},\t"
                            f"--sparql_endpoint:{args.sparql_endpoint}.")
     else:
