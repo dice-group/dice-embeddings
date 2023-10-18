@@ -5,18 +5,11 @@ import sys
 import argparse
 
 
-def get_default_arguments(description=None):
+def get_default_arguments():
     parser = argparse.ArgumentParser(add_help=False)
-    # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
-    # Data related arguments
-    parser.add_argument("--dir", type=str, default="KINSHIP-DistMult-RN/",
-                        help="")
-    if description is None:
-        return parser.parse_args()
-    return parser.parse_args(description)
+    parser.add_argument("--dir", type=str, default=None, help="Path of a directory containing experiments")
+    return parser.parse_args()
 
-
-# need a class to hold all params
 class Experiment:
     def __init__(self):
         self.model_name = []
@@ -54,7 +47,7 @@ class Experiment:
         self.num_epochs.append(x['num_epochs'])
         self.batch_size.append(x['batch_size'])
         self.lr.append(x['lr'])
-        self.path_dataset_folder.append(x['path_dataset_folder'])
+        self.path_dataset_folder.append(x['dataset_dir'])
         self.pq.append((x['p'], x['q']))
         self.runtime.append(x['Runtime'])
         self.num_params.append(x['NumParam'])
@@ -115,7 +108,7 @@ def analyse(args):
                        'callbacks',
                        'scoring_technique',
                        "scoring_technique",
-                       'path_dataset_folder', 'p', 'q']}
+                       'dataset_dir', 'p', 'q']}
         with open(f'{full_path}/report.json', 'r') as f:
             report = json.load(f)
             report = {i: report[i] for i in ['Runtime', 'NumParam']}
@@ -136,8 +129,9 @@ def analyse(args):
     pd.set_option("display.precision", 3)
     # print(df)
     print(df.to_latex(index=False, float_format="%.3f"))
-    #print(df.to_markdown(index=False))
-    df.to_csv(path_or_buf=args.dir+'/summary.csv')
+    path_to_save=args.dir+'/summary.csv'
+    df.to_csv(path_or_buf=path_to_save)
+    print(f"Saved in {path_to_save}")
 
 
 if __name__ == '__main__':
