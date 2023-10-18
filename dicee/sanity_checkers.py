@@ -21,7 +21,7 @@ def validate_knowledge_graph(args):
         try:
             assert args.dataset_dir is None and args.path_single_kg is None
         except AssertionError:
-            raise RuntimeWarning(f'The path_dataset_folder and path_single_kg arguments '
+            raise RuntimeWarning(f'The dataset_dir and path_single_kg arguments '
                                  f'must be None if sparql_endpoint is given.'
                                  f'***{args.dataset_dir}***\n'
                                  f'***{args.path_single_kg}***\n'
@@ -44,19 +44,19 @@ def validate_knowledge_graph(args):
         try:
             assert isinstance(args.dataset_dir, str)
         except AssertionError:
-            raise AssertionError(f'The path_dataset_folder must be string sparql_endpoint is not given.'
+            raise AssertionError(f'The dataset_dir must be string sparql_endpoint is not given.'
                                  f'***{args.dataset_dir}***')
         try:
             assert os.path.isdir(args.dataset_dir) or os.path.isfile(args.dataset_dir)
         except AssertionError:
-            raise AssertionError(f'The path_dataset_folder does not lead to a directory '
+            raise AssertionError(f'The dataset_dir does not lead to a directory '
                                  f'***{args.dataset_dir}***')
         # Check whether the input parameter leads a standard data format (e.g. FOLDER/train.txt)
         if glob.glob(args.dataset_dir + '/train*'):
             """ all is good we have xxx/train.txt"""
         else:
             raise ValueError(
-                f"---path_dataset_folder **{args.dataset_dir}** must lead to "
+                f"---dataset_dir **{args.dataset_dir}** must lead to "
                 f"**folder** containing at least train.txt**. "
                 f"Use --path_single_kg **folder/dataset.format**, if you have a single file.")
 
