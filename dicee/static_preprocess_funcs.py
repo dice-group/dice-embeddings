@@ -58,7 +58,7 @@ def preprocesses_input_args(args):
     # reciprocal checking
     if args.scoring_technique in ["AllvsAll", "KvsSample", "KvsAll", "1vsAll"]:
         args.apply_reciprical_or_noise = True
-    elif args.scoring_technique == 'NegSample':
+    elif args.scoring_technique in ["NegSample", "Sentence"]:
         args.apply_reciprical_or_noise = False
     else:
         raise KeyError(f'Unexpected input for scoring_technique.\t{args.scoring_technique}')

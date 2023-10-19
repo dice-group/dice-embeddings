@@ -2,7 +2,7 @@ from torch.utils.data import DataLoader
 import numpy as np
 import torch
 import pytorch_lightning as pl
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from .static_preprocess_funcs import mapping_from_first_two_cols_to_third
 from .static_funcs import timeit, load_pickle
 
@@ -52,6 +52,8 @@ def reload_dataset(path: str, form_of_labelling, scoring_technique, neg_ratio, l
 def construct_dataset(*, train_set: np.ndarray,
                       valid_set=None,
                       test_set=None,
+                      num_tokens: int = None,
+                      block_size: int = None,
                       entity_to_idx: dict,
                       relation_to_idx: dict,
                       form_of_labelling: str,
@@ -88,6 +90,8 @@ def construct_dataset(*, train_set: np.ndarray,
                                  entity_idxs=entity_to_idx,
                                  relation_idxs=relation_to_idx,
                                  label_smoothing_rate=label_smoothing_rate)
+        elif scoring_technique == 'Sentence':
+            train_set = Sentence(train_set, num_tokens=num_tokens, block_size=block_size)
         else:
             raise ValueError(f'Invalid scoring technique : {scoring_technique}')
     elif form_of_labelling == 'RelationPrediction':
@@ -97,6 +101,24 @@ def construct_dataset(*, train_set: np.ndarray,
     else:
         raise KeyError('Illegal input.')
     return train_set
+
+
+class Sentence(torch.utils.data.Dataset):
+
+    def __init__(self, train_set: List[int], num_tokens, block_size=8):
+        super().__init__()
+        assert isinstance(train_set, list)
+        assert isinstance(train_set[0], int)
+        self.train_data = torch.tensor(train_set, dtype=torch.long)
+        self.num_tokens = num_tokens
+        self.block_size = block_size
+        self.collate_fn=None
+
+    def __len__(self):
+        return len(self.train_data) - self.block_size
+
+    def __getitem__(self, idx):
+        return self.train_data[idx:idx + self.block_size], self.train_data[idx + 1: idx + self.block_size + 1]
 
 
 class OnevsAllDataset(torch.utils.data.Dataset):
@@ -214,6 +236,7 @@ class KvsAll(torch.utils.data.Dataset):
                 assert isinstance(self.train_target[0], np.ndarray)
             except IndexError or AssertionError:
                 print(self.train_target)
+                # TODO: Add info
                 exit(1)
         else:
             self.train_target = list(store.values())

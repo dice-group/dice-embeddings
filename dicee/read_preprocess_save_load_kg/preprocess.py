@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import polars as pl
 from .util import create_recipriocal_triples, timeit, index_triples_with_pandas, dataset_sanity_checking
@@ -38,6 +39,54 @@ class PreprocessKG:
                                                        num=max(self.kg.num_entities, self.kg.num_relations))
 
     @timeit
+    def preprocess_with_bpe(self) -> None:
+        """
+        Preprocess train, valid and test datasets stored in knowledge graph instance with pandas
+
+        (1) Add recipriocal or noisy triples
+        (2) Construct vocabulary
+        (3) Index datasets
+
+        Parameter
+        ---------
+
+        Returns
+        -------
+        None
+        """
+        # (1)  Add recipriocal or noisy triples.
+        self.apply_reciprical_or_noise()
+        # (2) Construct integer indexing for entities and relations.
+
+        self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
+
+        # (3) Index datasets
+        self.kg.train_set = index_triples_with_pandas(self.kg.train_set,
+                                                      self.kg.entity_to_idx,
+                                                      self.kg.relation_to_idx)
+        assert isinstance(self.kg.train_set, pd.core.frame.DataFrame)
+        self.kg.train_set = self.kg.train_set.values
+        self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
+                                                    num=max(self.kg.num_entities, self.kg.num_relations))
+        dataset_sanity_checking(self.kg.train_set, self.kg.num_entities, self.kg.num_relations)
+        if self.kg.valid_set is not None:
+            self.kg.valid_set = index_triples_with_pandas(self.kg.valid_set, self.kg.entity_to_idx,
+                                                          self.kg.relation_to_idx)
+            self.kg.valid_set = self.kg.valid_set.values
+            dataset_sanity_checking(self.kg.valid_set, self.kg.num_entities, self.kg.num_relations)
+            self.kg.valid_set = numpy_data_type_changer(self.kg.valid_set,
+                                                        num=max(self.kg.num_entities, self.kg.num_relations))
+
+        if self.kg.test_set is not None:
+            self.kg.test_set = index_triples_with_pandas(self.kg.test_set, self.kg.entity_to_idx,
+                                                         self.kg.relation_to_idx)
+            # To numpy
+            self.kg.test_set = self.kg.test_set.values
+            dataset_sanity_checking(self.kg.test_set, self.kg.num_entities, self.kg.num_relations)
+            self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
+                                                       num=max(self.kg.num_entities, self.kg.num_relations))
+
+    @timeit
     def preprocess_with_pandas(self) -> None:
         """
         Preprocess train, valid and test datasets stored in knowledge graph instance with pandas
@@ -55,6 +104,7 @@ class PreprocessKG:
         """
         # (1)  Add recipriocal or noisy triples.
         self.apply_reciprical_or_noise()
+
         # (2) Construct integer indexing for entities and relations.
         self.sequential_vocabulary_construction()
         self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
@@ -84,6 +134,7 @@ class PreprocessKG:
             dataset_sanity_checking(self.kg.test_set, self.kg.num_entities, self.kg.num_relations)
             self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
                                                        num=max(self.kg.num_entities, self.kg.num_relations))
+
     @timeit
     def preprocess_with_polars(self) -> None:
         print(f'*** Preprocessing Train Data:{self.kg.train_set.shape} with Polars ***')
@@ -138,7 +189,7 @@ class PreprocessKG:
         self.kg.entity_to_idx = pl.concat((df_str_kg['subject'],
                                            df_str_kg['object'])).unique(maintain_order=True).rename('entity')
         print('Relation Indexing...')
-        self.kg.relation_to_idx =df_str_kg['relation'].unique(maintain_order=True)
+        self.kg.relation_to_idx = df_str_kg['relation'].unique(maintain_order=True)
         print('Creating index for entities...')
         self.kg.entity_to_idx = {ent: idx for idx, ent in enumerate(self.kg.entity_to_idx.to_list())}
         print('Creating index for relations...')
@@ -232,6 +283,7 @@ class PreprocessKG:
             # print('\t after dropping:', df_str_kg.size.compute(scheduler=scheduler_flag))
             print('\t after dropping:', self.kg.train_set.size)  # .compute(scheduler=scheduler_flag))
             del low_frequency_entities
+
     def apply_reciprical_or_noise(self) -> None:
         """ (1) Add reciprocal triples (2) Add noisy triples """
         # (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}

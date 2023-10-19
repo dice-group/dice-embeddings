@@ -44,7 +44,7 @@ class Execute:
         self.trainer = None
         self.trained_model = None
         # (6) A variable is initialized for storing input data.
-        self.dataset = None
+        self.knowledge_graph = None
         # (7) Store few data in memory for numerical results, e.g. runtime, H@1 etc.
         self.report = dict()
         # (8) Create an object to carry out link prediction evaluations
@@ -67,15 +67,17 @@ class Execute:
 
         """
         # (1) Read & Preprocess & Index & Serialize Input Data.
-        self.dataset = read_or_load_kg(self.args, cls=KG)
+        self.knowledge_graph = read_or_load_kg(self.args, cls=KG)
         # (2) Sanity checking.
-        self.args, self.dataset = config_kge_sanity_checking(self.args, self.dataset)
+        self.args, self.knowledge_graph = config_kge_sanity_checking(self.args, self.knowledge_graph)
         # (3) Store the stats
-        self.args.num_entities = self.dataset.num_entities
-        self.args.num_relations = self.dataset.num_relations
-        self.report['num_train_triples'] = len(self.dataset.train_set)
-        self.report['num_entities'] = self.dataset.num_entities
-        self.report['num_relations'] = self.dataset.num_relations
+        self.args.num_entities = self.knowledge_graph.num_entities
+        self.args.num_relations = self.knowledge_graph.num_relations
+        self.args.num_tokens = self.knowledge_graph.num_tokens
+        self.report['num_train_triples'] = len(self.knowledge_graph.train_set)
+        self.report['num_entities'] = self.knowledge_graph.num_entities
+        self.report['num_relations'] = self.knowledge_graph.num_relations
+        self.report['num_relations'] = self.knowledge_graph.num_relations
         self.report['runtime_kg_loading'] = time.time() - self.start_time
 
     def load_indexed_data(self) -> None:
@@ -89,7 +91,7 @@ class Execute:
         None
 
         """
-        self.dataset = read_or_load_kg(self.args, cls=KG)
+        self.knowledge_graph = read_or_load_kg(self.args, cls=KG)
 
     @timeit
     def save_trained_model(self) -> None:
@@ -157,7 +159,7 @@ class Execute:
             self.write_report()
             return {**self.report}
         else:
-            self.evaluator.eval(dataset=self.dataset, trained_model=self.trained_model,
+            self.evaluator.eval(dataset=self.knowledge_graph, trained_model=self.trained_model,
                                 form_of_labelling=form_of_labelling)
             self.write_report()
             return {**self.report, **self.evaluator.report}
@@ -200,7 +202,7 @@ class Execute:
                                     storage_path=self.storage_path,
                                     evaluator=self.evaluator)
         # (4) Start the training
-        self.trained_model, form_of_labelling = self.trainer.start(dataset=self.dataset)
+        self.trained_model, form_of_labelling = self.trainer.start(dataset=self.knowledge_graph)
         return self.end(form_of_labelling)
 
 

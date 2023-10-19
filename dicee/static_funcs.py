@@ -279,6 +279,7 @@ def read_or_load_kg(args, cls):
     print('*** Read or Load Knowledge Graph  ***')
     start_time = time.time()
     kg = cls(dataset_dir=args.dataset_dir,
+             bpe=args.bpe,
              add_noise_rate=args.add_noise_rate,
              sparql_endpoint=args.sparql_endpoint,
              path_single_kg=args.path_single_kg,

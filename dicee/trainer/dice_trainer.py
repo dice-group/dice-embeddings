@@ -163,6 +163,8 @@ class DICE_Trainer:
                                           test_set=dataset.test_set,
                                           entity_to_idx=dataset.entity_to_idx,
                                           relation_to_idx=dataset.relation_to_idx,
+                                          num_tokens=dataset.num_tokens,
+                                          block_size=self.args.block_size,
                                           form_of_labelling=form_of_labelling,
                                           scoring_technique=self.args.scoring_technique,
                                           neg_ratio=self.args.neg_ratio,

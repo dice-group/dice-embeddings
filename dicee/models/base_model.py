@@ -2,7 +2,7 @@ from typing import List, Any, Tuple, Union, Dict
 import pytorch_lightning
 import numpy as np
 import torch
-
+from torch.nn import functional as F
 
 class BaseKGE(pytorch_lightning.LightningModule):
     def __init__(self, args: dict):
@@ -11,6 +11,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
         self.embedding_dim = None
         self.num_entities = None
         self.num_relations = None
+        self.num_tokens = None
         self.learning_rate = None
         self.apply_unit_norm = None
         self.input_dropout_rate = None
@@ -58,15 +59,15 @@ class BaseKGE(pytorch_lightning.LightningModule):
         else:
             self.embedding_dim = 1
 
-        if self.args.get('num_entities'):
-            self.num_entities = self.args['num_entities']
-        else:
-            self.num_entities = 1
+        self.num_entities = self.args.get('num_entities', None)
+        self.num_relations = self.args.get('num_relations', None)
 
-        if self.args.get('num_relations'):
-            self.num_relations = self.args['num_relations']
-        else:
-            self.num_relations = 1
+        if self.num_entities is None and self.num_relations is None:
+            self.num_tokens = self.args.get('num_tokens', None)
+            try:
+                assert isinstance(self.num_tokens, int)
+            except AssertionError:
+                raise AssertionError("num_entities and num_relations is None, num_tokens cannot be None")
 
         if self.args.get('learning_rate'):
             self.learning_rate = self.args['learning_rate']
@@ -191,26 +192,17 @@ class BaseKGE(pytorch_lightning.LightningModule):
             else:
                 return self.forward_sequence(x=x)
 
-    """
-    def training_step(self, batch, batch_idx):
-        if len(batch) == 2:
-            x_batch, y_batch = batch
-            yhat_batch = self.forward(x_batch)
-        elif len(batch) == 3:
-            x_batch, y_idx_batch, y_batch, = batch
-            yhat_batch = self.forward(x_batch, y_idx_batch)
-        else:
-            print(len(batch))
-            raise ValueError('Unexpected batch shape..')
-        train_loss = self.loss_function(yhat_batch=yhat_batch, y_batch=y_batch)
-        return train_loss
-    """
-
     def training_step(self, batch, batch_idx=None):
         x_batch, y_batch = batch
         yhat_batch = self.forward(x_batch)
-        loss_batch = self.loss_function(yhat_batch, y_batch)
-        return loss_batch
+        # (1) A workaround for sentence based KGE.
+        if self.num_tokens is not None:
+            B, T =y_batch.shape
+            y_batch=y_batch.view(B * T)
+            return F.cross_entropy(F.sigmoid(yhat_batch), y_batch)
+        else:
+            loss_batch = self.loss_function(yhat_batch, y_batch)
+            return loss_batch
 
     def training_epoch_end(self, training_step_outputs):
         batch_losses = [i['loss'].item() for i in training_step_outputs]
