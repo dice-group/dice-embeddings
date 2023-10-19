@@ -2,6 +2,7 @@ from typing import Tuple
 import torch
 from .base_model import BaseKGE
 
+
 class ConEx(BaseKGE):
     """ Convolutional ComplEx Knowledge Graph Embeddings"""
 
@@ -229,14 +230,9 @@ class ComplEx(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'ComplEx'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
-    def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
-        # (1) Retrieve embeddings & Apply Dropout & Normalization.
-        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
-        # (2) Split (1) into real and imaginary parts.
+    @staticmethod
+    def score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor):
         emb_head_real, emb_head_imag = torch.hsplit(head_ent_emb, 2)
         emb_rel_real, emb_rel_imag = torch.hsplit(rel_ent_emb, 2)
         emb_tail_real, emb_tail_imag = torch.hsplit(tail_ent_emb, 2)
@@ -246,6 +242,11 @@ class ComplEx(BaseKGE):
         imag_real_imag = (emb_head_imag * emb_rel_real * emb_tail_imag).sum(dim=1)
         imag_imag_real = (emb_head_imag * emb_rel_imag * emb_tail_real).sum(dim=1)
         return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
+
+    def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
+        # (1) Retrieve embeddings & Apply Dropout & Normalization.
+        return self.score(self.get_triple_representation(x))
+
 
     def forward_k_vs_all(self, x: torch.LongTensor) -> torch.FloatTensor:
         # (1) Retrieve embeddings & Apply Dropout & Normalization.

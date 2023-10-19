@@ -12,15 +12,10 @@ class DistMult(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'DistMult'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
     def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
-        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
-        # (2) Compute the score
-        return (self.hidden_dropout(self.hidden_normalizer(head_ent_emb * rel_ent_emb)) * tail_ent_emb).sum(dim=1)
+        return self.score(self.get_triple_representation(x))
 
     def forward_k_vs_all(self, x: torch.LongTensor):
         emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
@@ -33,8 +28,10 @@ class DistMult(BaseKGE):
         t = self.entity_embeddings(target_entity_idx).transpose(1, 2)
         return torch.bmm(hr, t).squeeze(1)
 
-    def score(self,h,r,t):
+    def score(self, h, r, t):
         return (self.hidden_dropout(self.hidden_normalizer(h * r)) * t).sum(dim=1)
+
+
 class TransE(BaseKGE):
     """
     Translating Embeddings for Modeling

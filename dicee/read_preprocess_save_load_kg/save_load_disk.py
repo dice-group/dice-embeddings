@@ -1,6 +1,5 @@
 import numpy as np
-import concurrent
-from .util import load_pickle, get_er_vocab, get_re_vocab, get_ee_vocab, create_constraints, load_numpy_ndarray
+from .util import load_pickle, load_numpy_ndarray
 import os
 from dicee.static_funcs import save_pickle, save_numpy_ndarray
 

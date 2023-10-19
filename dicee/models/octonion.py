@@ -48,9 +48,6 @@ class OMult(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'OMult'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
     def octonion_normalizer(self, emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6,
                             emb_rel_e7):
@@ -67,10 +64,7 @@ class OMult(BaseKGE):
         y7 = emb_rel_e7 / denominator
         return y0, y1, y2, y3, y4, y5, y6, y7
 
-    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
-        # (1) Retrieve embeddings & Apply Dropout & Normalization.
-        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
-
+    def score(self, head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor):
         # (2) Split (1) into real and imaginary parts.
         emb_head_e0, emb_head_e1, emb_head_e2, emb_head_e3, emb_head_e4, emb_head_e5, emb_head_e6, emb_head_e7 = torch.hsplit(
             head_ent_emb, 8)
@@ -103,6 +97,10 @@ class OMult(BaseKGE):
         e7_score = (e7 * emb_tail_e7).sum(dim=1)
 
         return e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
+
+    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
+        # (1) Retrieve embeddings & Apply Dropout & Normalization.
+        return self.score(self.get_triple_representation(x))
 
     def forward_k_vs_all(self, x: torch.Tensor):
         """

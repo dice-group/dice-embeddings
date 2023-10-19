@@ -306,23 +306,6 @@ class Keci(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'Keci'
-        if self.num_entities is None and self.num_relations is None:
-
-            self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
-            # self.lm_head = torch.nn.Linear(self.embedding_dim, self.num_tokens)
-            """
-            # each token directly reads off the logits for the next token from a lookup table
-
-            self.blocks = nn.Sequential(*[Block(num_heads=self.n_head, n_embd=self.embedding_dim, block_size=self.block_size) for _ in range(self.n_layer)])
-            self.ln_f = nn.LayerNorm(self.embedding_dim)  # final layer norm
-            self.lm_head = nn.Linear(self.embedding_dim, self.num_tokens)
-            """
-
-        else:
-            self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-            self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-            self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
-
         self.p = self.args.get("p", 0)
         self.q = self.args.get("q", 0)
         if self.p is None:
@@ -808,20 +791,6 @@ class Keci(BaseKGE):
         D_E_F_score = D_E_F_score.view(len(head_ent_emb), 1)
         # (12) Score
         return A_B_C_score + D_E_F_score
-
-    def forward_sequence(self, x: torch.LongTensor):
-        """
-
-        Parameters
-        ----------
-        x shape b, 3, t,
-        where b denoting the batch size, 3 stands for subject, predicate, object and t denotes
-        number of subtokens.
-        -------
-
-        """
-        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_sentence_representation(x)
-        return self.score(head_ent_emb, rel_ent_emb, tail_ent_emb)
 
 
 class KeciBase(Keci):

@@ -2,7 +2,6 @@ from typing import List, Any, Tuple, Union, Dict
 import pytorch_lightning
 import numpy as np
 import torch
-from torch.nn import functional as F
 
 
 class BaseKGE(pytorch_lightning.LightningModule):
@@ -38,6 +37,13 @@ class BaseKGE(pytorch_lightning.LightningModule):
         self.hidden_dropout = torch.nn.Dropout(self.input_dropout_rate)
         # average minibatch loss per epoch
         self.loss_history = []
+
+        if self.num_entities is None and self.num_relations is None:
+            self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
+        else:
+            self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+            self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
+            self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
     def mem_of_model(self) -> Dict:
         """ Size of model in MB and number of params"""
@@ -193,7 +199,20 @@ class BaseKGE(pytorch_lightning.LightningModule):
                     # Note that y can be relation or tail entity.
                     return self.forward_k_vs_all(x=x)
             else:
-                return self.forward_sequence(x=x)
+                return self.forward_byte_pair_encoded_triple(x=x)
+
+
+    def forward_byte_pair_encoded_triple(self, x: torch.LongTensor):
+        """
+
+        Parameters
+        ----------
+        x shape b, 3, t,
+        -------
+
+        """
+        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_sentence_representation(x)
+        return self.score(head_ent_emb, rel_ent_emb, tail_ent_emb)
 
     def training_step(self, batch, batch_idx=None):
         x_batch, y_batch = batch
@@ -287,7 +306,6 @@ class BaseKGE(pytorch_lightning.LightningModule):
     def get_sentence_representation(self, x: torch.LongTensor):
         h, r, t = x[:, 0], x[:, 1], x[:, 2]
         batch_size, sub_token_size = h.shape
-
         head_ent_emb = self.token_embeddings(h).view(batch_size, sub_token_size * self.embedding_dim)
         rel_emb = self.token_embeddings(r).view(batch_size, sub_token_size * self.embedding_dim)
         tail_emb = self.token_embeddings(t).view(batch_size, sub_token_size * self.embedding_dim)

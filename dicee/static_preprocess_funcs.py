@@ -76,7 +76,7 @@ def preprocesses_input_args(args):
         try:
             assert args.scoring_technique=="Sentence"
         except AssertionError:
-            raise AssertionError(f"Byte-pair encoding only works with --scoring_technique Sentence (current value {args.scoring_technique}=")
+            raise AssertionError(f"Byte-pair encoding only works with --scoring_technique Sentence (current value {args.scoring_technique})")
     return args
 
 
