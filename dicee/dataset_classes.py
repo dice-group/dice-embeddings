@@ -2,7 +2,7 @@ from torch.utils.data import DataLoader
 import numpy as np
 import torch
 import pytorch_lightning as pl
-from typing import Dict, List, Tuple
+from typing import Dict, List
 from .static_preprocess_funcs import mapping_from_first_two_cols_to_third
 from .static_funcs import timeit, load_pickle
 

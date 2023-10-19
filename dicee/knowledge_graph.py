@@ -1,5 +1,4 @@
 from typing import List
-import numpy as np
 from .read_preprocess_save_load_kg import ReadFromDisk, PreprocessKG, LoadSaveToDisk
 import sys
 
@@ -16,8 +15,8 @@ class CharEncoder:
     def encode(self, x: str):
         return [self.char_to_idx[c] for c in x]
 
-    def decode(self, l: str):
-        return ''.join([self.idx_to_char[i] for i in l])
+    def decode(self, x):
+        return ''.join([self.idx_to_char[i] for i in x])
 
 
 class KG:

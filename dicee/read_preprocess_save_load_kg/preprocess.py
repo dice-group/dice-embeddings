@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import polars as pl
 from .util import create_recipriocal_triples, timeit, index_triples_with_pandas, dataset_sanity_checking
