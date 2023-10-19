@@ -8,6 +8,12 @@ class Namespace(argparse.Namespace):
         self.save_embeddings_as_csv: bool = False
         "A flag for saving embeddings in csv file."
 
+        self.bpe: bool = False
+        "WIP:A flag for tokenzier."
+
+        self.block_size: int = False
+        "WIP:A flag for saving embeddings in csv file."
+
         self.storage_path: str = "Experiments"
         "A directory named with time of execution under --storage_path that contains related data about embeddings."
 
