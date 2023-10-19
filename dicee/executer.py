@@ -192,7 +192,7 @@ class Execute:
         self.start_time = time.time()
         print(f"Start time:{datetime.datetime.now()}")
         # (1) Loading the Data
-        #  Load the indexed data from disk or read a raw data from disk.
+        #  Load the indexed data from disk or read a raw data from disk into knowledge_graph attribtute
         self.load_indexed_data() if self.is_continual_training else self.read_preprocess_index_serialize_data()
         # (2) Create an evaluator object.
         self.evaluator = Evaluator(args=self.args)

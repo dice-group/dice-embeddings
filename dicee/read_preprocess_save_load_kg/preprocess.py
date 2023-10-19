@@ -2,6 +2,8 @@ import pandas as pd
 import polars as pl
 from .util import create_recipriocal_triples, timeit, index_triples_with_pandas, dataset_sanity_checking
 from dicee.static_funcs import numpy_data_type_changer
+# Subworkd token
+import tiktoken
 
 
 class PreprocessKG:
@@ -21,12 +23,16 @@ class PreprocessKG:
         -------
         None
         """
-        if self.kg.backend == "polars":
+        if self.kg.byte_pair_encoding:
+            self.preprocess_with_byte_pair_encoding()
+        elif self.kg.backend == "polars":
             self.preprocess_with_polars()
         elif self.kg.backend in ["pandas", "rdflib"]:
             self.preprocess_with_pandas()
         else:
             raise KeyError(f'{self.kg.backend} not found')
+        """
+        @TODO: Temporarily ignored
         print('Finding suitable integer type for the index...')
         self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
                                                     num=max(self.kg.num_entities, self.kg.num_relations))
@@ -36,54 +42,31 @@ class PreprocessKG:
         if self.kg.test_set is not None:
             self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
                                                        num=max(self.kg.num_entities, self.kg.num_relations))
-
+        """
     @timeit
-    def preprocess_with_bpe(self) -> None:
-        """
-        Preprocess train, valid and test datasets stored in knowledge graph instance with pandas
-
-        (1) Add recipriocal or noisy triples
-        (2) Construct vocabulary
-        (3) Index datasets
-
-        Parameter
-        ---------
-
-        Returns
-        -------
-        None
-        """
+    def preprocess_with_byte_pair_encoding(self) -> None:
         # (1)  Add recipriocal or noisy triples.
-        self.apply_reciprical_or_noise()
+        # self.apply_reciprical_or_noise()
+
         # (2) Construct integer indexing for entities and relations.
+        # self.sequential_vocabulary_construction()
+        # self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
 
-        self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
+        self.kg.enc = tiktoken.get_encoding("gpt2")
+        self.kg.num_tokens = self.kg.enc.n_vocab
+        # Index
+        self.kg.train_set = self.kg.train_set.map(self.kg.enc.encode).values.tolist()
+        assert isinstance(self.kg.train_set, list)
+        assert isinstance(self.kg.train_set[0], list)
+        assert len(self.kg.train_set[0])==3
+        assert isinstance(self.kg.train_set[0][0], list)
+        assert isinstance(self.kg.train_set[0][0][0], int)
 
-        # (3) Index datasets
-        self.kg.train_set = index_triples_with_pandas(self.kg.train_set,
-                                                      self.kg.entity_to_idx,
-                                                      self.kg.relation_to_idx)
-        assert isinstance(self.kg.train_set, pd.core.frame.DataFrame)
-        self.kg.train_set = self.kg.train_set.values
-        self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
-                                                    num=max(self.kg.num_entities, self.kg.num_relations))
-        dataset_sanity_checking(self.kg.train_set, self.kg.num_entities, self.kg.num_relations)
         if self.kg.valid_set is not None:
-            self.kg.valid_set = index_triples_with_pandas(self.kg.valid_set, self.kg.entity_to_idx,
-                                                          self.kg.relation_to_idx)
-            self.kg.valid_set = self.kg.valid_set.values
-            dataset_sanity_checking(self.kg.valid_set, self.kg.num_entities, self.kg.num_relations)
-            self.kg.valid_set = numpy_data_type_changer(self.kg.valid_set,
-                                                        num=max(self.kg.num_entities, self.kg.num_relations))
+            self.kg.valid_set = self.kg.valid_set.map(self.kg.enc.encode).values.tolist()
 
         if self.kg.test_set is not None:
-            self.kg.test_set = index_triples_with_pandas(self.kg.test_set, self.kg.entity_to_idx,
-                                                         self.kg.relation_to_idx)
-            # To numpy
-            self.kg.test_set = self.kg.test_set.values
-            dataset_sanity_checking(self.kg.test_set, self.kg.num_entities, self.kg.num_relations)
-            self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
-                                                       num=max(self.kg.num_entities, self.kg.num_relations))
+            self.kg.test_set = self.kg.test_set.map(self.kg.enc.encode).values.tolist()
 
     @timeit
     def preprocess_with_pandas(self) -> None:
@@ -225,6 +208,7 @@ class PreprocessKG:
         try:
             assert isinstance(self.kg.train_set, pd.DataFrame)
         except AssertionError:
+            raise AssertionError
             print(type(self.kg.train_set))
             print('HEREE')
             exit(1)

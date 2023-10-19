@@ -1,29 +1,15 @@
 from typing import List
 from .read_preprocess_save_load_kg import ReadFromDisk, PreprocessKG, LoadSaveToDisk
+from .read_preprocess_save_load_kg.util import get_er_vocab, get_re_vocab, get_ee_vocab, create_constraints
 import sys
-
-
-class CharEncoder:
-    def __init__(self, chars):
-        # import tiktoken
-        # self.enc = tiktoken.get_encoding("gpt2")
-        # self.num_tokens = self.enc.n_vocab
-        self.char_to_idx = {ch: i for i, ch in enumerate(chars)}
-        self.idx_to_chat = {i: ch for i, ch in enumerate(chars)}
-        self.n_vocab = len(self.char_to_idx)
-
-    def encode(self, x: str):
-        return [self.char_to_idx[c] for c in x]
-
-    def decode(self, x):
-        return ''.join([self.idx_to_char[i] for i in x])
-
+import numpy as np
+import concurrent
 
 class KG:
     """ Knowledge Graph """
 
     def __init__(self, dataset_dir: str = None,
-                 bpe: bool = False,
+                 byte_pair_encoding: bool = False,
                  add_noise_rate: float = None,
                  sparql_endpoint: str = None,
                  path_single_kg: str = None,
@@ -34,7 +20,7 @@ class KG:
                  entity_to_idx=None, relation_to_idx=None, backend=None):
         """
         :param dataset_dir: A path of a folder containing train.txt, valid.txt, test.text
-        :param bpe: Apply Byte pair encoding.
+        :param byte_pair_encoding: Apply Byte pair encoding.
         :param add_noise_rate: Noisy triples added into the training adataset by x % of its size.
         : param sparql_endpoint: An endpoint of a triple store
         :param path_single_kg: The path of a single file containing the input knowledge graph
@@ -47,7 +33,7 @@ class KG:
         sample_triples_ratio
         """
         self.dataset_dir = dataset_dir
-        self.bpe = bpe
+        self.byte_pair_encoding = byte_pair_encoding
         self.sparql_endpoint = sparql_endpoint
         self.add_noise_rate = add_noise_rate
         self.num_entities = None
@@ -69,33 +55,24 @@ class KG:
 
         if self.path_for_deserialization is None:
             ReadFromDisk(kg=self).start()
-            # WIP:
-            if self.bpe:
-                self.train_set["sentence"] = self.train_set["subject"] + " " + self.train_set[
-                    "relation"] + " " + self.train_set["object"]
-                self.train_set.drop(columns=["subject", "relation", "object"], inplace=True)
-                text = "\n".join(self.train_set["sentence"].to_list())
+            PreprocessKG(kg=self).start()
+            LoadSaveToDisk(kg=self).save()
 
-                self.enc=CharEncoder(sorted(list(set(text))))
-                self.num_tokens = self.enc.n_vocab
-
-                self.train_set = self.enc.encode("\n".join(self.train_set["sentence"].to_list()))
-
-                if self.valid_set is not None:
-                    self.valid_set["sentence"] = self.valid_set["subject"] + " " + self.valid_set[
-                        "relation"] + " " + self.valid_set["object"]
-                    self.valid_set.drop(columns=["subject", "relation", "object"], inplace=True)
-                    self.valid_set = self.enc.encode("\n".join(self.valid_set["sentence"].to_list()))
-
-                if self.test_set is not None:
-                    self.test_set["sentence"] = self.test_set["subject"] + " " + self.test_set[
-                        "relation"] + " " + self.test_set["object"]
-                    self.test_set.drop(columns=["subject", "relation", "object"], inplace=True)
-                    self.test_set = self.enc.encode("\n".join(self.test_set["sentence"].to_list()))
-
-            else:
-                PreprocessKG(kg=self).start()
-                LoadSaveToDisk(kg=self).save()
+            if self.eval_model:
+                if self.valid_set is not None and self.test_set is not None:
+                    assert isinstance(self.valid_set, np.ndarray) and isinstance(self.test_set, np.ndarray)
+                    data = np.concatenate([self.train_set, self.valid_set, self.test_set])
+                else:
+                    data = self.train_set
+                # We need to parallelise the next four steps.
+                print('Submit er-vocab, re-vocab, and ee-vocab via  ProcessPoolExecutor...')
+                executor = concurrent.futures.ProcessPoolExecutor()
+                self.er_vocab = executor.submit(get_er_vocab, data, self.path_for_serialization + '/er_vocab.p')
+                self.re_vocab = executor.submit(get_re_vocab, data, self.path_for_serialization + '/re_vocab.p')
+                self.ee_vocab = executor.submit(get_ee_vocab, data, self.path_for_serialization + '/ee_vocab.p')
+                self.constraints = executor.submit(create_constraints, self.train_set,
+                                                      self.path_for_serialization + '/constraints.p')
+                self.domain_constraints_per_rel, self.range_constraints_per_rel = None, None
         else:
             LoadSaveToDisk(kg=self).load()
 
@@ -118,7 +95,6 @@ class KG:
                                      f'{len(self.test_set) if self.test_set is not None else 0}\n'
         self.description_of_input += f"Entity Index:{sys.getsizeof(self.entity_to_idx) / 1_000_000_000:.5f} in GB\n"
         self.description_of_input += f"Relation Index:{sys.getsizeof(self.relation_to_idx) / 1_000_000_000:.5f} in GB\n"
-        # self.description_of_input += f"Train set :{self.train_set.nbytes / 1_000_000_000:.5f} in GB\n"
 
     @property
     def entities_str(self) -> List:

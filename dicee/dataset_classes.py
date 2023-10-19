@@ -91,7 +91,8 @@ def construct_dataset(*, train_set: np.ndarray,
                                  relation_idxs=relation_to_idx,
                                  label_smoothing_rate=label_smoothing_rate)
         elif scoring_technique == 'Sentence':
-            train_set = Sentence(train_set, num_tokens=num_tokens, block_size=block_size)
+            # Subtoken maybe ?!
+            train_set = Sentence(train_set, num_tokens=num_tokens)
         else:
             raise ValueError(f'Invalid scoring technique : {scoring_technique}')
     elif form_of_labelling == 'RelationPrediction':
@@ -105,20 +106,63 @@ def construct_dataset(*, train_set: np.ndarray,
 
 class Sentence(torch.utils.data.Dataset):
 
-    def __init__(self, train_set: List[int], num_tokens, block_size=8):
+    def __init__(self, train_set: List, num_tokens):
         super().__init__()
-        assert isinstance(train_set, list)
-        assert isinstance(train_set[0], int)
-        self.train_data = torch.tensor(train_set, dtype=torch.long)
+        # CD: Can be paralelized and remove from here
+        max_len = 0
+        for i in train_set:
+            max_token_length_per_triple = max(len(i[0]), len(i[1]), len(i[2]))
+            if max_token_length_per_triple > max_len:
+                max_len = max_token_length_per_triple
+        dummy_token_index = 220
+        for i in range(len(train_set)):
+            triple = train_set[i]
+            s, p, o = triple[0], triple[1], triple[2]
+            if len(s) < max_len:
+                train_set[i][0] = s + [dummy_token_index for _ in range(max_len - len(s))]
+
+            if len(p) < max_len:
+                train_set[i][1] = p + [dummy_token_index for _ in range(max_len - len(p))]
+
+            if len(o) < max_len:
+                train_set[i][2] = o + [dummy_token_index for _ in range(max_len - len(o))]
+
+        self.train_set = torch.tensor(train_set, dtype=torch.long)
         self.num_tokens = num_tokens
-        self.block_size = block_size
-        self.collate_fn=None
 
     def __len__(self):
-        return len(self.train_data) - self.block_size
+        return len(self.train_set)
 
     def __getitem__(self, idx):
-        return self.train_data[idx:idx + self.block_size], self.train_data[idx + 1: idx + self.block_size + 1]
+        return self.train_set[idx]
+
+    def collate_fn(self, batch: List[torch.Tensor]):
+        batch = torch.stack(batch, dim=0)
+        size_of_batch, _, d = batch.shape
+        label = torch.ones((size_of_batch,))
+
+        h, r, t = batch[:, 0, :], batch[:, 1, :], batch[:, 2, :]
+
+        # Head corruption only
+        h_corr = h[torch.randperm(size_of_batch)]
+        label_head_corr = torch.zeros(size_of_batch)
+
+        # Relation corruption only
+        r_corr = r[torch.randperm(size_of_batch)]
+        label_r_corr = torch.zeros(size_of_batch)
+
+        # Relation corruption only
+        t_corr = t[torch.randperm(size_of_batch)]
+        label_t_corr = torch.zeros(size_of_batch)
+
+        h = torch.cat((h, h_corr, h, h), 0)
+        r = torch.cat((r, r, r_corr, r), 0)
+        t = torch.cat((t, t, t, t_corr), 0)
+
+        x = torch.stack((h, r, t), dim=1)
+        label = torch.cat((label, label_head_corr, label_r_corr, label_t_corr), 0)
+
+        return x, label
 
 
 class OnevsAllDataset(torch.utils.data.Dataset):

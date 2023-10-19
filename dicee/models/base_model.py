@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from torch.nn import functional as F
 
+
 class BaseKGE(pytorch_lightning.LightningModule):
     def __init__(self, args: dict):
         super().__init__()
@@ -182,27 +183,23 @@ class BaseKGE(pytorch_lightning.LightningModule):
             x, y_idx = x
             return self.forward_k_vs_sample(x=x, target_entity_idx=y_idx)
         else:
-            batch_size, dim = x.shape
-            if dim == 3:
-                return self.forward_triples(x)
-            elif dim == 2:
-                # h, y = x[0], x[1]
-                # Note that y can be relation or tail entity.
-                return self.forward_k_vs_all(x=x)
+            shape_info = x.shape
+            if len(shape_info) == 2:
+                batch_size, dim = x.shape
+                if dim == 3:
+                    return self.forward_triples(x)
+                elif dim == 2:
+                    # h, y = x[0], x[1]
+                    # Note that y can be relation or tail entity.
+                    return self.forward_k_vs_all(x=x)
             else:
                 return self.forward_sequence(x=x)
 
     def training_step(self, batch, batch_idx=None):
         x_batch, y_batch = batch
         yhat_batch = self.forward(x_batch)
-        # (1) A workaround for sentence based KGE.
-        if self.num_tokens is not None:
-            B, T =y_batch.shape
-            y_batch=y_batch.view(B * T)
-            return F.cross_entropy(F.sigmoid(yhat_batch), y_batch)
-        else:
-            loss_batch = self.loss_function(yhat_batch, y_batch)
-            return loss_batch
+        loss_batch = self.loss_function(yhat_batch, y_batch)
+        return loss_batch
 
     def training_epoch_end(self, training_step_outputs):
         batch_losses = [i['loss'].item() for i in training_step_outputs]
@@ -286,6 +283,16 @@ class BaseKGE(pytorch_lightning.LightningModule):
             self.input_dp_ent_real(self.entity_embeddings(idx_head_entity)))
         rel_ent_emb = self.normalize_relation_embeddings(self.input_dp_rel_real(self.relation_embeddings(idx_relation)))
         return head_ent_emb, rel_ent_emb
+
+    def get_sentence_representation(self, x: torch.LongTensor):
+        h, r, t = x[:, 0], x[:, 1], x[:, 2]
+        batch_size, sub_token_size = h.shape
+
+        head_ent_emb = self.token_embeddings(h).view(batch_size, sub_token_size * self.embedding_dim)
+        rel_emb = self.token_embeddings(r).view(batch_size, sub_token_size * self.embedding_dim)
+        tail_emb = self.token_embeddings(t).view(batch_size, sub_token_size * self.embedding_dim)
+
+        return head_ent_emb, rel_emb, tail_emb
 
 
 class IdentityClass(torch.nn.Module):

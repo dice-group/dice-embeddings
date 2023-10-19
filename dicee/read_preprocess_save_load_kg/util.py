@@ -34,6 +34,7 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
     # (1) Load the data.
     if data_path[-3:] in ['txt', 'csv']:
         print('Reading with polars.read_csv with sep **t** ...')
+        # TODO: if byte_pair_encoding=True, we should not use "\s+" as seperator I guess
         df = polars.read_csv(data_path,
                              has_header=False,
                              low_memory=False,
@@ -66,6 +67,7 @@ def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio:
     print(f'*** Reading {data_path} with Pandas ***')
     if data_path[-3:] in ["ttl", 'txt', 'csv', 'zst']:
         print('Reading with pandas.read_csv with sep ** s+ ** ...')
+        # TODO: if byte_pair_encoding=True, we should not use "\s+" as seperator I guess
         df = pd.read_csv(data_path,
                          sep="\s+",
                          header=None,
@@ -101,7 +103,7 @@ def read_from_disk(data_path: str, read_only_few: int = None,
     assert backend
     # If path exits
     if glob.glob(data_path):
-        # format of the data
+        # (1) Detect data format
         dformat = data_path[data_path.find(".") + 1:]
         if dformat in ["ttl", "owl", "turtle", "rdf/xml"] and backend != "rdflib":
             raise RuntimeError(

@@ -30,6 +30,11 @@ class KGE(BaseInteractiveKGE):
             (self.domain_constraints_per_rel, self.range_constraints_per_rel,
              self.domain_per_rel, self.range_per_rel) = create_constraints(self.train_set)
 
+        if len(self.entity_to_idx) == 0 or len(self.relation_to_idx) == 0:
+            print("Sub work tokenizer will be applied")
+            import tiktoken
+            self.enc = tiktoken.get_encoding("gpt2")
+
     def __str__(self):
         return "KGE | " + str(self.model)
 
@@ -317,16 +322,24 @@ class KGE(BaseInteractiveKGE):
 
         pytorch tensor of triple score
         """
-        if isinstance(h, list) and isinstance(r, list) and isinstance(t, list):
-            h = torch.LongTensor([self.entity_to_idx[i] for i in h]).reshape(len(h), 1)
-            r = torch.LongTensor([self.relation_to_idx[i] for i in r]).reshape(len(r), 1)
-            t = torch.LongTensor([self.entity_to_idx[i] for i in t]).reshape(len(t), 1)
-        else:
-            h = torch.LongTensor([self.entity_to_idx[h]]).reshape(1, 1)
-            r = torch.LongTensor([self.relation_to_idx[r]]).reshape(1, 1)
-            t = torch.LongTensor([self.entity_to_idx[t]]).reshape(1, 1)
 
-        x = torch.hstack((h, r, t))
+        if len(self.entity_to_idx) == 0 or len(self.relation_to_idx) == 0:
+            h = torch.LongTensor(self.enc.encode(h)).reshape(1, 2)
+            r = torch.LongTensor(self.enc.encode(r)).reshape(1, 2)
+            t = torch.LongTensor(self.enc.encode(t)).reshape(1, 2)
+            x = torch.cat((h, r, t),  dim=0)
+            x = torch.unsqueeze(x, dim=0)
+        else:
+            if isinstance(h, list) and isinstance(r, list) and isinstance(t, list):
+                h = torch.LongTensor([self.entity_to_idx[i] for i in h]).reshape(len(h), 1)
+                r = torch.LongTensor([self.relation_to_idx[i] for i in r]).reshape(len(r), 1)
+                t = torch.LongTensor([self.entity_to_idx[i] for i in t]).reshape(len(t), 1)
+            else:
+                h = torch.LongTensor([self.entity_to_idx[h]]).reshape(1, 1)
+                r = torch.LongTensor([self.relation_to_idx[r]]).reshape(1, 1)
+                t = torch.LongTensor([self.entity_to_idx[t]]).reshape(1, 1)
+            x = torch.hstack((h, r, t))
+
         if self.apply_semantic_constraint:
             raise NotImplementedError()
         else:
