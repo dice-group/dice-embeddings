@@ -28,7 +28,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
         self.normalize_relation_embeddings = IdentityClass()
         self.normalize_tail_entity_embeddings = IdentityClass()
         self.hidden_normalizer = IdentityClass()
-        self.param_init = None
+        self.param_init = IdentityClass
         self.init_params_with_sanity_checking()
 
         # Dropouts
@@ -133,9 +133,6 @@ class BaseKGE(pytorch_lightning.LightningModule):
             print(f'--init_param (***{self.args.get("init_param")}***) not found')
             self.optimizer_name = IdentityClass
 
-    def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
-        # @TODO why twice data.data.?
-        return self.entity_embeddings.weight.data.data.detach(), self.relation_embeddings.weight.data.detach()
 
     def configure_optimizers(self, parameters=None):
         if parameters is None:
@@ -165,25 +162,32 @@ class BaseKGE(pytorch_lightning.LightningModule):
             raise KeyError()
         return self.selected_optimizer
 
-    def loss_function(self, yhat_batch, y_batch):
+    def loss_function(self, yhat_batch:torch.FloatTensor, y_batch:torch.FloatTensor):
+        """
+
+        Parameters
+        ----------
+        yhat_batch
+        y_batch
+
+        Returns
+        -------
+
+        """
         return self.loss(yhat_batch, y_batch)
-
-    def forward_triples(self, *args, **kwargs):
-        raise ValueError(f'MODEL:{self.name} does not have forward_triples function')
-
-    def forward_k_vs_all(self, *args, **kwargs):
-        raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_all function')
-
-    def forward_k_vs_sample(self, *args, **kwargs):
-        raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_sample function')
 
     def forward(self, x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]],
                 y_idx: torch.LongTensor = None):
         """
 
-        :param x: a batch of inputs
-        :param y_idx: indices of selected outputs.
-        :return:
+        Parameters
+        ----------
+        x
+        y_idx
+
+        Returns
+        -------
+
         """
         if isinstance(x, tuple):
             x, y_idx = x
@@ -201,9 +205,30 @@ class BaseKGE(pytorch_lightning.LightningModule):
             else:
                 return self.forward_byte_pair_encoded_triple(x=x)
 
+    def forward_triples(self, x: torch.LongTensor) -> torch.Tensor:
+        """
+
+        Parameters
+        ----------
+        x
+
+        Returns
+        -------
+
+        """
+        # (1) Retrieve embeddings & Apply Dropout & Normalization.
+        h_emb, r_emb, t_emb = self.get_triple_representation(x)
+        return self.score(h_emb, r_emb, t_emb)
+
+    def forward_k_vs_all(self, *args, **kwargs):
+        raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_all function')
+
+    def forward_k_vs_sample(self, *args, **kwargs):
+        raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_sample function')
 
     def forward_byte_pair_encoded_triple(self, x: torch.LongTensor):
         """
+        attentive byte pair encoded neural link predictors
 
         Parameters
         ----------
@@ -212,6 +237,13 @@ class BaseKGE(pytorch_lightning.LightningModule):
 
         """
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_sentence_representation(x)
+        # x=cat(head_ent_emb, rel_ent_emb, tail_ent_emb)
+        # k= key(x)
+        # q = query(x)
+        # v = value (x)
+        # x=(q@k) @ v
+        # head_ent_emb, rel_ent_emb, tail_ent_emb := x
+        # key()
         return self.score(head_ent_emb, rel_ent_emb, tail_ent_emb)
 
     def training_step(self, batch, batch_idx=None):
@@ -304,6 +336,18 @@ class BaseKGE(pytorch_lightning.LightningModule):
         return head_ent_emb, rel_ent_emb
 
     def get_sentence_representation(self, x: torch.LongTensor):
+        """
+
+        Parameters
+        ----------
+        x shape (b,3,t)
+
+        Returns
+        -------
+
+        """
+        # @TODO: Rename
+        # get_tokenized_triple_representation
         h, r, t = x[:, 0], x[:, 1], x[:, 2]
         batch_size, sub_token_size = h.shape
         head_ent_emb = self.token_embeddings(h).view(batch_size, sub_token_size * self.embedding_dim)
@@ -312,6 +356,14 @@ class BaseKGE(pytorch_lightning.LightningModule):
 
         return head_ent_emb, rel_emb, tail_emb
 
+    def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
+        """
+
+        Returns
+        -------
+
+        """
+        return self.entity_embeddings.weight.data.data.detach(), self.relation_embeddings.weight.data.detach()
 
 class IdentityClass(torch.nn.Module):
     def __init__(self, args=None):

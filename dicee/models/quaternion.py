@@ -121,10 +121,6 @@ class QMult(BaseKGE):
         k_score = torch.sum(k_val * emb_tail_k, dim=1)
         return real_score + i_score + j_score + k_score
 
-    def forward_triples(self, indexed_triple: torch.Tensor) -> torch.Tensor:
-        # (1) Retrieve embeddings & Apply Dropout & Normalization.
-        return self.score(self.get_triple_representation(indexed_triple))
-
     def forward_k_vs_all(self, x):
         """
         Completed.

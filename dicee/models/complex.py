@@ -9,9 +9,6 @@ class ConEx(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'ConEx'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
         # Convolution
         self.conv2d = torch.nn.Conv2d(in_channels=1, out_channels=self.num_of_output_channels,
                                       kernel_size=(self.kernel_size, self.kernel_size), stride=1, padding=1, bias=True)
@@ -118,9 +115,6 @@ class AConEx(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'AConEx'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
         # Convolution
         self.conv2d = torch.nn.Conv2d(in_channels=1, out_channels=self.num_of_output_channels,
                                       kernel_size=(self.kernel_size, self.kernel_size), stride=1, padding=1, bias=True)
@@ -242,11 +236,6 @@ class ComplEx(BaseKGE):
         imag_real_imag = (emb_head_imag * emb_rel_real * emb_tail_imag).sum(dim=1)
         imag_imag_real = (emb_head_imag * emb_rel_imag * emb_tail_real).sum(dim=1)
         return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
-
-    def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
-        # (1) Retrieve embeddings & Apply Dropout & Normalization.
-        return self.score(self.get_triple_representation(x))
-
 
     def forward_k_vs_all(self, x: torch.LongTensor) -> torch.FloatTensor:
         # (1) Retrieve embeddings & Apply Dropout & Normalization.

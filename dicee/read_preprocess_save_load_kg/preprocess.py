@@ -51,22 +51,19 @@ class PreprocessKG:
         # (2) Construct integer indexing for entities and relations.
         # self.sequential_vocabulary_construction()
         # self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
-
-        self.kg.enc = tiktoken.get_encoding("gpt2")
-        self.kg.num_tokens = self.kg.enc.n_vocab
-        # Index
-        self.kg.train_set = self.kg.train_set.map(self.kg.enc.encode).values.tolist()
+        assert isinstance(self.kg.train_set,pd.DataFrame)
+        self.kg.train_set = list(self.kg.train_set.map(lambda x: tuple(self.kg.enc.encode(x))).itertuples(index=False, name=None))
         assert isinstance(self.kg.train_set, list)
-        assert isinstance(self.kg.train_set[0], list)
+        assert isinstance(self.kg.train_set[0], tuple)
         assert len(self.kg.train_set[0])==3
-        assert isinstance(self.kg.train_set[0][0], list)
+        assert isinstance(self.kg.train_set[0][0], tuple)
         assert isinstance(self.kg.train_set[0][0][0], int)
 
         if self.kg.valid_set is not None:
-            self.kg.valid_set = self.kg.valid_set.map(self.kg.enc.encode).values.tolist()
+            self.kg.valid_set = list(self.kg.valid_set.map(lambda x: tuple(self.kg.enc.encode(x))).itertuples(index=False, name=None))
 
         if self.kg.test_set is not None:
-            self.kg.test_set = self.kg.test_set.map(self.kg.enc.encode).values.tolist()
+            self.kg.test_set = list(self.kg.test_set.map(lambda x: tuple(self.kg.enc.encode(x))).itertuples(index=False, name=None))
 
     @timeit
     def preprocess_with_pandas(self) -> None:

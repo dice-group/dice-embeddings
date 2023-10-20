@@ -192,7 +192,7 @@ class Execute:
         self.start_time = time.time()
         print(f"Start time:{datetime.datetime.now()}")
         # (1) Loading the Data
-        #  Load the indexed data from disk or read a raw data from disk into knowledge_graph attribtute
+        #  Load the indexed data from disk or read a raw data from disk into knowledge_graph attribute
         self.load_indexed_data() if self.is_continual_training else self.read_preprocess_index_serialize_data()
         # (2) Create an evaluator object.
         self.evaluator = Evaluator(args=self.args)
@@ -202,7 +202,7 @@ class Execute:
                                     storage_path=self.storage_path,
                                     evaluator=self.evaluator)
         # (4) Start the training
-        self.trained_model, form_of_labelling = self.trainer.start(dataset=self.knowledge_graph)
+        self.trained_model, form_of_labelling = self.trainer.start(knowledge_graph=self.knowledge_graph)
         return self.end(form_of_labelling)
 
 

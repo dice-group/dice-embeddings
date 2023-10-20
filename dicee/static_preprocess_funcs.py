@@ -73,10 +73,12 @@ def preprocesses_input_args(args):
         args.normalization = None
     assert args.normalization in [None, 'LayerNorm', 'BatchNorm1d']
     if args.byte_pair_encoding:
+        args.scoring_technique="BytePairEncodedTriplesNegSample"
         try:
-            assert args.scoring_technique=="Sentence"
+            assert args.neg_ratio>0
         except AssertionError:
-            raise AssertionError(f"Byte-pair encoding only works with --scoring_technique Sentence (current value {args.scoring_technique})")
+            raise AssertionError(f"--byte_pair_encoding {args.byte_pair_encoding} currently only works with "
+                                 f"positive --neg_ratio {neg_ratio}")
     return args
 
 
