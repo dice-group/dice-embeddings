@@ -78,7 +78,7 @@ def preprocesses_input_args(args):
             assert args.neg_ratio>0
         except AssertionError:
             raise AssertionError(f"--byte_pair_encoding {args.byte_pair_encoding} currently only works with "
-                                 f"positive --neg_ratio {neg_ratio}")
+                                 f"positive --neg_ratio {args.neg_ratio}")
     return args
 
 

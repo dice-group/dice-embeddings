@@ -2,11 +2,9 @@ from torch.utils.data import DataLoader
 import numpy as np
 import torch
 import pytorch_lightning as pl
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 from .static_preprocess_funcs import mapping_from_first_two_cols_to_third
 from .static_funcs import timeit, load_pickle
-import tiktoken
-
 
 @timeit
 def reload_dataset(path: str, form_of_labelling, scoring_technique, neg_ratio, label_smoothing_rate):

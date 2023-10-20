@@ -2,9 +2,6 @@ import pandas as pd
 import polars as pl
 from .util import create_recipriocal_triples, timeit, index_triples_with_pandas, dataset_sanity_checking
 from dicee.static_funcs import numpy_data_type_changer
-# Subworkd token
-import tiktoken
-
 
 class PreprocessKG:
     """ Preprocess the data in memory """

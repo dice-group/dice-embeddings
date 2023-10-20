@@ -5,8 +5,6 @@ import sys
 import numpy as np
 import concurrent
 import tiktoken
-import torch
-
 
 class KG:
     """ Knowledge Graph """
@@ -70,80 +68,95 @@ class KG:
             # @TODO: move this into PreprocessKG
             if self.byte_pair_encoding:
                 tokens = set()
-                max_len = 0
+                entity = set()
+                self.max_length_subword_tokens = 0
                 for i in self.train_set + self.valid_set + self.test_set:
                     max_token_length_per_triple = max(len(i[0]), len(i[1]), len(i[2]))
-                    if max_token_length_per_triple > max_len:
-                        max_len = max_token_length_per_triple
+                    if max_token_length_per_triple > self.max_length_subword_tokens:
+                        self.max_length_subword_tokens = max_token_length_per_triple
 
                 for i in range(len(self.train_set)):
                     # Tuple of three tuples
                     s, p, o = self.train_set[i]
-                    if len(s) < max_len:
-                        s_encoded = s + tuple(self.dummy_id for _ in range(max_len - len(s)))
+                    if len(s) < self.max_length_subword_tokens:
+                        s_encoded = s + tuple(self.dummy_id for _ in range(self.max_length_subword_tokens - len(s)))
                     else:
                         s_encoded = s
 
-                    if len(p) < max_len:
-                        p_encoded = p + tuple(self.dummy_id for _ in range(max_len - len(p)))
+                    if len(p) < self.max_length_subword_tokens:
+                        p_encoded = p + tuple(self.dummy_id for _ in range(self.max_length_subword_tokens - len(p)))
                     else:
                         p_encoded = p
 
-                    if len(o) < max_len:
-                        o_encoded = o + tuple(self.dummy_id for _ in range(max_len - len(o)))
+                    if len(o) < self.max_length_subword_tokens:
+                        o_encoded = o + tuple(self.dummy_id for _ in range(self.max_length_subword_tokens - len(o)))
                     else:
                         o_encoded = o
 
                     tokens.add(s_encoded)
                     tokens.add(p_encoded)
                     tokens.add(o_encoded)
+
+                    entity.add(s_encoded)
+                    entity.add(o_encoded)
+
                     self.train_set[i] = (s_encoded, p_encoded, o_encoded)
 
                 for i in range(len(self.valid_set)):
                     # Tuple of three tuples
                     s, p, o = self.valid_set[i]
-                    if len(s) < max_len:
-                        s_encoded = s + tuple(self.dummy_id for _ in range(max_len - len(s)))
+                    if len(s) < self.max_length_subword_tokens:
+                        s_encoded = s + tuple(self.dummy_id for _ in range(self.max_length_subword_tokens - len(s)))
                     else:
                         s_encoded = s
-                    if len(p) < max_len:
-                        p_encoded = p + tuple(self.dummy_id for _ in range(max_len - len(p)))
+                    if len(p) < self.max_length_subword_tokens:
+                        p_encoded = p + tuple(self.dummy_id for _ in range(self.max_length_subword_tokens - len(p)))
                     else:
                         p_encoded = p
 
-                    if len(o) < max_len:
-                        o_encoded = o + tuple(self.dummy_id for _ in range(max_len - len(o)))
+                    if len(o) < self.max_length_subword_tokens:
+                        o_encoded = o + tuple(self.dummy_id for _ in range(self.max_length_subword_tokens - len(o)))
                     else:
                         o_encoded = o
                     tokens.add(s_encoded)
                     tokens.add(p_encoded)
                     tokens.add(o_encoded)
+
+                    entity.add(s_encoded)
+                    entity.add(o_encoded)
+
                     self.valid_set[i] = (s_encoded, p_encoded, o_encoded)
 
                 for i in range(len(self.test_set)):
                     # Tuple of three tuples
                     s, p, o = self.test_set[i]
-                    if len(s) < max_len:
-                        s_encoded = s + tuple(self.dummy_id for _ in range(max_len - len(s)))
+                    if len(s) < self.max_length_subword_tokens:
+                        s_encoded = s + tuple(self.dummy_id for _ in range(self.max_length_subword_tokens - len(s)))
                     else:
                         s_encoded = s
-                    if len(p) < max_len:
-                        p_encoded = p + tuple(self.dummy_id for _ in range(max_len - len(p)))
+                    if len(p) < self.max_length_subword_tokens:
+                        p_encoded = p + tuple(self.dummy_id for _ in range(self.max_length_subword_tokens - len(p)))
                     else:
                         p_encoded = p
 
-                    if len(o) < max_len:
-                        o_encoded = o + tuple(self.dummy_id for _ in range(max_len - len(o)))
+                    if len(o) < self.max_length_subword_tokens:
+                        o_encoded = o + tuple(self.dummy_id for _ in range(self.max_length_subword_tokens - len(o)))
                     else:
                         o_encoded = o
                     tokens.add(s_encoded)
                     tokens.add(p_encoded)
                     tokens.add(o_encoded)
+
+                    entity.add(s_encoded)
+                    entity.add(o_encoded)
+
                     self.test_set[i] = (s_encoded, p_encoded, o_encoded)
 
                 # shaped_bpe_tokens
                 self.ordered_shaped_bpe_tokens: List[Tuple[int, ..., int]]
                 self.ordered_shaped_bpe_tokens = [shaped_bpe_token for shaped_bpe_token in tokens]
+
+                self.index_of_relations_on_ordered_bpe_entities_relations = [self.ordered_shaped_bpe_tokens.index(i) for i in entity]
 
                 # self.train_set = np.array(self.train_set)
                 # self.test_set = np.array(self.test_set)
@@ -194,6 +207,7 @@ class KG:
         self.description_of_input += f'\nNumber of entities:{self.num_entities}' \
                                      f'\nNumber of relations:{self.num_relations}' \
                                      f'\nNumber of tokens:{self.num_tokens}' \
+                                     f'\nNumber of max length of subwords :{self.max_length_subword_tokens}' \
                                      f'\nNumber of triples on train set:' \
                                      f'{len(self.train_set)}' \
                                      f'\nNumber of triples on valid set:' \

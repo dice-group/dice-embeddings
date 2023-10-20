@@ -2,6 +2,7 @@ from typing import List, Any, Tuple, Union, Dict
 import pytorch_lightning
 import numpy as np
 import torch
+from torch.nn import functional as F
 
 
 class BaseKGE(pytorch_lightning.LightningModule):
@@ -40,6 +41,16 @@ class BaseKGE(pytorch_lightning.LightningModule):
 
         if self.num_entities is None and self.num_relations is None:
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
+            # @TODO: Add positional embeddings.
+            # Require the max length of the sub word list of an entity
+            self.max_length_subword_tokens = self.args['max_length_subword_tokens']
+            self.position_embedding_table = torch.nn.Embedding(
+                self.max_length_subword_tokens + self.max_length_subword_tokens + self.max_length_subword_tokens,
+                self.embedding_dim)
+            self.key = torch.nn.Linear(self.embedding_dim, self.embedding_dim, bias=False)
+            self.query = torch.nn.Linear(self.embedding_dim, self.embedding_dim, bias=False)
+            self.value = torch.nn.Linear(self.embedding_dim, self.embedding_dim, bias=False)
+
         else:
             self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
             self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
@@ -133,7 +144,6 @@ class BaseKGE(pytorch_lightning.LightningModule):
             print(f'--init_param (***{self.args.get("init_param")}***) not found')
             self.optimizer_name = IdentityClass
 
-
     def configure_optimizers(self, parameters=None):
         if parameters is None:
             parameters = self.parameters()
@@ -162,7 +172,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
             raise KeyError()
         return self.selected_optimizer
 
-    def loss_function(self, yhat_batch:torch.FloatTensor, y_batch:torch.FloatTensor):
+    def loss_function(self, yhat_batch: torch.FloatTensor, y_batch: torch.FloatTensor):
         """
 
         Parameters
@@ -236,14 +246,52 @@ class BaseKGE(pytorch_lightning.LightningModule):
         -------
 
         """
+        # (1) Retrieve embeddings of head entity, relation and tail entity
+        # shape batch_size, sub_token_size, embedding_dim.
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_sentence_representation(x)
-        # x=cat(head_ent_emb, rel_ent_emb, tail_ent_emb)
-        # k= key(x)
-        # q = query(x)
-        # v = value (x)
-        # x=(q@k) @ v
-        # head_ent_emb, rel_ent_emb, tail_ent_emb := x
-        # key()
+
+        B, T, C = head_ent_emb.shape
+
+        # (2) Compute key, query and value of head entity embeddings
+        head_ent_emb_k = self.key(head_ent_emb)  # (B,T,hs)
+        head_ent_emb_q = self.query(head_ent_emb)  # (B,T,hs)
+        head_ent_emb_v = self.value(head_ent_emb)  # (B,T,hs)
+
+        # (3) Compute key, query and value of relation embeddings
+        rel_ent_emb_k = self.key(rel_ent_emb)  # (B,T,hs)
+        rel_ent_emb_q = self.query(rel_ent_emb)  # (B,T,hs)
+        rel_ent_emb_v = self.value(rel_ent_emb)  # (B,T,hs)
+
+        # (4) Compute key, query and value of tail embeddings
+        tail_ent_emb_k = self.key(tail_ent_emb)  # (B,T,hs)
+        tail_ent_emb_q = self.query(tail_ent_emb)  # (B,T,hs)
+        tail_ent_emb_v = self.value(tail_ent_emb)  # (B,T,hs)
+
+        # compute attention scores ("affinities")
+        wei = head_ent_emb_q @ head_ent_emb_k.transpose(-2, -1) * head_ent_emb_k.shape[
+            -1] ** -0.5  # (B, T, hs) @ (B, hs, T) -> (B, T, T)
+        wei = F.softmax(wei, dim=-1)  # (B, T, T)
+        # perform the weighted aggregation of the values
+        head_ent_emb = wei @ head_ent_emb_v  # (B, T, T) @ (B, T, hs) -> (B, T, hs)
+
+        # compute attention scores ("affinities")
+        wei = rel_ent_emb_q @ rel_ent_emb_k.transpose(-2, -1) * rel_ent_emb_k.shape[
+            -1] ** -0.5  # (B, T, hs) @ (B, hs, T) -> (B, T, T)
+        wei = F.softmax(wei, dim=-1)  # (B, T, T)
+        # perform the weighted aggregation of the values
+        rel_ent_emb = wei @ rel_ent_emb_v  # (B, T, T) @ (B, T, hs) -> (B, T, hs)
+
+        # compute attention scores ("affinities")
+        wei = tail_ent_emb_q @ tail_ent_emb_k.transpose(-2, -1) * tail_ent_emb_k.shape[
+            -1] ** -0.5  # (B, T, hs) @ (B, hs, T) -> (B, T, T)
+        wei = F.softmax(wei, dim=-1)  # (B, T, T)
+        # perform the weighted aggregation of the values
+        tail_ent_emb = wei @ tail_ent_emb_v  # (B, T, T) @ (B, T, hs) -> (B, T, hs)
+
+        head_ent_emb = head_ent_emb.view(B, T * C)
+        rel_ent_emb = rel_ent_emb.view(B, T * C)
+        tail_ent_emb = tail_ent_emb.view(B, T * C)
+
         return self.score(head_ent_emb, rel_ent_emb, tail_ent_emb)
 
     def training_step(self, batch, batch_idx=None):
@@ -346,14 +394,15 @@ class BaseKGE(pytorch_lightning.LightningModule):
         -------
 
         """
-        # @TODO: Rename
+        # triple embeddings: B, 3, T, Dim
+        x = self.token_embeddings(x)
+        B, three, T, dim = x.shape
+        x = x + self.position_embedding_table(torch.arange(T))  # (T,C)
         # get_tokenized_triple_representation
-        h, r, t = x[:, 0], x[:, 1], x[:, 2]
-        batch_size, sub_token_size = h.shape
-        head_ent_emb = self.token_embeddings(h).view(batch_size, sub_token_size * self.embedding_dim)
-        rel_emb = self.token_embeddings(r).view(batch_size, sub_token_size * self.embedding_dim)
-        tail_emb = self.token_embeddings(t).view(batch_size, sub_token_size * self.embedding_dim)
-
+        head_ent_emb, rel_emb, tail_emb = x[:, 0, :, :], x[:, 1, :, :], x[:, 2, :, :]
+        # head_ent_emb = self.token_embeddings(h)  # .view(batch_size, sub_token_size * self.embedding_dim)
+        # rel_emb = self.token_embeddings(r)  # .view(batch_size, sub_token_size * self.embedding_dim)
+        # tail_emb = self.token_embeddings(t)  # .view(batch_size, sub_token_size * self.embedding_dim)
         return head_ent_emb, rel_emb, tail_emb
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
@@ -364,6 +413,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
 
         """
         return self.entity_embeddings.weight.data.data.detach(), self.relation_embeddings.weight.data.detach()
+
 
 class IdentityClass(torch.nn.Module):
     def __init__(self, args=None):

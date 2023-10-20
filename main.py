@@ -10,7 +10,7 @@ def get_default_arguments(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Knowledge graph related arguments
-    parser.add_argument("--dataset_dir", type=str, default="KGs/UMLS",
+    parser.add_argument("--dataset_dir", type=str, default="KGs/Coun",
                         help="The path of a folder containing train.txt, and/or valid.txt and/or test.txt"
                              ",e.g., KGs/UMLS")
     parser.add_argument("--sparql_endpoint", type=str, default=None,
@@ -43,12 +43,12 @@ def get_default_arguments(description=None):
     parser.add_argument('--optim', type=str, default='Adam',
                         help='An optimizer',
                         choices=['Adam', 'SGD'])
-    parser.add_argument('--embedding_dim', type=int, default=128,
+    parser.add_argument('--embedding_dim', type=int, default=256,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=256, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024,
                         help='Mini batch size. If None, automatic batch finder is applied')
-    parser.add_argument("--lr", type=float, default=0.1)
+    parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument('--callbacks', type=json.loads,
                         default={},
                         help='{"PPE":{ "last_percent_to_consider": 10}}'
@@ -60,7 +60,7 @@ def get_default_arguments(description=None):
                         help="Training technique for knowledge graph embedding model",
                         choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "KvsSample"])
     parser.add_argument("--byte_pair_encoding",
-                        action="store_true",
+                        action="store_false",
                         help="Currently only avail. for""KGE implemented within dice-embeddings.")
     parser.add_argument('--neg_ratio', type=int, default=10,
                         help='The number of negative triples generated per positive triple.')

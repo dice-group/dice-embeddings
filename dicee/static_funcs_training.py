@@ -112,7 +112,9 @@ def evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re
 
 @torch.no_grad
 def evaluate_bpe_lp(model, triple_idx: List[Tuple[Tuple[int], Tuple[int], Tuple[int]]],
-                    ordered_bpe_entities_relations: List[Tuple[int]], er_vocab: Dict[Tuple, List],
+                    ordered_bpe_entities_relations: List[Tuple[int]],
+                    index_of_relations_on_ordered_bpe_entities_relations,
+                    er_vocab: Dict[Tuple, List],
                     re_vocab: Dict[Tuple, List],
                     info='Eval Starts'):
     """
@@ -122,6 +124,7 @@ def evaluate_bpe_lp(model, triple_idx: List[Tuple[Tuple[int], Tuple[int], Tuple[
     model
     triple_idx
     ordered_bpe_entities_relations
+    index_of_relations_on_ordered_bpe_entities_relations
     er_vocab
     re_vocab
     info
@@ -143,6 +146,7 @@ def evaluate_bpe_lp(model, triple_idx: List[Tuple[Tuple[int], Tuple[int], Tuple[
     # Iterating one by one is not good when you are using batch norm
     num_tokens = len(ordered_bpe_entities_relations)
     ordered_all_tokens = torch.LongTensor(ordered_bpe_entities_relations)
+    index_of_relations = index_of_relations_on_ordered_bpe_entities_relations
     for i in range(0, len(triple_idx)):
         # (1) Get a triple (head entity, relation, tail entity
         bpe_encoded_h, bpe_encoded_r, bpe_encoded_t = triple_idx[i]
@@ -154,18 +158,22 @@ def evaluate_bpe_lp(model, triple_idx: List[Tuple[Tuple[int], Tuple[int], Tuple[
                          torch.repeat_interleave(input=torch_bpe_encoded_r, repeats=num_tokens, dim=0),
                          torch.repeat_interleave(input=torch_bpe_encoded_t, repeats=num_tokens, dim=0)), dim=1)
         predictions_heads = model.forward(x)
+        predictions_heads[index_of_relations] = -np.Inf
+
         del x
 
         x = torch.stack((torch.repeat_interleave(input=torch_bpe_encoded_h, repeats=num_tokens, dim=0),
                          torch.repeat_interleave(input=torch_bpe_encoded_r, repeats=num_tokens, dim=0),
                          ordered_all_tokens), dim=1)
         predictions_tails = model.forward(x)
+        predictions_tails[index_of_relations] = -np.Inf
+
         del x
 
         # 3. Computed filtered ranks for missing tail entities.
         # 3.1. Compute filtered tail entity rankings
         filt_bpe_encoded_list_of_tails = er_vocab[(bpe_encoded_h, bpe_encoded_r)]
-        filt_tails = [ ordered_bpe_entities_relations.index(i) for i in filt_bpe_encoded_list_of_tails]
+        filt_tails = [ordered_bpe_entities_relations.index(i) for i in filt_bpe_encoded_list_of_tails]
 
         index_of_t_in_all_tokens: int
         index_of_t_in_all_tokens = ordered_bpe_entities_relations.index(bpe_encoded_t)
@@ -187,12 +195,10 @@ def evaluate_bpe_lp(model, triple_idx: List[Tuple[Tuple[int], Tuple[int], Tuple[
         index_of_h_in_all_tokens: int
         index_of_h_in_all_tokens = ordered_bpe_entities_relations.index(bpe_encoded_h)
 
-
         # 4.2 Get the predicted target's score
         target_value = predictions_heads[index_of_h_in_all_tokens].item()
 
-        filt_heads = [ ordered_bpe_entities_relations.index(i) for i in filt_bpe_encoded_list_of_heads]
-
+        filt_heads = [ordered_bpe_entities_relations.index(i) for i in filt_bpe_encoded_list_of_heads]
 
         # 4.3 Filter scores of all triples containing filtered head entities.
         predictions_heads[filt_heads] = -np.Inf

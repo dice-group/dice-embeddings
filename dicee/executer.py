@@ -74,6 +74,7 @@ class Execute:
         self.args.num_entities = self.knowledge_graph.num_entities
         self.args.num_relations = self.knowledge_graph.num_relations
         self.args.num_tokens = self.knowledge_graph.num_tokens
+        self.args.max_length_subword_tokens=self.knowledge_graph.max_length_subword_tokens
         self.report['num_train_triples'] = len(self.knowledge_graph.train_set)
         self.report['num_entities'] = self.knowledge_graph.num_entities
         self.report['num_relations'] = self.knowledge_graph.num_relations
