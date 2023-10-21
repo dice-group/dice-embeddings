@@ -145,7 +145,8 @@ def get_er_vocab(data, file_path: str = None):
     # head entity and relation
     er_vocab = defaultdict(list)
     for triple in data:
-        er_vocab[(triple[0], triple[1])].append(triple[2])
+        h, r, t = triple
+        er_vocab[(h, r)].append(t)
     if file_path:
         save_pickle(data=er_vocab, file_path=file_path)
     return er_vocab

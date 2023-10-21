@@ -10,7 +10,7 @@ def get_default_arguments(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Knowledge graph related arguments
-    parser.add_argument("--dataset_dir", type=str, default="KGs/Coun",
+    parser.add_argument("--dataset_dir", type=str, default="KGs/Countries-S1",
                         help="The path of a folder containing train.txt, and/or valid.txt and/or test.txt"
                              ",e.g., KGs/UMLS")
     parser.add_argument("--sparql_endpoint", type=str, default=None,
@@ -43,12 +43,12 @@ def get_default_arguments(description=None):
     parser.add_argument('--optim', type=str, default='Adam',
                         help='An optimizer',
                         choices=['Adam', 'SGD'])
-    parser.add_argument('--embedding_dim', type=int, default=256,
+    parser.add_argument('--embedding_dim', type=int, default=32,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=500, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024,
                         help='Mini batch size. If None, automatic batch finder is applied')
-    parser.add_argument("--lr", type=float, default=0.001)
+    parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument('--callbacks', type=json.loads,
                         default={},
                         help='{"PPE":{ "last_percent_to_consider": 10}}'
@@ -62,7 +62,7 @@ def get_default_arguments(description=None):
     parser.add_argument("--byte_pair_encoding",
                         action="store_false",
                         help="Currently only avail. for""KGE implemented within dice-embeddings.")
-    parser.add_argument('--neg_ratio', type=int, default=10,
+    parser.add_argument('--neg_ratio', type=int, default=1,
                         help='The number of negative triples generated per positive triple.')
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
     parser.add_argument('--input_dropout_rate', type=float, default=0.0)
@@ -91,7 +91,7 @@ def get_default_arguments(description=None):
                         help="# of output channels in convolution")
     parser.add_argument("--num_core", type=int, default=0,
                         help='Number of cores to be used. 0 implies using single CPU')
-    parser.add_argument("--random_seed", type=int, default=0,
+    parser.add_argument("--random_seed", type=int, default=1,
                         help='Seed for all, see pl seed_everything().')
     parser.add_argument("--sample_triples_ratio", type=float, default=None, help='Sample input data.')
     parser.add_argument("--read_only_few", type=int, default=None,
@@ -100,7 +100,7 @@ def get_default_arguments(description=None):
                         help='Add x % of noisy triples into training dataset.')
     parser.add_argument('--p', type=int, default=0,
                         help='P for Clifford Algebra')
-    parser.add_argument('--q', type=int, default=0,
+    parser.add_argument('--q', type=int, default=1,
                         help='Q for Clifford Algebra')
     parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
 

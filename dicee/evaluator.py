@@ -101,7 +101,7 @@ class Evaluator:
                                                                      valid_set=dataset.valid_set,
                                                                      test_set=dataset.test_set,
                                                                      ordered_shaped_bpe_tokens=dataset.ordered_shaped_bpe_tokens,
-                                                                     index_of_relations_on_ordered_bpe_entities_relations=dataset.index_of_relations_on_ordered_bpe_entities_relations,
+                                                                     shaped_bpe_entities=dataset.shaped_bpe_entities,
                                                                      trained_model=trained_model)
         else:
             raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
@@ -172,24 +172,24 @@ class Evaluator:
     def eval_rank_of_head_and_tail_byte_pair_encoded_entity(self, *, train_set,
                                                             valid_set, test_set,
                                                             ordered_shaped_bpe_tokens,
-                                                            index_of_relations_on_ordered_bpe_entities_relations,
+                                                            shaped_bpe_entities,
                                                             trained_model):
         # 4. Test model on the training dataset if it is needed.
         if 'train' in self.args.eval_model:
             res = self.evaluate_bpe_lp(trained_model, train_set, ordered_shaped_bpe_tokens,
-                                       index_of_relations_on_ordered_bpe_entities_relations,
+                                       shaped_bpe_entities,
                                        f'Evaluate {trained_model.name} on BPE Train set')
             self.report['Train'] = res
         # 5. Test model on the validation and test dataset if it is needed.
         if 'val' in self.args.eval_model:
             if valid_set is not None:
                 self.report['Val'] = self.evaluate_bpe_lp(trained_model, valid_set, ordered_shaped_bpe_tokens,
-                                                          index_of_relations_on_ordered_bpe_entities_relations,
+                                                          shaped_bpe_entities,
                                                           f'Evaluate {trained_model.name} on BPE Validation set')
 
         if test_set is not None and 'test' in self.args.eval_model:
             self.report['Test'] = self.evaluate_bpe_lp(trained_model, test_set, ordered_shaped_bpe_tokens,
-                                                       index_of_relations_on_ordered_bpe_entities_relations,
+                                                       shaped_bpe_entities,
                                                        f'Evaluate {trained_model.name} on BPE Test set')
 
     def eval_with_vs_all(self, *, train_set, valid_set=None, test_set=None, trained_model, form_of_labelling) -> None:
@@ -306,7 +306,7 @@ class Evaluator:
         return evaluate_lp(model, triple_idx, num_entities=self.num_entities, er_vocab=self.er_vocab, re_vocab=self.re_vocab, info=info)
 
 
-    def evaluate_bpe_lp(self, model, triple_idx, ordered_bpe_entities_relations, index_of_relations_on_ordered_bpe_entities_relations, info):
+    def evaluate_bpe_lp(self, model, triple_idx, ordered_bpe_entities_relations, shaped_bpe_entities, info):
         assert isinstance(triple_idx, list)
         assert isinstance(triple_idx[0], tuple)
         assert len(triple_idx[0]) == 3
@@ -315,9 +315,9 @@ class Evaluator:
         assert isinstance(triple_idx[0][2], tuple)
         assert isinstance(ordered_bpe_entities_relations, list)
         assert isinstance(ordered_bpe_entities_relations[0], tuple)
-
+        # @TODO: later merged to evalulate_lp
         return evaluate_bpe_lp(model, triple_idx, ordered_bpe_entities_relations,
-                               index_of_relations_on_ordered_bpe_entities_relations,
+                               shaped_bpe_entities,
                                er_vocab=self.er_vocab, re_vocab=self.re_vocab, info=info)
 
     def eval_with_data(self, dataset, trained_model, triple_idx: np.ndarray, form_of_labelling: str):

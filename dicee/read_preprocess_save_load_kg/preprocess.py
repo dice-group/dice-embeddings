@@ -62,6 +62,102 @@ class PreprocessKG:
         if self.kg.test_set is not None:
             self.kg.test_set = list(self.kg.test_set.map(lambda x: tuple(self.kg.enc.encode(x))).itertuples(index=False, name=None))
 
+        # @TODO: move this into PreprocessKG
+        if self.kg.byte_pair_encoding:
+            tokens = set()
+            entity = set()
+            self.kg.max_length_subword_tokens = 0
+            for i in self.kg.train_set + self.kg.valid_set + self.kg.test_set:
+                max_token_length_per_triple = max(len(i[0]), len(i[1]), len(i[2]))
+                if max_token_length_per_triple > self.kg.max_length_subword_tokens:
+                    self.kg.max_length_subword_tokens = max_token_length_per_triple
+
+            for i in range(len(self.kg.train_set)):
+                # Tuple of three tuples
+                s, p, o = self.kg.train_set[i]
+                if len(s) < self.kg.max_length_subword_tokens:
+                    s_encoded = s + tuple(self.kg.dummy_id for _ in range(self.kg.max_length_subword_tokens - len(s)))
+                else:
+                    s_encoded = s
+
+                if len(p) < self.kg.max_length_subword_tokens:
+                    p_encoded = p + tuple(self.kg.dummy_id for _ in range(self.kg.max_length_subword_tokens - len(p)))
+                else:
+                    p_encoded = p
+
+                if len(o) < self.kg.max_length_subword_tokens:
+                    o_encoded = o + tuple(self.kg.dummy_id for _ in range(self.kg.max_length_subword_tokens - len(o)))
+                else:
+                    o_encoded = o
+
+                tokens.add(s_encoded)
+                tokens.add(p_encoded)
+                tokens.add(o_encoded)
+
+                entity.add(s_encoded)
+                entity.add(o_encoded)
+
+                self.kg.train_set[i] = (s_encoded, p_encoded, o_encoded)
+
+            for i in range(len(self.kg.valid_set)):
+                # Tuple of three tuples
+                s, p, o = self.kg.valid_set[i]
+                if len(s) < self.kg.max_length_subword_tokens:
+                    s_encoded = s + tuple(self.kg.dummy_id for _ in range(self.kg.max_length_subword_tokens - len(s)))
+                else:
+                    s_encoded = s
+                if len(p) < self.kg.max_length_subword_tokens:
+                    p_encoded = p + tuple(self.kg.dummy_id for _ in range(self.kg.max_length_subword_tokens - len(p)))
+                else:
+                    p_encoded = p
+
+                if len(o) < self.kg.max_length_subword_tokens:
+                    o_encoded = o + tuple(self.kg.dummy_id for _ in range(self.kg.max_length_subword_tokens - len(o)))
+                else:
+                    o_encoded = o
+                tokens.add(s_encoded)
+                tokens.add(p_encoded)
+                tokens.add(o_encoded)
+
+                entity.add(s_encoded)
+                entity.add(o_encoded)
+
+                self.kg.valid_set[i] = (s_encoded, p_encoded, o_encoded)
+
+            for i in range(len(self.kg.test_set)):
+                # Tuple of three tuples
+                s, p, o = self.kg.test_set[i]
+                if len(s) < self.kg.max_length_subword_tokens:
+                    s_encoded = s + tuple(self.kg.dummy_id for _ in range(self.kg.max_length_subword_tokens - len(s)))
+                else:
+                    s_encoded = s
+                if len(p) < self.kg.max_length_subword_tokens:
+                    p_encoded = p + tuple(self.kg.dummy_id for _ in range(self.kg.max_length_subword_tokens - len(p)))
+                else:
+                    p_encoded = p
+
+                if len(o) < self.kg.max_length_subword_tokens:
+                    o_encoded = o + tuple(self.kg.dummy_id for _ in range(self.kg.max_length_subword_tokens - len(o)))
+                else:
+                    o_encoded = o
+                tokens.add(s_encoded)
+                tokens.add(p_encoded)
+                tokens.add(o_encoded)
+
+                entity.add(s_encoded)
+                entity.add(o_encoded)
+
+                self.kg.test_set[i] = (s_encoded, p_encoded, o_encoded)
+
+            # shaped_bpe_tokens
+            self.kg.ordered_shaped_bpe_tokens: List[Tuple[int, ..., int]]
+            self.kg.ordered_shaped_bpe_tokens = [shaped_bpe_token for shaped_bpe_token in tokens]
+            self.kg.shaped_bpe_entities = [i for i in self.kg.ordered_shaped_bpe_tokens if i in entity]
+
+            # self.train_set = np.array(self.train_set)
+            # self.test_set = np.array(self.test_set)
+            # self.valid_set = np.array(self.valid_set)
+
     @timeit
     def preprocess_with_pandas(self) -> None:
         """

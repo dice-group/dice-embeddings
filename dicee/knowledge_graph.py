@@ -6,6 +6,7 @@ import numpy as np
 import concurrent
 import tiktoken
 
+
 class KG:
     """ Knowledge Graph """
 
@@ -39,9 +40,11 @@ class KG:
             self.enc = tiktoken.get_encoding("gpt2")
             self.num_tokens = self.enc.n_vocab  # ~ 50
             self.dummy_id = self.enc.encode(" ")[0]
+            self.max_length_subword_tokens = None
         else:
             self.enc = None
             self.num_tokens = None
+            self.max_length_subword_tokens = None
 
         self.ordered_shaped_bpe_tokens = None
         self.sparql_endpoint = sparql_endpoint
@@ -65,103 +68,6 @@ class KG:
         if self.path_for_deserialization is None:
             ReadFromDisk(kg=self).start()
             PreprocessKG(kg=self).start()
-            # @TODO: move this into PreprocessKG
-            if self.byte_pair_encoding:
-                tokens = set()
-                entity = set()
-                self.max_length_subword_tokens = 0
-                for i in self.train_set + self.valid_set + self.test_set:
-                    max_token_length_per_triple = max(len(i[0]), len(i[1]), len(i[2]))
-                    if max_token_length_per_triple > self.max_length_subword_tokens:
-                        self.max_length_subword_tokens = max_token_length_per_triple
-
-                for i in range(len(self.train_set)):
-                    # Tuple of three tuples
-                    s, p, o = self.train_set[i]
-                    if len(s) < self.max_length_subword_tokens:
-                        s_encoded = s + tuple(self.dummy_id for _ in range(self.max_length_subword_tokens - len(s)))
-                    else:
-                        s_encoded = s
-
-                    if len(p) < self.max_length_subword_tokens:
-                        p_encoded = p + tuple(self.dummy_id for _ in range(self.max_length_subword_tokens - len(p)))
-                    else:
-                        p_encoded = p
-
-                    if len(o) < self.max_length_subword_tokens:
-                        o_encoded = o + tuple(self.dummy_id for _ in range(self.max_length_subword_tokens - len(o)))
-                    else:
-                        o_encoded = o
-
-                    tokens.add(s_encoded)
-                    tokens.add(p_encoded)
-                    tokens.add(o_encoded)
-
-                    entity.add(s_encoded)
-                    entity.add(o_encoded)
-
-                    self.train_set[i] = (s_encoded, p_encoded, o_encoded)
-
-                for i in range(len(self.valid_set)):
-                    # Tuple of three tuples
-                    s, p, o = self.valid_set[i]
-                    if len(s) < self.max_length_subword_tokens:
-                        s_encoded = s + tuple(self.dummy_id for _ in range(self.max_length_subword_tokens - len(s)))
-                    else:
-                        s_encoded = s
-                    if len(p) < self.max_length_subword_tokens:
-                        p_encoded = p + tuple(self.dummy_id for _ in range(self.max_length_subword_tokens - len(p)))
-                    else:
-                        p_encoded = p
-
-                    if len(o) < self.max_length_subword_tokens:
-                        o_encoded = o + tuple(self.dummy_id for _ in range(self.max_length_subword_tokens - len(o)))
-                    else:
-                        o_encoded = o
-                    tokens.add(s_encoded)
-                    tokens.add(p_encoded)
-                    tokens.add(o_encoded)
-
-                    entity.add(s_encoded)
-                    entity.add(o_encoded)
-
-                    self.valid_set[i] = (s_encoded, p_encoded, o_encoded)
-
-                for i in range(len(self.test_set)):
-                    # Tuple of three tuples
-                    s, p, o = self.test_set[i]
-                    if len(s) < self.max_length_subword_tokens:
-                        s_encoded = s + tuple(self.dummy_id for _ in range(self.max_length_subword_tokens - len(s)))
-                    else:
-                        s_encoded = s
-                    if len(p) < self.max_length_subword_tokens:
-                        p_encoded = p + tuple(self.dummy_id for _ in range(self.max_length_subword_tokens - len(p)))
-                    else:
-                        p_encoded = p
-
-                    if len(o) < self.max_length_subword_tokens:
-                        o_encoded = o + tuple(self.dummy_id for _ in range(self.max_length_subword_tokens - len(o)))
-                    else:
-                        o_encoded = o
-                    tokens.add(s_encoded)
-                    tokens.add(p_encoded)
-                    tokens.add(o_encoded)
-
-                    entity.add(s_encoded)
-                    entity.add(o_encoded)
-
-                    self.test_set[i] = (s_encoded, p_encoded, o_encoded)
-
-                # shaped_bpe_tokens
-                self.ordered_shaped_bpe_tokens: List[Tuple[int, ..., int]]
-                self.ordered_shaped_bpe_tokens = [shaped_bpe_token for shaped_bpe_token in tokens]
-
-                self.index_of_relations_on_ordered_bpe_entities_relations = [self.ordered_shaped_bpe_tokens.index(i) for i in entity]
-
-                # self.train_set = np.array(self.train_set)
-                # self.test_set = np.array(self.test_set)
-                # self.valid_set = np.array(self.valid_set)
-
             LoadSaveToDisk(kg=self).save()
 
             if self.eval_model:
@@ -170,6 +76,10 @@ class KG:
                         data = np.concatenate([self.train_set, self.valid_set, self.test_set])
                     elif isinstance(self.valid_set, list) and isinstance(self.test_set, list):
                         data = self.train_set + self.valid_set + self.test_set
+                        # To see the last triple in the test dataset
+                        # print(self.enc.decode(list(data[-1][0])))
+                        # print(self.enc.decode(list(data[-1][1])))
+                        # print(self.enc.decode(list(data[-1][2])))
                     else:
                         raise KeyError(
                             f"Unrecognized type: valid_set {type(self.valid_set)} and test_set {type(self.test_set)}")
@@ -180,7 +90,8 @@ class KG:
                 self.re_vocab = get_re_vocab(data, self.path_for_serialization + '/re_vocab.p')
                 self.ee_vocab = get_ee_vocab(data, self.path_for_serialization + '/ee_vocab.p')
                 if self.byte_pair_encoding is False:
-                    self.constraints = create_constraints(self.train_set, self.path_for_serialization + '/constraints.p')
+                    self.constraints = create_constraints(self.train_set,
+                                                          self.path_for_serialization + '/constraints.p')
                 """
 
                 print('Submit er-vocab, re-vocab, and ee-vocab via  ProcessPoolExecutor...')
@@ -192,6 +103,7 @@ class KG:
                 self.constraints = executor.submit(create_constraints, self.train_set,
                                                    self.path_for_serialization + '/constraints.p')
                 self.domain_constraints_per_rel, self.range_constraints_per_rel = None, None
+
 
         else:
             LoadSaveToDisk(kg=self).load()
