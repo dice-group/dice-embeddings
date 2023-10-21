@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List
 from .read_preprocess_save_load_kg import ReadFromDisk, PreprocessKG, LoadSaveToDisk
 from .read_preprocess_save_load_kg.util import get_er_vocab, get_re_vocab, get_ee_vocab, create_constraints
 import sys

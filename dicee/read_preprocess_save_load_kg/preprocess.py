@@ -150,7 +150,6 @@ class PreprocessKG:
                 self.kg.test_set[i] = (s_encoded, p_encoded, o_encoded)
 
             # shaped_bpe_tokens
-            self.kg.ordered_shaped_bpe_tokens: List[Tuple[int, ..., int]]
             self.kg.ordered_shaped_bpe_tokens = [shaped_bpe_token for shaped_bpe_token in tokens]
             self.kg.shaped_bpe_entities = [i for i in self.kg.ordered_shaped_bpe_tokens if i in entity]
 

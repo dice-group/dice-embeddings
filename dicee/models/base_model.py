@@ -2,8 +2,6 @@ from typing import List, Any, Tuple, Union, Dict
 import pytorch_lightning
 import numpy as np
 import torch
-from torch.nn import functional as F
-
 
 class BaseKGE(pytorch_lightning.LightningModule):
     def __init__(self, args: dict):
