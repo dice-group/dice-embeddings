@@ -2,6 +2,85 @@ from typing import List, Any, Tuple, Union, Dict
 import pytorch_lightning
 import numpy as np
 import torch
+from torch import nn
+from torch.nn import functional as F
+
+
+class Head(nn.Module):
+    """ one head of self-attention """
+
+    def __init__(self, head_size: int, n_embd: int, block_size: int):
+        super().__init__()
+        self.key = nn.Linear(n_embd, head_size, bias=False)
+        self.query = nn.Linear(n_embd, head_size, bias=False)
+        self.value = nn.Linear(n_embd, head_size, bias=False)
+
+        self.dropout = nn.Dropout(0.0)
+
+    def forward(self, x):
+        # input of size (batch, time-step, channels)
+        # output of size (batch, time-step, head size)
+        B, T, C = x.shape
+        k = self.key(x)  # (B,T,hs)
+        q = self.query(x)  # (B,T,hs)
+        # compute attention scores ("affinities")
+        wei = q @ k.transpose(-2, -1) * k.shape[-1] ** -0.5  # (B, T, hs) @ (B, hs, T) -> (B, T, T)
+        wei = F.softmax(wei, dim=-1)  # (B, T, T)
+        wei = self.dropout(wei)
+        # perform the weighted aggregation of the values
+        v = self.value(x)  # (B,T,hs)
+        out = wei @ v  # (B, T, T) @ (B, T, hs) -> (B, T, hs)
+        return out
+
+
+class MultiHeadAttention(nn.Module):
+    """ multiple heads of self-attention in parallel """
+
+    def __init__(self, num_heads, head_size, n_embd, block_size):
+        super().__init__()
+        self.heads = nn.ModuleList([Head(head_size, n_embd=n_embd, block_size=block_size) for _ in range(num_heads)])
+        self.proj = nn.Linear(head_size * num_heads, n_embd)
+        self.dropout = nn.Dropout(0.0)
+
+    def forward(self, x):
+        out = torch.cat([h(x) for h in self.heads], dim=-1)
+        out = self.dropout(self.proj(out))
+        return out
+
+
+class FeedFoward(nn.Module):
+    """ a simple linear layer followed by a non-linearity """
+
+    def __init__(self, n_embd):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(n_embd, 4 * n_embd),
+            nn.ReLU(),
+            nn.Linear(4 * n_embd, n_embd),
+            nn.Dropout(0.0),
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+
+class Block(nn.Module):
+    """ Transformer block: communication followed by computation """
+
+    def __init__(self, n_embd, n_head, block_size):
+        # n_embd: embedding dimension, n_head: the number of heads we'd like
+        super().__init__()
+        head_size = n_embd // n_head
+        self.sa = MultiHeadAttention(n_head, head_size, n_embd=n_embd, block_size=block_size)
+        self.ffwd = FeedFoward(n_embd)
+        self.ln1 = nn.LayerNorm(n_embd)
+        self.ln2 = nn.LayerNorm(n_embd)
+
+    def forward(self, x):
+        x = x + self.sa(self.ln1(x))
+        x = x + self.ffwd(self.ln2(x))
+        return x
+
 
 class BaseKGE(pytorch_lightning.LightningModule):
     def __init__(self, args: dict):
@@ -39,17 +118,16 @@ class BaseKGE(pytorch_lightning.LightningModule):
 
         if self.num_entities is None and self.num_relations is None:
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
-            # @TODO: Add positional embeddings.
-            # Require the max length of the sub word list of an entity
-            self.max_length_subword_tokens = self.args['max_length_subword_tokens']
-            # self.position_embedding_table = torch.nn.Embedding(
-            #    self.max_length_subword_tokens + self.max_length_subword_tokens + self.max_length_subword_tokens,
-            #    self.embedding_dim)
-
-            #self.key = torch.nn.Linear(self.embedding_dim, self.embedding_dim, bias=False)
-            #self.query = torch.nn.Linear(self.embedding_dim, self.embedding_dim, bias=False)
-            #self.value = torch.nn.Linear(self.embedding_dim, self.embedding_dim, bias=False)
-
+            """
+            self.block_size = self.args["max_length_subword_tokens"]
+            n_layer = 1
+            n_head = 1
+            # each token directly reads off the logits for the next token from a lookup table
+            self.position_embedding_table = nn.Embedding(self.block_size, self.embedding_dim * 3)
+            self.blocks = nn.Sequential(
+                *[Block(self.embedding_dim * 3, n_head=n_head, block_size=self.block_size) for _ in range(n_layer)])
+            self.ln_f = nn.LayerNorm(self.embedding_dim * 3)  # final layer norm
+            """
         else:
             self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
             self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
@@ -247,50 +325,24 @@ class BaseKGE(pytorch_lightning.LightningModule):
         """
         # (1) Retrieve embeddings of head entity, relation and tail entity
         # shape batch_size, sub_token_size, embedding_dim.
+        """
+        x = torch.cat(self.get_sentence_representation(x), dim=-1)
+        pos_emb = self.position_embedding_table(torch.arange(self.block_size))  # (T,C)
+        x =  x + pos_emb
+        x = self.ln_f(self.blocks(x))
+        head_ent_emb, rel_ent_emb, tail_ent_emb = x[:, :, :self.embedding_dim], x[:, :,
+                                                                                self.embedding_dim:self.embedding_dim + self.embedding_dim], x[
+                                                                                                                                             :,
+                                                                                                                                             :,
+                                                                                                                                             -self.embedding_dim:]
+        """
+
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_sentence_representation(x)
-        # @TODO: Apply attention on concat of  head_ent_emb, rel_ent_emb, tail_ent_emb ?
-        B, T, C =head_ent_emb.shape
-        """
-        # (2) Compute key, query and value of head entity embeddings
-        head_ent_emb_k = self.key(head_ent_emb)  # (B,T,hs)
-        head_ent_emb_q = self.query(head_ent_emb)  # (B,T,hs)
-        head_ent_emb_v = self.value(head_ent_emb)  # (B,T,hs)
+        B, T, C = head_ent_emb.shape
 
-        # (3) Compute key, query and value of relation embeddings
-        rel_ent_emb_k = self.key(rel_ent_emb)  # (B,T,hs)
-        rel_ent_emb_q = self.query(rel_ent_emb)  # (B,T,hs)
-        rel_ent_emb_v = self.value(rel_ent_emb)  # (B,T,hs)
-
-        # (4) Compute key, query and value of tail embeddings
-        tail_ent_emb_k = self.key(tail_ent_emb)  # (B,T,hs)
-        tail_ent_emb_q = self.query(tail_ent_emb)  # (B,T,hs)
-        tail_ent_emb_v = self.value(tail_ent_emb)  # (B,T,hs)
-
-        # compute attention scores ("affinities")
-        wei = head_ent_emb_q @ head_ent_emb_k.transpose(-2, -1) * head_ent_emb_k.shape[
-            -1] ** -0.5  # (B, T, hs) @ (B, hs, T) -> (B, T, T)
-        wei = F.softmax(wei, dim=-1)  # (B, T, T)
-        # perform the weighted aggregation of the values
-        head_ent_emb = wei @ head_ent_emb_v  # (B, T, T) @ (B, T, hs) -> (B, T, hs)
-
-        # compute attention scores ("affinities")
-        wei = rel_ent_emb_q @ rel_ent_emb_k.transpose(-2, -1) * rel_ent_emb_k.shape[
-            -1] ** -0.5  # (B, T, hs) @ (B, hs, T) -> (B, T, T)
-        wei = F.softmax(wei, dim=-1)  # (B, T, T)
-        # perform the weighted aggregation of the values
-        rel_ent_emb = wei @ rel_ent_emb_v  # (B, T, T) @ (B, T, hs) -> (B, T, hs)
-
-        # compute attention scores ("affinities")
-        wei = tail_ent_emb_q @ tail_ent_emb_k.transpose(-2, -1) * tail_ent_emb_k.shape[
-            -1] ** -0.5  # (B, T, hs) @ (B, hs, T) -> (B, T, T)
-        wei = F.softmax(wei, dim=-1)  # (B, T, T)
-        # perform the weighted aggregation of the values
-        tail_ent_emb = wei @ tail_ent_emb_v  # (B, T, T) @ (B, T, hs) -> (B, T, hs)
-        """
-
-        head_ent_emb = head_ent_emb.view(B, T * C)
-        rel_ent_emb = rel_ent_emb.view(B, T * C)
-        tail_ent_emb = tail_ent_emb.view(B, T * C)
+        head_ent_emb = head_ent_emb.reshape(B, T * C)
+        rel_ent_emb = rel_ent_emb.reshape(B, T * C)
+        tail_ent_emb = tail_ent_emb.reshape(B, T * C)
 
         return self.score(head_ent_emb, rel_ent_emb, tail_ent_emb)
 

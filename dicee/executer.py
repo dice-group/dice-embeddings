@@ -79,6 +79,8 @@ class Execute:
         self.report['num_entities'] = self.knowledge_graph.num_entities
         self.report['num_relations'] = self.knowledge_graph.num_relations
         self.report['num_relations'] = self.knowledge_graph.num_relations
+        self.report['max_length_subword_tokens'] = self.knowledge_graph.max_length_subword_tokens if self.knowledge_graph.max_length_subword_tokens else None
+
         self.report['runtime_kg_loading'] = time.time() - self.start_time
 
     def load_indexed_data(self) -> None:

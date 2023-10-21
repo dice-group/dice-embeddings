@@ -33,8 +33,8 @@ class KGE(BaseInteractiveKGE):
 
         if len(self.entity_to_idx) == 0 or len(self.relation_to_idx) == 0:
             print("Sub work tokenizer will be applied")
-            self.enc = tiktoken.get_encoding("gpt4")
-            self.dummy_id = tiktoken.get_encoding("gpt4").encode(" ")[0]
+            self.enc = tiktoken.get_encoding("gpt2")
+            self.dummy_id = tiktoken.get_encoding("gpt2").encode(" ")[0]
 
     def __str__(self):
         return "KGE | " + str(self.model)

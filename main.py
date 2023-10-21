@@ -10,7 +10,7 @@ def get_default_arguments(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Knowledge graph related arguments
-    parser.add_argument("--dataset_dir", type=str, default="KGs/Countries-S1",
+    parser.add_argument("--dataset_dir", type=str, default="KGs/UMLS",
                         help="The path of a folder containing train.txt, and/or valid.txt and/or test.txt"
                              ",e.g., KGs/UMLS")
     parser.add_argument("--sparql_endpoint", type=str, default=None,
@@ -30,7 +30,7 @@ def get_default_arguments(description=None):
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
     # Model related arguments
     parser.add_argument("--model", type=str,
-                        default="Keci",
+                        default="DistMult",
                         choices=["ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "ComplEx", "Keci",
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
@@ -43,10 +43,10 @@ def get_default_arguments(description=None):
     parser.add_argument('--optim', type=str, default='Adam',
                         help='An optimizer',
                         choices=['Adam', 'SGD'])
-    parser.add_argument('--embedding_dim', type=int, default=32,
+    parser.add_argument('--embedding_dim', type=int, default=2,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=500, help='Number of epochs for training. ')
-    parser.add_argument('--batch_size', type=int, default=1024,
+    parser.add_argument("--num_epochs", type=int, default=300, help='Number of epochs for training. ')
+    parser.add_argument('--batch_size', type=int, default=4096,
                         help='Mini batch size. If None, automatic batch finder is applied')
     parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument('--callbacks', type=json.loads,
@@ -61,8 +61,8 @@ def get_default_arguments(description=None):
                         choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "KvsSample"])
     parser.add_argument("--byte_pair_encoding",
                         action="store_false",
-                        help="Currently only avail. for""KGE implemented within dice-embeddings.")
-    parser.add_argument('--neg_ratio', type=int, default=1,
+                        help="Currently only avail. for KGE implemented within dice-embeddings.")
+    parser.add_argument('--neg_ratio', type=int, default=10,
                         help='The number of negative triples generated per positive triple.')
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
     parser.add_argument('--input_dropout_rate', type=float, default=0.0)

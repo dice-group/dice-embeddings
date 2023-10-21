@@ -633,33 +633,3 @@ class CVDataModule(pl.LightningDataModule):
     def prepare_data(self, *args, **kwargs):
         # Nothing to be prepared for now.
         pass
-
-
-"""
-def input_data_type_checking(train_set_idx, valid_set_idx, test_set_idx, entity_to_idx: Dict, relation_to_idx: Dict):
-    assert isinstance(train_set_idx, np.ndarray)
-    assert str(np.dtype(train_set_idx.dtype)) in ['int8', 'int16', 'int32']
-    if valid_set_idx is not None:
-        if len(valid_set_idx) > 0:
-            assert isinstance(valid_set_idx, np.ndarray)
-            assert str(np.dtype(valid_set_idx.dtype)) in ['int8', 'int16', 'int32']
-    if test_set_idx is not None:
-        if len(test_set_idx) > 0:
-            assert isinstance(test_set_idx, np.ndarray)
-            assert str(np.dtype(test_set_idx.dtype)) in ['int8', 'int16', 'int32']
-    assert isinstance(entity_to_idx, dict)
-    assert isinstance(relation_to_idx, dict)
-
-
-def create_tensor(x: np.ndarray):
-    str_type = str(np.dtype(x.dtype))
-    if str_type == 'int8':
-        return torch.CharTensor(x)
-    elif str_type == 'int16':
-        return torch.ShortTensor(x)
-    elif str_type == 'int32':
-        return torch.IntTensor(x)
-    else:
-        raise TypeError(f'x has a type of {str_type}.')
-
-"""
