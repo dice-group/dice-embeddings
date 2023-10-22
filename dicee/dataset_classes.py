@@ -2,38 +2,9 @@ from torch.utils.data import DataLoader
 import numpy as np
 import torch
 import pytorch_lightning as pl
-from typing import Dict, List
+from typing import List, Tuple
 from .static_preprocess_funcs import mapping_from_first_two_cols_to_third
 from .static_funcs import timeit, load_pickle
-
-
-def input_data_type_checking(train_set_idx, valid_set_idx, test_set_idx, entity_to_idx: Dict, relation_to_idx: Dict):
-    """ Type checking for efficient memory usage"""
-    assert isinstance(train_set_idx, np.ndarray)
-    assert str(np.dtype(train_set_idx.dtype)) in ['int8', 'int16', 'int32']
-    if valid_set_idx is not None:
-        if len(valid_set_idx) > 0:
-            assert isinstance(valid_set_idx, np.ndarray)
-            assert str(np.dtype(valid_set_idx.dtype)) in ['int8', 'int16', 'int32']
-    if test_set_idx is not None:
-        if len(test_set_idx) > 0:
-            assert isinstance(test_set_idx, np.ndarray)
-            assert str(np.dtype(test_set_idx.dtype)) in ['int8', 'int16', 'int32']
-    assert isinstance(entity_to_idx, dict)
-    assert isinstance(relation_to_idx, dict)
-
-
-def create_tensor(x: np.ndarray):
-    str_type = str(np.dtype(x.dtype))
-    if str_type == 'int8':
-        return torch.CharTensor(x)
-    elif str_type == 'int16':
-        return torch.ShortTensor(x)
-    elif str_type == 'int32':
-        return torch.IntTensor(x)
-    else:
-        raise TypeError(f'x has a type of {str_type}.')
-
 
 @timeit
 def reload_dataset(path: str, form_of_labelling, scoring_technique, neg_ratio, label_smoothing_rate):
@@ -52,6 +23,7 @@ def reload_dataset(path: str, form_of_labelling, scoring_technique, neg_ratio, l
 def construct_dataset(*, train_set: np.ndarray,
                       valid_set=None,
                       test_set=None,
+                      ordered_shaped_bpe_tokens: List[Tuple[int]] = None,
                       entity_to_idx: dict,
                       relation_to_idx: dict,
                       form_of_labelling: str,
@@ -88,6 +60,11 @@ def construct_dataset(*, train_set: np.ndarray,
                                  entity_idxs=entity_to_idx,
                                  relation_idxs=relation_to_idx,
                                  label_smoothing_rate=label_smoothing_rate)
+        elif scoring_technique == 'BytePairEncodedTriplesNegSample':
+            train_set = BytePairEncodedTriples(torch.tensor(train_set, dtype=torch.long),
+                                               bpe_entities_relations=torch.tensor(ordered_shaped_bpe_tokens,
+                                                                                   dtype=torch.long),
+                                               neg_ratio=neg_ratio)
         else:
             raise ValueError(f'Invalid scoring technique : {scoring_technique}')
     elif form_of_labelling == 'RelationPrediction':
@@ -97,6 +74,47 @@ def construct_dataset(*, train_set: np.ndarray,
     else:
         raise KeyError('Illegal input.')
     return train_set
+
+
+class BytePairEncodedTriples(torch.utils.data.Dataset):
+
+    def __init__(self, train_set: List, bpe_entities_relations: torch.LongTensor, neg_ratio: int):
+        super().__init__()
+        assert isinstance(bpe_entities_relations, torch.LongTensor)
+        assert isinstance(train_set, torch.LongTensor)
+        self.bpe_entities_relations = bpe_entities_relations
+        self.train_set = train_set
+        self.num_tokens = len(bpe_entities_relations)
+        self.neg_ratio = neg_ratio
+
+    def __len__(self):
+        return len(self.train_set)
+
+    def __getitem__(self, idx):
+        return self.train_set[idx]
+
+    def collate_fn(self, batch: List[torch.Tensor]):
+        batch = torch.stack(batch, dim=0)
+        size_of_batch, _, d = batch.shape
+
+        h, r, t = batch[:, 0, :], batch[:, 1, :], batch[:, 2, :]
+        label = torch.ones((size_of_batch,))
+        num_of_corruption = size_of_batch * self.neg_ratio
+        # b by
+        corr_entities = self.bpe_entities_relations[torch.randint(0, high=self.num_tokens, size=(num_of_corruption,))]
+        if torch.rand(1) >= 0.5:
+            h = torch.cat((h, corr_entities), 0)
+            r = torch.cat((r, torch.repeat_interleave(input=r, repeats=self.neg_ratio, dim=0)), 0)
+            t = torch.cat((t, torch.repeat_interleave(input=t, repeats=self.neg_ratio, dim=0)), 0)
+        else:
+            h = torch.cat((h, torch.repeat_interleave(input=h, repeats=self.neg_ratio, dim=0)), 0)
+            r = torch.cat((r, torch.repeat_interleave(input=r, repeats=self.neg_ratio, dim=0)), 0)
+            t = torch.cat((t, corr_entities), 0)
+
+        x = torch.stack((h, r, t), dim=1)
+        label = torch.cat((label, torch.zeros(num_of_corruption)), 0)
+
+        return x, label
 
 
 class OnevsAllDataset(torch.utils.data.Dataset):
@@ -214,6 +232,7 @@ class KvsAll(torch.utils.data.Dataset):
                 assert isinstance(self.train_target[0], np.ndarray)
             except IndexError or AssertionError:
                 print(self.train_target)
+                # TODO: Add info
                 exit(1)
         else:
             self.train_target = list(store.values())

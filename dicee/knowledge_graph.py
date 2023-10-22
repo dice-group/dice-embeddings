@@ -1,13 +1,17 @@
 from typing import List
-import numpy as np
 from .read_preprocess_save_load_kg import ReadFromDisk, PreprocessKG, LoadSaveToDisk
+from .read_preprocess_save_load_kg.util import get_er_vocab, get_re_vocab, get_ee_vocab, create_constraints
 import sys
+import numpy as np
+import concurrent
+import tiktoken
 
 
 class KG:
     """ Knowledge Graph """
 
     def __init__(self, dataset_dir: str = None,
+                 byte_pair_encoding: bool = False,
                  add_noise_rate: float = None,
                  sparql_endpoint: str = None,
                  path_single_kg: str = None,
@@ -18,6 +22,7 @@ class KG:
                  entity_to_idx=None, relation_to_idx=None, backend=None):
         """
         :param dataset_dir: A path of a folder containing train.txt, valid.txt, test.text
+        :param byte_pair_encoding: Apply Byte pair encoding.
         :param add_noise_rate: Noisy triples added into the training adataset by x % of its size.
         : param sparql_endpoint: An endpoint of a triple store
         :param path_single_kg: The path of a single file containing the input knowledge graph
@@ -29,11 +34,23 @@ class KG:
         :param add_noise_rate: Add say 10% noise in the input data
         sample_triples_ratio
         """
+        self.dataset_dir = dataset_dir
+        self.byte_pair_encoding = byte_pair_encoding
+        if self.byte_pair_encoding:
+            self.enc = tiktoken.get_encoding("gpt2")
+            self.num_tokens = self.enc.n_vocab  # ~ 50
+            self.dummy_id = self.enc.encode(" ")[0]
+            self.max_length_subword_tokens = None
+        else:
+            self.enc = None
+            self.num_tokens = None
+            self.max_length_subword_tokens = None
+
+        self.ordered_shaped_bpe_tokens = None
         self.sparql_endpoint = sparql_endpoint
         self.add_noise_rate = add_noise_rate
         self.num_entities = None
         self.num_relations = None
-        self.dataset_dir = dataset_dir
         self.path_single_kg = path_single_kg
         self.path_for_deserialization = path_for_deserialization
         self.add_reciprical = add_reciprical
@@ -52,19 +69,57 @@ class KG:
             ReadFromDisk(kg=self).start()
             PreprocessKG(kg=self).start()
             LoadSaveToDisk(kg=self).save()
+
+            if self.eval_model:
+                if self.valid_set is not None and self.test_set is not None:
+                    if isinstance(self.valid_set, np.ndarray) and isinstance(self.test_set, np.ndarray):
+                        data = np.concatenate([self.train_set, self.valid_set, self.test_set])
+                    elif isinstance(self.valid_set, list) and isinstance(self.test_set, list):
+                        data = self.train_set + self.valid_set + self.test_set
+                        # To see the last triple in the test dataset
+                        # print(self.enc.decode(list(data[-1][0])))
+                        # print(self.enc.decode(list(data[-1][1])))
+                        # print(self.enc.decode(list(data[-1][2])))
+                    else:
+                        raise KeyError(
+                            f"Unrecognized type: valid_set {type(self.valid_set)} and test_set {type(self.test_set)}")
+                else:
+                    data = self.train_set
+                """
+                self.er_vocab = get_er_vocab(data, self.path_for_serialization + '/er_vocab.p')
+                self.re_vocab = get_re_vocab(data, self.path_for_serialization + '/re_vocab.p')
+                self.ee_vocab = get_ee_vocab(data, self.path_for_serialization + '/ee_vocab.p')
+                if self.byte_pair_encoding is False:
+                    self.constraints = create_constraints(self.train_set,
+                                                          self.path_for_serialization + '/constraints.p')
+                """
+
+                print('Submit er-vocab, re-vocab, and ee-vocab via  ProcessPoolExecutor...')
+                # We need to benchmark the benefits of using futures  ?
+                executor = concurrent.futures.ProcessPoolExecutor()
+                self.er_vocab = executor.submit(get_er_vocab, data, self.path_for_serialization + '/er_vocab.p')
+                self.re_vocab = executor.submit(get_re_vocab, data, self.path_for_serialization + '/re_vocab.p')
+                self.ee_vocab = executor.submit(get_ee_vocab, data, self.path_for_serialization + '/ee_vocab.p')
+                self.constraints = executor.submit(create_constraints, self.train_set,
+                                                   self.path_for_serialization + '/constraints.p')
+                self.domain_constraints_per_rel, self.range_constraints_per_rel = None, None
+
+
         else:
             LoadSaveToDisk(kg=self).load()
 
-        assert len(self.train_set) > 0
-        assert len(self.train_set[0]) > 0
-        assert isinstance(self.train_set, np.ndarray)
-        assert isinstance(self.train_set[0], np.ndarray)
+        # assert len(self.train_set) > 0
+        # assert len(self.train_set[0]) > 0
+        # assert isinstance(self.train_set, np.ndarray)
+        # assert isinstance(self.train_set[0], np.ndarray)
         self._describe()
 
     def _describe(self) -> None:
         self.description_of_input = f'\n------------------- Description of Dataset {self.dataset_dir} -------------------'
         self.description_of_input += f'\nNumber of entities:{self.num_entities}' \
                                      f'\nNumber of relations:{self.num_relations}' \
+                                     f'\nNumber of tokens:{self.num_tokens}' \
+                                     f'\nNumber of max length of subwords :{self.max_length_subword_tokens}' \
                                      f'\nNumber of triples on train set:' \
                                      f'{len(self.train_set)}' \
                                      f'\nNumber of triples on valid set:' \
@@ -73,7 +128,6 @@ class KG:
                                      f'{len(self.test_set) if self.test_set is not None else 0}\n'
         self.description_of_input += f"Entity Index:{sys.getsizeof(self.entity_to_idx) / 1_000_000_000:.5f} in GB\n"
         self.description_of_input += f"Relation Index:{sys.getsizeof(self.relation_to_idx) / 1_000_000_000:.5f} in GB\n"
-        self.description_of_input += f"Train set :{self.train_set.nbytes / 1_000_000_000:.5f} in GB\n"
 
     @property
     def entities_str(self) -> List:

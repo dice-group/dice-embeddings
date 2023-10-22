@@ -2,6 +2,84 @@ from typing import List, Any, Tuple, Union, Dict
 import pytorch_lightning
 import numpy as np
 import torch
+from torch import nn
+from torch.nn import functional as F
+
+
+class Head(nn.Module):
+    """ one head of self-attention """
+
+    def __init__(self, head_size: int, n_embd: int, block_size: int):
+        super().__init__()
+        self.key = nn.Linear(n_embd, head_size, bias=False)
+        self.query = nn.Linear(n_embd, head_size, bias=False)
+        self.value = nn.Linear(n_embd, head_size, bias=False)
+
+        self.dropout = nn.Dropout(0.0)
+
+    def forward(self, x):
+        # input of size (batch, time-step, channels)
+        # output of size (batch, time-step, head size)
+        B, T, C = x.shape
+        k = self.key(x)  # (B,T,hs)
+        q = self.query(x)  # (B,T,hs)
+        # compute attention scores ("affinities")
+        wei = q @ k.transpose(-2, -1) * k.shape[-1] ** -0.5  # (B, T, hs) @ (B, hs, T) -> (B, T, T)
+        wei = F.softmax(wei, dim=-1)  # (B, T, T)
+        wei = self.dropout(wei)
+        # perform the weighted aggregation of the values
+        v = self.value(x)  # (B,T,hs)
+        out = wei @ v  # (B, T, T) @ (B, T, hs) -> (B, T, hs)
+        return out
+
+
+class MultiHeadAttention(nn.Module):
+    """ multiple heads of self-attention in parallel """
+
+    def __init__(self, num_heads, head_size, n_embd, block_size):
+        super().__init__()
+        self.heads = nn.ModuleList([Head(head_size, n_embd=n_embd, block_size=block_size) for _ in range(num_heads)])
+        self.proj = nn.Linear(head_size * num_heads, n_embd)
+        self.dropout = nn.Dropout(0.0)
+
+    def forward(self, x):
+        out = torch.cat([h(x) for h in self.heads], dim=-1)
+        out = self.dropout(self.proj(out))
+        return out
+
+
+class FeedFoward(nn.Module):
+    """ a simple linear layer followed by a non-linearity """
+
+    def __init__(self, n_embd):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(n_embd, 4 * n_embd),
+            nn.ReLU(),
+            nn.Linear(4 * n_embd, n_embd),
+            nn.Dropout(0.0),
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+
+class Block(nn.Module):
+    """ Transformer block: communication followed by computation """
+
+    def __init__(self, n_embd, n_head, block_size):
+        # n_embd: embedding dimension, n_head: the number of heads we'd like
+        super().__init__()
+        head_size = n_embd // n_head
+        self.sa = MultiHeadAttention(n_head, head_size, n_embd=n_embd, block_size=block_size)
+        self.ffwd = FeedFoward(n_embd)
+        self.ln1 = nn.LayerNorm(n_embd)
+        self.ln2 = nn.LayerNorm(n_embd)
+
+    def forward(self, x):
+        x = x + self.sa(self.ln1(x))
+        x = x + self.ffwd(self.ln2(x))
+        return x
 
 
 class BaseKGE(pytorch_lightning.LightningModule):
@@ -11,6 +89,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
         self.embedding_dim = None
         self.num_entities = None
         self.num_relations = None
+        self.num_tokens = None
         self.learning_rate = None
         self.apply_unit_norm = None
         self.input_dropout_rate = None
@@ -27,7 +106,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
         self.normalize_relation_embeddings = IdentityClass()
         self.normalize_tail_entity_embeddings = IdentityClass()
         self.hidden_normalizer = IdentityClass()
-        self.param_init = None
+        self.param_init = IdentityClass
         self.init_params_with_sanity_checking()
 
         # Dropouts
@@ -36,6 +115,23 @@ class BaseKGE(pytorch_lightning.LightningModule):
         self.hidden_dropout = torch.nn.Dropout(self.input_dropout_rate)
         # average minibatch loss per epoch
         self.loss_history = []
+
+        if self.num_entities is None and self.num_relations is None:
+            self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
+            """
+            self.block_size = self.args["max_length_subword_tokens"]
+            n_layer = 1
+            n_head = 1
+            # each token directly reads off the logits for the next token from a lookup table
+            self.position_embedding_table = nn.Embedding(self.block_size, self.embedding_dim * 3)
+            self.blocks = nn.Sequential(
+                *[Block(self.embedding_dim * 3, n_head=n_head, block_size=self.block_size) for _ in range(n_layer)])
+            self.ln_f = nn.LayerNorm(self.embedding_dim * 3)  # final layer norm
+            """
+        else:
+            self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+            self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
+            self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
     def mem_of_model(self) -> Dict:
         """ Size of model in MB and number of params"""
@@ -58,15 +154,15 @@ class BaseKGE(pytorch_lightning.LightningModule):
         else:
             self.embedding_dim = 1
 
-        if self.args.get('num_entities'):
-            self.num_entities = self.args['num_entities']
-        else:
-            self.num_entities = 1
+        self.num_entities = self.args.get('num_entities', None)
+        self.num_relations = self.args.get('num_relations', None)
 
-        if self.args.get('num_relations'):
-            self.num_relations = self.args['num_relations']
-        else:
-            self.num_relations = 1
+        if self.num_entities is None and self.num_relations is None:
+            self.num_tokens = self.args.get('num_tokens', None)
+            try:
+                assert isinstance(self.num_tokens, int)
+            except AssertionError:
+                raise AssertionError("num_entities and num_relations is None, num_tokens cannot be None")
 
         if self.args.get('learning_rate'):
             self.learning_rate = self.args['learning_rate']
@@ -125,10 +221,6 @@ class BaseKGE(pytorch_lightning.LightningModule):
             print(f'--init_param (***{self.args.get("init_param")}***) not found')
             self.optimizer_name = IdentityClass
 
-    def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
-        # @TODO why twice data.data.?
-        return self.entity_embeddings.weight.data.data.detach(), self.relation_embeddings.weight.data.detach()
-
     def configure_optimizers(self, parameters=None):
         if parameters is None:
             parameters = self.parameters()
@@ -157,11 +249,63 @@ class BaseKGE(pytorch_lightning.LightningModule):
             raise KeyError()
         return self.selected_optimizer
 
-    def loss_function(self, yhat_batch, y_batch):
+    def loss_function(self, yhat_batch: torch.FloatTensor, y_batch: torch.FloatTensor):
+        """
+
+        Parameters
+        ----------
+        yhat_batch
+        y_batch
+
+        Returns
+        -------
+
+        """
         return self.loss(yhat_batch, y_batch)
 
-    def forward_triples(self, *args, **kwargs):
-        raise ValueError(f'MODEL:{self.name} does not have forward_triples function')
+    def forward(self, x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]],
+                y_idx: torch.LongTensor = None):
+        """
+
+        Parameters
+        ----------
+        x
+        y_idx
+
+        Returns
+        -------
+
+        """
+        if isinstance(x, tuple):
+            x, y_idx = x
+            return self.forward_k_vs_sample(x=x, target_entity_idx=y_idx)
+        else:
+            shape_info = x.shape
+            if len(shape_info) == 2:
+                batch_size, dim = x.shape
+                if dim == 3:
+                    return self.forward_triples(x)
+                elif dim == 2:
+                    # h, y = x[0], x[1]
+                    # Note that y can be relation or tail entity.
+                    return self.forward_k_vs_all(x=x)
+            else:
+                return self.forward_byte_pair_encoded_triple(x=x)
+
+    def forward_triples(self, x: torch.LongTensor) -> torch.Tensor:
+        """
+
+        Parameters
+        ----------
+        x
+
+        Returns
+        -------
+
+        """
+        # (1) Retrieve embeddings & Apply Dropout & Normalization.
+        h_emb, r_emb, t_emb = self.get_triple_representation(x)
+        return self.score(h_emb, r_emb, t_emb)
 
     def forward_k_vs_all(self, *args, **kwargs):
         raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_all function')
@@ -169,42 +313,38 @@ class BaseKGE(pytorch_lightning.LightningModule):
     def forward_k_vs_sample(self, *args, **kwargs):
         raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_sample function')
 
-    def forward(self, x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]],
-                y_idx: torch.LongTensor = None):
+    def forward_byte_pair_encoded_triple(self, x: torch.LongTensor):
+        """
+        attentive byte pair encoded neural link predictors
+
+        Parameters
+        ----------
+        x shape b, 3, t,
+        -------
+
+        """
+        # (1) Retrieve embeddings of head entity, relation and tail entity
+        # shape batch_size, sub_token_size, embedding_dim.
+        """
+        x = torch.cat(self.get_sentence_representation(x), dim=-1)
+        pos_emb = self.position_embedding_table(torch.arange(self.block_size))  # (T,C)
+        x =  x + pos_emb
+        x = self.ln_f(self.blocks(x))
+        head_ent_emb, rel_ent_emb, tail_ent_emb = x[:, :, :self.embedding_dim], x[:, :,
+                                                                                self.embedding_dim:self.embedding_dim + self.embedding_dim], x[
+                                                                                                                                             :,
+                                                                                                                                             :,
+                                                                                                                                             -self.embedding_dim:]
         """
 
-        :param x: a batch of inputs
-        :param y_idx: indices of selected outputs.
-        :return:
-        """
-        if isinstance(x, tuple):
-            x, y_idx = x
-            return self.forward_k_vs_sample(x=x, target_entity_idx=y_idx)
-        else:
-            batch_size, dim = x.shape
-            if dim == 3:
-                return self.forward_triples(x)
-            elif dim == 2:
-                # h, y = x[0], x[1]
-                # Note that y can be relation or tail entity.
-                return self.forward_k_vs_all(x=x)
-            else:
-                return self.forward_sequence(x=x)
+        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_sentence_representation(x)
+        B, T, C = head_ent_emb.shape
 
-    """
-    def training_step(self, batch, batch_idx):
-        if len(batch) == 2:
-            x_batch, y_batch = batch
-            yhat_batch = self.forward(x_batch)
-        elif len(batch) == 3:
-            x_batch, y_idx_batch, y_batch, = batch
-            yhat_batch = self.forward(x_batch, y_idx_batch)
-        else:
-            print(len(batch))
-            raise ValueError('Unexpected batch shape..')
-        train_loss = self.loss_function(yhat_batch=yhat_batch, y_batch=y_batch)
-        return train_loss
-    """
+        head_ent_emb = head_ent_emb.reshape(B, T * C)
+        rel_ent_emb = rel_ent_emb.reshape(B, T * C)
+        tail_ent_emb = tail_ent_emb.reshape(B, T * C)
+
+        return self.score(head_ent_emb, rel_ent_emb, tail_ent_emb)
 
     def training_step(self, batch, batch_idx=None):
         x_batch, y_batch = batch
@@ -294,6 +434,33 @@ class BaseKGE(pytorch_lightning.LightningModule):
             self.input_dp_ent_real(self.entity_embeddings(idx_head_entity)))
         rel_ent_emb = self.normalize_relation_embeddings(self.input_dp_rel_real(self.relation_embeddings(idx_relation)))
         return head_ent_emb, rel_ent_emb
+
+    def get_sentence_representation(self, x: torch.LongTensor):
+        """
+
+        Parameters
+        ----------
+        x shape (b,3,t)
+
+        Returns
+        -------
+
+        """
+        h, r, t = x[:, 0, :], x[:, 1, :], x[:, 2, :]
+        batch_size, sub_token_size = h.shape
+        head_ent_emb = self.token_embeddings(h)
+        rel_emb = self.token_embeddings(r)
+        tail_emb = self.token_embeddings(t)
+        return head_ent_emb, rel_emb, tail_emb
+
+    def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
+        """
+
+        Returns
+        -------
+
+        """
+        return self.entity_embeddings.weight.data.data.detach(), self.relation_embeddings.weight.data.detach()
 
 
 class IdentityClass(torch.nn.Module):

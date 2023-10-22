@@ -1,6 +1,5 @@
 import numpy as np
-import concurrent
-from .util import load_pickle, get_er_vocab, get_re_vocab, get_ee_vocab, create_constraints, load_numpy_ndarray
+from .util import load_pickle, load_numpy_ndarray
 import os
 from dicee.static_funcs import save_pickle, save_numpy_ndarray
 
@@ -16,6 +15,9 @@ class LoadSaveToDisk:
             # No serialization
             return None
 
+        if isinstance(self.kg.entity_to_idx, dict) is False:
+            return None
+
         assert isinstance(self.kg.entity_to_idx, dict)
         assert isinstance(self.kg.relation_to_idx, dict)
         assert isinstance(self.kg.train_set, np.ndarray)
@@ -29,22 +31,6 @@ class LoadSaveToDisk:
             save_numpy_ndarray(data=self.kg.valid_set, file_path=self.kg.path_for_serialization + '/valid_set.npy')
         if self.kg.test_set is not None:
             save_numpy_ndarray(data=self.kg.test_set, file_path=self.kg.path_for_serialization + '/test_set.npy')
-
-        if self.kg.eval_model:
-            if self.kg.valid_set is not None and self.kg.test_set is not None:
-                assert isinstance(self.kg.valid_set, np.ndarray) and isinstance(self.kg.test_set, np.ndarray)
-                data = np.concatenate([self.kg.train_set, self.kg.valid_set, self.kg.test_set])
-            else:
-                data = self.kg.train_set
-            # We need to parallelise the next four steps.
-            print('Submit er-vocab, re-vocab, and ee-vocab via  ProcessPoolExecutor...')
-            executor = concurrent.futures.ProcessPoolExecutor()
-            self.kg.er_vocab = executor.submit(get_er_vocab, data, self.kg.path_for_serialization + '/er_vocab.p')
-            self.kg.re_vocab = executor.submit(get_re_vocab, data, self.kg.path_for_serialization + '/re_vocab.p')
-            self.kg.ee_vocab = executor.submit(get_ee_vocab, data, self.kg.path_for_serialization + '/ee_vocab.p')
-            self.kg.constraints = executor.submit(create_constraints, self.kg.train_set,
-                                                  self.kg.path_for_serialization + '/constraints.p')
-            self.kg.domain_constraints_per_rel, self.kg.range_constraints_per_rel = None, None
 
     def load(self):
         assert self.kg.path_for_deserialization is not None

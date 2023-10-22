@@ -157,10 +157,22 @@ class DICE_Trainer:
 
     @timeit
     def initialize_dataset(self, dataset, form_of_labelling) -> torch.utils.data.Dataset:
+        """
+
+        Parameters
+        ----------
+        dataset knowledge graph object
+        form_of_labelling
+
+        Returns
+        -------
+
+        """
         print('Initializing Dataset...', end='\t')
         train_dataset = construct_dataset(train_set=dataset.train_set,
                                           valid_set=dataset.valid_set,
                                           test_set=dataset.test_set,
+                                          ordered_shaped_bpe_tokens=dataset.ordered_shaped_bpe_tokens,
                                           entity_to_idx=dataset.entity_to_idx,
                                           relation_to_idx=dataset.relation_to_idx,
                                           form_of_labelling=form_of_labelling,
@@ -172,23 +184,25 @@ class DICE_Trainer:
             gc.collect()
         return train_dataset
 
-    def start(self, dataset: KG) -> Tuple[BaseKGE, str]:
+    def start(self, knowledge_graph: KG) -> Tuple[BaseKGE, str]:
         """ Train selected model via the selected training strategy """
         print('------------------- Train -------------------')
-        # (1) Perform K-fold CV
-        if self.args.num_folds_for_cv >= 2:
-            return self.k_fold_cross_validation(dataset)
-        else:
+
+        if self.args.num_folds_for_cv == 0:
+            # Initialize Trainer
             self.trainer: Union[TorchTrainer, TorchDDPTrainer, pl.Trainer]
             self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
+            # Initialize or load model
             model, form_of_labelling = self.initialize_or_load_model()
             self.trainer.evaluator = self.evaluator
-            # @TODO Why do we need to sent the dataset ?
-            self.trainer.dataset = dataset
+
+            self.trainer.dataset = knowledge_graph
             self.trainer.form_of_labelling = form_of_labelling
             self.trainer.fit(model, train_dataloaders=self.initialize_dataloader(
-                self.initialize_dataset(dataset, form_of_labelling)))
+                self.initialize_dataset(knowledge_graph, form_of_labelling)))
             return model, form_of_labelling
+        else:
+            return self.k_fold_cross_validation(knowledge_graph)
 
     def k_fold_cross_validation(self, dataset) -> Tuple[BaseKGE, str]:
         """
