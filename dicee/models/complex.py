@@ -2,15 +2,13 @@ from typing import Tuple
 import torch
 from .base_model import BaseKGE
 
+
 class ConEx(BaseKGE):
     """ Convolutional ComplEx Knowledge Graph Embeddings"""
 
     def __init__(self, args):
         super().__init__(args)
         self.name = 'ConEx'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
         # Convolution
         self.conv2d = torch.nn.Conv2d(in_channels=1, out_channels=self.num_of_output_channels,
                                       kernel_size=(self.kernel_size, self.kernel_size), stride=1, padding=1, bias=True)
@@ -117,9 +115,6 @@ class AConEx(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'AConEx'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
         # Convolution
         self.conv2d = torch.nn.Conv2d(in_channels=1, out_channels=self.num_of_output_channels,
                                       kernel_size=(self.kernel_size, self.kernel_size), stride=1, padding=1, bias=True)
@@ -229,14 +224,9 @@ class ComplEx(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'ComplEx'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
-    def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
-        # (1) Retrieve embeddings & Apply Dropout & Normalization.
-        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
-        # (2) Split (1) into real and imaginary parts.
+    @staticmethod
+    def score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor):
         emb_head_real, emb_head_imag = torch.hsplit(head_ent_emb, 2)
         emb_rel_real, emb_rel_imag = torch.hsplit(rel_ent_emb, 2)
         emb_tail_real, emb_tail_imag = torch.hsplit(tail_ent_emb, 2)

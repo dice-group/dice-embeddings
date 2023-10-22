@@ -58,7 +58,6 @@ class ReadFromDisk:
     def add_noisy_triples_into_training(self):
         num_noisy_triples = int(len(self.kg.train_set) * self.kg.add_noise_rate)
         s = len(self.kg.train_set)
-        # @TODO: Can we use polars here ?
         list_of_entities = pd.unique(self.kg.train_set[['subject', 'object']].values.ravel('K'))
         self.kg.train_set = pd.concat([self.kg.train_set,
                                        # Noisy triples

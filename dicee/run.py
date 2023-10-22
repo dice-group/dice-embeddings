@@ -38,12 +38,12 @@ def get_default_arguments(description=None):
     parser.add_argument('--optim', type=str, default='Adam',
                         help='An optimizer',
                         choices=['Adam', 'SGD'])
-    parser.add_argument('--embedding_dim', type=int, default=32,
+    parser.add_argument('--embedding_dim', type=int, default=256,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=1, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024,
                         help='Mini batch size. If None, automatic batch finder is applied')
-    parser.add_argument("--lr", type=float, default=0.1)
+    parser.add_argument("--lr", type=float, default=0.001)
     parser.add_argument('--callbacks', type=json.loads,
                         default={},
                         help='{"PPE":{ "last_percent_to_consider": 10}}'
@@ -51,12 +51,12 @@ def get_default_arguments(description=None):
     parser.add_argument("--backend", type=str, default="pandas",
                         choices=["pandas", "polars", "rdflib"],
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
-    parser.add_argument("--trainer", type=str, default='PL',
+    parser.add_argument("--trainer", type=str, default='torchCPUTrainer',
                         choices=['torchCPUTrainer', 'PL', 'torchDDP'],
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
-    parser.add_argument('--scoring_technique', default="AllvsAll",
+    parser.add_argument('--scoring_technique', default="Sentence",
                         help="Training technique for knowledge graph embedding model",
-                        choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "KvsSample"])
+                        choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "KvsSample", "Sentence"])
     parser.add_argument('--neg_ratio', type=int, default=0,
                         help='The number of negative triples generated per positive triple.')
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
@@ -84,7 +84,7 @@ def get_default_arguments(description=None):
                         help="Square kernel size for convolution based models.")
     parser.add_argument("--num_of_output_channels", type=int, default=2,
                         help="# of output channels in convolution")
-    parser.add_argument("--num_core", type=int, default=1,
+    parser.add_argument("--num_core", type=int, default=0,
                         help='Number of cores to be used. 0 implies using single CPU')
     parser.add_argument("--random_seed", type=int, default=0,
                         help='Seed for all, see pl seed_everything().')
@@ -98,6 +98,10 @@ def get_default_arguments(description=None):
     parser.add_argument('--q', type=int, default=0,
                         help='Q for Clifford Algebra')
     parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
+    # Ongoing work
+    parser.add_argument("--bpe", action="store_action")
+    parser.add_argument("--block_size", type=int, default=64)
+
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)

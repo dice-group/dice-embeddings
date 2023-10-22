@@ -48,11 +48,9 @@ class OMult(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'OMult'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
-    def octonion_normalizer(self, emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6,
+    @staticmethod
+    def octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6,
                             emb_rel_e7):
         denominator = torch.sqrt(
             emb_rel_e0 ** 2 + emb_rel_e1 ** 2 + emb_rel_e2 ** 2 + emb_rel_e3 ** 2 + emb_rel_e4 ** 2
@@ -67,10 +65,7 @@ class OMult(BaseKGE):
         y7 = emb_rel_e7 / denominator
         return y0, y1, y2, y3, y4, y5, y6, y7
 
-    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
-        # (1) Retrieve embeddings & Apply Dropout & Normalization.
-        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
-
+    def score(self, head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor):
         # (2) Split (1) into real and imaginary parts.
         emb_head_e0, emb_head_e1, emb_head_e2, emb_head_e3, emb_head_e4, emb_head_e5, emb_head_e6, emb_head_e7 = torch.hsplit(
             head_ent_emb, 8)
@@ -160,9 +155,6 @@ class ConvO(BaseKGE):
     def __init__(self, args: dict):
         super().__init__(args=args)
         self.name = 'ConvO'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
         # Convolution
         self.conv2d = torch.nn.Conv2d(in_channels=1, out_channels=self.num_of_output_channels,
                                       kernel_size=(self.kernel_size, self.kernel_size), stride=1, padding=1, bias=True)
@@ -172,7 +164,8 @@ class ConvO(BaseKGE):
         self.norm_fc1 = self.normalizer_class(self.embedding_dim)
         self.feature_map_dropout = torch.nn.Dropout2d(self.feature_map_dropout_rate)
 
-    def octonion_normalizer(self, emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6,
+    @staticmethod
+    def octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6,
                             emb_rel_e7):
         denominator = torch.sqrt(
             emb_rel_e0 ** 2 + emb_rel_e1 ** 2 + emb_rel_e2 ** 2 + emb_rel_e3 ** 2 + emb_rel_e4 ** 2 +
@@ -322,9 +315,6 @@ class AConvO(BaseKGE):
     def __init__(self, args: dict):
         super().__init__(args=args)
         self.name = 'AConvO'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
         # Convolution
         self.conv2d = torch.nn.Conv2d(in_channels=1, out_channels=self.num_of_output_channels,
                                       kernel_size=(self.kernel_size, self.kernel_size), stride=1, padding=1, bias=True)
@@ -334,7 +324,8 @@ class AConvO(BaseKGE):
         self.norm_fc1 = self.normalizer_class(self.embedding_dim)
         self.feature_map_dropout = torch.nn.Dropout2d(self.feature_map_dropout_rate)
 
-    def octonion_normalizer(self, emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6,
+    @staticmethod
+    def octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6,
                             emb_rel_e7):
         denominator = torch.sqrt(
             emb_rel_e0 ** 2 + emb_rel_e1 ** 2 + emb_rel_e2 ** 2 +

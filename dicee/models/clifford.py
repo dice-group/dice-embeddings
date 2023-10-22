@@ -1,5 +1,7 @@
 from .base_model import BaseKGE
 import torch
+from torch.nn import functional as F
+from torch import nn
 
 
 class CMult(BaseKGE):
@@ -223,14 +225,87 @@ class CMult(BaseKGE):
             raise NotImplementedError
 
 
+class Head(nn.Module):
+    """ one head of self-attention """
+
+    def __init__(self, n_embd, block_size, head_size):
+        super().__init__()
+        self.key = nn.Linear(n_embd, head_size, bias=False)
+        self.query = nn.Linear(n_embd, head_size, bias=False)
+        self.value = nn.Linear(n_embd, head_size, bias=False)
+        self.register_buffer('tril', torch.tril(torch.ones(block_size, block_size)))
+
+        self.dropout = nn.Dropout(0.0)
+
+    def forward(self, x):
+        # input of size (batch, time-step, channels)
+        # output of size (batch, time-step, head size)
+        B, T, C = x.shape
+        k = self.key(x)  # (B,T,hs)
+        q = self.query(x)  # (B,T,hs)
+        # compute attention scores ("affinities")
+        wei = q @ k.transpose(-2, -1) * k.shape[-1] ** -0.5  # (B, T, hs) @ (B, hs, T) -> (B, T, T)
+        wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf'))  # (B, T, T)
+        wei = F.softmax(wei, dim=-1)  # (B, T, T)
+        wei = self.dropout(wei)
+        # perform the weighted aggregation of the values
+        v = self.value(x)  # (B,T,hs)
+        out = wei @ v  # (B, T, T) @ (B, T, hs) -> (B, T, hs)
+        return out
+
+
+class Block(nn.Module):
+    """ Transformer block: communication followed by computation """
+
+    def __init__(self, num_heads, n_embd, block_size):
+        super().__init__()
+        head_size = n_embd // num_heads
+        self.sa = MultiHeadAttention(num_heads, n_embd, block_size, head_size)
+        self.ffwd = FeedFoward(n_embd)
+        self.ln1 = nn.LayerNorm(n_embd)
+        self.ln2 = nn.LayerNorm(n_embd)
+
+    def forward(self, x):
+        x = x + self.sa(self.ln1(x))
+        x = x + self.ffwd(self.ln2(x))
+        return x
+
+
+class MultiHeadAttention(nn.Module):
+    """ multiple heads of self-attention in parallel """
+
+    def __init__(self, num_heads, n_embd, block_size, head_size):
+        super().__init__()
+        self.heads = nn.ModuleList([Head(n_embd, block_size, head_size) for _ in range(num_heads)])
+        self.proj = nn.Linear(head_size * num_heads, n_embd)
+        self.dropout = nn.Dropout(0.0)
+
+    def forward(self, x):
+        out = torch.cat([h(x) for h in self.heads], dim=-1)
+        out = self.dropout(self.proj(out))
+        return out
+
+
+class FeedFoward(nn.Module):
+    """ a simple linear layer followed by a non-linearity """
+
+    def __init__(self, n_embd):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(n_embd, 4 * n_embd),
+            nn.ReLU(),
+            nn.Linear(4 * n_embd, n_embd),
+            nn.Dropout(0.0),
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+
 class Keci(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'Keci'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
-
         self.p = self.args.get("p", 0)
         self.q = self.args.get("q", 0)
         if self.p is None:
@@ -329,6 +404,16 @@ class Keci(BaseKGE):
         assert sigma_pq.shape[1:] == (self.r, self.p, self.q)
         return sigma_pq
 
+    def apply_coefficients(self, h0, hp, hq, r0, rp, rq):
+        """ Multiplying a base vector with its scalar coefficient """
+        if self.p > 0:
+            hp = hp * self.p_coefficients.weight
+            rp = rp * self.p_coefficients.weight
+        if self.q > 0:
+            hq = hq * self.q_coefficients.weight
+            rq = rq * self.q_coefficients.weight
+        return h0, hp, hq, r0, rp, rq
+
     def clifford_multiplication(self, h0, hp, hq, r0, rp, rq):
         """ Compute our CL multiplication
 
@@ -375,6 +460,36 @@ class Keci(BaseKGE):
         assert sigma_pq.shape == (n, self.r, self.p, self.q)
 
         return sigma_0, sigma_p, sigma_q, sigma_pp, sigma_qq, sigma_pq
+
+    def construct_cl_multivector(self, x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[
+        torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
+        """
+        Construct a batch of multivectors Cl_{p,q}(\mathbb{R}^d)
+
+        Parameter
+        ---------
+        x: torch.FloatTensor with (n,d) shape
+
+        Returns
+        -------
+        a0: torch.FloatTensor with (n,r) shape
+        ap: torch.FloatTensor with (n,r,p) shape
+        aq: torch.FloatTensor with (n,r,q) shape
+        """
+        batch_size, d = x.shape
+        # (1) A_{n \times k}: take the first k columns
+        a0 = x[:, :r].view(batch_size, r)
+        # (2) B_{n \times p}, C_{n \times q}: take the self.k * self.p columns after the k. column
+        if p > 0:
+            ap = x[:, r: r + (r * p)].view(batch_size, r, p)
+        else:
+            ap = torch.zeros((batch_size, r, p), device=self.device)
+        if q > 0:
+            # (3) B_{n \times p}, C_{n \times q}: take the last self.r * self.q .
+            aq = x[:, -(r * q):].view(batch_size, r, q)
+        else:
+            aq = torch.zeros((batch_size, r, q), device=self.device)
+        return a0, ap, aq
 
     def forward_k_vs_with_explicit(self, x: torch.Tensor):
         n = len(x)
@@ -439,46 +554,6 @@ class Keci(BaseKGE):
             sigma_pq = 0
 
         return score_sigma_0 + score_sigma_p + score_sigma_q + sigma_pp + sigma_qq + sigma_pq
-
-    def apply_coefficients(self, h0, hp, hq, r0, rp, rq):
-        """ Multiplying a base vector with its scalar coefficient """
-        if self.p > 0:
-            hp = hp * self.p_coefficients.weight
-            rp = rp * self.p_coefficients.weight
-        if self.q > 0:
-            hq = hq * self.q_coefficients.weight
-            rq = rq * self.q_coefficients.weight
-        return h0, hp, hq, r0, rp, rq
-
-    def construct_cl_multivector(self, x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[
-        torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
-        """
-        Construct a batch of multivectors Cl_{p,q}(\mathbb{R}^d)
-
-        Parameter
-        ---------
-        x: torch.FloatTensor with (n,d) shape
-
-        Returns
-        -------
-        a0: torch.FloatTensor with (n,r) shape
-        ap: torch.FloatTensor with (n,r,p) shape
-        aq: torch.FloatTensor with (n,r,q) shape
-        """
-        batch_size, d = x.shape
-        # (1) A_{n \times k}: take the first k columns
-        a0 = x[:, :r].view(batch_size, r)
-        # (2) B_{n \times p}, C_{n \times q}: take the self.k * self.p columns after the k. column
-        if p > 0:
-            ap = x[:, r: r + (r * p)].view(batch_size, r, p)
-        else:
-            ap = torch.zeros((batch_size, r, p), device=self.device)
-        if q > 0:
-            # (3) B_{n \times p}, C_{n \times q}: take the last self.r * self.q .
-            aq = x[:, -(r * q):].view(batch_size, r, q)
-        else:
-            aq = torch.zeros((batch_size, r, q), device=self.device)
-        return a0, ap, aq
 
     def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
         """
@@ -546,6 +621,63 @@ class Keci(BaseKGE):
         else:
             sigma_pq = 0
         return h0r0t0 + score_p + score_q + sigma_pp + sigma_qq + sigma_pq
+
+
+    def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor:
+        """
+        Kvsall training
+
+        (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .
+        (2) Construct head entity and relation embeddings according to Cl_{p,q}(\mathbb{R}^d) .
+        (3) Perform Cl multiplication
+        (4) Inner product of (3) and all entity embeddings
+
+        Parameter
+        ---------
+        x: torch.LongTensor with (n,2) shape
+
+        Returns
+        -------
+        torch.FloatTensor with (n, |E|) shape
+        """
+        # (1) Retrieve real-valued embedding vectors.
+        head_ent_emb, rel_emb = self.get_head_relation_representation(x)
+        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities.
+        a0, ap, aq = self.construct_cl_multivector(head_ent_emb, r=self.r, p=self.p, q=self.q)
+        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for relations.
+        b0, bp, bq = self.construct_cl_multivector(rel_emb, r=self.r, p=self.p, q=self.q)
+
+        # (4) Clifford multiplication of (2) and (3).
+        # AB_pp, AB_qq, AB_pq
+        # AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq = self.clifford_mul_reduced_interactions(a0, ap, aq, b0, bp, bq)
+        AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq = self.clifford_mul(a0, ap, aq, b0, bp, bq)
+
+        # b e r
+        selected_tail_entity_embeddings = self.entity_embeddings(target_entity_idx)
+        # (7) Inner product of AB_0 and a0 of all entities.
+        A_score = torch.einsum('br,ber->be', AB_0, selected_tail_entity_embeddings[:, :self.r])
+
+        # (8) Inner product of AB_p and ap of all entities.
+        if self.p > 0:
+            B_score = torch.einsum('brp,berp->be', AB_p,
+                                   selected_tail_entity_embeddings[:, self.r: self.r + (self.r * self.p)]
+                                   .view(self.num_entities, self.r, self.p))
+        else:
+            B_score = 0
+        # (9) Inner product of AB_q and aq of all entities.
+        if self.q > 0:
+            C_score = torch.einsum('brq,berq->be', AB_q,
+                                   selected_tail_entity_embeddings[:, -(self.r * self.q):]
+                                   .view(self.num_entities, self.r, self.q))
+        else:
+            C_score = 0
+        # (10) Aggregate (7,8,9).
+        A_B_C_score = A_score + B_score + C_score
+        # (11) Compute inner products of AB_pp, AB_qq, AB_pq and respective identity matrices of all entities.
+        D_E_F_score = (torch.einsum('brpp->b', AB_pp) + torch.einsum('brqq->b', AB_qq) + torch.einsum('brpq->b', AB_pq))
+        D_E_F_score = D_E_F_score.view(len(head_ent_emb), 1)
+        # (12) Score
+        return A_B_C_score + D_E_F_score
 
     def score(self, h, r, t):
         # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations
@@ -660,62 +792,6 @@ class Keci(BaseKGE):
         else:
             sigma_pq = 0
         return h0r0t0 + score_p + score_q + sigma_pp + sigma_qq + sigma_pq
-
-    def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor:
-        """
-        Kvsall training
-
-        (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .
-        (2) Construct head entity and relation embeddings according to Cl_{p,q}(\mathbb{R}^d) .
-        (3) Perform Cl multiplication
-        (4) Inner product of (3) and all entity embeddings
-
-        Parameter
-        ---------
-        x: torch.LongTensor with (n,2) shape
-
-        Returns
-        -------
-        torch.FloatTensor with (n, |E|) shape
-        """
-        # (1) Retrieve real-valued embedding vectors.
-        head_ent_emb, rel_emb = self.get_head_relation_representation(x)
-        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities.
-        a0, ap, aq = self.construct_cl_multivector(head_ent_emb, r=self.r, p=self.p, q=self.q)
-        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for relations.
-        b0, bp, bq = self.construct_cl_multivector(rel_emb, r=self.r, p=self.p, q=self.q)
-
-        # (4) Clifford multiplication of (2) and (3).
-        # AB_pp, AB_qq, AB_pq
-        # AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq = self.clifford_mul_reduced_interactions(a0, ap, aq, b0, bp, bq)
-        AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq = self.clifford_mul(a0, ap, aq, b0, bp, bq)
-
-        # b e r
-        selected_tail_entity_embeddings = self.entity_embeddings(target_entity_idx)
-        # (7) Inner product of AB_0 and a0 of all entities.
-        A_score = torch.einsum('br,ber->be', AB_0, selected_tail_entity_embeddings[:, :self.r])
-
-        # (8) Inner product of AB_p and ap of all entities.
-        if self.p > 0:
-            B_score = torch.einsum('brp,berp->be', AB_p,
-                                   selected_tail_entity_embeddings[:, self.r: self.r + (self.r * self.p)]
-                                   .view(self.num_entities, self.r, self.p))
-        else:
-            B_score = 0
-        # (9) Inner product of AB_q and aq of all entities.
-        if self.q > 0:
-            C_score = torch.einsum('brq,berq->be', AB_q,
-                                   selected_tail_entity_embeddings[:, -(self.r * self.q):]
-                                   .view(self.num_entities, self.r, self.q))
-        else:
-            C_score = 0
-        # (10) Aggregate (7,8,9).
-        A_B_C_score = A_score + B_score + C_score
-        # (11) Compute inner products of AB_pp, AB_qq, AB_pq and respective identity matrices of all entities.
-        D_E_F_score = (torch.einsum('brpp->b', AB_pp) + torch.einsum('brqq->b', AB_qq) + torch.einsum('brpq->b', AB_pq))
-        D_E_F_score = D_E_F_score.view(len(head_ent_emb), 1)
-        # (12) Score
-        return A_B_C_score + D_E_F_score
 
 
 class KeciBase(Keci):

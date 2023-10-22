@@ -58,7 +58,7 @@ def preprocesses_input_args(args):
     # reciprocal checking
     if args.scoring_technique in ["AllvsAll", "KvsSample", "KvsAll", "1vsAll"]:
         args.apply_reciprical_or_noise = True
-    elif args.scoring_technique == 'NegSample':
+    elif args.scoring_technique in ["NegSample", "Sentence"]:
         args.apply_reciprical_or_noise = False
     else:
         raise KeyError(f'Unexpected input for scoring_technique.\t{args.scoring_technique}')
@@ -72,6 +72,13 @@ def preprocesses_input_args(args):
     if args.normalization == 'None':
         args.normalization = None
     assert args.normalization in [None, 'LayerNorm', 'BatchNorm1d']
+    if args.byte_pair_encoding:
+        args.scoring_technique="BytePairEncodedTriplesNegSample"
+        try:
+            assert args.neg_ratio>0
+        except AssertionError:
+            raise AssertionError(f"--byte_pair_encoding {args.byte_pair_encoding} currently only works with "
+                                 f"positive --neg_ratio {args.neg_ratio}")
     return args
 
 

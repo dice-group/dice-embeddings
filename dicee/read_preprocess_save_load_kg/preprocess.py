@@ -3,7 +3,6 @@ import polars as pl
 from .util import create_recipriocal_triples, timeit, index_triples_with_pandas, dataset_sanity_checking
 from dicee.static_funcs import numpy_data_type_changer
 
-
 class PreprocessKG:
     """ Preprocess the data in memory """
 
@@ -21,12 +20,16 @@ class PreprocessKG:
         -------
         None
         """
-        if self.kg.backend == "polars":
+        if self.kg.byte_pair_encoding:
+            self.preprocess_with_byte_pair_encoding()
+        elif self.kg.backend == "polars":
             self.preprocess_with_polars()
         elif self.kg.backend in ["pandas", "rdflib"]:
             self.preprocess_with_pandas()
         else:
             raise KeyError(f'{self.kg.backend} not found')
+        """
+        @TODO: Temporarily ignored
         print('Finding suitable integer type for the index...')
         self.kg.train_set = numpy_data_type_changer(self.kg.train_set,
                                                     num=max(self.kg.num_entities, self.kg.num_relations))
@@ -36,6 +39,123 @@ class PreprocessKG:
         if self.kg.test_set is not None:
             self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
                                                        num=max(self.kg.num_entities, self.kg.num_relations))
+        """
+    @timeit
+    def preprocess_with_byte_pair_encoding(self) -> None:
+        # (1)  Add recipriocal or noisy triples.
+        # self.apply_reciprical_or_noise()
+
+        # (2) Construct integer indexing for entities and relations.
+        # self.sequential_vocabulary_construction()
+        # self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
+        assert isinstance(self.kg.train_set,pd.DataFrame)
+        self.kg.train_set = list(self.kg.train_set.map(lambda x: tuple(self.kg.enc.encode(x))).itertuples(index=False, name=None))
+        assert isinstance(self.kg.train_set, list)
+        assert isinstance(self.kg.train_set[0], tuple)
+        assert len(self.kg.train_set[0])==3
+        assert isinstance(self.kg.train_set[0][0], tuple)
+        assert isinstance(self.kg.train_set[0][0][0], int)
+
+        if self.kg.valid_set is not None:
+            self.kg.valid_set = list(self.kg.valid_set.map(lambda x: tuple(self.kg.enc.encode(x))).itertuples(index=False, name=None))
+
+        if self.kg.test_set is not None:
+            self.kg.test_set = list(self.kg.test_set.map(lambda x: tuple(self.kg.enc.encode(x))).itertuples(index=False, name=None))
+
+        # @TODO: move this into PreprocessKG
+        if self.kg.byte_pair_encoding:
+            tokens = set()
+            entity = set()
+            self.kg.max_length_subword_tokens = 0
+            for i in self.kg.train_set + self.kg.valid_set + self.kg.test_set:
+                max_token_length_per_triple = max(len(i[0]), len(i[1]), len(i[2]))
+                if max_token_length_per_triple > self.kg.max_length_subword_tokens:
+                    self.kg.max_length_subword_tokens = max_token_length_per_triple
+
+            for i in range(len(self.kg.train_set)):
+                # Tuple of three tuples
+                s, p, o = self.kg.train_set[i]
+                if len(s) < self.kg.max_length_subword_tokens:
+                    s_encoded = s + tuple(self.kg.dummy_id for _ in range(self.kg.max_length_subword_tokens - len(s)))
+                else:
+                    s_encoded = s
+
+                if len(p) < self.kg.max_length_subword_tokens:
+                    p_encoded = p + tuple(self.kg.dummy_id for _ in range(self.kg.max_length_subword_tokens - len(p)))
+                else:
+                    p_encoded = p
+
+                if len(o) < self.kg.max_length_subword_tokens:
+                    o_encoded = o + tuple(self.kg.dummy_id for _ in range(self.kg.max_length_subword_tokens - len(o)))
+                else:
+                    o_encoded = o
+
+                tokens.add(s_encoded)
+                tokens.add(p_encoded)
+                tokens.add(o_encoded)
+
+                entity.add(s_encoded)
+                entity.add(o_encoded)
+
+                self.kg.train_set[i] = (s_encoded, p_encoded, o_encoded)
+
+            for i in range(len(self.kg.valid_set)):
+                # Tuple of three tuples
+                s, p, o = self.kg.valid_set[i]
+                if len(s) < self.kg.max_length_subword_tokens:
+                    s_encoded = s + tuple(self.kg.dummy_id for _ in range(self.kg.max_length_subword_tokens - len(s)))
+                else:
+                    s_encoded = s
+                if len(p) < self.kg.max_length_subword_tokens:
+                    p_encoded = p + tuple(self.kg.dummy_id for _ in range(self.kg.max_length_subword_tokens - len(p)))
+                else:
+                    p_encoded = p
+
+                if len(o) < self.kg.max_length_subword_tokens:
+                    o_encoded = o + tuple(self.kg.dummy_id for _ in range(self.kg.max_length_subword_tokens - len(o)))
+                else:
+                    o_encoded = o
+                tokens.add(s_encoded)
+                tokens.add(p_encoded)
+                tokens.add(o_encoded)
+
+                entity.add(s_encoded)
+                entity.add(o_encoded)
+
+                self.kg.valid_set[i] = (s_encoded, p_encoded, o_encoded)
+
+            for i in range(len(self.kg.test_set)):
+                # Tuple of three tuples
+                s, p, o = self.kg.test_set[i]
+                if len(s) < self.kg.max_length_subword_tokens:
+                    s_encoded = s + tuple(self.kg.dummy_id for _ in range(self.kg.max_length_subword_tokens - len(s)))
+                else:
+                    s_encoded = s
+                if len(p) < self.kg.max_length_subword_tokens:
+                    p_encoded = p + tuple(self.kg.dummy_id for _ in range(self.kg.max_length_subword_tokens - len(p)))
+                else:
+                    p_encoded = p
+
+                if len(o) < self.kg.max_length_subword_tokens:
+                    o_encoded = o + tuple(self.kg.dummy_id for _ in range(self.kg.max_length_subword_tokens - len(o)))
+                else:
+                    o_encoded = o
+                tokens.add(s_encoded)
+                tokens.add(p_encoded)
+                tokens.add(o_encoded)
+
+                entity.add(s_encoded)
+                entity.add(o_encoded)
+
+                self.kg.test_set[i] = (s_encoded, p_encoded, o_encoded)
+
+            # shaped_bpe_tokens
+            self.kg.ordered_shaped_bpe_tokens = [shaped_bpe_token for shaped_bpe_token in tokens]
+            self.kg.shaped_bpe_entities = [i for i in self.kg.ordered_shaped_bpe_tokens if i in entity]
+
+            # self.train_set = np.array(self.train_set)
+            # self.test_set = np.array(self.test_set)
+            # self.valid_set = np.array(self.valid_set)
 
     @timeit
     def preprocess_with_pandas(self) -> None:
@@ -55,6 +175,7 @@ class PreprocessKG:
         """
         # (1)  Add recipriocal or noisy triples.
         self.apply_reciprical_or_noise()
+
         # (2) Construct integer indexing for entities and relations.
         self.sequential_vocabulary_construction()
         self.kg.num_entities, self.kg.num_relations = len(self.kg.entity_to_idx), len(self.kg.relation_to_idx)
@@ -84,6 +205,7 @@ class PreprocessKG:
             dataset_sanity_checking(self.kg.test_set, self.kg.num_entities, self.kg.num_relations)
             self.kg.test_set = numpy_data_type_changer(self.kg.test_set,
                                                        num=max(self.kg.num_entities, self.kg.num_relations))
+
     @timeit
     def preprocess_with_polars(self) -> None:
         print(f'*** Preprocessing Train Data:{self.kg.train_set.shape} with Polars ***')
@@ -138,7 +260,7 @@ class PreprocessKG:
         self.kg.entity_to_idx = pl.concat((df_str_kg['subject'],
                                            df_str_kg['object'])).unique(maintain_order=True).rename('entity')
         print('Relation Indexing...')
-        self.kg.relation_to_idx =df_str_kg['relation'].unique(maintain_order=True)
+        self.kg.relation_to_idx = df_str_kg['relation'].unique(maintain_order=True)
         print('Creating index for entities...')
         self.kg.entity_to_idx = {ent: idx for idx, ent in enumerate(self.kg.entity_to_idx.to_list())}
         print('Creating index for relations...')
@@ -175,6 +297,7 @@ class PreprocessKG:
         try:
             assert isinstance(self.kg.train_set, pd.DataFrame)
         except AssertionError:
+            raise AssertionError
             print(type(self.kg.train_set))
             print('HEREE')
             exit(1)
@@ -232,6 +355,7 @@ class PreprocessKG:
             # print('\t after dropping:', df_str_kg.size.compute(scheduler=scheduler_flag))
             print('\t after dropping:', self.kg.train_set.size)  # .compute(scheduler=scheduler_flag))
             del low_frequency_entities
+
     def apply_reciprical_or_noise(self) -> None:
         """ (1) Add reciprocal triples (2) Add noisy triples """
         # (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}

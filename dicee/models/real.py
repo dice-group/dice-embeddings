@@ -12,15 +12,6 @@ class DistMult(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'DistMult'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
-
-    def forward_triples(self, x: torch.Tensor) -> torch.Tensor:
-        # (1) Retrieve embeddings & Apply Dropout & Normalization.
-        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
-        # (2) Compute the score
-        return (self.hidden_dropout(self.hidden_normalizer(head_ent_emb * rel_ent_emb)) * tail_ent_emb).sum(dim=1)
 
     def forward_k_vs_all(self, x: torch.LongTensor):
         emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
@@ -33,8 +24,10 @@ class DistMult(BaseKGE):
         t = self.entity_embeddings(target_entity_idx).transpose(1, 2)
         return torch.bmm(hr, t).squeeze(1)
 
-    def score(self,h,r,t):
+    def score(self, h, r, t):
         return (self.hidden_dropout(self.hidden_normalizer(h * r)) * t).sum(dim=1)
+
+
 class TransE(BaseKGE):
     """
     Translating Embeddings for Modeling
@@ -46,20 +39,14 @@ class TransE(BaseKGE):
         self.name = 'TransE'
         self._norm = 2
         self.margin = 4
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
 
-    def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
-        # (1) Retrieve embeddings & Apply Dropout & Normalization.
-        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
+    def score(self, head_ent_emb, rel_ent_emb, tail_ent_emb):
         # Original d:=|| s+p - t||_2 \approx 0 distance, if true
         # if d =0 sigma(5-0) => 1
         # if d =5 sigma(5-5) => 0.5
         # Update: sigmoid( \gamma - d)
-        distance = self.margin - torch.nn.functional.pairwise_distance(head_ent_emb + rel_ent_emb, tail_ent_emb,
+        return self.margin - torch.nn.functional.pairwise_distance(head_ent_emb + rel_ent_emb, tail_ent_emb,
                                                                        p=self._norm)
-        return distance
 
     def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
         emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
@@ -74,10 +61,7 @@ class Shallom(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'Shallom'
-        # Fixed
         shallom_width = int(2 * self.embedding_dim)
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data)
         self.shallom = torch.nn.Sequential(torch.nn.Dropout(self.input_dropout_rate),
                                            torch.nn.Linear(self.embedding_dim * 2, shallom_width),
                                            self.normalizer_class(shallom_width),
@@ -114,9 +98,6 @@ class Pyke(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
         self.name = 'Pyke'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
         self.dist_func = torch.nn.PairwiseDistance(p=2)
         self.margin = 1.0
 

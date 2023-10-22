@@ -68,13 +68,19 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[o
     start_time = time.time()
     # (1) Load weights..
     weights = torch.load(path_of_experiment_folder + f'/{model_name}', torch.device('cpu'))
-    num_ent, ent_dim = weights['entity_embeddings.weight'].shape
-    num_rel, rel_dim = weights['relation_embeddings.weight'].shape
-    assert ent_dim==rel_dim
-    # (2) Loading input configuration.
-    configs = load_json(path_of_experiment_folder + '/configuration.json')
-    configs["num_entities"] = num_ent
-    configs["num_relations"] = num_rel
+    if "entity_embeddings.weight" not in weights:
+        num_tokens, ent_dim = weights['token_embeddings.weight'].shape
+        # (2) Loading input configuration.
+        configs = load_json(path_of_experiment_folder + '/configuration.json')
+        configs["num_tokens"] = num_tokens
+    else:
+        num_ent, ent_dim = weights['entity_embeddings.weight'].shape
+        num_rel, rel_dim = weights['relation_embeddings.weight'].shape
+        assert ent_dim==rel_dim
+        # (2) Loading input configuration.
+        configs = load_json(path_of_experiment_folder + '/configuration.json')
+        configs["num_entities"] = num_ent
+        configs["num_relations"] = num_rel
 
     print(f'Done! It took {time.time() - start_time:.3f}')
     # (4) Select the model
@@ -279,6 +285,7 @@ def read_or_load_kg(args, cls):
     print('*** Read or Load Knowledge Graph  ***')
     start_time = time.time()
     kg = cls(dataset_dir=args.dataset_dir,
+             byte_pair_encoding=args.byte_pair_encoding,
              add_noise_rate=args.add_noise_rate,
              sparql_endpoint=args.sparql_endpoint,
              path_single_kg=args.path_single_kg,
