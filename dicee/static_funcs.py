@@ -81,7 +81,9 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[o
         num_tokens, ent_dim = weights['token_embeddings.weight'].shape
         # (2) Loading input configuration.
         configs = load_json(path_of_experiment_folder + '/configuration.json')
+        report = load_json(path_of_experiment_folder + '/report.json')
         configs["num_tokens"] = num_tokens
+        configs["max_length_subword_tokens"] = report["max_length_subword_tokens"]
 
     print(f'Done! It took {time.time() - start_time:.3f}')
     # (4) Select the model

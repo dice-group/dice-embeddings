@@ -164,7 +164,6 @@ class BaseInteractiveKGE:
 
         self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
         self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
-
     def get_domain_of_relation(self, rel: str) -> List[str]:
         x = [self.idx_to_entity[i] for i in self.domain_per_rel[self.relation_to_idx[rel]]]
         res = set(x)

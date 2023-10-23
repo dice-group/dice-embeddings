@@ -57,6 +57,7 @@ class KG:
         self.enc = tiktoken.get_encoding("gpt2")
         self.num_tokens = self.enc.n_vocab  # ~ 50
         self.num_bpe_entities = None
+        # TODO: Find a unique token later
         self.dummy_id = self.enc.encode(" ")[0]
         self.ordered_bpe_entities = None
         self.max_length_subword_tokens = None

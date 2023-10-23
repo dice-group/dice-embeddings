@@ -12,7 +12,7 @@ from .static_preprocess_funcs import create_constraints
 import numpy as np
 import sys
 import tiktoken
-
+from .static_funcs import load_json
 
 class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
@@ -35,6 +35,9 @@ class KGE(BaseInteractiveKGE):
             print("Sub work tokenizer will be applied")
             self.enc = tiktoken.get_encoding("gpt2")
             self.dummy_id = tiktoken.get_encoding("gpt2").encode(" ")[0]
+
+        self.configs = load_json(path + '/configuration.json')
+        self.report = load_json(path + '/report.json')
 
     def __str__(self):
         return "KGE | " + str(self.model)
@@ -329,7 +332,7 @@ class KGE(BaseInteractiveKGE):
             r_encode = self.enc.encode(r)
             t_encode = self.enc.encode(t)
 
-            length = max(len(h_encode), len(r_encode), len(t_encode))
+            length=self.report["max_length_subword_tokens"]
 
             if len(h_encode) != length:
                 h_encode.extend([self.dummy_id for _ in range(length - len(h_encode))])
