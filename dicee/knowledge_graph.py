@@ -2,7 +2,7 @@ from typing import List
 from .read_preprocess_save_load_kg import ReadFromDisk, PreprocessKG, LoadSaveToDisk
 import sys
 import tiktoken
-
+import numpy as np
 
 class KG:
     """ Knowledge Graph """
