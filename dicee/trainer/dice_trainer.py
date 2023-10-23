@@ -156,7 +156,7 @@ class DICE_Trainer:
                                            num_workers=self.args.num_core, persistent_workers=False)
 
     @timeit
-    def initialize_dataset(self, dataset, form_of_labelling) -> torch.utils.data.Dataset:
+    def initialize_dataset(self, dataset:KG, form_of_labelling) -> torch.utils.data.Dataset:
         """
 
         Parameters
@@ -172,7 +172,10 @@ class DICE_Trainer:
         train_dataset = construct_dataset(train_set=dataset.train_set,
                                           valid_set=dataset.valid_set,
                                           test_set=dataset.test_set,
-                                          ordered_shaped_bpe_tokens=dataset.ordered_shaped_bpe_tokens,
+                                          train_bpe_set=dataset.train_bpe_set,
+                                          valid_bpe_set=dataset.valid_bpe_set,
+                                          test_bpe_set=dataset.test_bpe_set,
+                                          ordered_bpe_entities=dataset.ordered_bpe_entities,
                                           entity_to_idx=dataset.entity_to_idx,
                                           relation_to_idx=dataset.relation_to_idx,
                                           form_of_labelling=form_of_labelling,

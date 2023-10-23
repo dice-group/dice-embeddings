@@ -6,6 +6,7 @@ from typing import List, Tuple
 from .static_preprocess_funcs import mapping_from_first_two_cols_to_third
 from .static_funcs import timeit, load_pickle
 
+
 @timeit
 def reload_dataset(path: str, form_of_labelling, scoring_technique, neg_ratio, label_smoothing_rate):
     """ Reload the files from disk to construct the Pytorch dataset """
@@ -20,10 +21,14 @@ def reload_dataset(path: str, form_of_labelling, scoring_technique, neg_ratio, l
 
 
 @timeit
-def construct_dataset(*, train_set: np.ndarray,
+def construct_dataset(*,
+                      train_set: np.ndarray,
                       valid_set=None,
                       test_set=None,
-                      ordered_shaped_bpe_tokens: List[Tuple[int]] = None,
+                      train_bpe_set=None,
+                      valid_bpe_set=None,
+                      test_bpe_set=None,
+                      ordered_bpe_entities=None,
                       entity_to_idx: dict,
                       relation_to_idx: dict,
                       form_of_labelling: str,
@@ -61,10 +66,9 @@ def construct_dataset(*, train_set: np.ndarray,
                                  relation_idxs=relation_to_idx,
                                  label_smoothing_rate=label_smoothing_rate)
         elif scoring_technique == 'BytePairEncodedTriplesNegSample':
-            train_set = BytePairEncodedTriples(torch.tensor(train_set, dtype=torch.long),
-                                               bpe_entities_relations=torch.tensor(ordered_shaped_bpe_tokens,
-                                                                                   dtype=torch.long),
-                                               neg_ratio=neg_ratio)
+            train_set = BytePairEncodedTriples(
+                train_bpe_set=torch.tensor(train_bpe_set, dtype=torch.long),
+                ordered_shaped_bpe_entities=torch.tensor([shaped_bpe_ent for (str_ent, bpe_ent, shaped_bpe_ent) in ordered_bpe_entities]), neg_ratio=neg_ratio)
         else:
             raise ValueError(f'Invalid scoring technique : {scoring_technique}')
     elif form_of_labelling == 'RelationPrediction':
@@ -77,44 +81,53 @@ def construct_dataset(*, train_set: np.ndarray,
 
 
 class BytePairEncodedTriples(torch.utils.data.Dataset):
+    def __init__(self, train_bpe_set: torch.LongTensor, ordered_shaped_bpe_entities:torch.LongTensor, neg_ratio: int):
+        """
 
-    def __init__(self, train_set: List, bpe_entities_relations: torch.LongTensor, neg_ratio: int):
+        Parameters
+        ----------
+        train_bpe_set
+        ordered_shaped_bpe_entities: n by t torch Long tensor, where n denotes the number of entities and
+        t max token length
+        neg_ratio
+        """
         super().__init__()
-        assert isinstance(bpe_entities_relations, torch.LongTensor)
-        assert isinstance(train_set, torch.LongTensor)
-        self.bpe_entities_relations = bpe_entities_relations
-        self.train_set = train_set
-        self.num_tokens = len(bpe_entities_relations)
+        self.train_bpe_set = train_bpe_set
+        self.ordered_bpe_entities = ordered_shaped_bpe_entities
+        self.num_bpe_entities = len(self.ordered_bpe_entities)
         self.neg_ratio = neg_ratio
+        self.num_datapoints = len(self.train_bpe_set)
 
     def __len__(self):
-        return len(self.train_set)
+        return self.num_datapoints
 
     def __getitem__(self, idx):
-        return self.train_set[idx]
+        return self.train_bpe_set[idx]
 
-    def collate_fn(self, batch: List[torch.Tensor]):
-        batch = torch.stack(batch, dim=0)
-        size_of_batch, _, d = batch.shape
+    def collate_fn(self, batch_shaped_bpe_triples: List[Tuple[torch.Tensor, torch.Tensor]]):
+        batch_of_bpe_triples = torch.stack(batch_shaped_bpe_triples, dim=0)
 
-        h, r, t = batch[:, 0, :], batch[:, 1, :], batch[:, 2, :]
+        size_of_batch, _, token_length = batch_of_bpe_triples.shape
+
+        bpe_h, bpe_r, bpe_t = batch_of_bpe_triples[:, 0, :], batch_of_bpe_triples[:, 1, :], batch_of_bpe_triples[:, 2, :]
+
         label = torch.ones((size_of_batch,))
         num_of_corruption = size_of_batch * self.neg_ratio
-        # b by
-        corr_entities = self.bpe_entities_relations[torch.randint(0, high=self.num_tokens, size=(num_of_corruption,))]
+        # Select bpe entities
+        corr_bpe_entities = self.ordered_bpe_entities[torch.randint(0, high=self.num_bpe_entities, size=(num_of_corruption,))]
+
         if torch.rand(1) >= 0.5:
-            h = torch.cat((h, corr_entities), 0)
-            r = torch.cat((r, torch.repeat_interleave(input=r, repeats=self.neg_ratio, dim=0)), 0)
-            t = torch.cat((t, torch.repeat_interleave(input=t, repeats=self.neg_ratio, dim=0)), 0)
+            bpe_h = torch.cat((bpe_h, corr_bpe_entities), 0)
+            bpe_r = torch.cat((bpe_r, torch.repeat_interleave(input=bpe_r, repeats=self.neg_ratio, dim=0)), 0)
+            bpe_t = torch.cat((bpe_t, torch.repeat_interleave(input=bpe_t, repeats=self.neg_ratio, dim=0)), 0)
         else:
-            h = torch.cat((h, torch.repeat_interleave(input=h, repeats=self.neg_ratio, dim=0)), 0)
-            r = torch.cat((r, torch.repeat_interleave(input=r, repeats=self.neg_ratio, dim=0)), 0)
-            t = torch.cat((t, corr_entities), 0)
+            bpe_h = torch.cat((bpe_h, torch.repeat_interleave(input=bpe_h, repeats=self.neg_ratio, dim=0)), 0)
+            bpe_r = torch.cat((bpe_r, torch.repeat_interleave(input=bpe_r, repeats=self.neg_ratio, dim=0)), 0)
+            bpe_t = torch.cat((bpe_t, corr_bpe_entities), 0)
 
-        x = torch.stack((h, r, t), dim=1)
+        bpe_triple = torch.stack((bpe_h, bpe_r, bpe_t), dim=1)
         label = torch.cat((label, torch.zeros(num_of_corruption)), 0)
-
-        return x, label
+        return bpe_triple, label
 
 
 class OnevsAllDataset(torch.utils.data.Dataset):

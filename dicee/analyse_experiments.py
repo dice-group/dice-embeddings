@@ -61,7 +61,7 @@ class Experiment:
         self.train_h10.append(x['Train']['H@10'])
 
         # Partition by delim and take the last one
-        self.full_storage_path.append(x['full_storage_path'].partition('dice-embeddings')[-1])
+        #self.full_storage_path.append(x['full_storage_path'].partition('dice-embeddings')[-1])
 
         self.val_mrr.append(x['Val']['MRR'])
         self.val_h1.append(x['Val']['H@1'])
@@ -75,10 +75,11 @@ class Experiment:
 
     def to_df(self):
         return pd.DataFrame(
-            dict(model_name=self.model_name,  # pq=self.pq, path_dataset_folder=self.path_dataset_folder,
+            dict(model_name=self.model_name,  # pq=self.pq,
+                 path_dataset_folder=self.path_dataset_folder,
                  train_mrr=self.train_mrr, train_h1=self.train_h1,
                  train_h3=self.train_h3, train_h10=self.train_h10,
-                 # full_storage_path=self.full_storage_path,
+                 #full_storage_path=self.full_storage_path,
                  val_mrr=self.val_mrr, val_h1=self.val_h1,
                  val_h3=self.val_h3, val_h10=self.val_h10,
                  test_mrr=self.test_mrr, test_h1=self.test_h1,
@@ -102,7 +103,7 @@ def analyse(args):
         with open(f'{full_path}/configuration.json', 'r') as f:
             config = json.load(f)
             config = {i: config[i] for i in
-                      ['model', 'full_storage_path', 'embedding_dim',
+                      ['model', 'dataset_dir', 'embedding_dim',
                        'normalization', 'num_epochs', 'batch_size', 'lr',
                        'callbacks',
                        'scoring_technique',

@@ -68,19 +68,20 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[o
     start_time = time.time()
     # (1) Load weights..
     weights = torch.load(path_of_experiment_folder + f'/{model_name}', torch.device('cpu'))
-    if "entity_embeddings.weight" not in weights:
+    configs = load_json(path_of_experiment_folder + '/configuration.json')
+    if configs["byte_pair_encoding"] is False:
+        num_ent, ent_dim = weights['entity_embeddings.weight'].shape
+        num_rel, rel_dim = weights['relation_embeddings.weight'].shape
+        assert ent_dim==rel_dim
+        # Update the training configuration
+        configs = load_json(path_of_experiment_folder + '/configuration.json')
+        configs["num_entities"] = num_ent
+        configs["num_relations"] = num_rel
+    else:
         num_tokens, ent_dim = weights['token_embeddings.weight'].shape
         # (2) Loading input configuration.
         configs = load_json(path_of_experiment_folder + '/configuration.json')
         configs["num_tokens"] = num_tokens
-    else:
-        num_ent, ent_dim = weights['entity_embeddings.weight'].shape
-        num_rel, rel_dim = weights['relation_embeddings.weight'].shape
-        assert ent_dim==rel_dim
-        # (2) Loading input configuration.
-        configs = load_json(path_of_experiment_folder + '/configuration.json')
-        configs["num_entities"] = num_ent
-        configs["num_relations"] = num_rel
 
     print(f'Done! It took {time.time() - start_time:.3f}')
     # (4) Select the model
