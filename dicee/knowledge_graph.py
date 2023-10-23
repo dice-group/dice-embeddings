@@ -1,8 +1,6 @@
 from typing import List
 from .read_preprocess_save_load_kg import ReadFromDisk, PreprocessKG, LoadSaveToDisk
 import sys
-import numpy as np
-import concurrent
 import tiktoken
 
 
