@@ -36,7 +36,12 @@ class PreprocessKG:
 
         if self.kg.eval_model:
             if self.kg.byte_pair_encoding:
-                data = self.kg.train_bpe_set + self.kg.valid_bpe_set + self.kg.test_bpe_set
+                data = []
+                data.extend(self.kg.train_set)
+                if self.kg.valid_set is not None:
+                    data.extend(self.kg.valid_set)
+                if self.kg.test_set is not None:
+                    data.extend(self.kg.test_set)
                 self.kg.max_length_subword_tokens = len(data[0][0])
             else:
                 if isinstance(self.kg.valid_set, np.ndarray) and isinstance(self.kg.test_set, np.ndarray):
@@ -62,6 +67,12 @@ class PreprocessKG:
             self.kg.constraints = executor.submit(create_constraints, self.kg.train_set,
                                                   self.kg.path_for_serialization + '/constraints.p')
             self.kg.domain_constraints_per_rel, self.kg.range_constraints_per_rel = None, None
+
+        if self.kg.max_length_subword_tokens is None and self.kg.byte_pair_encoding:
+            assert isinstance(self.kg.train_set, list)
+            assert isinstance(self.kg.train_set[0], tuple)
+            assert isinstance(self.kg.train_set[0][0], tuple)
+            self.kg.max_length_subword_tokens = len(self.kg.train_set[0][0])
 
         """
         @TODO: Temporarily ignored
@@ -91,33 +102,37 @@ class PreprocessKG:
 
         """
         assert isinstance(self.kg.train_set, pd.DataFrame)
-        self.kg.train_bpe_set = list(
+        self.kg.train_set = list(
             self.kg.train_set.map(lambda x: tuple(self.kg.enc.encode(x))).itertuples(index=False, name=None))
-        assert isinstance(self.kg.train_bpe_set, list)
-        assert isinstance(self.kg.train_bpe_set[0], tuple)
-        assert len(self.kg.train_bpe_set[0]) == 3
-        assert isinstance(self.kg.train_bpe_set[0][0], tuple)
-        assert isinstance(self.kg.train_bpe_set[0][0][0], int)
+        assert isinstance(self.kg.train_set, list)
+        assert isinstance(self.kg.train_set[0], tuple)
+        assert len(self.kg.train_set[0]) == 3
+        assert isinstance(self.kg.train_set[0][0], tuple)
+        assert isinstance(self.kg.train_set[0][0][0], int)
 
+        temp = []
+        temp.extend(self.kg.train_set)
         if self.kg.valid_set is not None:
-            self.kg.valid_bpe_set = list(
+            self.kg.valid_set = list(
                 self.kg.valid_set.map(lambda x: tuple(self.kg.enc.encode(x))).itertuples(index=False, name=None))
+            temp.extend(self.kg.valid_set)
 
         if self.kg.test_set is not None:
-            self.kg.test_bpe_set = list(
+            self.kg.test_set = list(
                 self.kg.test_set.map(lambda x: tuple(self.kg.enc.encode(x))).itertuples(index=False, name=None))
-
+            temp.extend(self.kg.test_set)
         tokens = set()
         bpe_subwords_to_shaped_bpe_entities = dict()
         max_length_subword_tokens = 0
-        for i in self.kg.train_bpe_set + self.kg.valid_bpe_set + self.kg.test_bpe_set:
+
+        # Iterate over all triples to find the longest sequence.
+        for i in temp:
             max_token_length_per_triple = max(len(i[0]), len(i[1]), len(i[2]))
             if max_token_length_per_triple > max_length_subword_tokens:
                 max_length_subword_tokens = max_token_length_per_triple
 
-        for i in range(len(self.kg.train_bpe_set)):
-            # Tuple of three tuples
-            s, p, o = self.kg.train_bpe_set[i]
+        print("Longest sequence of subwords of an entity or relation is ", max_length_subword_tokens)
+        for i, (s, p, o) in enumerate(self.kg.train_set):
             if len(s) < max_length_subword_tokens:
                 s_encoded = s + tuple(self.kg.dummy_id for _ in range(max_length_subword_tokens - len(s)))
             else:
@@ -136,61 +151,53 @@ class PreprocessKG:
             tokens.add(s_encoded)
             tokens.add(p_encoded)
             tokens.add(o_encoded)
-
             bpe_subwords_to_shaped_bpe_entities[o] = o_encoded
             bpe_subwords_to_shaped_bpe_entities[s] = s_encoded
+            self.kg.train_set[i] = (s_encoded, p_encoded, o_encoded)
 
-            self.kg.train_bpe_set[i] = (s_encoded, p_encoded, o_encoded)
+        if self.kg.valid_set is not None:
+            for i, (s, p, o) in enumerate(self.kg.valid_set):
+                if len(s) < max_length_subword_tokens:
+                    s_encoded = s + tuple(self.kg.dummy_id for _ in range(max_length_subword_tokens - len(s)))
+                else:
+                    s_encoded = s
+                if len(p) < max_length_subword_tokens:
+                    p_encoded = p + tuple(self.kg.dummy_id for _ in range(max_length_subword_tokens - len(p)))
+                else:
+                    p_encoded = p
+                if len(o) < max_length_subword_tokens:
+                    o_encoded = o + tuple(self.kg.dummy_id for _ in range(max_length_subword_tokens - len(o)))
+                else:
+                    o_encoded = o
+                tokens.add(s_encoded)
+                tokens.add(p_encoded)
+                tokens.add(o_encoded)
+                bpe_subwords_to_shaped_bpe_entities[o] = o_encoded
+                bpe_subwords_to_shaped_bpe_entities[s] = s_encoded
+                self.kg.valid_set[i] = (s_encoded, p_encoded, o_encoded)
 
-        for i in range(len(self.kg.valid_bpe_set)):
-            # Tuple of three tuples
-            s, p, o = self.kg.valid_bpe_set[i]
-            if len(s) < max_length_subword_tokens:
-                s_encoded = s + tuple(self.kg.dummy_id for _ in range(max_length_subword_tokens - len(s)))
-            else:
-                s_encoded = s
-            if len(p) < max_length_subword_tokens:
-                p_encoded = p + tuple(self.kg.dummy_id for _ in range(max_length_subword_tokens - len(p)))
-            else:
-                p_encoded = p
+        if self.kg.test_set is not None:
+            for i, (s, p, o) in enumerate(self.kg.test_set):
+                if len(s) < max_length_subword_tokens:
+                    s_encoded = s + tuple(self.kg.dummy_id for _ in range(max_length_subword_tokens - len(s)))
+                else:
+                    s_encoded = s
+                if len(p) < max_length_subword_tokens:
+                    p_encoded = p + tuple(self.kg.dummy_id for _ in range(max_length_subword_tokens - len(p)))
+                else:
+                    p_encoded = p
+                if len(o) < max_length_subword_tokens:
+                    o_encoded = o + tuple(self.kg.dummy_id for _ in range(max_length_subword_tokens - len(o)))
+                else:
+                    o_encoded = o
+                tokens.add(s_encoded)
+                tokens.add(p_encoded)
+                tokens.add(o_encoded)
 
-            if len(o) < max_length_subword_tokens:
-                o_encoded = o + tuple(self.kg.dummy_id for _ in range(max_length_subword_tokens - len(o)))
-            else:
-                o_encoded = o
-            tokens.add(s_encoded)
-            tokens.add(p_encoded)
-            tokens.add(o_encoded)
+                bpe_subwords_to_shaped_bpe_entities[o] = o_encoded
+                bpe_subwords_to_shaped_bpe_entities[s] = s_encoded
 
-            bpe_subwords_to_shaped_bpe_entities[o] = o_encoded
-            bpe_subwords_to_shaped_bpe_entities[s] = s_encoded
-
-            self.kg.valid_bpe_set[i] = (s_encoded, p_encoded, o_encoded)
-
-        for i in range(len(self.kg.test_bpe_set)):
-            # Tuple of three tuples
-            s, p, o = self.kg.test_bpe_set[i]
-            if len(s) < max_length_subword_tokens:
-                s_encoded = s + tuple(self.kg.dummy_id for _ in range(max_length_subword_tokens - len(s)))
-            else:
-                s_encoded = s
-            if len(p) < max_length_subword_tokens:
-                p_encoded = p + tuple(self.kg.dummy_id for _ in range(max_length_subword_tokens - len(p)))
-            else:
-                p_encoded = p
-
-            if len(o) < max_length_subword_tokens:
-                o_encoded = o + tuple(self.kg.dummy_id for _ in range(max_length_subword_tokens - len(o)))
-            else:
-                o_encoded = o
-            tokens.add(s_encoded)
-            tokens.add(p_encoded)
-            tokens.add(o_encoded)
-
-            bpe_subwords_to_shaped_bpe_entities[o] = o_encoded
-            bpe_subwords_to_shaped_bpe_entities[s] = s_encoded
-
-            self.kg.test_bpe_set[i] = (s_encoded, p_encoded, o_encoded)
+                self.kg.test_set[i] = (s_encoded, p_encoded, o_encoded)
 
         self.kg.ordered_bpe_entities = [(self.kg.enc.decode(k), k, v) for k, v in
                                         bpe_subwords_to_shaped_bpe_entities.items()]

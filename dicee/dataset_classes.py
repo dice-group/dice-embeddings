@@ -2,7 +2,7 @@ from torch.utils.data import DataLoader
 import numpy as np
 import torch
 import pytorch_lightning as pl
-from typing import List, Tuple
+from typing import List, Tuple, Union
 from .static_preprocess_funcs import mapping_from_first_two_cols_to_third
 from .static_funcs import timeit, load_pickle
 
@@ -22,12 +22,9 @@ def reload_dataset(path: str, form_of_labelling, scoring_technique, neg_ratio, l
 
 @timeit
 def construct_dataset(*,
-                      train_set: np.ndarray,
+                      train_set: Union[np.ndarray,list],
                       valid_set=None,
                       test_set=None,
-                      train_bpe_set=None,
-                      valid_bpe_set=None,
-                      test_bpe_set=None,
                       ordered_bpe_entities=None,
                       entity_to_idx: dict,
                       relation_to_idx: dict,
@@ -67,7 +64,7 @@ def construct_dataset(*,
                                  label_smoothing_rate=label_smoothing_rate)
         elif scoring_technique == 'BytePairEncodedTriplesNegSample':
             train_set = BytePairEncodedTriples(
-                train_bpe_set=torch.tensor(train_bpe_set, dtype=torch.long),
+                train_set=torch.tensor(train_set, dtype=torch.long),
                 ordered_shaped_bpe_entities=torch.tensor([shaped_bpe_ent for (str_ent, bpe_ent, shaped_bpe_ent) in ordered_bpe_entities]), neg_ratio=neg_ratio)
         else:
             raise ValueError(f'Invalid scoring technique : {scoring_technique}')
@@ -81,28 +78,27 @@ def construct_dataset(*,
 
 
 class BytePairEncodedTriples(torch.utils.data.Dataset):
-    def __init__(self, train_bpe_set: torch.LongTensor, ordered_shaped_bpe_entities:torch.LongTensor, neg_ratio: int):
+    def __init__(self, train_set: torch.LongTensor, ordered_shaped_bpe_entities:torch.LongTensor, neg_ratio: int):
         """
 
         Parameters
         ----------
-        train_bpe_set
-        ordered_shaped_bpe_entities: n by t torch Long tensor, where n denotes the number of entities and
-        t max token length
+        train_set
+        ordered_shaped_bpe_entities
         neg_ratio
         """
         super().__init__()
-        self.train_bpe_set = train_bpe_set
+        self.train_set = train_set
         self.ordered_bpe_entities = ordered_shaped_bpe_entities
         self.num_bpe_entities = len(self.ordered_bpe_entities)
         self.neg_ratio = neg_ratio
-        self.num_datapoints = len(self.train_bpe_set)
+        self.num_datapoints = len(self.train_set)
 
     def __len__(self):
         return self.num_datapoints
 
     def __getitem__(self, idx):
-        return self.train_bpe_set[idx]
+        return self.train_set[idx]
 
     def collate_fn(self, batch_shaped_bpe_triples: List[Tuple[torch.Tensor, torch.Tensor]]):
         batch_of_bpe_triples = torch.stack(batch_shaped_bpe_triples, dim=0)

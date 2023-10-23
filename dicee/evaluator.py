@@ -98,9 +98,9 @@ class Evaluator:
                                   trained_model=trained_model,
                                   form_of_labelling=form_of_labelling)
         elif self.args.scoring_technique == "BytePairEncodedTriplesNegSample":
-            self.eval_rank_of_head_and_tail_byte_pair_encoded_entity(train_set=dataset.train_bpe_set,
-                                                                     valid_set=dataset.valid_bpe_set,
-                                                                     test_set=dataset.test_bpe_set,
+            self.eval_rank_of_head_and_tail_byte_pair_encoded_entity(train_set=dataset.train_set,
+                                                                     valid_set=dataset.valid_set,
+                                                                     test_set=dataset.test_set,
                                                                      ordered_bpe_entities=dataset.ordered_bpe_entities,
                                                                      trained_model=trained_model)
         else:

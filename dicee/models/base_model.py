@@ -118,7 +118,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
         if self.args["byte_pair_encoding"]:
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
             # Workaround: Dummy subReducing the impact of dummies
-            self.lf = nn.Linear(self.embedding_dim * self.args["max_length_subword_tokens"],
+            self.lf = nn.Linear(self.embedding_dim * self.args.get("max_length_subword_tokens",None),
                                 self.embedding_dim, bias=False)
 
             self.param_init(self.token_embeddings.weight.data)

@@ -51,7 +51,6 @@ class KG:
         self.relation_to_idx = relation_to_idx
         self.backend = 'pandas' if backend is None else backend
         self.train_set, self.valid_set, self.test_set = None, None, None
-        self.train_bpe_set, self.valid_bpe_set, self.test_bpe_set = None, None, None
         self.idx_entity_to_bpe_shaped = dict()
 
         # WIP:
@@ -60,7 +59,7 @@ class KG:
         self.num_bpe_entities = None
         self.dummy_id = self.enc.encode(" ")[0]
         self.ordered_bpe_entities = None
-        self.max_length_subword_tokens = -1
+        self.max_length_subword_tokens = None
 
         if self.path_for_deserialization is None:
             ReadFromDisk(kg=self).start()
@@ -70,10 +69,15 @@ class KG:
         else:
             LoadSaveToDisk(kg=self).load()
 
-        # assert len(self.train_set) > 0
-        # assert len(self.train_set[0]) > 0
-        # assert isinstance(self.train_set, np.ndarray)
-        # assert isinstance(self.train_set[0], np.ndarray)
+        assert len(self.train_set) > 0
+
+        if self.byte_pair_encoding:
+            assert isinstance(self.train_set[0],tuple) and len(self.train_set[0])==3
+            assert isinstance(self.train_set[0][0], tuple) and isinstance(self.train_set[0][1], tuple)
+            assert isinstance(self.train_set[0][2], tuple)
+        else:
+            assert isinstance(self.train_set, np.ndarray)
+            assert isinstance(self.train_set[0], np.ndarray)
         self._describe()
 
     def _describe(self) -> None:
@@ -82,11 +86,11 @@ class KG:
             self.description_of_input += f'\nNumber of tokens:{self.num_tokens}' \
                                          f'\nNumber of max sequence of sub-words: {self.max_length_subword_tokens}' \
                                          f'\nNumber of triples on train set:' \
-                                         f'{len(self.train_bpe_set)}' \
+                                         f'{len(self.train_set)}' \
                                          f'\nNumber of triples on valid set:' \
-                                         f'{len(self.valid_bpe_set) if self.valid_bpe_set is not None else 0}' \
+                                         f'{len(self.valid_set) if self.valid_set is not None else 0}' \
                                          f'\nNumber of triples on test set:' \
-                                         f'{len(self.test_bpe_set) if self.test_bpe_set is not None else 0}\n'
+                                         f'{len(self.test_set) if self.test_set is not None else 0}\n'
         else:
             self.description_of_input += f'\nNumber of entities:{self.num_entities}' \
                                          f'\nNumber of relations:{self.num_relations}' \
