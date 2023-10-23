@@ -45,13 +45,12 @@ class ReadFromDisk:
                                                        backend=self.kg.backend)
                     if self.kg.add_noise_rate:
                         self.add_noisy_triples_into_training()
-
                 elif 'test' in i and self.kg.eval_model is not None:
                     self.kg.test_set = read_from_disk(i, backend=self.kg.backend)
                 elif 'valid' in i and self.kg.eval_model is not None:
                     self.kg.valid_set = read_from_disk(i, backend=self.kg.backend)
                 else:
-                    print(f'Unrecognized data {i}')
+                    print(f'Not processed data: {i}')
         else:
             raise RuntimeError(f"Invalid data:{self.kg.data_dir}\t{self.kg.sparql_endpoint}\t{self.kg.path_single_kg}")
 

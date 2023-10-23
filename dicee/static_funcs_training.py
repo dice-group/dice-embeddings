@@ -111,75 +111,73 @@ def evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re
 
 
 @torch.no_grad
-def evaluate_bpe_lp(model, triple_idx: List[Tuple[Tuple[int], Tuple[int], Tuple[int]]],
-                    ordered_bpe_entities_relations: List[Tuple[int]],
-                    shaped_bpe_entities,
-                    er_vocab: Dict[Tuple, List],
-                    re_vocab: Dict[Tuple, List],
+def evaluate_bpe_lp(model, triple_idx: List[Tuple], all_bpe_shaped_entities,
+                    er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List],
                     info='Eval Starts'):
+
+    assert isinstance(triple_idx, list)
+    assert isinstance(triple_idx[0], tuple)
+    assert len(triple_idx[0]) == 3
+
     model.eval()
     print(info)
-    print(f'Num of BPE triples {len(triple_idx)}')
-    print('** Evaluation without batching')
+    print(f'Num of triples {len(triple_idx)}')
     hits = dict()
     reciprocal_ranks = []
     # Iterate over test triples
-    num_bpe_entities = len(shaped_bpe_entities)
-    tensor_entities = torch.LongTensor(shaped_bpe_entities)
-    # @TODO: Create this dictionary in KG
-    shaped_bpe_entities=dict(zip(shaped_bpe_entities,list(range(0,len(shaped_bpe_entities)))))
+    num_entities = len(all_bpe_shaped_entities)
+    bpe_entity_to_idx = dict()
+    all_bpe_entities = []
+    for idx, (str_entity, bpe_entity, shaped_bpe_entity) in enumerate(all_bpe_shaped_entities):
+        bpe_entity_to_idx[shaped_bpe_entity] = idx
+        all_bpe_entities.append(shaped_bpe_entity)
 
-    for i in range(0, len(triple_idx)):
-        # (1) Get a triple (head entity, relation, tail entity
-        h: Tuple[int]
-        r: Tuple[int]
-        t: Tuple[int]
-        h, r, t = triple_idx[i]
+    all_bpe_entities = torch.LongTensor(all_bpe_entities)
 
-        torch_h = torch.LongTensor(h).unsqueeze(0)
-        torch_r = torch.LongTensor(r).unsqueeze(0)
-        torch_t = torch.LongTensor(t).unsqueeze(0)
+    for (bpe_h, bpe_r, bpe_t) in triple_idx:
+        # (1) Indices of head and tail entities in all entities
+        idx_bpe_h= bpe_entity_to_idx[bpe_h]
+        idx_bpe_t= bpe_entity_to_idx[bpe_t]
 
-        idx_h=shaped_bpe_entities[h]
-        idx_t=shaped_bpe_entities[t]
+        # (2) Tensor representation of sequence of sub-word representation of entities and relations
+        torch_bpe_h = torch.LongTensor(bpe_h).unsqueeze(0)
+        torch_bpe_r = torch.LongTensor(bpe_r).unsqueeze(0)
+        torch_bpe_t = torch.LongTensor(bpe_t).unsqueeze(0)
 
-        # (2) Predict missing heads and tails
-        x = torch.stack((torch.repeat_interleave(input=torch_h, repeats=num_bpe_entities, dim=0),
-                         torch.repeat_interleave(input=torch_r, repeats=num_bpe_entities, dim=0),
-                         tensor_entities), dim=1)
+        # (3) Missing head and tail predictions
+        x = torch.stack((torch.repeat_interleave(input=torch_bpe_h, repeats=num_entities, dim=0),
+                         torch.repeat_interleave(input=torch_bpe_r, repeats=num_entities, dim=0),
+                         all_bpe_entities), dim=1)
         predictions_tails = model(x)
-        x = torch.stack((tensor_entities,
-                         torch.repeat_interleave(input=torch_r, repeats=num_bpe_entities, dim=0),
-                         torch.repeat_interleave(input=torch_t, repeats=num_bpe_entities, dim=0)), dim=1)
-
+        x = torch.stack((all_bpe_entities,
+                         torch.repeat_interleave(input=torch_bpe_r, repeats=num_entities, dim=0),
+                         torch.repeat_interleave(input=torch_bpe_t, repeats=num_entities, dim=0)), dim=1)
         predictions_heads = model(x)
-        del x
         # 3. Computed filtered ranks for missing tail entities.
         # 3.1. Compute filtered tail entity rankings
-        filt_idx_tails: List[int]
-        filt_idx_tails = [shaped_bpe_entities[i] for i in er_vocab[(h, r)]]
+        filt_tails = [bpe_entity_to_idx[i] for i in er_vocab[(bpe_h, bpe_r)]]
         # 3.2 Get the predicted target's score
-        target_value = predictions_tails[idx_t].item()
+        target_value = predictions_tails[idx_bpe_t].item()
         # 3.3 Filter scores of all triples containing filtered tail entities
-        predictions_tails[filt_idx_tails] = -np.Inf
+        predictions_tails[filt_tails] = -np.Inf
         # 3.4 Reset the target's score
-        predictions_tails[idx_t] = target_value
+        predictions_tails[idx_bpe_t] = target_value
         # 3.5. Sort the score
         _, sort_idxs = torch.sort(predictions_tails, descending=True)
         sort_idxs = sort_idxs.detach()
-        filt_tail_entity_rank = np.where(sort_idxs == idx_t)[0][0]
+        filt_tail_entity_rank = np.where(sort_idxs == idx_bpe_t)[0][0]
 
         # 4. Computed filtered ranks for missing head entities.
         # 4.1. Retrieve head entities to be filtered
-        filt_idx_heads = [shaped_bpe_entities[i] for i in re_vocab[(r, t)]]
+        filt_heads = [bpe_entity_to_idx[i] for i in re_vocab[(bpe_r, bpe_t)]]
         # 4.2 Get the predicted target's score
-        target_value = predictions_heads[idx_h].item()
+        target_value = predictions_heads[idx_bpe_h].item()
         # 4.3 Filter scores of all triples containing filtered head entities.
-        predictions_heads[filt_idx_heads] = -np.Inf
-        predictions_heads[idx_h] = target_value
+        predictions_heads[filt_heads] = -np.Inf
+        predictions_heads[idx_bpe_h] = target_value
         _, sort_idxs = torch.sort(predictions_heads, descending=True)
         sort_idxs = sort_idxs.detach()
-        filt_head_entity_rank = np.where(sort_idxs == idx_h)[0][0]
+        filt_head_entity_rank = np.where(sort_idxs == idx_bpe_h)[0][0]
 
         # 4. Add 1 to ranks as numpy array first item has the index of 0.
         filt_head_entity_rank += 1

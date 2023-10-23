@@ -187,10 +187,16 @@ class TorchTrainer(AbstractTrainer):
            -------
            (tuple) mini-batch on select device
        """
-        # (1) NegSample: x is a triple, y is a float
         if len(batch) == 2:
             x_batch, y_batch = batch
-            return x_batch.to(self.device), y_batch.to(self.device)
+
+            if isinstance(x_batch, tuple):
+                # Triple and Byte
+                return x_batch, y_batch
+            else:
+                # (1) NegSample: x is a triple, y is a float
+                x_batch, y_batch = batch
+                return x_batch.to(self.device), y_batch.to(self.device)
         elif len(batch) == 3:
             x_batch, y_idx_batch, y_batch, = batch
             x_batch, y_idx_batch, y_batch = x_batch.to(self.device), y_idx_batch.to(self.device), y_batch.to(

@@ -78,7 +78,7 @@ from dicee.config import Namespace
 args = Namespace()
 args.model = 'Keci'
 args.scoring_technique = "KvsAll"  # 1vsAll, or AllvsAll, or NegSample
-args.dataset_dir = "KGs/UMLS/"
+args.dataset_dir = "KGs/UMLS"
 args.path_to_store_single_run = "Keci_UMLS"
 args.num_epochs = 100
 args.embedding_dim = 32

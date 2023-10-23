@@ -52,6 +52,27 @@ class Execute:
         # (9) Execution start time
         self.start_time = None
 
+    def read_or_load_kg(self):
+        print('*** Read or Load Knowledge Graph  ***')
+        start_time = time.time()
+        kg = KG(dataset_dir=self.args.dataset_dir,
+                byte_pair_encoding=self.args.byte_pair_encoding,
+                add_noise_rate=self.args.add_noise_rate,
+                sparql_endpoint=self.args.sparql_endpoint,
+                path_single_kg=self.args.path_single_kg,
+                add_reciprical=self.args.apply_reciprical_or_noise,
+                eval_model=self.args.eval_model,
+                read_only_few=self.args.read_only_few,
+                sample_triples_ratio=self.args.sample_triples_ratio,
+                path_for_serialization=self.args.full_storage_path,
+                path_for_deserialization=self.args.path_experiment_folder if hasattr(self.args,
+                                                                                     'path_experiment_folder') else None,
+                backend=self.args.backend)
+        print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
+        # (2) Share some info about data for easy access.
+        print(kg.description_of_input)
+        return kg
+
     def read_preprocess_index_serialize_data(self) -> None:
         """ Read & Preprocess & Index & Serialize Input Data
 
@@ -67,19 +88,20 @@ class Execute:
 
         """
         # (1) Read & Preprocess & Index & Serialize Input Data.
-        self.knowledge_graph = read_or_load_kg(self.args, cls=KG)
+        self.knowledge_graph = self.read_or_load_kg()
         # (2) Sanity checking.
         self.args, self.knowledge_graph = config_kge_sanity_checking(self.args, self.knowledge_graph)
         # (3) Store the stats
         self.args.num_entities = self.knowledge_graph.num_entities
         self.args.num_relations = self.knowledge_graph.num_relations
         self.args.num_tokens = self.knowledge_graph.num_tokens
-        self.args.max_length_subword_tokens=self.knowledge_graph.max_length_subword_tokens
+        self.args.max_length_subword_tokens = self.knowledge_graph.max_length_subword_tokens
         self.report['num_train_triples'] = len(self.knowledge_graph.train_set)
         self.report['num_entities'] = self.knowledge_graph.num_entities
         self.report['num_relations'] = self.knowledge_graph.num_relations
         self.report['num_relations'] = self.knowledge_graph.num_relations
-        self.report['max_length_subword_tokens'] = self.knowledge_graph.max_length_subword_tokens if self.knowledge_graph.max_length_subword_tokens else None
+        self.report[
+            'max_length_subword_tokens'] = self.knowledge_graph.max_length_subword_tokens if self.knowledge_graph.max_length_subword_tokens else None
 
         self.report['runtime_kg_loading'] = time.time() - self.start_time
 
@@ -167,7 +189,7 @@ class Execute:
             self.write_report()
             return {**self.report, **self.evaluator.report}
 
-    def write_report(self)-> None:
+    def write_report(self) -> None:
         """ Report training related information in a report.json file """
         # Report total runtime.
         self.report['Runtime'] = time.time() - self.start_time
@@ -275,7 +297,7 @@ class ContinuousExecute(Execute):
             return {**self.report, **self.evaluator.report}
 
 
-def get_default_arguments(description=None):
+def dept_get_default_arguments(description=None):
     """ Extends pytorch_lightning Trainer's arguments with ours """
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
