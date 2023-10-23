@@ -115,23 +115,36 @@ class BaseKGE(pytorch_lightning.LightningModule):
         self.hidden_dropout = torch.nn.Dropout(self.input_dropout_rate)
         # average minibatch loss per epoch
         self.loss_history = []
-
-        if self.num_entities is None and self.num_relations is None:
+        if self.args["byte_pair_encoding"]:
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
-            """
-            self.block_size = self.args["max_length_subword_tokens"]
-            n_layer = 1
-            n_head = 1
-            # each token directly reads off the logits for the next token from a lookup table
-            self.position_embedding_table = nn.Embedding(self.block_size, self.embedding_dim * 3)
-            self.blocks = nn.Sequential(
-                *[Block(self.embedding_dim * 3, n_head=n_head, block_size=self.block_size) for _ in range(n_layer)])
-            self.ln_f = nn.LayerNorm(self.embedding_dim * 3)  # final layer norm
-            """
+            # Workaround: Dummy subReducing the impact of dummies
+            self.lf = nn.Linear(self.embedding_dim * self.args.get("max_length_subword_tokens",None),
+                                self.embedding_dim, bias=False)
+
+            self.param_init(self.token_embeddings.weight.data)
         else:
             self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
             self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
             self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
+
+    def forward_byte_pair_encoded_triple(self, x: Tuple[torch.LongTensor, torch.LongTensor]):
+        """
+        byte pair encoded neural link predictors
+
+        Parameters
+        ----------
+
+        -------
+
+        """
+
+        bpe_head_ent_emb, bpe_rel_ent_emb, bpe_tail_ent_emb = self.get_sentence_representation(x)
+        B, T, C = bpe_head_ent_emb.shape
+        bpe_head_ent_emb = bpe_head_ent_emb.reshape(B, T * C)
+        bpe_rel_ent_emb = bpe_rel_ent_emb.reshape(B, T * C)
+        bpe_tail_ent_emb = bpe_tail_ent_emb.reshape(B, T * C)
+        bpe_triple_score = self.score(self.lf(bpe_head_ent_emb), self.lf(bpe_rel_ent_emb), self.lf(bpe_tail_ent_emb))
+        return bpe_triple_score
 
     def mem_of_model(self) -> Dict:
         """ Size of model in MB and number of params"""
@@ -156,13 +169,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
 
         self.num_entities = self.args.get('num_entities', None)
         self.num_relations = self.args.get('num_relations', None)
-
-        if self.num_entities is None and self.num_relations is None:
-            self.num_tokens = self.args.get('num_tokens', None)
-            try:
-                assert isinstance(self.num_tokens, int)
-            except AssertionError:
-                raise AssertionError("num_entities and num_relations is None, num_tokens cannot be None")
+        self.num_tokens = self.args.get('num_tokens', None)
 
         if self.args.get('learning_rate'):
             self.learning_rate = self.args['learning_rate']
@@ -312,39 +319,6 @@ class BaseKGE(pytorch_lightning.LightningModule):
 
     def forward_k_vs_sample(self, *args, **kwargs):
         raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_sample function')
-
-    def forward_byte_pair_encoded_triple(self, x: torch.LongTensor):
-        """
-        attentive byte pair encoded neural link predictors
-
-        Parameters
-        ----------
-        x shape b, 3, t,
-        -------
-
-        """
-        # (1) Retrieve embeddings of head entity, relation and tail entity
-        # shape batch_size, sub_token_size, embedding_dim.
-        """
-        x = torch.cat(self.get_sentence_representation(x), dim=-1)
-        pos_emb = self.position_embedding_table(torch.arange(self.block_size))  # (T,C)
-        x =  x + pos_emb
-        x = self.ln_f(self.blocks(x))
-        head_ent_emb, rel_ent_emb, tail_ent_emb = x[:, :, :self.embedding_dim], x[:, :,
-                                                                                self.embedding_dim:self.embedding_dim + self.embedding_dim], x[
-                                                                                                                                             :,
-                                                                                                                                             :,
-                                                                                                                                             -self.embedding_dim:]
-        """
-
-        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_sentence_representation(x)
-        B, T, C = head_ent_emb.shape
-
-        head_ent_emb = head_ent_emb.reshape(B, T * C)
-        rel_ent_emb = rel_ent_emb.reshape(B, T * C)
-        tail_ent_emb = tail_ent_emb.reshape(B, T * C)
-
-        return self.score(head_ent_emb, rel_ent_emb, tail_ent_emb)
 
     def training_step(self, batch, batch_idx=None):
         x_batch, y_batch = batch
