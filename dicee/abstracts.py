@@ -1,6 +1,6 @@
 import os
 import datetime
-from .static_funcs import load_model_ensemble, load_model, save_checkpoint_model
+from .static_funcs import load_model_ensemble, load_model, save_checkpoint_model, load_json
 import torch
 from typing import List, Tuple
 import random
@@ -148,22 +148,33 @@ class BaseInteractiveKGE:
         # (1) Load model...
         self.construct_ensemble = construct_ensemble
         self.apply_semantic_constraint = apply_semantic_constraint
+        self.configs = load_json(path + '/configuration.json')
+        self.configs.update(load_json(path + '/report.json'))
+
         if construct_ensemble:
-            self.model, self.entity_to_idx, self.relation_to_idx = load_model_ensemble(self.path)
+            self.model, tuple_of_entity_relation_idx = load_model_ensemble(self.path)
         else:
             if model_name:
-                self.model, self.entity_to_idx, self.relation_to_idx = load_model(self.path, model_name=model_name)
+                self.model, tuple_of_entity_relation_idx = load_model(self.path, model_name=model_name)
             else:
-                self.model, self.entity_to_idx, self.relation_to_idx = load_model(self.path)
-        self.num_entities = len(self.entity_to_idx)
-        self.num_relations = len(self.relation_to_idx)
-        self.entity_to_idx: dict
-        self.relation_to_idx: dict
-        assert list(self.entity_to_idx.values()) == list(range(0, len(self.entity_to_idx)))
-        assert list(self.relation_to_idx.values()) == list(range(0, len(self.relation_to_idx)))
+                self.model, tuple_of_entity_relation_idx = load_model(self.path)
 
-        self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
-        self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
+        if self.configs.get("byte_pair_encoding", False):
+            pass
+        else:
+            assert len(tuple_of_entity_relation_idx) == 2
+
+            self.entity_to_idx, self.relation_to_idx = tuple_of_entity_relation_idx
+            self.num_entities = len(self.entity_to_idx)
+            self.num_relations = len(self.relation_to_idx)
+            self.entity_to_idx: dict
+            self.relation_to_idx: dict
+            assert list(self.entity_to_idx.values()) == list(range(0, len(self.entity_to_idx)))
+            assert list(self.relation_to_idx.values()) == list(range(0, len(self.relation_to_idx)))
+
+            self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
+            self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
+
     def get_domain_of_relation(self, rel: str) -> List[str]:
         x = [self.idx_to_entity[i] for i in self.domain_per_rel[self.relation_to_idx[rel]]]
         res = set(x)
@@ -475,7 +486,7 @@ class AbstractPPECallback(AbstractCallback):
             param_ensemble = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device(model.device))
             with torch.no_grad():
                 for k, v in model.state_dict().items():
-                    if v.dtype==torch.float:
+                    if v.dtype == torch.float:
                         # (2) Update the parameter ensemble model with the current model.
                         param_ensemble[k] += self.alphas[self.sample_counter] * v
             # (3) Save the updated parameter ensemble model.

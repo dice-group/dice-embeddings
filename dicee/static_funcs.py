@@ -62,29 +62,28 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
         return intialize_model(args)
 
 
-def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[object, dict, dict]:
+def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[object, Tuple[dict, dict]]:
     """ Load weights and initialize pytorch module from namespace arguments"""
     print(f'Loading model {model_name}...', end=' ')
     start_time = time.time()
     # (1) Load weights..
     weights = torch.load(path_of_experiment_folder + f'/{model_name}', torch.device('cpu'))
     configs = load_json(path_of_experiment_folder + '/configuration.json')
-    if configs["byte_pair_encoding"] is False:
-        num_ent, ent_dim = weights['entity_embeddings.weight'].shape
-        num_rel, rel_dim = weights['relation_embeddings.weight'].shape
-        assert ent_dim==rel_dim
-        # Update the training configuration
-        configs = load_json(path_of_experiment_folder + '/configuration.json')
-        configs["num_entities"] = num_ent
-        configs["num_relations"] = num_rel
-    else:
+
+    if configs["byte_pair_encoding"]:
         num_tokens, ent_dim = weights['token_embeddings.weight'].shape
         # (2) Loading input configuration.
         configs = load_json(path_of_experiment_folder + '/configuration.json')
         report = load_json(path_of_experiment_folder + '/report.json')
         configs["num_tokens"] = num_tokens
         configs["max_length_subword_tokens"] = report["max_length_subword_tokens"]
-
+    else:
+        num_ent, ent_dim = weights['entity_embeddings.weight'].shape
+        num_rel, rel_dim = weights['relation_embeddings.weight'].shape
+        assert ent_dim==rel_dim
+        # Update the training configuration
+        configs["num_entities"] = num_ent
+        configs["num_relations"] = num_rel
     print(f'Done! It took {time.time() - start_time:.3f}')
     # (4) Select the model
     model, _ = intialize_model(configs)
@@ -95,25 +94,28 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[o
         parameter.requires_grad = False
     model.eval()
     start_time = time.time()
-    print('Loading entity and relation indexes...', end=' ')
-    try:
-        # Maybe ? https://docs.python.org/3/library/mmap.html
-        with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
-            entity_to_idx = pickle.load(f)
-    except FileNotFoundError:
-        print("entity_to_idx.p not found")
-        entity_to_idx=dict()
-    try:    
-        with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
-            relation_to_idx = pickle.load(f)
-    except FileNotFoundError:
-        print("relation_to_idx.p not found")
-        relation_to_idx=dict()
-    print(f'Done! It took {time.time() - start_time:.4f}')
-    return model, entity_to_idx, relation_to_idx
+    if configs["byte_pair_encoding"]:
+        return model, None
+    else:
+        print('Loading entity and relation indexes...', end=' ')
+        try:
+            # Maybe ? https://docs.python.org/3/library/mmap.html
+            with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
+                entity_to_idx = pickle.load(f)
+        except FileNotFoundError:
+            print("entity_to_idx.p not found")
+            entity_to_idx=dict()
+        try:
+            with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
+                relation_to_idx = pickle.load(f)
+        except FileNotFoundError:
+            print("relation_to_idx.p not found")
+            relation_to_idx=dict()
+        print(f'Done! It took {time.time() - start_time:.4f}')
+        return model, (entity_to_idx, relation_to_idx)
 
 
-def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, pd.DataFrame, pd.DataFrame]:
+def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, Tuple[pd.DataFrame, pd.DataFrame]]:
     """ Construct Ensemble Of weights and initialize pytorch module from namespace arguments
 
     (1) Detect models under given path
@@ -170,7 +172,7 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, pd.Dat
     assert isinstance(entity_to_idx, dict)
     assert isinstance(relation_to_idx, dict)
     print(f'Done! It took {time.time() - start_time:.4f}')
-    return model, entity_to_idx, relation_to_idx
+    return model, (entity_to_idx, relation_to_idx)
 
 
 def save_numpy_ndarray(*, data: np.ndarray, file_path: str):
@@ -306,8 +308,6 @@ def read_or_load_kg(args, cls):
 
 
 def intialize_model(args: dict) -> Tuple[object, str]:
-    # @TODO: Apply construct_krone as callback? or use KronE_QMult as a prefix.
-    # @TODO: Remove form_of_labelling
     print(f"Initializing {args['model']}...")
     model_name = args['model']
     if "pykeen" in model_name.lower():

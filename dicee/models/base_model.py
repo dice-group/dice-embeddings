@@ -115,10 +115,13 @@ class BaseKGE(pytorch_lightning.LightningModule):
         self.hidden_dropout = torch.nn.Dropout(self.input_dropout_rate)
         # average minibatch loss per epoch
         self.loss_history = []
-        if self.args["byte_pair_encoding"]:
+        self.byte_pair_encoding = self.args.get("byte_pair_encoding", False)
+        self.max_length_subword_tokens = self.args.get("max_length_subword_tokens", None)
+
+        if self.byte_pair_encoding:
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
             # Workaround: Dummy subReducing the impact of dummies
-            self.lf = nn.Linear(self.embedding_dim * self.args.get("max_length_subword_tokens",None),
+            self.lf = nn.Linear(self.embedding_dim * self.max_length_subword_tokens,
                                 self.embedding_dim, bias=False)
 
             self.param_init(self.token_embeddings.weight.data)
