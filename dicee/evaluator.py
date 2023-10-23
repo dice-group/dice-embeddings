@@ -98,12 +98,9 @@ class Evaluator:
                                   trained_model=trained_model,
                                   form_of_labelling=form_of_labelling)
         elif self.args.scoring_technique == "BytePairEncodedTriplesNegSample":
-            self.eval_rank_of_head_and_tail_byte_pair_encoded_entity(train_set=dataset.train_set,
-                                                                     valid_set=dataset.valid_set,
-                                                                     test_set=dataset.test_set,
-                                                                     train_bpe_set=dataset.train_bpe_set,
-                                                                     valid_bpe_set=dataset.valid_bpe_set,
-                                                                     test_bpe_set=dataset.test_bpe_set,
+            self.eval_rank_of_head_and_tail_byte_pair_encoded_entity(train_set=dataset.train_bpe_set,
+                                                                     valid_set=dataset.valid_bpe_set,
+                                                                     test_set=dataset.test_bpe_set,
                                                                      ordered_bpe_entities=dataset.ordered_bpe_entities,
                                                                      trained_model=trained_model)
         else:
@@ -176,26 +173,25 @@ class Evaluator:
                                                             train_set=None,
                                                             valid_set=None,
                                                             test_set=None,
-                                                            train_bpe_set,
-                                                            valid_bpe_set=None,
-                                                            test_bpe_set=None,
                                                             ordered_bpe_entities,
                                                             trained_model):
         # 4. Test model on the training dataset if it is needed.
         if 'train' in self.args.eval_model:
-            info = 'Eval Starts'
-            res = self.evaluate_bpe_lp(trained_model, train_set, train_bpe_set, ordered_bpe_entities,
-                                       f'Evaluate {trained_model.name} on BPE augmented Train set')
-            self.report['Train'] = res
+            self.report['Train'] = evaluate_bpe_lp(trained_model, train_set, ordered_bpe_entities,
+                                                   er_vocab=self.er_vocab, re_vocab=self.re_vocab,
+                                                   info=f'Evaluate {trained_model.name} on BPE Train set')
+
         # 5. Test model on the validation and test dataset if it is needed.
         if 'val' in self.args.eval_model:
             if valid_set is not None:
-                self.report['Val'] = self.evaluate_bpe_lp(trained_model, valid_set, valid_bpe_set, ordered_bpe_entities,
-                                                          f'Evaluate {trained_model.name} on BPE augmented Validation set')
+                self.report['Val'] = evaluate_bpe_lp(trained_model, valid_set, ordered_bpe_entities,
+                                                     er_vocab=self.er_vocab, re_vocab=self.re_vocab,
+                                                     info=f'Evaluate {trained_model.name} on BPE Valid set')
 
         if test_set is not None and 'test' in self.args.eval_model:
-            self.report['Test'] = self.evaluate_bpe_lp(trained_model, test_set, test_bpe_set, ordered_bpe_entities,
-                                                       f'Evaluate {trained_model.name} on BPE augmented Test set')
+            self.report['Test'] = evaluate_bpe_lp(trained_model, test_set, ordered_bpe_entities,
+                                                  er_vocab=self.er_vocab, re_vocab=self.re_vocab,
+                                                  info=f'Evaluate {trained_model.name} on BPE Test set')
 
     def eval_with_vs_all(self, *, train_set, valid_set=None, test_set=None, trained_model, form_of_labelling) -> None:
         """ Evaluate model after reciprocal triples are added """
@@ -307,13 +303,9 @@ class Evaluator:
             print(results)
         return results
 
-    def evaluate_lp(self, model, triple_idx, info):
+    def evaluate_lp(self, model, triple_idx, info: str):
         return evaluate_lp(model, triple_idx, num_entities=self.num_entities, er_vocab=self.er_vocab,
                            re_vocab=self.re_vocab, info=info)
-
-    def evaluate_bpe_lp(self, model, triple_idx, train_bpe_set, ordered_bpe_entities, info):
-        return evaluate_bpe_lp(model, triple_idx, train_bpe_set, ordered_bpe_entities,
-                               bpe_er_vocab=self.er_vocab, bpe_re_vocab=self.re_vocab, info=info)
 
     def eval_with_data(self, dataset, trained_model, triple_idx: np.ndarray, form_of_labelling: str):
         self.vocab_preparation(dataset)

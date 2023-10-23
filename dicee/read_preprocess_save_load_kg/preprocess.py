@@ -36,8 +36,8 @@ class PreprocessKG:
 
         if self.kg.eval_model:
             if self.kg.byte_pair_encoding:
-                data = self.kg.train_bpe_set
-                self.kg.max_length_subword_tokens = len(self.kg.train_bpe_set[0][0])
+                data = self.kg.train_bpe_set + self.kg.valid_bpe_set + self.kg.test_bpe_set
+                self.kg.max_length_subword_tokens = len(data[0][0])
             else:
                 if isinstance(self.kg.valid_set, np.ndarray) and isinstance(self.kg.test_set, np.ndarray):
                     data = np.concatenate([self.kg.train_set, self.kg.valid_set, self.kg.test_set])

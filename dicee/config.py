@@ -20,7 +20,7 @@ class Namespace(argparse.Namespace):
         self.sparql_endpoint = None
         "An endpoint of a triple store."
 
-        self.save_embeddings_as_csv=True
+        self.save_embeddings_as_csv = True
         "Embeddings of entities and relations are stored into CSV files to facilitate easy usage."
 
         self.model: str = "Keci"

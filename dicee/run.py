@@ -3,7 +3,6 @@ from .executer import Execute
 import pytorch_lightning as pl
 import argparse
 
-
 def get_default_arguments(description=None):
     """ Extends pytorch_lightning Trainer's arguments with ours """
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
@@ -42,7 +41,7 @@ def get_default_arguments(description=None):
     parser.add_argument('--optim', type=str, default='Adam',
                         help='An optimizer',
                         choices=['Adam', 'SGD'])
-    parser.add_argument('--embedding_dim', type=int, default=32,
+    parser.add_argument('--embedding_dim', type=int, default=2,
                         help='Number of dimensions for an embedding vector. ')
     parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1096,
@@ -101,7 +100,7 @@ def get_default_arguments(description=None):
     parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
     # WIP
     parser.add_argument("--byte_pair_encoding",
-                        action="store_false",
+                        action="store_true",
                         help="Currently only avail. for KGE implemented within dice-embeddings.")
     if description is None:
         return parser.parse_args()
