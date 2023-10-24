@@ -488,6 +488,7 @@ def load_numpy(path) -> np.ndarray:
 
 def evaluate(entity_to_idx, scores, easy_answers, hard_answers):
     """
+    # @TODO: CD: Renamed this function
     Evaluate multi hop query answering on different query types
     """
     # Calculate MRR considering the hard and easy answers
