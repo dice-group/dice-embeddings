@@ -12,12 +12,9 @@ from .static_preprocess_funcs import create_constraints
 import numpy as np
 import sys
 import tiktoken
-from .static_funcs import load_json
 
 class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
-
-    # @TODO: we can download the model if it is not present locally
     def __init__(self, path, construct_ensemble=False,
                  model_name=None,
                  apply_semantic_constraint=False):
@@ -31,13 +28,9 @@ class KGE(BaseInteractiveKGE):
             (self.domain_constraints_per_rel, self.range_constraints_per_rel,
              self.domain_per_rel, self.range_per_rel) = create_constraints(self.train_set)
 
-        if len(self.entity_to_idx) == 0 or len(self.relation_to_idx) == 0:
-            print("Sub work tokenizer will be applied")
+        if self.configs["byte_pair_encoding"]:
             self.enc = tiktoken.get_encoding("gpt2")
             self.dummy_id = tiktoken.get_encoding("gpt2").encode(" ")[0]
-
-        self.configs = load_json(path + '/configuration.json')
-        self.report = load_json(path + '/report.json')
 
     def __str__(self):
         return "KGE | " + str(self.model)
@@ -327,12 +320,12 @@ class KGE(BaseInteractiveKGE):
         pytorch tensor of triple score
         """
 
-        if len(self.entity_to_idx) == 0 or len(self.relation_to_idx) == 0:
+        if self.configs["byte_pair_encoding"]:
             h_encode = self.enc.encode(h)
             r_encode = self.enc.encode(r)
             t_encode = self.enc.encode(t)
 
-            length=self.report["max_length_subword_tokens"]
+            length=self.configs["max_length_subword_tokens"]
 
             if len(h_encode) != length:
                 h_encode.extend([self.dummy_id for _ in range(length - len(h_encode))])
