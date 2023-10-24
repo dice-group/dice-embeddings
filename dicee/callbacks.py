@@ -325,25 +325,29 @@ class Perturb(AbstractCallback):
         device = x.get_device()
         if device == -1:
             device = "cpu"
-        # (4) Sample random integers from 0 to n without replacement and take k of tem
+        # (4) Sample random integers from 0 to n without replacement and take num_of_perturbed_data of tem
         random_indices = torch.randperm(n, device=device)[:num_of_perturbed_data]
         # (5) Apply perturbation depending on the level.
+
+        # (5.1) Apply Input level perturbation.
         if self.level == "input":
-            # (5.1) Apply input level perturbation.
             if torch.rand(1) > 0.5:
-                # (5.1.1) Perturb input via heads
-                perturbation = torch.randint(low=0, high=model.num_entities, size=(num_of_perturbed_data,),
+                # (5.1.1) Perturb input via heads: Sample random indices for heads.
+                perturbation = torch.randint(low=0, high=model.num_entities,
+                                             size=(num_of_perturbed_data,),
                                              device=device)
-                x[random_indices] = torch.column_stack(
-                    (perturbation, x[:, 1][random_indices]))
+                # Replace the head entities with (5.1.1) on given randomly selected data points in a mini-batch.
+                x[random_indices] = torch.column_stack((perturbation, x[:, 1][random_indices]))
             else:
-                # (5.1.2) Perturb input via heads
-                perturbation = torch.randint(low=0, high=model.num_relations, size=(num_of_perturbed_data,),
+                # (5.1.2) Perturb input via relations : Sample random indices for relations.
+                perturbation = torch.randint(low=0, high=model.num_relations,
+                                             size=(num_of_perturbed_data,),
                                              device=device)
+                # Replace the relations with (5.1.2) on given randomly selected data points in a mini-batch.
                 x[random_indices] = torch.column_stack(
                     (x[:, 0][random_indices], perturbation))
+        # (5.2) Apply Parameter level perturbation.
         elif self.level == "param":
-            # (5.2) Apply Parameter level perturbation.
             h, r = torch.hsplit(x, 2)
             # (5.2.1) Apply Gaussian Perturbation
             if self.method == "GN":

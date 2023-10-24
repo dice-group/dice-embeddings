@@ -138,10 +138,6 @@ For more, please refer to `examples`.
 from dicee.executer import Execute
 from dicee.config import Namespace
 from dicee.knowledge_graph_embeddings import KGE
-from dicee import QueryGenerator
-from dicee.static_funcs import evaluate
-from dicee.static_funcs import load_pickle
-from dicee.static_funcs import load_json
 # (1) Train a KGE model
 args = Namespace()
 args.model = 'Keci'
@@ -187,8 +183,7 @@ assert "http://www.benchmark.org/family#F9F158" in top_entities
 # (3) Answer: [Person, Male, Father] since  F9M157 is [Brother Father Grandfather Male] and F9M142 is [Male Grandfather Father]
 
 predictions = pre_trained_kge.answer_multi_hop_query(query_type="3p", query=("http://www.benchmark.org/family#F9M167",
-                                                                             (
-                                                                             "http://www.benchmark.org/family#hasSibling",
+                                                                             ("http://www.benchmark.org/family#hasSibling",
                                                                              "http://www.benchmark.org/family#married",
                                                                              "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")),
                                                      tnorm="min", k=5)
