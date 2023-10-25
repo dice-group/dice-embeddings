@@ -5,6 +5,7 @@ from dicee.static_funcs import numpy_data_type_changer
 from .util import get_er_vocab, get_re_vocab, get_ee_vocab, create_constraints
 import numpy as np
 import concurrent
+from typing import List, Tuple
 
 
 class PreprocessKG:
@@ -13,17 +14,7 @@ class PreprocessKG:
     def __init__(self, kg):
         self.kg = kg
 
-    def start(self) -> None:
-        """
-        Preprocess train, valid and test datasets stored in knowledge graph instance
-
-        Parameter
-        ---------
-
-        Returns
-        -------
-        None
-        """
+    def process(self):
         # Before preprocessing
         if self.kg.byte_pair_encoding:
             self.preprocess_with_byte_pair_encoding()
@@ -33,9 +24,9 @@ class PreprocessKG:
             self.preprocess_with_pandas()
         else:
             raise KeyError(f'{self.kg.backend} not found')
-
         if self.kg.eval_model:
             if self.kg.byte_pair_encoding:
+                assert isinstance(self.kg.train_set, list)
                 data = []
                 data.extend(self.kg.train_set)
                 if self.kg.valid_set is not None:
@@ -48,14 +39,6 @@ class PreprocessKG:
                     data = np.concatenate([self.kg.train_set, self.kg.valid_set, self.kg.test_set])
                 else:
                     data = self.kg.train_set
-            """
-            self.er_vocab = get_er_vocab(data, self.path_for_serialization + '/er_vocab.p')
-            self.re_vocab = get_re_vocab(data, self.path_for_serialization + '/re_vocab.p')
-            self.ee_vocab = get_ee_vocab(data, self.path_for_serialization + '/ee_vocab.p')
-            if self.byte_pair_encoding is False:
-                self.constraints = create_constraints(self.train_set,
-                                                      self.path_for_serialization + '/constraints.p')
-            """
 
             print('Submit er-vocab, re-vocab, and ee-vocab via  ProcessPoolExecutor...')
             # We need to benchmark the benefits of using futures  ?
@@ -68,11 +51,50 @@ class PreprocessKG:
                                                   self.kg.path_for_serialization + '/constraints.p')
             self.kg.domain_constraints_per_rel, self.kg.range_constraints_per_rel = None, None
 
-        if self.kg.max_length_subword_tokens is None and self.kg.byte_pair_encoding:
-            assert isinstance(self.kg.train_set, list)
-            assert isinstance(self.kg.train_set[0], tuple)
-            assert isinstance(self.kg.train_set[0][0], tuple)
-            self.kg.max_length_subword_tokens = len(self.kg.train_set[0][0])
+    def start(self) -> None:
+        """
+        Preprocess train, valid and test datasets stored in knowledge graph instance
+
+        Parameter
+        ---------
+
+        Returns
+        -------
+        None
+        """
+        self.process()
+
+        if self.kg.byte_pair_encoding:
+            if self.kg.training_technique == "NegSample":
+                pass
+            elif self.kg.training_technique == "KvsAll":
+                # Construct the training data: A single data point is a unique pair of
+                # a sequence of sub-words representing an entity
+                # a sequence of sub-words representing a relation
+                # Mapping from a sequence of bpe entity to its unique integer index
+                entity_to_idx = {shaped_bpe_ent: idx for idx, (str_ent, bpe_ent, shaped_bpe_ent) in
+                                 enumerate(self.kg.ordered_bpe_entities)}
+                er_tails = dict()
+                # Iterate over bpe encoded triples to obtain a mapping from pair of bpe entity and relation to
+                # indices of bpe entities
+                bpe_entities = []
+                for (h, r, t) in self.kg.train_set:
+                    er_tails.setdefault((h, r), list()).append(entity_to_idx[t])
+                    bpe_entities.append(t)
+                # Generate a training data
+                self.kg.train_set = []
+                self.kg.train_target_indices = []
+                for (shaped_bpe_h, shaped_bpe_r), list_of_indices_of_tails in er_tails.items():
+                    self.kg.train_set.append((shaped_bpe_h, shaped_bpe_r))
+                    # List of integers denoting the index of shaped_bpe_entities
+                    self.kg.train_target_indices.append(list_of_indices_of_tails)
+                self.kg.train_set = np.array(self.kg.train_set)
+                self.kg.target_dim = len(self.kg.ordered_bpe_entities)
+            else:
+                raise NotImplementedError(f" Scoring technique {self.self.kg.training_technique} with BPE not implemented")
+            # TODO: Implement  AllvsAll
+            if self.kg.max_length_subword_tokens is None and self.kg.byte_pair_encoding:
+                self.kg.max_length_subword_tokens = len(self.kg.train_set[0][0])
 
         """
         @TODO: Temporarily ignored
@@ -87,52 +109,42 @@ class PreprocessKG:
                                                        num=max(self.kg.num_entities, self.kg.num_relations))
         """
 
-    @timeit
-    def preprocess_with_byte_pair_encoding(self) -> None:
+    @staticmethod
+    def __replace_values_df(df: pd.DataFrame, f) -> List[Tuple[Tuple[int], Tuple[int], Tuple[int]]]:
         """
-        Transform three-dimensional train_set, valid_set, and test_set pandas dataframes
-        containing triples (h,r,t) in string representations into respective dataframes containing
-        sequences of sub-word units representation of triples
-        ([1,2,222,222,222], [11,43, 1026, 222, 222], [8, 222,222,222,222]). where 222 denotes the index of a dummy
-        sub-word to represent a triple into fixed shape/dimension.
-
+        Map a n by 3 pandas dataframe containing n triples into a list of n tuples
+        where each tuple contains three tuples corresdoing to sequence of sub-word list representing head entity
+        relation, and tail entity respectivly.
+        Parameters
+        ----------
+        df: pandas.Dataframe
+        f: an encoder function.
 
         Returns
         -------
 
         """
-        assert isinstance(self.kg.train_set, pd.DataFrame)
-        self.kg.train_set = list(
-            self.kg.train_set.map(lambda x: tuple(self.kg.enc.encode(x))).itertuples(index=False, name=None))
-        assert isinstance(self.kg.train_set, list)
-        assert isinstance(self.kg.train_set[0], tuple)
-        assert len(self.kg.train_set[0]) == 3
-        assert isinstance(self.kg.train_set[0][0], tuple)
-        assert isinstance(self.kg.train_set[0][0][0], int)
+        bpe_triples = list(df.map(lambda x: tuple(f(x))).itertuples(index=False, name=None))
+        assert isinstance(bpe_triples, list)
+        assert isinstance(bpe_triples[0], tuple)
+        assert len(bpe_triples[0]) == 3
+        assert isinstance(bpe_triples[0][0], tuple)
+        assert isinstance(bpe_triples[0][0][0], int)
+        return bpe_triples
 
-        temp = []
-        temp.extend(self.kg.train_set)
-        if self.kg.valid_set is not None:
-            self.kg.valid_set = list(
-                self.kg.valid_set.map(lambda x: tuple(self.kg.enc.encode(x))).itertuples(index=False, name=None))
-            temp.extend(self.kg.valid_set)
-
-        if self.kg.test_set is not None:
-            self.kg.test_set = list(
-                self.kg.test_set.map(lambda x: tuple(self.kg.enc.encode(x))).itertuples(index=False, name=None))
-            temp.extend(self.kg.test_set)
-        tokens = set()
-        bpe_subwords_to_shaped_bpe_entities = dict()
+    @staticmethod
+    def __finding_max_token(triples) -> int:
         max_length_subword_tokens = 0
-
-        # Iterate over all triples to find the longest sequence.
-        for i in temp:
+        for i in triples:
             max_token_length_per_triple = max(len(i[0]), len(i[1]), len(i[2]))
             if max_token_length_per_triple > max_length_subword_tokens:
                 max_length_subword_tokens = max_token_length_per_triple
+        return max_length_subword_tokens
 
-        print("Longest sequence of subwords of an entity or relation is ", max_length_subword_tokens)
-        for i, (s, p, o) in enumerate(self.kg.train_set):
+    def __padding_in_place(self, x, max_length_subword_tokens, bpe_subwords_to_shaped_bpe_entities,
+                           bpe_subwords_to_shaped_bpe_relations):
+
+        for i, (s, p, o) in enumerate(x):
             if len(s) < max_length_subword_tokens:
                 s_encoded = s + tuple(self.kg.dummy_id for _ in range(max_length_subword_tokens - len(s)))
             else:
@@ -148,59 +160,72 @@ class PreprocessKG:
             else:
                 o_encoded = o
 
-            tokens.add(s_encoded)
-            tokens.add(p_encoded)
-            tokens.add(o_encoded)
             bpe_subwords_to_shaped_bpe_entities[o] = o_encoded
             bpe_subwords_to_shaped_bpe_entities[s] = s_encoded
-            self.kg.train_set[i] = (s_encoded, p_encoded, o_encoded)
 
+            bpe_subwords_to_shaped_bpe_relations[p] = p_encoded
+            x[i] = (s_encoded, p_encoded, o_encoded)
+        return x
+
+    @timeit
+    def preprocess_with_byte_pair_encoding(self) -> None:
+        """
+        Transform three-dimensional train_set, valid_set, and test_set pandas dataframes
+        containing triples (h,r,t) in string representations into respective dataframes containing
+        sequences of sub-word units representation of triples
+        ([1,2,222,222,222], [11,43, 1026, 222, 222], [8, 222,222,222,222]). where 222 denotes the index of a dummy
+        sub-word to represent a triple into fixed shape/dimension.
+
+
+        Returns
+        -------
+
+        """
+        # n b
+        assert isinstance(self.kg.train_set, pd.DataFrame)
+        assert self.kg.train_set.columns.tolist() == ['subject', 'relation', 'object']
+        # (1)  Add recipriocal or noisy triples.
+        self.apply_reciprical_or_noise()
+        # (1) Transformation from DataFrame to list of tuples.
+        self.kg.train_set: List[Tuple[Tuple[int], Tuple[int], Tuple[int]]]
+        self.kg.train_set = self.__replace_values_df(df=self.kg.train_set, f=self.kg.enc.encode)
+
+        temp = []
+        temp.extend(self.kg.train_set)
         if self.kg.valid_set is not None:
-            for i, (s, p, o) in enumerate(self.kg.valid_set):
-                if len(s) < max_length_subword_tokens:
-                    s_encoded = s + tuple(self.kg.dummy_id for _ in range(max_length_subword_tokens - len(s)))
-                else:
-                    s_encoded = s
-                if len(p) < max_length_subword_tokens:
-                    p_encoded = p + tuple(self.kg.dummy_id for _ in range(max_length_subword_tokens - len(p)))
-                else:
-                    p_encoded = p
-                if len(o) < max_length_subword_tokens:
-                    o_encoded = o + tuple(self.kg.dummy_id for _ in range(max_length_subword_tokens - len(o)))
-                else:
-                    o_encoded = o
-                tokens.add(s_encoded)
-                tokens.add(p_encoded)
-                tokens.add(o_encoded)
-                bpe_subwords_to_shaped_bpe_entities[o] = o_encoded
-                bpe_subwords_to_shaped_bpe_entities[s] = s_encoded
-                self.kg.valid_set[i] = (s_encoded, p_encoded, o_encoded)
+            assert self.kg.valid_set.columns.tolist() == ['subject', 'relation', 'object']
+            self.kg.valid_set = self.__replace_values_df(df=self.kg.valid_set, f=self.kg.enc.encode)
+            temp.extend(self.kg.valid_set)
 
         if self.kg.test_set is not None:
-            for i, (s, p, o) in enumerate(self.kg.test_set):
-                if len(s) < max_length_subword_tokens:
-                    s_encoded = s + tuple(self.kg.dummy_id for _ in range(max_length_subword_tokens - len(s)))
-                else:
-                    s_encoded = s
-                if len(p) < max_length_subword_tokens:
-                    p_encoded = p + tuple(self.kg.dummy_id for _ in range(max_length_subword_tokens - len(p)))
-                else:
-                    p_encoded = p
-                if len(o) < max_length_subword_tokens:
-                    o_encoded = o + tuple(self.kg.dummy_id for _ in range(max_length_subword_tokens - len(o)))
-                else:
-                    o_encoded = o
-                tokens.add(s_encoded)
-                tokens.add(p_encoded)
-                tokens.add(o_encoded)
+            assert self.kg.test_set.columns.tolist() == ['subject', 'relation', 'object']
+            self.kg.test_set = self.__replace_values_df(df=self.kg.test_set, f=self.kg.enc.encode)
+            temp.extend(self.kg.test_set)
 
-                bpe_subwords_to_shaped_bpe_entities[o] = o_encoded
-                bpe_subwords_to_shaped_bpe_entities[s] = s_encoded
+        bpe_subwords_to_shaped_bpe_entities = dict()
+        bpe_subwords_to_shaped_bpe_relations = dict()
 
-                self.kg.test_set[i] = (s_encoded, p_encoded, o_encoded)
+        max_length_subword_tokens = self.__finding_max_token(temp)
 
+        print("Longest sequence of sub-words of an entity or relation is ", max_length_subword_tokens)
+        self.kg.train_set = self.__padding_in_place(self.kg.train_set, max_length_subword_tokens,
+                                                    bpe_subwords_to_shaped_bpe_entities,
+                                                    bpe_subwords_to_shaped_bpe_relations)
+        if self.kg.valid_set is not None:
+            self.kg.valid_set = self.__padding_in_place(self.kg.valid_set, max_length_subword_tokens,
+                                                        bpe_subwords_to_shaped_bpe_entities,
+                                                        bpe_subwords_to_shaped_bpe_relations)
+        if self.kg.test_set is not None:
+            self.kg.test_set = self.__padding_in_place(self.kg.test_set, max_length_subword_tokens,
+                                                       bpe_subwords_to_shaped_bpe_entities,
+                                                       bpe_subwords_to_shaped_bpe_relations)
         self.kg.ordered_bpe_entities = [(self.kg.enc.decode(k), k, v) for k, v in
                                         bpe_subwords_to_shaped_bpe_entities.items()]
+        self.kg.ordered_bpe_relations = [(self.kg.enc.decode(k), k, v) for k, v in
+                                         bpe_subwords_to_shaped_bpe_relations.items()]
+        del bpe_subwords_to_shaped_bpe_entities
+        del bpe_subwords_to_shaped_bpe_relations
+
 
     @timeit
     def preprocess_with_pandas(self) -> None:

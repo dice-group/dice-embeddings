@@ -13,10 +13,24 @@ class DistMult(BaseKGE):
         super().__init__(args)
         self.name = 'DistMult'
 
+    def k_vs_all_score(self, emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor):
+        """
+
+        Parameters
+        ----------
+        emb_h
+        emb_r
+        emb_E
+
+        Returns
+        -------
+
+        """
+        return torch.mm(self.hidden_dropout(self.hidden_normalizer(emb_h * emb_r)), emb_E.transpose(1, 0))
+
     def forward_k_vs_all(self, x: torch.LongTensor):
-        emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
-        return torch.mm(self.hidden_dropout(self.hidden_normalizer(emb_head_real * emb_rel_real)),
-                        self.entity_embeddings.weight.transpose(1, 0))
+        emb_head, emb_rel = self.get_head_relation_representation(x)
+        return self.k_vs_all_score(emb_h=emb_head, emb_r=emb_rel, emb_E=self.entity_embeddings.weight.transpose(1, 0))
 
     def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor):
         emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
@@ -46,7 +60,7 @@ class TransE(BaseKGE):
         # if d =5 sigma(5-5) => 0.5
         # Update: sigmoid( \gamma - d)
         return self.margin - torch.nn.functional.pairwise_distance(head_ent_emb + rel_ent_emb, tail_ent_emb,
-                                                                       p=self._norm)
+                                                                   p=self._norm)
 
     def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
         emb_head_real, emb_rel_real = self.get_head_relation_representation(x)

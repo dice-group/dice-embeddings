@@ -61,7 +61,7 @@ def preprocesses_input_args(args):
     elif args.scoring_technique in ["NegSample", "Sentence"]:
         args.apply_reciprical_or_noise = False
     else:
-        raise KeyError(f'Unexpected input for scoring_technique.\t{args.scoring_technique}')
+        raise KeyError(f'Unexpected input for scoring_technique \t{args.scoring_technique}')
 
     if args.sample_triples_ratio is not None:
         assert 1.0 >= args.sample_triples_ratio >= 0.0
@@ -72,6 +72,7 @@ def preprocesses_input_args(args):
     if args.normalization == 'None':
         args.normalization = None
     assert args.normalization in [None, 'LayerNorm', 'BatchNorm1d']
+    """
     if args.byte_pair_encoding:
         args.scoring_technique="BytePairEncodedTriplesNegSample"
         try:
@@ -79,6 +80,7 @@ def preprocesses_input_args(args):
         except AssertionError:
             raise AssertionError(f"--byte_pair_encoding {args.byte_pair_encoding} currently only works with "
                                  f"positive --neg_ratio {args.neg_ratio}")
+    """
     return args
 
 
