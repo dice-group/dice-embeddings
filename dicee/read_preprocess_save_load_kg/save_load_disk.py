@@ -15,22 +15,31 @@ class LoadSaveToDisk:
             # No serialization
             return None
 
-        if isinstance(self.kg.entity_to_idx, dict) is False:
-            return None
+        if self.kg.byte_pair_encoding:
+            print("What shall be saved ?!")
+            # self.kg.ordered_bpe_entities
+            # self.kg.ordered_bpe_relations
+            if self.kg.training_technique in ["KvsAll", "AllvsAll"]:
+                save_numpy_ndarray(data=self.kg.train_set, file_path=self.kg.path_for_serialization + '/train_set.npy')
 
-        assert isinstance(self.kg.entity_to_idx, dict)
-        assert isinstance(self.kg.relation_to_idx, dict)
-        assert isinstance(self.kg.train_set, np.ndarray)
+            assert self.kg.ordered_bpe_entities is not None
+            assert self.kg.ordered_bpe_relations is not None
+            save_pickle(data=self.kg.ordered_bpe_entities, file_path=self.kg.path_for_serialization + '/ordered_bpe_entities.p')
+            save_pickle(data=self.kg.ordered_bpe_relations, file_path=self.kg.path_for_serialization + '/ordered_bpe_relations.p')
+        else:
+            assert isinstance(self.kg.entity_to_idx, dict)
+            assert isinstance(self.kg.relation_to_idx, dict)
+            assert isinstance(self.kg.train_set, np.ndarray)
 
-        # (1) Save dictionary mappings into disk
-        save_pickle(data=self.kg.entity_to_idx, file_path=self.kg.path_for_serialization + '/entity_to_idx.p')
-        save_pickle(data=self.kg.relation_to_idx, file_path=self.kg.path_for_serialization + '/relation_to_idx.p')
+            # (1) Save dictionary mappings into disk
+            save_pickle(data=self.kg.entity_to_idx, file_path=self.kg.path_for_serialization + '/entity_to_idx.p')
+            save_pickle(data=self.kg.relation_to_idx, file_path=self.kg.path_for_serialization + '/relation_to_idx.p')
 
-        save_numpy_ndarray(data=self.kg.train_set, file_path=self.kg.path_for_serialization + '/train_set.npy')
-        if self.kg.valid_set is not None:
-            save_numpy_ndarray(data=self.kg.valid_set, file_path=self.kg.path_for_serialization + '/valid_set.npy')
-        if self.kg.test_set is not None:
-            save_numpy_ndarray(data=self.kg.test_set, file_path=self.kg.path_for_serialization + '/test_set.npy')
+            save_numpy_ndarray(data=self.kg.train_set, file_path=self.kg.path_for_serialization + '/train_set.npy')
+            if self.kg.valid_set is not None:
+                save_numpy_ndarray(data=self.kg.valid_set, file_path=self.kg.path_for_serialization + '/valid_set.npy')
+            if self.kg.test_set is not None:
+                save_numpy_ndarray(data=self.kg.test_set, file_path=self.kg.path_for_serialization + '/test_set.npy')
 
     def load(self):
         assert self.kg.path_for_deserialization is not None

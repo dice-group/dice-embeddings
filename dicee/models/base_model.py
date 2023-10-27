@@ -125,11 +125,14 @@ class BaseKGE(pytorch_lightning.LightningModule):
                 nn.Linear(self.embedding_dim * self.max_length_subword_tokens, self.embedding_dim, bias=False))
 
             self.param_init(self.token_embeddings.weight.data)
-            if self.args["scoring_technique"]=="KvsAll":
+            if self.args["scoring_technique"] in ["AllvsAll", "KvsAll"]:
+                self.str_to_bpe_entity_to_idx = {str_ent: idx for idx, (str_ent, bpe_ent, shaped_bpe_ent) in
+                                                 enumerate(self.args["ordered_bpe_entities"])}
+
+
                 self.bpe_entity_to_idx = {shaped_bpe_ent: idx for idx, (str_ent, bpe_ent, shaped_bpe_ent) in
                                           enumerate(self.args["ordered_bpe_entities"])}
                 self.ordered_bpe_entities = torch.tensor(list(self.bpe_entity_to_idx.keys()), dtype=torch.long)
-
         else:
             self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
             self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
@@ -312,6 +315,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
         ----------
         x
         y_idx
+        ordered_bpe_entities
 
         Returns
         -------
@@ -337,7 +341,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
                     return self.forward_byte_pair_encoded_triple(x=x)
                 elif size_of_input_data == 2:
                     # KvsAll with BPE
-                    return self.forward_byte_pair_encoded_k_vs_all(x=x)
+                    return self.forward_byte_pair_encoded_k_vs_all(x)
 
     def forward_triples(self, x: torch.LongTensor) -> torch.Tensor:
         """

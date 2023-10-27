@@ -176,9 +176,6 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, Tuple[
 
 
 def save_numpy_ndarray(*, data: np.ndarray, file_path: str):
-    n, d = data.shape
-    assert n > 0
-    assert d == 3
     with open(file_path, 'wb') as f:
         np.save(f, data)
 

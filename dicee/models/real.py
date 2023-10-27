@@ -30,7 +30,7 @@ class DistMult(BaseKGE):
 
     def forward_k_vs_all(self, x: torch.LongTensor):
         emb_head, emb_rel = self.get_head_relation_representation(x)
-        return self.k_vs_all_score(emb_h=emb_head, emb_r=emb_rel, emb_E=self.entity_embeddings.weight.transpose(1, 0))
+        return self.k_vs_all_score(emb_h=emb_head, emb_r=emb_rel, emb_E=self.entity_embeddings.weight)
 
     def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor):
         emb_head_real, emb_rel_real = self.get_head_relation_representation(x)

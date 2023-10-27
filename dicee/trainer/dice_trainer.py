@@ -188,7 +188,6 @@ class DICE_Trainer:
             # Initialize or load model
             model, form_of_labelling = self.initialize_or_load_model()
             self.trainer.evaluator = self.evaluator
-
             self.trainer.dataset = knowledge_graph
             self.trainer.form_of_labelling = form_of_labelling
             self.trainer.fit(model, train_dataloaders=self.initialize_dataloader(

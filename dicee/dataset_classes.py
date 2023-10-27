@@ -36,15 +36,19 @@ def construct_dataset(*,
                       label_smoothing_rate: float,
                       byte_pair_encoding=None
                       ) -> torch.utils.data.Dataset:
-
     if byte_pair_encoding and scoring_technique == 'NegSample':
         train_set = BPE_NegativeSamplingDataset(
             train_set=torch.tensor(train_set, dtype=torch.long),
-            ordered_shaped_bpe_entities=torch.tensor([shaped_bpe_ent for (str_ent, bpe_ent, shaped_bpe_ent) in ordered_bpe_entities]),
+            ordered_shaped_bpe_entities=torch.tensor(
+                [shaped_bpe_ent for (str_ent, bpe_ent, shaped_bpe_ent) in ordered_bpe_entities]),
             neg_ratio=neg_ratio)
-    elif byte_pair_encoding and scoring_technique == 'KvsAll':
-        train_set = BPE_KvsAll(train_set=torch.tensor(train_set, dtype=torch.long),
-                               train_indices_target=train_target_indices, target_dim=target_dim)
+    elif byte_pair_encoding and scoring_technique in ['KvsAll', "AllvsAll"]:
+        train_set = MultiLabelDataset(train_set=torch.tensor(train_set, dtype=torch.long),
+                                      train_indices_target=train_target_indices, target_dim=target_dim,
+                                      torch_ordered_shaped_bpe_entities=torch.tensor(
+                                          [shaped_bpe_ent for (str_ent, bpe_ent, shaped_bpe_ent) in
+                                           ordered_bpe_entities])
+                                      )
     elif scoring_technique == 'NegSample':
         # Binary-class.
         train_set = TriplePredictionDataset(train_set=train_set,
@@ -132,25 +136,31 @@ class BPE_NegativeSamplingDataset(torch.utils.data.Dataset):
         return bpe_triple, label
 
 
-class BPE_KvsAll(torch.utils.data.Dataset):
-    def __init__(self, train_set: torch.LongTensor, train_indices_target: torch.LongTensor, target_dim: int):
+class MultiLabelDataset(torch.utils.data.Dataset):
+    def __init__(self, train_set: torch.LongTensor, train_indices_target: torch.LongTensor, target_dim: int,
+                 torch_ordered_shaped_bpe_entities: torch.LongTensor):
         super().__init__()
         assert len(train_set) == len(train_indices_target)
         assert target_dim > 0
-
         self.train_set = train_set
         self.train_indices_target = train_indices_target
         self.target_dim = target_dim
-
         self.num_datapoints = len(self.train_set)
+        # why needed ?!
+        self.torch_ordered_shaped_bpe_entities = torch_ordered_shaped_bpe_entities
         self.collate_fn = None
 
     def __len__(self):
         return self.num_datapoints
 
     def __getitem__(self, idx):
+        # (1) Initialize as all zeros.
         y_vec = torch.zeros(self.target_dim)
-        y_vec[self.train_indices_target[idx]] = 1.0
+        # (2) Indices of labels.
+        indices = self.train_indices_target[idx]
+        # (3) Add 1s if holds.
+        if len(indices) > 0:
+            y_vec[indices] = 1.0
         return self.train_set[idx], y_vec
 
 

@@ -1,7 +1,7 @@
 import torch
 from typing import Dict, Tuple, List
 import numpy as np
-
+from tqdm import tqdm
 
 def evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List],
                 info='Eval Starts'):
@@ -26,7 +26,7 @@ def evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re
     all_entities = torch.arange(0, num_entities).long()
     all_entities = all_entities.reshape(len(all_entities), )
     # Iterating one by one is not good when you are using batch norm
-    for i in range(0, len(triple_idx)):
+    for i in tqdm(range(0, len(triple_idx))):
         # (1) Get a triple (head entity, relation, tail entity
         data_point = triple_idx[i]
         h, r, t = data_point[0], data_point[1], data_point[2]
@@ -110,7 +110,7 @@ def evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re
     return results
 
 
-@torch.no_grad
+@torch.no_grad()
 def evaluate_bpe_lp(model, triple_idx: List[Tuple], all_bpe_shaped_entities,
                     er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List],
                     info='Eval Starts'):
@@ -118,7 +118,6 @@ def evaluate_bpe_lp(model, triple_idx: List[Tuple], all_bpe_shaped_entities,
     assert isinstance(triple_idx, list)
     assert isinstance(triple_idx[0], tuple)
     assert len(triple_idx[0]) == 3
-
     model.eval()
     print(info)
     print(f'Num of triples {len(triple_idx)}')
@@ -128,13 +127,12 @@ def evaluate_bpe_lp(model, triple_idx: List[Tuple], all_bpe_shaped_entities,
     num_entities = len(all_bpe_shaped_entities)
     bpe_entity_to_idx = dict()
     all_bpe_entities = []
-    for idx, (str_entity, bpe_entity, shaped_bpe_entity) in enumerate(all_bpe_shaped_entities):
+    for idx, (str_entity, bpe_entity, shaped_bpe_entity) in tqdm(enumerate(all_bpe_shaped_entities)):
         bpe_entity_to_idx[shaped_bpe_entity] = idx
         all_bpe_entities.append(shaped_bpe_entity)
 
     all_bpe_entities = torch.LongTensor(all_bpe_entities)
-
-    for (bpe_h, bpe_r, bpe_t) in triple_idx:
+    for (bpe_h, bpe_r, bpe_t) in tqdm(triple_idx):
         # (1) Indices of head and tail entities in all entities
         idx_bpe_h= bpe_entity_to_idx[bpe_h]
         idx_bpe_t= bpe_entity_to_idx[bpe_t]

@@ -3,6 +3,7 @@ from .read_preprocess_save_load_kg import ReadFromDisk, PreprocessKG, LoadSaveTo
 import sys
 import tiktoken
 
+
 class KG:
     """ Knowledge Graph """
 
@@ -50,7 +51,8 @@ class KG:
         self.entity_to_idx = entity_to_idx
         self.relation_to_idx = relation_to_idx
         self.backend = 'pandas' if backend is None else backend
-        self.training_technique=training_technique
+        self.training_technique = training_technique
+        self.raw_train_set, self.raw_valid_set, self.raw_test_set = None, None, None
         self.train_set, self.valid_set, self.test_set = None, None, None
         self.idx_entity_to_bpe_shaped = dict()
 
@@ -119,3 +121,16 @@ class KG:
     @property
     def relations_str(self) -> List:
         return list(self.relation_to_idx.keys())
+
+    def func_triple_to_bpe_representation(self, triple:List[str]):
+        result=[]
+
+        for x in triple:
+            unshaped_bpe_repr = self.enc.encode(x)
+            if len(unshaped_bpe_repr) < self.max_length_subword_tokens:
+                unshaped_bpe_repr.extend([self.dummy_id for _ in
+                                            range(self.max_length_subword_tokens - len(unshaped_bpe_repr))])
+            else:
+                pass
+            result.append(unshaped_bpe_repr)
+        return result
