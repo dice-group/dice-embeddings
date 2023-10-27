@@ -12,7 +12,7 @@ from .static_preprocess_funcs import create_constraints
 import numpy as np
 import sys
 import tiktoken
-
+import gradio as gr
 class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
     def __init__(self, path, construct_ensemble=False,
@@ -994,7 +994,6 @@ class KGE(BaseInteractiveKGE):
         return extended_triples
 
     def deploy(self, share: bool = False, top_k: int = 10):
-        import gradio as gr
 
         def predict(str_subject: str, str_predicate: str, str_object: str, random_examples: bool):
             if random_examples:

@@ -121,26 +121,29 @@ class QMult(BaseKGE):
         k_score = torch.sum(k_val * emb_tail_k, dim=1)
         return real_score + i_score + j_score + k_score
 
-    def forward_k_vs_all(self, x):
-        """
-        Completed.
-        Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,
-        [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
-        Given a batch of head entities and relations => shape (size of batch,| Entities|)
+    def k_vs_all_score(self, bpe_head_ent_emb, bpe_rel_ent_emb, E):
         """
 
-        # (1) Retrieve embeddings & Apply Dropout & Normalization.
-        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
+        Parameters
+        ----------
+        bpe_head_ent_emb
+        bpe_rel_ent_emb
+        E
+
+        Returns
+        -------
+
+        """
         # (1.1) If No normalization set, we need to apply quaternion normalization
         if isinstance(self.normalize_relation_embeddings, IdentityClass):
-            rel_ent_emb = self.quaternion_normalizer(rel_ent_emb)
+            bpe_rel_ent_emb = self.quaternion_normalizer(bpe_rel_ent_emb)
         # (2) Split (1) into real and imaginary parts.
-        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(head_ent_emb, 4)
-        emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k = torch.hsplit(rel_ent_emb, 4)
+        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(bpe_head_ent_emb, 4)
+        emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k = torch.hsplit(bpe_rel_ent_emb, 4)
         r_val, i_val, j_val, k_val = quaternion_mul(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
                                                     Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
 
-        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(self.entity_embeddings.weight, 4)
+        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(E, 4)
         emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = emb_tail_real.transpose(1, 0), emb_tail_i.transpose(1, 0), \
             emb_tail_j.transpose(1, 0), emb_tail_k.transpose(1, 0)
 
@@ -150,8 +153,22 @@ class QMult(BaseKGE):
         i_score = torch.mm(i_val, emb_tail_i)
         j_score = torch.mm(j_val, emb_tail_j)
         k_score = torch.mm(k_val, emb_tail_k)
-
         return real_score + i_score + j_score + k_score
+
+    def forward_k_vs_all(self, x):
+        """
+
+        Parameters
+        ----------
+        x
+
+        Returns
+        -------
+
+        """
+        # (1) Retrieve embeddings & Apply Dropout & Normalization.
+        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
+        return self.k_vs_all_score(head_ent_emb, rel_ent_emb,self.entity_embeddings.weight)
 
     def forward_k_vs_sample(self, x, target_entity_idx):
         """

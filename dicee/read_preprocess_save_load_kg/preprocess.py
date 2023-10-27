@@ -205,11 +205,6 @@ class PreprocessKG:
     @timeit
     def preprocess_with_byte_pair_encoding(self) -> None:
         """
-        Transform three-dimensional train_set, valid_set, and test_set pandas dataframes
-        containing triples (h,r,t) in string representations into respective dataframes containing
-        sequences of sub-word units representation of triples
-        ([1,2,222,222,222], [11,43, 1026, 222, 222], [8, 222,222,222,222]). where 222 denotes the index of a dummy
-        sub-word to represent a triple into fixed shape/dimension.
 
 
         Returns
@@ -219,8 +214,7 @@ class PreprocessKG:
         # n b
         assert isinstance(self.kg.raw_train_set, pd.DataFrame)
         assert self.kg.raw_train_set.columns.tolist() == ['subject', 'relation', 'object']
-        # (1)  Add recipriocal or noisy triples into raw_train_set
-        # Reciprocal must be added into raw_train and **raw_test and raw_validation** to accelerate the testing
+        # (1)  Add recipriocal or noisy triples into raw_train_set, raw_valid_set, raw_test_set
         self.kg.raw_train_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprical,
                                                           eval_model=self.kg.eval_model,
                                                           df=self.kg.raw_train_set, info="Train")
@@ -231,20 +225,24 @@ class PreprocessKG:
                                                          eval_model=self.kg.eval_model,
                                                          df=self.kg.raw_test_set, info="Test")
 
-        # (1) Transformation from DataFrame to list of tuples.
+        # (2) Transformation from DataFrame to list of tuples.
         # self.kg.train_set: List[Tuple[Tuple[int], Tuple[int], Tuple[int]]]
         # valid_set: Union[List, List[Tuple[Tuple[int], Tuple[int], Tuple[int]]]]
         # test_set: Union[List, List[Tuple[Tuple[int], Tuple[int], Tuple[int]]]]
+        # self.kg.train_set[0] => (bpe_h,bpe_r, bpe_t)
+        # bpe_* denotes a tuple of positive integer numbers
         self.kg.train_set = self.__replace_values_df(df=self.kg.raw_train_set, f=self.kg.enc.encode)
         self.kg.valid_set = self.__replace_values_df(df=self.kg.raw_valid_set, f=self.kg.enc.encode)
         self.kg.test_set = self.__replace_values_df(df=self.kg.raw_test_set, f=self.kg.enc.encode)
 
         self.kg.max_length_subword_tokens = self.__finding_max_token(self.kg.train_set+self.kg.valid_set+self.kg.test_set)
 
+        # Store padded bpe entities and relations
         bpe_subwords_to_shaped_bpe_entities = dict()
         bpe_subwords_to_shaped_bpe_relations = dict()
 
-        print("Longest sequence of sub-words of an entity or relation is ", self.kg.max_length_subword_tokens)
+        print("The longest sequence of sub-word units of entities and relations is ", self.kg.max_length_subword_tokens)
+        # Padding
         self.kg.train_set = self.__padding_in_place(self.kg.train_set, self.kg.max_length_subword_tokens,
                                                     bpe_subwords_to_shaped_bpe_entities,
                                                     bpe_subwords_to_shaped_bpe_relations)
@@ -256,7 +254,7 @@ class PreprocessKG:
             self.kg.test_set = self.__padding_in_place(self.kg.test_set, self.kg.max_length_subword_tokens,
                                                        bpe_subwords_to_shaped_bpe_entities,
                                                        bpe_subwords_to_shaped_bpe_relations)
-
+        # Store str_entity, bpe_entity, padded_bpe_entity
         self.kg.ordered_bpe_entities = [(self.kg.enc.decode(k), k, v) for k, v in
                                         bpe_subwords_to_shaped_bpe_entities.items()]
         self.kg.ordered_bpe_relations = [(self.kg.enc.decode(k), k, v) for k, v in

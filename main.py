@@ -10,7 +10,7 @@ def get_default_arguments(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Knowledge graph related arguments
-    parser.add_argument("--dataset_dir", type=str, default="KGs/UMLS",
+    parser.add_argument("--dataset_dir", type=str, default="KGs/NELL-995-h100",
                         help="The path of a folder containing train.txt, and/or valid.txt and/or test.txt"
                              ",e.g., KGs/UMLS")
     parser.add_argument("--sparql_endpoint", type=str, default=None,
@@ -30,7 +30,7 @@ def get_default_arguments(description=None):
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
     # Model related arguments
     parser.add_argument("--model", type=str,
-                        default="Keci",
+                        default="DistMult",
                         choices=["ComplEx", "Keci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE",
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
@@ -102,7 +102,7 @@ def get_default_arguments(description=None):
     parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
     # WIP
     parser.add_argument("--byte_pair_encoding",
-                        action="store_true",
+                        action="store_false",
                         help="Currently only avail. for KGE implemented within dice-embeddings.")
     if description is None:
         return parser.parse_args()
