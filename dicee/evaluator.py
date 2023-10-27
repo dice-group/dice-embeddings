@@ -217,13 +217,13 @@ class Evaluator:
             if raw_valid_set is not None:
                 assert isinstance(raw_valid_set, pd.DataFrame)
                 self.report['Val'] = self.evaluate_lp_bpe_k_vs_all(trained_model, raw_valid_set.values.tolist(),
-                                                    f'Evaluate {trained_model.name} on BPE Validation set',
-                                                    form_of_labelling=form_of_labelling)
+                                                                   f'Evaluate {trained_model.name} on BPE Validation set',
+                                                                   form_of_labelling=form_of_labelling)
 
         if raw_test_set is not None and 'test' in self.args.eval_model:
             self.report['Test'] = self.evaluate_lp_bpe_k_vs_all(trained_model, raw_test_set.values.tolist(),
-                                                f'Evaluate {trained_model.name} on BPE Test set',
-                                                form_of_labelling=form_of_labelling)
+                                                                f'Evaluate {trained_model.name} on BPE Test set',
+                                                                form_of_labelling=form_of_labelling)
 
     def eval_with_vs_all(self, *, train_set, valid_set=None, test_set=None, trained_model, form_of_labelling) -> None:
         """ Evaluate model after reciprocal triples are added """
@@ -366,7 +366,7 @@ class Evaluator:
                 [self.func_triple_to_bpe_representation(i) for i in str_data_batch])
 
             # (2) Extract entities and relations.
-            bpe_hr, bpe_t = torch_batch_bpe_triple[:, [0, 1], :], torch_batch_bpe_triple[:, 2, :]
+            bpe_hr = torch_batch_bpe_triple[:, [0, 1], :]
             # (3) Predict missing entities, i.e., assign probs to all entities.
             predictions = model(bpe_hr)
             # (4) Filter entities except the target entity
@@ -374,7 +374,6 @@ class Evaluator:
                 # (4.2) Get all ids of all entities occurring with the head entity and relation extracted in 4.1.
                 h, r, t = str_data_batch[j]
                 id_e_target = model.str_to_bpe_entity_to_idx[t]
-                filt_str_entities: List[str]
                 filt_idx_entities = [model.str_to_bpe_entity_to_idx[_] for _ in self.er_vocab[(h, r)]]
 
                 # (4.3) Store the assigned score of the target tail entity extracted in 4.1.

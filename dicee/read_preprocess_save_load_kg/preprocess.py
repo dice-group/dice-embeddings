@@ -1,6 +1,6 @@
 import pandas as pd
 import polars as pl
-from .util import create_recipriocal_triples, timeit, index_triples_with_pandas, dataset_sanity_checking
+from .util import timeit, index_triples_with_pandas, dataset_sanity_checking
 from dicee.static_funcs import numpy_data_type_changer
 from .util import get_er_vocab, get_re_vocab, get_ee_vocab, create_constraints, apply_reciprical_or_noise
 import numpy as np
@@ -232,9 +232,9 @@ class PreprocessKG:
                                                          df=self.kg.raw_test_set, info="Test")
 
         # (1) Transformation from DataFrame to list of tuples.
-        self.kg.train_set: List[Tuple[Tuple[int], Tuple[int], Tuple[int]]]
-        valid_set: Union[List, List[Tuple[Tuple[int], Tuple[int], Tuple[int]]]]
-        test_set: Union[List, List[Tuple[Tuple[int], Tuple[int], Tuple[int]]]]
+        # self.kg.train_set: List[Tuple[Tuple[int], Tuple[int], Tuple[int]]]
+        # valid_set: Union[List, List[Tuple[Tuple[int], Tuple[int], Tuple[int]]]]
+        # test_set: Union[List, List[Tuple[Tuple[int], Tuple[int], Tuple[int]]]]
         self.kg.train_set = self.__replace_values_df(df=self.kg.raw_train_set, f=self.kg.enc.encode)
         self.kg.valid_set = self.__replace_values_df(df=self.kg.raw_valid_set, f=self.kg.enc.encode)
         self.kg.test_set = self.__replace_values_df(df=self.kg.raw_test_set, f=self.kg.enc.encode)
