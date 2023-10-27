@@ -5,7 +5,6 @@ from dicee.knowledge_graph_embeddings import KGE
 import os
 
 
-
 class TestIndictiveLP:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_inductive(self):

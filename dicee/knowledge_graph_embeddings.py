@@ -13,8 +13,11 @@ import numpy as np
 import sys
 import tiktoken
 import gradio as gr
+
+
 class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
+
     def __init__(self, path, construct_ensemble=False,
                  model_name=None,
                  apply_semantic_constraint=False):
@@ -35,9 +38,10 @@ class KGE(BaseInteractiveKGE):
     def __str__(self):
         return "KGE | " + str(self.model)
 
+    # given a string, return is bpe encoded embeddings
     def eval_lp_performance(self, dataset=List[Tuple[str, str, str]], filtered=True):
         assert isinstance(dataset, list) and len(dataset) > 0
-
+        # TODO: Use it for BPE as well.
         idx_dataset = np.array(
             [(self.entity_to_idx[s], self.relation_to_idx[p], self.entity_to_idx[o]) for s, p, o in dataset])
         if filtered:
@@ -325,7 +329,7 @@ class KGE(BaseInteractiveKGE):
             r_encode = self.enc.encode(r)
             t_encode = self.enc.encode(t)
 
-            length=self.configs["max_length_subword_tokens"]
+            length = self.configs["max_length_subword_tokens"]
 
             if len(h_encode) != length:
                 h_encode.extend([self.dummy_id for _ in range(length - len(h_encode))])
