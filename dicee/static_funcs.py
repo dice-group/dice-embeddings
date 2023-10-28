@@ -75,6 +75,8 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[o
         # (2) Loading input configuration.
         configs = load_json(path_of_experiment_folder + '/configuration.json')
         report = load_json(path_of_experiment_folder + '/report.json')
+        # Load ordered_bpe_entities.p
+        configs["ordered_bpe_entities"]=load_pickle(file_path=path_of_experiment_folder+"/ordered_bpe_entities.p")
         configs["num_tokens"] = num_tokens
         configs["max_length_subword_tokens"] = report["max_length_subword_tokens"]
     else:
@@ -176,9 +178,6 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, Tuple[
 
 
 def save_numpy_ndarray(*, data: np.ndarray, file_path: str):
-    n, d = data.shape
-    assert n > 0
-    assert d == 3
     with open(file_path, 'wb') as f:
         np.save(f, data)
 

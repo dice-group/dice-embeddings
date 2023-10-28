@@ -1,7 +1,7 @@
 from dicee.executer import Execute
 import pytest
 from dicee.config import Namespace
-class TestPolyak:
+class TestBackends:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_pandas_as_backend(self):
         args = Namespace()

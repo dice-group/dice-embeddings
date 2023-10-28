@@ -237,14 +237,24 @@ class ComplEx(BaseKGE):
         imag_imag_real = (emb_head_imag * emb_rel_imag * emb_tail_real).sum(dim=1)
         return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
 
-    def forward_k_vs_all(self, x: torch.LongTensor) -> torch.FloatTensor:
-        # (1) Retrieve embeddings & Apply Dropout & Normalization.
-        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
-        # (2) Split (1) into real and imaginary parts.
-        emb_head_real, emb_head_imag = torch.hsplit(head_ent_emb, 2)
-        emb_rel_real, emb_rel_imag = torch.hsplit(rel_ent_emb, 2)
+    @staticmethod
+    def k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor):
+        """
+
+        Parameters
+        ----------
+        emb_h
+        emb_r
+        emb_E
+
+        Returns
+        -------
+
+        """
+        emb_head_real, emb_head_imag = torch.hsplit(emb_h, 2)
+        emb_rel_real, emb_rel_imag = torch.hsplit(emb_r, 2)
         # (3) Transpose Entity embedding matrix to perform matrix multiplications in Hermitian Product.
-        emb_tail_real, emb_tail_imag = torch.hsplit(self.entity_embeddings.weight, 2)
+        emb_tail_real, emb_tail_imag = torch.hsplit(emb_E, 2)
         emb_tail_real, emb_tail_imag = emb_tail_real.transpose(1, 0), emb_tail_imag.transpose(1, 0)
         # (4) Compute hermitian inner product on embedding vectors.
         real_real_real = torch.mm(emb_head_real * emb_rel_real, emb_tail_real)
@@ -252,3 +262,8 @@ class ComplEx(BaseKGE):
         imag_real_imag = torch.mm(emb_head_imag * emb_rel_real, emb_tail_imag)
         imag_imag_real = torch.mm(emb_head_imag * emb_rel_imag, emb_tail_real)
         return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
+
+    def forward_k_vs_all(self, x: torch.LongTensor) -> torch.FloatTensor:
+        # (1) Retrieve embeddings & Apply Dropout & Normalization.
+        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
+        return self.k_vs_all_score(head_ent_emb,rel_ent_emb,self.entity_embeddings.weight)

@@ -50,7 +50,7 @@ def get_callbacks(args):
     if isinstance(args.callbacks, list):
         return callbacks
     for k, v in args.callbacks.items():
-        if k=="Perturb":
+        if k == "Perturb":
             callbacks.append(Perturb(**v))
         elif k == 'FPP':
             callbacks.append(
@@ -67,6 +67,7 @@ def get_callbacks(args):
         else:
             raise RuntimeError(f'Incorrect callback:{k}')
     return callbacks
+
 
 class DICE_Trainer:
     """
@@ -156,29 +157,21 @@ class DICE_Trainer:
                                            num_workers=self.args.num_core, persistent_workers=False)
 
     @timeit
-    def initialize_dataset(self, dataset:KG, form_of_labelling) -> torch.utils.data.Dataset:
-        """
-
-        Parameters
-        ----------
-        dataset knowledge graph object
-        form_of_labelling
-
-        Returns
-        -------
-
-        """
+    def initialize_dataset(self, dataset: KG, form_of_labelling) -> torch.utils.data.Dataset:
         print('Initializing Dataset...', end='\t')
         train_dataset = construct_dataset(train_set=dataset.train_set,
                                           valid_set=dataset.valid_set,
                                           test_set=dataset.test_set,
+                                          train_target_indices=dataset.train_target_indices,
+                                          target_dim=dataset.target_dim,
                                           ordered_bpe_entities=dataset.ordered_bpe_entities,
                                           entity_to_idx=dataset.entity_to_idx,
                                           relation_to_idx=dataset.relation_to_idx,
                                           form_of_labelling=form_of_labelling,
                                           scoring_technique=self.args.scoring_technique,
                                           neg_ratio=self.args.neg_ratio,
-                                          label_smoothing_rate=self.args.label_smoothing_rate)
+                                          label_smoothing_rate=self.args.label_smoothing_rate,
+                                          byte_pair_encoding=self.args.byte_pair_encoding)
         if self.args.eval_model is None:
             del dataset.train_set
             gc.collect()
@@ -195,7 +188,6 @@ class DICE_Trainer:
             # Initialize or load model
             model, form_of_labelling = self.initialize_or_load_model()
             self.trainer.evaluator = self.evaluator
-
             self.trainer.dataset = knowledge_graph
             self.trainer.form_of_labelling = form_of_labelling
             self.trainer.fit(model, train_dataloaders=self.initialize_dataloader(
@@ -224,7 +216,7 @@ class DICE_Trainer:
         kf = KFold(n_splits=self.args.num_folds_for_cv, shuffle=True, random_state=1)
         model = None
         eval_folds = []
-        form_of_labelling=None
+        form_of_labelling = None
         # (2) Iterate over (1)
         for (ith, (train_index, test_index)) in enumerate(kf.split(dataset.train_set)):
             # (2.1) Create a new copy for the callbacks

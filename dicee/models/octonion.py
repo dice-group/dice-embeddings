@@ -99,21 +99,14 @@ class OMult(BaseKGE):
 
         return e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
 
-    def forward_k_vs_all(self, x: torch.Tensor):
-        """
-        Given a head entity and a relation (h,r), we compute scores for all entities.
-        [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
-        Given a batch of head entities and relations => shape (size of batch,| Entities|)
-        """
+    def k_vs_all_score(self, bpe_head_ent_emb, bpe_rel_ent_emb, E):
 
-        # (1) Retrieve embeddings & Apply Dropout & Normalization.
-        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
         # (2) Split (1) into real and imaginary parts.
         # (2) Split (1) into real and imaginary parts.
         emb_head_e0, emb_head_e1, emb_head_e2, emb_head_e3, emb_head_e4, emb_head_e5, emb_head_e6, emb_head_e7 = torch.hsplit(
-            head_ent_emb, 8)
+            bpe_head_ent_emb, 8)
         emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7 = torch.hsplit(
-            rel_ent_emb,
+            bpe_rel_ent_emb,
             8)
         if isinstance(self.normalize_relation_embeddings, IdentityClass):
             (emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3,
@@ -131,7 +124,7 @@ class OMult(BaseKGE):
 
         # Prepare all entities.
         emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 = torch.hsplit(
-            self.entity_embeddings.weight, 8)
+            E, 8)
         emb_tail_e0, emb_tail_e1, emb_tail_e2, emb_tail_e3, emb_tail_e4, emb_tail_e5, emb_tail_e6, emb_tail_e7 \
             = emb_tail_e0.transpose(1, 0), emb_tail_e1.transpose(1, 0), \
             emb_tail_e2.transpose(1, 0), emb_tail_e3.transpose(1, 0), \
@@ -149,6 +142,17 @@ class OMult(BaseKGE):
         e6_score = torch.mm(e6, emb_tail_e6)
         e7_score = torch.mm(e7, emb_tail_e7)
         return e0_score + e1_score + e2_score + e3_score + e4_score + e5_score + e6_score + e7_score
+
+    def forward_k_vs_all(self, x):
+        """
+        Completed.
+        Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,
+        [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
+        Given a batch of head entities and relations => shape (size of batch,| Entities|)
+        """
+        # (1) Retrieve embeddings & Apply Dropout & Normalization.
+        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
+        return self.k_vs_all_score(head_ent_emb, rel_ent_emb, self.entity_embeddings.weight)
 
 
 class ConvO(BaseKGE):

@@ -121,10 +121,18 @@ class BaseKGE(pytorch_lightning.LightningModule):
         if self.byte_pair_encoding:
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
             # Workaround: Dummy subReducing the impact of dummies
-            self.lf = nn.Linear(self.embedding_dim * self.max_length_subword_tokens,
-                                self.embedding_dim, bias=False)
+            self.lf = nn.Sequential(
+                nn.Linear(self.embedding_dim * self.max_length_subword_tokens, self.embedding_dim, bias=False))
 
             self.param_init(self.token_embeddings.weight.data)
+            if self.args["scoring_technique"] in ["AllvsAll", "KvsAll"]:
+                self.str_to_bpe_entity_to_idx = {str_ent: idx for idx, (str_ent, bpe_ent, shaped_bpe_ent) in
+                                                 enumerate(self.args["ordered_bpe_entities"])}
+
+
+                self.bpe_entity_to_idx = {shaped_bpe_ent: idx for idx, (str_ent, bpe_ent, shaped_bpe_ent) in
+                                          enumerate(self.args["ordered_bpe_entities"])}
+                self.ordered_bpe_entities = torch.tensor(list(self.bpe_entity_to_idx.keys()), dtype=torch.long)
         else:
             self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
             self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
@@ -148,6 +156,32 @@ class BaseKGE(pytorch_lightning.LightningModule):
         bpe_tail_ent_emb = bpe_tail_ent_emb.reshape(B, T * C)
         bpe_triple_score = self.score(self.lf(bpe_head_ent_emb), self.lf(bpe_rel_ent_emb), self.lf(bpe_tail_ent_emb))
         return bpe_triple_score
+
+    def forward_byte_pair_encoded_k_vs_all(self, x):
+        """
+
+        Parameters
+        ----------
+        x
+
+        Returns
+        -------
+
+        """
+        bpe_head_ent_emb, bpe_rel_ent_emb = self.get_bpe_head_and_relation_representation(x)
+
+        B, T, C = bpe_head_ent_emb.shape
+        bpe_head_ent_emb = bpe_head_ent_emb.reshape(B, T * C)
+        bpe_rel_ent_emb = bpe_rel_ent_emb.reshape(B, T * C)
+
+        bpe_head_ent_emb = self.lf(bpe_head_ent_emb)
+        bpe_rel_ent_emb = self.lf(bpe_rel_ent_emb)
+
+        all_entities = self.token_embeddings(self.ordered_bpe_entities)
+        num_e, token_size, dim = all_entities.shape
+        all_entities = all_entities.reshape(num_e, token_size * dim)
+        E = self.lf(all_entities)
+        return self.k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
 
     def mem_of_model(self) -> Dict:
         """ Size of model in MB and number of params"""
@@ -281,6 +315,7 @@ class BaseKGE(pytorch_lightning.LightningModule):
         ----------
         x
         y_idx
+        ordered_bpe_entities
 
         Returns
         -------
@@ -300,7 +335,13 @@ class BaseKGE(pytorch_lightning.LightningModule):
                     # Note that y can be relation or tail entity.
                     return self.forward_k_vs_all(x=x)
             else:
-                return self.forward_byte_pair_encoded_triple(x=x)
+                size_of_input_data = shape_info[1]
+                if size_of_input_data == 3:
+                    # NegSample with BPE
+                    return self.forward_byte_pair_encoded_triple(x=x)
+                elif size_of_input_data == 2:
+                    # KvsAll with BPE
+                    return self.forward_byte_pair_encoded_k_vs_all(x)
 
     def forward_triples(self, x: torch.LongTensor) -> torch.Tensor:
         """
@@ -424,11 +465,16 @@ class BaseKGE(pytorch_lightning.LightningModule):
 
         """
         h, r, t = x[:, 0, :], x[:, 1, :], x[:, 2, :]
-        batch_size, sub_token_size = h.shape
         head_ent_emb = self.token_embeddings(h)
         rel_emb = self.token_embeddings(r)
         tail_emb = self.token_embeddings(t)
         return head_ent_emb, rel_emb, tail_emb
+
+    def get_bpe_head_and_relation_representation(self, x: torch.LongTensor):
+        h, r = x[:, 0, :], x[:, 1, :]
+        head_ent_emb = self.token_embeddings(h)
+        rel_emb = self.token_embeddings(r)
+        return head_ent_emb, rel_emb
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:
         """
