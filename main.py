@@ -102,7 +102,7 @@ def get_default_arguments(description=None):
     parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
     # WIP
     parser.add_argument("--byte_pair_encoding",
-                        action="store_false",
+                        action="store_true",
                         help="Currently only avail. for KGE implemented within dice-embeddings.")
     if description is None:
         return parser.parse_args()
