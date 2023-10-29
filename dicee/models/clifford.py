@@ -776,7 +776,7 @@ class Keci_r(BaseKGE): # Extending cl_pq to cl_pqr
         r0, rp, rq, rk = self.construct_cl_multivector(rel_ent_emb, re=self.re, p=self.p, q=self.q, r= self.r)
         t0, tp, tq, tk = self.construct_cl_multivector(tail_ent_emb, re=self.re, p=self.p, q=self.q, r=self.r)
 
-        h0, hp, hq, hk, h0, rp, rq, rk = self.apply_coefficients(h0, hp, hq, hk, h0, rp, rq,rk)
+        #h0, hp, hq, hk, h0, rp, rq, rk = self.apply_coefficients(h0, hp, hq, hk, h0, rp, rq,rk)
         
         
         # (4) Compute a triple score based on interactions described by the basis 1. Eq. 20
@@ -1023,7 +1023,7 @@ class Keci_r(BaseKGE): # Extending cl_pq to cl_pqr
                 sigma_qq = 0
 
             if self.r >= 2:
-                sigma_rr = torch.sum(self.compute_sigma_qq(hk, rk), dim=[1, 2]).unsqueeze(-1)
+                sigma_rr = torch.sum(self.compute_sigma_rr(hk, rk), dim=[1, 2]).unsqueeze(-1)
             else:
                 sigma_rr = 0
 
@@ -1146,8 +1146,9 @@ class Keci_r(BaseKGE): # Extending cl_pq to cl_pqr
             # Compute p by p operations
             sigma_qq = torch.einsum('nrp,nrx->nrpx', hq, rq) - torch.einsum('nrx,nrp->nrpx', hq, rq)
             sigma_qq = sigma_qq[:, :, indices[0], indices[1]]
+        
         else:
-            sigma_qq = torch.zeros((len(hq), self.r, int((self.q * (self.q - 1)) / 2)))
+            sigma_qq = torch.zeros((len(hq), self.re, int((self.q * (self.q - 1)) / 2)))
 
         return sigma_qq
     
