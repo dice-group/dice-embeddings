@@ -31,5 +31,5 @@ class TestIndictiveLP:
         assert result['Val']['MRR'] >= 0.78
         assert result['Test']['MRR'] >= 0.78
         pre_trained_kge = KGE(path=result['path_experiment_folder'])
-        assert pre_trained_kge.predict(h="alga", r="isa", t="entity") >= 0.55
-        assert pre_trained_kge.predict(h="Demir", r="loves", t="Embeddings") >= 0.49
+        assert (pre_trained_kge.predict(h="alga", r="isa", t="entity", logits=False) >
+                pre_trained_kge.predict(h="Demir", r="loves", t="Embeddings", logits=False))

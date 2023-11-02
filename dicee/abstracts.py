@@ -303,7 +303,14 @@ class BaseInteractiveKGE:
         Returns
         ---------
         """
-        return self.model.entity_embeddings(torch.LongTensor([self.entity_to_idx[i] for i in items]))
+        if self.configs["byte_pair_encoding"]:
+            t_encode = self.enc.encode_batch(items)
+            if len(t_encode) !=self.configs["max_length_subword_tokens"]:
+                for i in range(len(t_encode)):
+                    t_encode[i].extend([self.dummy_id for _ in range(self.configs["max_length_subword_tokens"] - len(t_encode[i]))])
+            return self.model.token_embeddings(torch.LongTensor(t_encode)).flatten(1)
+        else:
+            return self.model.entity_embeddings(torch.LongTensor([self.entity_to_idx[i] for i in items]))
 
     def get_relation_embeddings(self, items: List[str]):
         """

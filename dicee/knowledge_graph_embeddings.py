@@ -52,7 +52,8 @@ class KGE(BaseInteractiveKGE):
             return evaluate_lp(model=self.model, triple_idx=idx_dataset, num_entities=len(self.entity_to_idx),
                                er_vocab=None, re_vocab=None)
 
-    def predict_missing_head_entity(self, relation: Union[List[str], str], tail_entity: Union[List[str], str]) -> Tuple:
+    def predict_missing_head_entity(self, relation: Union[List[str], str], tail_entity: Union[List[str], str],
+                                    within=None) -> Tuple:
         """
         Given a relation and a tail entity, return top k ranked head entity.
 
@@ -92,10 +93,10 @@ class KGE(BaseInteractiveKGE):
         x = torch.stack((head_entity,
                          relation.repeat(self.num_entities, ),
                          tail_entity.repeat(self.num_entities, )), dim=1)
-        return self.model.forward(x)
+        return self.model(x)
 
     def predict_missing_relations(self, head_entity: Union[List[str], str],
-                                  tail_entity: Union[List[str], str]) -> Tuple:
+                                  tail_entity: Union[List[str], str], within=None) -> Tuple:
         """
         Given a head entity and a tail entity, return top k ranked relations.
 
@@ -139,7 +140,7 @@ class KGE(BaseInteractiveKGE):
         return self.model(x)
 
     def predict_missing_tail_entity(self, head_entity: Union[List[str], str],
-                                    relation: Union[List[str], str]) -> torch.FloatTensor:
+                                    relation: Union[List[str], str], within: List[str] = None) -> torch.FloatTensor:
         """
         Given a head entity and a relation, return top k ranked entities
 
@@ -161,26 +162,62 @@ class KGE(BaseInteractiveKGE):
 
         scores
         """
-        tail_entity = torch.arange(0, len(self.entity_to_idx))
+        if within is not None:
+            h_encode = self.enc.encode(head_entity[0])
+            r_encode = self.enc.encode(relation[0])
+            t_encode = self.enc.encode_batch(within)
+            length = self.configs["max_length_subword_tokens"]
 
-        if isinstance(head_entity, list):
-            head_entity = torch.LongTensor([self.entity_to_idx[i] for i in head_entity])
-        else:
-            head_entity = torch.LongTensor([self.entity_to_idx[head_entity]])
-        if isinstance(relation, list):
-            relation = torch.LongTensor([self.relation_to_idx[i] for i in relation])
-        else:
-            relation = torch.LongTensor([self.relation_to_idx[relation]])
+            num_entities = len(within)
+            if len(h_encode) != length:
+                h_encode.extend([self.dummy_id for _ in range(length - len(h_encode))])
 
-        x = torch.stack((head_entity.repeat(self.num_entities, ),
-                         relation.repeat(self.num_entities, ),
-                         tail_entity), dim=1)
-        return self.model.forward(x)
+            if len(r_encode) != length:
+                r_encode.extend([self.dummy_id for _ in range(length - len(r_encode))])
+
+            if len(t_encode) != length:
+                for i in range(len(t_encode)):
+                    t_encode[i].extend([self.dummy_id for _ in range(length - len(t_encode[i]))])
+
+            h_encode = torch.LongTensor(h_encode).unsqueeze(0)
+            r_encode = torch.LongTensor(r_encode).unsqueeze(0)
+            t_encode = torch.LongTensor(t_encode)
+
+            x = torch.stack((torch.repeat_interleave(input=h_encode, repeats=num_entities, dim=0),
+                             torch.repeat_interleave(input=r_encode, repeats=num_entities, dim=0),
+                             t_encode), dim=1)
+        else:
+            tail_entity = torch.arange(0, len(self.entity_to_idx))
+
+            if isinstance(head_entity, list):
+                head_entity = torch.LongTensor([self.entity_to_idx[i] for i in head_entity])
+            else:
+                head_entity = torch.LongTensor([self.entity_to_idx[head_entity]])
+            if isinstance(relation, list):
+                relation = torch.LongTensor([self.relation_to_idx[i] for i in relation])
+            else:
+                relation = torch.LongTensor([self.relation_to_idx[relation]])
+
+            x = torch.stack((head_entity.repeat(self.num_entities, ),
+                             relation.repeat(self.num_entities, ),
+                             tail_entity), dim=1)
+        return self.model(x)
 
     def predict(self, *, h: Union[List[str], str] = None, r: Union[List[str], str] = None,
-                t: Union[List[str], str] = None) -> torch.FloatTensor:
+                t: Union[List[str], str] = None, within=None, logits=True) -> torch.FloatTensor:
         """
-        Predict missing triples by means of
+
+        Parameters
+        ----------
+        logits
+        h
+        r
+        t
+        within
+
+        Returns
+        -------
+
         """
         # (1) Sanity checking.
         if h is not None:
@@ -198,25 +235,29 @@ class KGE(BaseInteractiveKGE):
             assert r is not None
             assert t is not None
             # ? r, t
-            scores = self.predict_missing_head_entity(r, t)
+            scores = self.predict_missing_head_entity(r, t, within)
         # (3) Predict missing relation given a head entity and a tail entity.
         elif r is None:
             assert h is not None
             assert t is not None
             # h ? t
-            scores = self.predict_missing_relations(h, t)
+            scores = self.predict_missing_relations(h, t, within)
         # (4) Predict missing tail entity given a head entity and a relation
         elif t is None:
             assert h is not None
             assert r is not None
             # h r ?
-            scores = self.predict_missing_tail_entity(h, r)
+            scores = self.predict_missing_tail_entity(h, r, within)
         else:
-            scores = self.triple_score(h, r, t)
-        return torch.sigmoid(scores)
+            scores=self.triple_score(h, r, t, logits=True)
+
+        if logits:
+            return scores
+        else:
+            return torch.sigmoid(scores)
 
     def predict_topk(self, *, h: List[str] = None, r: List[str] = None, t: List[str] = None,
-                     topk: int = 10):
+                     topk: int = 10, within: List[str] = None):
         """
         Predict missing item in a given triple.
 
@@ -259,7 +300,7 @@ class KGE(BaseInteractiveKGE):
             assert r is not None
             assert t is not None
             # ? r, t
-            scores = self.predict_missing_head_entity(r, t).flatten()
+            scores = self.predict_missing_head_entity(r, t, within=within).flatten()
             if self.apply_semantic_constraint:
                 # filter the scores
                 for th, i in enumerate(r):
@@ -274,7 +315,7 @@ class KGE(BaseInteractiveKGE):
             assert h is not None
             assert t is not None
             # h ? t
-            scores = self.predict_missing_relations(h, t).flatten()
+            scores = self.predict_missing_relations(h, t, within=within).flatten()
             sort_scores, sort_idxs = torch.topk(scores, topk)
             return [(self.idx_to_relations[idx_top_entity], scores.item()) for idx_top_entity, scores in
                     zip(sort_idxs.tolist(), torch.sigmoid(sort_scores))]
@@ -284,7 +325,7 @@ class KGE(BaseInteractiveKGE):
             assert h is not None
             assert r is not None
             # h r ?t
-            scores = self.predict_missing_tail_entity(h, r).flatten()
+            scores = self.predict_missing_tail_entity(h, r, within=within).flatten()
             if self.apply_semantic_constraint:
                 # filter the scores
                 for th, i in enumerate(r):
@@ -360,11 +401,10 @@ class KGE(BaseInteractiveKGE):
             raise NotImplementedError()
         else:
             with torch.no_grad():
-                out = self.model(x)
                 if logits:
-                    return out
+                    return  self.model(x)
                 else:
-                    return torch.sigmoid(out)
+                    return  torch.sigmoid(self.model(x))
 
     def t_norm(self, tens_1: torch.Tensor, tens_2: torch.Tensor, tnorm: str = 'min') -> torch.Tensor:
         if 'min' in tnorm:

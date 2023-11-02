@@ -79,11 +79,12 @@ class Experiment:
 
     def to_df(self):
         return pd.DataFrame(
-            dict(model_name=self.model_name,  # pq=self.pq,
+            dict(model_name=self.model_name,
                  byte_pair_encoding=self.byte_pair_encoding,
                  path_dataset_folder=self.path_dataset_folder,
                  train_mrr=self.train_mrr, train_h1=self.train_h1,
                  train_h3=self.train_h3, train_h10=self.train_h10,
+                 num_epochs=self.num_epochs,
                  #full_storage_path=self.full_storage_path,
                  val_mrr=self.val_mrr, val_h1=self.val_h1,
                  val_h3=self.val_h3, val_h10=self.val_h10,
@@ -92,8 +93,7 @@ class Experiment:
                  runtime=self.runtime,
                  params=self.num_params,
                  callbacks=self.callbacks,
-                 # normalization=self.normalization,
-                 # embeddingdim=self.embedding_dim
+                 embeddingdim=self.embedding_dim,
                  scoring_technique=self.scoring_technique
                  )
         )
