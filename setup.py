@@ -26,7 +26,7 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3.9",
         "License :: OSI Approved :: MIT License"],
-    python_requires='>=3.9',
+    python_requires='>=3.9.18',
     entry_points={"console_scripts": ["dicee = dicee.run:main"]},
     long_description=long_description,
     long_description_content_type="text/markdown",

@@ -459,7 +459,7 @@ def continual_training_setup_executor(executor) -> None:
     else:
         # Create a single directory containing KGE and all related data
         if executor.args.path_to_store_single_run:
-            os.makedirs(executor.args.path_to_store_single_run, exist_ok=False)
+            os.makedirs(executor.args.path_to_store_single_run, exist_ok=True)
             executor.args.full_storage_path = executor.args.path_to_store_single_run
         else:
             # Create a parent and subdirectory.
