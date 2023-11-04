@@ -6,6 +6,7 @@ from typing import List, Tuple
 import random
 from abc import ABC
 import pytorch_lightning
+import tiktoken
 
 
 class AbstractTrainer:
@@ -159,8 +160,11 @@ class BaseInteractiveKGE:
             else:
                 self.model, tuple_of_entity_relation_idx = load_model(self.path)
 
-        if self.configs.get("byte_pair_encoding", False):
-            pass
+        if self.configs["byte_pair_encoding"]:
+            self.enc = tiktoken.get_encoding("gpt2")
+            self.dummy_id = tiktoken.get_encoding("gpt2").encode(" ")[0]
+            self.max_length_subword_tokens = self.configs["max_length_subword_tokens"]
+
         else:
             assert len(tuple_of_entity_relation_idx) == 2
 
@@ -174,6 +178,25 @@ class BaseInteractiveKGE:
 
             self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
             self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
+
+    def get_bpe_token_representation(self, x: str) -> Tuple[int]:
+        unshaped_bpe_repr = self.enc.encode(x)
+        if len(unshaped_bpe_repr) < self.max_length_subword_tokens:
+            unshaped_bpe_repr.extend(
+                [self.dummy_id for _ in range(self.max_length_subword_tokens - len(unshaped_bpe_repr))])
+        return tuple(unshaped_bpe_repr)
+
+    def func_triple_to_bpe_representation(self, triple: List[str]):
+        result = []
+        for x in triple:
+            unshaped_bpe_repr = self.enc.encode(x)
+            if len(unshaped_bpe_repr) < self.max_length_subword_tokens:
+                unshaped_bpe_repr.extend([self.dummy_id for _ in
+                                          range(self.max_length_subword_tokens - len(unshaped_bpe_repr))])
+            else:
+                pass
+            result.append(unshaped_bpe_repr)
+        return result
 
     def get_domain_of_relation(self, rel: str) -> List[str]:
         x = [self.idx_to_entity[i] for i in self.domain_per_rel[self.relation_to_idx[rel]]]
@@ -245,6 +268,12 @@ class BaseInteractiveKGE:
         else:
             save_checkpoint_model(self.model, path=self.path + f'/model_interactive_{str(t)}.pt')
 
+    def get_entity_index(self, x: str):
+        return self.entity_to_idx[x]
+
+    def get_relation_index(self, x: str):
+        return self.relation_to_idx[x]
+
     def index_triple(self, head_entity: List[str], relation: List[str], tail_entity: List[str]) -> Tuple[
         torch.LongTensor, torch.LongTensor, torch.LongTensor]:
         """
@@ -305,9 +334,10 @@ class BaseInteractiveKGE:
         """
         if self.configs["byte_pair_encoding"]:
             t_encode = self.enc.encode_batch(items)
-            if len(t_encode) !=self.configs["max_length_subword_tokens"]:
+            if len(t_encode) != self.configs["max_length_subword_tokens"]:
                 for i in range(len(t_encode)):
-                    t_encode[i].extend([self.dummy_id for _ in range(self.configs["max_length_subword_tokens"] - len(t_encode[i]))])
+                    t_encode[i].extend(
+                        [self.dummy_id for _ in range(self.configs["max_length_subword_tokens"] - len(t_encode[i]))])
             return self.model.token_embeddings(torch.LongTensor(t_encode)).flatten(1)
         else:
             return self.model.entity_embeddings(torch.LongTensor([self.entity_to_idx[i] for i in items]))
