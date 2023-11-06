@@ -177,9 +177,6 @@ def evaluate_link_prediction_performance_with_bpe_reciprocals(model: KGE,
                                                               er_vocab: Dict[Tuple, List]):
     triples = np.array(triples)
     model.model.eval()
-
-    length = model.max_length_subword_tokens
-    num_entities = len(within_entities)
     entity_to_idx={ent: id_ for id_, ent in enumerate(within_entities)}
     padded_bpe_within_entities = torch.LongTensor(model.get_bpe_token_representation(within_entities))
 
@@ -196,8 +193,7 @@ def evaluate_link_prediction_performance_with_bpe_reciprocals(model: KGE,
         # (1) Get a batch of data.
         str_data_batch = triples[i:i + batch_size]
 
-        str_heads, str_rels, str_tails = str_data_batch[:, 0].tolist(), str_data_batch[:, 1].tolist(), str_data_batch[:,
-                                                                                                       2].tolist()
+        str_heads, str_rels = str_data_batch[:, 0].tolist(), str_data_batch[:, 1].tolist()
 
         padded_bpe_heads = torch.LongTensor(model.get_bpe_token_representation(str_heads)).unsqueeze(1)
         padded_bpe_rels = torch.LongTensor(model.get_bpe_token_representation(str_rels)).unsqueeze(1)
