@@ -111,6 +111,7 @@ def evaluate_link_prediction_performance(model: KGE, triples, er_vocab: Dict[Tup
         hit_10 = 0
     return {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10, 'MRR': mean_reciprocal_rank}
 
+
 @torch.no_grad()
 def evaluate_link_prediction_performance_with_reciprocals(model: KGE, triples,
                                                           er_vocab: Dict[Tuple, List],
@@ -155,6 +156,75 @@ def evaluate_link_prediction_performance_with_reciprocals(model: KGE, triples,
         for j in range(data_batch.shape[0]):
             # index between 0 and \inf
             rank = torch.where(sort_idxs[j] == e2_idx[j])[0].item() + 1
+            ranks.append(rank)
+            for hits_level in hits_range:
+                if rank <= hits_level:
+                    hits[hits_level].append(1.0)
+    # (7) Sanity checking: a rank for a triple
+    assert len(triples) == len(ranks) == num_triples
+    hit_1 = sum(hits[1]) / num_triples
+    hit_3 = sum(hits[3]) / num_triples
+    hit_10 = sum(hits[10]) / num_triples
+    mean_reciprocal_rank = np.mean(1. / np.array(ranks))
+
+    results = {'H@1': hit_1, 'H@3': hit_3, 'H@10': hit_10, 'MRR': mean_reciprocal_rank}
+    return results
+
+
+def evaluate_link_prediction_performance_with_bpe_reciprocals(model: KGE,
+                                                              within_entities: List[str],
+                                                              triples: List[List[str]],
+                                                              er_vocab: Dict[Tuple, List]):
+    triples = np.array(triples)
+    model.model.eval()
+
+    length = model.max_length_subword_tokens
+    num_entities = len(within_entities)
+    entity_to_idx={ent: id_ for id_, ent in enumerate(within_entities)}
+    padded_bpe_within_entities = torch.LongTensor(model.get_bpe_token_representation(within_entities))
+
+    batch_size = model.model.args["batch_size"]
+    num_triples = len(triples)
+    ranks = []
+    # Hit range
+    hits_range = [i for i in range(1, 11)]
+    hits = {i: [] for i in hits_range}
+    # (!!!) Set the entities for which triple scores are computed
+    model.model.ordered_bpe_entities = padded_bpe_within_entities
+    # Iterate over integer indexed triples in mini batch fashion
+    for i in range(0, num_triples, batch_size):
+        # (1) Get a batch of data.
+        str_data_batch = triples[i:i + batch_size]
+
+        str_heads, str_rels, str_tails = str_data_batch[:, 0].tolist(), str_data_batch[:, 1].tolist(), str_data_batch[:,
+                                                                                                       2].tolist()
+
+        padded_bpe_heads = torch.LongTensor(model.get_bpe_token_representation(str_heads)).unsqueeze(1)
+        padded_bpe_rels = torch.LongTensor(model.get_bpe_token_representation(str_rels)).unsqueeze(1)
+
+        e1_idx_r_idx = torch.cat((padded_bpe_heads, padded_bpe_rels), dim=1)
+
+        # (3) Predict missing entities, i.e., assign probs to all entities.
+        predictions = model.model(e1_idx_r_idx)
+        # (4) Filter entities except the target entity
+        for j, (str_h, str_r, str_t) in enumerate(str_data_batch):
+            # (4.1) Get the ids of the head entity, the relation and the target tail entity in the j.th triple.
+            id_e_target = entity_to_idx[str_t]
+            # (4.2) Get all ids of all entities occurring with the head entity and relation extracted in 4.1.
+            filt = [entity_to_idx[_] for _ in er_vocab[(str_h, str_r)]]
+            # (4.3) Store the assigned score of the target tail entity extracted in 4.1.
+            target_value = predictions[j, id_e_target].item()
+            # (4.4.1) Filter all assigned scores for entities.
+            predictions[j, filt] = -np.Inf
+            # (4.5) Insert 4.3. after filtering.
+            predictions[j, id_e_target] = target_value
+        # (5) Sort predictions.
+        sort_values, sort_idxs = torch.sort(predictions, dim=1, descending=True)
+
+        # (6) Compute the filtered ranks.
+        for j,(_, __, str_t) in enumerate(str_data_batch):
+            # index between 0 and \inf
+            rank = torch.where(sort_idxs[j] == entity_to_idx[str_t])[0].item() + 1
             ranks.append(rank)
             for hits_level in hits_range:
                 if rank <= hits_level:
