@@ -1,13 +1,11 @@
-from dicee.executer import Execute
 import pytest
+from dicee import Execute
 from dicee.config import Namespace
 
 
 class TestRegressionAllvsAll:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_allvsall_kvsall(self):
-        from dicee import Execute
-        from dicee.config import Namespace
         args = Namespace()
         args.model = "Keci"
         args.p = 0
