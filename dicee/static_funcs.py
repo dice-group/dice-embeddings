@@ -14,6 +14,46 @@ import os
 import psutil
 from .models.base_model import BaseKGE
 import pickle
+from collections import defaultdict
+
+def create_recipriocal_triples(x):
+    """
+    Add inverse triples into dask dataframe
+    :param x:
+    :return:
+    """
+    return pd.concat([x, x['object'].to_frame(name='subject').join(
+        x['relation'].map(lambda x: x + '_inverse').to_frame(name='relation')).join(
+        x['subject'].to_frame(name='object'))], ignore_index=True)
+def get_er_vocab(data, file_path: str = None):
+    # head entity and relation
+    er_vocab = defaultdict(list)
+    for triple in data:
+        h, r, t = triple
+        er_vocab[(h, r)].append(t)
+    if file_path:
+        save_pickle(data=er_vocab, file_path=file_path)
+    return er_vocab
+
+
+def get_re_vocab(data, file_path: str = None):
+    # head entity and relation
+    re_vocab = defaultdict(list)
+    for triple in data:
+        re_vocab[(triple[1], triple[2])].append(triple[0])
+    if file_path:
+        save_pickle(data=re_vocab, file_path=file_path)
+    return re_vocab
+
+
+def get_ee_vocab(data, file_path: str = None):
+    # head entity and relation
+    ee_vocab = defaultdict(list)
+    for triple in data:
+        ee_vocab[(triple[0], triple[2])].append(triple[1])
+    if file_path:
+        save_pickle(data=ee_vocab, file_path=file_path)
+    return ee_vocab
 
 
 def timeit(func):

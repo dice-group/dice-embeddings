@@ -168,7 +168,7 @@ class PreprocessKG:
             assert isinstance(bpe_triples[0][0][0], int)
             return bpe_triples
 
-    def __finding_max_token(self,concat_of_train_val_test) -> int:
+    def __finding_max_token(self, concat_of_train_val_test) -> int:
         max_length_subword_tokens = 0
         for i in concat_of_train_val_test:
             max_token_length_per_triple = max(len(i[0]), len(i[1]), len(i[2]))
@@ -235,7 +235,8 @@ class PreprocessKG:
         self.kg.valid_set = self.__replace_values_df(df=self.kg.raw_valid_set, f=self.kg.enc.encode)
         self.kg.test_set = self.__replace_values_df(df=self.kg.raw_test_set, f=self.kg.enc.encode)
 
-        self.kg.max_length_subword_tokens = self.__finding_max_token(self.kg.train_set+self.kg.valid_set+self.kg.test_set)
+        self.kg.max_length_subword_tokens = self.__finding_max_token(
+            self.kg.train_set + self.kg.valid_set + self.kg.test_set)
 
         # Store padded bpe entities and relations
         bpe_subwords_to_shaped_bpe_entities = dict()
@@ -255,10 +256,10 @@ class PreprocessKG:
                                                        bpe_subwords_to_shaped_bpe_entities,
                                                        bpe_subwords_to_shaped_bpe_relations)
         # Store str_entity, bpe_entity, padded_bpe_entity
-        self.kg.ordered_bpe_entities = [(self.kg.enc.decode(k), k, v) for k, v in
-                                        bpe_subwords_to_shaped_bpe_entities.items()]
-        self.kg.ordered_bpe_relations = [(self.kg.enc.decode(k), k, v) for k, v in
-                                         bpe_subwords_to_shaped_bpe_relations.items()]
+        self.kg.ordered_bpe_entities = sorted([(self.kg.enc.decode(k), k, v) for k, v in
+                                               bpe_subwords_to_shaped_bpe_entities.items()], key=lambda x: x[0])
+        self.kg.ordered_bpe_relations = sorted([(self.kg.enc.decode(k), k, v) for k, v in
+                                                bpe_subwords_to_shaped_bpe_relations.items()], key=lambda x: x[0])
         del bpe_subwords_to_shaped_bpe_entities
         del bpe_subwords_to_shaped_bpe_relations
 

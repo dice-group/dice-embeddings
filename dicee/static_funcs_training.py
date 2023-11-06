@@ -130,7 +130,6 @@ def evaluate_bpe_lp(model, triple_idx: List[Tuple], all_bpe_shaped_entities,
     for idx, (str_entity, bpe_entity, shaped_bpe_entity) in tqdm(enumerate(all_bpe_shaped_entities)):
         bpe_entity_to_idx[shaped_bpe_entity] = idx
         all_bpe_entities.append(shaped_bpe_entity)
-
     all_bpe_entities = torch.LongTensor(all_bpe_entities)
     for (bpe_h, bpe_r, bpe_t) in tqdm(triple_idx):
         # (1) Indices of head and tail entities in all entities

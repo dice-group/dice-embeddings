@@ -11,7 +11,6 @@ from .static_funcs_training import evaluate_lp
 from .static_preprocess_funcs import create_constraints
 import numpy as np
 import sys
-import tiktoken
 import gradio as gr
 
 
@@ -31,17 +30,12 @@ class KGE(BaseInteractiveKGE):
             (self.domain_constraints_per_rel, self.range_constraints_per_rel,
              self.domain_per_rel, self.range_per_rel) = create_constraints(self.train_set)
 
-        if self.configs["byte_pair_encoding"]:
-            self.enc = tiktoken.get_encoding("gpt2")
-            self.dummy_id = tiktoken.get_encoding("gpt2").encode(" ")[0]
-
     def __str__(self):
         return "KGE | " + str(self.model)
 
     # given a string, return is bpe encoded embeddings
     def eval_lp_performance(self, dataset=List[Tuple[str, str, str]], filtered=True):
         assert isinstance(dataset, list) and len(dataset) > 0
-        # TODO: Use it for BPE as well.
         idx_dataset = np.array(
             [(self.entity_to_idx[s], self.relation_to_idx[p], self.entity_to_idx[o]) for s, p, o in dataset])
         if filtered:
