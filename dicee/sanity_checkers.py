@@ -97,18 +97,3 @@ def sanity_checking_with_arguments(args):
         raise AssertionError(f'num_folds_for_cv can not be negative. Currently:{args.num_folds_for_cv}')
     validate_knowledge_graph(args)
 
-
-def config_kge_sanity_checking(args, dataset):
-    """
-    Sanity checking for input hyperparams.
-    :return:
-    """
-    assert isinstance(args.batch_size, int) or args.batch_size is None
-    if args.model == 'Shallom' and args.scoring_technique == 'NegSample':
-        print(
-            'Shallom can not be trained with Negative Sampling. Scoring technique is changed to KvsALL')
-        args.scoring_technique = 'KvsAll'
-
-    if args.scoring_technique == 'KvsAll':
-        args.neg_ratio = None
-    return args, dataset

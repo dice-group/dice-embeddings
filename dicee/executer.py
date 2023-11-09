@@ -16,7 +16,6 @@ from dicee.trainer import DICE_Trainer
 import pytorch_lightning as pl
 
 from dicee.static_funcs import timeit, continual_training_setup_executor, read_or_load_kg, load_json, store
-from dicee.sanity_checkers import config_kge_sanity_checking
 
 logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
@@ -67,7 +66,8 @@ class Execute:
                 path_for_serialization=self.args.full_storage_path,
                 path_for_deserialization=self.args.path_experiment_folder if hasattr(self.args,
                                                                                      'path_experiment_folder') else None,
-                backend=self.args.backend)
+                backend=self.args.backend,
+                training_technique=self.args.scoring_technique)
         print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
         # (2) Share some info about data for easy access.
         print(kg.description_of_input)
@@ -89,13 +89,13 @@ class Execute:
         """
         # (1) Read & Preprocess & Index & Serialize Input Data.
         self.knowledge_graph = self.read_or_load_kg()
-        # (2) Sanity checking.
-        self.args, self.knowledge_graph = config_kge_sanity_checking(self.args, self.knowledge_graph)
-        # (3) Store the stats
+
+        # (2) Store the stats and share parameters
         self.args.num_entities = self.knowledge_graph.num_entities
         self.args.num_relations = self.knowledge_graph.num_relations
         self.args.num_tokens = self.knowledge_graph.num_tokens
         self.args.max_length_subword_tokens = self.knowledge_graph.max_length_subword_tokens
+        self.args.ordered_bpe_entities=self.knowledge_graph.ordered_bpe_entities
         self.report['num_train_triples'] = len(self.knowledge_graph.train_set)
         self.report['num_entities'] = self.knowledge_graph.num_entities
         self.report['num_relations'] = self.knowledge_graph.num_relations

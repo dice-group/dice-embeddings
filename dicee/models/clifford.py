@@ -555,40 +555,22 @@ class Keci(BaseKGE):
 
         return score_sigma_0 + score_sigma_p + score_sigma_q + sigma_pp + sigma_qq + sigma_pq
 
-    def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
-        """
-        Kvsall training
-
-        (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .
-        (2) Construct head entity and relation embeddings according to Cl_{p,q}(\mathbb{R}^d) .
-        (3) Perform Cl multiplication
-        (4) Inner product of (3) and all entity embeddings
-
-        forward_k_vs_with_explicit and this funcitons are identical
-        Parameter
-        ---------
-        x: torch.LongTensor with (n,2) shape
-        Returns
-        -------
-        torch.FloatTensor with (n, |E|) shape
-        """
-        # (1) Retrieve real-valued embedding vectors.
-        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
+    def k_vs_all_score(self, bpe_head_ent_emb, bpe_rel_ent_emb, E):
         # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations
-        h0, hp, hq = self.construct_cl_multivector(head_ent_emb, r=self.r, p=self.p, q=self.q)
-        r0, rp, rq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
+        h0, hp, hq = self.construct_cl_multivector(bpe_head_ent_emb, r=self.r, p=self.p, q=self.q)
+        r0, rp, rq = self.construct_cl_multivector(bpe_rel_ent_emb, r=self.r, p=self.p, q=self.q)
 
         h0, hp, hq, h0, rp, rq = self.apply_coefficients(h0, hp, hq, h0, rp, rq)
-        # (3) Extract all entity embeddings
-        E = self.entity_embeddings.weight
         # (3.1) Extract real part
         t0 = E[:, :self.r]
+
+        num_entities=len(E)
         # (4) Compute a triple score based on interactions described by the basis 1. Eq. 20
         h0r0t0 = torch.einsum('br,er->be', h0 * r0, t0)
 
         # (5) Compute a triple score based on interactions described by the bases of p {e_1, ..., e_p}. Eq. 21
         if self.p > 0:
-            tp = E[:, self.r: self.r + (self.r * self.p)].view(self.num_entities, self.r, self.p)
+            tp = E[:, self.r: self.r + (self.r * self.p)].view(num_entities, self.r, self.p)
             hp_rp_t0 = torch.einsum('brp, er  -> be', hp * rp, t0)
             h0_rp_tp = torch.einsum('brp, erp -> be', torch.einsum('br,  brp -> brp', h0, rp), tp)
             hp_r0_tp = torch.einsum('brp, erp -> be', torch.einsum('brp, br  -> brp', hp, r0), tp)
@@ -598,7 +580,7 @@ class Keci(BaseKGE):
 
         # (5) Compute a triple score based on interactions described by the bases of q {e_{p+1}, ..., e_{p+q}}. Eq. 22
         if self.q > 0:
-            tq = E[:, -(self.r * self.q):].view(self.num_entities, self.r, self.q)
+            tq = E[:, -(self.r * self.q):].view(num_entities, self.r, self.q)
             h0_rq_tq = torch.einsum('brq, erq -> be', torch.einsum('br,  brq -> brq', h0, rq), tq)
             hq_r0_tq = torch.einsum('brq, erq -> be', torch.einsum('brq, br  -> brq', hq, r0), tq)
             hq_rq_t0 = torch.einsum('brq, er  -> be', hq * rq, t0)
@@ -622,6 +604,29 @@ class Keci(BaseKGE):
             sigma_pq = 0
         return h0r0t0 + score_p + score_q + sigma_pp + sigma_qq + sigma_pq
 
+    def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
+        """
+        Kvsall training
+
+        (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .
+        (2) Construct head entity and relation embeddings according to Cl_{p,q}(\mathbb{R}^d) .
+        (3) Perform Cl multiplication
+        (4) Inner product of (3) and all entity embeddings
+
+        forward_k_vs_with_explicit and this funcitons are identical
+        Parameter
+        ---------
+        x: torch.LongTensor with (n,2) shape
+        Returns
+        -------
+        torch.FloatTensor with (n, |E|) shape
+        """
+        # (1) Retrieve real-valued embedding vectors.
+        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
+
+        # (3) Extract all entity embeddings
+        E = self.entity_embeddings.weight
+        return self.k_vs_all_score(head_ent_emb,rel_ent_emb,E)
 
     def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor:
         """

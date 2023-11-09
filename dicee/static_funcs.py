@@ -14,6 +14,46 @@ import os
 import psutil
 from .models.base_model import BaseKGE
 import pickle
+from collections import defaultdict
+
+def create_recipriocal_triples(x):
+    """
+    Add inverse triples into dask dataframe
+    :param x:
+    :return:
+    """
+    return pd.concat([x, x['object'].to_frame(name='subject').join(
+        x['relation'].map(lambda x: x + '_inverse').to_frame(name='relation')).join(
+        x['subject'].to_frame(name='object'))], ignore_index=True)
+def get_er_vocab(data, file_path: str = None):
+    # head entity and relation
+    er_vocab = defaultdict(list)
+    for triple in data:
+        h, r, t = triple
+        er_vocab[(h, r)].append(t)
+    if file_path:
+        save_pickle(data=er_vocab, file_path=file_path)
+    return er_vocab
+
+
+def get_re_vocab(data, file_path: str = None):
+    # head entity and relation
+    re_vocab = defaultdict(list)
+    for triple in data:
+        re_vocab[(triple[1], triple[2])].append(triple[0])
+    if file_path:
+        save_pickle(data=re_vocab, file_path=file_path)
+    return re_vocab
+
+
+def get_ee_vocab(data, file_path: str = None):
+    # head entity and relation
+    ee_vocab = defaultdict(list)
+    for triple in data:
+        ee_vocab[(triple[0], triple[2])].append(triple[1])
+    if file_path:
+        save_pickle(data=ee_vocab, file_path=file_path)
+    return ee_vocab
 
 
 def timeit(func):
@@ -75,6 +115,8 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[o
         # (2) Loading input configuration.
         configs = load_json(path_of_experiment_folder + '/configuration.json')
         report = load_json(path_of_experiment_folder + '/report.json')
+        # Load ordered_bpe_entities.p
+        configs["ordered_bpe_entities"]=load_pickle(file_path=path_of_experiment_folder+"/ordered_bpe_entities.p")
         configs["num_tokens"] = num_tokens
         configs["max_length_subword_tokens"] = report["max_length_subword_tokens"]
     else:
@@ -176,9 +218,6 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, Tuple[
 
 
 def save_numpy_ndarray(*, data: np.ndarray, file_path: str):
-    n, d = data.shape
-    assert n > 0
-    assert d == 3
     with open(file_path, 'wb') as f:
         np.save(f, data)
 
@@ -460,7 +499,7 @@ def continual_training_setup_executor(executor) -> None:
     else:
         # Create a single directory containing KGE and all related data
         if executor.args.path_to_store_single_run:
-            os.makedirs(executor.args.path_to_store_single_run, exist_ok=False)
+            os.makedirs(executor.args.path_to_store_single_run, exist_ok=True)
             executor.args.full_storage_path = executor.args.path_to_store_single_run
         else:
             # Create a parent and subdirectory.

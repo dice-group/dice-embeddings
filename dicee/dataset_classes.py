@@ -22,17 +22,34 @@ def reload_dataset(path: str, form_of_labelling, scoring_technique, neg_ratio, l
 
 @timeit
 def construct_dataset(*,
-                      train_set: Union[np.ndarray,list],
+                      train_set: Union[np.ndarray, list],
                       valid_set=None,
                       test_set=None,
                       ordered_bpe_entities=None,
+                      train_target_indices=None,
+                      target_dim: int = None,
                       entity_to_idx: dict,
                       relation_to_idx: dict,
                       form_of_labelling: str,
                       scoring_technique: str,
                       neg_ratio: int,
-                      label_smoothing_rate: float) -> torch.utils.data.Dataset:
-    if scoring_technique == 'NegSample':
+                      label_smoothing_rate: float,
+                      byte_pair_encoding=None
+                      ) -> torch.utils.data.Dataset:
+    if byte_pair_encoding and scoring_technique == 'NegSample':
+        train_set = BPE_NegativeSamplingDataset(
+            train_set=torch.tensor(train_set, dtype=torch.long),
+            ordered_shaped_bpe_entities=torch.tensor(
+                [shaped_bpe_ent for (str_ent, bpe_ent, shaped_bpe_ent) in ordered_bpe_entities]),
+            neg_ratio=neg_ratio)
+    elif byte_pair_encoding and scoring_technique in ['KvsAll', "AllvsAll"]:
+        train_set = MultiLabelDataset(train_set=torch.tensor(train_set, dtype=torch.long),
+                                      train_indices_target=train_target_indices, target_dim=target_dim,
+                                      torch_ordered_shaped_bpe_entities=torch.tensor(
+                                          [shaped_bpe_ent for (str_ent, bpe_ent, shaped_bpe_ent) in
+                                           ordered_bpe_entities])
+                                      )
+    elif scoring_technique == 'NegSample':
         # Binary-class.
         train_set = TriplePredictionDataset(train_set=train_set,
                                             num_entities=len(entity_to_idx),
@@ -54,7 +71,8 @@ def construct_dataset(*,
             # Multi-label.
             train_set = KvsAll(train_set,
                                entity_idxs=entity_to_idx,
-                               relation_idxs=relation_to_idx, form=form_of_labelling,
+                               relation_idxs=relation_to_idx,
+                               form=form_of_labelling,
                                label_smoothing_rate=label_smoothing_rate)
         elif scoring_technique == 'AllvsAll':
             # Multi-label imbalanced.
@@ -62,10 +80,6 @@ def construct_dataset(*,
                                  entity_idxs=entity_to_idx,
                                  relation_idxs=relation_to_idx,
                                  label_smoothing_rate=label_smoothing_rate)
-        elif scoring_technique == 'BytePairEncodedTriplesNegSample':
-            train_set = BytePairEncodedTriples(
-                train_set=torch.tensor(train_set, dtype=torch.long),
-                ordered_shaped_bpe_entities=torch.tensor([shaped_bpe_ent for (str_ent, bpe_ent, shaped_bpe_ent) in ordered_bpe_entities]), neg_ratio=neg_ratio)
         else:
             raise ValueError(f'Invalid scoring technique : {scoring_technique}')
     elif form_of_labelling == 'RelationPrediction':
@@ -77,17 +91,11 @@ def construct_dataset(*,
     return train_set
 
 
-class BytePairEncodedTriples(torch.utils.data.Dataset):
-    def __init__(self, train_set: torch.LongTensor, ordered_shaped_bpe_entities:torch.LongTensor, neg_ratio: int):
-        """
-
-        Parameters
-        ----------
-        train_set
-        ordered_shaped_bpe_entities
-        neg_ratio
-        """
+class BPE_NegativeSamplingDataset(torch.utils.data.Dataset):
+    def __init__(self, train_set: torch.LongTensor, ordered_shaped_bpe_entities: torch.LongTensor, neg_ratio: int):
         super().__init__()
+        assert isinstance(train_set, torch.LongTensor)
+        assert train_set.shape[1] == 3
         self.train_set = train_set
         self.ordered_bpe_entities = ordered_shaped_bpe_entities
         self.num_bpe_entities = len(self.ordered_bpe_entities)
@@ -105,12 +113,14 @@ class BytePairEncodedTriples(torch.utils.data.Dataset):
 
         size_of_batch, _, token_length = batch_of_bpe_triples.shape
 
-        bpe_h, bpe_r, bpe_t = batch_of_bpe_triples[:, 0, :], batch_of_bpe_triples[:, 1, :], batch_of_bpe_triples[:, 2, :]
+        bpe_h, bpe_r, bpe_t = batch_of_bpe_triples[:, 0, :], batch_of_bpe_triples[:, 1, :], batch_of_bpe_triples[:, 2,
+                                                                                            :]
 
         label = torch.ones((size_of_batch,))
         num_of_corruption = size_of_batch * self.neg_ratio
         # Select bpe entities
-        corr_bpe_entities = self.ordered_bpe_entities[torch.randint(0, high=self.num_bpe_entities, size=(num_of_corruption,))]
+        corr_bpe_entities = self.ordered_bpe_entities[
+            torch.randint(0, high=self.num_bpe_entities, size=(num_of_corruption,))]
 
         if torch.rand(1) >= 0.5:
             bpe_h = torch.cat((bpe_h, corr_bpe_entities), 0)
@@ -124,6 +134,34 @@ class BytePairEncodedTriples(torch.utils.data.Dataset):
         bpe_triple = torch.stack((bpe_h, bpe_r, bpe_t), dim=1)
         label = torch.cat((label, torch.zeros(num_of_corruption)), 0)
         return bpe_triple, label
+
+
+class MultiLabelDataset(torch.utils.data.Dataset):
+    def __init__(self, train_set: torch.LongTensor, train_indices_target: torch.LongTensor, target_dim: int,
+                 torch_ordered_shaped_bpe_entities: torch.LongTensor):
+        super().__init__()
+        assert len(train_set) == len(train_indices_target)
+        assert target_dim > 0
+        self.train_set = train_set
+        self.train_indices_target = train_indices_target
+        self.target_dim = target_dim
+        self.num_datapoints = len(self.train_set)
+        # why needed ?!
+        self.torch_ordered_shaped_bpe_entities = torch_ordered_shaped_bpe_entities
+        self.collate_fn = None
+
+    def __len__(self):
+        return self.num_datapoints
+
+    def __getitem__(self, idx):
+        # (1) Initialize as all zeros.
+        y_vec = torch.zeros(self.target_dim)
+        # (2) Indices of labels.
+        indices = self.train_indices_target[idx]
+        # (3) Add 1s if holds.
+        if len(indices) > 0:
+            y_vec[indices] = 1.0
+        return self.train_set[idx], y_vec
 
 
 class OnevsAllDataset(torch.utils.data.Dataset):

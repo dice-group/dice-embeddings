@@ -12,6 +12,19 @@ import requests
 from rdflib import Graph
 
 
+def apply_reciprical_or_noise(add_reciprical: bool, eval_model: str, df: object = None, info: str = None):
+    """ (1) Add reciprocal triples (2) Add noisy triples """
+    # (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}
+    if add_reciprical and eval_model:
+        if df is not None:
+            print(f'Adding reciprocal triples to {info}, e.g. KG:= (s, p, o) union (o, p_inverse, s)')
+            return create_recipriocal_triples(df)
+        else:
+            return None
+    else:
+        return df
+
+
 def timeit(func):
     @functools.wraps(func)
     def timeit_wrapper(*args, **kwargs):
