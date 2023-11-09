@@ -196,10 +196,17 @@ class BaseInteractiveKGE:
         if isinstance(str_entity_or_relation, list):
             return [self.get_bpe_token_representation(i) for i in str_entity_or_relation]
         else:
+            # (1) Map a string into its binary representation
             unshaped_bpe_repr = self.enc.encode(str_entity_or_relation)
-            if len(unshaped_bpe_repr) < self.max_length_subword_tokens:
+            # (2)
+            if len(unshaped_bpe_repr) <= self.max_length_subword_tokens:
                 unshaped_bpe_repr.extend(
                     [self.dummy_id for _ in range(self.max_length_subword_tokens - len(unshaped_bpe_repr))])
+            else:
+                # @TODO: What to do ?
+                # print(f'Larger length is detected from all lengths have seen:{str_entity_or_relation} | {len(unshaped_bpe_repr)}')
+                pass
+
             return unshaped_bpe_repr
 
     def get_padded_bpe_triple_representation(self, triples: List[List[str]]) -> Tuple[List, List, List]:
