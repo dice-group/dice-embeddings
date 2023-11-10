@@ -16,6 +16,10 @@ from .models.base_model import BaseKGE
 import pickle
 from collections import defaultdict
 
+import requests
+from urllib.parse import urlparse
+from bs4 import BeautifulSoup
+
 def create_recipriocal_triples(x):
     """
     Add inverse triples into dask dataframe
@@ -25,6 +29,8 @@ def create_recipriocal_triples(x):
     return pd.concat([x, x['object'].to_frame(name='subject').join(
         x['relation'].map(lambda x: x + '_inverse').to_frame(name='relation')).join(
         x['subject'].to_frame(name='object'))], ignore_index=True)
+
+
 def get_er_vocab(data, file_path: str = None):
     # head entity and relation
     er_vocab = defaultdict(list)
@@ -110,19 +116,19 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[o
     weights = torch.load(path_of_experiment_folder + f'/{model_name}', torch.device('cpu'))
     configs = load_json(path_of_experiment_folder + '/configuration.json')
 
-    if configs["byte_pair_encoding"]:
+    if configs.get("byte_pair_encoding", None):
         num_tokens, ent_dim = weights['token_embeddings.weight'].shape
         # (2) Loading input configuration.
         configs = load_json(path_of_experiment_folder + '/configuration.json')
         report = load_json(path_of_experiment_folder + '/report.json')
         # Load ordered_bpe_entities.p
-        configs["ordered_bpe_entities"]=load_pickle(file_path=path_of_experiment_folder+"/ordered_bpe_entities.p")
+        configs["ordered_bpe_entities"] = load_pickle(file_path=path_of_experiment_folder + "/ordered_bpe_entities.p")
         configs["num_tokens"] = num_tokens
         configs["max_length_subword_tokens"] = report["max_length_subword_tokens"]
     else:
         num_ent, ent_dim = weights['entity_embeddings.weight'].shape
         num_rel, rel_dim = weights['relation_embeddings.weight'].shape
-        assert ent_dim==rel_dim
+        assert ent_dim == rel_dim
         # Update the training configuration
         configs["num_entities"] = num_ent
         configs["num_relations"] = num_rel
@@ -136,7 +142,7 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[o
         parameter.requires_grad = False
     model.eval()
     start_time = time.time()
-    if configs["byte_pair_encoding"]:
+    if configs.get("byte_pair_encoding", None):
         return model, None
     else:
         print('Loading entity and relation indexes...', end=' ')
@@ -146,13 +152,13 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[o
                 entity_to_idx = pickle.load(f)
         except FileNotFoundError:
             print("entity_to_idx.p not found")
-            entity_to_idx=dict()
+            entity_to_idx = dict()
         try:
             with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
                 relation_to_idx = pickle.load(f)
         except FileNotFoundError:
             print("relation_to_idx.p not found")
-            relation_to_idx=dict()
+            relation_to_idx = dict()
         print(f'Done! It took {time.time() - start_time:.4f}')
         return model, (entity_to_idx, relation_to_idx)
 
@@ -407,7 +413,7 @@ def intialize_model(args: dict) -> Tuple[object, str]:
 
 def load_json(p: str) -> dict:
     with open(p, 'r') as r:
-            args = json.load(r)
+        args = json.load(r)
     return args
 
 
@@ -525,6 +531,7 @@ def load_numpy(path) -> np.ndarray:
         data = np.load(f)
     return data
 
+
 def evaluate(entity_to_idx, scores, easy_answers, hard_answers):
     """
     # @TODO: CD: Renamed this function
@@ -583,3 +590,43 @@ def evaluate(entity_to_idx, scores, easy_answers, hard_answers):
     avg_h10 = total_h10 / num_queries
 
     return avg_mrr, avg_h1, avg_h3, avg_h10
+
+
+
+def download_file(url, destination_folder="."):
+    response = requests.get(url, stream=True)
+    if response.status_code == 200:
+        filename = os.path.join(destination_folder, os.path.basename(urlparse(url).path))
+        with open(filename, 'wb') as file:
+            for chunk in response.iter_content(chunk_size=1024):
+                if chunk:
+                    file.write(chunk)
+        print(f"Downloaded: {filename}")
+    else:
+        print(f"Failed to download: {url}")
+
+
+def download_files_from_url(base_url, destination_folder="."):
+    response = requests.get(base_url)
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        # Find the table with id "list"
+        table = soup.find('table', {'id': 'list'})
+        # Extract all hrefs under the table
+        hrefs = [a['href'] for a in table.find_all('a', href=True)]
+        # To remove '?C=N&O=A', '?C=N&O=D', '?C=S&O=A', '?C=S&O=D', '?C=M&O=A', '?C=M&O=D', '../'
+        hrefs = [i for i in hrefs if len(i) > 3 and "." in i]
+        for file_url in hrefs:
+            download_file(base_url + "/" + file_url, destination_folder)
+
+
+def download_pretrained_model(url: str) -> str:
+    assert url[-1] != "/"
+    dir_name = url[url.rfind("/") + 1:]
+    url_to_download_from = f"https://files.dice-research.org/projects/DiceEmbeddings/{dir_name}"
+    if os.path.exists(dir_name):
+        print("Path exists", dir_name)
+    else:
+        os.mkdir(dir_name)
+        download_files_from_url(url_to_download_from, destination_folder=dir_name)
+    return dir_name

@@ -114,8 +114,7 @@ def evaluate_link_prediction_performance(model: KGE, triples, er_vocab: Dict[Tup
 
 @torch.no_grad()
 def evaluate_link_prediction_performance_with_reciprocals(model: KGE, triples,
-                                                          er_vocab: Dict[Tuple, List],
-                                                          re_vocab: Dict[Tuple, List]):
+                                                          er_vocab: Dict[Tuple, List]):
     model.model.eval()
     entity_to_idx = model.entity_to_idx
     relation_to_idx = model.relation_to_idx
