@@ -1,7 +1,7 @@
 [project]
 name = "dicee"
-requires-python = ">=3.9"
-version="0.0.9"
+requires-python = ">=3.9.18"
+version="0.1.0"
 authors = [
   { name="Caglar Demir", email="caglardemir8@gmail.com" },
 ]
