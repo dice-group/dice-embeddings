@@ -97,19 +97,13 @@ class TestDefaultParams:
         model = KGE(result["path_experiment_folder"])
         assert result["Train"] == evaluate_link_prediction_performance_with_reciprocals(model, triples=train_triples,
                                                                                         er_vocab=get_er_vocab(
-                                                                                            all_triples),
-                                                                                        re_vocab=get_re_vocab(
                                                                                             all_triples))
 
         assert result["Val"] == evaluate_link_prediction_performance_with_reciprocals(model, triples=valid_triples,
                                                                                       er_vocab=get_er_vocab(
-                                                                                          all_triples),
-                                                                                      re_vocab=get_re_vocab(
                                                                                           all_triples))
         assert result["Test"] == evaluate_link_prediction_performance_with_reciprocals(model, triples=test_triples,
                                                                                        er_vocab=get_er_vocab(
-                                                                                           all_triples),
-                                                                                       re_vocab=get_re_vocab(
                                                                                            all_triples))
 
     @pytest.mark.filterwarnings('ignore::UserWarning')

@@ -1,6 +1,6 @@
 import os
 import datetime
-from .static_funcs import load_model_ensemble, load_model, save_checkpoint_model, load_json
+from .static_funcs import load_model_ensemble, load_model, save_checkpoint_model, load_json, download_pretrained_model
 import torch
 from typing import List, Tuple, Union
 import random
@@ -139,18 +139,23 @@ class BaseInteractiveKGE:
     apply_semantic_constraint : boolean
     """
 
-    def __init__(self, path: str, construct_ensemble: bool = False, model_name: str = None,
+    def __init__(self, path: str=None, url:str=None, construct_ensemble: bool = False, model_name: str = None,
                  apply_semantic_constraint: bool = False):
+        if url is not None:
+            assert path is None
+            self.path = download_pretrained_model(url)
+        else:
+            self.path = path
         try:
-            assert os.path.isdir(path)
+            assert os.path.isdir(self.path)
         except AssertionError:
-            raise AssertionError(f'Could not find a directory {path}')
-        self.path = path
+            raise AssertionError(f'Could not find a directory {self.path}')
+
         # (1) Load model...
         self.construct_ensemble = construct_ensemble
         self.apply_semantic_constraint = apply_semantic_constraint
-        self.configs = load_json(path + '/configuration.json')
-        self.configs.update(load_json(path + '/report.json'))
+        self.configs = load_json(self.path + '/configuration.json')
+        self.configs.update(load_json(self.path + '/report.json'))
 
         if construct_ensemble:
             self.model, tuple_of_entity_relation_idx = load_model_ensemble(self.path)
@@ -159,12 +164,10 @@ class BaseInteractiveKGE:
                 self.model, tuple_of_entity_relation_idx = load_model(self.path, model_name=model_name)
             else:
                 self.model, tuple_of_entity_relation_idx = load_model(self.path)
-
-        if self.configs["byte_pair_encoding"]:
+        if self.configs.get("byte_pair_encoding", None):
             self.enc = tiktoken.get_encoding("gpt2")
             self.dummy_id = tiktoken.get_encoding("gpt2").encode(" ")[0]
             self.max_length_subword_tokens = self.configs["max_length_subword_tokens"]
-
         else:
             assert len(tuple_of_entity_relation_idx) == 2
 
@@ -178,6 +181,20 @@ class BaseInteractiveKGE:
 
             self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
             self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
+
+
+
+        # See https://numpy.org/doc/stable/reference/generated/numpy.memmap.html
+        # @TODO: Ignore temporalryIf file exists
+        #if os.path.exists(self.path + '/train_set.npy'):
+        #    self.train_set = np.load(file=self.path + '/train_set.npy', mmap_mode='r')
+
+        #if apply_semantic_constraint:
+        #    (self.domain_constraints_per_rel, self.range_constraints_per_rel,
+        #     self.domain_per_rel, self.range_per_rel) = create_constraints(self.train_set)
+
+    def get_eval_report(self) -> dict:
+        return load_json(self.path + "/eval_report.json")
 
     def get_bpe_token_representation(self, str_entity_or_relation: Union[List[str], str]) -> Union[
         List[List[int]], List[int]]:
@@ -572,3 +589,8 @@ class AbstractPPECallback(AbstractCallback):
 
     def on_train_batch_end(self, *args, **kwargs):
         return
+
+
+
+
+
