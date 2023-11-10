@@ -1,4 +1,3 @@
-import os.path
 from typing import List, Tuple, Set, Iterable, Dict, Union
 import torch
 from torch import optim
@@ -8,7 +7,6 @@ from .dataset_classes import TriplePredictionDataset
 from .static_funcs import random_prediction, deploy_triple_prediction, deploy_tail_entity_prediction, \
     deploy_relation_prediction, deploy_head_entity_prediction, load_pickle
 from .static_funcs_training import evaluate_lp
-from .static_preprocess_funcs import create_constraints
 import numpy as np
 import sys
 import gradio as gr
@@ -17,18 +15,10 @@ import gradio as gr
 class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
 
-    def __init__(self, path, construct_ensemble=False,
+    def __init__(self, path=None, url=None, construct_ensemble=False,
                  model_name=None,
                  apply_semantic_constraint=False):
-        super().__init__(path=path, construct_ensemble=construct_ensemble, model_name=model_name)
-        # See https://numpy.org/doc/stable/reference/generated/numpy.memmap.html
-        # If file exists
-        if os.path.exists(path + '/train_set.npy'):
-            self.train_set = np.load(file=path + '/train_set.npy', mmap_mode='r')
-
-        if apply_semantic_constraint:
-            (self.domain_constraints_per_rel, self.range_constraints_per_rel,
-             self.domain_per_rel, self.range_per_rel) = create_constraints(self.train_set)
+        super().__init__(path=path, url=url, construct_ensemble=construct_ensemble, model_name=model_name)
 
     def __str__(self):
         return "KGE | " + str(self.model)
@@ -243,7 +233,7 @@ class KGE(BaseInteractiveKGE):
             # h r ?
             scores = self.predict_missing_tail_entity(h, r, within)
         else:
-            scores=self.triple_score(h, r, t, logits=True)
+            scores = self.triple_score(h, r, t, logits=True)
 
         if logits:
             return scores
@@ -359,7 +349,7 @@ class KGE(BaseInteractiveKGE):
         pytorch tensor of triple score
         """
 
-        if self.configs["byte_pair_encoding"]:
+        if self.configs.get("byte_pair_encoding", None):
             h_encode = self.enc.encode(h)
             r_encode = self.enc.encode(r)
             t_encode = self.enc.encode(t)
@@ -396,9 +386,9 @@ class KGE(BaseInteractiveKGE):
         else:
             with torch.no_grad():
                 if logits:
-                    return  self.model(x)
+                    return self.model(x)
                 else:
-                    return  torch.sigmoid(self.model(x))
+                    return torch.sigmoid(self.model(x))
 
     def t_norm(self, tens_1: torch.Tensor, tens_2: torch.Tensor, tnorm: str = 'min') -> torch.Tensor:
         if 'min' in tnorm:
