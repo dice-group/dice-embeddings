@@ -1,4 +1,3 @@
-import os.path
 from typing import List, Tuple, Set, Iterable, Dict, Union
 import torch
 from torch import optim
@@ -8,7 +7,6 @@ from .dataset_classes import TriplePredictionDataset
 from .static_funcs import random_prediction, deploy_triple_prediction, deploy_tail_entity_prediction, \
     deploy_relation_prediction, deploy_head_entity_prediction, load_pickle
 from .static_funcs_training import evaluate_lp
-from .static_preprocess_funcs import create_constraints
 import numpy as np
 import sys
 import gradio as gr
@@ -20,11 +18,10 @@ class KGE(BaseInteractiveKGE):
     def __init__(self, path=None, url=None, construct_ensemble=False,
                  model_name=None,
                  apply_semantic_constraint=False):
-        super().__init__(path=path, url=url,construct_ensemble=construct_ensemble, model_name=model_name)
+        super().__init__(path=path, url=url, construct_ensemble=construct_ensemble, model_name=model_name)
 
     def __str__(self):
         return "KGE | " + str(self.model)
-
 
     # given a string, return is bpe encoded embeddings
     def eval_lp_performance(self, dataset=List[Tuple[str, str, str]], filtered=True):
