@@ -20,6 +20,7 @@ setup(
         "ruff>=0.0.284",
         "gradio>=3.23.0",
         "rdflib>=7.0.0",
+        "tiktoken>=0.5.1",
         "beautifulsoup4>=4.12.2"],
     author='Caglar Demir',
     author_email='caglardemir8@gmail.com',
