@@ -139,7 +139,7 @@ class BaseInteractiveKGE:
     apply_semantic_constraint : boolean
     """
 
-    def __init__(self, path: str=None, url:str=None, construct_ensemble: bool = False, model_name: str = None,
+    def __init__(self, path: str = None, url: str = None, construct_ensemble: bool = False, model_name: str = None,
                  apply_semantic_constraint: bool = False):
         if url is not None:
             assert path is None
@@ -182,14 +182,12 @@ class BaseInteractiveKGE:
             self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
             self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
 
-
-
         # See https://numpy.org/doc/stable/reference/generated/numpy.memmap.html
         # @TODO: Ignore temporalryIf file exists
-        #if os.path.exists(self.path + '/train_set.npy'):
+        # if os.path.exists(self.path + '/train_set.npy'):
         #    self.train_set = np.load(file=self.path + '/train_set.npy', mmap_mode='r')
 
-        #if apply_semantic_constraint:
+        # if apply_semantic_constraint:
         #    (self.domain_constraints_per_rel, self.range_constraints_per_rel,
         #     self.domain_per_rel, self.range_per_rel) = create_constraints(self.train_set)
 
@@ -551,12 +549,23 @@ class AbstractPPECallback(AbstractCallback):
 
     """
 
-    def __init__(self, num_epochs, path, last_percent_to_consider):
+    def __init__(self, num_epochs, path, epoch_to_start, last_percent_to_consider):
         super(AbstractPPECallback, self).__init__()
         self.num_epochs = num_epochs
         self.path = path
         self.sample_counter = 0
-        if last_percent_to_consider is None:
+        self.epoch_count = 0
+        self.alphas = None
+
+        if epoch_to_start is not None:
+            self.epoch_to_start = epoch_to_start
+            try:
+                assert self.epoch_to_start < self.num_epochs
+            except AssertionError:
+                raise AssertionError(f"--epoch_to_start {self.epoch_to_start} "
+                                     f"must be less than --num_epochs {self.num_epochs}")
+            self.num_ensemble_coefficient = self.num_epochs - self.epoch_to_start + 1
+        elif last_percent_to_consider is None:
             self.epoch_to_start = 1
             self.num_ensemble_coefficient = self.num_epochs - 1
         else:
@@ -568,29 +577,58 @@ class AbstractPPECallback(AbstractCallback):
         pass
 
     def on_fit_end(self, trainer, model):
-        model.load_state_dict(torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device('cpu')))
+        param_ensemble = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device("cpu"))
+        model.load_state_dict(param_ensemble)
+
+    def initialize_parameter_ensemble(self, model):
+        # (2.1) Initialize the ensemble model if it hasn't been initialized.
+        torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_main.pt")
+        # (2.2) Load the running parameter ensemble model.
+        param_ensemble = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device(model.device))
+        # (2.3) Scale it
+        with torch.no_grad():
+            for k, parameters in param_ensemble.items():
+                if parameters.dtype == torch.float:
+                    # (2) Update the parameter ensemble model with the current model.
+                    param_ensemble[k] = self.alphas[self.sample_counter] * param_ensemble[k]
+        torch.save(param_ensemble, f=f"{self.path}/trainer_checkpoint_main.pt")
+        return param_ensemble
+
+    def update_parameter_ensemble(self, ensemble, current_model):
+        with torch.no_grad():
+            for k, parameters in current_model.state_dict().items():
+                if parameters.dtype == torch.float:
+                    # (2) Update the parameter ensemble model with the current model.
+                    ensemble[k] += self.alphas[self.sample_counter] * parameters
+
+    def get_ppe_model(self, model):
+        if self.sample_counter == 0:
+            # Initialize
+            param_ensemble = self.initialize_parameter_ensemble(model)
+            self.sample_counter += 1
+        else:
+            # (2.2) Load the running parameter ensemble model.
+            param_ensemble = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device(model.device))
+
+        return param_ensemble
 
     def on_train_epoch_end(self, trainer, model):
-        if self.epoch_to_start <= 0:
-            if self.sample_counter == 0:
-                torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_main.pt")
-            # (1) Load the running parameter ensemble model.
-            param_ensemble = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device(model.device))
-            with torch.no_grad():
-                for k, v in model.state_dict().items():
-                    if v.dtype == torch.float:
-                        # (2) Update the parameter ensemble model with the current model.
-                        param_ensemble[k] += self.alphas[self.sample_counter] * v
-            # (3) Save the updated parameter ensemble model.
-            torch.save(param_ensemble, f=f"{self.path}/trainer_checkpoint_main.pt")
-            self.sample_counter += 1
+        # (1) Increment the epoch counter.
+        self.epoch_count += 1
+        # (2) Start averaging
+        if self.epoch_to_start <= self.epoch_count:
+            # Load the ensemble model
+            param_ensemble = self.get_ppe_model(model=model)
+            # Update the ensemble model
+            self.update_parameter_ensemble(ensemble=param_ensemble, current_model=model)
+            # Store the ensemble model
+            self.store_ppe_model(param_ensemble)
 
-        self.epoch_to_start -= 1
+    def store_ppe_model(self, param_ensemble):
+        # (3) Save the updated parameter ensemble model.
+        torch.save(param_ensemble, f=f"{self.path}/trainer_checkpoint_main.pt")
+        if self.sample_counter > 1:
+            self.sample_counter += 1
 
     def on_train_batch_end(self, *args, **kwargs):
         return
-
-
-
-
-

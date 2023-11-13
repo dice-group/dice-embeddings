@@ -152,9 +152,11 @@ class PPE(AbstractPPECallback):
         Maintains a running parameter average for all parameters requiring gradient signals
     """
 
-    def __init__(self, num_epochs, path, last_percent_to_consider=None):
-        super().__init__(num_epochs, path, last_percent_to_consider)
+    def __init__(self, num_epochs, path, epoch_to_start: int = None, last_percent_to_consider=None):
+        super().__init__(num_epochs, path, epoch_to_start, last_percent_to_consider)
+        # Weights for models participating the ensemble
         self.alphas = np.ones(self.num_ensemble_coefficient) / self.num_ensemble_coefficient
+        print(self.alphas)
 
 class FPPE(AbstractPPECallback):
     """
@@ -319,7 +321,7 @@ class Perturb(AbstractCallback):
         assert n > 0
         # (2) Compute the number of perturbed data points.
         num_of_perturbed_data = int(n * self.ratio)
-        if num_of_perturbed_data ==0:
+        if num_of_perturbed_data == 0:
             return None
         # (3) Detect the device on which data points reside
         device = x.get_device()
@@ -395,7 +397,7 @@ class Perturb(AbstractCallback):
                 # 0.0 => perturb
                 # (5.3.2) Reduces 1s and increases 0s via (5.2.1)
                 batch[1][random_indices] = torch.where(batch[1][random_indices] == 1.0, 1.0 - perturb, perturb)
-            elif self.method=="Hard":
+            elif self.method == "Hard":
                 # (5.3) Output level hard perturbation flips 1s to 0 and 0s to 1s.
                 batch[1][random_indices] = torch.where(batch[1][random_indices] == 1.0, 0.0, 1.0)
             else:

@@ -57,9 +57,16 @@ def get_callbacks(args):
                 FPPE(num_epochs=args.num_epochs, path=args.full_storage_path,
                      last_percent_to_consider=v.get('last_percent_to_consider')))
         elif k == 'PPE':
+
+            if v is None:
+                last_percent_to_consider = None
+            else:
+                assert isinstance(v, dict)
+                last_percent_to_consider = v.get('last_percent_to_consider', None)
             callbacks.append(
                 PPE(num_epochs=args.num_epochs, path=args.full_storage_path,
-                    last_percent_to_consider=v.get('last_percent_to_consider')))
+                    epoch_to_start=v.get('epoch_to_start', None),
+                    last_percent_to_consider=last_percent_to_consider))
         elif k == 'KronE':
             callbacks.append(KronE())
         elif k == 'Eval':
