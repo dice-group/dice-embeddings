@@ -256,11 +256,13 @@ class ASWE(AbstractPPECallback):
         # (2) Enable eval mode.
         model.eval()
         # (3) MRR performance on the validation data of running model.
-
+        device_name=model.device
+        model.to("cpu")
         last_val_mrr_running_model = trainer.evaluator.eval(dataset=trainer.dataset,
                                                             trained_model=model,
                                                             form_of_labelling=trainer.form_of_labelling,
                                                             during_training=True)["Val"]["MRR"]
+        model.to(device_name)
         # (4) Enable train mode.
         model.train()
         return last_val_mrr_running_model
