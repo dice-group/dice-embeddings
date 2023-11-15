@@ -16,6 +16,9 @@ class TestPolyak:
         args.embedding_dim = 32
         args.batch_size = 1024
         reports = Execute(args).start()
+        assert reports["Train"]["MRR"]>=0.998
+        assert reports["Val"]["MRR"]  >=0.729
+        assert reports["Test"]["MRR"] >= 0.751
         """
         Evaluate Keci on Train set: Evaluate Keci on Train set
         {'H@1': 0.9966449386503068, 'H@3': 1.0, 'H@10': 1.0, 'MRR': 0.9983064928425357}
@@ -37,6 +40,10 @@ class TestPolyak:
         args.batch_size = 1024
         args.callbacks = {"PPE": {"epoch_to_start": 100}}
         ppe_reports = Execute(args).start()
+        assert ppe_reports["Train"]["MRR"]>=0.996
+        assert ppe_reports["Val"]["MRR"]  >=0.731
+        assert ppe_reports["Test"]["MRR"] >= 0.755
+
         assert ppe_reports["Test"]["MRR"]>reports["Test"]["MRR"]
         """
         Evaluate Keci on Train set: Evaluate Keci on Train set
@@ -47,6 +54,22 @@ class TestPolyak:
         {'H@1': 0.710287443267776, 'H@3': 0.8789712556732224, 'H@10': 0.9780635400907716, 'MRR': 0.8082179592109334}
         Total Runtime: 12.497 seconds
         """
+        args = Namespace()
+        args.model = 'Keci'
+        args.p = 0
+        args.q = 1
+        args.scoring_technique = "KvsAll"
+        args.dataset_dir = "KGs/UMLS"
+        args.num_epochs = 200
+        args.lr = 0.1
+        args.embedding_dim = 32
+        args.batch_size = 1024
+        args.adaptive_swa = True
+        adaptive_swa_report = Execute(args).start()
+        assert adaptive_swa_report["Train"]["MRR"]>=0.987
+        assert adaptive_swa_report["Val"]["MRR"]  >=0.872
+        assert adaptive_swa_report["Test"]["MRR"] >= 0.872
+        assert adaptive_swa_report["Test"]["MRR"]>ppe_reports["Test"]["MRR"]
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_polyak_qmult_k_vs_all(self):

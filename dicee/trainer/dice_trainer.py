@@ -3,7 +3,7 @@ import gc
 from typing import Union
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
-from dicee.callbacks import (PPE, FPPE, Eval, KronE, PrintCallback, KGESaveCallback, AccumulateEpochLossCallback,
+from dicee.callbacks import (ASWE, PPE, FPPE, Eval, KronE, PrintCallback, KGESaveCallback, AccumulateEpochLossCallback,
                              Perturb)
 from dicee.dataset_classes import construct_dataset, reload_dataset
 from .torch_trainer import TorchTrainer
@@ -47,6 +47,9 @@ def get_callbacks(args):
                                  path=args.full_storage_path),
                  AccumulateEpochLossCallback(path=args.full_storage_path)
                  ]
+    if args.adaptive_swa:
+        callbacks.append(ASWE(num_epochs=args.num_epochs, path=args.full_storage_path))
+
     if isinstance(args.callbacks, list):
         return callbacks
     for k, v in args.callbacks.items():
@@ -59,14 +62,12 @@ def get_callbacks(args):
         elif k == 'PPE':
 
             if v is None:
-                last_percent_to_consider = None
-            else:
-                assert isinstance(v, dict)
-                last_percent_to_consider = v.get('last_percent_to_consider', None)
+                v = dict()
+
             callbacks.append(
                 PPE(num_epochs=args.num_epochs, path=args.full_storage_path,
                     epoch_to_start=v.get('epoch_to_start', None),
-                    last_percent_to_consider=last_percent_to_consider))
+                    last_percent_to_consider=v.get('last_percent_to_consider', None)))
         elif k == 'KronE':
             callbacks.append(KronE())
         elif k == 'Eval':

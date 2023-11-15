@@ -320,7 +320,6 @@ class Keci(BaseKGE):
                                  f'Currently {self.r}={self.embedding_dim} / ({self.p}+ {self.q} +1)')
         self.r = int(self.r)
         self.requires_grad_for_interactions = True
-        print(f'r:{self.r}\t p:{self.p}\t q:{self.q}')
         # Initialize parameters for dimension scaling
         if self.p > 0:
             self.p_coefficients = torch.nn.Embedding(num_embeddings=1, embedding_dim=self.p)

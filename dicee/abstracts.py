@@ -556,7 +556,6 @@ class AbstractPPECallback(AbstractCallback):
         self.sample_counter = 0
         self.epoch_count = 0
         self.alphas = None
-
         if epoch_to_start is not None:
             self.epoch_to_start = epoch_to_start
             try:
@@ -577,8 +576,19 @@ class AbstractPPECallback(AbstractCallback):
         pass
 
     def on_fit_end(self, trainer, model):
-        param_ensemble = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device("cpu"))
-        model.load_state_dict(param_ensemble)
+        if os.path.exists(f"{self.path}/trainer_checkpoint_main.pt"):
+            param_ensemble = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device("cpu"))
+            model.load_state_dict(param_ensemble)
+        else:
+            print(f"No parameter ensemble found at {self.path}/trainer_checkpoint_main.pt")
+
+    def store_ensemble(self, param_ensemble) -> None:
+        # (3) Save the updated parameter ensemble model.
+        torch.save(param_ensemble, f=f"{self.path}/trainer_checkpoint_main.pt")
+        if self.sample_counter > 1:
+            self.sample_counter += 1
+
+    """
 
     def initialize_parameter_ensemble(self, model):
         # (2.1) Initialize the ensemble model if it hasn't been initialized.
@@ -590,7 +600,11 @@ class AbstractPPECallback(AbstractCallback):
             for k, parameters in param_ensemble.items():
                 if parameters.dtype == torch.float:
                     # (2) Update the parameter ensemble model with the current model.
-                    param_ensemble[k] = self.alphas[self.sample_counter] * param_ensemble[k]
+                    if no_scaling:
+                        continue
+                    else:
+                        param_ensemble[k] = self.alphas[self.sample_counter] * param_ensemble[k]
+
         torch.save(param_ensemble, f=f"{self.path}/trainer_checkpoint_main.pt")
         return param_ensemble
 
@@ -601,22 +615,24 @@ class AbstractPPECallback(AbstractCallback):
                     # (2) Update the parameter ensemble model with the current model.
                     ensemble[k] += self.alphas[self.sample_counter] * parameters
 
-    def get_ppe_model(self, model):
+    def get_ppe_model(self, model, no_scaling: bool = False):
         if self.sample_counter == 0:
             # Initialize
-            param_ensemble = self.initialize_parameter_ensemble(model)
+            param_ensemble = self.initialize_parameter_ensemble(model, no_scaling)
             self.sample_counter += 1
         else:
             # (2.2) Load the running parameter ensemble model.
             param_ensemble = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device(model.device))
-
         return param_ensemble
+
+    def should_ppe_start(self):
+        return self.epoch_to_start <= self.epoch_count
 
     def on_train_epoch_end(self, trainer, model):
         # (1) Increment the epoch counter.
         self.epoch_count += 1
         # (2) Start averaging
-        if self.epoch_to_start <= self.epoch_count:
+        if self.should_ppe_start():
             # Load the ensemble model
             param_ensemble = self.get_ppe_model(model=model)
             # Update the ensemble model
@@ -624,11 +640,6 @@ class AbstractPPECallback(AbstractCallback):
             # Store the ensemble model
             self.store_ppe_model(param_ensemble)
 
-    def store_ppe_model(self, param_ensemble):
-        # (3) Save the updated parameter ensemble model.
-        torch.save(param_ensemble, f=f"{self.path}/trainer_checkpoint_main.pt")
-        if self.sample_counter > 1:
-            self.sample_counter += 1
-
     def on_train_batch_end(self, *args, **kwargs):
         return
+    """
