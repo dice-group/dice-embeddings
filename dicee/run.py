@@ -102,7 +102,7 @@ def get_default_arguments(description=None):
     parser.add_argument("--byte_pair_encoding",
                         action="store_true",
                         help="Currently only avail. for KGE implemented within dice-embeddings.")
-    parser.add_argument("--adaptive_swa", action="store_false", help="Adaptive stochastic weight averaging")
+    parser.add_argument("--adaptive_swa", action="store_true", help="Adaptive stochastic weight averaging")
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)
