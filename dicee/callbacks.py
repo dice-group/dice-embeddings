@@ -7,9 +7,6 @@ import dicee.models.base_model
 from .static_funcs import save_checkpoint_model, exponential_function, save_pickle
 from .abstracts import AbstractCallback, AbstractPPECallback
 import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score
 
 
 class AccumulateEpochLossCallback(AbstractCallback):
