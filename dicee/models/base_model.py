@@ -1,3 +1,4 @@
+
 from typing import List, Any, Tuple, Union, Dict
 import pytorch_lightning
 import numpy as np
@@ -129,9 +130,8 @@ class BaseKGE(pytorch_lightning.LightningModule):
                 self.str_to_bpe_entity_to_idx = {str_ent: idx for idx, (str_ent, bpe_ent, shaped_bpe_ent) in
                                                  enumerate(self.args["ordered_bpe_entities"])}
 
-
                 self.bpe_entity_to_idx = {shaped_bpe_ent: idx for idx, (str_ent, bpe_ent, shaped_bpe_ent) in
-                                         enumerate(self.args["ordered_bpe_entities"])}
+                                          enumerate(self.args["ordered_bpe_entities"])}
                 self.ordered_bpe_entities = torch.tensor(list(self.bpe_entity_to_idx.keys()), dtype=torch.long)
         else:
             self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
@@ -177,18 +177,16 @@ class BaseKGE(pytorch_lightning.LightningModule):
         bpe_head_ent_emb = self.lf(bpe_head_ent_emb)
         bpe_rel_ent_emb = self.lf(bpe_rel_ent_emb)
 
-        device_r=bpe_head_ent_emb.get_device()
-        if device_r>=0:
-            self.ordered_bpe_entities=self.ordered_bpe_entities.to(device_r)
+        device_r = bpe_head_ent_emb.get_device()
+        if device_r >= 0:
+            self.ordered_bpe_entities = self.ordered_bpe_entities.to(device_r)
         else:
-            self.ordered_bpe_entities=self.ordered_bpe_entities.to("cpu")
-
+            self.ordered_bpe_entities = self.ordered_bpe_entities.to("cpu")
 
         all_entities = self.token_embeddings(self.ordered_bpe_entities)
         num_e, token_size, dim = all_entities.shape
         all_entities = all_entities.reshape(num_e, token_size * dim)
-        
-        
+
         E = self.lf(all_entities)
         return self.k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
 
