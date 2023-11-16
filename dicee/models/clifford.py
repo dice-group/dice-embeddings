@@ -246,7 +246,7 @@ class Keci(BaseKGE):
         self.r = int(self.r)
         self.requires_grad_for_interactions = True
         print(f'r:{self.r}\t p:{self.p}\t q:{self.q}')
-        # Initialize parameters for dimension scaling
+        # # Initialize parameters for dimension scaling
         if self.p > 0:
             self.p_coefficients = torch.nn.Embedding(num_embeddings=1, embedding_dim=self.p)
             torch.nn.init.zeros_(self.p_coefficients.weight)
@@ -747,16 +747,16 @@ class Keci_r(BaseKGE): # Extending cl_pq to cl_pqr
 
         # self.requires_grad_for_interactions = True
         # print(f'r:{self.r}\t p:{self.p}\t q:{self.q}')
-        # # Initialize parameters for dimension scaling
-        # if self.p > 0:
-        #     self.p_coefficients = torch.nn.Embedding(num_embeddings=1, embedding_dim=self.p)
-        #     torch.nn.init.zeros_(self.p_coefficients.weight)
-        # if self.q > 0:
-        #     self.q_coefficients = torch.nn.Embedding(num_embeddings=1, embedding_dim=self.q)
-        #     torch.nn.init.zeros_(self.q_coefficients.weight)
-        # if self.r > 0:
-        #     self.r_coefficients = torch.nn.Embedding(num_embeddings=1, embedding_dim=self.r)
-        #     torch.nn.init.zeros_(self.r_coefficients.weight)
+        # Initialize parameters for dimension scaling
+        if self.p > 0:
+            self.p_coefficients = torch.nn.Embedding(num_embeddings=1, embedding_dim=self.p)
+            torch.nn.init.zeros_(self.p_coefficients.weight)
+        if self.q > 0:
+            self.q_coefficients = torch.nn.Embedding(num_embeddings=1, embedding_dim=self.q)
+            torch.nn.init.zeros_(self.q_coefficients.weight)
+        if self.r > 0:
+            self.r_coefficients = torch.nn.Embedding(num_embeddings=1, embedding_dim=self.r)
+            torch.nn.init.zeros_(self.r_coefficients.weight)
 
     def forward_triples(self, x: torch.Tensor) -> torch.FloatTensor:
         """
@@ -973,7 +973,7 @@ class Keci_r(BaseKGE): # Extending cl_pq to cl_pqr
             h0, hp, hq, hk = self.construct_cl_multivector(head_ent_emb, re=self.re, p=self.p, q=self.q, r= self.r)
             r0, rp, rq, rk = self.construct_cl_multivector(rel_ent_emb, re=self.re, p=self.p, q=self.q, r= self.r)
 
-            #h0, hp, hq, hk, h0, rp, rq, rk = self.apply_coefficients(h0, hp, hq, hk, h0, rp, rq,rk)
+            h0, hp, hq, hk, h0, rp, rq, rk = self.apply_coefficients(h0, hp, hq, hk, h0, rp, rq,rk)
             # (3) Extract all entity embeddings
             E = self.entity_embeddings.weight
             # (3.1) Extract real part

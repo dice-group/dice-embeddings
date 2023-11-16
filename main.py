@@ -10,7 +10,7 @@ def get_default_arguments(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Data related arguments
-    parser.add_argument("--path_dataset_folder", type=str, default="/home/dice/Desktop/dice-embeddings/KGs/UMLS",
+    parser.add_argument("--path_dataset_folder", type=str, default="/home/dice/Desktop/dice-embeddings/KGs/KINSHIP",
                         help="The path of a folder containing train.txt, and/or valid.txt and/or test.txt"
                              ",e.g., KGs/UMLS")
     parser.add_argument("--sparql_endpoint", type=str, default=None,
@@ -26,7 +26,7 @@ def get_default_arguments(description=None):
                         help="A flag for saving embeddings in csv file.")
     # Model related arguments
     parser.add_argument("--model", type=str,
-                        default="Keci_r",
+                        default="Keci",
                         choices=["ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "ComplEx", "Keci",
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
@@ -94,11 +94,11 @@ def get_default_arguments(description=None):
                         help='READ only first N triples. If 0, read all.')
     parser.add_argument("--add_noise_rate", type=float, default=0.0,
                         help='Add x % of noisy triples into training dataset.')
-    parser.add_argument('--p', type=int, default=1,
+    parser.add_argument('--p', type=int, default=0,
                         help='P for Clifford Algebra')
     parser.add_argument('--q', type=int, default=1,
                         help='Q for Clifford Algebra')
-    parser.add_argument('--r', type=int, default=1,
+    parser.add_argument('--r', type=int, default=0,
                         help='Q for Clifford Algebra')
     parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
     if description is None:
