@@ -191,7 +191,7 @@ class PPE(AbstractPPECallback):
             self.store_ensemble(ensemble_state_dict)
 
 
-class ASWE(AbstractPPECallback):
+class ASWA(AbstractPPECallback):
     """ Adaptive stochastic weight averaging
         ASWE keeps track of the validation performance and update s the ensemble model accordingly.
         """
@@ -201,18 +201,10 @@ class ASWE(AbstractPPECallback):
         self.reports_of_running_model = []
         self.reports_of_ensemble_model = []
         self.last_mrr_ensemble = None
-        self.fit = "LR"
         self.initial_eval_setting = None
-        # Although it can be negative
-        self.max_epoch_r2score = float("-inf")
-        self.r2scores = []
         self.entered_good_regions = None
-        self.start_avg = False
-        if self.fit is None:
-            # Weights for models participating the ensemble
-            self.alphas = np.ones(self.num_ensemble_coefficient) / self.num_ensemble_coefficient
-        else:
-            self.alphas = None
+        self.alphas = None
+        self.val_aswa=-1
 
     def on_fit_end(self, trainer, model):
         """
@@ -317,7 +309,7 @@ class ASWE(AbstractPPECallback):
             torch.save(ensemble_state_dict, f=f"{self.path}/trainer_checkpoint_main.pt")
         else:
             if mrr_updated_ensemble_model > self.last_mrr_ensemble:
-                print(f"Ensemble model is updated: Current MRR: {mrr_updated_ensemble_model}")
+                print(f"ASWA ensemble updated: Current MRR: {mrr_updated_ensemble_model}")
                 self.last_mrr_ensemble = mrr_updated_ensemble_model
                 self.sample_counter += 1
                 torch.save(ensemble_state_dict, f=f"{self.path}/trainer_checkpoint_main.pt")
@@ -332,22 +324,36 @@ class ASWE(AbstractPPECallback):
             self.initial_eval_setting = trainer.evaluator.args.eval_model
             trainer.evaluator.args.eval_model = "val"
 
-        # (3) Does the validation performance of running model still increase?
-        if self.is_mrr_increasing(trainer, model):
-            return True
+        val_running_model = self.__compute_mrr(trainer, model)
+        if val_running_model > self.val_aswa:
+            # hard update
+            self.val_aswa= val_running_model
+            torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_main.pt")
+            self.sample_counter = 1
+            print(f"Hard Update: MRR: {self.val_aswa}")
+        else:
+            # Load ensemble
+            ensemble_state_dict = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device(model.device))
+            # Perform provision parameter update.
+            with torch.no_grad():
+                for k, parameters in model.state_dict().items():
+                    if parameters.dtype == torch.float:
+                        ensemble_state_dict[k] = (ensemble_state_dict[k] * self.sample_counter + parameters) / (1 + self.sample_counter)
+            # Evaluate
+            ensemble = type(model)(model.args)
+            ensemble.load_state_dict(ensemble_state_dict)
+            mrr_updated_ensemble_model = trainer.evaluator.eval(dataset=trainer.dataset, trained_model=ensemble,
+                                                                form_of_labelling=trainer.form_of_labelling,
+                                                                during_training=True)["Val"]["MRR"]
 
-        ensemble_state_dict = self.initialize_or_load_ensemble(model)
-        # Update
-        self.inplace_update_parameter_ensemble(ensemble_state_dict, model)
-        # Evaluate
-        ensemble = type(model)(model.args)
-        ensemble.load_state_dict(ensemble_state_dict)
-        mrr_updated_ensemble_model = trainer.evaluator.eval(dataset=trainer.dataset, trained_model=ensemble,
-                                                            form_of_labelling=trainer.form_of_labelling,
-                                                            during_training=True)["Val"]["MRR"]
-        # Store
-        self.store_ensemble_model(ensemble_state_dict, mrr_updated_ensemble_model=mrr_updated_ensemble_model)
+            if mrr_updated_ensemble_model > self.val_aswa:
 
+                self.val_aswa = mrr_updated_ensemble_model
+                torch.save(ensemble_state_dict, f=f"{self.path}/trainer_checkpoint_main.pt")
+                self.sample_counter += 1
+                print(f" Soft Update: MRR: {self.val_aswa} | |ASWA|:{self.sample_counter}")
+            else:
+                print(" No update")
 
 class FPPE(AbstractPPECallback):
     """

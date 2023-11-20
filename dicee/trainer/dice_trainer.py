@@ -3,7 +3,7 @@ import gc
 from typing import Union
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
-from dicee.callbacks import (ASWE, PPE, FPPE, Eval, KronE, PrintCallback, KGESaveCallback, AccumulateEpochLossCallback,
+from dicee.callbacks import (ASWA, PPE, FPPE, Eval, KronE, PrintCallback, KGESaveCallback, AccumulateEpochLossCallback,
                              Perturb)
 from dicee.dataset_classes import construct_dataset, reload_dataset
 from .torch_trainer import TorchTrainer
@@ -48,7 +48,7 @@ def get_callbacks(args):
                  AccumulateEpochLossCallback(path=args.full_storage_path)
                  ]
     if args.adaptive_swa:
-        callbacks.append(ASWE(num_epochs=args.num_epochs, path=args.full_storage_path))
+        callbacks.append(ASWA(num_epochs=args.num_epochs, path=args.full_storage_path))
 
     if isinstance(args.callbacks, list):
         return callbacks
