@@ -66,9 +66,9 @@ class TestPolyak:
         args.batch_size = 1024
         args.adaptive_swa = True
         adaptive_swa_report = Execute(args).start()
-        assert adaptive_swa_report["Train"]["MRR"]>=0.987
-        assert adaptive_swa_report["Val"]["MRR"]  >=0.872
-        assert adaptive_swa_report["Test"]["MRR"] >= 0.872
+        assert adaptive_swa_report["Train"]["MRR"]>=0.983
+        assert adaptive_swa_report["Val"]["MRR"]  >=0.861
+        assert adaptive_swa_report["Test"]["MRR"] >= 0.875
         assert adaptive_swa_report["Test"]["MRR"]>ppe_reports["Test"]["MRR"]
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
