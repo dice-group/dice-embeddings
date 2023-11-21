@@ -330,7 +330,7 @@ class ASWA(AbstractPPECallback):
             self.val_aswa= val_running_model
             torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_main.pt")
             self.sample_counter = 1
-            print(f"Hard Update: MRR: {self.val_aswa}")
+            print(f" Hard Update: MRR: {self.val_aswa:.4f}")
         else:
             # Load ensemble
             ensemble_state_dict = torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device(model.device))
@@ -351,7 +351,7 @@ class ASWA(AbstractPPECallback):
                 self.val_aswa = mrr_updated_ensemble_model
                 torch.save(ensemble_state_dict, f=f"{self.path}/trainer_checkpoint_main.pt")
                 self.sample_counter += 1
-                print(f" Soft Update: MRR: {self.val_aswa} | |ASWA|:{self.sample_counter}")
+                print(f" Soft Update: MRR: {self.val_aswa:.4f} | |ASWA|:{self.sample_counter}")
             else:
                 print(" No update")
 
