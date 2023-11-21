@@ -3,7 +3,7 @@ import gc
 from typing import Union
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
-from dicee.callbacks import (ASWA, PPE, FPPE, Eval, KronE, PrintCallback, KGESaveCallback, AccumulateEpochLossCallback,
+from dicee.callbacks import (ASWA, PPE, FPPE, Eval, KronE, PrintCallback, AccumulateEpochLossCallback,
                              Perturb)
 from dicee.dataset_classes import construct_dataset, reload_dataset
 from .torch_trainer import TorchTrainer

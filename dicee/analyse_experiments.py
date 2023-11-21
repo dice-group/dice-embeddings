@@ -129,7 +129,7 @@ def analyse(args):
                 report = {i: report[i] for i in ['Runtime', 'NumParam']}
             with open(f'{full_path}/eval_report.json', 'r') as f:
                 eval_report = json.load(f)
-        except:
+        except FileNotFoundError:
             print("NOT found")
             continue
         config.update(eval_report)
