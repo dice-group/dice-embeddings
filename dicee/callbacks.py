@@ -205,6 +205,7 @@ class ASWA(AbstractPPECallback):
         self.entered_good_regions = None
         self.alphas = None
         self.val_aswa=-1
+        self.num_rejects=0
 
     def on_fit_end(self, trainer, model):
         """
@@ -267,6 +268,9 @@ class ASWA(AbstractPPECallback):
             self.initial_eval_setting = trainer.evaluator.args.eval_model
             trainer.evaluator.args.eval_model = "val"
 
+        if self.num_rejects >= int(self.num_epochs *0.25):
+            return True
+
         val_running_model = self.compute_mrr(trainer, model)
         # self.val_aswa is initialized as -1
         if val_running_model > self.val_aswa:
@@ -298,6 +302,8 @@ class ASWA(AbstractPPECallback):
                 print(f" Soft Update: MRR: {self.val_aswa:.4f} | |ASWA|:{self.sample_counter}")
             else:
                 print(" No update")
+                self.num_rejects+=1
+
 
 class FPPE(AbstractPPECallback):
     """
