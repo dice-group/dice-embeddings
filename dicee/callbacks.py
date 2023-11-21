@@ -202,7 +202,6 @@ class ASWA(AbstractPPECallback):
         self.reports_of_ensemble_model = []
         self.last_mrr_ensemble = None
         self.initial_eval_setting = None
-        self.entered_good_regions = None
         self.alphas = None
         self.val_aswa=-1
         self.num_rejects=0
@@ -268,17 +267,14 @@ class ASWA(AbstractPPECallback):
             self.initial_eval_setting = trainer.evaluator.args.eval_model
             trainer.evaluator.args.eval_model = "val"
 
-        if self.num_rejects >= int(self.num_epochs *0.25):
-            return True
-
         val_running_model = self.compute_mrr(trainer, model)
-        # self.val_aswa is initialized as -1
+        print(f" MRR Running {val_running_model:.4f} | MRR ASWA: {self.val_aswa:.4f} |ASWA|:{self.sample_counter}", end="\t")
+
         if val_running_model > self.val_aswa:
             # Perform Hard Update
-            self.val_aswa= val_running_model
             torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_main.pt")
             self.sample_counter = 1
-            print(f" Hard Update: MRR: {self.val_aswa:.4f}")
+            self.val_aswa= val_running_model
         else:
             # Question: Soft update or now ?!
             # Load ensemble
@@ -299,10 +295,10 @@ class ASWA(AbstractPPECallback):
                 self.val_aswa = mrr_updated_ensemble_model
                 torch.save(ensemble_state_dict, f=f"{self.path}/trainer_checkpoint_main.pt")
                 self.sample_counter += 1
-                print(f" Soft Update: MRR: {self.val_aswa:.4f} | |ASWA|:{self.sample_counter}")
             else:
-                print(" No update")
-                self.num_rejects+=1
+                """ No update"""
+
+        print("")
 
 
 class FPPE(AbstractPPECallback):
