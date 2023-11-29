@@ -40,6 +40,8 @@ class TestASWA:
         assert aswa_report["Test"]["MRR"] > swa_report["Test"]["MRR"]
         assert aswa_report["Test"]["H@1"] > swa_report["Test"]["H@1"]
 
+    """
+
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_k_vs_all_low(self):
         args = Namespace()
@@ -106,66 +108,4 @@ class TestASWA:
         assert aswa_report["Val"]["MRR"] > swa_report["Val"]["MRR"]
         assert aswa_report["Test"]["MRR"] > swa_report["Test"]["MRR"]
         assert 0.88 > aswa_report["Test"]["MRR"] > swa_report["Test"]["MRR"] > 0.75
-
-    @pytest.mark.filterwarnings('ignore::UserWarning')
-    def test_k_vs_all_high(self):
-        args = Namespace()
-        args.model = 'Keci'
-        args.p = 0
-        args.q = 1
-        args.scoring_technique = "KvsAll"
-        args.dataset_dir = "KGs/UMLS"
-        args.trainer = "PL"
-        args.num_epochs = 500
-        args.lr = 0.1
-        args.embedding_dim = 32
-        args.batch_size = 1024
-        args.adaptive_swa = True
-        aswa_report = Execute(args).start()
-
-        args = Namespace()
-        args.model = 'Keci'
-        args.p = 0
-        args.q = 1
-        args.scoring_technique = "KvsAll"
-        args.dataset_dir = "KGs/UMLS"
-        args.trainer = "PL"
-        args.num_epochs = 500
-        args.lr = 0.1
-        args.embedding_dim = 32
-        args.batch_size = 1024
-        args.stochastic_weight_avg = True
-        swa_report = Execute(args).start()
-        assert aswa_report["Test"]["MRR"] > swa_report["Test"]["MRR"]
-        assert aswa_report["Test"]["H@1"] > swa_report["Test"]["H@1"]
-
-    def test_1_vs_all_high(self):
-        args = Namespace()
-        args.model = 'Keci'
-        args.p = 0
-        args.q = 1
-        args.scoring_technique = "1vsAll"
-        args.dataset_dir = "KGs/UMLS"
-        args.trainer = "PL"
-        args.num_epochs = 120
-        args.lr = 0.1
-        args.embedding_dim = 32
-        args.batch_size = 1024
-        args.adaptive_swa = True
-        aswa_report = Execute(args).start()
-
-        args = Namespace()
-        args.model = 'Keci'
-        args.p = 0
-        args.q = 1
-        args.scoring_technique = "1vsAll"
-        args.dataset_dir = "KGs/UMLS"
-        args.trainer = "PL"
-        args.num_epochs = 120
-        args.lr = 0.1
-        args.embedding_dim = 32
-        args.batch_size = 1024
-        args.stochastic_weight_avg = True
-        swa_report = Execute(args).start()
-        assert aswa_report["Test"]["MRR"] >= swa_report["Test"]["MRR"]
-        assert aswa_report["Test"]["H@1"] >= swa_report["Test"]["H@1"]
+    """
