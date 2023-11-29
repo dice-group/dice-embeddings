@@ -9,6 +9,7 @@ def get_default_arguments():
     parser.add_argument("--dir", type=str, default=None, help="Path of a directory containing experiments")
     return parser.parse_args()
 
+
 class Experiment:
     def __init__(self):
         self.model_name = []
@@ -19,7 +20,7 @@ class Experiment:
         self.batch_size = []
         self.lr = []
         self.byte_pair_encoding = []
-        self.aswa=[]
+        self.aswa = []
         self.path_dataset_folder = []
         self.full_storage_path = []
         self.pq = []
@@ -66,7 +67,7 @@ class Experiment:
         self.train_h10.append(x['Train']['H@10'])
 
         # Partition by delim and take the last one
-        #self.full_storage_path.append(x['full_storage_path'].partition('dice-embeddings')[-1])
+        # self.full_storage_path.append(x['full_storage_path'].partition('dice-embeddings')[-1])
 
         self.val_mrr.append(x['Val']['MRR'])
         self.val_h1.append(x['Val']['H@1'])
@@ -84,19 +85,19 @@ class Experiment:
                  byte_pair_encoding=self.byte_pair_encoding,
                  aswa=self.aswa,
                  Dataset=self.path_dataset_folder,
-                 trainMRR=self.train_mrr, 
+                 trainMRR=self.train_mrr,
                  trainH1=self.train_h1,
-                 trainH3=self.train_h3, 
+                 trainH3=self.train_h3,
                  trainH10=self.train_h10,
                  num_epochs=self.num_epochs,
                  full_storage_path=self.full_storage_path,
-                 valMRR=self.val_mrr, 
+                 valMRR=self.val_mrr,
                  valH1=self.val_h1,
-                 valH3=self.val_h3, 
+                 valH3=self.val_h3,
                  valH10=self.val_h10,
-                 testMRR=self.test_mrr, 
+                 testMRR=self.test_mrr,
                  testH1=self.test_h1,
-                 testH3=self.test_h3, 
+                 testH3=self.test_h3,
                  testH10=self.test_h10,
                  runtime=self.runtime,
                  params=self.num_params,
@@ -112,17 +113,21 @@ def analyse(args):
     sub_folder_str_paths = os.listdir(args.dir)
     experiments = []
     for path in sub_folder_str_paths:
-        full_path=args.dir +"/"+path
+        if path=="summary.csv":
+            continue
+        full_path = args.dir + "/" + path
         with open(f'{full_path}/configuration.json', 'r') as f:
             config = json.load(f)
+            """
             config = {i: config[i] for i in
                       ['model', 'dataset_dir', 'embedding_dim',
                        'normalization', 'num_epochs', 'batch_size', 'lr',
                        'callbacks',
                        'adaptive_swa',
-                       "scoring_technique",
+                       'scoring_technique',
                        "byte_pair_encoding",
                        'dataset_dir', 'p', 'q']}
+            """
         try:
             with open(f'{full_path}/report.json', 'r') as f:
                 report = json.load(f)
@@ -134,20 +139,49 @@ def analyse(args):
             continue
         config.update(eval_report)
         config.update(report)
-        print(config)
-        experiments.append(config)
-    
-    counter = Experiment()
+        if "Train" in config:
+            for k, v in config["Train"].items():
+                config[f"train{k}"] = v
 
-    for i in experiments:
-        counter.save_experiment(i)
-    
-    df = counter.to_df()
+        if "Val" in config:
+            for k, v in config["Val"].items():
+                config[f"val{k}"] = v
+
+        if "Test" in config:
+            for k, v in config["Test"].items():
+                config[f"test{k}"] = v
+
+        del config["Train"]
+        del config["Val"]
+        del config["Test"]
+        experiments.append(config)
+
+    df = pd.DataFrame(experiments)
     df.sort_values(by=['testMRR'], ascending=False, inplace=True)
     pd.set_option("display.precision", 3)
-    # print(df)
+
+    df=df[['model',
+               'adaptive_swa',
+               "stochastic_weight_avg",
+              "trainMRR",
+              "trainH@1",
+              "trainH@3",
+              "trainH@10",
+              "valMRR",
+              "valH@1",
+              "valH@3",
+              "valH@10",
+              "testMRR",
+              "testH@1",
+              "testH@3",
+              "testH@10",
+              #'dataset_dir', 'embedding_dim',
+              #'num_epochs', 'batch_size', 'lr',
+
+              ]]
+    print(df)
     print(df.to_latex(index=False, float_format="%.3f"))
-    path_to_save=args.dir+'/summary.csv'
+    path_to_save = args.dir + '/summary.csv'
     df.to_csv(path_or_buf=path_to_save)
     print(f"Saved in {path_to_save}")
 
