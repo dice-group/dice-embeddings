@@ -456,22 +456,22 @@ def deploy_tail_entity_prediction(pre_trained_kge, str_subject, str_predicate, t
     if pre_trained_kge.model.name == 'Shallom':
         print('Tail entity prediction is not available for Shallom')
         raise NotImplementedError
-    scores, entity = pre_trained_kge.predict_topk(h=[str_subject], r=[str_predicate], topk=top_k)
-    return f'(  {str_subject},  {str_predicate}, ? )', pd.DataFrame({'Entity': entity, 'Score': scores})
+    str_entity_scores = pre_trained_kge.predict_topk(h=[str_subject], r=[str_predicate], topk=top_k)
+
+    return f'(  {str_subject},  {str_predicate}, ? )', pd.DataFrame(str_entity_scores,columns=["entity","score"])
 
 
 def deploy_head_entity_prediction(pre_trained_kge, str_object, str_predicate, top_k):
     if pre_trained_kge.model.name == 'Shallom':
         print('Head entity prediction is not available for Shallom')
         raise NotImplementedError
-
-    scores, entity = pre_trained_kge.predict_topk(t=[str_object], r=[str_predicate], topk=top_k)
-    return f'(  ?,  {str_predicate}, {str_object} )', pd.DataFrame({'Entity': entity, 'Score': scores})
+    str_entity_scores = pre_trained_kge.predict_topk(t=[str_object], r=[str_predicate], topk=top_k)
+    return f'(  ?,  {str_predicate}, {str_object} )', pd.DataFrame(str_entity_scores,columns=["entity","score"])
 
 
 def deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k):
-    scores, relations = pre_trained_kge.predict_topk(h=[str_subject], t=[str_object], topk=top_k)
-    return f'(  {str_subject}, ?, {str_object} )', pd.DataFrame({'Relations': relations, 'Score': scores})
+    str_relation_scores = pre_trained_kge.predict_topk(h=[str_subject], t=[str_object], topk=top_k)
+    return f'(  {str_subject}, ?, {str_object} )', pd.DataFrame(str_relation_scores,columns=["relation","score"])
 
 
 @timeit
