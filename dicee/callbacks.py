@@ -152,9 +152,140 @@ class PPE(AbstractPPECallback):
         Maintains a running parameter average for all parameters requiring gradient signals
     """
 
-    def __init__(self, num_epochs, path, last_percent_to_consider=None):
-        super().__init__(num_epochs, path, last_percent_to_consider)
-        self.alphas = np.ones(self.num_ensemble_coefficient) / self.num_ensemble_coefficient
+    def __init__(self, num_epochs: int, path: str,
+                 epoch_to_start: int = None, last_percent_to_consider=None):
+        assert isinstance(num_epochs, int)
+        assert isinstance(path, str)
+        super().__init__(num_epochs, path, epoch_to_start, last_percent_to_consider)
+        # self.alphas = np.ones(self.num_ensemble_coefficient) / self.num_ensemble_coefficient
+
+    def initialize_ensemble(self, model):
+        torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_main.pt")
+        return torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device(model.device))
+
+    def should_averaging_start(self):
+        return self.epoch_to_start <= self.epoch_count
+
+    def get_ensemble_model(self, model):
+        if self.sample_counter == 0:
+            self.sample_counter += 1
+            torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_main.pt")
+        return torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device(model.device))
+
+    def update_ensemble(self, ensemble_state_dict, current_model):
+        with torch.no_grad():
+            for k, parameters in current_model.state_dict().items():
+                if parameters.dtype == torch.float:
+                    # ensemble_state_dict[k] += self.alphas[self.sample_counter] * parameters
+                    ensemble_state_dict[k] = (ensemble_state_dict[k] * self.sample_counter + parameters) / (
+                            1 + self.sample_counter)
+
+    def on_train_epoch_end(self, trainer, model) -> None:
+        self.epoch_count += 1
+        if self.should_averaging_start():
+            # Load the ensemble model
+            ensemble_state_dict = self.get_ensemble_model(model=model)
+            # Update the ensemble model
+            self.update_ensemble(ensemble_state_dict=ensemble_state_dict, current_model=model)
+            # Store the ensemble model
+            self.store_ensemble(ensemble_state_dict)
+
+
+class ASWA(AbstractPPECallback):
+    """ Adaptive stochastic weight averaging
+        ASWE keeps track of the validation performance and update s the ensemble model accordingly.
+        """
+
+    def __init__(self, num_epochs, path):
+        super().__init__(num_epochs, path, epoch_to_start=None, last_percent_to_consider=None)
+        self.initial_eval_setting = None
+        self.alphas = []
+        self.val_aswa = -1
+
+    def on_fit_end(self, trainer, model):
+        # super().on_fit_end(trainer, model)
+        if self.initial_eval_setting:
+            # ADD this info back
+            trainer.evaluator.args.eval_model = self.initial_eval_setting
+
+        param_ensemble = torch.load(f"{self.path}/aswa.pt", torch.device("cpu"))
+        model.load_state_dict(param_ensemble)
+
+    @staticmethod
+    def compute_mrr(trainer, model) -> float:
+        # (2) Enable eval mode.
+        model.eval()
+        # (3) MRR performance on the validation data of running model.
+        device_name = model.device
+        model.to("cpu")
+        last_val_mrr_running_model = trainer.evaluator.eval(dataset=trainer.dataset,
+                                                            trained_model=model,
+                                                            form_of_labelling=trainer.form_of_labelling,
+                                                            during_training=True)["Val"]["MRR"]
+        model.to(device_name)
+        # (4) Enable train mode.
+        model.train()
+        return last_val_mrr_running_model
+
+    def get_aswa_state_dict(self, model):
+        # (2) Question: Soft update or Rejection?!
+        ensemble_state_dict = torch.load(f"{self.path}/aswa.pt", torch.device(model.device))
+        # Perform provision parameter update.
+        with torch.no_grad():
+            for k, parameters in model.state_dict().items():
+                if parameters.dtype == torch.float:
+                    ensemble_state_dict[k] = (ensemble_state_dict[k] * sum(self.alphas) + parameters) / (1 + sum(self.alphas))
+        return ensemble_state_dict
+
+    def decide(self, running_model_state_dict, ensemble_state_dict, val_running_model, mrr_updated_ensemble_model):
+        if val_running_model > mrr_updated_ensemble_model and val_running_model > self.val_aswa:
+            """Hard Update """
+            torch.save(running_model_state_dict, f=f"{self.path}/aswa.pt")
+            self.alphas.clear()
+            self.val_aswa = val_running_model
+            return True
+
+        if mrr_updated_ensemble_model > self.val_aswa:
+            """Soft update"""
+            self.val_aswa = mrr_updated_ensemble_model
+            torch.save(ensemble_state_dict, f=f"{self.path}/aswa.pt")
+            self.alphas.append(1.0)
+            return True
+
+        if self.val_aswa > mrr_updated_ensemble_model:
+            """ Ignore """
+            self.alphas.append(0)
+            return True
+
+    def on_train_epoch_end(self, trainer, model):
+        # (1) Increment epoch counter
+        self.epoch_count += 1
+        # (2) Save the given eval setting .
+        if self.initial_eval_setting is None:
+            self.initial_eval_setting = trainer.evaluator.args.eval_model
+            trainer.evaluator.args.eval_model = "val"
+
+        val_running_model = self.compute_mrr(trainer, model)
+        # (1) Initialize the ensemble
+        if self.val_aswa == -1:
+            torch.save(model.state_dict(), f=f"{self.path}/aswa.pt")
+            self.alphas.append(1.0)
+            self.val_aswa = val_running_model
+            return True
+        else:
+
+            ensemble_state_dict = self.get_aswa_state_dict(model)
+
+            # Evaluate
+            ensemble = type(model)(model.args)
+            ensemble.load_state_dict(ensemble_state_dict)
+            mrr_updated_ensemble_model = trainer.evaluator.eval(dataset=trainer.dataset, trained_model=ensemble,
+                                                                form_of_labelling=trainer.form_of_labelling,
+                                                                during_training=True)["Val"]["MRR"]
+            print(f"MRR Running {val_running_model:.4f} | MRR ASWA: {self.val_aswa:.4f} |ASWA|:{sum(self.alphas)}")
+
+            self.decide(model.state_dict(), ensemble_state_dict, val_running_model, mrr_updated_ensemble_model)
+
 
 class FPPE(AbstractPPECallback):
     """
@@ -319,7 +450,7 @@ class Perturb(AbstractCallback):
         assert n > 0
         # (2) Compute the number of perturbed data points.
         num_of_perturbed_data = int(n * self.ratio)
-        if num_of_perturbed_data ==0:
+        if num_of_perturbed_data == 0:
             return None
         # (3) Detect the device on which data points reside
         device = x.get_device()
@@ -395,7 +526,7 @@ class Perturb(AbstractCallback):
                 # 0.0 => perturb
                 # (5.3.2) Reduces 1s and increases 0s via (5.2.1)
                 batch[1][random_indices] = torch.where(batch[1][random_indices] == 1.0, 1.0 - perturb, perturb)
-            elif self.method=="Hard":
+            elif self.method == "Hard":
                 # (5.3) Output level hard perturbation flips 1s to 0 and 0s to 1s.
                 batch[1][random_indices] = torch.where(batch[1][random_indices] == 1.0, 0.0, 1.0)
             else:

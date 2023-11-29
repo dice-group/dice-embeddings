@@ -10,7 +10,7 @@ def get_default_arguments(description=None):
     parser = pl.Trainer.add_argparse_args(argparse.ArgumentParser(add_help=False))
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Knowledge graph related arguments
-    parser.add_argument("--dataset_dir", type=str, default="KGs/Countries-S3",
+    parser.add_argument("--dataset_dir", type=str, default="KGs/UMLS",
                         help="The path of a folder containing train.txt, and/or valid.txt and/or test.txt"
                              ",e.g., KGs/UMLS")
     parser.add_argument("--sparql_endpoint", type=str, default=None,
@@ -30,7 +30,7 @@ def get_default_arguments(description=None):
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
     # Model related arguments
     parser.add_argument("--model", type=str,
-                        default="DistMult",
+                        default="Keci",
                         choices=["ComplEx", "Keci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE",
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
@@ -45,15 +45,15 @@ def get_default_arguments(description=None):
                         choices=['Adam', 'SGD'])
     parser.add_argument('--embedding_dim', type=int, default=32,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=2000, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=20, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024,
                         help='Mini batch size. If None, automatic batch finder is applied')
-    parser.add_argument("--lr", type=float, default=0.001)
+    parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument('--callbacks', type=json.loads,
                         default={},
                         help='{"PPE":{ "last_percent_to_consider": 10}}'
                              '"Perturb": {"level": "out", "ratio": 0.2, "method": "RN", "scaler": 0.3}')
-    parser.add_argument("--trainer", type=str, default='PL',
+    parser.add_argument("--trainer", type=str, default='torchCPUTrainer',
                         choices=['torchCPUTrainer', 'PL', 'torchDDP'],
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
     parser.add_argument('--scoring_technique', default="KvsAll",
@@ -102,8 +102,11 @@ def get_default_arguments(description=None):
     parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
     # WIP
     parser.add_argument("--byte_pair_encoding",
-                        action="store_false",
+                        action="store_true",
                         help="Currently only avail. for KGE implemented within dice-embeddings.")
+    parser.add_argument("--adaptive_swa",
+                        action="store_true",
+                        help="Adaptive stochastic weight averaging")
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)

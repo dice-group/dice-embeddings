@@ -39,7 +39,7 @@ cd dice-embeddings && pip3 install -r requirements.txt
 ```
 or
 ```bash
-pip install dicee==0.1.1
+pip install dicee==0.1.2
 ```
 ## Download Knowledge Graphs
 ```bash
@@ -99,16 +99,20 @@ A KGE model can also be trained from the command line
 ```bash
 dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
 ```
-Models can be easily trained in a single node multi-gpu setting
+Models can be easily trained in a single node multi-gpu setting with pytorch-lightning
 ```bash
 dicee --accelerator "gpu" --strategy "ddp" --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" 
 ```
-Similarly, models can be easily trained in a multi-node multi-gpu setting
+
+Similarly, models can be easily trained with torchrun
+```bash
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu main.py
+```
+You can also train a model in multi-node multi-gpu setting.
 ```bash
 torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula -m dicee.run --trainer torchDDP --dataset_dir KGs/UMLS
 torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula -m dicee.run --trainer torchDDP --dataset_dir KGs/UMLS
 ```
-
 Train a KGE model by providing the path of a single file and store all parameters under newly created directory
 called `KeciFamilyRun`.
 ```bash

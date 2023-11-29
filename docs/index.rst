@@ -41,7 +41,7 @@ Usage
 
    $ git clone https://github.com/dice-group/dice-embeddings.git
 
-   $ conda create -n dicee python=3.9 --no-default-packages && conda activate dicee
+   $ conda create -n dice python=3.9.18 --no-default-packages && conda activate dice
 
    (dice) $ pip3 install -r requirements.txt
 
