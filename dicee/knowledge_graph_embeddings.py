@@ -1050,11 +1050,11 @@ class KGE(BaseInteractiveKGE):
 
         gr.Interface(
             fn=predict,
-            inputs=[gr.inputs.Textbox(lines=1, placeholder=None, label='Subject'),
-                    gr.inputs.Textbox(lines=1, placeholder=None, label='Predicate'),
-                    gr.inputs.Textbox(lines=1, placeholder=None, label='Object'), "checkbox"],
-            outputs=[gr.outputs.Textbox(label='Input Triple'),
-                     gr.outputs.Dataframe(label='Outputs', type='pandas')],
+            inputs=[gr.Textbox(lines=1, placeholder=None, label='Subject'),
+                    gr.Textbox(lines=1, placeholder=None, label='Predicate'),
+                    gr.Textbox(lines=1, placeholder=None, label='Object'), "checkbox"],
+            outputs=[gr.Textbox(label='Input Triple'),
+                     gr.Dataframe(label='Outputs', type='pandas')],
             title=f'{self.name} Deployment',
             description='1. Enter a triple to compute its score,\n'
                         '2. Enter a subject and predicate pair to obtain most likely top ten entities or\n'
