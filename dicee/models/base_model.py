@@ -1,4 +1,3 @@
-
 from typing import List, Any, Tuple, Union, Dict
 import pytorch_lightning
 import numpy as np
@@ -477,10 +476,27 @@ class BaseKGE(pytorch_lightning.LightningModule):
         tail_emb = self.token_embeddings(t)
         return head_ent_emb, rel_emb, tail_emb
 
-    def get_bpe_head_and_relation_representation(self, x: torch.LongTensor):
+    def get_bpe_head_and_relation_representation(self, x: torch.LongTensor) -> Tuple[
+        torch.FloatTensor, torch.FloatTensor]:
+        """
+
+        Parameters
+        ----------
+        x
+
+        Returns
+        -------
+
+        """
         h, r = x[:, 0, :], x[:, 1, :]
+        # N, T, D
         head_ent_emb = self.token_embeddings(h)
+        # N, T, D
         rel_emb = self.token_embeddings(r)
+        # A sequence of sub-list embeddings representing an embedding of a head entity should be normalized to 0.
+        # Therefore, the norm of a row vector obtained from T by D matrix must be 1.
+        head_ent_emb = F.normalize(head_ent_emb, p=2, dim=(1, 2))
+        rel_emb = F.normalize(rel_emb, p=2, dim=(1, 2))
         return head_ent_emb, rel_emb
 
     def get_embeddings(self) -> Tuple[np.ndarray, np.ndarray]:

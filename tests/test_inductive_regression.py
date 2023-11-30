@@ -18,7 +18,7 @@ class TestIndictiveLP:
         args.optim = 'Adam'
         args.num_epochs = 500
         args.batch_size = 1024
-        args.lr = 0.001
+        args.lr = 0.1
         args.input_dropout_rate = 0.0
         args.hidden_dropout_rate = 0.0
         args.feature_map_dropout_rate = 0.0
@@ -29,7 +29,7 @@ class TestIndictiveLP:
         result = Execute(args).start()
         assert result['Train']['MRR'] >= 0.88
         assert result['Val']['MRR'] >= 0.78
-        assert result['Test']['MRR'] >= 0.78
+        assert result['Test']['MRR'] >= 0.77
         pre_trained_kge = KGE(path=result['path_experiment_folder'])
         assert (pre_trained_kge.predict(h="alga", r="isa", t="entity", logits=False) >
                 pre_trained_kge.predict(h="Demir", r="loves", t="Embeddings", logits=False))

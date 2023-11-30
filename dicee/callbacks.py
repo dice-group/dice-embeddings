@@ -238,6 +238,22 @@ class ASWA(AbstractPPECallback):
         return ensemble_state_dict
 
     def decide(self, running_model_state_dict, ensemble_state_dict, val_running_model, mrr_updated_ensemble_model):
+        """
+        Hard Update
+        Soft Update
+        Rejection
+
+        Parameters
+        ----------
+        running_model_state_dict
+        ensemble_state_dict
+        val_running_model
+        mrr_updated_ensemble_model
+
+        Returns
+        -------
+
+        """
         if val_running_model > mrr_updated_ensemble_model and val_running_model > self.val_aswa:
             """Hard Update """
             torch.save(running_model_state_dict, f=f"{self.path}/aswa.pt")
@@ -273,17 +289,17 @@ class ASWA(AbstractPPECallback):
             self.val_aswa = val_running_model
             return True
         else:
-
+            # (1) Load ASWA ensemble
             ensemble_state_dict = self.get_aswa_state_dict(model)
 
-            # Evaluate
+            # (2) Evaluate (1) on the validation data.
             ensemble = type(model)(model.args)
             ensemble.load_state_dict(ensemble_state_dict)
             mrr_updated_ensemble_model = trainer.evaluator.eval(dataset=trainer.dataset, trained_model=ensemble,
                                                                 form_of_labelling=trainer.form_of_labelling,
                                                                 during_training=True)["Val"]["MRR"]
-            print(f"MRR Running {val_running_model:.4f} | MRR ASWA: {self.val_aswa:.4f} |ASWA|:{sum(self.alphas)}")
-
+            # print(f"| MRR Running {val_running_model:.4f} | MRR ASWA: {self.val_aswa:.4f} |ASWA|:{sum(self.alphas)}")
+            # (3) Update or not
             self.decide(model.state_dict(), ensemble_state_dict, val_running_model, mrr_updated_ensemble_model)
 
 
