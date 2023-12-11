@@ -68,6 +68,15 @@ class Execute:
                                                                                      'path_experiment_folder') else None,
                 backend=self.args.backend,
                 training_technique=self.args.scoring_technique)
+        #____________________________________________________________
+        #____________________________________________________________
+
+
+        print("kg:",kg)
+        print("description_of_input:", kg.description_of_input)
+
+        #____________________________________________________________
+        #_____________________________________________________________
         print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
         # (2) Share some info about data for easy access.
         print(kg.description_of_input)

@@ -1,0 +1,11 @@
+{
+    "num_train_triples": 4064,
+    "num_entities": 230,
+    "num_relations": 12,
+    "max_length_subword_tokens": null,
+    "runtime_kg_loading": 0.1781601905822754,
+    "EstimatedSizeMB": 0.1181650161743164,
+    "NumParam": 123905,
+    "path_experiment_folder": "c:\\Users\\amall\\OneDrive\\Desktop\\JOB\\Knowledge Graph\\dice-embeddings\\examples\\multi_hop_query_answering/Experiments/2023-12-09 23-38-25.466778",
+    "Runtime": 26.736701488494873
+}
