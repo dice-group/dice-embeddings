@@ -7,6 +7,8 @@ import torch.optim as optim
 import random
 import os
 import shutil
+import pandas as pd
+import pickle
 
 #######################################################################################################################
 
@@ -39,41 +41,40 @@ def create_data(kg,num_subgraphs,tensor_size,step):
     print(f"Folders for {kg} created and files copied.")
     
     
-    path_main = "/local/upb/users/l/louis888/profiles/unix/cs/dice-embeddings/main.py"
+    path_main = "../dice-embeddings/main.py"
+    data_dict = {}
     for sub_kg in l:
         
         folder_name = f"../dice-embeddings/d2v_Experiments/Experiments_{sub_kg}_local"
-        Experiments_path=f"/upb/users/l/louis888/profiles/unix/cs/dice-embeddings/d2v_Experiments/Experiments_{sub_kg}_local"
+        Experiments_path=f"../dice-embeddings/d2v_Experiments/Experiments_{sub_kg}_local"
         path_dataset =  f"../dice-embeddings/d2v_Experiments/{sub_kg}"
         Num_epochs = 250
         Batch_size = 1024
 
         if step == "training":
             
-            data_dict = {}
-            
             dat = Keci_exp(emb_dim=16,path_main = path_main,folder_name = folder_name,Experiments_path=Experiments_path,\
                        num_epochs=250,batch_size=1024, scoring_technique= "KvsAll",path_dataset=path_dataset)
 
-            (p,q,r), _ = dat.exaustive_search_local(params_range = range(5)) # take the result of the exhaustive search.
+            (p,q,r), _ = dat.exaustive_search_local(params_range = range(2)) # take the result of the exhaustive search in [0 4].
 
-            file_path = os.path.join(Experiments_path, f"{p}_{q}_{r}")  # Replace with the actual file path
+            file_path = os.path.join(Experiments_path, f"{1}_{1}_{1}") 
 
             
             D_i = tensor_data(file_path,N)
             
-            data_dict = {D_i:(p,q,r)}
+            data_dict.update({D_i:(p,q,r)})
                 
         if step == "prediction":
 
-            (p,q,r) = (0, 0, 0)
+            (p,q,r) = (1, 1, 1)
 
-            file_path = os.path.join(Experiments_path, f"{p}_{q}_{r}")  # Replace with the actual file path
+            file_path = os.path.join(Experiments_path, f"{p}_{q}_{r}")  
 
             D_i = tensor_data(file_path,N)
 
 
-            data_dict = D_i
+            data_dict.update(D_i)
             
     print(data_dict)
     file_name = f"{kg}_data.pth" 
@@ -88,25 +89,60 @@ def tensor_data(file_path,N):
         
 
 
-        folder_path = os.path.join(file_path, folder)
-        train_path = os.path.join(folder_path, 'train_set.npy')
-        loaded_array = np.load(train_path)
+        folder_path  = os.path.join(file_path, folder)
+        train_path   = os.path.join(folder_path, 'train_set.npy')
+        path_ent_idx = os.path.join(folder_path, 'entity_to_idx.p')
+        path_rel_idx = os.path.join(folder_path, 'relation_to_idx.p')
+        path_ent_emb = os.path.join(folder_path, 'Keci_r_entity_embeddings.csv')
+        path_rel_emb = os.path.join(folder_path, 'Keci_r_relation_embeddings.csv')
 
-        num_relations = np.unique(loaded_array [:,1]).size
-        num_entities = np.unique(loaded_array [:,0]).size + np.unique(loaded_array [:,2]).size
+        train_data = np.load(train_path)
 
-        entity_embeddings = torch.nn.Embedding(num_entities, 16)
-        relation_embeddings = torch.nn.Embedding(num_relations,16)
 
         D_i = torch.zeros(N,48) #N is the size of the tensor
         for i in range(len(D_i)):
-            h_r_tidx = torch.tensor(loaded_array[i,:], dtype=torch.int32)
-            h,r,t = entity_embeddings(h_r_tidx[0]), relation_embeddings(h_r_tidx[1]), entity_embeddings(h_r_tidx[2])
+            indx_triple = train_data[i,:]
+            h,r,t = ent_rel_emb(indx_triple,path_ent_idx,path_rel_idx,path_ent_emb,path_rel_emb)
             h_r_t = torch.concatenate((h,r,t),dim=0)
             D_i[i,:] = h_r_t
             
     return D_i
-            
+
+
+def ent_rel_emb(indx_triple,path_ent_idx,path_rel_idx,path_ent_emb,path_rel_emb):
+
+    # Here we retrieve final entities embedings we just need the indx (value == indx) of and entity from the file above:
+    
+    with open(path_ent_idx, 'rb') as file:
+        ent_to_idx = pickle.load(file)
+
+    head = next((key for key, value in ent_to_idx.items() if value == indx_triple[0]), None)
+    tail = next((key for key, value in ent_to_idx.items() if value == indx_triple[2]), None)
+    
+    head_emb = pd.read_csv(path_ent_emb, index_col=0)
+    head_id_to_extract = head
+    vector_head_emb = head_emb.loc[head_id_to_extract].values
+
+    tail_emb = pd.read_csv(path_ent_emb, index_col=0)
+    tail_id_to_extract = tail
+    vector_tail_emb = tail_emb.loc[tail_id_to_extract].values
+
+
+
+
+    # Here we retrieve final entities embedings we just need the indx of a relation:
+    
+    with open(path_rel_idx, 'rb') as file:
+        rel_to_idx = pickle.load(file)
+
+    rel = next((key for key, value in rel_to_idx.items() if value == indx_triple[1]), None)
+    rel_emb = pd.read_csv(path_rel_emb, index_col=0)
+
+
+    rel_id_to_extract = rel
+    vector_rel_emb = rel_emb.loc[rel_id_to_extract].values
+
+    return  torch.tensor(vector_head_emb), torch.tensor(vector_rel_emb), torch.tensor(vector_tail_emb)
 
 
 def random_walk_subgraph(original_folder, output_base_folder, num_subgraphs):

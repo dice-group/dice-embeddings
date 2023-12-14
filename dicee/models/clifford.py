@@ -771,6 +771,7 @@ class Keci_r(BaseKGE): # Extending cl_pq to cl_pqr
         """
         # (1) Retrieve real-valued embedding vectors.
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
+        
         # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations
         h0, hp, hq, hk = self.construct_cl_multivector(head_ent_emb, re=self.re, p=self.p, q=self.q, r= self.r)
         r0, rp, rq, rk = self.construct_cl_multivector(rel_ent_emb, re=self.re, p=self.p, q=self.q, r= self.r)
@@ -955,7 +956,7 @@ class Keci_r(BaseKGE): # Extending cl_pq to cl_pqr
             Kvsall training
 
             (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .
-            (2) Construct head entity and relation embeddings according to Cl_{p,q}(\mathbb{R}^d) .
+            (2) Construct head entity and relation embeddings according to Cl_{p,q,r}(\mathbb{R}^d) .
             (3) Perform Cl multiplication
             (4) Inner product of (3) and all entity embeddings
 
@@ -969,9 +970,11 @@ class Keci_r(BaseKGE): # Extending cl_pq to cl_pqr
             """
             # (1) Retrieve real-valued embedding vectors.
             head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
-            # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations
+            # (2) Construct multi-vector in Cl_{p,q,r} (\mathbb{R}^d) for head entities and relations
             h0, hp, hq, hk = self.construct_cl_multivector(head_ent_emb, re=self.re, p=self.p, q=self.q, r= self.r)
             r0, rp, rq, rk = self.construct_cl_multivector(rel_ent_emb, re=self.re, p=self.p, q=self.q, r= self.r)
+
+        
 
             h0, hp, hq, hk, h0, rp, rq, rk = self.apply_coefficients(h0, hp, hq, hk, h0, rp, rq,rk)
             # (3) Extract all entity embeddings
