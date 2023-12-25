@@ -20,6 +20,43 @@ class KGE(BaseInteractiveKGE):
                  apply_semantic_constraint=False):
         super().__init__(path=path, url=url, construct_ensemble=construct_ensemble, model_name=model_name)
 
+    def generate(self, h="", r=""):
+        assert self.configs["byte_pair_encoding"]
+
+        h_encode = self.enc.encode(h)
+        r_encode = self.enc.encode(r)
+
+        length = self.configs["max_length_subword_tokens"]
+
+        if len(h_encode) != length:
+            h_encode.extend([self.dummy_id for _ in range(length - len(h_encode))])
+
+        if len(r_encode) != length:
+            r_encode.extend([self.dummy_id for _ in range(length - len(r_encode))])
+
+        h_encode = torch.LongTensor(h_encode).reshape(1, length)
+        r_encode = torch.LongTensor(r_encode).reshape(1, length)
+        # Initialize batch as all dummy ID
+        X = torch.ones(self.enc.n_vocab, length) * self.dummy_id
+        X = X.long()
+        h_encode = h_encode.repeat_interleave(self.enc.n_vocab, dim=0)
+        r_encode = r_encode.repeat_interleave(self.enc.n_vocab, dim=0)
+
+        counter = 0
+        pointer = 0
+        tokens = [self.dummy_id for _ in range(length)]
+        while counter != self.max_length_subword_tokens:
+            X[:, pointer] = torch.arange(0, self.enc.n_vocab, dtype=int)
+
+            x = torch.stack((h_encode, r_encode, X), dim=1)
+            score, id_next_token = torch.max(self.model(x), dim=0)
+            id_next_token = int(id_next_token)
+            tokens[pointer] = id_next_token
+            X[:, pointer] = id_next_token
+            pointer += 1
+            counter += 1
+            print(self.enc.decode(tokens), end=f"\t {score}\n")
+
     def __str__(self):
         return "KGE | " + str(self.model)
 
