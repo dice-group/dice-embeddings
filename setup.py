@@ -30,7 +30,7 @@ def deps_list(*pkgs):
     return [deps[pkg] for pkg in pkgs]
 
 extras = dict()
-extras["dev"] = deps_list("torch", "pytorch-lightning", "pykeen", "tiktoken", "pandas", "polars", "rdflib", "ruff", "pytest")
+extras["dev"] = deps_list("torch", "pytorch-lightning", "pykeen", "tiktoken", "pandas", "polars", "psutil", "rdflib", "ruff", "pytest")
 extras["min"] = deps_list("torch", "pandas")
 extras["test"] = (extras["dev"] + deps_list("ruff", "pytest"))
 
