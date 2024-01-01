@@ -17,7 +17,6 @@ import pickle
 from collections import defaultdict
 
 import requests
-from urllib.parse import urlparse
 
 def create_recipriocal_triples(x):
     """
@@ -594,6 +593,9 @@ def evaluate(entity_to_idx, scores, easy_answers, hard_answers):
 
 def download_file(url, destination_folder="."):
     response = requests.get(url, stream=True)
+    # lazy import
+    from urllib.parse import urlparse
+
     if response.status_code == 200:
         filename = os.path.join(destination_folder, os.path.basename(urlparse(url).path))
         with open(filename, 'wb') as file:
