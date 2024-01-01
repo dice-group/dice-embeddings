@@ -9,6 +9,8 @@ from .static_funcs import random_prediction, deploy_triple_prediction, deploy_ta
 from .static_funcs_training import evaluate_lp
 import numpy as np
 import sys
+
+
 # import gradio as gr
 
 
@@ -1059,8 +1061,11 @@ class KGE(BaseInteractiveKGE):
         return extended_triples
 
     def deploy(self, share: bool = False, top_k: int = 10):
+        # Lazy import
         import gradio
+
         def predict(str_subject: str, str_predicate: str, str_object: str, random_examples: bool):
+
             if random_examples:
                 return random_prediction(self)
             else:
