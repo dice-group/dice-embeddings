@@ -1062,7 +1062,7 @@ class KGE(BaseInteractiveKGE):
 
     def deploy(self, share: bool = False, top_k: int = 10):
         # Lazy import
-        import gradio
+        import gradio as gr
 
         def predict(str_subject: str, str_predicate: str, str_object: str, random_examples: bool):
 
