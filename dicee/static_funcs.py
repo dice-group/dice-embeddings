@@ -18,7 +18,6 @@ from collections import defaultdict
 
 import requests
 from urllib.parse import urlparse
-from bs4 import BeautifulSoup
 
 def create_recipriocal_triples(x):
     """
@@ -607,6 +606,9 @@ def download_file(url, destination_folder="."):
 
 
 def download_files_from_url(base_url, destination_folder="."):
+    # lazy import
+    from bs4 import BeautifulSoup
+
     response = requests.get(base_url)
     if response.status_code == 200:
         soup = BeautifulSoup(response.text, 'html.parser')
