@@ -35,8 +35,7 @@ extras["min"] = deps_list("torch", "pandas")
 extras["test"] = (extras["dev"] + deps_list("ruff", "pytest"))
 
 install_requires = [
-    extras["min"]
-    # deps["torch"],  # filesystem locks, e.g., to prevent parallel downloads
+    extras["dev"],  # filesystem locks, e.g., to prevent parallel downloads
     # deps["pandas"],
     # deps["polars"],  # can be optional
     # deps["rdflib"],  # can be optional
