@@ -9,7 +9,6 @@ import pickle
 import os
 import psutil
 import requests
-from rdflib import Graph
 
 
 def apply_reciprical_or_noise(add_reciprical: bool, eval_model: str, df: object = None, info: str = None):
@@ -127,6 +126,9 @@ def read_from_disk(data_path: str, read_only_few: int = None,
         elif backend == 'polars':
             return read_with_polars(data_path, read_only_few, sample_triples_ratio)
         elif backend == "rdflib":
+            # Lazy import
+            from rdflib import Graph
+
             try:
                 assert dformat in ["ttl", "owl", "nt", "turtle", "rdf/xml", "n3", " n-triples"]
             except AssertionError:
