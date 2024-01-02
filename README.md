@@ -32,14 +32,15 @@ Deploy a pre-trained embedding model without writing a single line of code.
 ## Installation
 <details><summary> Click me! </summary>
 
+### Instalation from Source
 ``` bash
 git clone https://github.com/dice-group/dice-embeddings.git
-conda create -n dice python=3.9.18 --no-default-packages && conda activate dice
-cd dice-embeddings && pip3 install -r requirements.txt
+conda create -n dice python=3.9.18 --no-default-packages && conda activate dice && cd dice-embeddings &&
+pip3 install .
 ```
 or
 ```bash
-pip install dicee==0.1.2
+pip install dicee==0.1.3
 ```
 ## Download Knowledge Graphs
 ```bash

@@ -185,8 +185,9 @@ class BaseKGE(pytorch_lightning.LightningModule):
         all_entities = self.token_embeddings(self.ordered_bpe_entities)
         num_e, token_size, dim = all_entities.shape
         all_entities = all_entities.reshape(num_e, token_size * dim)
-
-        E = self.lf(all_entities)
+        # Normalize each token vector into unit norms
+        # https://pytorch.org/docs/stable/generated/torch.nn.functional.normalize.html
+        E = F.normalize(self.lf(all_entities), p=2, dim=0)
         return self.k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
 
     def mem_of_model(self) -> Dict:

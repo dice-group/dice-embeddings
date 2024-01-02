@@ -5,7 +5,6 @@ import warnings
 from types import SimpleNamespace
 import os
 import datetime
-import argparse
 from pytorch_lightning import seed_everything
 
 from dicee.knowledge_graph import KG
@@ -13,8 +12,6 @@ from dicee.evaluator import Evaluator
 # Avoid
 from dicee.static_preprocess_funcs import preprocesses_input_args
 from dicee.trainer import DICE_Trainer
-import pytorch_lightning as pl
-
 from dicee.static_funcs import timeit, continual_training_setup_executor, read_or_load_kg, load_json, store
 
 logging.getLogger('pytorch_lightning').setLevel(0)

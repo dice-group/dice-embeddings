@@ -239,9 +239,7 @@ class ASWA(AbstractPPECallback):
 
     def decide(self, running_model_state_dict, ensemble_state_dict, val_running_model, mrr_updated_ensemble_model):
         """
-        Hard Update
-        Soft Update
-        Rejection
+        Perform Hard Update, software or rejection
 
         Parameters
         ----------
@@ -254,20 +252,30 @@ class ASWA(AbstractPPECallback):
         -------
 
         """
+        # (1) HARD UPDATE:
+        # If the validation performance of the running model is greater than
+        # the validation performance of updated ASWA and
+        # the validation performance of ASWA
         if val_running_model > mrr_updated_ensemble_model and val_running_model > self.val_aswa:
             """Hard Update """
+            # (1.1) Save the running model as ASWA
             torch.save(running_model_state_dict, f=f"{self.path}/aswa.pt")
+            # (2.1) Resect alphas/ensemble weights
             self.alphas.clear()
+            # (2.2) Store the validation performance of ASWA
             self.val_aswa = val_running_model
             return True
 
+        # (2) SOFT UPDATE:
+        # If the validation performance of the running model is less  than
+        # the validation performance of updated ASWA
         if mrr_updated_ensemble_model > self.val_aswa:
             """Soft update"""
             self.val_aswa = mrr_updated_ensemble_model
             torch.save(ensemble_state_dict, f=f"{self.path}/aswa.pt")
             self.alphas.append(1.0)
             return True
-
+        # (3) Rejection:
         if self.val_aswa > mrr_updated_ensemble_model:
             """ Ignore """
             self.alphas.append(0)
@@ -276,30 +284,32 @@ class ASWA(AbstractPPECallback):
     def on_train_epoch_end(self, trainer, model):
         # (1) Increment epoch counter
         self.epoch_count += 1
-        # (2) Save the given eval setting .
+        # (2) Save the given eval setting if it is not saved.
         if self.initial_eval_setting is None:
             self.initial_eval_setting = trainer.evaluator.args.eval_model
             trainer.evaluator.args.eval_model = "val"
-
+        # (3) Compute MRR of the running model.
         val_running_model = self.compute_mrr(trainer, model)
-        # (1) Initialize the ensemble
+
+        # (4) Initialize ASWA if it is not initialized.
         if self.val_aswa == -1:
             torch.save(model.state_dict(), f=f"{self.path}/aswa.pt")
             self.alphas.append(1.0)
             self.val_aswa = val_running_model
             return True
         else:
-            # (1) Load ASWA ensemble
+            # (5) Load ASWA ensemble parameters.
             ensemble_state_dict = self.get_aswa_state_dict(model)
-
-            # (2) Evaluate (1) on the validation data.
+            # (6) Initialize ASWA ensemble with (5).
             ensemble = type(model)(model.args)
             ensemble.load_state_dict(ensemble_state_dict)
-            mrr_updated_ensemble_model = trainer.evaluator.eval(dataset=trainer.dataset, trained_model=ensemble,
+            # (7) Evaluate (6) on the validation data, i.e., perform the lookahead operation.
+            mrr_updated_ensemble_model = trainer.evaluator.eval(dataset=trainer.dataset,
+                                                                trained_model=ensemble,
                                                                 form_of_labelling=trainer.form_of_labelling,
                                                                 during_training=True)["Val"]["MRR"]
             # print(f"| MRR Running {val_running_model:.4f} | MRR ASWA: {self.val_aswa:.4f} |ASWA|:{sum(self.alphas)}")
-            # (3) Update or not
+            # (8) Decide whether ASWA should be updated via the current running model.
             self.decide(model.state_dict(), ensemble_state_dict, val_running_model, mrr_updated_ensemble_model)
 
 
