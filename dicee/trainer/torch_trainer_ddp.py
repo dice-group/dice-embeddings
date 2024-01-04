@@ -62,18 +62,21 @@ class TorchDDPTrainer(AbstractTrainer):
         # (2) Initialize OPTIMIZER.
         optimizer = model.configure_optimizers()
         # (3) Start NodeTrainer.
-        NodeTrainer(model, train_dataset_loader, optimizer, self.callbacks, self.attributes.num_epochs).train()
+        NodeTrainer(self,model, train_dataset_loader, optimizer, self.callbacks, self.attributes.num_epochs).train()
         torch.distributed.destroy_process_group()
         self.on_fit_end(self, model)
 
 
 class NodeTrainer:
     def __init__(self,
+                 trainer,
                  model: torch.nn.Module,
                  train_dataset_loader: DataLoader,
                  optimizer: torch.optim.Optimizer,
                  callbacks,
                  num_epochs: int) -> None:
+        
+        self.trainer=trainer
         # (1) Local and Global Ranks. 
         self.local_rank = int(os.environ["LOCAL_RANK"])
         self.global_rank = int(os.environ["RANK"])
@@ -91,12 +94,12 @@ class NodeTrainer:
         print(self.model)
         print(self.optimizer)
         print(f'Global:{self.global_rank}'
-              f'|Local:{self.local_rank}'
-              f'|NumOfDataPoints:{len(self.train_dataset_loader.dataset)}'
-              f'|NumOfEpochs:{self.num_epochs}'
-              f'|LearningRate:{self.model.module.learning_rate}'
-              f'|BatchSize:{self.train_dataset_loader.batch_size}'
-              f'|EpochBatchsize:{len(self.train_dataset_loader)}')
+              f' | Local:{self.local_rank}'
+              f' | NumOfDataPoints:{len(self.train_dataset_loader.dataset)}'
+              f' | NumOfEpochs:{self.num_epochs}'
+              f' | LearningRate:{self.model.module.learning_rate}'
+              f' | BatchSize:{self.train_dataset_loader.batch_size}'
+              f' | EpochBatchsize:{len(self.train_dataset_loader)}')
 
         self.loss_history = []
 
@@ -140,20 +143,20 @@ class NodeTrainer:
                 if construct_mini_batch_time:
                     print(
                         f"Global:{self.global_rank}"
-                        f"|Local:{self.local_rank}"
-                        f"|Epoch:{epoch + 1}"
-                        f"|Batch:{i + 1}"
-                        f"|Loss:{batch_loss}"
-                        f"|ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec|"
-                        f"BatchConst.:{construct_mini_batch_time:.2f}sec")
+                        f" | Local:{self.local_rank}"
+                        f" | Epoch:{epoch + 1}"
+                        f" | Batch:{i + 1}"
+                        f" | Loss:{batch_loss}"
+                        f" | ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec"
+                        f" | BatchConst.:{construct_mini_batch_time:.2f}sec")
                 else:
                     print(
                         f"Global:{self.global_rank}"
-                        f"|Local:{self.local_rank}"
-                        f"|Epoch:{epoch + 1}"
-                        f"|Batch:{i + 1}"
-                        f"|Loss:{batch_loss}"
-                        f"|ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
+                        f" | Local:{self.local_rank}"
+                        f" | Epoch:{epoch + 1}"
+                        f" | Batch:{i + 1}"
+                        f" | Loss:{batch_loss}"
+                        f" | ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
             construct_mini_batch_time = time.time()
         return epoch_loss / (i + 1)
 
@@ -162,12 +165,16 @@ class NodeTrainer:
             start_time = time.time()
             epoch_loss = self._run_epoch(epoch)
 
-            print(f"Epoch:{epoch + 1} | Loss:{epoch_loss:.8f} | Runtime:{(time.time() - start_time) / 60:.3f}mins")
-            if True:#self.local_rank == self.global_rank == 0:
-                #print(f"Epoch:{epoch + 1} | Loss:{epoch_loss:.8f} | Runtime:{(time.time() - start_time) / 60:.3f}mins")
+            print(f"Global:{self.global_rank}"
+                  f" | Local:{self.local_rank}"
+                  f" | Epoch:{epoch + 1}"
+                  f" | Loss:{epoch_loss:.8f}"
+                  f" | Runtime:{(time.time() - start_time) / 60:.3f}mins")
+
+            if True: # self.local_rank == self.global_rank == 0:
                 self.model.module.loss_history.append(epoch_loss)
                 for c in self.callbacks:
-                    c.on_train_epoch_end(None, self.model.module)
+                    c.on_train_epoch_end(self.trainer, self.model.module)
 
 
 class DDPTrainer:
