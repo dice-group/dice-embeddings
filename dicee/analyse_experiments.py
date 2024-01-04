@@ -160,17 +160,17 @@ def analyse(args):
     df.sort_values(by=['testMRR'], ascending=False, inplace=True)
     pd.set_option("display.precision", 3)
 
-    df=df[['model',
-               'adaptive_swa',
+    df=df[["model",
+            "adaptive_swa",
                "stochastic_weight_avg",
               "trainMRR",
               "trainH@1",
               "trainH@3",
               "trainH@10",
-              "valMRR",
-              "valH@1",
-              "valH@3",
-              "valH@10",
+              #"valMRR",
+              #"valH@1",
+              #"valH@3",
+              #"valH@10",
               "testMRR",
               "testH@1",
               "testH@3",

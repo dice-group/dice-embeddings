@@ -24,8 +24,10 @@ jobs:
       - name: Install dependencies
         run: | 
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+      #    # pip install -r requirements.txt
 
       - name: Build HTML and import
         run: |
-           sphinx-apidoc -o docs dicee/ && make -C docs/ html && mv docs/_build/html docs/ && ghp-import -n -p -f docs/html
+      #     sphinx-apidoc -o docs dicee/ && make -C docs/ html && ghp-import -n -p -f docs/_build/html
+          
+          

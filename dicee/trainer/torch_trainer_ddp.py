@@ -52,8 +52,11 @@ class TorchDDPTrainer(AbstractTrainer):
         torch.distributed.init_process_group(backend="nccl")
         train_dataset_loader = kwargs['train_dataloaders']
         # (1) Create DATA LOADER.
-        train_dataset_loader = DataLoader(train_dataset_loader.dataset, batch_size=self.attributes.batch_size,
-                                          pin_memory=True, shuffle=False, num_workers=self.attributes.num_core,
+        train_dataset_loader = DataLoader(train_dataset_loader.dataset,
+                                          batch_size=self.attributes.batch_size,
+                                          pin_memory=True,
+                                          shuffle=False,
+                                          num_workers=self.attributes.num_core,
                                           persistent_workers=False,
                                           collate_fn=kwargs['train_dataloaders'].dataset.collate_fn,
                                           sampler=torch.utils.data.distributed.DistributedSampler(
@@ -62,22 +65,25 @@ class TorchDDPTrainer(AbstractTrainer):
         # (2) Initialize OPTIMIZER.
         optimizer = model.configure_optimizers()
         # (3) Start NodeTrainer.
-        NodeTrainer(model, train_dataset_loader, optimizer, self.callbacks, self.attributes.num_epochs).train()
+        NodeTrainer(self, model, train_dataset_loader, optimizer, self.callbacks, self.attributes.num_epochs).train()
         torch.distributed.destroy_process_group()
         self.on_fit_end(self, model)
 
 
 class NodeTrainer:
     def __init__(self,
+                 trainer,
                  model: torch.nn.Module,
                  train_dataset_loader: DataLoader,
                  optimizer: torch.optim.Optimizer,
                  callbacks,
                  num_epochs: int) -> None:
-        # (1) Local and Global Ranks. 
+        # (1) Trainer.
+        self.trainer = trainer
+        # (2) Local and Global Ranks.
         self.local_rank = int(os.environ["LOCAL_RANK"])
         self.global_rank = int(os.environ["RANK"])
-        # (2) Send model to local trainer. (Check whether it is uncesseary as we wrap it with DDP
+        # (3) Send model to local trainer.
         self.model = model.to(self.local_rank)
         self.train_dataset_loader = train_dataset_loader
         self.loss_func = self.model.loss
@@ -91,19 +97,32 @@ class NodeTrainer:
         print(self.model)
         print(self.optimizer)
         print(f'Global:{self.global_rank}'
-              f'|Local:{self.local_rank}'
-              f'|NumOfDataPoints:{len(self.train_dataset_loader.dataset)}'
-              f'|NumOfEpochs:{self.num_epochs}'
-              f'|LearningRate:{self.model.module.learning_rate}'
-              f'|BatchSize:{self.train_dataset_loader.batch_size}'
-              f'|EpochBatchsize:{len(self.train_dataset_loader)}')
+              f' | Local:{self.local_rank}'
+              f' | NumOfDataPoints:{len(self.train_dataset_loader.dataset)}'
+              f' | NumOfEpochs:{self.num_epochs}'
+              f' | LearningRate:{self.model.module.learning_rate}'
+              f' | BatchSize:{self.train_dataset_loader.batch_size}'
+              f' | EpochBatchsize:{len(self.train_dataset_loader)}')
 
         self.loss_history = []
 
     def _load_snapshot(self, snapshot_path):
         raise NotImplementedError
 
-    def _run_batch(self, source, targets):
+    def _run_batch(self, source: torch.LongTensor, targets: torch.FloatTensor):
+        """
+        Forward + Backward + Update over a single batch
+
+        Parameters
+        ----------
+        source:
+        targets
+
+        Returns
+        -------
+        batch loss
+
+        """
         self.optimizer.zero_grad()
         output = self.model(source)
         loss = self.loss_func(output, targets)
@@ -124,7 +143,19 @@ class NodeTrainer:
         else:
             raise ValueError('Unexpected batch shape..')
 
-    def _run_epoch(self, epoch):
+    def _run_epoch(self, epoch: int) -> float:
+        """
+        Single pass/iteration over the training dataset
+
+        Parameters
+        ----------
+        epoch:int epoch number of the DistributedSampler
+
+        Returns
+        -------
+        Average mini batch loss over the training dataset
+
+        """
         self.train_dataset_loader.sampler.set_epoch(epoch)
         epoch_loss = 0
         i = 0
@@ -140,34 +171,45 @@ class NodeTrainer:
                 if construct_mini_batch_time:
                     print(
                         f"Global:{self.global_rank}"
-                        f"|Local:{self.local_rank}"
-                        f"|Epoch:{epoch + 1}"
-                        f"|Batch:{i + 1}"
-                        f"|Loss:{batch_loss}"
-                        f"|ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec|"
-                        f"BatchConst.:{construct_mini_batch_time:.2f}sec")
+                        f" | Local:{self.local_rank}"
+                        f" | Epoch:{epoch + 1}"
+                        f" | Batch:{i + 1}"
+                        f" | Loss:{batch_loss}"
+                        f" | ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec"
+                        f" | BatchConst.:{construct_mini_batch_time:.2f}sec")
                 else:
                     print(
                         f"Global:{self.global_rank}"
-                        f"|Local:{self.local_rank}"
-                        f"|Epoch:{epoch + 1}"
-                        f"|Batch:{i + 1}"
-                        f"|Loss:{batch_loss}"
-                        f"|ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
+                        f" | Local:{self.local_rank}"
+                        f" | Epoch:{epoch + 1}"
+                        f" | Batch:{i + 1}"
+                        f" | Loss:{batch_loss}"
+                        f" | ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
             construct_mini_batch_time = time.time()
         return epoch_loss / (i + 1)
 
     def train(self):
+        """
+        Training loop for DDP
+
+        Returns
+        -------
+
+        """
         for epoch in range(self.num_epochs):
             start_time = time.time()
             epoch_loss = self._run_epoch(epoch)
 
-            print(f"Epoch:{epoch + 1} | Loss:{epoch_loss:.8f} | Runtime:{(time.time() - start_time) / 60:.3f}mins")
-            if True:#self.local_rank == self.global_rank == 0:
-                #print(f"Epoch:{epoch + 1} | Loss:{epoch_loss:.8f} | Runtime:{(time.time() - start_time) / 60:.3f}mins")
+            print(f"Global:{self.global_rank}"
+                  f" | Local:{self.local_rank}"
+                  f" | Epoch:{epoch + 1}"
+                  f" | Loss:{epoch_loss:.8f}"
+                  f" | Runtime:{(time.time() - start_time) / 60:.3f}mins")
+
+            if True:  # self.local_rank == self.global_rank == 0:
                 self.model.module.loss_history.append(epoch_loss)
                 for c in self.callbacks:
-                    c.on_train_epoch_end(None, self.model.module)
+                    c.on_train_epoch_end(self.trainer, self.model.module)
 
 
 class DDPTrainer:
