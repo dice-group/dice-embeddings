@@ -44,7 +44,7 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
     """ Load and Preprocess via Polars """
     print(f'*** Reading {data_path} with Polars ***')
     # (1) Load the data.
-    if data_path[-3:] in ['txt', 'csv']:
+    if True:#data_path[-3:] in [".tar.gz",'txt', 'csv']:
         print('Reading with polars.read_csv with sep **t** ...')
         # TODO: if byte_pair_encoding=True, we should not use "\s+" as seperator I guess
         df = polars.read_csv(data_path,
