@@ -5,7 +5,7 @@ import torch
 from typing import List, Tuple, Union
 import random
 from abc import ABC
-import pytorch_lightning
+import lightning
 import tiktoken
 
 
@@ -30,6 +30,8 @@ class AbstractTrainer:
         # Set True to use Model summary callback of pl.
         torch.manual_seed(self.attributes.random_seed)
         torch.cuda.manual_seed_all(self.attributes.random_seed)
+        # To be able to use pl callbacks with our trainers.
+        self.strategy=None
 
     def on_fit_start(self, *args, **kwargs):
         """
@@ -429,7 +431,7 @@ class BaseInteractiveKGE:
         return self.model.parameters()
 
 
-class AbstractCallback(ABC, pytorch_lightning.callbacks.Callback):
+class AbstractCallback(ABC, lightning.pytorch.callbacks.Callback):
     """
     Abstract class for Callback class for knowledge graph embedding models
 

@@ -22,6 +22,58 @@ class KGE(BaseInteractiveKGE):
                  apply_semantic_constraint=False):
         super().__init__(path=path, url=url, construct_ensemble=construct_ensemble, model_name=model_name)
 
+    def get_transductive_entity_embeddings(self,
+                                           indices: Union[torch.LongTensor, List[str]],
+                                           as_pytorch=False,
+                                           as_numpy=False,
+                                           as_list=True) -> Union[torch.FloatTensor, np.ndarray, List[float]]:
+
+        if isinstance(indices, torch.LongTensor):
+            """ Do nothing"""
+        else:
+            assert isinstance(indices, list), f"indices must be either torch.LongTensor or list of strings{indices}"
+            indices = torch.LongTensor([self.entity_to_idx[i] for i in indices])
+
+        if as_pytorch:
+            return self.model.entity_embeddings(indices)
+        elif as_numpy:
+            return self.model.entity_embeddings(indices).numpy
+        elif as_list:
+            return self.model.entity_embeddings(indices).tolist()
+        else:
+            raise RuntimeError("Something went wrong with the types")
+
+    def create_vector_database(self, collection_name: str, distance: str, location: str = "localhost",
+                               port: int = 6333):
+        assert distance in ["cosine", "dot"]
+        # lazy imports
+        from qdrant_client import QdrantClient
+        from qdrant_client.http.models import Distance, VectorParams
+        from qdrant_client.http.models import PointStruct
+        # from qdrant_client.http.models import Filter, FieldCondition, MatchValue
+
+        client = QdrantClient(location=location, port=port)
+        # If the collection is not created, create it
+        if collection_name in [i.name for i in client.get_collections().collections]:
+            print("Deleting existing collection ", collection_name)
+            client.delete_collection(collection_name=collection_name)
+
+        print(f"Creating a collection {collection_name} with distance metric:Cosine")
+        client.create_collection(collection_name=collection_name,
+                                 vectors_config=VectorParams(size=self.model.embedding_dim, distance=Distance.COSINE))
+
+        entities = list(self.idx_to_entity.values())
+        print("Fetching entity embeddings..")
+        vectors = self.get_transductive_entity_embeddings(indices=entities, as_list=True)
+        print("Indexing....")
+        points = []
+        for str_ent, vec in zip(entities, vectors):
+            points.append(PointStruct(id=self.entity_to_idx[str_ent],
+                                      vector=vec, payload={"name": str_ent}))
+        operation_info = client.upsert(collection_name=collection_name, wait=True,
+                                       points=points)
+        print(operation_info)
+
     def generate(self, h="", r=""):
         assert self.configs["byte_pair_encoding"]
 

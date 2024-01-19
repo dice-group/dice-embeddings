@@ -38,9 +38,9 @@ class PrintCallback(AbstractCallback):
         self.start_time = time.time()
 
     def on_fit_start(self, trainer, pl_module):
-        print(pl_module)
-        print(pl_module.summarize())
-        print(pl_module.selected_optimizer)
+        # print(pl_module)
+        # print(pl_module.summarize())
+        # print(pl_module.selected_optimizer)
         print(f"\nTraining is starting {datetime.datetime.now()}...")
 
     def on_fit_end(self, trainer, pl_module):

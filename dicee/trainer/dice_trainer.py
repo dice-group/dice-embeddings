@@ -1,6 +1,11 @@
-import pytorch_lightning as pl
+import lightning as pl
+
 import gc
+
 from typing import Union
+
+
+
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
 from dicee.callbacks import (ASWA, PPE, FPPE, Eval, KronE, PrintCallback, AccumulateEpochLossCallback,
@@ -11,7 +16,6 @@ from .torch_trainer_ddp import TorchDDPTrainer
 from ..static_funcs import timeit
 import os
 import torch
-from pytorch_lightning.strategies import DDPStrategy
 import pandas as pd
 from sklearn.model_selection import KFold
 import copy
@@ -32,17 +36,59 @@ def initialize_trainer(args, callbacks):
             return TorchTrainer(args, callbacks=callbacks)
     elif args.trainer == 'PL':
         print('Initializing Pytorch-lightning Trainer', end='\t')
-        return pl.Trainer.from_argparse_args(args,
-                                             callbacks=callbacks,
-                                             strategy=DDPStrategy(find_unused_parameters=False))
+        kwargs = vars(args)
+        # kwargs["callbacks"] = callbacks
+        """
+        max_time: Optional[Union[str, timedelta, Dict[str, int]]] = None,
+        limit_train_batches: Optional[Union[int, float]] = None,
+        limit_val_batches: Optional[Union[int, float]] = None,
+        limit_test_batches: Optional[Union[int, float]] = None,
+        limit_predict_batches: Optional[Union[int, float]] = None,
+        overfit_batches: Union[int, float] = 0.0,
+        val_check_interval: Optional[Union[int, float]] = None,
+        check_val_every_n_epoch: Optional[int] = 1,
+        num_sanity_val_steps: Optional[int] = None,
+        log_every_n_steps: Optional[int] = None,
+        enable_checkpointing: Optional[bool] = None,
+        enable_progress_bar: Optional[bool] = None,
+        enable_model_summary: Optional[bool] = None,
+        accumulate_grad_batches: int = 1,
+        gradient_clip_val: Optional[Union[int, float]] = None,
+        gradient_clip_algorithm: Optional[str] = None,
+        deterministic: Optional[Union[bool, _LITERAL_WARN]] = None,
+        benchmark: Optional[bool] = None,
+        inference_mode: bool = True,
+        use_distributed_sampler: bool = True,
+        profiler: Optional[Union[Profiler, str]] = None,
+        detect_anomaly: bool = False,
+        barebones: bool = False,
+        plugins: Optional[Union[_PLUGIN_INPUT, List[_PLUGIN_INPUT]]] = None,
+        sync_batchnorm: bool = False,
+        reload_dataloaders_every_n_epochs: int = 0,
+        default_root_dir: Optional[_PATH] = None,)
+        """
+        # @TODO: callbacks need to be ad
+        return pl.Trainer(accelerator=kwargs.get("accelerator", "auto"),
+                          strategy=kwargs.get("strategy", "auto"),
+                          num_nodes=kwargs.get("num_nodes", 1),
+                          precision=kwargs.get("precision", None),
+                          logger=kwargs.get("logger", None),
+                          callbacks=callbacks,
+                          fast_dev_run=kwargs.get("fast_dev_run", False),
+                          max_epochs=kwargs["num_epochs"],
+                          min_epochs=kwargs["num_epochs"],
+                          max_steps=kwargs.get("max_step", -1),
+                          min_steps=kwargs.get("min_steps", None))
     else:
         print('Initialize TorchTrainer CPU Trainer', end='\t')
         return TorchTrainer(args, callbacks=callbacks)
 
 
 def get_callbacks(args):
-    callbacks = [PrintCallback(),
-                 #KGESaveCallback(every_x_epoch=args.save_model_at_every_epoch,
+    callbacks = [
+        pl.pytorch.callbacks.ModelSummary(),
+        PrintCallback(),
+                 # KGESaveCallback(every_x_epoch=args.save_model_at_every_epoch,
                  #                max_epochs=args.max_epochs,
                  #                path=args.full_storage_path),
                  AccumulateEpochLossCallback(path=args.full_storage_path)
