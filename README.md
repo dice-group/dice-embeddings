@@ -134,6 +134,117 @@ dicee --sparql_endpoint "http://localhost:3030/mutagenesis/" --model Keci
 For more, please refer to `examples`.
 </details>
 
+## Embedding Vector Database 
+<details> <summary> To see a code snippet </summary>
+
+#### Train an embedding model
+
+```bash
+dicee --dataset_dir KGs/Countries-S1 --path_to_store_single_run CountryEmbeddings --model Keci --p 0 --q 1 --embedding_dim 32 --adaptive_swa
+Evaluate Keci on Train set: Evaluate Keci on Train set
+{'H@1': 0.7110711071107111, 'H@3': 0.8937893789378938, 'H@10': 0.9657965796579658, 'MRR': 0.8083741625024974}
+Evaluate Keci on Validation set: Evaluate Keci on Validation set
+{'H@1': 0.2916666666666667, 'H@3': 0.5208333333333334, 'H@10': 0.75, 'MRR': 0.43778750756550605}
+Evaluate Keci on Test set: Evaluate Keci on Test set
+{'H@1': 0.4166666666666667, 'H@3': 0.5833333333333334, 'H@10': 0.8125, 'MRR': 0.5345117321073071}
+Total Runtime: 16.738 seconds
+
+## Create a qdrant vector database
+diceeindex --path_to_store_single_run CountryEmbeddings --path_model CountryEmbeddings --collection_name "dummy" --location "localhost"
+```
+#### Create Embedding Vector database
+
+```bash
+# Install Qdrant
+docker pull qdrant/qdrant
+docker run -p 6333:6333 -p 6334:6334      -v $(pwd)/qdrant_storage:/qdrant/storage:z      qdrant/qdrant
+# pip install qdrant-client
+diceeindex --path_model CountryEmbeddings --collection_name "dummy" --location "localhost"
+```
+
+#### Run Webservice
+```bash
+diceeserve --path_model CountryEmbeddings --collection_name "dummy" --collection_location "localhost"
+```
+
+#### Query
+
+Most similar countries to germany
+```bash
+curl -X 'GET' 'http://0.0.0.0:8000/api/search?q=germany' -H 'accept: application/json'
+{"result":[{"hit":"germany","score":1.0},
+{"hit":"netherlands","score":0.8340942},
+{"hit":"luxembourg","score":0.7828385},
+{"hit":"france","score":0.70330715},
+{"hit":"belgium","score":0.6233973}]}
+```
+
+
+```python
+# pip install dicee
+# wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate & unzip KGs.zip
+from dicee.executer import Execute
+from dicee.config import Namespace
+from dicee.knowledge_graph_embeddings import KGE
+# (1) Train a KGE model
+args = Namespace()
+args.model = 'Keci'
+args.p=0
+args.q=1
+args.optim = 'Adam'
+args.scoring_technique = "AllvsAll"
+args.path_single_kg = "KGs/Family/family-benchmark_rich_background.owl"
+args.backend = "rdflib"
+args.num_epochs = 200
+args.batch_size = 1024
+args.lr = 0.1
+args.embedding_dim = 512
+result = Execute(args).start()
+# (2) Load the pre-trained model
+pre_trained_kge = KGE(path=result['path_experiment_folder'])
+# (3) Single-hop query answering
+# Query: ?E : \exist E.hasSibling(E, F9M167)
+# Question: Who are the siblings of F9M167?
+# Answer: [F9M157, F9F141], as (F9M167, hasSibling, F9M157) and (F9M167, hasSibling, F9F141)
+predictions = pre_trained_kge.answer_multi_hop_query(query_type="1p",
+                                                     query=('http://www.benchmark.org/family#F9M167',
+                                                            ('http://www.benchmark.org/family#hasSibling',)),
+                                                     tnorm="min", k=3)
+top_entities = [topk_entity for topk_entity, query_score in predictions]
+assert "http://www.benchmark.org/family#F9F141" in top_entities
+assert "http://www.benchmark.org/family#F9M157" in top_entities
+# (2) Two-hop query answering
+# Query: ?D : \exist E.Married(D, E) \land hasSibling(E, F9M167)
+# Question: To whom a sibling of F9M167 is married to?
+# Answer: [F9F158, F9M142] as (F9M157 #married F9F158) and (F9F141 #married F9M142)
+predictions = pre_trained_kge.answer_multi_hop_query(query_type="2p",
+                                                     query=("http://www.benchmark.org/family#F9M167",
+                                                            ("http://www.benchmark.org/family#hasSibling",
+                                                             "http://www.benchmark.org/family#married")),
+                                                     tnorm="min", k=3)
+top_entities = [topk_entity for topk_entity, query_score in predictions]
+assert "http://www.benchmark.org/family#F9M142" in top_entities
+assert "http://www.benchmark.org/family#F9F158" in top_entities
+# (3) Three-hop query answering
+# Query: ?T : \exist D.type(D,T) \land Married(D,E) \land hasSibling(E, F9M167)
+# Question: What are the type of people who are married to a sibling of F9M167?
+# (3) Answer: [Person, Male, Father] since  F9M157 is [Brother Father Grandfather Male] and F9M142 is [Male Grandfather Father]
+
+predictions = pre_trained_kge.answer_multi_hop_query(query_type="3p", query=("http://www.benchmark.org/family#F9M167",
+                                                                             ("http://www.benchmark.org/family#hasSibling",
+                                                                             "http://www.benchmark.org/family#married",
+                                                                             "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")),
+                                                     tnorm="min", k=5)
+top_entities = [topk_entity for topk_entity, query_score in predictions]
+print(top_entities)
+assert "http://www.benchmark.org/family#Person" in top_entities
+assert "http://www.benchmark.org/family#Father" in top_entities
+assert "http://www.benchmark.org/family#Male" in top_entities
+```
+For more, please refer to `examples/multi_hop_query_answering`.
+</details>
+
+
 ## Answering Complex Queries 
 <details> <summary> To see a code snippet </summary>
 

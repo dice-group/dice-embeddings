@@ -43,7 +43,8 @@ class KGE(BaseInteractiveKGE):
         else:
             raise RuntimeError("Something went wrong with the types")
 
-    def create_vector_database(self, collection_name: str, distance: str, location: str = "localhost",
+    def create_vector_database(self, collection_name: str, distance: str,
+                               location: str = "localhost",
                                port: int = 6333):
         assert distance in ["cosine", "dot"]
         # lazy imports

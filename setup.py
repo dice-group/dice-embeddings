@@ -66,7 +66,10 @@ setup(
         "Programming Language :: Python :: 3.9",
         "License :: OSI Approved :: MIT License"],
     python_requires='>=3.9.18',
-    entry_points={"console_scripts": ["dicee = dicee.run:main"]},
+    entry_points={"console_scripts":
+                      ["dicee=dicee.scripts.run:main",
+                       "diceeindex=dicee.scripts.index:main",
+                       "diceeserve=dicee.scripts.serve:main"]},
     long_description=long_description,
     long_description_content_type="text/markdown",
 )

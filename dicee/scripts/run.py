@@ -1,5 +1,5 @@
 import json
-from .executer import Execute
+from ..executer import Execute
 import argparse
 def get_default_arguments(description=None):
     """ Extends pytorch_lightning Trainer's arguments with ours """
