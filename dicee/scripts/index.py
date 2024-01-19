@@ -1,5 +1,4 @@
 import argparse
-from ..knowledge_graph_embeddings import KGE
 
 
 def get_default_arguments():
@@ -19,10 +18,6 @@ def main():
     # docker run -p 6333:6333 -p 6334:6334      -v $(pwd)/qdrant_storage:/qdrant/storage:z      qdrant/qdrant
     # pip install qdrant-client
 
-    from qdrant_client import QdrantClient
-    from qdrant_client.http.models import Distance, VectorParams
-    from qdrant_client.http.models import PointStruct
-    from qdrant_client.http.models import Filter, FieldCondition, MatchValue
     from dicee.knowledge_graph_embeddings import KGE
 
     # Train a model on Countries dataset
