@@ -10,7 +10,7 @@ _deps = [
     "polars>=0.16.14",
     "scikit-learn>=1.2.2",
     "pyarrow>=11.0.0",
-    "pytorch-lightning==1.6.4",
+    "lightning>=2.1.3",
     "pykeen==1.10.1",
     "zstandard>=0.21.0",
     "pytest>=7.2.2",
@@ -30,7 +30,7 @@ def deps_list(*pkgs):
     return [deps[pkg] for pkg in pkgs]
 
 extras = dict()
-extras["dev"] = deps_list("torch", "pytorch-lightning", "pykeen", "tiktoken", "pandas", "polars", "pyarrow", "psutil", "rdflib", "ruff", "pytest")
+extras["dev"] = deps_list("torch", "lightning", "pykeen", "tiktoken", "pandas", "polars", "pyarrow", "psutil", "rdflib", "ruff", "pytest")
 extras["min"] = deps_list("torch", "pandas")
 extras["test"] = (extras["dev"] + deps_list("ruff", "pytest"))
 
@@ -66,7 +66,10 @@ setup(
         "Programming Language :: Python :: 3.9",
         "License :: OSI Approved :: MIT License"],
     python_requires='>=3.9.18',
-    entry_points={"console_scripts": ["dicee = dicee.run:main"]},
+    entry_points={"console_scripts":
+                      ["dicee=dicee.scripts.run:main",
+                       "diceeindex=dicee.scripts.index:main",
+                       "diceeserve=dicee.scripts.serve:main"]},
     long_description=long_description,
     long_description_content_type="text/markdown",
 )

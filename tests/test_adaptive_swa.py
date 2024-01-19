@@ -14,7 +14,7 @@ class TestASWA:
         args.scoring_technique = "KvsAll"
         args.dataset_dir = "KGs/UMLS"
         args.trainer = "PL"
-        args.num_epochs = 20
+        args.num_epochs = 100
         args.lr = 0.1
         args.embedding_dim = 32
         args.batch_size = 1024
@@ -28,7 +28,7 @@ class TestASWA:
         args.scoring_technique = "KvsAll"
         args.dataset_dir = "KGs/UMLS"
         args.trainer = "PL"
-        args.num_epochs = 20
+        args.num_epochs = 100
         args.lr = 0.1
         args.embedding_dim = 32
         args.batch_size = 1024
