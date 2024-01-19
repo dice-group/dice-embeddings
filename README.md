@@ -52,12 +52,7 @@ pytest -p no:warnings -x # Runs >114 tests leading to > 15 mins
 pytest -p no:warnings --lf # run only the last failed test
 pytest -p no:warnings --ff # to run the failures first and then the rest of the tests.
 ```
-To see the software architecture, execute the following command
-```
-pyreverse dicee/ && dot -Tpng -x classes.dot -o dice_software.png && eog dice_software.png
-# or
-pyreverse dicee/trainer && dot -Tpng -x classes.dot -o trainer.png && eog trainer.png
-```
+
 </details>
 
 ## Knowledge Graph Embedding Models
