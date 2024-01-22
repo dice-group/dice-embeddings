@@ -129,40 +129,26 @@ dicee --sparql_endpoint "http://localhost:3030/mutagenesis/" --model Keci
 For more, please refer to `examples`.
 </details>
 
-## Embedding Vector Database 
+## Creating an Embedding Vector Database 
 <details> <summary> To see a code snippet </summary>
 
-#### Train an embedding model
-
+##### Learning Embeddings
 ```bash
+# Train an embedding model
 dicee --dataset_dir KGs/Countries-S1 --path_to_store_single_run CountryEmbeddings --model Keci --p 0 --q 1 --embedding_dim 32 --adaptive_swa
-Evaluate Keci on Train set: Evaluate Keci on Train set
-{'H@1': 0.7110711071107111, 'H@3': 0.8937893789378938, 'H@10': 0.9657965796579658, 'MRR': 0.8083741625024974}
-Evaluate Keci on Validation set: Evaluate Keci on Validation set
-{'H@1': 0.2916666666666667, 'H@3': 0.5208333333333334, 'H@10': 0.75, 'MRR': 0.43778750756550605}
-Evaluate Keci on Test set: Evaluate Keci on Test set
-{'H@1': 0.4166666666666667, 'H@3': 0.5833333333333334, 'H@10': 0.8125, 'MRR': 0.5345117321073071}
-Total Runtime: 16.738 seconds
-
-## Create a qdrant vector database
-diceeindex --path_to_store_single_run CountryEmbeddings --path_model CountryEmbeddings --collection_name "dummy" --location "localhost"
 ```
-#### Create Embedding Vector database
-
+#### Loading Embeddings into Qdrant Vector Database
 ```bash
-# Install Qdrant
-docker pull qdrant/qdrant
-docker run -p 6333:6333 -p 6334:6334      -v $(pwd)/qdrant_storage:/qdrant/storage:z      qdrant/qdrant
+# Ensure that Qdrant available
+# docker pull qdrant/qdrant
+# docker run -p 6333:6333 -p 6334:6334      -v $(pwd)/qdrant_storage:/qdrant/storage:z      qdrant/qdrant
 # pip install qdrant-client
 diceeindex --path_model CountryEmbeddings --collection_name "dummy" --location "localhost"
 ```
-
-#### Run Webservice
+#### Launching Webservice
 ```bash
 diceeserve --path_model CountryEmbeddings --collection_name "dummy" --collection_location "localhost"
 ```
-
-#### Query
 
 Most similar countries to germany
 ```bash
