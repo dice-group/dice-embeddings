@@ -1,6 +1,8 @@
 import json
-from ..executer import Execute
+#from ..executer import Execute
+from dicee.executer import Execute
 import argparse
+
 def get_default_arguments(description=None):
     """ Extends pytorch_lightning Trainer's arguments with ours """
     # From "pytorch-lightning==1.6.4" to "lightning>=2.1.3",  'Trainer' has no attribute 'add_argparse_args'

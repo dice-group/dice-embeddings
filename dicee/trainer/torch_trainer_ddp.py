@@ -48,7 +48,9 @@ class TorchDDPTrainer(AbstractTrainer):
         model, = args
         # (1) Run the fit the start callback.
         self.on_fit_start(self, model)
+        print("DDP starts")
         # (2) Setup DDP.
+        print("NCCL is being initialized....")
         torch.distributed.init_process_group(backend="nccl")
         train_dataset_loader = kwargs['train_dataloaders']
         # (1) Create DATA LOADER.
@@ -78,6 +80,7 @@ class NodeTrainer:
                  optimizer: torch.optim.Optimizer,
                  callbacks,
                  num_epochs: int) -> None:
+        print("Initializing Node Trainer....")
         # (1) Trainer.
         self.trainer = trainer
         # (2) Local and Global Ranks.
@@ -90,8 +93,10 @@ class NodeTrainer:
         self.optimizer = optimizer
         self.callbacks = callbacks
         # (3) Wrap the model with DDP() along with GPU ID that model lives on.
-        self.model = DDP(model, device_ids=[self.local_rank])
+        print("Initializing device on",self.local_rank)
+        self.model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[self.local_rank],output_device=self.local_rank)
         self.num_epochs = num_epochs
+        print("HEREEE")
         print_peak_memory("Max memory allocated after creating DDP local local_rank:", self.local_rank)
         print(f'Global Rank {self.global_rank}\t Local Rank:{self.local_rank}')
         print(self.model)
