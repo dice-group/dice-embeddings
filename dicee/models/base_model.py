@@ -1,5 +1,5 @@
 from typing import List, Any, Tuple, Union, Dict
-import pytorch_lightning
+import lightning as pl
 import numpy as np
 import torch
 from torch import nn
@@ -82,7 +82,7 @@ class Block(nn.Module):
         return x
 
 
-class BaseKGE(pytorch_lightning.LightningModule):
+class BaseKGE(pl.LightningModule):
     def __init__(self, args: dict):
         super().__init__()
         self.args = args
@@ -377,51 +377,20 @@ class BaseKGE(pytorch_lightning.LightningModule):
         loss_batch = self.loss_function(yhat_batch, y_batch)
         return loss_batch
 
-    def training_epoch_end(self, training_step_outputs):
+    def on_train_epoch_end(self, *args, **kwargs):
+        if len(args)>=1:
+            raise RuntimeError(f"Arguments must not be empty:{args}")
+
+        if len(kwargs)>=1:
+            raise RuntimeError(f"Keyword Arguments must not be empty:{kwargs}")
+
+        # @TODO: No saving
+        """
+
         batch_losses = [i['loss'].item() for i in training_step_outputs]
         avg = sum(batch_losses) / len(batch_losses)
         self.loss_history.append(avg)
-
-    def validation_step(self, batch, batch_idx):
         """
-        @ TODO
-        # from torchmetrics import Accuracy as accuracy
-        if len(batch) == 4:
-            h, r, t, y_batch = batch
-            predictions = self.forward_triples(h, r, t)
-        else:
-            h, x, y_batch = batch[:, 0], batch[:, 1], batch[:, 2]
-            predictions = self.forward_k_vs_all(h, x)
-
-        val_loss = self.loss_function(predictions, y_batch)
-        val_accuracy = accuracy(predictions, y_batch)
-        return {'val_acc': val_accuracy, 'val_loss': val_loss}
-        """
-
-    def validation_epoch_end(self, outputs: List[Any]) -> None:
-        """
-        @ TODO
-
-        x = [[x['val_acc'], x['val_loss']] for x in outputs]
-        avg_val_acc, avg_loss = torch.tensor(x).mean(dim=0)[:]
-        self.log('avg_loss_per_epoch', avg_loss, on_epoch=True, prog_bar=True)
-        self.log('avg_val_acc_per_epoch', avg_val_acc, on_epoch=True, prog_bar=True)
-        """
-
-    def test_step(self, batch, batch_idx):
-        """
-        @ TODO
-
-        if len(batch) == 4:
-            h, r, t, y_batch = batch
-            predictions = self.forward_triples(h, r, t)
-        else:
-            h, x, y_batch = batch[:, 0], batch[:, 1], batch[:, 2]
-            predictions = self.forward_k_vs_all(h, x)
-        test_accuracy = accuracy(predictions, y_batch)
-        return {'test_accuracy': test_accuracy}
-        """
-
     def test_epoch_end(self, outputs: List[Any]):
         """
         @ TODO
