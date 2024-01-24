@@ -4,6 +4,7 @@ import torch
 import numpy as np
 from scipy.special import roots_legendre
 
+
 class FMult(BaseKGE):
     """
     FMult is a model for learning neural networks on knowledge graphs. It extends
@@ -14,7 +15,7 @@ class FMult(BaseKGE):
     Parameters
     ----------
     args : dict
-        A dictionary of arguments containing hyperparameters and settings for the model, 
+        A dictionary of arguments containing hyperparameters and settings for the model,
         such as embedding dimensions and other model-specific parameters.
 
     Attributes
@@ -50,21 +51,33 @@ class FMult(BaseKGE):
 
     def __init__(self, args: dict):
         super().__init__(args)
-        self.name = 'FMult'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
+        self.name = "FMult"
+        self.entity_embeddings = torch.nn.Embedding(
+            self.num_entities, self.embedding_dim
+        )
+        self.relation_embeddings = torch.nn.Embedding(
+            self.num_relations, self.embedding_dim
+        )
+        self.param_init(self.entity_embeddings.weight.data), self.param_init(
+            self.relation_embeddings.weight.data
+        )
         self.k = int(np.sqrt(self.embedding_dim // 2))
         self.num_sample = 50
         # self.gamma = torch.rand(self.k, self.num_sample) [0,1) uniform=> worse results
         self.gamma = torch.randn(self.k, self.num_sample)  # N(0,1)
         from scipy.special import roots_legendre
+
         roots, weights = roots_legendre(self.num_sample)
-        self.roots = torch.from_numpy(roots).repeat(self.k, 1).float()  # shape self.k by self.n
-        self.weights = torch.from_numpy(weights).reshape(1, -1).float()  # shape 1 by self.n
+        self.roots = (
+            torch.from_numpy(roots).repeat(self.k, 1).float()
+        )  # shape self.k by self.n
+        self.weights = (
+            torch.from_numpy(weights).reshape(1, -1).float()
+        )  # shape 1 by self.n
 
-
-    def compute_func(self, weights: torch.FloatTensor, x: torch.Tensor) -> torch.FloatTensor:
+    def compute_func(
+        self, weights: torch.FloatTensor, x: torch.Tensor
+    ) -> torch.FloatTensor:
         """
         Compute the output of a two-layer neural network.
 
@@ -79,7 +92,7 @@ class FMult(BaseKGE):
         -------
         torch.FloatTensor
             The output tensor after passing through the two-layer neural network.
-        """        
+        """
         n = len(weights)
         # Weights for two linear layers.
         w1, w2 = torch.hsplit(weights, 2)
@@ -133,7 +146,9 @@ class FMult(BaseKGE):
             The computed scores for the batch of triples.
         """
         # (1) Retrieve embeddings: batch, \mathbb R^d
-        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(idx_triple)
+        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(
+            idx_triple
+        )
         # (2) Compute NNs on \Gamma
         # Logits via FDistMult...
         # h_x = self.compute_func(head_ent_emb, x=self.gamma)  # batch, \mathbb{R}^k, |\Gamma|
@@ -141,16 +156,23 @@ class FMult(BaseKGE):
         # t_x = self.compute_func(tail_ent_emb, x=self.gamma)  # batch, \mathbb{R}^k, |\Gamma|
         # out = h_x * r_x * t_x  # batch, \mathbb{R}^k, |gamma|
         # (2) Compute NNs on \Gamma
-        self.gamma=self.gamma.to(head_ent_emb.device)
+        self.gamma = self.gamma.to(head_ent_emb.device)
 
-        h_x = self.compute_func(head_ent_emb, x=self.gamma)  # batch, \mathbb{R}^k, |\Gamma|
-        t_x = self.compute_func(tail_ent_emb, x=self.gamma)  # batch, \mathbb{R}^k, |\Gamma|
-        r_h_x = self.chain_func(weights=rel_ent_emb, x=h_x)  # batch, \mathbb{R}^k, |\Gamma|
+        h_x = self.compute_func(
+            head_ent_emb, x=self.gamma
+        )  # batch, \mathbb{R}^k, |\Gamma|
+        t_x = self.compute_func(
+            tail_ent_emb, x=self.gamma
+        )  # batch, \mathbb{R}^k, |\Gamma|
+        r_h_x = self.chain_func(
+            weights=rel_ent_emb, x=h_x
+        )  # batch, \mathbb{R}^k, |\Gamma|
         # (3) Compute |\Gamma| predictions
         out = torch.sum(r_h_x * t_x, dim=1)  # batch, |gamma| #
         # (4) Average (3) over \Gamma
         out = torch.mean(out, dim=1)  # batch
         return out
+
 
 class GFMult(BaseKGE):
     """
@@ -162,7 +184,7 @@ class GFMult(BaseKGE):
     Parameters
     ----------
     args : dict
-        A dictionary of arguments containing hyperparameters and settings for the model, 
+        A dictionary of arguments containing hyperparameters and settings for the model,
         such as embedding dimensions, learning rate, and other model-specific parameters.
 
     Attributes
@@ -196,17 +218,29 @@ class GFMult(BaseKGE):
 
     def __init__(self, args: dict):
         super().__init__(args)
-        self.name = 'GFMult'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
+        self.name = "GFMult"
+        self.entity_embeddings = torch.nn.Embedding(
+            self.num_entities, self.embedding_dim
+        )
+        self.relation_embeddings = torch.nn.Embedding(
+            self.num_relations, self.embedding_dim
+        )
+        self.param_init(self.entity_embeddings.weight.data), self.param_init(
+            self.relation_embeddings.weight.data
+        )
         self.k = int(np.sqrt(self.embedding_dim // 2))
         self.num_sample = 250
         roots, weights = roots_legendre(self.num_sample)
-        self.roots = torch.from_numpy(roots).repeat(self.k, 1).float()  # shape self.k by self.n
-        self.weights = torch.from_numpy(weights).reshape(1, -1).float()  # shape 1 by self.n
+        self.roots = (
+            torch.from_numpy(roots).repeat(self.k, 1).float()
+        )  # shape self.k by self.n
+        self.weights = (
+            torch.from_numpy(weights).reshape(1, -1).float()
+        )  # shape 1 by self.n
 
-    def compute_func(self, weights: torch.FloatTensor, x: torch.Tensor) -> torch.FloatTensor:
+    def compute_func(
+        self, weights: torch.FloatTensor, x: torch.Tensor
+    ) -> torch.FloatTensor:
         """
         Compute the output of a two-layer neural network.
 
@@ -275,16 +309,24 @@ class GFMult(BaseKGE):
             The computed scores for the batch of triples.
         """
         # (1) Retrieve embeddings: batch, \mathbb R^d
-        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(idx_triple)
+        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(
+            idx_triple
+        )
         # (2) Compute NNs on \Gamma
-        self.roots=self.roots.to(head_ent_emb.device)
-        self.weights=self.weights.to(head_ent_emb.device)
+        self.roots = self.roots.to(head_ent_emb.device)
+        self.weights = self.weights.to(head_ent_emb.device)
 
-        h_x = self.compute_func(head_ent_emb, x=self.roots)  # batch, \mathbb{R}^k, |\Gamma|
-        t_x = self.compute_func(tail_ent_emb, x=self.roots)  # batch, \mathbb{R}^k, |\Gamma|
-        r_h_x = self.chain_func(weights=rel_ent_emb, x=h_x)  # batch, \mathbb{R}^k, |\Gamma|
+        h_x = self.compute_func(
+            head_ent_emb, x=self.roots
+        )  # batch, \mathbb{R}^k, |\Gamma|
+        t_x = self.compute_func(
+            tail_ent_emb, x=self.roots
+        )  # batch, \mathbb{R}^k, |\Gamma|
+        r_h_x = self.chain_func(
+            weights=rel_ent_emb, x=h_x
+        )  # batch, \mathbb{R}^k, |\Gamma|
         # (3) Compute |\Gamma| predictions.
-        out = torch.sum(r_h_x * t_x, dim=1)*self.weights  # batch, |gamma| #
+        out = torch.sum(r_h_x * t_x, dim=1) * self.weights  # batch, |gamma| #
         # (4) Average (3) over \Gamma
         out = torch.mean(out, dim=1)  # batch
         return out
@@ -292,15 +334,15 @@ class GFMult(BaseKGE):
 
 class FMult2(BaseKGE):
     """
-    FMult2 is a model for learning neural networks on knowledge graphs, offering 
-    enhanced capabilities for capturing complex interactions in the graph. It extends 
-    the base knowledge graph embedding model by integrating multi-layer neural network 
+    FMult2 is a model for learning neural networks on knowledge graphs, offering
+    enhanced capabilities for capturing complex interactions in the graph. It extends
+    the base knowledge graph embedding model by integrating multi-layer neural network
     computations with entity and relation embeddings.
 
     Parameters
     ----------
     args : dict
-        A dictionary of arguments containing hyperparameters and settings for the model, 
+        A dictionary of arguments containing hyperparameters and settings for the model,
         such as embedding dimensions, learning rate, number of layers, and other model-specific parameters.
 
     Attributes
@@ -349,15 +391,18 @@ class FMult2(BaseKGE):
 
     def __init__(self, args: dict):
         super().__init__(args)
-        self.name = 'FMult2'
+        self.name = "FMult2"
         self.n_layers = 3
         tuned_embedding_dim = False
         while int(np.sqrt((self.embedding_dim - 1) / self.n_layers)) != np.sqrt(
-                (self.embedding_dim - 1) / self.n_layers):
+            (self.embedding_dim - 1) / self.n_layers
+        ):
             self.embedding_dim += 1
             tuned_embedding_dim = True
         if tuned_embedding_dim:
-            print(f"\n\n*****Embedding dimension reset to {self.embedding_dim} to fit model architecture!*****\n")
+            print(
+                f"\n\n*****Embedding dimension reset to {self.embedding_dim} to fit model architecture!*****\n"
+            )
         self.k = int(np.sqrt((self.embedding_dim - 1) // self.n_layers))
         self.n = 50
         self.a, self.b = -1.0, 1.0
@@ -366,12 +411,19 @@ class FMult2(BaseKGE):
         self.score_func = "compositional"
         # self.score_func = "full-compositional"
         # self.discrete_points = torch.linspace(self.a, self.b, steps=self.n)
-        self.discrete_points = torch.linspace(self.a, self.b, steps=self.n).repeat(self.k, 1)
+        self.discrete_points = torch.linspace(self.a, self.b, steps=self.n).repeat(
+            self.k, 1
+        )
 
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
-
+        self.entity_embeddings = torch.nn.Embedding(
+            self.num_entities, self.embedding_dim
+        )
+        self.relation_embeddings = torch.nn.Embedding(
+            self.num_relations, self.embedding_dim
+        )
+        self.param_init(self.entity_embeddings.weight.data), self.param_init(
+            self.relation_embeddings.weight.data
+        )
 
     def build_func(self, Vec: torch.Tensor) -> Tuple[List[torch.Tensor], torch.Tensor]:
         """
@@ -395,34 +447,36 @@ class FMult2(BaseKGE):
             W[i] = w.reshape(n, self.k, self.k)
         return W, Vec[:, -1]
 
-    def build_chain_funcs(self, list_Vec: List[torch.Tensor]) -> Tuple[List[torch.Tensor], torch.Tensor]:
+    def build_chain_funcs(
+        self, list_Vec: List[torch.Tensor]
+    ) -> Tuple[List[torch.Tensor], torch.Tensor]:
         """
         Builds chained functions from a list of vector representations. This method
-        constructs a sequence of neural network layers and their corresponding biases 
+        constructs a sequence of neural network layers and their corresponding biases
         based on the provided vector representations.
 
         Each vector representation in the list is first transformed into a set of weights
         and biases for a neural network layer using the `build_func` method. The method
-        then computes a chained multiplication of these weights, adjusted by biases, 
+        then computes a chained multiplication of these weights, adjusted by biases,
         to form a composite neural network function.
 
         Parameters
         ----------
         list_Vec : List[torch.Tensor]
-            A list of vector representations, each corresponding to a set of parameters 
+            A list of vector representations, each corresponding to a set of parameters
             for constructing a neural network layer.
 
         Returns
         -------
         Tuple[List[torch.Tensor], torch.Tensor]
-            A tuple where the first element is a list of weight tensors for each layer of 
-            the composite neural network, and the second element is the bias tensor for 
+            A tuple where the first element is a list of weight tensors for each layer of
+            the composite neural network, and the second element is the bias tensor for
             the last layer in the list.
 
         Notes
         -----
-        This method is specifically designed to work with the neural network architecture 
-        defined in the FMult2 model. It assumes that each vector in `list_Vec` can be 
+        This method is specifically designed to work with the neural network architecture
+        defined in the FMult2 model. It assumes that each vector in `list_Vec` can be
         decomposed into weights and biases suitable for a layer in a neural network.
         """
         list_W = []
@@ -444,19 +498,21 @@ class FMult2(BaseKGE):
         W.insert(0, W_temp)
         return W, list_b[-1]
 
-    def compute_func(self, W: List[torch.Tensor], b: torch.Tensor, x: torch.Tensor) -> torch.FloatTensor:
+    def compute_func(
+        self, W: List[torch.Tensor], b: torch.Tensor, x: torch.Tensor
+    ) -> torch.FloatTensor:
         """
         Computes the output of a multi-layer neural network defined by the given weights and bias.
 
-        This method sequentially applies a series of matrix multiplications and non-linear 
-        transformations to an input tensor `x`, using the provided weights `W`. The method 
-        alternates between applying a non-linear function (tanh) and a linear transformation 
+        This method sequentially applies a series of matrix multiplications and non-linear
+        transformations to an input tensor `x`, using the provided weights `W`. The method
+        alternates between applying a non-linear function (tanh) and a linear transformation
         to the intermediate outputs. The final output is adjusted with a bias term `b`.
 
         Parameters
         ----------
         W : List[torch.Tensor]
-            A list of weight tensors for each layer in the neural network. Each tensor 
+            A list of weight tensors for each layer in the neural network. Each tensor
             in the list represents the weights of a layer.
         b : torch.Tensor
             The bias tensor to be added to the output of the final layer.
@@ -470,8 +526,8 @@ class FMult2(BaseKGE):
 
         Notes
         -----
-        The method assumes an odd-indexed layer applies a non-linearity (tanh), while 
-        even-indexed layers apply linear transformations. This design choice is based on 
+        The method assumes an odd-indexed layer applies a non-linearity (tanh), while
+        even-indexed layers apply linear transformations. This design choice is based on
         empirical observations for better performance in the context of the FMult2 model.
         """
         out = W[0] @ x
@@ -482,16 +538,18 @@ class FMult2(BaseKGE):
                 out = out + w @ out
         return out + b.reshape(-1, 1, 1)
 
-    def function(self, list_W: List[List[torch.Tensor]], list_b: List[torch.Tensor]) -> Callable[[torch.Tensor], torch.Tensor]:
+    def function(
+        self, list_W: List[List[torch.Tensor]], list_b: List[torch.Tensor]
+    ) -> Callable[[torch.Tensor], torch.Tensor]:
         """
-        Defines a function that computes the output of a composite neural network. 
-        This higher-order function returns a callable that applies a sequence of 
+        Defines a function that computes the output of a composite neural network.
+        This higher-order function returns a callable that applies a sequence of
         transformations defined by the provided weights and biases.
 
-        The returned function (`f`) takes an input tensor `x` and applies a series of 
-        neural network computations on it. If only one set of weights and biases is provided, 
-        it directly computes the output using `compute_func`. Otherwise, it sequentially 
-        multiplies the outputs of multiple calls to `compute_func`, each using a different 
+        The returned function (`f`) takes an input tensor `x` and applies a series of
+        neural network computations on it. If only one set of weights and biases is provided,
+        it directly computes the output using `compute_func`. Otherwise, it sequentially
+        multiplies the outputs of multiple calls to `compute_func`, each using a different
         set of weights and biases from `list_W` and `list_b`.
 
         Parameters
@@ -509,18 +567,19 @@ class FMult2(BaseKGE):
 
         Notes
         -----
-        This method is part of the FMult2 model's approach to construct complex scoring 
-        functions for knowledge graph embeddings. The flexibility in combining multiple 
+        This method is part of the FMult2 model's approach to construct complex scoring
+        functions for knowledge graph embeddings. The flexibility in combining multiple
         neural network layers enables capturing intricate patterns in the data.
         """
+
         def f(x: torch.Tensor) -> torch.Tensor:
             """
             Applies a sequence of neural network transformations to the input tensor `x`.
 
-            If only one set of weights and biases is provided in `list_W` and `list_b`, 
-            `f` applies a single neural network transformation using the `compute_func` method. 
-            If multiple sets of weights and biases are provided, `f` sequentially multiplies 
-            the outputs of `compute_func` applied with each set of weights and biases. 
+            If only one set of weights and biases is provided in `list_W` and `list_b`,
+            `f` applies a single neural network transformation using the `compute_func` method.
+            If multiple sets of weights and biases are provided, `f` sequentially multiplies
+            the outputs of `compute_func` applied with each set of weights and biases.
             This creates a composite function from multiple neural network layers.
 
             Parameters
@@ -535,9 +594,9 @@ class FMult2(BaseKGE):
 
             Notes
             -----
-            This function is designed to work within the `function` method of the FMult2 class. 
-            It leverages the `compute_func` method for each layer's computation and combines 
-            these layers in a multiplicative fashion to enhance the modeling capability of 
+            This function is designed to work within the `function` method of the FMult2 class.
+            It leverages the `compute_func` method for each layer's computation and combines
+            these layers in a multiplicative fashion to enhance the modeling capability of
             the network, especially in the context of knowledge graph embeddings.
             """
             if len(list_W) == 1:
@@ -546,17 +605,20 @@ class FMult2(BaseKGE):
             for W, b in zip(list_W[1:], list_b[1:]):
                 score = score * self.compute_func(W, b, x)
             return score
+
         return f
 
-    def trapezoid(self, list_W: List[List[torch.Tensor]], list_b: List[torch.Tensor]) -> torch.Tensor:
+    def trapezoid(
+        self, list_W: List[List[torch.Tensor]], list_b: List[torch.Tensor]
+    ) -> torch.Tensor:
         """
-        Computes the integral of the output of a composite neural network function over a 
+        Computes the integral of the output of a composite neural network function over a
         range of discrete points using the trapezoidal rule.
 
-        This method first constructs a composite neural network function using the `function` 
-        method with the provided weights `list_W` and biases `list_b`. It then evaluates this 
-        function at a series of discrete points (`self.discrete_points`) and applies the 
-        trapezoidal rule to approximate the integral of the function over these points. The 
+        This method first constructs a composite neural network function using the `function`
+        method with the provided weights `list_W` and biases `list_b`. It then evaluates this
+        function at a series of discrete points (`self.discrete_points`) and applies the
+        trapezoidal rule to approximate the integral of the function over these points. The
         sum of the integral approximations across all dimensions is returned.
 
         Parameters
@@ -569,18 +631,21 @@ class FMult2(BaseKGE):
         Returns
         -------
         torch.Tensor
-            The sum of the integral of the composite function's output over the range 
+            The sum of the integral of the composite function's output over the range
             of discrete points, computed using the trapezoidal rule.
 
         Notes
         -----
-        The trapezoidal rule is a numerical method to approximate definite integrals. 
-        In the context of the FMult2 model, this method is used to integrate the output 
-        of the neural network over a range of inputs, which is crucial for certain types 
+        The trapezoidal rule is a numerical method to approximate definite integrals.
+        In the context of the FMult2 model, this method is used to integrate the output
+        of the neural network over a range of inputs, which is crucial for certain types
         of calculations in knowledge graph embeddings.
         """
-        return torch.trapezoid(self.function(list_W, list_b)(self.discrete_points), x=self.discrete_points, dim=-1).sum(
-            dim=-1)
+        return torch.trapezoid(
+            self.function(list_W, list_b)(self.discrete_points),
+            x=self.discrete_points,
+            dim=-1,
+        ).sum(dim=-1)
 
     def forward_triples(self, idx_triple: torch.Tensor) -> torch.Tensor:
         """
@@ -604,14 +669,17 @@ class FMult2(BaseKGE):
             h_W, h_b = self.build_func(head_ent_emb)
             r_W, r_b = self.build_func(rel_emb)
             t_W, t_b = self.build_func(tail_ent_emb)
-            out = -self.trapezoid([t_W], [t_b]) * self.trapezoid([h_W, r_W], [h_b, r_b]) + self.trapezoid([r_W], [
-                r_b]) * self.trapezoid([t_W, h_W], [t_b, h_b])
+            out = -self.trapezoid([t_W], [t_b]) * self.trapezoid(
+                [h_W, r_W], [h_b, r_b]
+            ) + self.trapezoid([r_W], [r_b]) * self.trapezoid([t_W, h_W], [t_b, h_b])
         elif self.score_func == "compositional":
             t_W, t_b = self.build_func(tail_ent_emb)
             chain_W, chain_b = self.build_chain_funcs([head_ent_emb, rel_emb])
             out = self.trapezoid([chain_W, t_W], [chain_b, t_b])
         elif self.score_func == "full-compositional":
-            chain_W, chain_b = self.build_chain_funcs([head_ent_emb, rel_emb, tail_ent_emb])
+            chain_W, chain_b = self.build_chain_funcs(
+                [head_ent_emb, rel_emb, tail_ent_emb]
+            )
             out = self.trapezoid([chain_W], [chain_b])
         elif self.score_func == "trilinear":
             h_W, h_b = self.build_func(head_ent_emb)
