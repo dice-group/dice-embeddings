@@ -112,3 +112,4 @@ class PykeenKGE(BaseKGE):
 
     def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx):
         raise NotImplementedError(f"KvsSample has not yet implemented for {self.name}")
+    
