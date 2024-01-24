@@ -618,25 +618,29 @@ class ConvO(BaseKGE):
         y7 = emb_rel_e7 / denominator
         return y0, y1, y2, y3, y4, y5, y6, y7
 
-    def residual_convolution(self, O_1: Tuple[
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-    ], O_2: Tuple[
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-        torch.Tensor,
-    ]) -> Tuple[
+    def residual_convolution(
+        self,
+        O_1: Tuple[
+            torch.Tensor,
+            torch.Tensor,
+            torch.Tensor,
+            torch.Tensor,
+            torch.Tensor,
+            torch.Tensor,
+            torch.Tensor,
+            torch.Tensor,
+        ],
+        O_2: Tuple[
+            torch.Tensor,
+            torch.Tensor,
+            torch.Tensor,
+            torch.Tensor,
+            torch.Tensor,
+            torch.Tensor,
+            torch.Tensor,
+            torch.Tensor,
+        ],
+    ) -> Tuple[
         torch.Tensor,
         torch.Tensor,
         torch.Tensor,
@@ -649,7 +653,7 @@ class ConvO(BaseKGE):
         """
         Performs a residual convolution operation on two sets of octonion embeddings.
 
-        The method combines two octonion embeddings and applies a convolutional operation 
+        The method combines two octonion embeddings and applies a convolutional operation
         followed by batch normalization, dropout, and a fully connected layer.
 
         Parameters
@@ -663,7 +667,7 @@ class ConvO(BaseKGE):
         -------
         Tuple[torch.Tensor, ...]
             The resulting octonion embeddings after the convolutional operation.
-        """        
+        """
         (
             emb_ent_e0,
             emb_ent_e1,
@@ -715,7 +719,7 @@ class ConvO(BaseKGE):
         """
         Computes scores for a batch of triples using convolutional operations.
 
-        The method processes head, relation, and tail embeddings using convolutional 
+        The method processes head, relation, and tail embeddings using convolutional
         layers and computes the scores of the triples.
 
         Parameters
@@ -727,7 +731,7 @@ class ConvO(BaseKGE):
         -------
         torch.Tensor
             Scores for the given batch of triples.
-        """        
+        """
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
         # (2) Split (1) into real and imaginary parts.
@@ -1134,7 +1138,7 @@ class AConvO(BaseKGE):
         -------
         Tuple[torch.Tensor, ...]
             The normalized components of the octonion.
-        """        
+        """
         denominator = torch.sqrt(
             emb_rel_e0**2
             + emb_rel_e1**2
@@ -1155,7 +1159,9 @@ class AConvO(BaseKGE):
         y7 = emb_rel_e7 / denominator
         return y0, y1, y2, y3, y4, y5, y6, y7
 
-    def residual_convolution(self, O_1: Tuple[
+    def residual_convolution(
+        self,
+        O_1: Tuple[
             torch.Tensor,
             torch.Tensor,
             torch.Tensor,
@@ -1164,7 +1170,8 @@ class AConvO(BaseKGE):
             torch.Tensor,
             torch.Tensor,
             torch.Tensor,
-        ], O_2: Tuple[
+        ],
+        O_2: Tuple[
             torch.Tensor,
             torch.Tensor,
             torch.Tensor,
@@ -1173,17 +1180,17 @@ class AConvO(BaseKGE):
             torch.Tensor,
             torch.Tensor,
             torch.Tensor,
-        ]) -> Tuple[
-            torch.Tensor,
-            torch.Tensor,
-            torch.Tensor,
-            torch.Tensor,
-            torch.Tensor,
-            torch.Tensor,
-            torch.Tensor,
-            torch.Tensor,
-        ]:
-
+        ],
+    ) -> Tuple[
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+        torch.Tensor,
+    ]:
         """
         Performs a residual convolution operation on two sets of octonion embeddings.
 
@@ -1201,7 +1208,7 @@ class AConvO(BaseKGE):
         -------
         Tuple[torch.Tensor, ...]
             The resulting octonion embeddings after the convolutional operation.
-        """        
+        """
         (
             emb_ent_e0,
             emb_ent_e1,
@@ -1265,7 +1272,7 @@ class AConvO(BaseKGE):
         -------
         torch.Tensor
             Scores for the given batch of triples.
-        """        
+        """
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(x)
         # (2) Split (1) into real and imaginary parts.
@@ -1396,7 +1403,7 @@ class AConvO(BaseKGE):
         Compute scores for a head entity and a relation (h,r) against all entities in the knowledge graph.
 
         Given a head entity and a relation (h, r), this method computes scores for (h, r, x) for all entities x in the knowledge graph.
-        
+
         Parameters
         ----------
         x : torch.Tensor
