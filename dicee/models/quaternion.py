@@ -353,8 +353,8 @@ class QMult(BaseKGE):
         )
 
     def forward_k_vs_sample(
-        self, x: torch.Tensor, target_entity_idx: int
-    ) -> torch.Tensor:
+        self, x: torch.FloatTensor, target_entity_idx: int
+    ) -> torch.FloatTensor:
         """
         Computes scores for a batch of triples against a sampled subset of entities in a K-vs-Sample setting.
 
@@ -365,7 +365,7 @@ class QMult(BaseKGE):
 
         Parameters
         ----------
-        x : torch.Tensor
+        x : torch.FloatTensor
             A tensor containing indices for head entities and relations. The tensor is expected to have
             a specific format suitable for the model's embedding retrieval process.
         target_entity_idx : int
@@ -373,7 +373,7 @@ class QMult(BaseKGE):
 
         Returns
         -------
-        torch.Tensor
+        torch.FloatTensor
             A tensor of scores where each element corresponds to the score of the target entity
             for a single head entity and relation pair. The shape of the tensor is (size of the batch, 1).
 
@@ -512,9 +512,9 @@ class ConvQ(BaseKGE):
 
     def residual_convolution(
         self,
-        Q_1: Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
-        Q_2: Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        Q_1: Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor],
+        Q_2: Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor],
+    ) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
         """
         Performs a residual convolution operation on two sets of quaternion embeddings.
 
@@ -523,14 +523,14 @@ class ConvQ(BaseKGE):
 
         Parameters
         ----------
-        Q_1 : Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
+        Q_1 : Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
             The first set of quaternion embeddings.
-        Q_2 : Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
+        Q_2 : Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
             The second set of quaternion embeddings.
 
         Returns
         -------
-        Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
+        Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
             The resulting quaternion embeddings after the convolutional operation.
         """
         emb_ent_real, emb_ent_imag_i, emb_ent_imag_j, emb_ent_imag_k = Q_1
@@ -744,9 +744,9 @@ class AConvQ(BaseKGE):
 
     def residual_convolution(
         self,
-        Q_1: Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
-        Q_2: Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        Q_1: Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor],
+        Q_2: Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor],
+    ) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
         """
         Performs a residual convolution operation on two sets of quaternion embeddings.
 
@@ -755,14 +755,14 @@ class AConvQ(BaseKGE):
 
         Parameters
         ----------
-        Q_1 : Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
+        Q_1 : Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
             The first set of quaternion embeddings.
-        Q_2 : Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
+        Q_2 : Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
             The second set of quaternion embeddings.
 
         Returns
         -------
-        Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
+        Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
             The resulting quaternion embeddings after the convolutional operation.
         """
         emb_ent_real, emb_ent_imag_i, emb_ent_imag_j, emb_ent_imag_k = Q_1
