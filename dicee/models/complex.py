@@ -71,7 +71,7 @@ class ConEx(BaseKGE):
         self,
         C_1: Tuple[torch.Tensor, torch.Tensor],
         C_2: Tuple[torch.Tensor, torch.Tensor],
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> Tuple[torch.FloatTensor, torch.FloatTensor]:
         """
         Computes the residual score of two complex-valued embeddings by applying convolutional operations.
         This method is a key component of the ConEx model, combining complex embeddings with convolutional neural networks.
@@ -85,7 +85,7 @@ class ConEx(BaseKGE):
 
         Returns
         -------
-        Tuple[torch.Tensor, torch.Tensor]
+        Tuple[torch.FloatTensor, torch.FloatTensor]
             A tuple of two tensors, representing the real and imaginary parts of the convolutionally transformed embeddings.
 
         Notes
@@ -347,7 +347,7 @@ class AConEx(BaseKGE):
         self,
         C_1: Tuple[torch.Tensor, torch.Tensor],
         C_2: Tuple[torch.Tensor, torch.Tensor],
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
         """
         Computes the residual convolution of two complex-valued embeddings. This method
         is a core part of the AConEx model, applying convolutional neural network techniques
@@ -364,7 +364,7 @@ class AConEx(BaseKGE):
 
         Returns
         -------
-        Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
+        Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
             A tuple of four tensors, each representing a component of the convolutionally
             transformed embeddings. These components correspond to the modified real
             and imaginary parts of the input embeddings.
