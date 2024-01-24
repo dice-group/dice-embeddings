@@ -35,7 +35,7 @@ Deploy a pre-trained embedding model without writing a single line of code.
 ### Installation from Source
 ``` bash
 git clone https://github.com/dice-group/dice-embeddings.git
-conda create -n dice python=3.9.18 --no-default-packages && conda activate dice && cd dice-embeddings &&
+conda create -n dice python=3.10.13 --no-default-packages && conda activate dice && cd dice-embeddings &&
 pip3 install .
 ```
 or
@@ -95,18 +95,50 @@ A KGE model can also be trained from the command line
 ```bash
 dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
 ```
-Models can be easily trained in a single node multi-gpu setting with pytorch-lightning
+dicee automaticaly detects available GPUs and trains a model with distributed data parallels technique. Under the hood, dicee uses lighning as a default trainer.
 ```bash
+# Train a model by only using the GPU-0
+CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
+# Train a model by only using GPU-1
+CUDA_VISIBLE_DEVICES=1 dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
 NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=0,1 python dicee/scripts/run.py --trainer PL --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
+```
+Under the hood, dicee executes run.py script and uses lighning as a default trainer
+```bash
+# Two equivalent executions
+# (1)
+dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
+# Evaluate Keci on Train set: Evaluate Keci on Train set
+# {'H@1': 0.9518788343558282, 'H@3': 0.9988496932515337, 'H@10': 1.0, 'MRR': 0.9753123402351737}
+# Evaluate Keci on Validation set: Evaluate Keci on Validation set
+# {'H@1': 0.6932515337423313, 'H@3': 0.9041411042944786, 'H@10': 0.9754601226993865, 'MRR': 0.8072362996241839}
+# Evaluate Keci on Test set: Evaluate Keci on Test set
+# {'H@1': 0.6951588502269289, 'H@3': 0.9039334341906202, 'H@10': 0.9750378214826021, 'MRR': 0.8064032293278861}
+
+# (2)
+CUDA_VISIBLE_DEVICES=0,1 python dicee/scripts/run.py --trainer PL --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
+# Evaluate Keci on Train set: Evaluate Keci on Train set
+# {'H@1': 0.9518788343558282, 'H@3': 0.9988496932515337, 'H@10': 1.0, 'MRR': 0.9753123402351737}
+# Evaluate Keci on Train set: Evaluate Keci on Train set
+# Evaluate Keci on Validation set: Evaluate Keci on Validation set
+# {'H@1': 0.6932515337423313, 'H@3': 0.9041411042944786, 'H@10': 0.9754601226993865, 'MRR': 0.8072362996241839}
+# Evaluate Keci on Test set: Evaluate Keci on Test set
+# {'H@1': 0.6951588502269289, 'H@3': 0.9039334341906202, 'H@10': 0.9750378214826021, 'MRR': 0.8064032293278861}
 ```
 Similarly, models can be easily trained with torchrun
 ```bash
-torchrun --standalone --nnodes=1 --nproc_per_node=gpu main.py
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee/scripts/run.py --trainer torchDDP --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
+# Evaluate Keci on Train set: Evaluate Keci on Train set: Evaluate Keci on Train set
+# {'H@1': 0.9518788343558282, 'H@3': 0.9988496932515337, 'H@10': 1.0, 'MRR': 0.9753123402351737}
+# Evaluate Keci on Validation set: Evaluate Keci on Validation set
+# {'H@1': 0.6932515337423313, 'H@3': 0.9041411042944786, 'H@10': 0.9754601226993865, 'MRR': 0.8072499937521418}
+# Evaluate Keci on Test set: Evaluate Keci on Test set
+{'H@1': 0.6951588502269289, 'H@3': 0.9039334341906202, 'H@10': 0.9750378214826021, 'MRR': 0.8064032293278861}
 ```
 You can also train a model in multi-node multi-gpu setting.
 ```bash
-torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula -m dicee.run --trainer torchDDP --dataset_dir KGs/UMLS
-torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula -m dicee.run --trainer torchDDP --dataset_dir KGs/UMLS
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee/scripts/run.py --trainer torchDDP --dataset_dir KGs/UMLS
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula dicee/scripts/run.py --trainer torchDDP --dataset_dir KGs/UMLS
 ```
 Train a KGE model by providing the path of a single file and store all parameters under newly created directory
 called `KeciFamilyRun`.
