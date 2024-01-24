@@ -1,14 +1,46 @@
+from typing import Tuple
 import torch
 from .static_funcs import quaternion_mul
 from .base_model import BaseKGE, IdentityClass
 
 
-def quaternion_mul_with_unit_norm(*, Q_1, Q_2):
-    a_h, b_h, c_h, d_h = Q_1  # = {a_h + b_h i + c_h j + d_h k : a_r, b_r, c_r, d_r \in R^k}
-    a_r, b_r, c_r, d_r = Q_2  # = {a_r + b_r i + c_r j + d_r k : a_r, b_r, c_r, d_r \in R^k}
+def quaternion_mul_with_unit_norm(
+    *, Q_1: Tuple[float, float, float, float], Q_2: Tuple[float, float, float, float]
+) -> Tuple[float, float, float, float]:
+    """
+    Performs the multiplication of two quaternions with unit norm.
+
+    Parameters
+    ----------
+    Q_1 : Tuple[float, float, float, float]
+        The first quaternion represented as a tuple of four real numbers (a_h, b_h, c_h, d_h).
+    Q_2 : Tuple[float, float, float, float]
+        The second quaternion represented as a tuple of four real numbers (a_r, b_r, c_r, d_r).
+
+    Returns
+    -------
+    Tuple[float, float, float, float]
+        The result of the quaternion multiplication, represented as a tuple of four real numbers (r_val, i_val, j_val, k_val).
+
+    Notes
+    -----
+    The function assumes that the input quaternions have unit norm. It first normalizes the second quaternion to eliminate the scaling effect, and then performs the Hamilton product of the two quaternions.
+    """
+    (
+        a_h,
+        b_h,
+        c_h,
+        d_h,
+    ) = Q_1  # = {a_h + b_h i + c_h j + d_h k : a_r, b_r, c_r, d_r \in R^k}
+    (
+        a_r,
+        b_r,
+        c_r,
+        d_r,
+    ) = Q_2  # = {a_r + b_r i + c_r j + d_r k : a_r, b_r, c_r, d_r \in R^k}
 
     # Normalize the relation to eliminate the scaling effect
-    denominator = torch.sqrt(a_r ** 2 + b_r ** 2 + c_r ** 2 + d_r ** 2)
+    denominator = torch.sqrt(a_r**2 + b_r**2 + c_r**2 + d_r**2)
     p = a_r / denominator
     q = b_r / denominator
     u = c_r / denominator
@@ -22,9 +54,47 @@ def quaternion_mul_with_unit_norm(*, Q_1, Q_2):
 
 
 class QMult(BaseKGE):
-    def __init__(self, args):
+    """
+    QMult extends the base knowledge graph embedding model by integrating quaternion
+    algebra. This model leverages the properties of quaternions to represent and process
+    the embeddings of entities and relations in a knowledge graph, aiming to capture
+    complex interactions and patterns.
+
+    Parameters
+    ----------
+    args : dict
+        A dictionary of arguments containing hyperparameters and settings for the model,
+        such as embedding dimensions and learning rate.
+
+    Attributes
+    ----------
+    name : str
+        The name identifier for the QMult model.
+
+    Methods
+    -------
+    quaternion_normalizer(x: torch.FloatTensor) -> torch.FloatTensor
+        Normalizes the length of relation vectors.
+
+    score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor) -> torch.FloatTensor
+        Computes the score of a triple using quaternion multiplication.
+
+    k_vs_all_score(bpe_head_ent_emb: torch.FloatTensor, bpe_rel_ent_emb: torch.FloatTensor, E: torch.FloatTensor) -> torch.FloatTensor
+        Computes scores in a K-vs-All setting using quaternion embeddings.
+
+    forward_k_vs_all(x: torch.FloatTensor) -> torch.FloatTensor
+        Performs a forward pass for K-vs-All scoring, returning scores for all entities.
+
+    forward_k_vs_sample(x: torch.FloatTensor, target_entity_idx: int) -> torch.FloatTensor
+        Performs a forward pass for K-vs-Sample scoring, returning scores for the specified entities.
+
+    quaternion_multiplication_followed_by_inner_product(h: torch.FloatTensor, r: torch.FloatTensor, t: torch.FloatTensor) -> torch.FloatTensor
+        Performs quaternion multiplication followed by inner product, returning triple scores.
+    """
+
+    def __init__(self, args: dict):
         super().__init__(args)
-        self.name = 'QMult'
+        self.name = "QMult"
         self.explicit = True
         if self.explicit is False:
             _1, _i, _j, _k = 0, 1, 2, 3
@@ -54,44 +124,65 @@ class QMult(BaseKGE):
             ]:
                 self.multiplication_table[i, j, k] = v
 
-    def quaternion_multiplication_followed_by_inner_product(self, h, r, t):
+    def quaternion_multiplication_followed_by_inner_product(
+        self, h: torch.FloatTensor, r: torch.FloatTensor, t: torch.FloatTensor
+    ) -> torch.FloatTensor:
         """
-        :param h: shape: (`*batch_dims`, dim)
-            The head representations.
-        :param r: shape: (`*batch_dims`, dim)
-            The head representations.
-        :param t: shape: (`*batch_dims`, dim)
-            The tail representations.
-        :return:
+        Performs quaternion multiplication followed by inner product.
+
+        Parameters
+        ----------
+        h : torch.FloatTensor
+            The head representations. Shape: (`*batch_dims`, dim)
+
+        r : torch.FloatTensor
+            The relation representations. Shape: (`*batch_dims`, dim)
+
+        t : torch.FloatTensor
+            The tail representations. Shape: (`*batch_dims`, dim)
+
+        Returns
+        -------
+        torch.FloatTensor
             Triple scores.
         """
         n, d = h.shape
         h = h.reshape(n, d // 4, 4)
         r = r.reshape(n, d // 4, 4)
         t = t.reshape(n, d // 4, 4)
-        return -torch.einsum("...di, ...dj, ...dk, ijk -> ...", h, r, t, self.multiplication_table)
+        return -torch.einsum(
+            "...di, ...dj, ...dk, ijk -> ...", h, r, t, self.multiplication_table
+        )
 
     @staticmethod
     def quaternion_normalizer(x: torch.FloatTensor) -> torch.FloatTensor:
         r"""
+        TODO: Add mathematical format for sphinx.
         Normalize the length of relation vectors, if the forward constraint has not been applied yet.
 
-        Absolute value of a quaternion
-
+        The absolute value of a quaternion is calculated as follows:
         .. math::
 
             |a + bi + cj + dk| = \sqrt{a^2 + b^2 + c^2 + d^2}
 
-        L2 norm of quaternion vector:
-
+        The L2 norm of a quaternion vector is computed as:
         .. math::
             \|x\|^2 = \sum_{i=1}^d |x_i|^2
                      = \sum_{i=1}^d (x_i.re^2 + x_i.im_1^2 + x_i.im_2^2 + x_i.im_3^2)
-        :param x:
-            The vector.
+        Parameters
+        ----------
+        x : torch.FloatTensor
+            The vector containing quaternion values.
 
-        :return:
+        Returns
+        -------
+        torch.FloatTensor
             The normalized vector.
+
+        Notes
+        -----
+        This function normalizes the length of relation vectors represented as quaternions. It ensures that
+        the absolute value of each quaternion in the vector is equal to 1, preserving the unit length.
         """
         # Normalize relation embeddings
         shape = x.shape
@@ -99,20 +190,64 @@ class QMult(BaseKGE):
         x = torch.nn.functional.normalize(x, p=2, dim=-1)
         return x.view(*shape)
 
-    def score(self, head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor):
+    def score(
+        self,
+        head_ent_emb: torch.FloatTensor,
+        rel_ent_emb: torch.FloatTensor,
+        tail_ent_emb: torch.FloatTensor,
+    ) -> torch.FloatTensor:
+        """
+        Compute scores for a batch of triples using octonion-based embeddings.
+
+        This method computes scores for a batch of triples using octonion-based embeddings of head entities,
+        relation embeddings, and tail entities. It supports both explicit and non-explicit scoring methods.
+
+        Parameters
+        ----------
+        head_ent_emb : torch.FloatTensor
+            Tensor containing the octonion-based embeddings of head entities.
+        rel_ent_emb : torch.FloatTensor
+            Tensor containing the octonion-based embeddings of relations.
+        tail_ent_emb : torch.FloatTensor
+            Tensor containing the octonion-based embeddings of tail entities.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Scores for the given batch of triples.
+
+        Notes
+        -----
+        If no normalization is set, this method applies quaternion normalization to relation embeddings.
+
+        If the scoring method is explicit, it computes the scores using quaternion multiplication followed by
+        an inner product of the real and imaginary parts of the resulting quaternions.
+
+        If the scoring method is non-explicit, it directly computes the inner product of the real and
+        imaginary parts of the octonion-based embeddings.
+
+        """
         # (1.1) If No normalization set, we need to apply quaternion normalization
         if isinstance(self.normalize_relation_embeddings, IdentityClass):
             rel_ent_emb = self.quaternion_normalizer(rel_ent_emb)
         if self.explicit is False:
-            return self.quaternion_multiplication_followed_by_inner_product(head_ent_emb, rel_ent_emb, tail_ent_emb)
+            return self.quaternion_multiplication_followed_by_inner_product(
+                head_ent_emb, rel_ent_emb, tail_ent_emb
+            )
         # (2) Split (1) into real and imaginary parts.
-        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(head_ent_emb, 4)
+        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(
+            head_ent_emb, 4
+        )
         emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k = torch.hsplit(rel_ent_emb, 4)
-        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(tail_ent_emb, 4)
+        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(
+            tail_ent_emb, 4
+        )
         # (2)
         # (2.1) Apply quaternion multiplication on (1.1) and (2.1).
-        r_val, i_val, j_val, k_val = quaternion_mul(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
-                                                    Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
+        r_val, i_val, j_val, k_val = quaternion_mul(
+            Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
+            Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k),
+        )
         # (3)
         # (3.1) Inner product
         real_score = torch.sum(r_val * emb_tail_real, dim=1)
@@ -121,31 +256,61 @@ class QMult(BaseKGE):
         k_score = torch.sum(k_val * emb_tail_k, dim=1)
         return real_score + i_score + j_score + k_score
 
-    def k_vs_all_score(self, bpe_head_ent_emb, bpe_rel_ent_emb, E):
+    def k_vs_all_score(
+        self,
+        bpe_head_ent_emb: torch.FloatTensor,
+        bpe_rel_ent_emb: torch.FloatTensor,
+        E: torch.FloatTensor,
+    ) -> torch.FloatTensor:
         """
+        Computes scores in a K-vs-All setting using quaternion embeddings for a batch of head entities and relations.
+
+        This method involves splitting the head entity and relation embeddings into quaternion components,
+        optionally normalizing the relation embeddings, performing quaternion multiplication, and then
+        calculating the score by performing an inner product with all tail entity embeddings.
 
         Parameters
         ----------
-        bpe_head_ent_emb
-        bpe_rel_ent_emb
-        E
+        bpe_head_ent_emb : torch.FloatTensor
+            Batched embeddings of head entities, each represented as a quaternion.
+        bpe_rel_ent_emb : torch.FloatTensor
+            Batched embeddings of relations, each represented as a quaternion.
+        E : torch.FloatTensor
+            Embeddings of all possible tail entities.
 
         Returns
         -------
+        torch.FloatTensor
+            Scores for all possible triples formed with the given head entities and relations against all entities.
+            The shape of the output is (size of batch, number of entities).
 
+        Notes
+        -----
+        The method is particularly useful in scenarios like link prediction, where the goal is to rank all possible
+        tail entities for a given head entity and relation. Quaternion algebra is used to enhance the interaction
+        modeling between entities and relations.
         """
+
         # (1.1) If No normalization set, we need to apply quaternion normalization
         if isinstance(self.normalize_relation_embeddings, IdentityClass):
             bpe_rel_ent_emb = self.quaternion_normalizer(bpe_rel_ent_emb)
         # (2) Split (1) into real and imaginary parts.
-        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(bpe_head_ent_emb, 4)
+        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(
+            bpe_head_ent_emb, 4
+        )
         emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k = torch.hsplit(bpe_rel_ent_emb, 4)
-        r_val, i_val, j_val, k_val = quaternion_mul(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
-                                                    Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
+        r_val, i_val, j_val, k_val = quaternion_mul(
+            Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
+            Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k),
+        )
 
         emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(E, 4)
-        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = emb_tail_real.transpose(1, 0), emb_tail_i.transpose(1, 0), \
-            emb_tail_j.transpose(1, 0), emb_tail_k.transpose(1, 0)
+        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = (
+            emb_tail_real.transpose(1, 0),
+            emb_tail_i.transpose(1, 0),
+            emb_tail_j.transpose(1, 0),
+            emb_tail_k.transpose(1, 0),
+        )
 
         # (3)
         # (3.1) Inner product
@@ -155,29 +320,69 @@ class QMult(BaseKGE):
         k_score = torch.mm(k_val, emb_tail_k)
         return real_score + i_score + j_score + k_score
 
-    def forward_k_vs_all(self, x):
+    def forward_k_vs_all(self, x: torch.FloatTensor) -> torch.FloatTensor:
         """
+        Computes scores for all entities in a K-vs-All setting given a batch of head entities and relations.
+
+        This method retrieves embeddings for the head entities and relations from the input tensor `x`,
+        applies necessary dropout and normalization, and then uses the `k_vs_all_score` method to compute
+        the scores against all possible tail entities in the knowledge graph.
 
         Parameters
         ----------
-        x
+        x : torch.FloatTensor
+            A tensor containing indices for head entities and relations. The tensor is expected to have
+            a specific format suitable for the model's embedding retrieval process.
 
         Returns
         -------
+        torch.FloatTensor
+            A tensor of scores, where each row corresponds to the scores of all tail entities for a
+            single head entity and relation pair. The shape of the tensor is (size of the batch, number of entities).
 
+        Notes
+        -----
+        This method is typically used in evaluating the model's performance in link prediction tasks,
+        where it's important to rank the likelihood of every possible tail entity for a given head entity
+        and relation.
         """
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
-        return self.k_vs_all_score(head_ent_emb, rel_ent_emb,self.entity_embeddings.weight)
+        return self.k_vs_all_score(
+            head_ent_emb, rel_ent_emb, self.entity_embeddings.weight
+        )
 
-    def forward_k_vs_sample(self, x, target_entity_idx):
+    def forward_k_vs_sample(
+        self, x: torch.Tensor, target_entity_idx: int
+    ) -> torch.Tensor:
         """
-        Completed.
-        Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,
-        [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
-        Given a batch of head entities and relations => shape (size of batch,| Entities|)
-        """
+        Computes scores for a batch of triples against a sampled subset of entities in a K-vs-Sample setting.
 
+        Given a batch of head entities and relations (h,r), this method computes the scores for all possible triples
+        formed with these head entities and relations against a subset of entities, i.e., [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|). TODO: Add mathematical format for sphinx.
+        The subset of entities is specified by the `target_entity_idx`, which is an integer index representing a specific entity.
+        Given a batch of head entities and relations => shape (size of batch,| Entities|).
+
+        Parameters
+        ----------
+        x : torch.Tensor
+            A tensor containing indices for head entities and relations. The tensor is expected to have
+            a specific format suitable for the model's embedding retrieval process.
+        target_entity_idx : int
+            Index of the target entity against which the scores are to be computed.
+
+        Returns
+        -------
+        torch.Tensor
+            A tensor of scores where each element corresponds to the score of the target entity
+            for a single head entity and relation pair. The shape of the tensor is (size of the batch, 1).
+
+        Notes
+        -----
+        This method is particularly useful in scenarios like link prediction, where it's necessary to
+        evaluate the likelihood of a specific relationship between a given head entity and a particular
+        target entity.
+        """
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
         # (1.1) If No normalization set, we need to apply quaternion normalization
@@ -185,15 +390,21 @@ class QMult(BaseKGE):
             rel_ent_emb = self.quaternion_normalizer(rel_ent_emb)
 
         # (2) Split (1) into real and imaginary parts.
-        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(head_ent_emb, 4)
+        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(
+            head_ent_emb, 4
+        )
         emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k = torch.hsplit(rel_ent_emb, 4)
-        r_val, i_val, j_val, k_val = quaternion_mul(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
-                                                    Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
+        r_val, i_val, j_val, k_val = quaternion_mul(
+            Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
+            Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k),
+        )
 
         # (batch size, num. selected entity, dimension)
         tail_entity_emb = self.entity_embeddings(target_entity_idx)
         # quaternion vectors
-        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.tensor_split(tail_entity_emb, 4, dim=2)
+        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.tensor_split(
+            tail_entity_emb, 4, dim=2
+        )
 
         emb_tail_real = emb_tail_real.transpose(1, 2)
         emb_tail_i = emb_tail_i.transpose(1, 2)
@@ -215,38 +426,128 @@ class QMult(BaseKGE):
 
 
 class ConvQ(BaseKGE):
-    """ Convolutional Quaternion Knowledge Graph Embeddings
+    """
+    Convolutional Quaternion Knowledge Graph Embeddings (ConvQ) is a model that extends
+    the base knowledge graph embedding approach by using quaternion algebra and convolutional
+    neural networks. This model aims to capture complex interactions in knowledge graphs
+    by applying convolutions to quaternion-based entity and relation embeddings.
 
+    Parameters
+    ----------
+    args : dict
+        A dictionary of arguments containing hyperparameters and settings for the model,
+        such as embedding dimensions, number of output channels, kernel size, and dropout rates.
+
+    Attributes
+    ----------
+    name : str
+        The name identifier for the ConvQ model.
+    entity_embeddings : torch.nn.Embedding
+        Embedding layer for entities in the knowledge graph.
+    relation_embeddings : torch.nn.Embedding
+        Embedding layer for relations in the knowledge graph.
+    conv2d : torch.nn.Conv2d
+        A 2D convolutional layer used for processing quaternion embeddings.
+    fc_num_input : int
+        The number of input features for the fully connected layer.
+    fc1 : torch.nn.Linear
+        A fully connected linear layer for compressing the output of the convolutional layer.
+    bn_conv1 : torch.nn.BatchNorm2d
+        First batch normalization layer applied after the convolutional operation.
+    bn_conv2 : Normalizer
+        Second normalization layer applied after the fully connected layer.
+    feature_map_dropout : torch.nn.Dropout2d
+        Dropout layer applied to the output of the convolutional layer.
+
+    Methods
+    -------
+    residual_convolution(Q_1, Q_2)
+        Performs a residual convolution operation on two sets of quaternion embeddings.
+
+    forward_triples(indexed_triple: torch.FloatTensor) -> torch.FloatTensor
+        Computes scores for a batch of triples using convolutional operations on quaternion embeddings.
+
+    forward_k_vs_all(x: torch.FloatTensor) -> torch.FloatTensor
+        Computes scores for all entities in a K-vs-All setting given a batch of head entities and relations.
+
+    Notes
+    -----
+    ConvQ leverages the properties of quaternions, a number system that extends complex numbers,
+    to represent and process the embeddings of entities and relations. The convolutional layers
+    aim to capture spatial relationships and complex patterns in the embeddings.
     """
 
     def __init__(self, args):
         super().__init__(args)
-        self.name = 'ConvQ'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
+        self.name = "ConvQ"
+        self.entity_embeddings = torch.nn.Embedding(
+            self.num_entities, self.embedding_dim
+        )
+        self.relation_embeddings = torch.nn.Embedding(
+            self.num_relations, self.embedding_dim
+        )
+        self.param_init(self.entity_embeddings.weight.data), self.param_init(
+            self.relation_embeddings.weight.data
+        )
         # Convolution
-        self.conv2d = torch.nn.Conv2d(in_channels=1, out_channels=self.num_of_output_channels,
-                                      kernel_size=(self.kernel_size, self.kernel_size), stride=1, padding=1, bias=True)
+        self.conv2d = torch.nn.Conv2d(
+            in_channels=1,
+            out_channels=self.num_of_output_channels,
+            kernel_size=(self.kernel_size, self.kernel_size),
+            stride=1,
+            padding=1,
+            bias=True,
+        )
 
-        self.fc_num_input = self.embedding_dim * 2 * self.num_of_output_channels  # 8 because of 8 real values in 2 quaternions
-        self.fc1 = torch.nn.Linear(self.fc_num_input, self.embedding_dim)  # Hard compression.
+        self.fc_num_input = (
+            self.embedding_dim * 2 * self.num_of_output_channels
+        )  # 8 because of 8 real values in 2 quaternions
+        self.fc1 = torch.nn.Linear(
+            self.fc_num_input, self.embedding_dim
+        )  # Hard compression.
 
         self.bn_conv1 = torch.nn.BatchNorm2d(self.num_of_output_channels)
         self.bn_conv2 = self.normalizer_class(self.embedding_dim)
         self.feature_map_dropout = torch.nn.Dropout2d(self.feature_map_dropout_rate)
 
-    def residual_convolution(self, Q_1, Q_2):
+    def residual_convolution(
+        self,
+        Q_1: Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
+        Q_2: Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """
+        Performs a residual convolution operation on two sets of quaternion embeddings.
+
+        The method combines two quaternion embeddings and applies a convolutional operation
+        followed by batch normalization, dropout, and a fully connected layer.
+
+        Parameters
+        ----------
+        Q_1 : Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
+            The first set of quaternion embeddings.
+        Q_2 : Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
+            The second set of quaternion embeddings.
+
+        Returns
+        -------
+        Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
+            The resulting quaternion embeddings after the convolutional operation.
+        """
         emb_ent_real, emb_ent_imag_i, emb_ent_imag_j, emb_ent_imag_k = Q_1
         emb_rel_real, emb_rel_imag_i, emb_rel_imag_j, emb_rel_imag_k = Q_2
-        x = torch.cat([emb_ent_real.view(-1, 1, 1, self.embedding_dim // 4),
-                       emb_ent_imag_i.view(-1, 1, 1, self.embedding_dim // 4),
-                       emb_ent_imag_j.view(-1, 1, 1, self.embedding_dim // 4),
-                       emb_ent_imag_k.view(-1, 1, 1, self.embedding_dim // 4),
-                       emb_rel_real.view(-1, 1, 1, self.embedding_dim // 4),
-                       emb_rel_imag_i.view(-1, 1, 1, self.embedding_dim // 4),
-                       emb_rel_imag_j.view(-1, 1, 1, self.embedding_dim // 4),
-                       emb_rel_imag_k.view(-1, 1, 1, self.embedding_dim // 4)], 2)
+        x = torch.cat(
+            [
+                emb_ent_real.view(-1, 1, 1, self.embedding_dim // 4),
+                emb_ent_imag_i.view(-1, 1, 1, self.embedding_dim // 4),
+                emb_ent_imag_j.view(-1, 1, 1, self.embedding_dim // 4),
+                emb_ent_imag_k.view(-1, 1, 1, self.embedding_dim // 4),
+                emb_rel_real.view(-1, 1, 1, self.embedding_dim // 4),
+                emb_rel_imag_i.view(-1, 1, 1, self.embedding_dim // 4),
+                emb_rel_imag_j.view(-1, 1, 1, self.embedding_dim // 4),
+                emb_rel_imag_k.view(-1, 1, 1, self.embedding_dim // 4),
+            ],
+            2,
+        )
 
         # n, c_in, h_in, w_in x.shape before conv. h_in=8, w_in embeddings
         x = self.conv2d(x)
@@ -258,23 +559,48 @@ class ConvQ(BaseKGE):
         x = torch.nn.functional.relu(self.bn_conv2(self.fc1(x)))
         return torch.chunk(x, 4, dim=1)
 
-    def forward_triples(self, indexed_triple: torch.Tensor) -> torch.Tensor:
+    def forward_triples(self, indexed_triple: torch.FloatTensor) -> torch.FloatTensor:
+        """
+        Computes scores for a batch of triples using convolutional operations on quaternion embeddings.
+
+        The method processes head, relation, and tail embeddings using quaternion algebra and
+        convolutional layers and computes the scores of the triples.
+
+        Parameters
+        ----------
+        indexed_triple : torch.FloatTensor
+            Tensor containing indices for head entities, relations, and tail entities.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Scores for the given batch of triples.
+        """
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
-        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(indexed_triple)
+        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(
+            indexed_triple
+        )
         # (2) Split (1) into real and imaginary parts.
-        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(head_ent_emb, 4)
+        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(
+            head_ent_emb, 4
+        )
         emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k = torch.hsplit(rel_ent_emb, 4)
-        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(tail_ent_emb, 4)
+        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(
+            tail_ent_emb, 4
+        )
 
         # (2) Apply convolution operation on (1.1) and (1.2).
-        Q_3 = self.residual_convolution(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
-                                        Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
+        Q_3 = self.residual_convolution(
+            Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
+            Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k),
+        )
         conv_real, conv_imag_i, conv_imag_j, conv_imag_k = Q_3
         # (3)
         # (3.1) Apply quaternion multiplication on (1.1) and (3.1).
         r_val, i_val, j_val, k_val = quaternion_mul(
             Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
-            Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
+            Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k),
+        )
         # (4)
         # (4.1) Hadamard product of (2) with (3) and inner product with tails
         real_score = torch.sum(conv_real * r_val * emb_tail_real, dim=1)
@@ -283,33 +609,55 @@ class ConvQ(BaseKGE):
         k_score = torch.sum(conv_imag_k * k_val * emb_tail_k, dim=1)
         return real_score + i_score + j_score + k_score
 
-    def forward_k_vs_all(self, x: torch.Tensor):
+    def forward_k_vs_all(self, x: torch.FloatTensor) -> torch.FloatTensor:
         """
-        Given a head entity and a relation (h,r), we compute scores for all entities.
-        [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
-        Given a batch of head entities and relations => shape (size of batch,| Entities|)
-        """
+        Computes scores for all entities in a K-vs-All setting given a batch of head entities and relations.
 
+        This method retrieves embeddings for the head entities and relations from the input tensor `x`,
+        applies necessary dropout and normalization, and then computes scores against all entities in
+        the knowledge graph.
+
+        Parameters
+        ----------
+        x : torch.FloatTensor
+            A tensor containing indices for head entities and relations.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Scores for all entities for the given batch of head entities and relations.
+        """
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
         # (2) Split (1) into real and imaginary parts.
-        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(head_ent_emb, 4)
+        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(
+            head_ent_emb, 4
+        )
         emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k = torch.hsplit(rel_ent_emb, 4)
 
         # (2) Apply convolution operation on (1.1) and (1.2).
-        Q_3 = self.residual_convolution(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
-                                        Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
+        Q_3 = self.residual_convolution(
+            Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
+            Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k),
+        )
         conv_real, conv_imag_i, conv_imag_j, conv_imag_k = Q_3
 
         # (3)
         # (3.1) Apply quaternion multiplication.
-        r_val, i_val, j_val, k_val = quaternion_mul(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
-                                                    Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
+        r_val, i_val, j_val, k_val = quaternion_mul(
+            Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
+            Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k),
+        )
         # Prepare all entity embeddings.
-        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(self.entity_embeddings.weight, 4)
-        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = emb_tail_real.transpose(1, 0), \
-            emb_tail_i.transpose(1, 0), emb_tail_j.transpose(
-            1, 0), emb_tail_k.transpose(1, 0)
+        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(
+            self.entity_embeddings.weight, 4
+        )
+        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = (
+            emb_tail_real.transpose(1, 0),
+            emb_tail_i.transpose(1, 0),
+            emb_tail_j.transpose(1, 0),
+            emb_tail_k.transpose(1, 0),
+        )
 
         # (4)
         # (4.1) Hadamard product of (2) with (3) and inner product with tails
@@ -322,36 +670,116 @@ class ConvQ(BaseKGE):
 
 
 class AConvQ(BaseKGE):
-    """ Additive Convolutional Quaternion Knowledge Graph Embeddings """
+    """
+    Additive Convolutional Quaternion Knowledge Graph Embeddings (AConvQ) model integrates
+    quaternion algebra with convolutional neural networks for knowledge graph embeddings.
+    This model is designed to capture complex interactions in knowledge graphs by applying
+    additive convolutions to quaternion-based entity and relation embeddings.
+
+    Attributes
+    ----------
+    name : str
+        The name identifier for the AConvQ model.
+    entity_embeddings : torch.nn.Embedding
+        Embedding layer for entities in the knowledge graph.
+    relation_embeddings : torch.nn.Embedding
+        Embedding layer for relations in the knowledge graph.
+    conv2d : torch.nn.Conv2d
+        A 2D convolutional layer used for processing quaternion embeddings.
+    fc_num_input : int
+        The number of input features for the fully connected layer.
+    fc1 : torch.nn.Linear
+        A fully connected linear layer for compressing the output of the convolutional layer.
+    bn_conv1 : torch.nn.BatchNorm2d
+        Batch normalization layer applied after the convolutional operation.
+    bn_conv2 : Normalizer
+        Normalization layer applied after the fully connected layer.
+    feature_map_dropout : torch.nn.Dropout2d
+        Dropout layer applied to the output of the convolutional layer.
+
+    Methods
+    -------
+    residual_convolution(Q_1, Q_2)
+        Performs an additive residual convolution operation on two sets of quaternion embeddings.
+
+    forward_triples(indexed_triple: torch.FloatTensor) -> torch.FloatTensor
+        Computes scores for a batch of triples using additive convolutional operations on quaternion embeddings.
+
+    forward_k_vs_all(x: torch.FloatTensor) -> torch.FloatTensor
+        Computes scores for all entities in a K-vs-All setting given a batch of head entities and relations.
+    """
 
     def __init__(self, args):
         super().__init__(args)
-        self.name = 'AConvQ'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
+        self.name = "AConvQ"
+        self.entity_embeddings = torch.nn.Embedding(
+            self.num_entities, self.embedding_dim
+        )
+        self.relation_embeddings = torch.nn.Embedding(
+            self.num_relations, self.embedding_dim
+        )
+        self.param_init(self.entity_embeddings.weight.data), self.param_init(
+            self.relation_embeddings.weight.data
+        )
         # Convolution
-        self.conv2d = torch.nn.Conv2d(in_channels=1, out_channels=self.num_of_output_channels,
-                                      kernel_size=(self.kernel_size, self.kernel_size), stride=1, padding=1, bias=True)
+        self.conv2d = torch.nn.Conv2d(
+            in_channels=1,
+            out_channels=self.num_of_output_channels,
+            kernel_size=(self.kernel_size, self.kernel_size),
+            stride=1,
+            padding=1,
+            bias=True,
+        )
 
-        self.fc_num_input = self.embedding_dim * 2 * self.num_of_output_channels  # 8 because of 8 real values in 2 quaternions
-        self.fc1 = torch.nn.Linear(self.fc_num_input, self.embedding_dim)  # Hard compression.
+        self.fc_num_input = (
+            self.embedding_dim * 2 * self.num_of_output_channels
+        )  # 8 because of 8 real values in 2 quaternions
+        self.fc1 = torch.nn.Linear(
+            self.fc_num_input, self.embedding_dim
+        )  # Hard compression.
 
         self.bn_conv1 = torch.nn.BatchNorm2d(self.num_of_output_channels)
         self.bn_conv2 = self.normalizer_class(self.embedding_dim)
         self.feature_map_dropout = torch.nn.Dropout2d(self.feature_map_dropout_rate)
 
-    def residual_convolution(self, Q_1, Q_2):
+    def residual_convolution(
+        self,
+        Q_1: Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
+        Q_2: Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+        """
+        Performs a residual convolution operation on two sets of quaternion embeddings.
+
+        The method combines two quaternion embeddings and applies a convolutional operation
+        followed by batch normalization, dropout, and a fully connected layer.
+
+        Parameters
+        ----------
+        Q_1 : Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
+            The first set of quaternion embeddings.
+        Q_2 : Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
+            The second set of quaternion embeddings.
+
+        Returns
+        -------
+        Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
+            The resulting quaternion embeddings after the convolutional operation.
+        """
         emb_ent_real, emb_ent_imag_i, emb_ent_imag_j, emb_ent_imag_k = Q_1
         emb_rel_real, emb_rel_imag_i, emb_rel_imag_j, emb_rel_imag_k = Q_2
-        x = torch.cat([emb_ent_real.view(-1, 1, 1, self.embedding_dim // 4),
-                       emb_ent_imag_i.view(-1, 1, 1, self.embedding_dim // 4),
-                       emb_ent_imag_j.view(-1, 1, 1, self.embedding_dim // 4),
-                       emb_ent_imag_k.view(-1, 1, 1, self.embedding_dim // 4),
-                       emb_rel_real.view(-1, 1, 1, self.embedding_dim // 4),
-                       emb_rel_imag_i.view(-1, 1, 1, self.embedding_dim // 4),
-                       emb_rel_imag_j.view(-1, 1, 1, self.embedding_dim // 4),
-                       emb_rel_imag_k.view(-1, 1, 1, self.embedding_dim // 4)], 2)
+        x = torch.cat(
+            [
+                emb_ent_real.view(-1, 1, 1, self.embedding_dim // 4),
+                emb_ent_imag_i.view(-1, 1, 1, self.embedding_dim // 4),
+                emb_ent_imag_j.view(-1, 1, 1, self.embedding_dim // 4),
+                emb_ent_imag_k.view(-1, 1, 1, self.embedding_dim // 4),
+                emb_rel_real.view(-1, 1, 1, self.embedding_dim // 4),
+                emb_rel_imag_i.view(-1, 1, 1, self.embedding_dim // 4),
+                emb_rel_imag_j.view(-1, 1, 1, self.embedding_dim // 4),
+                emb_rel_imag_k.view(-1, 1, 1, self.embedding_dim // 4),
+            ],
+            2,
+        )
 
         # n, c_in, h_in, w_in x.shape before conv. h_in=8, w_in embeddings
         x = self.conv2d(x)
@@ -363,23 +791,48 @@ class AConvQ(BaseKGE):
         x = torch.nn.functional.relu(self.bn_conv2(self.fc1(x)))
         return torch.chunk(x, 4, dim=1)
 
-    def forward_triples(self, indexed_triple: torch.Tensor) -> torch.Tensor:
+    def forward_triples(self, indexed_triple: torch.FloatTensor) -> torch.FloatTensor:
+        """
+        Computes scores for a batch of triples using convolutional operations on quaternion embeddings.
+
+        The method processes head, relation, and tail embeddings using quaternion algebra and
+        convolutional layers and computes the scores of the triples.
+
+        Parameters
+        ----------
+        indexed_triple : torch.FloatTensor
+            Tensor containing indices for head entities, relations, and tail entities.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Scores for the given batch of triples.
+        """
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
-        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(indexed_triple)
+        head_ent_emb, rel_ent_emb, tail_ent_emb = self.get_triple_representation(
+            indexed_triple
+        )
         # (2) Split (1) into real and imaginary parts.
-        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(head_ent_emb, 4)
+        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(
+            head_ent_emb, 4
+        )
         emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k = torch.hsplit(rel_ent_emb, 4)
-        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(tail_ent_emb, 4)
+        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(
+            tail_ent_emb, 4
+        )
 
         # (2) Apply convolution operation on (1.1) and (1.2).
-        Q_3 = self.residual_convolution(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
-                                        Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
+        Q_3 = self.residual_convolution(
+            Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
+            Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k),
+        )
         conv_real, conv_imag_i, conv_imag_j, conv_imag_k = Q_3
         # (3)
         # (3.1) Apply quaternion multiplication on (1.1) and (3.1).
         r_val, i_val, j_val, k_val = quaternion_mul(
             Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
-            Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
+            Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k),
+        )
         # (4)
         # (4.1) Hadamard product of (2) with (3) and inner product with tails
         real_score = torch.sum(conv_real + r_val * emb_tail_real, dim=1)
@@ -388,33 +841,55 @@ class AConvQ(BaseKGE):
         k_score = torch.sum(conv_imag_k + k_val * emb_tail_k, dim=1)
         return real_score + i_score + j_score + k_score
 
-    def forward_k_vs_all(self, x: torch.Tensor):
+    def forward_k_vs_all(self, x: torch.FloatTensor) -> torch.FloatTensor:
         """
-        Given a head entity and a relation (h,r), we compute scores for all entities.
-        [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
-        Given a batch of head entities and relations => shape (size of batch,| Entities|)
-        """
+        Computes scores for all entities in a K-vs-All setting given a batch of head entities and relations.
 
+        This method retrieves embeddings for the head entities and relations from the input tensor `x`,
+        applies necessary dropout and normalization, and then computes scores against all entities in
+        the knowledge graph.
+
+        Parameters
+        ----------
+        x : torch.FloatTensor
+            A tensor containing indices for head entities and relations.
+
+        Returns
+        -------
+        torch.FloatTensor
+            Scores for all entities for the given batch of head entities and relations.
+        """
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
         # (2) Split (1) into real and imaginary parts.
-        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(head_ent_emb, 4)
+        emb_head_real, emb_head_i, emb_head_j, emb_head_k = torch.hsplit(
+            head_ent_emb, 4
+        )
         emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k = torch.hsplit(rel_ent_emb, 4)
 
         # (2) Apply convolution operation on (1.1) and (1.2).
-        Q_3 = self.residual_convolution(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
-                                        Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
+        Q_3 = self.residual_convolution(
+            Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
+            Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k),
+        )
         conv_real, conv_imag_i, conv_imag_j, conv_imag_k = Q_3
 
         # (3)
         # (3.1) Apply quaternion multiplication.
-        r_val, i_val, j_val, k_val = quaternion_mul(Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
-                                                    Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k))
+        r_val, i_val, j_val, k_val = quaternion_mul(
+            Q_1=(emb_head_real, emb_head_i, emb_head_j, emb_head_k),
+            Q_2=(emb_rel_real, emb_rel_i, emb_rel_j, emb_rel_k),
+        )
         # Prepare all entity embeddings.
-        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(self.entity_embeddings.weight, 4)
-        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = emb_tail_real.transpose(1, 0), \
-            emb_tail_i.transpose(1, 0), emb_tail_j.transpose(
-            1, 0), emb_tail_k.transpose(1, 0)
+        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = torch.hsplit(
+            self.entity_embeddings.weight, 4
+        )
+        emb_tail_real, emb_tail_i, emb_tail_j, emb_tail_k = (
+            emb_tail_real.transpose(1, 0),
+            emb_tail_i.transpose(1, 0),
+            emb_tail_j.transpose(1, 0),
+            emb_tail_k.transpose(1, 0),
+        )
 
         # (4)
         # (4.1) Hadamard product of (2) with (3) and inner product with tails
