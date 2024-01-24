@@ -4,30 +4,64 @@ from pykeen.models import model_resolver
 from .base_model import BaseKGE
 from collections import namedtuple
 
-class PykeenKGE(BaseKGE):
-    """ A class for using knowledge graph embedding models implemented in Pykeen
 
-    Notes:
-    Pykeen_DistMult: C
-    Pykeen_ComplEx:
-    Pykeen_QuatE:
-    Pykeen_MuRE:
-    Pykeen_CP:
-    Pykeen_HolE:
-    Pykeen_HolE:
+class PykeenKGE(BaseKGE):
+    """
+    A class for using knowledge graph embedding models implemented in Pykeen.
+
+    Parameters
+    ----------
+    args : dict
+        A dictionary of arguments containing hyperparameters and settings for the model,
+        such as embedding dimensions, random seed, and model-specific kwargs.
+
+    Attributes
+    ----------
+    name : str
+        The name identifier for the PykeenKGE model.
+    model : pykeen.models.base.Model
+        The Pykeen model instance.
+    loss_history : list
+        A list to store the training loss history.
+    args : dict
+        The arguments used to initialize the model.
+    entity_embeddings : torch.nn.Embedding
+        Entity embeddings learned by the model.
+    relation_embeddings : torch.nn.Embedding
+        Relation embeddings learned by the model.
+    interaction : pykeen.nn.modules.Interaction
+        Interaction module used by the Pykeen model.
+
+    Methods
+    -------
+    forward_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
+        Compute scores for all entities given a batch of head entities and relations.
+    forward_triples(x: torch.LongTensor) -> torch.FloatTensor
+        Compute scores for a batch of triples.
+    forward_k_vs_sample(x: torch.LongTensor, target_entity_idx)
+        Compute scores against a sampled subset of entities.
+
+    Notes
+    -----
+    This class provides an interface for using knowledge graph embedding models implemented
+    in Pykeen. It initializes Pykeen models based on the provided arguments and allows for
+    scoring triples and conducting knowledge graph embedding experiments.
     """
 
     def __init__(self, args: dict):
         super().__init__(args)
-        self.model_kwargs = {'embedding_dim': args['embedding_dim'],
-                             'entity_initializer': None if args['init_param'] is None else torch.nn.init.xavier_normal_,
-                             "random_seed": args["random_seed"]
-                             }
-        self.model_kwargs.update(args['pykeen_model_kwargs'])
-        self.name = args['model'].split("_")[1]
+        self.model_kwargs = {
+            "embedding_dim": args["embedding_dim"],
+            "entity_initializer": None
+            if args["init_param"] is None
+            else torch.nn.init.xavier_normal_,
+            "random_seed": args["random_seed"],
+        }
+        self.model_kwargs.update(args["pykeen_model_kwargs"])
+        self.name = args["model"].split("_")[1]
         # Solving memory issue of Pykeen models caused by the regularizers
         # See https://github.com/pykeen/pykeen/issues/1297
-        if self.name=="MuRE":
+        if self.name == "MuRE":
             "No Regularizer =>  no Memory Leakage"
             # https://pykeen.readthedocs.io/en/stable/api/pykeen.models.MuRE.html
         elif self.name == "QuatE":
@@ -51,19 +85,24 @@ class PykeenKGE(BaseKGE):
         elif self.name == "TransE":
             self.model_kwargs["regularizer"] = None
         else:
-            print("Pykeen model have a memory leak caused by their implementation of regularizers")
+            print(
+                "Pykeen model have a memory leak caused by their implementation of regularizers"
+            )
             print(f"{self.name} does not seem to have any regularizer")
 
-        self.model = model_resolver. \
-            make(self.name, self.model_kwargs, triples_factory=
-        namedtuple('triples_factory',
-                               ['num_entities', 'num_relations', 'create_inverse_triples'])(
-            self.num_entities, self.num_relations, False))
+        self.model = model_resolver.make(
+            self.name,
+            self.model_kwargs,
+            triples_factory=namedtuple(
+                "triples_factory",
+                ["num_entities", "num_relations", "create_inverse_triples"],
+            )(self.num_entities, self.num_relations, False),
+        )
         self.loss_history = []
         self.args = args
         self.entity_embeddings = None
         self.relation_embeddings = None
-        for (k, v) in self.model.named_modules():
+        for k, v in self.model.named_modules():
             if "entity_representations" == k:
                 self.entity_embeddings = v[0]._embeddings
             elif "relation_representations" == k:
@@ -75,6 +114,8 @@ class PykeenKGE(BaseKGE):
 
     def forward_k_vs_all(self, x: torch.LongTensor):
         """
+        TODO: Format in Numpy-style documentation
+
         # => Explicit version by this we can apply bn and dropout
 
         # (1) Retrieve embeddings of heads and relations +  apply Dropout & Normalization if given.
@@ -96,6 +137,8 @@ class PykeenKGE(BaseKGE):
 
     def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
         """
+        TODO: Format in Numpy-style documentation
+        
         # => Explicit version by this we can apply bn and dropout
 
         # (1) Retrieve embeddings of heads, relations and tails and apply Dropout & Normalization if given.
@@ -112,4 +155,3 @@ class PykeenKGE(BaseKGE):
 
     def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx):
         raise NotImplementedError(f"KvsSample has not yet implemented for {self.name}")
-    
