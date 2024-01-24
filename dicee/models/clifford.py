@@ -10,6 +10,8 @@ class CMult(BaseKGE):
     involving Clifford algebra multiplication. It defines several algebraic structures based on the signature (p, q),
     such as Real Numbers, Complex Numbers, Quaternions, and others. The class provides functionality for
     performing Clifford multiplication, a generalization of the geometric product for vectors in a Clifford algebra.
+    
+    TODO: Add mathematical format for sphinx.
 
     Cl_(0,0) => Real Numbers
 
@@ -389,6 +391,15 @@ class Head(nn.Module):
     The Head class represents a single head of a self-attention mechanism in neural networks, particularly in transformer models.
     It is responsible for computing key, query, and value representations of input data and performing attention operations.
 
+    Parameters
+    ----------
+    head_size : int
+        Size of each attention head.
+    n_embd : int
+        Dimensionality of embeddings.
+    block_size : int
+        Size of the blocks of input data.    
+
     Attributes
     ----------
     key : nn.Linear
@@ -402,26 +413,11 @@ class Head(nn.Module):
 
     Methods
     -------
-    __init__(head_size: int, n_embd: int, block_size: int)
-        Initializes the Head class with the specified head size, embedding size, and block size.
     forward(x: torch.Tensor) -> torch.Tensor
         Processes an input tensor using the attention mechanism and returns the result.
     """
 
     def __init__(self, n_embd: int, block_size: int, head_size: int):
-        """
-        Initializes the Head class with specified head size, embedding size, and block size.
-        Sets up the linear layers for the key, query, and value, along with a dropout layer.
-
-        Parameters
-        ----------
-        head_size : int
-            Size of each attention head.
-        n_embd : int
-            Dimensionality of embeddings.
-        block_size : int
-            Size of the blocks of input data.
-        """
         super().__init__()
         self.key = nn.Linear(n_embd, head_size, bias=False)
         self.query = nn.Linear(n_embd, head_size, bias=False)
@@ -432,8 +428,6 @@ class Head(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Description
-        -----------
         Processes an input tensor through the self-attention mechanism. It computes the key, query,
         and value representations of the input tensor, applies attention based on these representations,
         and then returns the result.
@@ -474,6 +468,15 @@ class Block(nn.Module):
     The class encapsulates the pattern of applying self-attention to the input, followed by layer normalization,
     and then passing it through a feedforward network, again followed by layer normalization.
 
+    Parameters
+    ----------
+    num_heads : int
+        The number of heads in the multi-head self-attention mechanism.
+    n_embd : int
+        The dimensionality of embeddings used in the transformer block.
+    block_size : int
+        The size of each block of input data.
+
     Attributes
     ----------
     sa : MultiHeadAttention
@@ -487,26 +490,11 @@ class Block(nn.Module):
 
     Methods
     -------
-    __init__(num_heads: int, n_embd: int, block_size: int)
-        Initializes the Block class with the specified number of attention heads, embedding size, and block size.
     forward(x: torch.Tensor) -> torch.Tensor
         Processes an input tensor through the transformer block and returns the output tensor.
     """
 
     def __init__(self, num_heads: int, n_embd: int, block_size: int):
-        """
-        Initializes the Block class with the specified number of attention heads, embedding size, and block size.
-        It sets up the multi-head self-attention mechanism, a feedforward network, and layer normalization layers.
-
-        Parameters
-        ----------
-        num_heads : int
-            The number of heads in the multi-head self-attention mechanism.
-        n_embd : int
-            The dimensionality of embeddings used in the transformer block.
-        block_size : int
-            The size of each block of input data.
-        """
         super().__init__()
         head_size = n_embd // num_heads
         self.sa = MultiHeadAttention(num_heads, n_embd, block_size, head_size)
@@ -542,6 +530,17 @@ class MultiHeadAttention(nn.Module):
     This class splits the input into multiple heads and applies self-attention to each head independently,
     then concatenates and processes the results.
 
+    Parameters
+    ----------
+    num_heads : int
+        The number of attention heads.
+    n_embd : int
+        The size of each embedding vector.
+    block_size : int
+        The size of each block of input data.
+    head_size : int
+        The size of each attention head.    
+
     Attributes
     ----------
     heads : list of Head
@@ -558,23 +557,6 @@ class MultiHeadAttention(nn.Module):
     """
 
     def __init__(self, num_heads: int, n_embd: int, block_size: int, head_size: int):
-        """
-        Description
-        -----------
-        Initializes the MultiHeadAttention class with specified parameters. It creates multiple Head objects for
-        self-attention operations and sets up linear layers for processing their concatenated outputs.
-
-        Parameters
-        ----------
-        num_heads : int
-            The number of attention heads.
-        n_embd : int
-            The size of each embedding vector.
-        block_size : int
-            The size of each block of input data.
-        head_size : int
-            The size of each attention head.
-        """
         super().__init__()
         self.heads = nn.ModuleList(
             [Head(n_embd, block_size, head_size) for _ in range(num_heads)]
@@ -608,6 +590,11 @@ class FeedFoward(nn.Module):
     It consists of a linear layer that expands the input dimensionality, followed by a ReLU non-linearity, and another linear layer to project
     the representation back to the original dimensionality. An optional dropout layer is included for regularization.
 
+    Parameters
+    ----------
+    n_embd : int
+        The size of each embedding vector, which is the input and output dimension of the feedforward network.    
+
     Attributes
     ----------
     net : nn.Sequential
@@ -622,17 +609,6 @@ class FeedFoward(nn.Module):
     """
 
     def __init__(self, n_embd: int):
-        """
-        Description
-        -----------
-        Initializes the FeedForward class with a specified embedding size. The method sets up a sequence of layers
-        including two linear transformations with a ReLU activation function in between, and an optional dropout layer.
-
-        Parameters
-        ----------
-        n_embd : int
-            The size of each embedding vector, which is the input and output dimension of the feedforward network.
-        """
         super().__init__()
         self.net = nn.Sequential(
             nn.Linear(n_embd, 4 * n_embd),
@@ -666,6 +642,11 @@ class Keci(BaseKGE):
     It supports different dimensions of Clifford algebra by setting the parameters p and q. The class
     utilizes Clifford multiplication for embedding interactions and computes scores for knowledge graph triples.
 
+    Parameters
+    ----------
+    args : dict
+        A dictionary of arguments containing hyperparameters and settings for the model.
+
     Attributes
     ----------
     name : str
@@ -683,8 +664,6 @@ class Keci(BaseKGE):
 
     Methods
     -------
-    __init__(args: dict)
-        Initializes the Keci class with specified arguments including 'p' and 'q' for Clifford algebra.
     compute_sigma_pp(hp: torch.Tensor, rp: torch.Tensor) -> torch.Tensor
         Computes the sigma_pp component in Clifford multiplication.
     compute_sigma_qq(hq: torch.Tensor, rq: torch.Tensor) -> torch.Tensor
@@ -717,20 +696,6 @@ class Keci(BaseKGE):
     """
 
     def __init__(self, args: dict):
-        """
-        Initializes the Keci class with the specified arguments. It sets the Clifford algebra dimensions (p and q)
-        and calculates the scaling factor 'r'. The class also initializes scaling coefficients for 'p' and 'q' if necessary.
-
-        Parameters
-        ----------
-        args : dict
-            A dictionary of arguments containing hyperparameters and settings for the model.
-
-        Raises
-        ------
-        AssertionError
-            If 'r' is not an integer, an AssertionError is raised.
-        """
         super().__init__(args)
         self.name = "Keci"
         self.p = self.args.get("p", 0)
@@ -811,6 +776,8 @@ class Keci(BaseKGE):
         Computes the sigma_qq component in Clifford multiplication, representing the interactions
         between the negative square terms in the Clifford algebra.
 
+        TODO: Add mathematical format for sphinx.
+
         sigma_{qq} = \sum_{j=1}^{p+q-1} \sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k
         sigma_{q} captures the interactions between along q bases
         For instance, let q e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
@@ -861,6 +828,8 @@ class Keci(BaseKGE):
         Computes the sigma_pq component in Clifford multiplication, representing the interactions
         between the positive and negative square terms in the Clifford algebra.
 
+        TODO: Add mathematical format for sphinx.
+        
         \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
 
         # results = []
@@ -959,6 +928,8 @@ class Keci(BaseKGE):
         """
         Performs Clifford multiplication of head and relation embeddings. This method computes the
         various components of the Clifford product, combining the scalar, 'p', and 'q' parts of the embeddings.
+
+        TODO: Add mathematical format for sphinx.
 
         h = h_0 + \sum_{i=1}^p h_i e_i + \sum_{j=p+1}^{p+q} h_j e_j
         r = r_0 + \sum_{i=1}^p r_i e_i + \sum_{j=p+1}^{p+q} r_j e_j
@@ -1274,6 +1245,7 @@ class Keci(BaseKGE):
 
     def forward_k_vs_all(self, x: torch.Tensor) -> torch.FloatTensor:
         """
+        TODO: Add mathematical format for sphinx.
         Performs the forward pass for K-vs-All training and evaluation in knowledge graph embeddings.
         This method involves retrieving real-valued embedding vectors for head entities and relations \mathbb{R}^d,
         constructing Clifford algebra multivectors for these embeddings according to Cl_{p,q}(\mathbb{R}^d), performing Clifford multiplication,
@@ -1310,6 +1282,9 @@ class Keci(BaseKGE):
         self, x: torch.LongTensor, target_entity_idx: torch.LongTensor
     ) -> torch.FloatTensor:
         """
+        
+        TODO: Add mathematical format for sphinx.
+
         Performs the forward pass for K-vs-Sample training in knowledge graph embeddings. This method involves
         retrieving real-valued embedding vectors for head entities and relations \mathbb{R}^d, constructing Clifford algebra
         multivectors for these embeddings according to Cl_{p,q}(\mathbb{R}^d), performing Clifford multiplication,
@@ -1601,12 +1576,6 @@ class KeciBase(Keci):
         Embedding for scaling coefficients of 'p' terms, initialized to ones if 'p' > 0.
     q_coefficients : torch.nn.Embedding (optional)
         Embedding for scaling coefficients of 'q' terms, initialized to ones if 'q' > 0.
-
-    Methods
-    -------
-    __init__(args: dict)
-        Initializes the KeciBase class with specified arguments including 'p' and 'q' for Clifford algebra
-        and sets the interaction coefficients without requiring gradients.
 
     Notes
     -----
