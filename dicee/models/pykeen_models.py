@@ -38,7 +38,7 @@ class PykeenKGE(BaseKGE):
         Compute scores for all entities given a batch of head entities and relations.
     forward_triples(x: torch.LongTensor) -> torch.FloatTensor
         Compute scores for a batch of triples.
-    forward_k_vs_sample(x: torch.LongTensor, target_entity_idx)
+    forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: int)
         Compute scores against a sampled subset of entities.
 
     Notes
@@ -138,7 +138,7 @@ class PykeenKGE(BaseKGE):
     def forward_triples(self, x: torch.LongTensor) -> torch.FloatTensor:
         """
         TODO: Format in Numpy-style documentation
-        
+
         # => Explicit version by this we can apply bn and dropout
 
         # (1) Retrieve embeddings of heads, relations and tails and apply Dropout & Normalization if given.
@@ -153,5 +153,5 @@ class PykeenKGE(BaseKGE):
         """
         return self.model.score_hrt(hrt_batch=x, mode=None).flatten()
 
-    def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx):
+    def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: int):
         raise NotImplementedError(f"KvsSample has not yet implemented for {self.name}")
