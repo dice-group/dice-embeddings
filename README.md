@@ -32,7 +32,7 @@ Deploy a pre-trained embedding model without writing a single line of code.
 ## Installation
 <details><summary> Click me! </summary>
 
-### Instalation from Source
+### Installation from Source
 ``` bash
 git clone https://github.com/dice-group/dice-embeddings.git
 conda create -n dice python=3.9.18 --no-default-packages && conda activate dice && cd dice-embeddings &&
@@ -97,9 +97,8 @@ dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
 ```
 Models can be easily trained in a single node multi-gpu setting with pytorch-lightning
 ```bash
-dicee --accelerator "gpu" --strategy "ddp" --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" 
+NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=0,1 python dicee/scripts/run.py --trainer PL --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
 ```
-
 Similarly, models can be easily trained with torchrun
 ```bash
 torchrun --standalone --nnodes=1 --nproc_per_node=gpu main.py
