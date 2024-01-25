@@ -1,6 +1,8 @@
 import json
-from ..executer import Execute
+#from ..executer import Execute
+from dicee.executer import Execute
 import argparse
+
 def get_default_arguments(description=None):
     """ Extends pytorch_lightning Trainer's arguments with ours """
     # From "pytorch-lightning==1.6.4" to "lightning>=2.1.3",  'Trainer' has no attribute 'add_argparse_args'
@@ -105,6 +107,10 @@ def get_default_arguments(description=None):
     parser.add_argument("--adaptive_swa",
                         action="store_true",
                         help="Adaptive stochastic weight averaging")
+    parser.add_argument("--swa",
+                        action="store_true",
+                        help="Stochastic weight averaging")
+
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)

@@ -4,8 +4,6 @@ import gc
 
 from typing import Union
 
-
-
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
 from dicee.callbacks import (ASWA, PPE, FPPE, Eval, KronE, PrintCallback, AccumulateEpochLossCallback,
@@ -88,13 +86,18 @@ def get_callbacks(args):
     callbacks = [
         pl.pytorch.callbacks.ModelSummary(),
         PrintCallback(),
-                 # KGESaveCallback(every_x_epoch=args.save_model_at_every_epoch,
-                 #                max_epochs=args.max_epochs,
-                 #                path=args.full_storage_path),
-                 AccumulateEpochLossCallback(path=args.full_storage_path)
-                 ]
-    if args.adaptive_swa:
+        # KGESaveCallback(every_x_epoch=args.save_model_at_every_epoch,
+        #                max_epochs=args.max_epochs,
+        #                path=args.full_storage_path),
+        AccumulateEpochLossCallback(path=args.full_storage_path)
+    ]
+    # pl does not allow StochasticWeightAveraging
+    if args.swa:
+        callbacks.append(pl.pytorch.callbacks.StochasticWeightAveraging(swa_lrs=args.lr, swa_epoch_start=1))
+    elif args.adaptive_swa:
         callbacks.append(ASWA(num_epochs=args.num_epochs, path=args.full_storage_path))
+    else:
+        """No SWA or ASWA applied"""
 
     if isinstance(args.callbacks, list):
         return callbacks
