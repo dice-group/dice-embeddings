@@ -44,9 +44,6 @@ class PreprocessKG:
 
     sequential_vocabulary_construction() -> None
         Construct integer indexing for entities and relations.
-
-    remove_triples_from_train_with_condition() -> None
-        Remove triples from training set based on specified conditions.
     """
 
     def __init__(self, kg):
@@ -817,7 +814,7 @@ class PreprocessKG:
         self.kg.relation_to_idx = {k: i for i, k in enumerate(ordered_list)}
         del ordered_list
 
-    def remove_triples_from_train_with_condition(self):
+    def dept_remove_triples_from_train_with_condition(self):
         """
         Remove specific triples from the training set based on a predefined condition.
 
