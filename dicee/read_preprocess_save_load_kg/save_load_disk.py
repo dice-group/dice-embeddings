@@ -5,10 +5,56 @@ from dicee.static_funcs import save_pickle, save_numpy_ndarray
 
 
 class LoadSaveToDisk:
+    """
+    Handle the saving and loading of a knowledge graph to and from disk.
+
+    This class provides functionality to serialize and deserialize the components of a knowledge graph, 
+    such as entity and relation indices, datasets, and byte-pair encoding mappings, to and from disk storage.
+
+    Attributes
+    ----------
+    kg : object
+        An instance of the knowledge graph to be saved or loaded.
+
+    Methods
+    -------
+    save() -> None
+        Save the knowledge graph components to disk.
+
+    load() -> None
+        Load the knowledge graph components from disk.
+    """
     def __init__(self, kg):
         self.kg = kg
 
     def save(self):
+        """
+        Save the knowledge graph components to disk.
+
+        This method serializes various components of the knowledge graph such as entity and relation indices, 
+        datasets, and byte-pair encoding mappings, and saves them to the specified file paths in the knowledge 
+        graph instance. The method handles different data types and structures based on the configuration of 
+        the knowledge graph.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        AssertionError
+            If the path for serialization is not set or other required conditions are not met.
+
+        Notes
+        -----
+        - The method checks if the 'path_for_serialization' attribute is set in the knowledge graph instance.
+        - Depending on the configuration (e.g., whether byte-pair encoding is used), different components are saved.
+        - The method uses custom functions like 'save_pickle' and 'save_numpy_ndarray' for serialization.
+        """
         assert self.kg.path_for_deserialization is None
 
         if self.kg.path_for_serialization is None:
@@ -42,6 +88,33 @@ class LoadSaveToDisk:
                 save_numpy_ndarray(data=self.kg.test_set, file_path=self.kg.path_for_serialization + '/test_set.npy')
 
     def load(self):
+        """
+        Load the knowledge graph components from disk.
+
+        This method deserializes various components of the knowledge graph such as entity and relation indices, 
+        datasets, and byte-pair encoding mappings from the specified file paths in the knowledge graph instance. 
+        The method reconstructs the knowledge graph instance with the loaded data.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        AssertionError
+            If the path for deserialization is not set or other required conditions are not met.
+
+        Notes
+        -----
+        - The method checks if the 'path_for_deserialization' attribute is set in the knowledge graph instance.
+        - The method updates the knowledge graph instance with the loaded components.
+        - The method uses custom functions like 'load_pickle' and 'load_numpy_ndarray' for deserialization.
+        - If evaluation models are used, additional components like vocabularies and constraints are also loaded.
+        """
         assert self.kg.path_for_deserialization is not None
         assert self.kg.path_for_serialization == self.kg.path_for_deserialization
 
