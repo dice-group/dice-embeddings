@@ -107,6 +107,10 @@ def get_default_arguments(description=None):
     parser.add_argument("--adaptive_swa",
                         action="store_true",
                         help="Adaptive stochastic weight averaging")
+    parser.add_argument("--swa",
+                        action="store_true",
+                        help="Stochastic weight averaging")
+
     if description is None:
         return parser.parse_args()
     return parser.parse_args(description)

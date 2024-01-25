@@ -94,7 +94,7 @@ def get_callbacks(args):
                  AccumulateEpochLossCallback(path=args.full_storage_path)
                  ]
     # pl does not allow StochasticWeightAveraging
-    if args.trainer=="PL" and args.adaptive_swa:
+    if  args.swa:
         callbacks.append(pl.pytorch.callbacks.StochasticWeightAveraging(swa_lrs=args.lr,swa_epoch_start=1))
     elif args.adaptive_swa:
         callbacks.append(ASWA(num_epochs=args.num_epochs, path=args.full_storage_path))
