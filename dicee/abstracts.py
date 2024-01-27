@@ -541,7 +541,7 @@ class AbstractCallback(ABC, lightning.pytorch.callbacks.Callback):
         pass
 
 
-class AbstractPPECallback(AbstractCallback):
+class deptAbstractPPECallback(AbstractCallback):
     """
     Abstract class for Callback class for knowledge graph embedding models
 
@@ -552,7 +552,7 @@ class AbstractPPECallback(AbstractCallback):
     """
 
     def __init__(self, num_epochs, path, epoch_to_start, last_percent_to_consider):
-        super(AbstractPPECallback, self).__init__()
+        super(deptAbstractPPECallback, self).__init__()
         self.num_epochs = num_epochs
         self.path = path
         self.sample_counter = 0
