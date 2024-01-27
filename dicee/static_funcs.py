@@ -106,9 +106,10 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
         return intialize_model(args)
 
 
-def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[object, Tuple[dict, dict]]:
+def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) -> Tuple[object, Tuple[dict, dict]]:
     """ Load weights and initialize pytorch module from namespace arguments"""
-    print(f'Loading model {model_name}...', end=' ')
+    if verbose>0:
+        print(f'Loading model {model_name}...', end=' ')
     start_time = time.time()
     # (1) Load weights..
     weights = torch.load(path_of_experiment_folder + f'/{model_name}', torch.device('cpu'))
@@ -130,9 +131,10 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[o
         # Update the training configuration
         configs["num_entities"] = num_ent
         configs["num_relations"] = num_rel
-    print(f'Done! It took {time.time() - start_time:.3f}')
+    if verbose>0:
+        print(f'Done! It took {time.time() - start_time:.3f}')
     # (4) Select the model
-    model, _ = intialize_model(configs)
+    model, _ = intialize_model(configs,verbose)
     # (5) Put (1) into (4)
     model.load_state_dict(weights)
     # (6) Set it into eval model.
@@ -143,7 +145,8 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[o
     if configs.get("byte_pair_encoding", None):
         return model, None
     else:
-        print('Loading entity and relation indexes...', end=' ')
+        if verbose>0:
+            print('Loading entity and relation indexes...', end=' ')
         try:
             # Maybe ? https://docs.python.org/3/library/mmap.html
             with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
@@ -157,7 +160,8 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[o
         except FileNotFoundError:
             print("relation_to_idx.p not found")
             relation_to_idx = dict()
-        print(f'Done! It took {time.time() - start_time:.4f}')
+        if verbose > 0:
+            print(f'Done! It took {time.time() - start_time:.4f}')
         return model, (entity_to_idx, relation_to_idx)
 
 
@@ -350,8 +354,9 @@ def read_or_load_kg(args, cls):
     return kg
 
 
-def intialize_model(args: dict) -> Tuple[object, str]:
-    print(f"Initializing {args['model']}...")
+def intialize_model(args: dict,verbose=0) -> Tuple[object, str]:
+    if verbose>0:
+        print(f"Initializing {args['model']}...")
     model_name = args['model']
     if "pykeen" in model_name.lower():
         model = PykeenKGE(args=args)

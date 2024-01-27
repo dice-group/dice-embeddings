@@ -6,8 +6,7 @@ from typing import Union
 
 from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
-from dicee.callbacks import (ASWA, PPE, FPPE, Eval, KronE, PrintCallback, AccumulateEpochLossCallback,
-                             Perturb)
+from dicee.callbacks import ASWA, Eval, KronE, PrintCallback, AccumulateEpochLossCallback, Perturb
 from dicee.dataset_classes import construct_dataset, reload_dataset
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
@@ -86,12 +85,8 @@ def get_callbacks(args):
     callbacks = [
         pl.pytorch.callbacks.ModelSummary(),
         PrintCallback(),
-        # KGESaveCallback(every_x_epoch=args.save_model_at_every_epoch,
-        #                max_epochs=args.max_epochs,
-        #                path=args.full_storage_path),
         AccumulateEpochLossCallback(path=args.full_storage_path)
     ]
-    # pl does not allow StochasticWeightAveraging
     if args.swa:
         callbacks.append(pl.pytorch.callbacks.StochasticWeightAveraging(swa_lrs=args.lr, swa_epoch_start=1))
     elif args.adaptive_swa:
@@ -101,22 +96,10 @@ def get_callbacks(args):
 
     if isinstance(args.callbacks, list):
         return callbacks
+
     for k, v in args.callbacks.items():
         if k == "Perturb":
             callbacks.append(Perturb(**v))
-        elif k == 'FPP':
-            callbacks.append(
-                FPPE(num_epochs=args.num_epochs, path=args.full_storage_path,
-                     last_percent_to_consider=v.get('last_percent_to_consider')))
-        elif k == 'PPE':
-
-            if v is None:
-                v = dict()
-
-            callbacks.append(
-                PPE(num_epochs=args.num_epochs, path=args.full_storage_path,
-                    epoch_to_start=v.get('epoch_to_start', None),
-                    last_percent_to_consider=v.get('last_percent_to_consider', None)))
         elif k == 'KronE':
             callbacks.append(KronE())
         elif k == 'Eval':
