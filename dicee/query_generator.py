@@ -10,7 +10,8 @@ from .static_funcs import save_pickle, load_pickle
 
 
 class QueryGenerator:
-    def __init__(self, train_path, val_path: str, test_path: str, ent2id, rel2id, seed: int,
+    def __init__(self, train_path, val_path: str, test_path: str, ent2id: Dict = None, rel2id: Dict = None,
+                 seed: int = 1,
                  gen_valid: bool = False,
                  gen_test: bool = True):
 
@@ -25,14 +26,14 @@ class QueryGenerator:
         self.max_ans_num = 1e6
 
         self.mode = str
-        self.ent2id: Dict = ent2id
+        self.ent2id = ent2id
         self.rel2id: Dict = rel2id
         self.ent_in: Dict = {}
         self.ent_out: Dict = {}
         self.query_name_to_struct = {"1p": ['e', ['r']],
                                      "2p": ['e', ['r', 'r']],
                                      "3p": ['e', ['r', 'r', 'r']],
-                                     "2i": [['e', ['r']], ['e', ['r']]],
+                                     "2i": [['e', ['r']], ['e', ['r']]], # @TODO: double check the evaluation
                                      "3i": [['e', ['r']], ['e', ['r']], ['e', ['r']]],
                                      "pi": [['e', ['r', 'r']], ['e', ['r']]],
                                      "ip": [[['e', ['r']], ['e', ['r']]], ['r']],
@@ -45,6 +46,10 @@ class QueryGenerator:
                                      "2u": [['e', ['r']], ['e', ['r']], ['u']],
                                      "up": [[['e', ['r']], ['e', ['r']], ['u']], ['r']]}
         self.set_global_seed(seed)
+
+        # Sanity checking
+        assert isinstance(self.ent2id, dict) or self.ent2id is None
+        assert isinstance(self.rel2id, dict) or self.rel2id is None
 
     def list2tuple(self, list_data):
         # @TODO: add description
@@ -437,11 +442,14 @@ class QueryGenerator:
             rel3 = id2rel[rel3_id]
             return (((ent1, (rel1,)), (ent2, (rel2,)), ("union",)), (rel3,))
 
-    def generate_queries(self, query_struct, gen_num: int, query_type: str):
+    def generate_queries(self, query_struct:List, gen_num: int, query_type: str):
         """
         Passing incoming and outgoing edges to ground queries depending on mode [train valid or text]
         and getting queries and answers in return
+        @ TODO: create a class for each single query struct
         """
+
+
         train_tail_relation_to_heads, train_head_relation_to_tails = self.construct_graph(paths=[self.train_path])
         val_tail_relation_to_heads, val_head_relation_to_tails = self.construct_graph(
             paths=[self.train_path, self.val_path])

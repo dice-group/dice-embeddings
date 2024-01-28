@@ -518,21 +518,32 @@ class KGE(BaseInteractiveKGE):
         elif 'yager' in neg_norm:
             return (1 - torch.pow(tens_1, lambda_)) ** (1 / lambda_)
 
-    def __single_hop_query_answering(self, query: Tuple[str, Tuple[str, ...]]):
-        head, relation = query
-        assert len(relation) == 1
-        # scores for all entities
-        return self.predict(h=head, r=relation[0])
+    def return_multi_hop_query_results(self, aggregated_query_for_all_entities, k: int, only_scores):
+        # @TODO: refactor by torchargmax(aggregated_query_for_all_entities)
+        if only_scores:
+            return aggregated_query_for_all_entities
+        # from idx obtain entity str
+        return sorted([(ei, s) for ei, s in zip(self.entity_to_idx.keys(), aggregated_query_for_all_entities)],
+                      key=lambda x: x[1], reverse=True)[:k]
 
-    def __return_answers_and_scores(self, query_score_of_all_entities, k: int):
-        query_score_of_all_entities = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), query_score_of_all_entities)]
-        return sorted(query_score_of_all_entities, key=lambda x: x[1], reverse=True)[:k]
+    def single_hop_query_answering(self, query: tuple, only_scores: bool = True, k: int = None):
+        h, r = query
+        result = self.predict(h=h, r=r[0]).squeeze()
+        if only_scores:
+            """ do nothing"""
+        else:
+            query_score_of_all_entities = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), result)]
+            result = sorted(query_score_of_all_entities, key=lambda x: x[1], reverse=True)[:k]
+        return result
 
     def answer_multi_hop_query(self, query_type: str = None, query: Tuple[Union[str, Tuple[str, str]], ...] = None,
                                queries: List[Tuple[Union[str, Tuple[str, str]], ...]] = None, tnorm: str = "prod",
                                neg_norm: str = "standard", lambda_: float = 0.0, k: int = 10, only_scores=False) -> \
             List[Tuple[str, torch.Tensor]]:
         """
+        # @TODO: Refactoring is needed
+        # @TODO: Score computation for each query type should be done in a static function
+
         Find an answer set for EPFO queries including negation and disjunction
 
         Parameter
@@ -606,38 +617,37 @@ class KGE(BaseInteractiveKGE):
 
         # 1p
         if query_structure == ("e", ("r",)):
-            atom1_scores = self.__single_hop_query_answering(query=query).squeeze()
-            if only_scores:
-                return atom1_scores
-            return self.__return_answers_and_scores(atom1_scores, k)
+            return self.single_hop_query_answering(query, only_scores, k)
         # 2p
         elif query_structure == ("e", ("r", "r",)):
             # ?M : \exist A. r1(e,A) \land r2(A,M)
-            head1, (relation1, relation2) = query
+            e, (r1, r2) = query
             top_k_scores1 = []
             atom2_scores = []
             # (1) Iterate over top k substitutes of A in the first hop query: r1(e,A) s.t. A<-a
-            for top_k_entity, score_of_e_r1_a in self.answer_multi_hop_query(query_type="1p",
-                                                                             query=(head1, (relation1,)),
-                                                                             tnorm=tnorm,
-                                                                             k=k):
+            for top_k_entity, score_of_e_r1_a in self.answer_multi_hop_query(query_type="1p", query=(e, (r1,)),
+                                                                             only_scores=False, tnorm=tnorm, k=k):
+                # (1.1) Store scores of (e, r1, a) s.t. a is a substitute of A and a is a top ranked entity.
                 top_k_scores1.append(score_of_e_r1_a)
-                # (.) Scores for all entities E
-                atom2_scores.append(self.predict(h=top_k_entity, r=relation2))
-            # k by E tensor
+                # (1.2) Compute scores for (a, r2, M): Replace predict with answer_multi_hop_query.
+                atom2_scores.append(self.predict(h=top_k_entity, r=r2))
+            # (2) k by E tensor
             atom2_scores = torch.vstack(atom2_scores)
-            topk_scores1_expanded = torch.FloatTensor(top_k_scores1).view(-1, 1).repeat(1, atom2_scores.shape[1])
-            query_scores, _ = torch.max(self.t_norm(topk_scores1_expanded, atom2_scores, tnorm), dim=0)
-            if only_scores:
-                return query_scores
-            else:
-                return self.__return_answers_and_scores(query_scores, k)
+            kk, E = atom2_scores.shape
+            # Sanity checking
+            assert k == kk
+            # Top k scores for all replacement of A. torch.Size([k,1])
+            top_k_scores1 = torch.FloatTensor(top_k_scores1).reshape(k, 1)
+            # k x E
+            top_k_scores1 = top_k_scores1.repeat(1, E)
+            # E scores
+            aggregated_query_for_all_entities, _ = torch.max(self.t_norm(top_k_scores1, atom2_scores, tnorm), dim=0)
+            return self.return_multi_hop_query_results(aggregated_query_for_all_entities, k, only_scores)
         # 3p
         elif query_structure == ("e", ("r", "r", "r",)):
-            # @TODO: explain the query and answering
             head1, (relation1, relation2, relation3) = query
             top_k_scores1 = []
-            atom2_scores = []
+            atom_scores = []
             # (1) Iterate over top k substitutes of A in the first hop query: r1(e,A) s.t. A<-a
             for top_k_entity, score_of_e_r1_a in self.answer_multi_hop_query(query_type="2p",
                                                                              query=(head1, (relation1, relation2)),
@@ -645,15 +655,21 @@ class KGE(BaseInteractiveKGE):
                                                                              k=k):
                 top_k_scores1.append(score_of_e_r1_a)
                 # () Scores for all entities E
-                atom2_scores.append(self.predict(h=[top_k_entity], r=[relation3]))
-            # k by E tensor
-            atom2_scores = torch.vstack(atom2_scores)
-            topk_scores1_expanded = torch.FloatTensor(top_k_scores1).view(-1, 1).repeat(1, atom2_scores.shape[1])
-            query_scores, _ = torch.max(self.t_norm(topk_scores1_expanded, atom2_scores, tnorm), dim=0)
-            if only_scores:
-                return query_scores
-            else:
-                return self.__return_answers_and_scores(query_scores, k)
+                atom_scores.append(self.predict(h=[top_k_entity], r=[relation3]))
+
+            # (2) k by E tensor
+            atom_scores = torch.vstack(atom_scores)
+            kk, E = atom_scores.shape
+            # Sanity checking
+            assert k == kk
+            # Top k scores for all replacement of A. torch.Size([k,1])
+            top_k_scores1 = torch.FloatTensor(top_k_scores1).reshape(k, 1)
+            # k x E
+            top_k_scores1 = top_k_scores1.repeat(1, E)
+            # E scores
+            aggregated_query_for_all_entities, _ = torch.max(self.t_norm(top_k_scores1, atom_scores, tnorm), dim=0)
+            return self.return_multi_hop_query_results(aggregated_query_for_all_entities, k, only_scores)
+
         # 2in
         elif query_structure == (("e", ("r",)), ("e", ("r", "n"))):
             # entity_scores = scores_2in(query, tnorm, neg_norm, lambda_)
@@ -913,6 +929,7 @@ class KGE(BaseInteractiveKGE):
             return sorted(entity_scores, key=lambda x: x[1], reverse=True)
         # ip
         elif query_structure == ((("e", ("r",)), ("e", ("r",))), ("r",)):
+            # @TODO: ip Doesn't work
             # entity_scores = scores_ip(model, query, tnorm, k_)
             head1, relation1 = query[0][0]
             head2, relation2 = query[0][1]

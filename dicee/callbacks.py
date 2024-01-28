@@ -147,7 +147,7 @@ def compute_convergence(seq, i):
     return estimate_q(seq[-i:] / (np.arange(i) + 1))
 
 
-class PPE(AbstractPPECallback):
+class deptPPE(AbstractPPECallback):
     """ A callback for Polyak Parameter Ensemble Technique
         Maintains a running parameter average for all parameters requiring gradient signals
     """
@@ -313,7 +313,7 @@ class ASWA(AbstractPPECallback):
             self.decide(model.state_dict(), ensemble_state_dict, val_running_model, mrr_updated_ensemble_model)
 
 
-class FPPE(AbstractPPECallback):
+class deptFPPE(AbstractPPECallback):
     """
     import matplotlib.pyplot as plt
     import numpy as np

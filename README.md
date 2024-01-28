@@ -32,10 +32,10 @@ Deploy a pre-trained embedding model without writing a single line of code.
 ## Installation
 <details><summary> Click me! </summary>
 
-### Instalation from Source
+### Installation from Source
 ``` bash
 git clone https://github.com/dice-group/dice-embeddings.git
-conda create -n dice python=3.9.18 --no-default-packages && conda activate dice && cd dice-embeddings &&
+conda create -n dice python=3.10.13 --no-default-packages && conda activate dice && cd dice-embeddings &&
 pip3 install .
 ```
 or
@@ -95,19 +95,50 @@ A KGE model can also be trained from the command line
 ```bash
 dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
 ```
-Models can be easily trained in a single node multi-gpu setting with pytorch-lightning
+dicee automaticaly detects available GPUs and trains a model with distributed data parallels technique. Under the hood, dicee uses lighning as a default trainer.
 ```bash
-dicee --accelerator "gpu" --strategy "ddp" --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test" 
+# Train a model by only using the GPU-0
+CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
+# Train a model by only using GPU-1
+CUDA_VISIBLE_DEVICES=1 dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
+NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=0,1 python dicee/scripts/run.py --trainer PL --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
 ```
+Under the hood, dicee executes run.py script and uses lighning as a default trainer
+```bash
+# Two equivalent executions
+# (1)
+dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
+# Evaluate Keci on Train set: Evaluate Keci on Train set
+# {'H@1': 0.9518788343558282, 'H@3': 0.9988496932515337, 'H@10': 1.0, 'MRR': 0.9753123402351737}
+# Evaluate Keci on Validation set: Evaluate Keci on Validation set
+# {'H@1': 0.6932515337423313, 'H@3': 0.9041411042944786, 'H@10': 0.9754601226993865, 'MRR': 0.8072362996241839}
+# Evaluate Keci on Test set: Evaluate Keci on Test set
+# {'H@1': 0.6951588502269289, 'H@3': 0.9039334341906202, 'H@10': 0.9750378214826021, 'MRR': 0.8064032293278861}
 
+# (2)
+CUDA_VISIBLE_DEVICES=0,1 python dicee/scripts/run.py --trainer PL --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
+# Evaluate Keci on Train set: Evaluate Keci on Train set
+# {'H@1': 0.9518788343558282, 'H@3': 0.9988496932515337, 'H@10': 1.0, 'MRR': 0.9753123402351737}
+# Evaluate Keci on Train set: Evaluate Keci on Train set
+# Evaluate Keci on Validation set: Evaluate Keci on Validation set
+# {'H@1': 0.6932515337423313, 'H@3': 0.9041411042944786, 'H@10': 0.9754601226993865, 'MRR': 0.8072362996241839}
+# Evaluate Keci on Test set: Evaluate Keci on Test set
+# {'H@1': 0.6951588502269289, 'H@3': 0.9039334341906202, 'H@10': 0.9750378214826021, 'MRR': 0.8064032293278861}
+```
 Similarly, models can be easily trained with torchrun
 ```bash
-torchrun --standalone --nnodes=1 --nproc_per_node=gpu main.py
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee/scripts/run.py --trainer torchDDP --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
+# Evaluate Keci on Train set: Evaluate Keci on Train set: Evaluate Keci on Train set
+# {'H@1': 0.9518788343558282, 'H@3': 0.9988496932515337, 'H@10': 1.0, 'MRR': 0.9753123402351737}
+# Evaluate Keci on Validation set: Evaluate Keci on Validation set
+# {'H@1': 0.6932515337423313, 'H@3': 0.9041411042944786, 'H@10': 0.9754601226993865, 'MRR': 0.8072499937521418}
+# Evaluate Keci on Test set: Evaluate Keci on Test set
+{'H@1': 0.6951588502269289, 'H@3': 0.9039334341906202, 'H@10': 0.9750378214826021, 'MRR': 0.8064032293278861}
 ```
 You can also train a model in multi-node multi-gpu setting.
 ```bash
-torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula -m dicee.run --trainer torchDDP --dataset_dir KGs/UMLS
-torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula -m dicee.run --trainer torchDDP --dataset_dir KGs/UMLS
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee/scripts/run.py --trainer torchDDP --dataset_dir KGs/UMLS
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula dicee/scripts/run.py --trainer torchDDP --dataset_dir KGs/UMLS
 ```
 Train a KGE model by providing the path of a single file and store all parameters under newly created directory
 called `KeciFamilyRun`.
@@ -129,40 +160,26 @@ dicee --sparql_endpoint "http://localhost:3030/mutagenesis/" --model Keci
 For more, please refer to `examples`.
 </details>
 
-## Embedding Vector Database 
+## Creating an Embedding Vector Database 
 <details> <summary> To see a code snippet </summary>
 
-#### Train an embedding model
-
+##### Learning Embeddings
 ```bash
+# Train an embedding model
 dicee --dataset_dir KGs/Countries-S1 --path_to_store_single_run CountryEmbeddings --model Keci --p 0 --q 1 --embedding_dim 32 --adaptive_swa
-Evaluate Keci on Train set: Evaluate Keci on Train set
-{'H@1': 0.7110711071107111, 'H@3': 0.8937893789378938, 'H@10': 0.9657965796579658, 'MRR': 0.8083741625024974}
-Evaluate Keci on Validation set: Evaluate Keci on Validation set
-{'H@1': 0.2916666666666667, 'H@3': 0.5208333333333334, 'H@10': 0.75, 'MRR': 0.43778750756550605}
-Evaluate Keci on Test set: Evaluate Keci on Test set
-{'H@1': 0.4166666666666667, 'H@3': 0.5833333333333334, 'H@10': 0.8125, 'MRR': 0.5345117321073071}
-Total Runtime: 16.738 seconds
-
-## Create a qdrant vector database
-diceeindex --path_to_store_single_run CountryEmbeddings --path_model CountryEmbeddings --collection_name "dummy" --location "localhost"
 ```
-#### Create Embedding Vector database
-
+#### Loading Embeddings into Qdrant Vector Database
 ```bash
-# Install Qdrant
-docker pull qdrant/qdrant
-docker run -p 6333:6333 -p 6334:6334      -v $(pwd)/qdrant_storage:/qdrant/storage:z      qdrant/qdrant
+# Ensure that Qdrant available
+# docker pull qdrant/qdrant
+# docker run -p 6333:6333 -p 6334:6334      -v $(pwd)/qdrant_storage:/qdrant/storage:z      qdrant/qdrant
 # pip install qdrant-client
 diceeindex --path_model CountryEmbeddings --collection_name "dummy" --location "localhost"
 ```
-
-#### Run Webservice
+#### Launching Webservice
 ```bash
 diceeserve --path_model CountryEmbeddings --collection_name "dummy" --collection_location "localhost"
 ```
-
-#### Query
 
 Most similar countries to germany
 ```bash
@@ -174,69 +191,6 @@ curl -X 'GET' 'http://0.0.0.0:8000/api/search?q=germany' -H 'accept: application
 {"hit":"belgium","score":0.6233973}]}
 ```
 
-
-```python
-# pip install dicee
-# wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate & unzip KGs.zip
-from dicee.executer import Execute
-from dicee.config import Namespace
-from dicee.knowledge_graph_embeddings import KGE
-# (1) Train a KGE model
-args = Namespace()
-args.model = 'Keci'
-args.p=0
-args.q=1
-args.optim = 'Adam'
-args.scoring_technique = "AllvsAll"
-args.path_single_kg = "KGs/Family/family-benchmark_rich_background.owl"
-args.backend = "rdflib"
-args.num_epochs = 200
-args.batch_size = 1024
-args.lr = 0.1
-args.embedding_dim = 512
-result = Execute(args).start()
-# (2) Load the pre-trained model
-pre_trained_kge = KGE(path=result['path_experiment_folder'])
-# (3) Single-hop query answering
-# Query: ?E : \exist E.hasSibling(E, F9M167)
-# Question: Who are the siblings of F9M167?
-# Answer: [F9M157, F9F141], as (F9M167, hasSibling, F9M157) and (F9M167, hasSibling, F9F141)
-predictions = pre_trained_kge.answer_multi_hop_query(query_type="1p",
-                                                     query=('http://www.benchmark.org/family#F9M167',
-                                                            ('http://www.benchmark.org/family#hasSibling',)),
-                                                     tnorm="min", k=3)
-top_entities = [topk_entity for topk_entity, query_score in predictions]
-assert "http://www.benchmark.org/family#F9F141" in top_entities
-assert "http://www.benchmark.org/family#F9M157" in top_entities
-# (2) Two-hop query answering
-# Query: ?D : \exist E.Married(D, E) \land hasSibling(E, F9M167)
-# Question: To whom a sibling of F9M167 is married to?
-# Answer: [F9F158, F9M142] as (F9M157 #married F9F158) and (F9F141 #married F9M142)
-predictions = pre_trained_kge.answer_multi_hop_query(query_type="2p",
-                                                     query=("http://www.benchmark.org/family#F9M167",
-                                                            ("http://www.benchmark.org/family#hasSibling",
-                                                             "http://www.benchmark.org/family#married")),
-                                                     tnorm="min", k=3)
-top_entities = [topk_entity for topk_entity, query_score in predictions]
-assert "http://www.benchmark.org/family#F9M142" in top_entities
-assert "http://www.benchmark.org/family#F9F158" in top_entities
-# (3) Three-hop query answering
-# Query: ?T : \exist D.type(D,T) \land Married(D,E) \land hasSibling(E, F9M167)
-# Question: What are the type of people who are married to a sibling of F9M167?
-# (3) Answer: [Person, Male, Father] since  F9M157 is [Brother Father Grandfather Male] and F9M142 is [Male Grandfather Father]
-
-predictions = pre_trained_kge.answer_multi_hop_query(query_type="3p", query=("http://www.benchmark.org/family#F9M167",
-                                                                             ("http://www.benchmark.org/family#hasSibling",
-                                                                             "http://www.benchmark.org/family#married",
-                                                                             "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")),
-                                                     tnorm="min", k=5)
-top_entities = [topk_entity for topk_entity, query_score in predictions]
-print(top_entities)
-assert "http://www.benchmark.org/family#Person" in top_entities
-assert "http://www.benchmark.org/family#Father" in top_entities
-assert "http://www.benchmark.org/family#Male" in top_entities
-```
-For more, please refer to `examples/multi_hop_query_answering`.
 </details>
 
 
@@ -434,5 +388,5 @@ url={https://openreview.net/forum?id=6T45-4TFqaX}}
   year={2021},
   organization={IEEE}
 ```
-For any questions or wishes, please contact:  ```caglar.demir@upb.de``` or ```caglardemir8@gmail.com```
+For any questions or wishes, please contact:  ```caglar.demir@upb.de```
 
