@@ -27,7 +27,6 @@ import os
 from typing import Generator, List, Tuple
 
 
-
 def initialize_query_generator(args):
     return QueryGenerator(train_path=f"{args.dataset_dir}/train.txt",
                           val_path=f"{args.dataset_dir}/valid.txt",
@@ -79,18 +78,19 @@ def eval_multi_hop_query_answering(args) -> Generator[Tuple[str, pd.DataFrame], 
         qg.rel2id = kge_model.relation_to_idx
         if args.query_and_answers is None and queries_and_answers is None:
             # To generate Queries Queries and Answers
+
             queries_and_answers = [(q, qg.get_queries(query_type=q, gen_num=args.num_queries)) for q in
-                                   [
-                                       #"1p",
-                                    "2p",  # $E_?\:.\:\exists E_1:r_1(e,E_1)\land r_2(E_1, E_?)$
-                                    "3p",  # $E_?\:.\:\exists E_1E_2.r_1(e,E_1)\land r_2(E_1, E_2)\land r_3(E_2,E_?)$
-                                    "2i",
-                                    "3i",  # $E_?\:.\:r_1(e_1,E_?)\land r_2(e_2,E_?)\land r_3(e_3,E_?)$
-                                    "ip",
-                                    "pi",
-                                    "2u",
-                                    "up"
-                                    ]]
+                                   [  # "1p",  E? . r(e, E?)
+                                       "2p",
+                                       # E? . ∃E1 : r1(e, E1) ∧ r2(E1, E?) $E_?\:.\:\exists E_1:r_1(e,E_1)\land r_2(E_1, E_?)$
+                                       "3p",  # $E_?\:.\:\exists E_1E_2.r_1(e,E_1)\land r_2(E_1, E_2)\land r_3(E_2,E_?)$
+                                       "2i",
+                                       "3i",  # $E_?\:.\:r_1(e_1,E_?)\land r_2(e_2,E_?)\land r_3(e_3,E_?)$
+                                       "ip",
+                                       "pi",
+                                       "2u",
+                                       "up"
+                                   ]]
             # qg.save_queries_and_answers(path="Queries", data=queries_and_answers)
             # queries_saved = True
         else:
@@ -105,10 +105,12 @@ def eval_multi_hop_query_answering(args) -> Generator[Tuple[str, pd.DataFrame], 
 def get_default_arguments():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--dataset_dir", type=str, default="KGs/UMLS")
-    parser.add_argument("--experiment_dir", type=str, default=None,help="A path of a family directory containing pre-trained model directories")
-    parser.add_argument("--pretrained_model", type=str, default=None, help="A path of a single pre-trained model directory")
+    parser.add_argument("--experiment_dir", type=str, default=None,
+                        help="A path of a family directory containing pre-trained model directories")
+    parser.add_argument("--pretrained_model", type=str, default=None,
+                        help="A path of a single pre-trained model directory")
     parser.add_argument("--random_seed", type=int, default=1)
-    parser.add_argument("--num_queries", type=int, default=100)
+    parser.add_argument("--num_queries", type=int, default=500)
     parser.add_argument("--query_and_answers", type=str, default=None)
     return parser.parse_args()
 
@@ -119,7 +121,8 @@ def display(results):
         print(df)
         print("#")
 
+        print(df["MRR"].to_latex(index=False))
+
 
 if __name__ == '__main__':
     display(eval_multi_hop_query_answering(get_default_arguments()))
-
