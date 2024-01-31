@@ -1,7 +1,7 @@
 import torch
 import torch.utils.data
 # from pykeen.models import model_resolver
-from .base_model import BaseKGE
+#from .base_model import BaseKGE
 from collections import namedtuple
 
 class PykeenKGE:#(BaseKGE):
