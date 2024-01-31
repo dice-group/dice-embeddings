@@ -4,7 +4,7 @@ import numpy as np
 import torch
 
 import dicee.models.base_model
-from .static_funcs import save_checkpoint_model, exponential_function, save_pickle
+from .static_funcs import save_checkpoint_model, save_pickle
 from .abstracts import AbstractCallback
 import pandas as pd
 
