@@ -4,8 +4,8 @@ import numpy as np
 import torch
 
 import dicee.models.base_model
-from .static_funcs import save_checkpoint_model, exponential_function, save_pickle
-from .abstracts import AbstractCallback, AbstractPPECallback
+from .static_funcs import save_checkpoint_model, save_pickle
+from .abstracts import AbstractCallback
 import pandas as pd
 
 
@@ -147,58 +147,17 @@ def compute_convergence(seq, i):
     return estimate_q(seq[-i:] / (np.arange(i) + 1))
 
 
-class deptPPE(AbstractPPECallback):
-    """ A callback for Polyak Parameter Ensemble Technique
-        Maintains a running parameter average for all parameters requiring gradient signals
-    """
-
-    def __init__(self, num_epochs: int, path: str,
-                 epoch_to_start: int = None, last_percent_to_consider=None):
-        assert isinstance(num_epochs, int)
-        assert isinstance(path, str)
-        super().__init__(num_epochs, path, epoch_to_start, last_percent_to_consider)
-        # self.alphas = np.ones(self.num_ensemble_coefficient) / self.num_ensemble_coefficient
-
-    def initialize_ensemble(self, model):
-        torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_main.pt")
-        return torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device(model.device))
-
-    def should_averaging_start(self):
-        return self.epoch_to_start <= self.epoch_count
-
-    def get_ensemble_model(self, model):
-        if self.sample_counter == 0:
-            self.sample_counter += 1
-            torch.save(model.state_dict(), f=f"{self.path}/trainer_checkpoint_main.pt")
-        return torch.load(f"{self.path}/trainer_checkpoint_main.pt", torch.device(model.device))
-
-    def update_ensemble(self, ensemble_state_dict, current_model):
-        with torch.no_grad():
-            for k, parameters in current_model.state_dict().items():
-                if parameters.dtype == torch.float:
-                    # ensemble_state_dict[k] += self.alphas[self.sample_counter] * parameters
-                    ensemble_state_dict[k] = (ensemble_state_dict[k] * self.sample_counter + parameters) / (
-                            1 + self.sample_counter)
-
-    def on_train_epoch_end(self, trainer, model) -> None:
-        self.epoch_count += 1
-        if self.should_averaging_start():
-            # Load the ensemble model
-            ensemble_state_dict = self.get_ensemble_model(model=model)
-            # Update the ensemble model
-            self.update_ensemble(ensemble_state_dict=ensemble_state_dict, current_model=model)
-            # Store the ensemble model
-            self.store_ensemble(ensemble_state_dict)
-
-
-class ASWA(AbstractPPECallback):
+class ASWA(AbstractCallback):
     """ Adaptive stochastic weight averaging
         ASWE keeps track of the validation performance and update s the ensemble model accordingly.
         """
 
     def __init__(self, num_epochs, path):
-        super().__init__(num_epochs, path, epoch_to_start=None, last_percent_to_consider=None)
+        super().__init__()
+        self.path=path
+        self.num_epochs=num_epochs
         self.initial_eval_setting = None
+        self.epoch_count=0
         self.alphas = []
         self.val_aswa = -1
 
@@ -311,40 +270,6 @@ class ASWA(AbstractPPECallback):
             # print(f"| MRR Running {val_running_model:.4f} | MRR ASWA: {self.val_aswa:.4f} |ASWA|:{sum(self.alphas)}")
             # (8) Decide whether ASWA should be updated via the current running model.
             self.decide(model.state_dict(), ensemble_state_dict, val_running_model, mrr_updated_ensemble_model)
-
-
-class deptFPPE(AbstractPPECallback):
-    """
-    import matplotlib.pyplot as plt
-    import numpy as np
-    def exponential_function(x: np.ndarray, lam: float, ascending_order=True) -> torch.FloatTensor:
-        # A sequence in exponentially decreasing order
-        result = np.exp(-lam * x) / np.sum(np.exp(-lam * x))
-        assert 0.999 < sum(result) < 1.0001
-        result = np.flip(result) if ascending_order else result
-        return torch.tensor(result.tolist())
-
-    N = 100
-    equal_weights = np.ones(N) / N
-    plt.plot(equal_weights, 'r', label="Equal")
-    plt.plot(exponential_function(np.arange(N), lam=0.1,), 'c-', label="Exp. forgetful with 0.1")
-    plt.plot(exponential_function(np.arange(N), lam=0.05), 'g-', label="Exp. forgetful with 0.05")
-    plt.plot(exponential_function(np.arange(N), lam=0.025), 'b-', label="Exp. forgetful with 0.025")
-    plt.plot(exponential_function(np.arange(N), lam=0.01), 'k-', label="Exp. forgetful with 0.01")
-    plt.title('Ensemble coefficients')
-    plt.xlabel('Epochs')
-    plt.ylabel('Coefficients')
-    plt.legend()
-    plt.savefig('ensemble_coefficients.pdf')
-    plt.show()
-    """
-
-    def __init__(self, num_epochs, path, last_percent_to_consider=None):
-        super().__init__(num_epochs, path, last_percent_to_consider)
-        lamb = 0.1
-        self.alphas = exponential_function(np.arange(self.num_ensemble_coefficient), lam=lamb, ascending_order=True)
-        print(f"Forgetful Ensemble Coefficients with lambda {lamb}:", self.alphas)
-
 
 class Eval(AbstractCallback):
     def __init__(self, path, epoch_ratio: int = None):

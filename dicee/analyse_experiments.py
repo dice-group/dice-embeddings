@@ -1,3 +1,4 @@
+""" This script should be moved to dicee/scripts"""
 import os
 import json
 import pandas as pd
@@ -7,6 +8,7 @@ import argparse
 def get_default_arguments():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--dir", type=str, default=None, help="Path of a directory containing experiments")
+    # TODO: features/columns for pandas dataframe
     return parser.parse_args()
 
 
@@ -113,7 +115,7 @@ def analyse(args):
     sub_folder_str_paths = os.listdir(args.dir)
     experiments = []
     for path in sub_folder_str_paths:
-        if path=="summary.csv":
+        if path == "summary.csv":
             continue
         full_path = args.dir + "/" + path
         with open(f'{full_path}/configuration.json', 'r') as f:
@@ -160,25 +162,21 @@ def analyse(args):
     df.sort_values(by=['testMRR'], ascending=False, inplace=True)
     pd.set_option("display.precision", 3)
 
-    df=df[["model",
-            "adaptive_swa",
-               "stochastic_weight_avg",
-              "trainMRR",
-              "trainH@1",
-              "trainH@3",
-              "trainH@10",
-              #"valMRR",
-              #"valH@1",
-              #"valH@3",
-              #"valH@10",
-              "testMRR",
-              "testH@1",
-              "testH@3",
-              "testH@10",
-              #'dataset_dir', 'embedding_dim',
-              #'num_epochs', 'batch_size', 'lr',
-
-              ]]
+    df = df[["model",
+             "adaptive_swa",
+             "swa",
+             # "trainMRR",
+             # "trainH@1",
+             # "trainH@3",
+             # "trainH@10",
+             # "valMRR",
+             # "valH@1",
+             # "valH@3",
+             # "valH@10",
+             "testMRR",
+             "testH@1",
+             "testH@3",
+             "testH@10"]]
     print(df)
     print(df.to_latex(index=False, float_format="%.3f"))
     path_to_save = args.dir + '/summary.csv'
