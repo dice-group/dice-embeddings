@@ -30,13 +30,14 @@ deps = {b: a for a, b in (re.findall(r"^(([^!=<>~ ]+)(?:[!=<>~ ].*)?$)", x)[0] f
 def deps_list(*pkgs):
     return [deps[pkg] for pkg in pkgs]
 
+
 extras = dict()
 extras["dev"] = deps_list(
-    "pandas", "polars", "rdflib", # Loading KG
-    "torch", "lightning", # Training KGE
+    "pandas", "polars", "rdflib",  # Loading KG
+    "torch", "lightning",  # Training KGE
     "tiktoken",
     # "pyarrow",
-    "psutil", # Memory tracking: (do we need it
+    "psutil",  # Memory tracking: (do we need it
     "matplotlib")
 extras["min"] = deps_list("torch", "pandas")
 extras["test"] = (extras["dev"] + deps_list("ruff", "pytest"))
