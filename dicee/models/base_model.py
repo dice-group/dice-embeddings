@@ -258,12 +258,12 @@ class BaseKGE(BaseKGELighning):
         bpe_triple_score = self.score(self.lf(bpe_head_ent_emb), self.lf(bpe_rel_ent_emb), self.lf(bpe_tail_ent_emb))
         return bpe_triple_score
 
-    def forward_byte_pair_encoded_k_vs_all(self, x):
+    def forward_byte_pair_encoded_k_vs_all(self, x:torch.LongTensor):
         """
 
         Parameters
         ----------
-        x
+        x : B x 2 x T
 
         Returns
         -------
@@ -271,9 +271,9 @@ class BaseKGE(BaseKGELighning):
         """
         bpe_head_ent_emb, bpe_rel_ent_emb = self.get_bpe_head_and_relation_representation(x)
 
-        B, T, C = bpe_head_ent_emb.shape
-        bpe_head_ent_emb = bpe_head_ent_emb.reshape(B, T * C)
-        bpe_rel_ent_emb = bpe_rel_ent_emb.reshape(B, T * C)
+        B, T, D = bpe_head_ent_emb.shape
+        bpe_head_ent_emb = bpe_head_ent_emb.reshape(B, T * D)
+        bpe_rel_ent_emb = bpe_rel_ent_emb.reshape(B, T * D)
 
         bpe_head_ent_emb = self.lf(bpe_head_ent_emb)
         bpe_rel_ent_emb = self.lf(bpe_rel_ent_emb)
@@ -462,20 +462,25 @@ class BaseKGE(BaseKGELighning):
 
         Parameters
         ----------
-        x
+        x : B x 2 x T
 
         Returns
         -------
 
         """
+        # h: batchsize, T where T represents the maximum shaped token size
+        # h: B x T, r: B x T
         h, r = x[:, 0, :], x[:, 1, :]
-        # N, T, D
+        # B, T, D
         head_ent_emb = self.token_embeddings(h)
-        # N, T, D
+        # B, T, D
         rel_emb = self.token_embeddings(r)
+
         # A sequence of sub-list embeddings representing an embedding of a head entity should be normalized to 0.
         # Therefore, the norm of a row vector obtained from T by D matrix must be 1.
+        # B, T, D
         head_ent_emb = F.normalize(head_ent_emb, p=2, dim=(1, 2))
+        # B, T, D
         rel_emb = F.normalize(rel_emb, p=2, dim=(1, 2))
         return head_ent_emb, rel_emb
 
