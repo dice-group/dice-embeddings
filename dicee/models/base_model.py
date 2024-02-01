@@ -106,6 +106,7 @@ class BaseKGELighning(pl.LightningModule):
                  on_step=True,
                  on_epoch=True,
                  prog_bar=True,
+                 sync_dist=True,
                  logger=False)
         return loss_batch
 
