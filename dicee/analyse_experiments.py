@@ -8,6 +8,7 @@ import argparse
 def get_default_arguments():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--dir", type=str, default=None, help="Path of a directory containing experiments")
+    parser.add_argument('--features', nargs='+', default=[])
     # TODO: features/columns for pandas dataframe
     return parser.parse_args()
 
@@ -115,21 +116,14 @@ def analyse(args):
     sub_folder_str_paths = os.listdir(args.dir)
     experiments = []
     for path in sub_folder_str_paths:
-        if path == "summary.csv":
-            continue
         full_path = args.dir + "/" + path
+        if os.path.isdir(full_path) is False:
+            continue
+
+        
         with open(f'{full_path}/configuration.json', 'r') as f:
             config = json.load(f)
-            """
-            config = {i: config[i] for i in
-                      ['model', 'dataset_dir', 'embedding_dim',
-                       'normalization', 'num_epochs', 'batch_size', 'lr',
-                       'callbacks',
-                       'adaptive_swa',
-                       'scoring_technique',
-                       "byte_pair_encoding",
-                       'dataset_dir', 'p', 'q']}
-            """
+            
         try:
             with open(f'{full_path}/report.json', 'r') as f:
                 report = json.load(f)
@@ -161,26 +155,18 @@ def analyse(args):
     df = pd.DataFrame(experiments)
     df.sort_values(by=['testMRR'], ascending=False, inplace=True)
     pd.set_option("display.precision", 3)
+    
+    #features=["model","testMRR"]
+    # print(df.columns)
+    try:
+        df_features = df[args.features]
+    except:
+        print(f"--features ({args.features}) is not a subset of {df.columns}")
+        exit(1)
 
-    df = df[["model",
-             "adaptive_swa",
-             "swa",
-             # "trainMRR",
-             # "trainH@1",
-             # "trainH@3",
-             # "trainH@10",
-             # "valMRR",
-             # "valH@1",
-             # "valH@3",
-             # "valH@10",
-             "testMRR",
-             "testH@1",
-             "testH@3",
-             "testH@10"]]
-    print(df)
-    print(df.to_latex(index=False, float_format="%.3f"))
+    print(df_features.to_latex(index=False, float_format="%.3f"))
     path_to_save = args.dir + '/summary.csv'
-    df.to_csv(path_or_buf=path_to_save)
+    df_features.to_csv(path_or_buf=path_to_save)
     print(f"Saved in {path_to_save}")
 
 
