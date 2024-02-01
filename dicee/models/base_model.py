@@ -82,7 +82,109 @@ class Block(nn.Module):
         return x
 
 
-class BaseKGE(pl.LightningModule):
+class BaseKGELighning(pl.LightningModule):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def mem_of_model(self) -> Dict:
+        """ Size of model in MB and number of params"""
+        # https://discuss.pytorch.org/t/finding-model-size/130275/2
+        # (2) Store NumParam and EstimatedSizeMB
+        num_params = sum(p.numel() for p in self.parameters())
+        # Not quite sure about EstimatedSizeMB ?
+        buffer_size = 0
+        for buffer in self.buffers():
+            buffer_size += buffer.nelement() * buffer.element_size()
+        return {'EstimatedSizeMB': (num_params + buffer_size) / 1024 ** 2, 'NumParam': num_params}
+
+    def training_step(self, batch, batch_idx=None):
+        x_batch, y_batch = batch
+        yhat_batch = self.forward(x_batch)
+        loss_batch = self.loss_function(yhat_batch, y_batch)
+        self.log("loss",
+                 value=loss_batch,
+                 on_step=True,
+                 on_epoch=True,
+                 prog_bar=True,
+                 logger=False)
+        return loss_batch
+
+    def loss_function(self, yhat_batch: torch.FloatTensor, y_batch: torch.FloatTensor):
+        """
+
+        Parameters
+        ----------
+        yhat_batch
+        y_batch
+
+        Returns
+        -------
+
+        """
+        return self.loss(yhat_batch, y_batch)
+
+    def on_train_epoch_end(self, *args, **kwargs):
+        if len(args) >= 1:
+            raise RuntimeError(f"Arguments must not be empty:{args}")
+        if len(kwargs) >= 1:
+            raise RuntimeError(f"Keyword Arguments must not be empty:{kwargs}")
+        # @TODO: No saving
+        """
+
+        batch_losses = [i['loss'].item() for i in training_step_outputs]
+        avg = sum(batch_losses) / len(batch_losses)
+        self.loss_history.append(avg)
+        """
+
+    def test_epoch_end(self, outputs: List[Any]):
+        """
+        @ TODO
+        avg_test_accuracy = torch.stack([x['test_accuracy'] for x in outputs]).mean()
+        self.log('avg_test_accuracy', avg_test_accuracy, on_epoch=True, prog_bar=True)
+        """
+
+    def test_dataloader(self) -> None:
+        pass
+
+    def val_dataloader(self) -> None:
+        pass
+
+    def predict_dataloader(self) -> None:
+        pass
+
+    def train_dataloader(self) -> None:
+        pass
+
+    def configure_optimizers(self, parameters=None):
+        if parameters is None:
+            parameters = self.parameters()
+
+        # default params in pytorch.
+        if self.optimizer_name == 'SGD':
+            self.selected_optimizer = torch.optim.SGD(params=parameters, lr=self.learning_rate,
+                                                      momentum=0, dampening=0, weight_decay=self.weight_decay,
+                                                      nesterov=False)
+        elif self.optimizer_name == 'Adam':
+            self.selected_optimizer = torch.optim.Adam(parameters, lr=self.learning_rate,
+                                                       weight_decay=self.weight_decay)
+
+        elif self.optimizer_name == 'NAdam':
+            self.selected_optimizer = torch.optim.NAdam(parameters, lr=self.learning_rate, betas=(0.9, 0.999),
+                                                        eps=1e-08, weight_decay=self.weight_decay, momentum_decay=0.004)
+        elif self.optimizer_name == 'Adagrad':
+            self.selected_optimizer = torch.optim.Adagrad(parameters,
+                                                          lr=self.learning_rate, eps=1e-10,
+                                                          weight_decay=self.weight_decay)
+        elif self.optimizer_name == 'ASGD':
+            self.selected_optimizer = torch.optim.ASGD(parameters,
+                                                       lr=self.learning_rate, lambd=0.0001, alpha=0.75,
+                                                       weight_decay=self.weight_decay)
+        else:
+            raise KeyError()
+        return self.selected_optimizer
+
+
+class BaseKGE(BaseKGELighning):
     def __init__(self, args: dict):
         super().__init__()
         self.args = args
@@ -190,17 +292,6 @@ class BaseKGE(pl.LightningModule):
         E = F.normalize(self.lf(all_entities), p=2, dim=0)
         return self.k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
 
-    def mem_of_model(self) -> Dict:
-        """ Size of model in MB and number of params"""
-        # https://discuss.pytorch.org/t/finding-model-size/130275/2
-        # (2) Store NumParam and EstimatedSizeMB
-        num_params = sum(p.numel() for p in self.parameters())
-        # Not quite sure about EstimatedSizeMB ?
-        buffer_size = 0
-        for buffer in self.buffers():
-            buffer_size += buffer.nelement() * buffer.element_size()
-        return {'EstimatedSizeMB': (num_params + buffer_size) / 1024 ** 2, 'NumParam': num_params}
-
     def init_params_with_sanity_checking(self):
         if self.args.get('weight_decay'):
             self.weight_decay = self.args['weight_decay']
@@ -272,48 +363,6 @@ class BaseKGE(pl.LightningModule):
             print(f'--init_param (***{self.args.get("init_param")}***) not found')
             self.optimizer_name = IdentityClass
 
-    def configure_optimizers(self, parameters=None):
-        if parameters is None:
-            parameters = self.parameters()
-
-        # default params in pytorch.
-        if self.optimizer_name == 'SGD':
-            self.selected_optimizer = torch.optim.SGD(params=parameters, lr=self.learning_rate,
-                                                      momentum=0, dampening=0, weight_decay=self.weight_decay,
-                                                      nesterov=False)
-        elif self.optimizer_name == 'Adam':
-            self.selected_optimizer = torch.optim.Adam(parameters, lr=self.learning_rate,
-                                                       weight_decay=self.weight_decay)
-
-        elif self.optimizer_name == 'NAdam':
-            self.selected_optimizer = torch.optim.NAdam(parameters, lr=self.learning_rate, betas=(0.9, 0.999),
-                                                        eps=1e-08, weight_decay=self.weight_decay, momentum_decay=0.004)
-        elif self.optimizer_name == 'Adagrad':
-            self.selected_optimizer = torch.optim.Adagrad(parameters,
-                                                          lr=self.learning_rate, eps=1e-10,
-                                                          weight_decay=self.weight_decay)
-        elif self.optimizer_name == 'ASGD':
-            self.selected_optimizer = torch.optim.ASGD(parameters,
-                                                       lr=self.learning_rate, lambd=0.0001, alpha=0.75,
-                                                       weight_decay=self.weight_decay)
-        else:
-            raise KeyError()
-        return self.selected_optimizer
-
-    def loss_function(self, yhat_batch: torch.FloatTensor, y_batch: torch.FloatTensor):
-        """
-
-        Parameters
-        ----------
-        yhat_batch
-        y_batch
-
-        Returns
-        -------
-
-        """
-        return self.loss(yhat_batch, y_batch)
-
     def forward(self, x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]],
                 y_idx: torch.LongTensor = None):
         """
@@ -370,45 +419,6 @@ class BaseKGE(pl.LightningModule):
 
     def forward_k_vs_sample(self, *args, **kwargs):
         raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_sample function')
-
-    def training_step(self, batch, batch_idx=None):
-        x_batch, y_batch = batch
-        yhat_batch = self.forward(x_batch)
-        loss_batch = self.loss_function(yhat_batch, y_batch)
-        return loss_batch
-
-    def on_train_epoch_end(self, *args, **kwargs):
-        if len(args)>=1:
-            raise RuntimeError(f"Arguments must not be empty:{args}")
-
-        if len(kwargs)>=1:
-            raise RuntimeError(f"Keyword Arguments must not be empty:{kwargs}")
-
-        # @TODO: No saving
-        """
-
-        batch_losses = [i['loss'].item() for i in training_step_outputs]
-        avg = sum(batch_losses) / len(batch_losses)
-        self.loss_history.append(avg)
-        """
-    def test_epoch_end(self, outputs: List[Any]):
-        """
-        @ TODO
-        avg_test_accuracy = torch.stack([x['test_accuracy'] for x in outputs]).mean()
-        self.log('avg_test_accuracy', avg_test_accuracy, on_epoch=True, prog_bar=True)
-        """
-
-    def test_dataloader(self) -> None:
-        pass
-
-    def val_dataloader(self) -> None:
-        pass
-
-    def predict_dataloader(self) -> None:
-        pass
-
-    def train_dataloader(self) -> None:
-        pass
 
     def get_triple_representation(self, idx_hrt):
         # (1) Split input into indexes.

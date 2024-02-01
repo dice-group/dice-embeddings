@@ -7,13 +7,6 @@ from qdrant_client import QdrantClient
 app = FastAPI()
 # Create a neural searcher instance
 neural_searcher = None
-
-
-@app.get("/api/search")
-def search_startup(q: str):
-    return {"result": neural_searcher.search(entity=q)}
-
-
 def get_default_arguments():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("--path_model", type=str, required=True,
@@ -22,9 +15,19 @@ def get_default_arguments():
     parser.add_argument("--collection_location", type=str, required=True, help="location")
     parser.add_argument("--host",type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8000)
-
     return parser.parse_args()
 
+@app.get("/")
+async def root():
+    return {"message": "Hello Dice Embedding User"}
+
+@app.get("/api/search")
+async def search_embeddings(q: str):
+    return {"result": neural_searcher.search(entity=q)}
+
+@app.get("/api/get")
+async def retrieve_embeddings(q: str):
+    return {"result": neural_searcher.get(entity=q)}
 
 class NeuralSearcher:
     def __init__(self, args):
@@ -34,9 +37,12 @@ class NeuralSearcher:
         # initialize Qdrant client
         self.qdrant_client = QdrantClient(location=args.collection_location)
 
+    def get(self,entity:str):
+        return self.model.get_transductive_entity_embeddings(indices=[entity], as_list=True)[0]
+
     def search(self, entity: str):
         # Convert text query into vector
-        vector = self.model.get_transductive_entity_embeddings(indices=[entity], as_list=True)[0]
+        vector=self.get(entity)
 
         # Use `vector` for search for closest vectors in the collection
         search_result = self.qdrant_client.search(

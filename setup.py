@@ -6,20 +6,21 @@ from setuptools import setup, find_packages
 #  pip3 install "dicee[min]" .
 _deps = [
     "torch>=2.0.0",
-    "pandas>=2.1.0",
-    "polars>=0.16.14",
-    "scikit-learn>=1.2.2",
-    "pyarrow>=11.0.0",
     "lightning>=2.1.3",
-    "pykeen==1.10.1",
-    "zstandard>=0.21.0",
-    "pytest>=7.2.2",
+    "pandas>=2.1.0",
+    "polars>=0.16.14",  # this can be lazy imported
+    "scikit-learn>=1.2.2",  # this can be lazy imported
+    "pyarrow>=11.0.0",  # this can be lazy imported
+    # "pykeen==1.10.1", # Temporarly removed due to
+    "zstandard>=0.21.0",  # this can be lazy imported
+    "pytest>=7.2.2",  # if testing required
     "psutil>=5.9.4",
-    "ruff>=0.0.284",
-    "gradio>=3.23.0",
+    "ruff>=0.0.284",  # if testing required
+    "gradio>=3.23.0",  # if deployment required
     "rdflib>=7.0.0",
     "tiktoken>=0.5.1",
-    "beautifulsoup4>=4.12.2",
+    "matplotlib>=3.8.2",
+    "beautifulsoup4>=4.12.2"
 ]
 
 # some of the values are versioned whereas others aren't.
@@ -30,7 +31,13 @@ def deps_list(*pkgs):
     return [deps[pkg] for pkg in pkgs]
 
 extras = dict()
-extras["dev"] = deps_list("torch", "lightning", "pykeen", "tiktoken", "pandas", "polars", "pyarrow", "psutil", "rdflib", "ruff", "pytest")
+extras["dev"] = deps_list(
+    "pandas", "polars", "rdflib", # Loading KG
+    "torch", "lightning", # Training KGE
+    "tiktoken",
+    # "pyarrow",
+    "psutil", # Memory tracking: (do we need it
+    "matplotlib")
 extras["min"] = deps_list("torch", "pandas")
 extras["test"] = (extras["dev"] + deps_list("ruff", "pytest"))
 
