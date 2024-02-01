@@ -85,6 +85,7 @@ class Block(nn.Module):
 class BaseKGELighning(pl.LightningModule):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.training_step_outputs=[]
 
     def mem_of_model(self) -> Dict:
         """ Size of model in MB and number of params"""
@@ -101,6 +102,7 @@ class BaseKGELighning(pl.LightningModule):
         x_batch, y_batch = batch
         yhat_batch = self.forward(x_batch)
         loss_batch = self.loss_function(yhat_batch, y_batch)
+        self.training_step_outputs.append(loss_batch.item())
         self.log("loss",
                  value=loss_batch,
                  on_step=True,
@@ -130,12 +132,9 @@ class BaseKGELighning(pl.LightningModule):
         if len(kwargs) >= 1:
             raise RuntimeError(f"Keyword Arguments must not be empty:{kwargs}")
         # @TODO: No saving
-        """
 
-        batch_losses = [i['loss'].item() for i in training_step_outputs]
-        avg = sum(batch_losses) / len(batch_losses)
-        self.loss_history.append(avg)
-        """
+        self.loss_history.append(sum( self.training_step_outputs) / len( self.training_step_outputs))
+        self.training_step_outputs.clear()
 
     def test_epoch_end(self, outputs: List[Any]):
         """
@@ -259,7 +258,7 @@ class BaseKGE(BaseKGELighning):
         bpe_triple_score = self.score(self.lf(bpe_head_ent_emb), self.lf(bpe_rel_ent_emb), self.lf(bpe_tail_ent_emb))
         return bpe_triple_score
 
-    def forward_byte_pair_encoded_k_vs_all(self, x:torch.LongTensor):
+    def forward_byte_pair_encoded_k_vs_all(self, x: torch.LongTensor):
         """
 
         Parameters
