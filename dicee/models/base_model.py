@@ -9,7 +9,7 @@ from torch.nn import functional as F
 class Head(nn.Module):
     """ one head of self-attention """
 
-    def __init__(self, head_size: int, n_embd: int, block_size: int):
+    def __init__(self, head_size: int, n_embd: int):
         super().__init__()
         self.key = nn.Linear(n_embd, head_size, bias=False)
         self.query = nn.Linear(n_embd, head_size, bias=False)
@@ -20,7 +20,7 @@ class Head(nn.Module):
     def forward(self, x):
         # input of size (batch, time-step, channels)
         # output of size (batch, time-step, head size)
-        B, T, C = x.shape
+        B, T, D = x.shape
         k = self.key(x)  # (B,T,hs)
         q = self.query(x)  # (B,T,hs)
         # compute attention scores ("affinities")
@@ -36,9 +36,9 @@ class Head(nn.Module):
 class MultiHeadAttention(nn.Module):
     """ multiple heads of self-attention in parallel """
 
-    def __init__(self, num_heads, head_size, n_embd, block_size):
+    def __init__(self, num_heads, head_size, n_embd):
         super().__init__()
-        self.heads = nn.ModuleList([Head(head_size, n_embd=n_embd, block_size=block_size) for _ in range(num_heads)])
+        self.heads = nn.ModuleList([Head(head_size, n_embd=n_embd) for _ in range(num_heads)])
         self.proj = nn.Linear(head_size * num_heads, n_embd)
         self.dropout = nn.Dropout(0.0)
 
@@ -67,11 +67,10 @@ class FeedFoward(nn.Module):
 class Block(nn.Module):
     """ Transformer block: communication followed by computation """
 
-    def __init__(self, n_embd, n_head, block_size):
-        # n_embd: embedding dimension, n_head: the number of heads we'd like
+    def __init__(self, n_embd, n_head):
         super().__init__()
         head_size = n_embd // n_head
-        self.sa = MultiHeadAttention(n_head, head_size, n_embd=n_embd, block_size=block_size)
+        self.sa = MultiHeadAttention(n_head, head_size, n_embd=n_embd)
         self.ffwd = FeedFoward(n_embd)
         self.ln1 = nn.LayerNorm(n_embd)
         self.ln2 = nn.LayerNorm(n_embd)
@@ -217,9 +216,12 @@ class BaseKGE(BaseKGELightning):
 
         if self.byte_pair_encoding:
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
-            # Workaround: Dummy subReducing the impact of dummies
+            # IDEA:
+            # Build a new head and relation embeddings that are influenced by their context
+            self.attention_block = Block(n_embd=self.embedding_dim, n_head=4)
             self.lf = nn.Sequential(
-                nn.Linear(self.embedding_dim * self.max_length_subword_tokens, self.embedding_dim, bias=False))
+                nn.Linear(self.embedding_dim * self.max_length_subword_tokens,
+                          self.embedding_dim, bias=False))
 
             self.param_init(self.token_embeddings.weight.data)
             if self.args["scoring_technique"] in ["AllvsAll", "KvsAll"]:
@@ -264,14 +266,21 @@ class BaseKGE(BaseKGELightning):
         -------
 
         """
+        # B, T, D
         bpe_head_ent_emb, bpe_rel_ent_emb = self.get_bpe_head_and_relation_representation(x)
+        # Food for Thought
+        # Given a head and relation embedding,
+        # Obtain new head and relation embedding vectors that are influenced by each other.
+        # From (B, 2T, D) to (B, 2T, D)
+        attentive_head_rel_emb = self.attention_block(torch.cat((bpe_head_ent_emb, bpe_rel_ent_emb), 1))
+        bpe_head_ent_emb = attentive_head_rel_emb[:, :self.max_length_subword_tokens, :]
+        bpe_rel_ent_emb = attentive_head_rel_emb[:, self.max_length_subword_tokens:, :]
 
         B, T, D = bpe_head_ent_emb.shape
         bpe_head_ent_emb = bpe_head_ent_emb.reshape(B, T * D)
         bpe_rel_ent_emb = bpe_rel_ent_emb.reshape(B, T * D)
-
-        bpe_head_ent_emb = self.lf(bpe_head_ent_emb)
-        bpe_rel_ent_emb = self.lf(bpe_rel_ent_emb)
+        # bpe_head_ent_emb = self.lf(bpe_head_ent_emb)
+        # bpe_rel_ent_emb = self.lf(bpe_rel_ent_emb)
 
         device_r = bpe_head_ent_emb.get_device()
         if device_r >= 0:
@@ -285,6 +294,7 @@ class BaseKGE(BaseKGELightning):
         # Normalize each token vector into unit norms
         # https://pytorch.org/docs/stable/generated/torch.nn.functional.normalize.html
         E = F.normalize(self.lf(all_entities), p=2, dim=0)
+
         return self.k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
 
     def init_params_with_sanity_checking(self):
