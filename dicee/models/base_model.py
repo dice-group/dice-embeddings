@@ -82,10 +82,10 @@ class Block(nn.Module):
         return x
 
 
-class BaseKGELighning(pl.LightningModule):
+class BaseKGELightning(pl.LightningModule):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.training_step_outputs=[]
+        self.training_step_outputs = []
 
     def mem_of_model(self) -> Dict:
         """ Size of model in MB and number of params"""
@@ -131,17 +131,12 @@ class BaseKGELighning(pl.LightningModule):
             raise RuntimeError(f"Arguments must not be empty:{args}")
         if len(kwargs) >= 1:
             raise RuntimeError(f"Keyword Arguments must not be empty:{kwargs}")
-        # @TODO: No saving
 
-        self.loss_history.append(sum( self.training_step_outputs) / len( self.training_step_outputs))
+        self.loss_history.append(sum(self.training_step_outputs) / len(self.training_step_outputs))
         self.training_step_outputs.clear()
 
     def test_epoch_end(self, outputs: List[Any]):
-        """
-        @ TODO
-        avg_test_accuracy = torch.stack([x['test_accuracy'] for x in outputs]).mean()
-        self.log('avg_test_accuracy', avg_test_accuracy, on_epoch=True, prog_bar=True)
-        """
+        """ """
 
     def test_dataloader(self) -> None:
         pass
@@ -184,7 +179,7 @@ class BaseKGELighning(pl.LightningModule):
         return self.selected_optimizer
 
 
-class BaseKGE(BaseKGELighning):
+class BaseKGE(BaseKGELightning):
     def __init__(self, args: dict):
         super().__init__()
         self.args = args
