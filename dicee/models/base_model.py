@@ -224,9 +224,8 @@ class BaseKGE(BaseKGELightning):
             # Build a new head and relation embeddings that are influenced by their context
             self.attention_block = Block(n_embd=self.embedding_dim, n_head=8)
             # Byte-
-            self.lf = nn.Sequential(
-                nn.Linear(self.embedding_dim * self.max_length_subword_tokens,
-                          self.embedding_dim, bias=False))
+            self.lf = nn.Linear(self.embedding_dim * self.max_length_subword_tokens,
+                                self.embedding_dim, bias=False)
 
             self.param_init(self.token_embeddings.weight.data)
             if self.args["scoring_technique"] in ["AllvsAll", "KvsAll"]:
@@ -273,10 +272,7 @@ class BaseKGE(BaseKGELightning):
         """
         # B, T, D
         bpe_head_ent_emb, bpe_rel_ent_emb = self.get_bpe_head_and_relation_representation(x)
-        # Food for Thought
-        # Given a head and relation embedding,
-        # Obtain new head and relation embedding vectors that are influenced by each other.
-        # From (B, 2T, D) to (B, 2T, D)
+
         attentive_head_rel_emb = self.attention_block(torch.cat((bpe_head_ent_emb, bpe_rel_ent_emb), 1))
         bpe_head_ent_emb = attentive_head_rel_emb[:, :self.max_length_subword_tokens, :]
         bpe_rel_ent_emb = attentive_head_rel_emb[:, self.max_length_subword_tokens:, :]
@@ -284,8 +280,6 @@ class BaseKGE(BaseKGELightning):
         B, T, D = bpe_head_ent_emb.shape
         bpe_head_ent_emb = bpe_head_ent_emb.reshape(B, T * D)
         bpe_rel_ent_emb = bpe_rel_ent_emb.reshape(B, T * D)
-        # bpe_head_ent_emb = self.lf(bpe_head_ent_emb)
-        # bpe_rel_ent_emb = self.lf(bpe_rel_ent_emb)
 
         device_r = bpe_head_ent_emb.get_device()
         if device_r >= 0:
@@ -295,10 +289,12 @@ class BaseKGE(BaseKGELightning):
 
         all_entities = self.token_embeddings(self.ordered_bpe_entities)
         num_e, token_size, dim = all_entities.shape
-        all_entities = all_entities.reshape(num_e, token_size * dim)
-        # Normalize each token vector into unit norms
-        # https://pytorch.org/docs/stable/generated/torch.nn.functional.normalize.html
-        E = F.normalize(self.lf(all_entities), p=2, dim=0)
+        E = all_entities.reshape(num_e, token_size * dim)
+
+        # Reducer
+        bpe_head_ent_emb = self.lf(bpe_head_ent_emb)
+        bpe_rel_ent_emb = self.lf(bpe_rel_ent_emb)
+        E = F.normalize(self.lf(E), p=2, dim=0)
 
         return self.k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
 
