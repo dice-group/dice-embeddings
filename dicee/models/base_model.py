@@ -20,16 +20,21 @@ class Head(nn.Module):
     def forward(self, x):
         # input of size (batch, time-step, channels)
         # output of size (batch, time-step, head size)
-        B, T, D = x.shape
-        k = self.key(x)  # (B,T,hs)
-        q = self.query(x)  # (B,T,hs)
-        # compute attention scores ("affinities")
-        wei = q @ k.transpose(-2, -1) * k.shape[-1] ** -0.5  # (B, T, hs) @ (B, hs, T) -> (B, T, T)
-        wei = F.softmax(wei, dim=-1)  # (B, T, T)
-        wei = self.dropout(wei)
+        # B, T, D = x.shape
+        # from (B,T,D) to (B,T,hs)
+        k = self.key(x)
+        # from (B,T,D) to (B,T,hs)
+        q = self.query(x)
+        # Compute attention scores ("affinities")
+        #  (B, T, hs) @ (B, hs, T) -> (B, T, T)
+        wei = q @ k.transpose(-2, -1) * k.shape[-1] ** -0.5
+        # (B, T, T)
+        wei = self.dropout(F.softmax(wei, dim=-1))
         # perform the weighted aggregation of the values
-        v = self.value(x)  # (B,T,hs)
-        out = wei @ v  # (B, T, T) @ (B, T, hs) -> (B, T, hs)
+        # from (B,T,D) to (B,T,hs)
+        v = self.value(x)
+        # (B, T, T) @ (B, T, hs) -> (B, T, hs)
+        out = wei @ v
         return out
 
 
@@ -44,8 +49,7 @@ class MultiHeadAttention(nn.Module):
 
     def forward(self, x):
         out = torch.cat([h(x) for h in self.heads], dim=-1)
-        out = self.dropout(self.proj(out))
-        return out
+        return self.dropout(self.proj(out))
 
 
 class FeedFoward(nn.Module):
@@ -218,7 +222,8 @@ class BaseKGE(BaseKGELightning):
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
             # IDEA:
             # Build a new head and relation embeddings that are influenced by their context
-            self.attention_block = Block(n_embd=self.embedding_dim, n_head=4)
+            self.attention_block = Block(n_embd=self.embedding_dim, n_head=8)
+            # Byte-
             self.lf = nn.Sequential(
                 nn.Linear(self.embedding_dim * self.max_length_subword_tokens,
                           self.embedding_dim, bias=False))
