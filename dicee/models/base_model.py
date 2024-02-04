@@ -222,7 +222,7 @@ class BaseKGE(BaseKGELightning):
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
             # IDEA:
             # Build a new head and relation embeddings that are influenced by their context
-            self.attention_block = Block(n_embd=self.embedding_dim, n_head=8)
+            # self.attention_block = Block(n_embd=self.embedding_dim, n_head=8)
             # Byte-
             self.lf = nn.Linear(self.embedding_dim * self.max_length_subword_tokens,
                                 self.embedding_dim, bias=False)
@@ -273,9 +273,9 @@ class BaseKGE(BaseKGELightning):
         # B, T, D
         bpe_head_ent_emb, bpe_rel_ent_emb = self.get_bpe_head_and_relation_representation(x)
 
-        attentive_head_rel_emb = self.attention_block(torch.cat((bpe_head_ent_emb, bpe_rel_ent_emb), 1))
-        bpe_head_ent_emb = attentive_head_rel_emb[:, :self.max_length_subword_tokens, :]
-        bpe_rel_ent_emb = attentive_head_rel_emb[:, self.max_length_subword_tokens:, :]
+        # attentive_head_rel_emb = self.attention_block(torch.cat((bpe_head_ent_emb, bpe_rel_ent_emb), 1))
+        # bpe_head_ent_emb = attentive_head_rel_emb[:, :self.max_length_subword_tokens, :]
+        # bpe_rel_ent_emb = attentive_head_rel_emb[:, self.max_length_subword_tokens:, :]
 
         B, T, D = bpe_head_ent_emb.shape
         bpe_head_ent_emb = bpe_head_ent_emb.reshape(B, T * D)
@@ -294,7 +294,7 @@ class BaseKGE(BaseKGELightning):
         # Reducer
         bpe_head_ent_emb = self.lf(bpe_head_ent_emb)
         bpe_rel_ent_emb = self.lf(bpe_rel_ent_emb)
-        E = F.normalize(self.lf(E), p=2, dim=0)
+        E = self.lf(E)
 
         return self.k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
 
