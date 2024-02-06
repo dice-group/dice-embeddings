@@ -216,7 +216,13 @@ class DICE_Trainer:
         Performs K-fold cross-validation on the dataset and returns the trained model and form of labelling.
     """
 
-    def __init__(self, args, is_continual_training: bool, storage_path: str, evaluator: Optional[object] = None):
+    def __init__(
+        self,
+        args,
+        is_continual_training: bool,
+        storage_path: str,
+        evaluator: Optional[object] = None,
+    ):
         self.report = dict()
         self.args = args
         self.trainer = None
@@ -244,8 +250,8 @@ class DICE_Trainer:
             for the actual model class, which should be a subclass of the base model class
             used in your framework.
         form_of_labelling : str
-            The form of labeling used during the training. This can indicate the type of 
-            prediction task the model is trained for, such as "EntityPrediction", 
+            The form of labeling used during the training. This can indicate the type of
+            prediction task the model is trained for, such as "EntityPrediction",
             "RelationPrediction", or other custom labeling forms defined in your implementation.
         """
 
@@ -288,21 +294,21 @@ class DICE_Trainer:
         return initialize_trainer(self.args, callbacks)
 
     @timeit
-    def initialize_or_load_model(self)-> Tuple[BaseKGE, str]:
+    def initialize_or_load_model(self) -> Tuple[BaseKGE, str]:
         """
         Initializes or loads a knowledge graph embedding model based on the training configuration.
-        This method decides whether to start training from scratch or to continue training from a 
+        This method decides whether to start training from scratch or to continue training from a
         previously saved model state, depending on the `is_continual_training` attribute.
 
         Returns
         -------
         model : BaseKGE
             The model instance that is either initialized from scratch or loaded from a saved state.
-            `BaseKGE` is a generic placeholder for the actual model class, which is a subclass of the 
+            `BaseKGE` is a generic placeholder for the actual model class, which is a subclass of the
             base knowledge graph embedding model class used in your implementation.
         form_of_labelling : str
             A string indicating the type of prediction task the model is configured for. Possible values
-            include "EntityPrediction" and "RelationPrediction", which signify whether the model is 
+            include "EntityPrediction" and "RelationPrediction", which signify whether the model is
             trained to predict missing entities or relations in a knowledge graph. The actual values
             depend on the specific tasks supported by your implementation.
 
@@ -310,7 +316,7 @@ class DICE_Trainer:
         -----
         The method uses the `is_continual_training` attribute to determine if the model should be loaded
         from a saved state. If `is_continual_training` is True, the method attempts to load the model and its
-        configuration from the specified `storage_path`. If `is_continual_training` is False or the model 
+        configuration from the specified `storage_path`. If `is_continual_training` is False or the model
         cannot be loaded, a new model instance is initialized.
 
         This method also sets the `form_of_labelling` attribute based on the model's configuration, which
@@ -331,7 +337,7 @@ class DICE_Trainer:
         """
         Initializes and returns a PyTorch DataLoader object for the given dataset.
 
-        This DataLoader is configured based on the training arguments provided, 
+        This DataLoader is configured based on the training arguments provided,
         including batch size, shuffle status, and the number of workers.
 
         Parameters
@@ -444,10 +450,10 @@ class DICE_Trainer:
 
     def k_fold_cross_validation(self, dataset: KG) -> Tuple[BaseKGE, str]:
         """
-        Conducts K-fold cross-validation on the provided dataset to assess the performance 
-        of the model specified in the training arguments. The process involves partitioning 
-        the dataset into K distinct subsets, iteratively using one subset for testing and 
-        the remainder for training. The model's performance is evaluated on each test split 
+        Conducts K-fold cross-validation on the provided dataset to assess the performance
+        of the model specified in the training arguments. The process involves partitioning
+        the dataset into K distinct subsets, iteratively using one subset for testing and
+        the remainder for training. The model's performance is evaluated on each test split
         to compute the Mean Reciprocal Rank (MRR) scores.
 
         Steps:
@@ -456,7 +462,7 @@ class DICE_Trainer:
         2.1. A trainer and model are initialized based on the provided configuration.
         2.2. The model is trained using the training portion of the split.
         2.3. The MRR score of the trained model is computed using the test portion of the split.
-        3. The process aggregates the MRR scores across all splits to report the mean and standard deviation 
+        3. The process aggregates the MRR scores across all splits to report the mean and standard deviation
         of the MRR, providing a comprehensive evaluation of the model's performance.
 
         Parameters
@@ -472,12 +478,12 @@ class DICE_Trainer:
             - The trained model instance from the last fold of the cross-validation.
             - The form of labelling used during training, indicating the prediction task
             (e.g., "EntityPrediction", "RelationPrediction").
-        
+
         Notes
         -----
-        The function assumes the presence of a predefined number of folds (K) specified in 
+        The function assumes the presence of a predefined number of folds (K) specified in
         the training arguments. It utilizes PyTorch Lightning for model training and evaluation,
-        leveraging GPU acceleration if available. The final output includes the model trained 
+        leveraging GPU acceleration if available. The final output includes the model trained
         on the last fold and a summary of the cross-validation performance metrics.
         """
         print(f"{self.args.num_folds_for_cv}-fold cross-validation")
