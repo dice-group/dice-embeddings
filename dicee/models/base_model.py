@@ -222,10 +222,11 @@ class BaseKGE(BaseKGELightning):
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
             # IDEA:
             # Build a new head and relation embeddings that are influenced by their context
-            # self.attention_block = Block(n_embd=self.embedding_dim, n_head=8)
+            self.attention_block = Block(n_embd=self.embedding_dim, n_head=2)
             # Byte-
-            self.lf = nn.Linear(self.embedding_dim * self.max_length_subword_tokens,
-                                self.embedding_dim, bias=False)
+            self.lf = nn.Sequential(
+                nn.Linear(self.embedding_dim * self.max_length_subword_tokens,
+                          self.embedding_dim * self.max_length_subword_tokens, bias=False))
 
             self.param_init(self.token_embeddings.weight.data)
             if self.args["scoring_technique"] in ["AllvsAll", "KvsAll"]:
@@ -270,28 +271,35 @@ class BaseKGE(BaseKGELightning):
         -------
 
         """
-        # B, T, D
+        # (1) Get unit normalized subword units embedding matrices: (B, T, D)
         bpe_head_ent_emb, bpe_rel_ent_emb = self.get_bpe_head_and_relation_representation(x)
 
-        # attentive_head_rel_emb = self.attention_block(torch.cat((bpe_head_ent_emb, bpe_rel_ent_emb), 1))
-        # bpe_head_ent_emb = attentive_head_rel_emb[:, :self.max_length_subword_tokens, :]
-        # bpe_rel_ent_emb = attentive_head_rel_emb[:, self.max_length_subword_tokens:, :]
+        attentive_head_rel_emb = self.attention_block(torch.cat((bpe_head_ent_emb, bpe_rel_ent_emb), 1))
+        bpe_head_ent_emb = attentive_head_rel_emb[:, :self.max_length_subword_tokens, :]
+        bpe_rel_ent_emb = attentive_head_rel_emb[:, self.max_length_subword_tokens:, :]
 
+        # (2) Reshaping (1) into row vectors.
         B, T, D = bpe_head_ent_emb.shape
-        bpe_head_ent_emb = bpe_head_ent_emb.reshape(B, T * D)
-        bpe_rel_ent_emb = bpe_rel_ent_emb.reshape(B, T * D)
+        # (3) Apply dropouts on inputs.
+        bpe_head_ent_emb = self.input_dp_ent_real(bpe_head_ent_emb.reshape(B, T * D))
+        bpe_rel_ent_emb = self.input_dp_rel_real(bpe_rel_ent_emb.reshape(B, T * D))
 
+
+        # Multi-node GPU setting.
         device_r = bpe_head_ent_emb.get_device()
         if device_r >= 0:
             self.ordered_bpe_entities = self.ordered_bpe_entities.to(device_r)
         else:
             self.ordered_bpe_entities = self.ordered_bpe_entities.to("cpu")
 
+        # (3) Get unit normalized subword units embedding matrices of all entities : (E, T, D)
         all_entities = self.token_embeddings(self.ordered_bpe_entities)
         num_e, token_size, dim = all_entities.shape
+
+        # (4) Reshaping (3) into row vectors (E, T*D) .
         E = all_entities.reshape(num_e, token_size * dim)
 
-        # Reducer
+        # (5) Reducing from (_, T*D) into D.
         bpe_head_ent_emb = self.lf(bpe_head_ent_emb)
         bpe_rel_ent_emb = self.lf(bpe_rel_ent_emb)
         E = self.lf(E)
