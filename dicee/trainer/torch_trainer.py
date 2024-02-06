@@ -8,15 +8,43 @@ import psutil
 
 class TorchTrainer(AbstractTrainer):
     """
-        TorchTrainer for using single GPU or multi CPUs on a single node
+    A trainer class for PyTorch models that supports training on a single GPU or multiple CPUs.
 
-        Arguments
-       ----------
-       args: ?
+    Parameters
+    ----------
+    args : dict
+        Configuration arguments for training, including model hyperparameters and training options.
+    callbacks : List[Callable]
+        List of callback functions to be called at various points of the training process.
 
-       callbacks: list of Abstract callback instances
+    Attributes
+    ----------
+    loss_function : Callable
+        The loss function used for training.
+    optimizer : torch.optim.Optimizer
+        The optimizer used for training.
+    model : torch.nn.Module
+        The PyTorch model being trained.
+    train_dataloaders : torch.utils.data.DataLoader
+        torch.utils.data.DataLoader providing access to the training data.
+    training_step : Callable
+        The training step function defining the forward pass and loss computation.
+    device : torch.device
+        The device (CPU or GPU) on which training is performed.
 
-   """
+    Methods
+    -------
+    _run_batch(i: int, x_batch: torch.Tensor, y_batch: torch.Tensor) -> float:
+        Executes a training step for a single batch and returns the loss value.
+    _run_epoch(epoch: int) -> float:
+        Executes training for one epoch and returns the average loss.
+    fit(*args, train_dataloaders: torch.utils.data.DataLoader, **kwargs) -> None:
+        Starts the training process for the given model and data.
+    forward_backward_update(x_batch: torch.Tensor, y_batch: torch.Tensor) -> float:
+        Performs the forward pass, computes the loss, and updates model weights.
+    extract_input_outputs_set_device(batch: list) -> Tuple[torch.Tensor, torch.Tensor]:
+        Prepares and moves batch data to the appropriate device.
+    """
 
     def __init__(self, args, callbacks):
         super().__init__(args, callbacks)
@@ -28,25 +56,32 @@ class TorchTrainer(AbstractTrainer):
         torch.manual_seed(self.attributes.random_seed)
         torch.cuda.manual_seed_all(self.attributes.random_seed)
         if self.attributes.gpus and torch.cuda.is_available():
-            self.device = torch.device(f'cuda:{self.attributes.gpus}' if torch.cuda.is_available() else 'cpu')
+            self.device = torch.device(
+                f"cuda:{self.attributes.gpus}" if torch.cuda.is_available() else "cpu"
+            )
         else:
-            self.device = 'cpu'
+            self.device = "cpu"
         # https://psutil.readthedocs.io/en/latest/#psutil.Process
         self.process = psutil.Process(os.getpid())
 
-    def _run_batch(self, i: int, x_batch, y_batch) -> float:
+    def _run_batch(self, i: int, x_batch: torch.Tensor, y_batch: torch.Tensor) -> float:
         """
-            Forward anc Backward according to a mini-batch
+        Executes a training step for a single batch and returns the loss value.
 
-            Arguments
-           ----------
-           i : index of a batch
-           x_batch: torch.Tensor on selected device
-           y_batch: torch.Tensor on selected device
-           Returns
-           -------
-           batch loss (float)
-       """
+        Parameters
+        ----------
+        i : int
+            The index of the current batch within the epoch.
+        x_batch : torch.Tensor
+            The batch of input features, already moved to the correct device.
+        y_batch : torch.Tensor
+            The batch of target outputs, already moved to the correct device.
+
+        Returns
+        -------
+        float
+            The loss value computed for the batch.
+        """
         if self.attributes.gradient_accumulation_steps > 1:
             # (1) Update parameters every gradient_accumulation_steps mini-batch.
             if i % self.attributes.gradient_accumulation_steps == 0:
@@ -59,14 +94,18 @@ class TorchTrainer(AbstractTrainer):
 
     def _run_epoch(self, epoch: int) -> float:
         """
-            Iterate over the training dataset
+        Executes training for one epoch and returns the average loss across all batches.
 
-            Arguments
-           ----------
-           epoch:int
-           -------
-           average loss over the dataset
-       """
+        Parameters
+        ----------
+        epoch : int
+            The current epoch number.
+
+        Returns
+        -------
+        float
+            The average loss value across all batches in the epoch.
+        """
         epoch_loss = 0
         i = 0
         construct_mini_batch_time = None
@@ -88,33 +127,34 @@ class TorchTrainer(AbstractTrainer):
                     f"| ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec "
                     f"| BatchConst.:{construct_mini_batch_time:.2f}sec "
                     f"| Mem. Usage {self.process.memory_info().rss / 1_000_000: .5}MB "
-                    f" ({psutil.virtual_memory().percent} %)")
+                    f" ({psutil.virtual_memory().percent} %)"
+                )
             else:
                 print(
                     f"Epoch:{epoch + 1} "
                     f"| Batch:{i + 1} "
                     f"| Loss:{batch_loss} "
                     f"| ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs "
-                    f"| Mem. Usage {self.process.memory_info().rss / 1_000_000: .5}MB ")
+                    f"| Mem. Usage {self.process.memory_info().rss / 1_000_000: .5}MB "
+                )
             construct_mini_batch_time = time.time()
         return epoch_loss / (i + 1)
 
-    def fit(self, *args, train_dataloaders, **kwargs) -> None:
+    def fit(
+        self, *args, train_dataloaders: torch.utils.data.DataLoader, **kwargs
+    ) -> None:
         """
-            Training starts
+        Starts the training process for the given model and training data.
 
-            Arguments
-           ----------
-           args:tuple
-           (BASEKGE,)
-           kwargs:Tuple
-               empty dictionary
-           Returns
-           -------
-           batch loss (float)
-       """
+        Parameters
+        ----------
+        model : torch.nn.Module
+            The model to be trained.
+        train_dataloaders : torch.utils.data.DataLoader
+            A DataLoader instance providing access to the training data.
+        """
         assert len(args) == 1
-        model, = args
+        (model,) = args
         self.model = model
         self.model.to(self.device)
         self.train_dataloaders = train_dataloaders
@@ -124,18 +164,22 @@ class TorchTrainer(AbstractTrainer):
         # (1) Start running callbacks
         self.on_fit_start(self, self.model)
 
-        print(f'NumOfDataPoints:{len(self.train_dataloaders.dataset)} '
-              f'| NumOfEpochs:{self.attributes.max_epochs} '
-              f'| LearningRate:{self.model.learning_rate} '
-              f'| BatchSize:{self.train_dataloaders.batch_size} '
-              f'| EpochBatchsize:{len(train_dataloaders)}')
+        print(
+            f"NumOfDataPoints:{len(self.train_dataloaders.dataset)} "
+            f"| NumOfEpochs:{self.attributes.max_epochs} "
+            f"| LearningRate:{self.model.learning_rate} "
+            f"| BatchSize:{self.train_dataloaders.batch_size} "
+            f"| EpochBatchsize:{len(train_dataloaders)}"
+        )
         for epoch in range(self.attributes.max_epochs):
             start_time = time.time()
 
             avg_epoch_loss = self._run_epoch(epoch)
-            print(f"Epoch:{epoch + 1} "
-                  f"| Loss:{avg_epoch_loss:.8f} "
-                  f"| Runtime:{(time.time() - start_time) / 60:.3f} mins")
+            print(
+                f"Epoch:{epoch + 1} "
+                f"| Loss:{avg_epoch_loss:.8f} "
+                f"| Runtime:{(time.time() - start_time) / 60:.3f} mins"
+            )
             """
             # Autobatch Finder: Double the current batch size if memory allows and repeat this process at mast 5 times.
             if self.attributes.auto_batch_finder and psutil.virtual_memory().percent < 30.0 and counter < 5:
@@ -157,36 +201,47 @@ class TorchTrainer(AbstractTrainer):
             self.on_train_epoch_end(self, self.model)
         self.on_fit_end(self, self.model)
 
-    def forward_backward_update(self, x_batch: torch.Tensor, y_batch: torch.Tensor) -> torch.Tensor:
+    def forward_backward_update(
+        self, x_batch: torch.Tensor, y_batch: torch.Tensor
+    ) -> float:
         """
-            Compute forward, loss, backward, and parameter update
+        Performs the forward pass, computes the loss, performs the backward pass to compute gradients,
+        and updates the model weights.
 
-            Arguments
-           ----------
-           x_batch:(torch.Tensor) mini-batch inputs
-           y_batch:(torch.Tensor) mini-batch outputs
+        Parameters
+        ----------
+        x_batch : torch.Tensor
+            The batch of input features.
+        y_batch : torch.Tensor
+            The batch of target outputs.
 
-           Returns
-           -------
-           batch loss (float)
-       """
+        Returns
+        -------
+        float
+            The loss value computed for the batch.
+        """
         batch_loss = self.training_step(batch=(x_batch, y_batch))
         batch_loss.backward()
         self.optimizer.step()
         return batch_loss.item()
 
-    def extract_input_outputs_set_device(self, batch: list) -> Tuple:
+    def extract_input_outputs_set_device(
+        self, batch: list
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
-            Construct inputs and outputs from a batch of inputs with outputs From a batch of inputs and put
+        Prepares a batch by extracting inputs and outputs and moving them to the correct device.
 
-            Arguments
-           ----------
-           batch: (list) mini-batch inputs on CPU
+        Parameters
+        ----------
+        batch : list
+            A list containing inputs and outputs for the batch.
 
-           Returns
-           -------
-           (tuple) mini-batch on select device
-       """
+        Returns
+        -------
+        Tuple[torch.Tensor, torch.Tensor]
+            A tuple containing the batch of input features and target outputs,
+            both moved to the appropriate device.
+        """
         if len(batch) == 2:
             x_batch, y_batch = batch
 
@@ -198,10 +253,17 @@ class TorchTrainer(AbstractTrainer):
                 x_batch, y_batch = batch
                 return x_batch.to(self.device), y_batch.to(self.device)
         elif len(batch) == 3:
-            x_batch, y_idx_batch, y_batch, = batch
-            x_batch, y_idx_batch, y_batch = x_batch.to(self.device), y_idx_batch.to(self.device), y_batch.to(
-                self.device)
+            (
+                x_batch,
+                y_idx_batch,
+                y_batch,
+            ) = batch
+            x_batch, y_idx_batch, y_batch = (
+                x_batch.to(self.device),
+                y_idx_batch.to(self.device),
+                y_batch.to(self.device),
+            )
             return (x_batch, y_idx_batch), y_batch
         else:
             print(len(batch))
-            raise ValueError('Unexpected batch shape..')
+            raise ValueError("Unexpected batch shape..")
