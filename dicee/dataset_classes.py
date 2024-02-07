@@ -43,8 +43,6 @@ def construct_dataset(*,
             ordered_shaped_bpe_entities=torch.tensor(
                 [shaped_bpe_ent for (str_ent, bpe_ent, shaped_bpe_ent) in ordered_bpe_entities]),
             neg_ratio=neg_ratio)
-    elif byte_pair_encoding:
-        train_set = MultiClassClassificationDataset(train_set, block_size=block_size)
     elif byte_pair_encoding and scoring_technique in ['KvsAll', "AllvsAll"]:
         train_set = MultiLabelDataset(train_set=torch.tensor(train_set, dtype=torch.long),
                                       train_indices_target=train_target_indices, target_dim=target_dim,
@@ -89,6 +87,8 @@ def construct_dataset(*,
         # Multi-label.
         train_set = KvsAll(train_set, entity_idxs=entity_to_idx, relation_idxs=relation_to_idx,
                            form=form_of_labelling, label_smoothing_rate=label_smoothing_rate)
+    elif byte_pair_encoding:
+        train_set = MultiClassClassificationDataset(train_set, block_size=block_size)
     else:
         raise KeyError('Illegal input.')
     return train_set

@@ -9,6 +9,7 @@ class KG:
 
     def __init__(self, dataset_dir: str = None,
                  byte_pair_encoding: bool = False,
+                 padding: bool = False,
                  add_noise_rate: float = None,
                  sparql_endpoint: str = None,
                  path_single_kg: str = None,
@@ -20,6 +21,7 @@ class KG:
         """
         :param dataset_dir: A path of a folder containing train.txt, valid.txt, test.text
         :param byte_pair_encoding: Apply Byte pair encoding.
+        :param padding: Add empty string into byte-pair encoded subword units representing triples
         :param add_noise_rate: Noisy triples added into the training adataset by x % of its size.
         :param sparql_endpoint: An endpoint of a triple store
         :param path_single_kg: The path of a single file containing the input knowledge graph
@@ -60,6 +62,7 @@ class KG:
         self.enc = tiktoken.get_encoding("gpt2")
         self.num_tokens = self.enc.n_vocab  # ~ 50
         self.num_bpe_entities = None
+        self.padding = padding
         # TODO: Find a unique token later
         self.dummy_id = self.enc.encode(" ")[0]
         self.max_length_subword_tokens = None
@@ -111,14 +114,14 @@ class KG:
     def relations_str(self) -> List:
         return list(self.relation_to_idx.keys())
 
-    def func_triple_to_bpe_representation(self, triple:List[str]):
-        result=[]
+    def func_triple_to_bpe_representation(self, triple: List[str]):
+        result = []
 
         for x in triple:
             unshaped_bpe_repr = self.enc.encode(x)
             if len(unshaped_bpe_repr) < self.max_length_subword_tokens:
                 unshaped_bpe_repr.extend([self.dummy_id for _ in
-                                            range(self.max_length_subword_tokens - len(unshaped_bpe_repr))])
+                                          range(self.max_length_subword_tokens - len(unshaped_bpe_repr))])
             else:
                 pass
             result.append(unshaped_bpe_repr)

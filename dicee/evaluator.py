@@ -95,8 +95,10 @@ class Evaluator:
                                                                      test_set=dataset.test_set,
                                                                      ordered_bpe_entities=dataset.ordered_bpe_entities,
                                                                      trained_model=trained_model)
-        elif self.args.scoring_technique in ["AllvsAll", "KvsAll", 'KvsSample',
-                                             "1vsAll"] and self.args.byte_pair_encoding:
+        elif self.args.scoring_technique in ["AllvsAll",
+                                             "KvsAll",
+                                             'KvsSample',
+                                             "1vsAll"] and self.args.byte_pair_encoding and self.args.model != "BytE":
             self.eval_with_bpe_vs_all(raw_train_set=dataset.raw_train_set,
                                       raw_valid_set=dataset.raw_valid_set,
                                       raw_test_set=dataset.raw_test_set,

@@ -138,28 +138,19 @@ class BaseKGE(BaseKGELightning):
         self.byte_pair_encoding = self.args.get("byte_pair_encoding", False)
         self.max_length_subword_tokens = self.args.get("max_length_subword_tokens", None)
         self.block_size=self.args.get("block_size", None)
-
-        if self.byte_pair_encoding:
-
+        if self.byte_pair_encoding and self.args['model'] != "BytE":
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
-            print("IGNORE OTHERS t base_model")
-            """
-            # IDEA:
-            # Build a new head and relation embeddings that are influenced by their context
-            # self.attention_block = Block(n_embd=self.embedding_dim, n_head=2)
+            self.param_init(self.token_embeddings.weight.data)
+
             # Reduces subword units embedding matrix from T x D into D.
             self.lf = nn.Sequential(nn.Linear(self.embedding_dim * self.max_length_subword_tokens,
                                               self.embedding_dim, bias=False))
-
-            self.param_init(self.token_embeddings.weight.data)
             if self.args["scoring_technique"] in ["AllvsAll", "KvsAll"]:
                 self.str_to_bpe_entity_to_idx = {str_ent: idx for idx, (str_ent, bpe_ent, shaped_bpe_ent) in
                                                  enumerate(self.args["ordered_bpe_entities"])}
-
                 self.bpe_entity_to_idx = {shaped_bpe_ent: idx for idx, (str_ent, bpe_ent, shaped_bpe_ent) in
                                           enumerate(self.args["ordered_bpe_entities"])}
                 self.ordered_bpe_entities = torch.tensor(list(self.bpe_entity_to_idx.keys()), dtype=torch.long)
-            """
         else:
             self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
             self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
@@ -438,83 +429,4 @@ class IdentityClass(torch.nn.Module):
 
     @staticmethod
     def forward(x):
-        return x
-
-
-class Head(nn.Module):
-    """ one head of self-attention """
-
-    def __init__(self, head_size: int, n_embd: int):
-        super().__init__()
-        self.key = nn.Linear(n_embd, head_size, bias=False)
-        self.query = nn.Linear(n_embd, head_size, bias=False)
-        self.value = nn.Linear(n_embd, head_size, bias=False)
-
-        self.dropout = nn.Dropout(0.0)
-
-    def forward(self, x):
-        # input of size (batch, time-step, channels)
-        # output of size (batch, time-step, head size)
-        # B, T, D = x.shape
-        # from (B,T,D) to (B,T,hs)
-        k = self.key(x)
-        # from (B,T,D) to (B,T,hs)
-        q = self.query(x)
-        # Compute attention scores ("affinities")
-        #  (B, T, hs) @ (B, hs, T) -> (B, T, T)
-        wei = q @ k.transpose(-2, -1) * k.shape[-1] ** -0.5
-        # (B, T, T)
-        wei = self.dropout(F.softmax(wei, dim=-1))
-        # perform the weighted aggregation of the values
-        # from (B,T,D) to (B,T,hs)
-        v = self.value(x)
-        # (B, T, T) @ (B, T, hs) -> (B, T, hs)
-        out = wei @ v
-        return out
-
-
-class MultiHeadAttention(nn.Module):
-    """ multiple heads of self-attention in parallel """
-
-    def __init__(self, num_heads, head_size, n_embd):
-        super().__init__()
-        self.heads = nn.ModuleList([Head(head_size, n_embd=n_embd) for _ in range(num_heads)])
-        self.proj = nn.Linear(head_size * num_heads, n_embd)
-        self.dropout = nn.Dropout(0.0)
-
-    def forward(self, x):
-        out = torch.cat([h(x) for h in self.heads], dim=-1)
-        return self.dropout(self.proj(out))
-
-
-class FeedFoward(nn.Module):
-    """ a simple linear layer followed by a non-linearity """
-
-    def __init__(self, n_embd):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(n_embd, 4 * n_embd),
-            nn.ReLU(),
-            nn.Linear(4 * n_embd, n_embd),
-            nn.Dropout(0.0),
-        )
-
-    def forward(self, x):
-        return self.net(x)
-
-
-class Block(nn.Module):
-    """ Transformer block: communication followed by computation """
-
-    def __init__(self, n_embd, n_head):
-        super().__init__()
-        head_size = n_embd // n_head
-        self.sa = MultiHeadAttention(n_head, head_size, n_embd=n_embd)
-        self.ffwd = FeedFoward(n_embd)
-        self.ln1 = nn.LayerNorm(n_embd)
-        self.ln2 = nn.LayerNorm(n_embd)
-
-    def forward(self, x):
-        x = x + self.sa(self.ln1(x))
-        x = x + self.ffwd(self.ln2(x))
         return x
