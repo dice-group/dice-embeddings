@@ -19,11 +19,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip3 install .
-          pip3 install ruff
       - name: Lint with ruff
         run: |
+          pip3 install ruff
           ruff  --select=E501 --line-length=200 dicee/
       - name: Test with pytest
         run: |
           wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate && unzip KGs.zip
+          pip3 install pytest
           pytest -p no:warnings -x
