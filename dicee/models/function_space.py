@@ -1,7 +1,6 @@
 from .base_model import BaseKGE
 import torch
 import numpy as np
-from scipy.special import roots_legendre
 
 class FMult(BaseKGE):
     """ Learning Knowledge Neural Graphs"""
@@ -17,6 +16,8 @@ class FMult(BaseKGE):
         self.num_sample = 50
         # self.gamma = torch.rand(self.k, self.num_sample) [0,1) uniform=> worse results
         self.gamma = torch.randn(self.k, self.num_sample)  # N(0,1)
+        # Lazy import
+        from scipy.special import roots_legendre
         from scipy.special import roots_legendre
         roots, weights = roots_legendre(self.num_sample)
         self.roots = torch.from_numpy(roots).repeat(self.k, 1).float()  # shape self.k by self.n
