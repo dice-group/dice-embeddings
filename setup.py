@@ -42,7 +42,7 @@ extras["dev"] = deps_list(
     "matplotlib"  # Unclear why it is needed
 )
 extras["min"] = deps_list("torch", "pandas")
-extras["test"] = (extras["dev"] + deps_list("ruff", "pytest", "pyarrow"))
+extras["test"] = (extras["dev"] + deps_list("ruff", "pytest", "pyarrow", "scikit-learn"))
 
 install_requires = [
     extras["dev"],  # filesystem locks, e.g., to prevent parallel downloads
