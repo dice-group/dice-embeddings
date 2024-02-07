@@ -14,7 +14,6 @@ from ..static_funcs import timeit
 import os
 import torch
 import pandas as pd
-from sklearn.model_selection import KFold
 import copy
 from typing import List, Tuple
 from ..knowledge_graph import KG
@@ -254,6 +253,7 @@ class DICE_Trainer:
         """
         print(f'{self.args.num_folds_for_cv}-fold cross-validation')
         # (1) Create Kfold data
+        from sklearn.model_selection import KFold
         kf = KFold(n_splits=self.args.num_folds_for_cv, shuffle=True, random_state=1)
         model = None
         eval_folds = []
