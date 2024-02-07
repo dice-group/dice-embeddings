@@ -5,84 +5,104 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+class BaseKGELightning(pl.LightningModule):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.training_step_outputs = []
 
-class Head(nn.Module):
-    """ one head of self-attention """
+    def mem_of_model(self) -> Dict:
+        """ Size of model in MB and number of params"""
+        # https://discuss.pytorch.org/t/finding-model-size/130275/2
+        # (2) Store NumParam and EstimatedSizeMB
+        num_params = sum(p.numel() for p in self.parameters())
+        # Not quite sure about EstimatedSizeMB ?
+        buffer_size = 0
+        for buffer in self.buffers():
+            buffer_size += buffer.nelement() * buffer.element_size()
+        return {'EstimatedSizeMB': (num_params + buffer_size) / 1024 ** 2, 'NumParam': num_params}
 
-    def __init__(self, head_size: int, n_embd: int, block_size: int):
-        super().__init__()
-        self.key = nn.Linear(n_embd, head_size, bias=False)
-        self.query = nn.Linear(n_embd, head_size, bias=False)
-        self.value = nn.Linear(n_embd, head_size, bias=False)
+    def training_step(self, batch, batch_idx=None):
+        x_batch, y_batch = batch
+        yhat_batch = self.forward(x_batch)
+        loss_batch = self.loss_function(yhat_batch, y_batch)
+        self.training_step_outputs.append(loss_batch.item())
+        self.log("loss",
+                 value=loss_batch,
+                 on_step=True,
+                 on_epoch=True,
+                 prog_bar=True,
+                 sync_dist=True,
+                 logger=False)
+        return loss_batch
 
-        self.dropout = nn.Dropout(0.0)
+    def loss_function(self, yhat_batch: torch.FloatTensor, y_batch: torch.FloatTensor):
+        """
 
-    def forward(self, x):
-        # input of size (batch, time-step, channels)
-        # output of size (batch, time-step, head size)
-        B, T, C = x.shape
-        k = self.key(x)  # (B,T,hs)
-        q = self.query(x)  # (B,T,hs)
-        # compute attention scores ("affinities")
-        wei = q @ k.transpose(-2, -1) * k.shape[-1] ** -0.5  # (B, T, hs) @ (B, hs, T) -> (B, T, T)
-        wei = F.softmax(wei, dim=-1)  # (B, T, T)
-        wei = self.dropout(wei)
-        # perform the weighted aggregation of the values
-        v = self.value(x)  # (B,T,hs)
-        out = wei @ v  # (B, T, T) @ (B, T, hs) -> (B, T, hs)
-        return out
+        Parameters
+        ----------
+        yhat_batch
+        y_batch
+
+        Returns
+        -------
+
+        """
+        return self.loss(yhat_batch, y_batch)
+
+    def on_train_epoch_end(self, *args, **kwargs):
+        if len(args) >= 1:
+            raise RuntimeError(f"Arguments must not be empty:{args}")
+        if len(kwargs) >= 1:
+            raise RuntimeError(f"Keyword Arguments must not be empty:{kwargs}")
+
+        self.loss_history.append(sum(self.training_step_outputs) / len(self.training_step_outputs))
+        self.training_step_outputs.clear()
+
+    def test_epoch_end(self, outputs: List[Any]):
+        """ """
+
+    def test_dataloader(self) -> None:
+        pass
+
+    def val_dataloader(self) -> None:
+        pass
+
+    def predict_dataloader(self) -> None:
+        pass
+
+    def train_dataloader(self) -> None:
+        pass
+
+    def configure_optimizers(self, parameters=None):
+        if parameters is None:
+            parameters = self.parameters()
+
+        # default params in pytorch.
+        if self.optimizer_name == 'SGD':
+            self.selected_optimizer = torch.optim.SGD(params=parameters, lr=self.learning_rate,
+                                                      momentum=0, dampening=0, weight_decay=self.weight_decay,
+                                                      nesterov=False)
+        elif self.optimizer_name == 'Adam':
+            self.selected_optimizer = torch.optim.Adam(parameters, lr=self.learning_rate,
+                                                       weight_decay=self.weight_decay)
+
+        elif self.optimizer_name == 'NAdam':
+            self.selected_optimizer = torch.optim.NAdam(parameters, lr=self.learning_rate, betas=(0.9, 0.999),
+                                                        eps=1e-08, weight_decay=self.weight_decay, momentum_decay=0.004)
+        elif self.optimizer_name == 'Adagrad':
+            self.selected_optimizer = torch.optim.Adagrad(parameters,
+                                                          lr=self.learning_rate, eps=1e-10,
+                                                          weight_decay=self.weight_decay)
+        elif self.optimizer_name == 'ASGD':
+            self.selected_optimizer = torch.optim.ASGD(parameters,
+                                                       lr=self.learning_rate, lambd=0.0001, alpha=0.75,
+                                                       weight_decay=self.weight_decay)
+        else:
+            raise KeyError()
+        return self.selected_optimizer
 
 
-class MultiHeadAttention(nn.Module):
-    """ multiple heads of self-attention in parallel """
-
-    def __init__(self, num_heads, head_size, n_embd, block_size):
-        super().__init__()
-        self.heads = nn.ModuleList([Head(head_size, n_embd=n_embd, block_size=block_size) for _ in range(num_heads)])
-        self.proj = nn.Linear(head_size * num_heads, n_embd)
-        self.dropout = nn.Dropout(0.0)
-
-    def forward(self, x):
-        out = torch.cat([h(x) for h in self.heads], dim=-1)
-        out = self.dropout(self.proj(out))
-        return out
-
-
-class FeedFoward(nn.Module):
-    """ a simple linear layer followed by a non-linearity """
-
-    def __init__(self, n_embd):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(n_embd, 4 * n_embd),
-            nn.ReLU(),
-            nn.Linear(4 * n_embd, n_embd),
-            nn.Dropout(0.0),
-        )
-
-    def forward(self, x):
-        return self.net(x)
-
-
-class Block(nn.Module):
-    """ Transformer block: communication followed by computation """
-
-    def __init__(self, n_embd, n_head, block_size):
-        # n_embd: embedding dimension, n_head: the number of heads we'd like
-        super().__init__()
-        head_size = n_embd // n_head
-        self.sa = MultiHeadAttention(n_head, head_size, n_embd=n_embd, block_size=block_size)
-        self.ffwd = FeedFoward(n_embd)
-        self.ln1 = nn.LayerNorm(n_embd)
-        self.ln2 = nn.LayerNorm(n_embd)
-
-    def forward(self, x):
-        x = x + self.sa(self.ln1(x))
-        x = x + self.ffwd(self.ln2(x))
-        return x
-
-
-class BaseKGE(pl.LightningModule):
+class BaseKGE(BaseKGELightning):
     def __init__(self, args: dict):
         super().__init__()
         self.args = args
@@ -120,9 +140,12 @@ class BaseKGE(pl.LightningModule):
 
         if self.byte_pair_encoding:
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
-            # Workaround: Dummy subReducing the impact of dummies
-            self.lf = nn.Sequential(
-                nn.Linear(self.embedding_dim * self.max_length_subword_tokens, self.embedding_dim, bias=False))
+            # IDEA:
+            # Build a new head and relation embeddings that are influenced by their context
+            # self.attention_block = Block(n_embd=self.embedding_dim, n_head=2)
+            # Reduces subword units embedding matrix from T x D into D.
+            self.lf = nn.Sequential(nn.Linear(self.embedding_dim * self.max_length_subword_tokens,
+                                              self.embedding_dim, bias=False))
 
             self.param_init(self.token_embeddings.weight.data)
             if self.args["scoring_technique"] in ["AllvsAll", "KvsAll"]:
@@ -136,6 +159,51 @@ class BaseKGE(pl.LightningModule):
             self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
             self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
             self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)
+
+    def forward_byte_pair_encoded_k_vs_all(self, x: torch.LongTensor):
+        """
+
+        Parameters
+        ----------
+        x : B x 2 x T
+
+
+
+        Returns
+        -------
+
+        """
+        # (1) Get unit normalized subword units embedding matrices: (B, T, D)
+        bpe_head_ent_emb, bpe_rel_ent_emb = self.get_bpe_head_and_relation_representation(x)
+        # Future work: Use attention to model similarity between subword units comprising head and relation
+        # attentive_head_rel_emb = self.attention_block(torch.cat((bpe_head_ent_emb, bpe_rel_ent_emb), 1))
+        # bpe_head_ent_emb = attentive_head_rel_emb[:, :self.max_length_subword_tokens, :]
+        # bpe_rel_ent_emb = attentive_head_rel_emb[:, self.max_length_subword_tokens:, :]
+
+        # (2) Reshaping (1) into row vectors.
+        B, T, D = bpe_head_ent_emb.shape
+
+        # Multi-node GPU setting.
+        device_r = bpe_head_ent_emb.get_device()
+        if device_r >= 0:
+            self.ordered_bpe_entities = self.ordered_bpe_entities.to(device_r)
+        else:
+            self.ordered_bpe_entities = self.ordered_bpe_entities.to("cpu")
+
+        # (3) Get unit normalized subword units embedding matrices of all entities : (E, T, D)
+        E = self.token_embeddings(self.ordered_bpe_entities)
+        # (4) Reshaping (3) into row vectors (E, T*D) .
+        E = E.reshape(len(E), T * D)
+
+        # (5) Reshape and Reduce from (_, T*D) into row vectors.
+        bpe_head_ent_emb = self.input_dp_ent_real(bpe_head_ent_emb.reshape(B, T * D))
+        bpe_rel_ent_emb = self.input_dp_rel_real(bpe_rel_ent_emb.reshape(B, T * D))
+        bpe_head_ent_emb = self.lf(bpe_head_ent_emb)
+        bpe_rel_ent_emb = self.lf(bpe_rel_ent_emb)
+        E = self.lf(E)
+
+        return self.k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
+
 
     def forward_byte_pair_encoded_triple(self, x: Tuple[torch.LongTensor, torch.LongTensor]):
         """
@@ -155,51 +223,6 @@ class BaseKGE(pl.LightningModule):
         bpe_tail_ent_emb = bpe_tail_ent_emb.reshape(B, T * C)
         bpe_triple_score = self.score(self.lf(bpe_head_ent_emb), self.lf(bpe_rel_ent_emb), self.lf(bpe_tail_ent_emb))
         return bpe_triple_score
-
-    def forward_byte_pair_encoded_k_vs_all(self, x):
-        """
-
-        Parameters
-        ----------
-        x
-
-        Returns
-        -------
-
-        """
-        bpe_head_ent_emb, bpe_rel_ent_emb = self.get_bpe_head_and_relation_representation(x)
-
-        B, T, C = bpe_head_ent_emb.shape
-        bpe_head_ent_emb = bpe_head_ent_emb.reshape(B, T * C)
-        bpe_rel_ent_emb = bpe_rel_ent_emb.reshape(B, T * C)
-
-        bpe_head_ent_emb = self.lf(bpe_head_ent_emb)
-        bpe_rel_ent_emb = self.lf(bpe_rel_ent_emb)
-
-        device_r = bpe_head_ent_emb.get_device()
-        if device_r >= 0:
-            self.ordered_bpe_entities = self.ordered_bpe_entities.to(device_r)
-        else:
-            self.ordered_bpe_entities = self.ordered_bpe_entities.to("cpu")
-
-        all_entities = self.token_embeddings(self.ordered_bpe_entities)
-        num_e, token_size, dim = all_entities.shape
-        all_entities = all_entities.reshape(num_e, token_size * dim)
-        # Normalize each token vector into unit norms
-        # https://pytorch.org/docs/stable/generated/torch.nn.functional.normalize.html
-        E = F.normalize(self.lf(all_entities), p=2, dim=0)
-        return self.k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
-
-    def mem_of_model(self) -> Dict:
-        """ Size of model in MB and number of params"""
-        # https://discuss.pytorch.org/t/finding-model-size/130275/2
-        # (2) Store NumParam and EstimatedSizeMB
-        num_params = sum(p.numel() for p in self.parameters())
-        # Not quite sure about EstimatedSizeMB ?
-        buffer_size = 0
-        for buffer in self.buffers():
-            buffer_size += buffer.nelement() * buffer.element_size()
-        return {'EstimatedSizeMB': (num_params + buffer_size) / 1024 ** 2, 'NumParam': num_params}
 
     def init_params_with_sanity_checking(self):
         if self.args.get('weight_decay'):
@@ -272,48 +295,6 @@ class BaseKGE(pl.LightningModule):
             print(f'--init_param (***{self.args.get("init_param")}***) not found')
             self.optimizer_name = IdentityClass
 
-    def configure_optimizers(self, parameters=None):
-        if parameters is None:
-            parameters = self.parameters()
-
-        # default params in pytorch.
-        if self.optimizer_name == 'SGD':
-            self.selected_optimizer = torch.optim.SGD(params=parameters, lr=self.learning_rate,
-                                                      momentum=0, dampening=0, weight_decay=self.weight_decay,
-                                                      nesterov=False)
-        elif self.optimizer_name == 'Adam':
-            self.selected_optimizer = torch.optim.Adam(parameters, lr=self.learning_rate,
-                                                       weight_decay=self.weight_decay)
-
-        elif self.optimizer_name == 'NAdam':
-            self.selected_optimizer = torch.optim.NAdam(parameters, lr=self.learning_rate, betas=(0.9, 0.999),
-                                                        eps=1e-08, weight_decay=self.weight_decay, momentum_decay=0.004)
-        elif self.optimizer_name == 'Adagrad':
-            self.selected_optimizer = torch.optim.Adagrad(parameters,
-                                                          lr=self.learning_rate, eps=1e-10,
-                                                          weight_decay=self.weight_decay)
-        elif self.optimizer_name == 'ASGD':
-            self.selected_optimizer = torch.optim.ASGD(parameters,
-                                                       lr=self.learning_rate, lambd=0.0001, alpha=0.75,
-                                                       weight_decay=self.weight_decay)
-        else:
-            raise KeyError()
-        return self.selected_optimizer
-
-    def loss_function(self, yhat_batch: torch.FloatTensor, y_batch: torch.FloatTensor):
-        """
-
-        Parameters
-        ----------
-        yhat_batch
-        y_batch
-
-        Returns
-        -------
-
-        """
-        return self.loss(yhat_batch, y_batch)
-
     def forward(self, x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]],
                 y_idx: torch.LongTensor = None):
         """
@@ -371,45 +352,6 @@ class BaseKGE(pl.LightningModule):
     def forward_k_vs_sample(self, *args, **kwargs):
         raise ValueError(f'MODEL:{self.name} does not have forward_k_vs_sample function')
 
-    def training_step(self, batch, batch_idx=None):
-        x_batch, y_batch = batch
-        yhat_batch = self.forward(x_batch)
-        loss_batch = self.loss_function(yhat_batch, y_batch)
-        return loss_batch
-
-    def on_train_epoch_end(self, *args, **kwargs):
-        if len(args)>=1:
-            raise RuntimeError(f"Arguments must not be empty:{args}")
-
-        if len(kwargs)>=1:
-            raise RuntimeError(f"Keyword Arguments must not be empty:{kwargs}")
-
-        # @TODO: No saving
-        """
-
-        batch_losses = [i['loss'].item() for i in training_step_outputs]
-        avg = sum(batch_losses) / len(batch_losses)
-        self.loss_history.append(avg)
-        """
-    def test_epoch_end(self, outputs: List[Any]):
-        """
-        @ TODO
-        avg_test_accuracy = torch.stack([x['test_accuracy'] for x in outputs]).mean()
-        self.log('avg_test_accuracy', avg_test_accuracy, on_epoch=True, prog_bar=True)
-        """
-
-    def test_dataloader(self) -> None:
-        pass
-
-    def val_dataloader(self) -> None:
-        pass
-
-    def predict_dataloader(self) -> None:
-        pass
-
-    def train_dataloader(self) -> None:
-        pass
-
     def get_triple_representation(self, idx_hrt):
         # (1) Split input into indexes.
         idx_head_entity, idx_relation, idx_tail_entity = idx_hrt[:, 0], idx_hrt[:, 1], idx_hrt[:, 2]
@@ -452,20 +394,25 @@ class BaseKGE(pl.LightningModule):
 
         Parameters
         ----------
-        x
+        x : B x 2 x T
 
         Returns
         -------
 
         """
+        # h: batchsize, T where T represents the maximum shaped token size
+        # h: B x T, r: B x T
         h, r = x[:, 0, :], x[:, 1, :]
-        # N, T, D
+        # B, T, D
         head_ent_emb = self.token_embeddings(h)
-        # N, T, D
+        # B, T, D
         rel_emb = self.token_embeddings(r)
+
         # A sequence of sub-list embeddings representing an embedding of a head entity should be normalized to 0.
         # Therefore, the norm of a row vector obtained from T by D matrix must be 1.
+        # B, T, D
         head_ent_emb = F.normalize(head_ent_emb, p=2, dim=(1, 2))
+        # B, T, D
         rel_emb = F.normalize(rel_emb, p=2, dim=(1, 2))
         return head_ent_emb, rel_emb
 
@@ -486,4 +433,83 @@ class IdentityClass(torch.nn.Module):
 
     @staticmethod
     def forward(x):
+        return x
+
+
+class Head(nn.Module):
+    """ one head of self-attention """
+
+    def __init__(self, head_size: int, n_embd: int):
+        super().__init__()
+        self.key = nn.Linear(n_embd, head_size, bias=False)
+        self.query = nn.Linear(n_embd, head_size, bias=False)
+        self.value = nn.Linear(n_embd, head_size, bias=False)
+
+        self.dropout = nn.Dropout(0.0)
+
+    def forward(self, x):
+        # input of size (batch, time-step, channels)
+        # output of size (batch, time-step, head size)
+        # B, T, D = x.shape
+        # from (B,T,D) to (B,T,hs)
+        k = self.key(x)
+        # from (B,T,D) to (B,T,hs)
+        q = self.query(x)
+        # Compute attention scores ("affinities")
+        #  (B, T, hs) @ (B, hs, T) -> (B, T, T)
+        wei = q @ k.transpose(-2, -1) * k.shape[-1] ** -0.5
+        # (B, T, T)
+        wei = self.dropout(F.softmax(wei, dim=-1))
+        # perform the weighted aggregation of the values
+        # from (B,T,D) to (B,T,hs)
+        v = self.value(x)
+        # (B, T, T) @ (B, T, hs) -> (B, T, hs)
+        out = wei @ v
+        return out
+
+
+class MultiHeadAttention(nn.Module):
+    """ multiple heads of self-attention in parallel """
+
+    def __init__(self, num_heads, head_size, n_embd):
+        super().__init__()
+        self.heads = nn.ModuleList([Head(head_size, n_embd=n_embd) for _ in range(num_heads)])
+        self.proj = nn.Linear(head_size * num_heads, n_embd)
+        self.dropout = nn.Dropout(0.0)
+
+    def forward(self, x):
+        out = torch.cat([h(x) for h in self.heads], dim=-1)
+        return self.dropout(self.proj(out))
+
+
+class FeedFoward(nn.Module):
+    """ a simple linear layer followed by a non-linearity """
+
+    def __init__(self, n_embd):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(n_embd, 4 * n_embd),
+            nn.ReLU(),
+            nn.Linear(4 * n_embd, n_embd),
+            nn.Dropout(0.0),
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+
+class Block(nn.Module):
+    """ Transformer block: communication followed by computation """
+
+    def __init__(self, n_embd, n_head):
+        super().__init__()
+        head_size = n_embd // n_head
+        self.sa = MultiHeadAttention(n_head, head_size, n_embd=n_embd)
+        self.ffwd = FeedFoward(n_embd)
+        self.ln1 = nn.LayerNorm(n_embd)
+        self.ln2 = nn.LayerNorm(n_embd)
+
+    def forward(self, x):
+        x = x + self.sa(self.ln1(x))
+        x = x + self.ffwd(self.ln2(x))
         return x

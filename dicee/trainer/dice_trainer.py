@@ -14,7 +14,6 @@ from ..static_funcs import timeit
 import os
 import torch
 import pandas as pd
-from sklearn.model_selection import KFold
 import copy
 from typing import List, Tuple
 from ..knowledge_graph import KG
@@ -58,7 +57,6 @@ def initialize_trainer(args, callbacks):
         use_distributed_sampler: bool = True,
         profiler: Optional[Union[Profiler, str]] = None,
         detect_anomaly: bool = False,
-        barebones: bool = False,
         plugins: Optional[Union[_PLUGIN_INPUT, List[_PLUGIN_INPUT]]] = None,
         sync_batchnorm: bool = False,
         reload_dataloaders_every_n_epochs: int = 0,
@@ -75,7 +73,9 @@ def initialize_trainer(args, callbacks):
                           max_epochs=kwargs["num_epochs"],
                           min_epochs=kwargs["num_epochs"],
                           max_steps=kwargs.get("max_step", -1),
-                          min_steps=kwargs.get("min_steps", None))
+                          min_steps=kwargs.get("min_steps", None),
+                          detect_anomaly=False,
+                          barebones=False)
     else:
         print('Initialize TorchTrainer CPU Trainer', end='\t')
         return TorchTrainer(args, callbacks=callbacks)
@@ -253,6 +253,7 @@ class DICE_Trainer:
         """
         print(f'{self.args.num_folds_for_cv}-fold cross-validation')
         # (1) Create Kfold data
+        from sklearn.model_selection import KFold
         kf = KFold(n_splits=self.args.num_folds_for_cv, shuffle=True, random_state=1)
         model = None
         eval_folds = []

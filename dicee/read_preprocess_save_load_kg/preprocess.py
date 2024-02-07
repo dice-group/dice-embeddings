@@ -226,11 +226,6 @@ class PreprocessKG:
                                                          df=self.kg.raw_test_set, info="Test")
 
         # (2) Transformation from DataFrame to list of tuples.
-        # self.kg.train_set: List[Tuple[Tuple[int], Tuple[int], Tuple[int]]]
-        # valid_set: Union[List, List[Tuple[Tuple[int], Tuple[int], Tuple[int]]]]
-        # test_set: Union[List, List[Tuple[Tuple[int], Tuple[int], Tuple[int]]]]
-        # self.kg.train_set[0] => (bpe_h,bpe_r, bpe_t)
-        # bpe_* denotes a tuple of positive integer numbers
         self.kg.train_set = self.__replace_values_df(df=self.kg.raw_train_set, f=self.kg.enc.encode)
         self.kg.valid_set = self.__replace_values_df(df=self.kg.raw_valid_set, f=self.kg.enc.encode)
         self.kg.test_set = self.__replace_values_df(df=self.kg.raw_test_set, f=self.kg.enc.encode)

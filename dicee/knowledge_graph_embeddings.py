@@ -13,7 +13,7 @@ import sys
 
 # import gradio as gr
 
-
+import traceback
 class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
 
@@ -48,7 +48,13 @@ class KGE(BaseInteractiveKGE):
                                port: int = 6333):
         assert distance in ["cosine", "dot"]
         # lazy imports
-        from qdrant_client import QdrantClient
+        try:
+            from qdrant_client import QdrantClient
+        except ModuleNotFoundError:
+            traceback.print_exc()
+            print("Please install qdrant_client: pip install qdrant_client")
+            exit(1)
+
         from qdrant_client.http.models import Distance, VectorParams
         from qdrant_client.http.models import PointStruct
         # from qdrant_client.http.models import Filter, FieldCondition, MatchValue
