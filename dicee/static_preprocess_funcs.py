@@ -72,15 +72,8 @@ def preprocesses_input_args(args):
     if args.normalization == 'None':
         args.normalization = None
     assert args.normalization in [None, 'LayerNorm', 'BatchNorm1d']
-    """
-    if args.byte_pair_encoding:
-        args.scoring_technique="BytePairEncodedTriplesNegSample"
-        try:
-            assert args.neg_ratio>0
-        except AssertionError:
-            raise AssertionError(f"--byte_pair_encoding {args.byte_pair_encoding} currently only works with "
-                                 f"positive --neg_ratio {args.neg_ratio}")
-    """
+    if args.model=="BytE":
+        args.byte_pair_encoding=True
     return args
 
 

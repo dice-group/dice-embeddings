@@ -78,17 +78,6 @@ class KG:
 
         assert len(self.train_set) > 0
 
-        """
-        if self.byte_pair_encoding:
-            assert isinstance(self.train_set[0], tuple) and len(self.train_set[0]) == 3
-            assert isinstance(self.train_set[0][0], tuple) and isinstance(self.train_set[0][1], tuple)
-            assert isinstance(self.train_set[0][2], tuple)
-            assert isinstance(self.target_dim,int)
-
-        else:
-            assert isinstance(self.train_set, np.ndarray)
-            assert isinstance(self.train_set[0], np.ndarray)
-        """
         self._describe()
 
     def _describe(self) -> None:

@@ -70,6 +70,10 @@ class PreprocessKG:
             assert isinstance(self.kg.train_set[0][0], tuple)
             assert isinstance(self.kg.train_set[0][1], tuple)
             assert isinstance(self.kg.train_set[0][2], tuple)
+
+            print(self.kg.train_set)
+
+            exit(1)
             if self.kg.training_technique == "NegSample":
                 """No need to do anything"""
             elif self.kg.training_technique == "KvsAll":
@@ -229,34 +233,36 @@ class PreprocessKG:
         self.kg.train_set = self.__replace_values_df(df=self.kg.raw_train_set, f=self.kg.enc.encode)
         self.kg.valid_set = self.__replace_values_df(df=self.kg.raw_valid_set, f=self.kg.enc.encode)
         self.kg.test_set = self.__replace_values_df(df=self.kg.raw_test_set, f=self.kg.enc.encode)
+        if False: # apply padding
+            self.kg.max_length_subword_tokens = self.__finding_max_token(
+                self.kg.train_set + self.kg.valid_set + self.kg.test_set)
 
-        self.kg.max_length_subword_tokens = self.__finding_max_token(
-            self.kg.train_set + self.kg.valid_set + self.kg.test_set)
+            # Store padded bpe entities and relations
+            bpe_subwords_to_shaped_bpe_entities = dict()
+            bpe_subwords_to_shaped_bpe_relations = dict()
 
-        # Store padded bpe entities and relations
-        bpe_subwords_to_shaped_bpe_entities = dict()
-        bpe_subwords_to_shaped_bpe_relations = dict()
-
-        print("The longest sequence of sub-word units of entities and relations is ", self.kg.max_length_subword_tokens)
-        # Padding
-        self.kg.train_set = self.__padding_in_place(self.kg.train_set, self.kg.max_length_subword_tokens,
-                                                    bpe_subwords_to_shaped_bpe_entities,
-                                                    bpe_subwords_to_shaped_bpe_relations)
-        if self.kg.valid_set is not None:
-            self.kg.valid_set = self.__padding_in_place(self.kg.valid_set, self.kg.max_length_subword_tokens,
+            print("The longest sequence of sub-word units of entities and relations is ", self.kg.max_length_subword_tokens)
+            # Padding
+            self.kg.train_set = self.__padding_in_place(self.kg.train_set, self.kg.max_length_subword_tokens,
                                                         bpe_subwords_to_shaped_bpe_entities,
                                                         bpe_subwords_to_shaped_bpe_relations)
-        if self.kg.test_set is not None:
-            self.kg.test_set = self.__padding_in_place(self.kg.test_set, self.kg.max_length_subword_tokens,
-                                                       bpe_subwords_to_shaped_bpe_entities,
-                                                       bpe_subwords_to_shaped_bpe_relations)
-        # Store str_entity, bpe_entity, padded_bpe_entity
-        self.kg.ordered_bpe_entities = sorted([(self.kg.enc.decode(k), k, v) for k, v in
-                                               bpe_subwords_to_shaped_bpe_entities.items()], key=lambda x: x[0])
-        self.kg.ordered_bpe_relations = sorted([(self.kg.enc.decode(k), k, v) for k, v in
-                                                bpe_subwords_to_shaped_bpe_relations.items()], key=lambda x: x[0])
-        del bpe_subwords_to_shaped_bpe_entities
-        del bpe_subwords_to_shaped_bpe_relations
+            if self.kg.valid_set is not None:
+                self.kg.valid_set = self.__padding_in_place(self.kg.valid_set, self.kg.max_length_subword_tokens,
+                                                            bpe_subwords_to_shaped_bpe_entities,
+                                                            bpe_subwords_to_shaped_bpe_relations)
+            if self.kg.test_set is not None:
+                self.kg.test_set = self.__padding_in_place(self.kg.test_set, self.kg.max_length_subword_tokens,
+                                                           bpe_subwords_to_shaped_bpe_entities,
+                                                           bpe_subwords_to_shaped_bpe_relations)
+            # Store str_entity, bpe_entity, padded_bpe_entity
+            self.kg.ordered_bpe_entities = sorted([(self.kg.enc.decode(k), k, v) for k, v in
+                                                   bpe_subwords_to_shaped_bpe_entities.items()], key=lambda x: x[0])
+            self.kg.ordered_bpe_relations = sorted([(self.kg.enc.decode(k), k, v) for k, v in
+                                                    bpe_subwords_to_shaped_bpe_relations.items()], key=lambda x: x[0])
+            del bpe_subwords_to_shaped_bpe_entities
+            del bpe_subwords_to_shaped_bpe_relations
+        else:
+            print("WORKAROUND....")
 
     @timeit
     def preprocess_with_pandas(self) -> None:

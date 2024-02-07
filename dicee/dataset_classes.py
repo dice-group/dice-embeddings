@@ -42,6 +42,8 @@ def construct_dataset(*,
             ordered_shaped_bpe_entities=torch.tensor(
                 [shaped_bpe_ent for (str_ent, bpe_ent, shaped_bpe_ent) in ordered_bpe_entities]),
             neg_ratio=neg_ratio)
+    elif byte_pair_encoding:
+        MultiClassClassificationDataset(train_set)
     elif byte_pair_encoding and scoring_technique in ['KvsAll', "AllvsAll"]:
         train_set = MultiLabelDataset(train_set=torch.tensor(train_set, dtype=torch.long),
                                       train_indices_target=train_target_indices, target_dim=target_dim,
@@ -162,6 +164,47 @@ class MultiLabelDataset(torch.utils.data.Dataset):
         if len(indices) > 0:
             y_vec[indices] = 1.0
         return self.train_set[idx], y_vec
+
+
+class MultiClassClassificationDataset(torch.utils.data.Dataset):
+    """
+       Dataset for the 1vsALL training strategy
+
+       Parameters
+       ----------
+       train_set_idx
+           Indexed triples for the training.
+       entity_idxs
+           mapping.
+       relation_idxs
+           mapping.
+       form
+           ?
+       num_workers
+           int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
+
+
+
+       Returns
+       -------
+       torch.utils.data.Dataset
+       """
+
+    def __init__(self, train_set_idx: np.ndarray, entity_idxs):
+        super().__init__()
+        assert isinstance(train_set_idx, np.ndarray)
+        assert len(train_set_idx) > 0
+        self.train_data = torch.LongTensor(train_set_idx)
+        self.target_dim = len(entity_idxs)
+        self.collate_fn = None
+
+    def __len__(self):
+        return len(self.train_data)
+
+    def __getitem__(self, idx):
+        y_vec = torch.zeros(self.target_dim)
+        y_vec[self.train_data[idx, 2]] = 1
+        return self.train_data[idx, :2], y_vec
 
 
 class OnevsAllDataset(torch.utils.data.Dataset):
