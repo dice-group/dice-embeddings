@@ -34,7 +34,8 @@ def construct_dataset(*,
                       scoring_technique: str,
                       neg_ratio: int,
                       label_smoothing_rate: float,
-                      byte_pair_encoding=None
+                      byte_pair_encoding=None,
+                      block_size: int = None
                       ) -> torch.utils.data.Dataset:
     if byte_pair_encoding and scoring_technique == 'NegSample':
         train_set = BPE_NegativeSamplingDataset(
@@ -43,7 +44,7 @@ def construct_dataset(*,
                 [shaped_bpe_ent for (str_ent, bpe_ent, shaped_bpe_ent) in ordered_bpe_entities]),
             neg_ratio=neg_ratio)
     elif byte_pair_encoding:
-        train_set = MultiClassClassificationDataset(train_set)
+        train_set = MultiClassClassificationDataset(train_set, block_size=block_size)
     elif byte_pair_encoding and scoring_technique in ['KvsAll', "AllvsAll"]:
         train_set = MultiLabelDataset(train_set=torch.tensor(train_set, dtype=torch.long),
                                       train_indices_target=train_target_indices, target_dim=target_dim,

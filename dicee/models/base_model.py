@@ -137,6 +137,7 @@ class BaseKGE(BaseKGELightning):
         self.loss_history = []
         self.byte_pair_encoding = self.args.get("byte_pair_encoding", False)
         self.max_length_subword_tokens = self.args.get("max_length_subword_tokens", None)
+        self.block_size=self.args.get("block_size", None)
 
         if self.byte_pair_encoding:
 

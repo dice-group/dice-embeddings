@@ -23,10 +23,25 @@ from torch.nn import functional as F
 class BytE(BaseKGE):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.name="BytE"
+        self.config = GPTConfig(**{"block_size": self.block_size,
+                                   "vocab_size": tiktoken.get_encoding("gpt2").n_vocab,
+                                   "n_layer": 4, "n_head": 4, "n_embd": self.embedding_dim, "dropout": 0,
+                                   "bias": False})
 
-        gptconf = GPTConfig(**{"block_size": 8, "vocab_size": tiktoken.get_encoding("gpt2").n_vocab,
-                               "n_layer": 2, "n_head": 2, "n_embd": 32, "dropout": 0, "bias": False})
-        self.gpt_model = torch.nn.Sequential(GPT(gptconf))
+        self.transformer = nn.ModuleDict(dict(
+            wte=nn.Embedding(self.config.vocab_size, self.config.n_embd),
+            wpe=nn.Embedding(self.config.block_size, self.config.n_embd),
+            drop=nn.Dropout(self.config.dropout),
+            h=nn.ModuleList([Block(self.config) for _ in range(self.config.n_layer)]),
+            ln_f=LayerNorm(self.config.n_embd, bias=self.config.bias),
+        ))
+        self.lm_head = nn.Linear(self.config.n_embd, self.config.vocab_size, bias=False)
+        # with weight tying when using torch.compile() some warnings get generated:
+        # "UserWarning: functional_call was passed multiple values for tied weights.
+        # This behavior is deprecated and will be an error in future versions"
+        # not 100% sure what this is, so far seems to be harmless. TODO investigate
+        self.transformer.wte.weight = self.lm_head.weight  # https://paperswithcode.com/method/weight-tying
 
     def loss_function(self, yhat_batch, y_batch):
         return F.cross_entropy(yhat_batch.view(-1, yhat_batch.size(-1)), y_batch.view(-1), ignore_index=-1)
@@ -43,7 +58,21 @@ class BytE(BaseKGE):
 
         """
         # B x D x |V| where  |V| denotes the vocabulary size
-        return self.gpt_model.forward(x)
+
+        device = x.device
+        b, t = x.size()
+        assert t <= self.config.block_size, f"Cannot forward sequence of length {t}, block size is only {self.config.block_size}"
+        pos = torch.arange(0, t, dtype=torch.long, device=device)  # shape (t)
+
+        # forward the GPT model itself
+        tok_emb = self.transformer.wte(x)  # token embeddings of shape (b, t, n_embd)
+        pos_emb = self.transformer.wpe(pos)  # position embeddings of shape (t, n_embd)
+        x = self.transformer.drop(tok_emb + pos_emb)
+        for block in self.transformer.h:
+            x = block(x)
+        x = self.transformer.ln_f(x)
+        logits = self.lm_head(x)
+        return logits
 
     def training_step(self, batch, batch_idx=None):
         x_batch, y_batch = batch

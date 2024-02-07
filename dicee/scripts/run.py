@@ -100,6 +100,8 @@ def get_default_arguments(description=None):
                         help='Q for Clifford Algebra')
     parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
     # WIP
+    parser.add_argument('--block_size', type=int, default=8,
+                        help='Block size for BytE')
     parser.add_argument("--byte_pair_encoding",
                         action="store_true",
                         help="Currently only avail. for KGE implemented within dice-embeddings.")
