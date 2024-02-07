@@ -139,7 +139,10 @@ class BaseKGE(BaseKGELightning):
         self.max_length_subword_tokens = self.args.get("max_length_subword_tokens", None)
 
         if self.byte_pair_encoding:
+
             self.token_embeddings = torch.nn.Embedding(self.num_tokens, self.embedding_dim)
+            print("IGNORE OTHERS t base_model")
+            """
             # IDEA:
             # Build a new head and relation embeddings that are influenced by their context
             # self.attention_block = Block(n_embd=self.embedding_dim, n_head=2)
@@ -155,6 +158,7 @@ class BaseKGE(BaseKGELightning):
                 self.bpe_entity_to_idx = {shaped_bpe_ent: idx for idx, (str_ent, bpe_ent, shaped_bpe_ent) in
                                           enumerate(self.args["ordered_bpe_entities"])}
                 self.ordered_bpe_entities = torch.tensor(list(self.bpe_entity_to_idx.keys()), dtype=torch.long)
+            """
         else:
             self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
             self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)

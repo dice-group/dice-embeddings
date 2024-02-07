@@ -43,7 +43,7 @@ def construct_dataset(*,
                 [shaped_bpe_ent for (str_ent, bpe_ent, shaped_bpe_ent) in ordered_bpe_entities]),
             neg_ratio=neg_ratio)
     elif byte_pair_encoding:
-        MultiClassClassificationDataset(train_set)
+        train_set = MultiClassClassificationDataset(train_set)
     elif byte_pair_encoding and scoring_technique in ['KvsAll', "AllvsAll"]:
         train_set = MultiLabelDataset(train_set=torch.tensor(train_set, dtype=torch.long),
                                       train_indices_target=train_target_indices, target_dim=target_dim,
@@ -190,21 +190,22 @@ class MultiClassClassificationDataset(torch.utils.data.Dataset):
        torch.utils.data.Dataset
        """
 
-    def __init__(self, train_set_idx: np.ndarray, entity_idxs):
+    def __init__(self, subword_units: np.ndarray, block_size: int = 8):
         super().__init__()
-        assert isinstance(train_set_idx, np.ndarray)
-        assert len(train_set_idx) > 0
-        self.train_data = torch.LongTensor(train_set_idx)
-        self.target_dim = len(entity_idxs)
+        assert isinstance(subword_units, np.ndarray)
+        assert len(subword_units) > 0
+        self.train_data = torch.LongTensor(subword_units)
+        self.block_size = block_size
+        self.num_of_data_points = len(self.train_data) - block_size
         self.collate_fn = None
 
     def __len__(self):
-        return len(self.train_data)
+        return self.num_of_data_points
 
     def __getitem__(self, idx):
-        y_vec = torch.zeros(self.target_dim)
-        y_vec[self.train_data[idx, 2]] = 1
-        return self.train_data[idx, :2], y_vec
+        x = self.train_data[idx:idx + self.block_size]
+        y = self.train_data[idx + 1: idx + 1 + self.block_size]
+        return x, y
 
 
 class OnevsAllDataset(torch.utils.data.Dataset):
