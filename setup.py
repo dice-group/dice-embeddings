@@ -34,18 +34,20 @@ def deps_list(*pkgs):
 
 
 extras = dict()
-extras["dev"] = deps_list(
+extras["min"] = deps_list(
     "pandas", "polars", "rdflib",  # Loading KG
     "torch", "lightning",  # Training KGE
     "tiktoken",  # used for BPE
     "psutil",  # Memory tracking: maybe remove later ?
     "matplotlib"  # Unclear why it is needed
 )
-extras["min"] = deps_list("torch", "pandas")
-extras["test"] = (extras["dev"] + deps_list("ruff", "pytest", "pyarrow", "scikit-learn"))
+
+extras["dev"] = (extras["min"] + deps_list("ruff", "pytest",
+                                           "polars", "pyarrow",
+                                           "scikit-learn"))
 
 install_requires = [
-    extras["dev"],  # filesystem locks, e.g., to prevent parallel downloads
+    extras["min"]
     # deps["pandas"],
     # deps["gradio"],  # must be optinal
     # deps["beautifulsoup4"],  # Not quire sure where we use it
@@ -53,6 +55,9 @@ install_requires = [
     # deps["pyarrow"],  # not quire sure whether we are still using it
     # deps["pykeen"],  # can be optional
 ]
+
+
+
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()
