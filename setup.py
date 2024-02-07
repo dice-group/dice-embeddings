@@ -1,7 +1,8 @@
 import re
 from setuptools import setup, find_packages
 
-# Goal
+#  To install minimal version: pip3 install -e .
+#  To instvall dev aand test: pip3 install -e .["test"]
 #  pip3 install "dicee" .
 #  pip3 install "dicee[dev]" .
 #  pip3 install "dicee[min]" .
@@ -41,7 +42,7 @@ extras["dev"] = deps_list(
     "matplotlib"  # Unclear why it is needed
 )
 extras["min"] = deps_list("torch", "pandas")
-extras["test"] = (extras["dev"] + deps_list("ruff", "pytest"))
+extras["test"] = (extras["dev"] + deps_list("ruff", "pytest", "pyarrow"))
 
 install_requires = [
     extras["dev"],  # filesystem locks, e.g., to prevent parallel downloads
