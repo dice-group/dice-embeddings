@@ -76,9 +76,11 @@ def timeit(func):
     return timeit_wrapper
 
 
-def save_pickle(*, data: object, file_path=str):
-    pickle.dump(data, open(file_path, "wb"))
-
+def save_pickle(*, data: object=None, file_path=str):
+    if data:
+        pickle.dump(data, open(file_path, "wb"))
+    else:
+        print("Input data is None. Nothing to save.")
 
 def load_pickle(file_path=str):
     with open(file_path, 'rb') as f:

@@ -18,9 +18,6 @@ class LoadSaveToDisk:
         if self.kg.byte_pair_encoding:
             save_numpy_ndarray(data=self.kg.train_set, file_path=self.kg.path_for_serialization + '/train_set.npy')
             print("NO SAVING for BPE at save_load_disk.py")
-            return False
-            assert self.kg.ordered_bpe_entities is not None
-            assert self.kg.ordered_bpe_relations is not None
             save_pickle(data=self.kg.ordered_bpe_entities, file_path=self.kg.path_for_serialization + '/ordered_bpe_entities.p')
             save_pickle(data=self.kg.ordered_bpe_relations, file_path=self.kg.path_for_serialization + '/ordered_bpe_relations.p')
         else:

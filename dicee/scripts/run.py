@@ -32,6 +32,7 @@ def get_default_arguments(description=None):
                         default="BytE",
                         choices=["ComplEx", "Keci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE",
+                                 "BytE",
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
                                  "Pykeen_HolE", "Pykeen_ProjE", "Pykeen_RotatE",
                                  "Pykeen_TransE", "Pykeen_TransF", "Pykeen_TransH",

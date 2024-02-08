@@ -9,6 +9,7 @@ from typing import List, Tuple
 from typing import Union
 import itertools
 
+
 class PreprocessKG:
     """ Preprocess the data in memory """
 
@@ -73,10 +74,6 @@ class PreprocessKG:
             assert isinstance(self.kg.train_set[0][1], tuple)
             assert isinstance(self.kg.train_set[0][2], tuple)
 
-            # list of numbers
-            # self.kg.train_set= np.array(list(itertools.chain.from_iterable(itertools.chain.from_iterable(self.kg.train_set))))
-            # return False
-
             if self.kg.training_technique == "NegSample":
                 """No need to do anything"""
             elif self.kg.training_technique == "KvsAll":
@@ -134,6 +131,25 @@ class PreprocessKG:
                     f" Scoring technique {self.self.kg.training_technique} with BPE not implemented")
             if self.kg.max_length_subword_tokens is None and self.kg.byte_pair_encoding:
                 self.kg.max_length_subword_tokens = len(self.kg.train_set[0][0])
+        elif self.kg.byte_pair_encoding:
+            # (1) self.kg.train_set list of tuples, where each tuple consists of three tuples representing input triple.
+            # (2) Flatten (1) twice to obtain list of numbers
+
+            space_token = self.kg.enc.encode(" ")[0]
+            end_token = self.kg.enc.encode(".")[0]
+            triples = []
+            for (h, r, t) in self.kg.train_set:
+                x = []
+                x.extend(h)
+                x.append(space_token)
+                x.extend(r)
+                x.append(space_token)
+                x.extend(t)
+                x.append(end_token)
+                # print(self.kg.enc.decode(x))
+                triples.extend(x)
+            self.kg.train_set = np.array(triples)
+
         else:
             """No need to do anything. We create datasets for other models in the pyorch dataset construction"""
             # @TODO: Either we should move the all pytorch dataset construciton into here
@@ -242,7 +258,8 @@ class PreprocessKG:
 
         self.preprocess_with_byte_pair_encoding()
 
-        self.kg.max_length_subword_tokens = self.__finding_max_token(self.kg.train_set + self.kg.valid_set + self.kg.test_set)
+        self.kg.max_length_subword_tokens = self.__finding_max_token(
+            self.kg.train_set + self.kg.valid_set + self.kg.test_set)
 
         # Store padded bpe entities and relations
         bpe_subwords_to_shaped_bpe_entities = dict()

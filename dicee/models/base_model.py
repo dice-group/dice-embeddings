@@ -151,7 +151,10 @@ class BaseKGE(BaseKGELightning):
                 self.bpe_entity_to_idx = {shaped_bpe_ent: idx for idx, (str_ent, bpe_ent, shaped_bpe_ent) in
                                           enumerate(self.args["ordered_bpe_entities"])}
                 self.ordered_bpe_entities = torch.tensor(list(self.bpe_entity_to_idx.keys()), dtype=torch.long)
+        elif self.byte_pair_encoding and self.args['model'] == "BytE":
+            """ Transformer implements token embeddings"""
         else:
+
             self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
             self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
             self.param_init(self.entity_embeddings.weight.data), self.param_init(self.relation_embeddings.weight.data)

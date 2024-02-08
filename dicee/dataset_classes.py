@@ -37,19 +37,21 @@ def construct_dataset(*,
                       byte_pair_encoding=None,
                       block_size: int = None
                       ) -> torch.utils.data.Dataset:
-    if byte_pair_encoding and scoring_technique == 'NegSample':
+    if ordered_bpe_entities and byte_pair_encoding and scoring_technique == 'NegSample':
         train_set = BPE_NegativeSamplingDataset(
             train_set=torch.tensor(train_set, dtype=torch.long),
             ordered_shaped_bpe_entities=torch.tensor(
                 [shaped_bpe_ent for (str_ent, bpe_ent, shaped_bpe_ent) in ordered_bpe_entities]),
             neg_ratio=neg_ratio)
-    elif byte_pair_encoding and scoring_technique in ['KvsAll', "AllvsAll"]:
+    elif ordered_bpe_entities and byte_pair_encoding and scoring_technique in ['KvsAll', "AllvsAll"]:
         train_set = MultiLabelDataset(train_set=torch.tensor(train_set, dtype=torch.long),
                                       train_indices_target=train_target_indices, target_dim=target_dim,
                                       torch_ordered_shaped_bpe_entities=torch.tensor(
                                           [shaped_bpe_ent for (str_ent, bpe_ent, shaped_bpe_ent) in
-                                           ordered_bpe_entities])
-                                      )
+                                           ordered_bpe_entities]))
+    elif byte_pair_encoding:
+        # Multi-class classification based on transformer model's training.
+        train_set = MultiClassClassificationDataset(train_set, block_size=block_size)
     elif scoring_technique == 'NegSample':
         # Binary-class.
         train_set = TriplePredictionDataset(train_set=train_set,
@@ -87,8 +89,6 @@ def construct_dataset(*,
         # Multi-label.
         train_set = KvsAll(train_set, entity_idxs=entity_to_idx, relation_idxs=relation_to_idx,
                            form=form_of_labelling, label_smoothing_rate=label_smoothing_rate)
-    elif byte_pair_encoding:
-        train_set = MultiClassClassificationDataset(train_set, block_size=block_size)
     else:
         raise KeyError('Illegal input.')
     return train_set

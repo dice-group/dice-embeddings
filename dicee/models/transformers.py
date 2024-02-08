@@ -1,5 +1,4 @@
 from .base_model import BaseKGE
-import tiktoken
 import torch
 
 """
@@ -24,11 +23,14 @@ class BytE(BaseKGE):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name="BytE"
+        # lazy import
+        import tiktoken
         self.config = GPTConfig(**{"block_size": self.block_size,
                                    "vocab_size": tiktoken.get_encoding("gpt2").n_vocab,
                                    "n_layer": 4, "n_head": 4, "n_embd": self.embedding_dim, "dropout": 0,
                                    "bias": False})
-
+        self.temperature=0.5
+        self.topk=2
         self.transformer = nn.ModuleDict(dict(
             wte=nn.Embedding(self.config.vocab_size, self.config.n_embd),
             wpe=nn.Embedding(self.config.block_size, self.config.n_embd),
@@ -37,11 +39,8 @@ class BytE(BaseKGE):
             ln_f=LayerNorm(self.config.n_embd, bias=self.config.bias),
         ))
         self.lm_head = nn.Linear(self.config.n_embd, self.config.vocab_size, bias=False)
-        # with weight tying when using torch.compile() some warnings get generated:
-        # "UserWarning: functional_call was passed multiple values for tied weights.
-        # This behavior is deprecated and will be an error in future versions"
-        # not 100% sure what this is, so far seems to be harmless. TODO investigate
-        self.transformer.wte.weight = self.lm_head.weight  # https://paperswithcode.com/method/weight-tying
+        # https://paperswithcode.com/method/weight-tying
+        self.transformer.wte.weight = self.lm_head.weight
 
     def loss_function(self, yhat_batch, y_batch):
         return F.cross_entropy(yhat_batch.view(-1, yhat_batch.size(-1)), y_batch.view(-1), ignore_index=-1)
@@ -51,13 +50,12 @@ class BytE(BaseKGE):
 
         Parameters
         ----------
-        x: B by D tensor
+        x: B by T tensor
 
         Returns
         -------
 
         """
-        # B x D x |V| where  |V| denotes the vocabulary size
 
         device = x.device
         b, t = x.size()
@@ -65,14 +63,43 @@ class BytE(BaseKGE):
         pos = torch.arange(0, t, dtype=torch.long, device=device)  # shape (t)
 
         # forward the GPT model itself
-        tok_emb = self.transformer.wte(x)  # token embeddings of shape (b, t, n_embd)
-        pos_emb = self.transformer.wpe(pos)  # position embeddings of shape (t, n_embd)
+        # token embeddings of shape (b, t, n_embd)
+        tok_emb = self.transformer.wte(x)
+        # position embeddings of shape (t, n_embd)
+        pos_emb = self.transformer.wpe(pos)
         x = self.transformer.drop(tok_emb + pos_emb)
         for block in self.transformer.h:
             x = block(x)
         x = self.transformer.ln_f(x)
         logits = self.lm_head(x)
         return logits
+
+    @torch.no_grad()
+    def generate(self, idx, max_new_tokens, temperature=1.0, top_k=None):
+        """
+        Take a conditioning sequence of indices idx (LongTensor of shape (b,t)) and complete
+        the sequence max_new_tokens times, feeding the predictions back into the model each time.
+        Most likely you'll want to make sure to be in model.eval() mode of operation for this.
+        """
+        for _ in range(max_new_tokens):
+            # if the sequence context is growing too long we must crop it at block_size
+            idx_cond = idx if idx.size(1) <= self.config.block_size else idx[:, -self.config.block_size:]
+            # forward the model to get the logits for the index in the sequence
+            logits = self(idx_cond)
+            # pluck the logits at the final step and scale by desired temperature
+            logits = logits[:, -1, :] / temperature
+            # optionally crop the logits to only the top k options
+            if top_k is not None:
+                v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
+                logits[logits < v[:, [-1]]] = -float('Inf')
+            # apply softmax to convert logits to (normalized) probabilities
+            probs = F.softmax(logits, dim=-1)
+            # sample from the distribution
+            idx_next = torch.multinomial(probs, num_samples=1)
+            # append sampled index to the running sequence and continue
+            idx = torch.cat((idx, idx_next), dim=1)
+
+        return idx
 
     def training_step(self, batch, batch_idx=None):
         x_batch, y_batch = batch
@@ -385,30 +412,3 @@ class GPT(nn.Module):
         flops_promised = 312e12  # A100 GPU bfloat16 peak flops is 312 TFLOPS
         mfu = flops_achieved / flops_promised
         return mfu
-
-    @torch.no_grad()
-    def generate(self, idx, max_new_tokens, temperature=1.0, top_k=None):
-        """
-        Take a conditioning sequence of indices idx (LongTensor of shape (b,t)) and complete
-        the sequence max_new_tokens times, feeding the predictions back into the model each time.
-        Most likely you'll want to make sure to be in model.eval() mode of operation for this.
-        """
-        for _ in range(max_new_tokens):
-            # if the sequence context is growing too long we must crop it at block_size
-            idx_cond = idx if idx.size(1) <= self.config.block_size else idx[:, -self.config.block_size:]
-            # forward the model to get the logits for the index in the sequence
-            logits, _ = self(idx_cond)
-            # pluck the logits at the final step and scale by desired temperature
-            logits = logits[:, -1, :] / temperature
-            # optionally crop the logits to only the top k options
-            if top_k is not None:
-                v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
-                logits[logits < v[:, [-1]]] = -float('Inf')
-            # apply softmax to convert logits to (normalized) probabilities
-            probs = F.softmax(logits, dim=-1)
-            # sample from the distribution
-            idx_next = torch.multinomial(probs, num_samples=1)
-            # append sampled index to the running sequence and continue
-            idx = torch.cat((idx, idx_next), dim=1)
-
-        return idx

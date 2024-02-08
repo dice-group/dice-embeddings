@@ -98,12 +98,19 @@ class Evaluator:
         elif self.args.scoring_technique in ["AllvsAll",
                                              "KvsAll",
                                              'KvsSample',
-                                             "1vsAll"] and self.args.byte_pair_encoding and self.args.model != "BytE":
-            self.eval_with_bpe_vs_all(raw_train_set=dataset.raw_train_set,
-                                      raw_valid_set=dataset.raw_valid_set,
-                                      raw_test_set=dataset.raw_test_set,
-                                      trained_model=trained_model,
-                                      form_of_labelling=form_of_labelling)
+                                             "1vsAll"] and self.args.byte_pair_encoding:
+            if self.args.model != "BytE":
+                self.eval_with_bpe_vs_all(raw_train_set=dataset.raw_train_set,
+                                          raw_valid_set=dataset.raw_valid_set,
+                                          raw_test_set=dataset.raw_test_set,
+                                          trained_model=trained_model,
+                                          form_of_labelling=form_of_labelling)
+            else:
+                self.eval_with_byte(raw_train_set=dataset.raw_train_set,
+                                    raw_valid_set=dataset.raw_valid_set,
+                                    raw_test_set=dataset.raw_test_set,
+                                    trained_model=trained_model,
+                                    form_of_labelling=form_of_labelling)
         elif self.args.scoring_technique == 'NegSample':
             self.eval_rank_of_head_and_tail_entity(train_set=dataset.train_set,
                                                    valid_set=dataset.valid_set,
@@ -181,6 +188,24 @@ class Evaluator:
             self.report['Test'] = evaluate_bpe_lp(trained_model, test_set, ordered_bpe_entities,
                                                   er_vocab=self.er_vocab, re_vocab=self.re_vocab,
                                                   info=f'Evaluate {trained_model.name} on NegSample BPE Test set')
+
+    def eval_with_byte(self, *, raw_train_set, raw_valid_set=None, raw_test_set=None, trained_model,
+                       form_of_labelling) -> None:
+        """ Evaluate model after reciprocal triples are added """
+        if 'train' in self.args.eval_model:
+            self.report['Train'] = -1
+
+        if 'val' in self.args.eval_model:
+            if raw_valid_set is not None:
+                assert isinstance(raw_valid_set, pd.DataFrame)
+                self.report['Val'] = self.evaluate_lp_with_byte(trained_model, raw_valid_set.values.tolist(),
+                                                                f'Evaluate {trained_model.name} on BytE Validation set',
+                                                                )
+
+        if raw_test_set is not None and 'test' in self.args.eval_model:
+            self.report['Test'] = self.evaluate_lp_with_byte(trained_model, raw_test_set.values.tolist(),
+                                                             f'Evaluate {trained_model.name} on BytE Test set',
+                                                             )
 
     def eval_with_bpe_vs_all(self, *, raw_train_set, raw_valid_set=None, raw_test_set=None, trained_model,
                              form_of_labelling) -> None:
@@ -310,6 +335,35 @@ class Evaluator:
         if info and self.during_training is False:
             print(info)
             print(results)
+        return results
+
+    @torch.no_grad()
+    def evaluate_lp_with_byte(self, model, triples: List[List[str]], info=None):
+
+        # (1) set model to eval model
+        model.eval()
+        num_triples = len(triples)
+        import tiktoken
+
+        enc = tiktoken.get_encoding("gpt2")
+
+        ranks = []
+        # Hit range
+        hits_range = [i for i in range(1, 11)]
+        hits = {i: [] for i in hits_range}
+        if info and self.during_training is False:
+            print(info + ':', end=' ')
+        # Iterate over integer indexed triples in mini batch fashion
+        for i in range(0, num_triples, self.args.batch_size):
+            str_data_batch = triples[i:i + self.args.batch_size]
+            for i in str_data_batch:
+                s, p, o = i
+                x = torch.LongTensor([enc.encode(s + " " + p)])
+                print("Triple:", i, end="\t")
+                y = model.generate(x, max_new_tokens=100, temperature=model.temperature, top_k=model.topk).tolist()
+                print("Generated:", enc.decode(y[0]))
+
+        results = {'H@1': -1, 'H@3': -1, 'H@10': -1, 'MRR': -1}
         return results
 
     @torch.no_grad()

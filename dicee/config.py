@@ -126,8 +126,12 @@ class Namespace(argparse.Namespace):
 
         self.adaptive_swa: bool = False
         "Adaptive stochastic weight averaging"
+
         self.swa: bool = False
         "Stochastic weight averaging"
+
+        self.block_size: int = None
+        "block size of LLM"
 
 
     def __iter__(self):

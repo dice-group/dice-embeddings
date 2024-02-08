@@ -1,8 +1,6 @@
 from typing import List
 from .read_preprocess_save_load_kg import ReadFromDisk, PreprocessKG, LoadSaveToDisk
 import sys
-import tiktoken
-
 
 class KG:
     """ Knowledge Graph """
@@ -59,6 +57,7 @@ class KG:
         self.idx_entity_to_bpe_shaped = dict()
 
         # WIP:
+        import tiktoken
         self.enc = tiktoken.get_encoding("gpt2")
         self.num_tokens = self.enc.n_vocab  # ~ 50
         self.num_bpe_entities = None
