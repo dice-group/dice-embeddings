@@ -171,24 +171,28 @@ dicee --dataset_dir KGs/Countries-S1 --path_to_store_single_run CountryEmbedding
 #### Loading Embeddings into Qdrant Vector Database
 ```bash
 # Ensure that Qdrant available
-# docker pull qdrant/qdrant
-# docker run -p 6333:6333 -p 6334:6334      -v $(pwd)/qdrant_storage:/qdrant/storage:z      qdrant/qdrant
-# pip install qdrant-client
-diceeindex --path_model CountryEmbeddings --collection_name "dummy" --location "localhost"
+# docker pull qdrant/qdrant && docker run -p 6333:6333 -p 6334:6334      -v $(pwd)/qdrant_storage:/qdrant/storage:z      qdrant/qdrant
+diceeindex --path_model "CountryEmbeddings" --collection_name "dummy" --location "localhost"
 ```
 #### Launching Webservice
 ```bash
-diceeserve --path_model CountryEmbeddings --collection_name "dummy" --collection_location "localhost"
+diceeserve --path_model "CountryEmbeddings" --collection_name "dummy" --collection_location "localhost"
+```
+##### Retrieve and Search 
+
+Get embedding of germany
+```bash
+curl -X 'GET' 'http://0.0.0.0:8000/api/get?q=germany' -H 'accept: application/json'
 ```
 
-Most similar countries to germany
+Get most similar things to europe
 ```bash
-curl -X 'GET' 'http://0.0.0.0:8000/api/search?q=germany' -H 'accept: application/json'
-{"result":[{"hit":"germany","score":1.0},
-{"hit":"netherlands","score":0.8340942},
-{"hit":"luxembourg","score":0.7828385},
-{"hit":"france","score":0.70330715},
-{"hit":"belgium","score":0.6233973}]}
+curl -X 'GET' 'http://0.0.0.0:8000/api/search?q=europe' -H 'accept: application/json'
+{"result":[{"hit":"europe","score":1.0},
+{"hit":"northern_europe","score":0.67126536},
+{"hit":"western_europe","score":0.6010134},
+{"hit":"puerto_rico","score":0.5051694},
+{"hit":"southern_europe","score":0.4829831}]}
 ```
 
 </details>

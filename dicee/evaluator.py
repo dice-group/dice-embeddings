@@ -142,30 +142,6 @@ class Evaluator:
         self.re_vocab = pickle.load(open(self.args.full_storage_path + "/re_vocab.p", "rb"))
         self.ee_vocab = pickle.load(open(self.args.full_storage_path + "/ee_vocab.p", "rb"))
 
-    """
-    def dummy_eval(self, trained_model, form_of_labelling: str):
-
-        if self.is_continual_training:
-            self.__load_and_set_mappings()
-
-        train_set, valid_set, test_set = self.__load_indexed_datasets()
-
-        if self.args.scoring_technique == 'NegSample':
-            self.eval_rank_of_head_and_tail_entity(train_set=train_set,
-                                                   valid_set=valid_set,
-                                                   test_set=test_set,
-                                                   trained_model=trained_model)
-        elif self.args.scoring_technique in ['KvsAll', 'KvsSample', '1vsAll', 'PvsAll', 'CCvsAll']:
-            self.eval_with_vs_all(train_set=train_set,
-                                  valid_set=valid_set,
-                                  test_set=test_set,
-                                  trained_model=trained_model, form_of_labelling=form_of_labelling)
-        else:
-            raise ValueError(f'Invalid argument: {self.args.scoring_technique}')
-        with open(self.args.full_storage_path + '/eval_report.json', 'w') as file_descriptor:
-            json.dump(self.report, file_descriptor, indent=4)
-    """
-
     def eval_rank_of_head_and_tail_entity(self, *, train_set, valid_set=None, test_set=None, trained_model):
         # 4. Test model on the training dataset if it is needed.
         if 'train' in self.args.eval_model:

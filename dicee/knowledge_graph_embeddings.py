@@ -13,7 +13,7 @@ import sys
 
 # import gradio as gr
 
-
+import traceback
 class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
 
@@ -48,7 +48,13 @@ class KGE(BaseInteractiveKGE):
                                port: int = 6333):
         assert distance in ["cosine", "dot"]
         # lazy imports
-        from qdrant_client import QdrantClient
+        try:
+            from qdrant_client import QdrantClient
+        except ModuleNotFoundError:
+            traceback.print_exc()
+            print("Please install qdrant_client: pip install qdrant_client")
+            exit(1)
+
         from qdrant_client.http.models import Distance, VectorParams
         from qdrant_client.http.models import PointStruct
         # from qdrant_client.http.models import Filter, FieldCondition, MatchValue
@@ -910,7 +916,7 @@ class KGE(BaseInteractiveKGE):
             # Get scores for the second atom
             for head2 in top_k_heads:
                 # The score tensor for the current head2
-                atom2_score = self.predict(h=[head2], r=[relation2])
+                atom2_score = self.predict(h=[head2], r=[relation2]).unsqueeze(0)
                 # Concatenate the score tensor for the current head2 with the previous scores
                 atom2_scores = torch.cat([atom2_scores, atom2_score], dim=0)
 
@@ -929,7 +935,6 @@ class KGE(BaseInteractiveKGE):
             return sorted(entity_scores, key=lambda x: x[1], reverse=True)
         # ip
         elif query_structure == ((("e", ("r",)), ("e", ("r",))), ("r",)):
-            # @TODO: ip Doesn't work
             # entity_scores = scores_ip(model, query, tnorm, k_)
             head1, relation1 = query[0][0]
             head2, relation2 = query[0][1]
@@ -959,7 +964,8 @@ class KGE(BaseInteractiveKGE):
             # Get scores for the second atom
             for head3 in top_k_heads:
                 # The score tensor for the current head2
-                atom3_score = self.predict(h=[head3], r=[relation_1p[0]])
+                atom3_score = self.predict(h=[head3], r=[relation_1p[0]]).unsqueeze(0)
+
                 # Concatenate the score tensor for the current head2 with the previous scores
                 atom3_scores = torch.cat([atom3_scores, atom3_score], dim=0)
 
@@ -1023,7 +1029,7 @@ class KGE(BaseInteractiveKGE):
 
             for head3 in top_k_heads:
                 # The score tensor for the current head3
-                atom3_score = self.predict(h=[head3], r=[relation_1p[0]])
+                atom3_score = self.predict(h=[head3], r=[relation_1p[0]]).unsqueeze(0)
 
                 # Concatenate the score tensor for the current head3 with the previous scores
                 atom3_scores = torch.cat([atom3_scores, atom3_score], dim=0)

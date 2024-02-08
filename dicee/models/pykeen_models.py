@@ -1,10 +1,10 @@
 import torch
 import torch.utils.data
-from pykeen.models import model_resolver
-from .base_model import BaseKGE
+# from pykeen.models import model_resolver
+#from .base_model import BaseKGE
 from collections import namedtuple
 
-class PykeenKGE(BaseKGE):
+class PykeenKGE:#(BaseKGE):
     """ A class for using knowledge graph embedding models implemented in Pykeen
 
     Notes:
@@ -18,7 +18,7 @@ class PykeenKGE(BaseKGE):
     """
 
     def __init__(self, args: dict):
-        super().__init__(args)
+        # super().__init__(args)
         self.model_kwargs = {'embedding_dim': args['embedding_dim'],
                              'entity_initializer': None if args['init_param'] is None else torch.nn.init.xavier_normal_,
                              "random_seed": args["random_seed"]
@@ -53,7 +53,8 @@ class PykeenKGE(BaseKGE):
         else:
             print("Pykeen model have a memory leak caused by their implementation of regularizers")
             print(f"{self.name} does not seem to have any regularizer")
-
+        
+        from pykeen.models import model_resolver
         self.model = model_resolver. \
             make(self.name, self.model_kwargs, triples_factory=
         namedtuple('triples_factory',
