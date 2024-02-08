@@ -29,9 +29,10 @@ def get_default_arguments(description=None):
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
     # Model related arguments
     parser.add_argument("--model", type=str,
-                        default="Keci",
+                        default="BytE",
                         choices=["ComplEx", "Keci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE",
+                                 "BytE",
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
                                  "Pykeen_HolE", "Pykeen_ProjE", "Pykeen_RotatE",
                                  "Pykeen_TransE", "Pykeen_TransF", "Pykeen_TransH",
@@ -100,6 +101,8 @@ def get_default_arguments(description=None):
                         help='Q for Clifford Algebra')
     parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
     # WIP
+    parser.add_argument('--block_size', type=int, default=8,
+                        help='Block size for BytE')
     parser.add_argument("--byte_pair_encoding",
                         action="store_true",
                         help="Currently only avail. for KGE implemented within dice-embeddings.")
