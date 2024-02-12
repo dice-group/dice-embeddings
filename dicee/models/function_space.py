@@ -296,7 +296,6 @@ class LFMult(BaseKGE): # embedding with polynomials
         self.x_values = torch.linspace(0, 1, 100)
         self.degree = self.args.get("degree",0)
         self.m = int(self.embedding_dim/(1+self.degree))
-        self.batch_size = 128 # 2*batch_size to be remove
 
     def forward_triples(self, idx_triple): # idx_triplet = (h_idx, r_idx, t_idx) #change this to the forward_triples
 
@@ -307,18 +306,11 @@ class LFMult(BaseKGE): # embedding with polynomials
 
         #score = self.tri_score(coeff_head,coeff_rel,coeff_tail)
 
-        score = torch.zeros(self.batch_size,self.m)
-
-
-        for b in range(self.batch_size):
-
-            print(b)
+        score = self.tri_score(coeff_head,coeff_rel,coeff_tail)
         
-            score[b,:] = self.tri_score(coeff_head[b,:],coeff_rel[b,:],coeff_tail[b,:])
+        score = score.reshape(-1,self.m).sum(dim=1)
         
-        s = score.sum(dim=1)
-        
-        return s
+        return score 
     
     def construct_multi_coeff(self, x):
 
@@ -349,7 +341,7 @@ class LFMult(BaseKGE): # embedding with polynomials
         terms = 1 / (1 + i_range + j_range + k_range) 
 
         
-        weighted_terms = terms*coeff_h.view(-1, 1, self.degree+1, 1) *coeff_r.view(-1, self.degree+1, 1, 1) * coeff_t.view(-1, 1, 1,self.degree+1)
+        weighted_terms = terms.unsqueeze(0)*coeff_h.view(-1, 1, self.degree+1, 1) *coeff_r.view(-1, self.degree+1, 1, 1) * coeff_t.view(-1, 1, 1,self.degree+1)
         result = torch.sum(weighted_terms, dim=[-3,-2,-1])
     
         return result
