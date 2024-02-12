@@ -340,8 +340,10 @@ class LFMult(BaseKGE): # embedding with polynomials
         i_range, j_range, k_range = torch.meshgrid(torch.arange(self.degree+1),torch.arange(self.degree+1),torch.arange(self.degree+1))
         terms = 1 / (1 + i_range + j_range + k_range) 
 
+    
+
         
-        weighted_terms = terms.unsqueeze(0)*coeff_h.view(-1, 1, self.degree+1, 1) *coeff_r.view(-1, self.degree+1, 1, 1) * coeff_t.view(-1, 1, 1,self.degree+1)
+        weighted_terms = terms.unsqueeze(0)*coeff_h.reshape(-1, 1, self.degree+1, 1) *coeff_r.reshape(-1, self.degree+1, 1, 1) * coeff_t.reshape(-1, 1, 1,self.degree+1)
         result = torch.sum(weighted_terms, dim=[-3,-2,-1])
     
         return result
