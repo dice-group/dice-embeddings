@@ -36,7 +36,7 @@ def get_default_arguments(description=None):
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
                                  "Pykeen_HolE", "Pykeen_ProjE", "Pykeen_RotatE",
                                  "Pykeen_TransE", "Pykeen_TransF", "Pykeen_TransH",
-                                 "Pykeen_TransR", "Pykeen_TuckER", "Pykeen_ComplEx"],
+                                 "Pykeen_TransR", "Pykeen_TuckER", "Pykeen_ComplEx", "DeCaL"],
                         help="Available knowledge graph embedding models. "
                              "To use other knowledge graph embedding models available in python, e.g.,"
                              "**Pykeen_BoxE** and add this into choices")
@@ -99,6 +99,8 @@ def get_default_arguments(description=None):
                         help='P for Clifford Algebra')
     parser.add_argument('--q', type=int, default=1,
                         help='Q for Clifford Algebra')
+    parser.add_argument('--r', type=int, default=0,
+                        help='R for Clifford Algebra')
     parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
     # WIP
     parser.add_argument('--block_size', type=int, default=8,
