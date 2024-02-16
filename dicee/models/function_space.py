@@ -234,7 +234,11 @@ class FMult2(BaseKGE):
         return out
     
 
-class LFMult1(BaseKGE): #this consider the score:  score = <hr,t> = \int Re(hr \bar t), gives similar result as the trilinear score
+class LFMult1(BaseKGE): 
+
+    '''Embedding with trigonometric functions. We represent all entities and relations in the complex number space as:
+      f(x) = \sum_{k=0}^{k=d-1}wk e^{kix}. and use the three differents scoring function as in the paper to evaluate the score'''
+    
     def __init__(self,args):
         super().__init__(args)
         self.name = 'LFMult1'
@@ -287,15 +291,20 @@ class LFMult1(BaseKGE): #this consider the score:  score = <hr,t> = \int Re(hr \
         s = s1 - s2 # combine the two sums.
         return s
     
-class LFMult(BaseKGE): # embedding with polynomials 
+class LFMult(BaseKGE): 
+
+    '''Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:
+      f(x) = \sum_{i=0}^{d-1} a_k x^{i%d} and use the three differents scoring function as in the paper to evaluate the score.
+      We also consider combining with Neural Networks.'''
+    
     def __init__(self,args):
         super().__init__(args)
         self.name = 'LFMult'
         self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
         self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.x_values = torch.linspace(0, 1, 100)
         self.degree = self.args.get("degree",0)
         self.m = int(self.embedding_dim/(1+self.degree))
+        self.x_values = torch.linspace(0, 1, self.m)
 
     def forward_triples(self, idx_triple): # idx_triplet = (h_idx, r_idx, t_idx) #change this to the forward_triples
 
@@ -303,12 +312,18 @@ class LFMult(BaseKGE): # embedding with polynomials
 
         coeff_head, coeff_rel, coeff_tail = self.construct_multi_coeff(head_ent_emb), self.construct_multi_coeff(rel_emb), self.construct_multi_coeff(tail_ent_emb)
 
-
-        #score = self.tri_score(coeff_head,coeff_rel,coeff_tail)
+        ###### polynomial score with trilinear scoring
 
         score = self.tri_score(coeff_head,coeff_rel,coeff_tail)
         
         score = score.reshape(-1,self.m).sum(dim=1)
+    
+
+        ##### polynomial score with NN
+
+        # integral_value = torch.trapezoid(self.poly_NN(self.x_values,coeff_head, coeff_rel, coeff_tail),self.x_values)
+        # score = integral_value.reshape(1,-1).squeeze(0)
+       
         
         return score 
     
@@ -318,9 +333,25 @@ class LFMult(BaseKGE): # embedding with polynomials
         coeffs = torch.stack(coeffs,dim=1)
 
         return coeffs.transpose(1,2)
+    
 
 
+    def poly_NN(self, x, coefh, coefr, coeft):
 
+        ''' Constructing a 2 layers NN to represent the embeddings. 
+         h = \sigma(wh^T x + bh ),  r = \sigma(wr^T x + br ),  t = \sigma(wt^T x + bt )'''
+
+        wh, bh = coefh[:, :self.m,0], coefh[:, :self.m,1]
+        wr, br = coefr[:, :self.m,0], coefr[:, :self.m,1]
+        wt, bt = coeft[:, :self.m,0], coeft[:, :self.m,1]
+
+        return (self.linear(x,wh,bh)*self.linear(x,wr,br)*self.linear(x,wt,bt)) 
+    
+    def linear(self,x,w,b):
+        return torch.sigmoid((w@x).reshape(-1,1)+b)
+
+
+    
 
     def tri_score(self, coeff_h, coeff_r, coeff_t):
 
@@ -334,18 +365,23 @@ class LFMult(BaseKGE): # embedding with polynomials
         \dfrac{a_i*b_j*c_k}{1+(i+j+k)%d} in parallel for every batch
 
         3. take the sum over each batch
-        
+
         '''
-        
+
         i_range, j_range, k_range = torch.meshgrid(torch.arange(self.degree+1),torch.arange(self.degree+1),torch.arange(self.degree+1))
-        terms = 1 / (1 + i_range + j_range + k_range) 
 
-    
+        if self.degree == 0:
+            terms = 1 / (1 + i_range + j_range + k_range) #%self.degree
+        else:
+            terms = 1 / (1 + (i_range + j_range + k_range)%self.degree) #%self.degree
 
-        
+
+
+
         weighted_terms = terms.unsqueeze(0)*coeff_h.reshape(-1, 1, self.degree+1, 1) *coeff_r.reshape(-1, self.degree+1, 1, 1) * coeff_t.reshape(-1, 1, 1,self.degree+1)
+        
         result = torch.sum(weighted_terms, dim=[-3,-2,-1])
-    
+
         return result
     
     def vtp_score(self, h, r, t):
@@ -381,7 +417,7 @@ class LFMult(BaseKGE): # embedding with polynomials
         return result
 
     def comp_func(self,h,r,t): 
-        '''this part implement the function composition scoring techniques:'''
+        '''this part implement the function composition scoring techniques: i.e. score = <hor, t>'''
 
         degree = torch.arange(self.embedding_dim, dtype=torch.float32)
 
