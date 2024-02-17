@@ -6,7 +6,9 @@ from setuptools import setup, find_packages
 #  pip3 install "dicee" .
 #  pip3 install "dicee[dev]" .
 #  pip3 install "dicee[min]" .
+# pip3 install torch==2.0.0 --index-url https://download.pytorch.org/whl/cpu
 _deps = [
+    # torch==2.0.0+cpu
     "torch==2.0.0",
     "lightning>=2.1.3",
     "pandas>=2.1.0",
@@ -35,7 +37,8 @@ def deps_list(*pkgs):
 
 extras = dict()
 extras["min"] = deps_list(
-    "pandas", "polars", "rdflib",  # Loading KG
+    "pandas",
+    "polars", "rdflib",  # Loading KG
     "torch", "lightning",  # Training KGE
     "tiktoken",  # used for BPE
     "psutil",  # Memory tracking: maybe remove later ?
@@ -43,19 +46,12 @@ extras["min"] = deps_list(
     "pykeen"  # additional kge models
 )
 
+# TODO: Remove polars, rdflib, tiktoken, psutil, matplotlib from min
+
 extras["dev"] = (extras["min"] + deps_list("ruff", "pytest",
                                            "polars", "pyarrow",
                                            "scikit-learn"))
-
-install_requires = [
-    extras["min"]
-    # deps["pandas"],
-    # deps["gradio"],  # must be optinal
-    # deps["beautifulsoup4"],  # Not quire sure where we use it
-    # deps["scikit-learn"],  # # can be optional
-    # deps["pyarrow"],  # not quire sure whether we are still using it
-    # deps["pykeen"],  # can be optional
-]
+install_requires = [extras["min"]]
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()
