@@ -18,11 +18,13 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip3 install -e .["dev"]
+        # pip3 install -e .["dev"]
+          pip3 install -e .
+
       - name: Lint with ruff
         run: |
           ruff  --select=E501 --line-length=200 dicee/
       - name: Test with pytest
         run: |
           wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate && unzip KGs.zip
-          pytest -p no:warnings -x
+          python -m pytest -p no:warnings -x

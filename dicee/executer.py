@@ -18,7 +18,6 @@ logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 os.environ["TORCH_DISTRIBUTED_DEBUG"] = "INFO"
 
-
 class Execute:
     """ A class for Training, Retraining and Evaluation a model.
 
@@ -53,6 +52,7 @@ class Execute:
         start_time = time.time()
         kg = KG(dataset_dir=self.args.dataset_dir,
                 byte_pair_encoding=self.args.byte_pair_encoding,
+                padding=True if self.args.byte_pair_encoding and self.args.model != "BytE" else False,
                 add_noise_rate=self.args.add_noise_rate,
                 sparql_endpoint=self.args.sparql_endpoint,
                 path_single_kg=self.args.path_single_kg,

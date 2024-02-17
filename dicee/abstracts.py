@@ -6,7 +6,6 @@ from typing import List, Tuple, Union
 import random
 from abc import ABC
 import lightning
-import tiktoken
 
 
 class AbstractTrainer:
@@ -167,6 +166,7 @@ class BaseInteractiveKGE:
             else:
                 self.model, tuple_of_entity_relation_idx = load_model(self.path)
         if self.configs.get("byte_pair_encoding", None):
+            import tiktoken
             self.enc = tiktoken.get_encoding("gpt2")
             self.dummy_id = tiktoken.get_encoding("gpt2").encode(" ")[0]
             self.max_length_subword_tokens = self.configs["max_length_subword_tokens"]

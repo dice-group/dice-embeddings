@@ -211,7 +211,8 @@ class DICE_Trainer:
                                           scoring_technique=self.args.scoring_technique,
                                           neg_ratio=self.args.neg_ratio,
                                           label_smoothing_rate=self.args.label_smoothing_rate,
-                                          byte_pair_encoding=self.args.byte_pair_encoding)
+                                          byte_pair_encoding=self.args.byte_pair_encoding,
+                                          block_size=self.args.block_size)
         if self.args.eval_model is None:
             del dataset.train_set
             gc.collect()

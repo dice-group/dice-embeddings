@@ -5,6 +5,7 @@ from typing import Tuple, List
 from .models import CMult, Pyke, DistMult, KeciBase, Keci, TransE, \
     ComplEx, AConEx, AConvO, AConvQ, ConvQ, ConvO, ConEx, QMult, OMult, Shallom
 from .models.pykeen_models import PykeenKGE
+from .models.transformers import BytE
 import time
 import pandas as pd
 import json
@@ -75,9 +76,11 @@ def timeit(func):
     return timeit_wrapper
 
 
-def save_pickle(*, data: object, file_path=str):
-    pickle.dump(data, open(file_path, "wb"))
-
+def save_pickle(*, data: object=None, file_path=str):
+    if data:
+        pickle.dump(data, open(file_path, "wb"))
+    else:
+        print("Input data is None. Nothing to save.")
 
 def load_pickle(file_path=str):
     with open(file_path, 'rb') as f:
@@ -408,6 +411,9 @@ def intialize_model(args: dict,verbose=0) -> Tuple[object, str]:
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'CMult':
         model = CMult(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'BytE':
+        model = BytE(args=args)
         form_of_labelling = 'EntityPrediction'
     else:
         raise ValueError(f"--model_name: {model_name} is not found.")
