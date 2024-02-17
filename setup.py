@@ -1,26 +1,23 @@
 import re
 from setuptools import setup, find_packages
 
-#  To install minimal version: pip3 install -e .
-#  To instvall dev aand test: pip3 install -e .["test"]
 #  pip3 install "dicee" .
 #  pip3 install "dicee[dev]" .
 #  pip3 install "dicee[min]" .
-# pip3 install torch==2.0.0 --index-url https://download.pytorch.org/whl/cpu
 _deps = [
     # torch==2.0.0+cpu
     "torch==2.0.0",
     "lightning>=2.1.3",
     "pandas>=2.1.0",
-    "polars>=0.16.14",  # this can be lazy imported
-    "scikit-learn>=1.2.2",  # this can be lazy imported
-    "pyarrow>=11.0.0",  # this can be lazy imported
-    "pykeen>=1.10.1",  # Temporarily removed due to
-    "zstandard>=0.21.0",  # this can be lazy imported
-    "pytest>=7.2.2",  # if testing required
+    "polars>=0.16.14",
+    "scikit-learn>=1.2.2",
+    "pyarrow>=11.0.0",
+    "pykeen>=1.10.1", # 1.10.1 does not work with torch>2.0.0
+    "zstandard>=0.21.0",
+    "pytest>=7.2.2",
     "psutil>=5.9.4",
-    "ruff>=0.0.284",  # if testing required
-    "gradio>=3.23.0",  # if deployment required
+    "ruff>=0.0.284",
+    "gradio>=3.23.0",
     "rdflib>=7.0.0",
     "tiktoken>=0.5.1",
     "matplotlib>=3.8.2",
