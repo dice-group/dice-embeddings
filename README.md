@@ -48,9 +48,9 @@ wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check
 ```
 To test the Installation
 ```bash
-pytest -p no:warnings -x # Runs >114 tests leading to > 15 mins
-pytest -p no:warnings --lf # run only the last failed test
-pytest -p no:warnings --ff # to run the failures first and then the rest of the tests.
+python -m pytest -p no:warnings -x # Runs >114 tests leading to > 15 mins
+python -m pytest -p no:warnings --lf # run only the last failed test
+python -m pytest -p no:warnings --ff # to run the failures first and then the rest of the tests.
 ```
 
 </details>

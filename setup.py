@@ -13,7 +13,7 @@ _deps = [
     "polars>=0.16.14",  # this can be lazy imported
     "scikit-learn>=1.2.2",  # this can be lazy imported
     "pyarrow>=11.0.0",  # this can be lazy imported
-    # "pykeen==1.10.1", # Temporarily removed due to
+    "pykeen==1.10.1",  # Temporarily removed due to
     "zstandard>=0.21.0",  # this can be lazy imported
     "pytest>=7.2.2",  # if testing required
     "psutil>=5.9.4",
@@ -40,6 +40,7 @@ extras["min"] = deps_list(
     "tiktoken",  # used for BPE
     "psutil",  # Memory tracking: maybe remove later ?
     "matplotlib"  # Unclear why it is needed
+    "pykeen",  # additional kge models
 )
 
 extras["dev"] = (extras["min"] + deps_list("ruff", "pytest",
@@ -55,9 +56,6 @@ install_requires = [
     # deps["pyarrow"],  # not quire sure whether we are still using it
     # deps["pykeen"],  # can be optional
 ]
-
-
-
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()

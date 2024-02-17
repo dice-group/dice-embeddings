@@ -25,4 +25,4 @@ jobs:
       - name: Test with pytest
         run: |
           wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate && unzip KGs.zip
-          pytest -p no:warnings -x
+          python -m pytest -p no:warnings -x
