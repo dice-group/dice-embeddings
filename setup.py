@@ -7,13 +7,13 @@ from setuptools import setup, find_packages
 #  pip3 install "dicee[dev]" .
 #  pip3 install "dicee[min]" .
 _deps = [
-    "torch>=2.0.0",
+    "torch==2.0.0",
     "lightning>=2.1.3",
     "pandas>=2.1.0",
     "polars>=0.16.14",  # this can be lazy imported
     "scikit-learn>=1.2.2",  # this can be lazy imported
     "pyarrow>=11.0.0",  # this can be lazy imported
-    "pykeen==1.10.1",  # Temporarily removed due to
+    "pykeen>=1.10.1",  # Temporarily removed due to
     "zstandard>=0.21.0",  # this can be lazy imported
     "pytest>=7.2.2",  # if testing required
     "psutil>=5.9.4",
