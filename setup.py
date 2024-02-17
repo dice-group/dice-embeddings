@@ -1,18 +1,17 @@
 import re
 from setuptools import setup, find_packages
 
-#  pip3 install "dicee" .
-#  pip3 install "dicee[dev]" .
-#  pip3 install "dicee[min]" .
+# Min version :pip3 install -e .
+# Dev version :pip3 install -e .["dev"]
+
 _deps = [
-    # torch==2.0.0+cpu
     "torch==2.0.0",
     "lightning>=2.1.3",
     "pandas>=2.1.0",
     "polars>=0.16.14",
     "scikit-learn>=1.2.2",
     "pyarrow>=11.0.0",
-    "pykeen>=1.10.1", # 1.10.1 does not work with torch>2.0.0
+    "pykeen>=1.10.1",  # 1.10.1 does not work with torch>2.0.0
     "zstandard>=0.21.0",
     "pytest>=7.2.2",
     "psutil>=5.9.4",
@@ -20,8 +19,7 @@ _deps = [
     "gradio>=3.23.0",
     "rdflib>=7.0.0",
     "tiktoken>=0.5.1",
-    "matplotlib>=3.8.2",
-    "beautifulsoup4>=4.12.2"  # unclear hy nedded
+    "matplotlib>=3.8.2"
 ]
 
 # some of the values are versioned whereas others aren't.
