@@ -28,7 +28,7 @@ def template(model_name):
 class TestClass:
     def test_defaultParameters_case(self, model_name):
         args = template(model_name)
-        #result = Execute(args).start()
+        result = Execute(args).start()
         """
 
         if args.model == "Pykeen_DistMult":
@@ -65,4 +65,4 @@ class TestClass:
     def test_perturb_callback_case(self, model_name):
         args = template(model_name)
         args.callbacks = {"Perturb": {"level": "out", "ratio": 0.2, "method": "Soft", "scaler": 0.3}}
-        # Execute(args).start()
+        Execute(args).start()
