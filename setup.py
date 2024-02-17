@@ -39,8 +39,8 @@ extras["min"] = deps_list(
     "torch", "lightning",  # Training KGE
     "tiktoken",  # used for BPE
     "psutil",  # Memory tracking: maybe remove later ?
-    "matplotlib"  # Unclear why it is needed
-    "pykeen",  # additional kge models
+    "matplotlib",  # Unclear why it is needed
+    "pykeen"  # additional kge models
 )
 
 extras["dev"] = (extras["min"] + deps_list("ruff", "pytest",
