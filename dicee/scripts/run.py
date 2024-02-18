@@ -29,7 +29,7 @@ def get_default_arguments(description=None):
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
     # Model related arguments
     parser.add_argument("--model", type=str,
-                        default="ComplEx",
+                        default="Keci",
                         choices=["ComplEx", "Keci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE",
                                  "BytE",
