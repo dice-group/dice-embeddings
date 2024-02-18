@@ -1,28 +1,25 @@
 import re
 from setuptools import setup, find_packages
 
-#  To install minimal version: pip3 install -e .
-#  To instvall dev aand test: pip3 install -e .["test"]
-#  pip3 install "dicee" .
-#  pip3 install "dicee[dev]" .
-#  pip3 install "dicee[min]" .
+# Min version :pip3 install -e .
+# Dev version :pip3 install -e .["dev"]
+
 _deps = [
     "torch==2.0.0",
     "lightning>=2.1.3",
     "pandas>=2.1.0",
-    "polars>=0.16.14",  # this can be lazy imported
-    "scikit-learn>=1.2.2",  # this can be lazy imported
-    "pyarrow>=11.0.0",  # this can be lazy imported
-    "pykeen>=1.10.1",  # Temporarily removed due to
-    "zstandard>=0.21.0",  # this can be lazy imported
-    "pytest>=7.2.2",  # if testing required
+    "polars>=0.16.14",
+    "scikit-learn>=1.2.2",
+    "pyarrow>=11.0.0",
+    "pykeen>=1.10.1",  # 1.10.1 does not work with torch>2.0.0
+    "zstandard>=0.21.0",
+    "pytest>=7.2.2",
     "psutil>=5.9.4",
-    "ruff>=0.0.284",  # if testing required
-    "gradio>=3.23.0",  # if deployment required
+    "ruff>=0.0.284",
+    "gradio>=3.23.0",
     "rdflib>=7.0.0",
     "tiktoken>=0.5.1",
-    "matplotlib>=3.8.2",
-    "beautifulsoup4>=4.12.2"  # unclear hy nedded
+    "matplotlib>=3.8.2"
 ]
 
 # some of the values are versioned whereas others aren't.
@@ -35,7 +32,8 @@ def deps_list(*pkgs):
 
 extras = dict()
 extras["min"] = deps_list(
-    "pandas", "polars", "rdflib",  # Loading KG
+    "pandas",
+    "polars", "rdflib",  # Loading KG
     "torch", "lightning",  # Training KGE
     "tiktoken",  # used for BPE
     "psutil",  # Memory tracking: maybe remove later ?
@@ -43,19 +41,12 @@ extras["min"] = deps_list(
     "pykeen"  # additional kge models
 )
 
+# TODO: Remove polars, rdflib, tiktoken, psutil, matplotlib from min
+
 extras["dev"] = (extras["min"] + deps_list("ruff", "pytest",
                                            "polars", "pyarrow",
                                            "scikit-learn"))
-
-install_requires = [
-    extras["min"]
-    # deps["pandas"],
-    # deps["gradio"],  # must be optinal
-    # deps["beautifulsoup4"],  # Not quire sure where we use it
-    # deps["scikit-learn"],  # # can be optional
-    # deps["pyarrow"],  # not quire sure whether we are still using it
-    # deps["pykeen"],  # can be optional
-]
+install_requires = [extras["min"]]
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()
