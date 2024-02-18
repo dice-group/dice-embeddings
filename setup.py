@@ -61,9 +61,9 @@ setup(
     author_email='caglardemir8@gmail.com',
     url='https://github.com/dice-group/dice-embeddings',
     classifiers=[
-        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "License :: OSI Approved :: MIT License"],
-    python_requires='>=3.9.18',
+    python_requires='>=3.10',
     entry_points={"console_scripts":
                       ["dicee=dicee.scripts.run:main",
                        "diceeindex=dicee.scripts.index:main",
