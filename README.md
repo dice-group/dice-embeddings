@@ -40,7 +40,7 @@ pip3 install -e .
 ```
 or
 ```bash
-pip install dicee==0.1.3
+pip install dicee
 ```
 ## Download Knowledge Graphs
 ```bash
