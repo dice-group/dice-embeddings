@@ -85,7 +85,9 @@ class BaseKGELightning(pl.LightningModule):
         elif self.optimizer_name == 'Adam':
             self.selected_optimizer = torch.optim.Adam(parameters, lr=self.learning_rate,
                                                        weight_decay=self.weight_decay)
-
+        elif self.optimizer_name == 'AdamW':
+            self.selected_optimizer = torch.optim.AdamW(parameters, lr=self.learning_rate,
+                                                       weight_decay=self.weight_decay)
         elif self.optimizer_name == 'NAdam':
             self.selected_optimizer = torch.optim.NAdam(parameters, lr=self.learning_rate, betas=(0.9, 0.999),
                                                         eps=1e-08, weight_decay=self.weight_decay, momentum_decay=0.004)
@@ -280,7 +282,7 @@ class BaseKGE(BaseKGELightning):
             self.normalizer_class = IdentityClass
         else:
             raise NotImplementedError()
-        if self.args.get("optim") in ['NAdam', 'Adam', 'SGD']:
+        if self.args.get("optim") in ['AdamW', 'Adam', 'SGD']:
             self.optimizer_name = self.args['optim']
         else:
             print(f'--optim (***{self.args.get("optim")}***) not found')
