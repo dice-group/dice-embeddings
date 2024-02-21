@@ -304,7 +304,7 @@ class LFMult(BaseKGE):
         self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
         self.degree = self.args.get("degree",0)
         self.m = int(self.embedding_dim/(1+self.degree))
-        self.x_values = torch.linspace(0, 1, self.m)
+        self.x_values = torch.linspace(0, 1, 100)
 
     def forward_triples(self, idx_triple): # idx_triplet = (h_idx, r_idx, t_idx) #change this to the forward_triples
 
@@ -314,14 +314,14 @@ class LFMult(BaseKGE):
 
         ###### polynomial score with trilinear scoring
 
-        score = self.tri_score(coeff_head,coeff_rel,coeff_tail)
+        # score = self.tri_score(coeff_head,coeff_rel,coeff_tail)
         
-        score = score.reshape(-1,self.m).sum(dim=1)
+        # score = score.reshape(-1,self.m).sum(dim=1)
     
 
         ##### polynomial score with NN
 
-        # integral_value = torch.trapezoid(self.poly_NN(self.x_values,coeff_head, coeff_rel, coeff_tail),self.x_values)
+        score = torch.trapezoid(self.poly_NN(self.x_values,coeff_head, coeff_rel, coeff_tail),self.x_values)
         # score = integral_value.reshape(1,-1).squeeze(0)
        
         
@@ -345,13 +345,34 @@ class LFMult(BaseKGE):
         wr, br = coefr[:, :self.m,0], coefr[:, :self.m,1]
         wt, bt = coeft[:, :self.m,0], coeft[:, :self.m,1]
 
-        return (self.linear(x,wh,bh)*self.linear(x,wr,br)*self.linear(x,wt,bt)) 
+        h_emb = self.linear(x,wh,bh).reshape(-1,self.m,x.size(0))
+        r_emb = self.linear(x,wr,br).reshape(-1,self.m,x.size(0))
+        t_emb = self.linear(x,wt,bt).reshape(-1,self.m,x.size(0))
+
+        return self.scalar_batch_NN(h_emb, r_emb, t_emb)#(linear(x,wh,bh)*linear(x,wr,br)*linear(x,wt,bt))
     
     def linear(self,x,w,b):
-        return torch.sigmoid((w@x).reshape(-1,1)+b)
+        return torch.tanh((w.reshape(-1,1)*x.unsqueeze(0) + b.reshape(-1,1)))
+    
 
 
     
+    def scalar_batch_NN(self, a, b, c):
+
+        '''element wise multiplication between a,b and c:
+        Inputs : a, b, c ====> torch.tensor of size batch_size x m x d
+        Output : a tensor of size batch_size x d'''
+
+        a_reshaped = a.transpose(1, 2).reshape(-1, a.size(-1), a.size(-2))
+        b_reshaped = b.transpose(1, 2).reshape(-1, b.size(-1), b.size(-2))
+        c_reshaped = c.transpose(1, 2).reshape(-1, c.size(-1), c.size(-2))
+
+        mul_result = a_reshaped * b_reshaped * c_reshaped
+        
+        return mul_result.sum(dim=-1)
+
+
+
 
     def tri_score(self, coeff_h, coeff_r, coeff_t):
 
