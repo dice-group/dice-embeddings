@@ -36,7 +36,7 @@ def get_default_arguments(description=None):
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
                                  "Pykeen_HolE", "Pykeen_ProjE", "Pykeen_RotatE",
                                  "Pykeen_TransE", "Pykeen_TransF", "Pykeen_TransH",
-                                 "Pykeen_TransR", "Pykeen_TuckER", "Pykeen_ComplEx"],
+                                 "Pykeen_TransR", "Pykeen_TuckER", "Pykeen_ComplEx","LFMult"],
                         help="Available knowledge graph embedding models. "
                              "To use other knowledge graph embedding models available in python, e.g.,"
                              "**Pykeen_BoxE** and add this into choices")
@@ -112,6 +112,8 @@ def get_default_arguments(description=None):
     parser.add_argument("--swa",
                         action="store_true",
                         help="Stochastic weight averaging")
+    parser.add_argument('--degree', type=int, default=0,
+                        help='degree for polynomial embeddings')
 
     if description is None:
         return parser.parse_args()
