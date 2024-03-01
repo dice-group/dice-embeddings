@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import datetime
 from typing import Tuple, List
-from .models import CMult, Pyke, DistMult, KeciBase, Keci, TransE, \
+from .models import CMult, Pyke, DistMult, KeciBase, Keci, TransE, DeCaL,\
     ComplEx, AConEx, AConvO, AConvQ, ConvQ, ConvO, ConEx, QMult, OMult, Shallom, LFMult
 from .models.pykeen_models import PykeenKGE
 from .models.transformers import BytE
@@ -417,6 +417,9 @@ def intialize_model(args: dict,verbose=0) -> Tuple[object, str]:
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'LFMult':
         model = LFMult(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'DeCaL':
+        model =DeCaL(args=args)
         form_of_labelling = 'EntityPrediction'
     else:
         raise ValueError(f"--model_name: {model_name} is not found.")
