@@ -2,8 +2,8 @@ import torch
 import torch.utils.data
 from .base_model import BaseKGE
 from collections import namedtuple
-from pykeen.models import model_resolver
 
+import traceback
 
 class PykeenKGE(BaseKGE):
     """ A class for using knowledge graph embedding models implemented in Pykeen
@@ -54,7 +54,13 @@ class PykeenKGE(BaseKGE):
         else:
             print("Pykeen model have a memory leak caused by their implementation of regularizers")
             print(f"{self.name} does not seem to have any regularizer")
-
+        try:
+            # lazy import
+            from pykeen.models import model_resolver
+        except:
+            print(traceback.format_exc())
+            print("Pykeen does not work with pytorch>2.0.0. Current pytorch version:",torch.__version__)
+            exit(1)
         self.model = model_resolver. \
             make(self.name, self.model_kwargs, triples_factory=
         namedtuple('triples_factory',

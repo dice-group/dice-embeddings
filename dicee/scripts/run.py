@@ -36,13 +36,13 @@ def get_default_arguments(description=None):
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
                                  "Pykeen_HolE", "Pykeen_ProjE", "Pykeen_RotatE",
                                  "Pykeen_TransE", "Pykeen_TransF", "Pykeen_TransH",
-                                 "Pykeen_TransR", "Pykeen_TuckER", "Pykeen_ComplEx"],
+                                 "Pykeen_TransR", "Pykeen_TuckER", "Pykeen_ComplEx","LFMult", "DeCaL"],
                         help="Available knowledge graph embedding models. "
                              "To use other knowledge graph embedding models available in python, e.g.,"
                              "**Pykeen_BoxE** and add this into choices")
     parser.add_argument('--optim', type=str, default='Adam',
                         help='An optimizer',
-                        choices=['Adam', 'SGD'])
+                        choices=['Adam', 'AdamW', 'SGD',"NAdam", "Adagrad", "ASGD"])
     parser.add_argument('--embedding_dim', type=int, default=32,
                         help='Number of dimensions for an embedding vector. ')
     parser.add_argument("--num_epochs", type=int, default=500, help='Number of epochs for training. ')
@@ -99,6 +99,8 @@ def get_default_arguments(description=None):
                         help='P for Clifford Algebra')
     parser.add_argument('--q', type=int, default=1,
                         help='Q for Clifford Algebra')
+    parser.add_argument('--r', type=int, default=0,
+                        help='R for Clifford Algebra')
     parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
     # WIP
     parser.add_argument('--block_size', type=int, default=8,
@@ -112,6 +114,8 @@ def get_default_arguments(description=None):
     parser.add_argument("--swa",
                         action="store_true",
                         help="Stochastic weight averaging")
+    parser.add_argument('--degree', type=int, default=0,
+                        help='degree for polynomial embeddings')
 
     if description is None:
         return parser.parse_args()

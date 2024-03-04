@@ -5,13 +5,13 @@ from setuptools import setup, find_packages
 # Dev version :pip3 install -e .["dev"]
 
 _deps = [
-    "torch==2.0.0",
+    "torch>=2.2.0",
     "lightning>=2.1.3",
     "pandas>=2.1.0",
     "polars>=0.16.14",
     "scikit-learn>=1.2.2",
     "pyarrow>=11.0.0",
-    "pykeen>=1.10.1",  # 1.10.1 does not work with torch>2.0.0
+    "pykeen>=1.10.2",
     "zstandard>=0.21.0",
     "pytest>=7.2.2",
     "psutil>=5.9.4",
@@ -53,7 +53,7 @@ with open('README.md', 'r') as fh:
 setup(
     name="dicee",
     description="Dice embedding is an hardware-agnostic framework for large-scale knowledge graph embedding applications",
-    version="0.1.3.2",
+    version="0.1.4",
     packages=find_packages(),
     extras_require=extras,
     install_requires=list(install_requires),
