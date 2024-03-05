@@ -1,0 +1,17 @@
+:py:mod:`dicee.scripts`
+=======================
+
+.. py:module:: dicee.scripts
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   index/index.rst
+   run/index.rst
+   serve/index.rst
+
+

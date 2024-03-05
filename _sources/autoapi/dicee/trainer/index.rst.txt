@@ -1,0 +1,105 @@
+:py:mod:`dicee.trainer`
+=======================
+
+.. py:module:: dicee.trainer
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   dice_trainer/index.rst
+   torch_trainer/index.rst
+   torch_trainer_ddp/index.rst
+
+
+Package Contents
+----------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.trainer.DICE_Trainer
+
+
+
+
+.. py:class:: DICE_Trainer(args, is_continual_training, storage_path, evaluator=None)
+
+
+   DICE_Trainer implement
+    1- Pytorch Lightning trainer (https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html)
+    2- Multi-GPU Trainer(https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html)
+    3- CPU Trainer
+
+    Parameter
+    ---------
+    args
+
+    is_continual_training:bool
+
+    storage_path:str
+
+    evaluator:
+
+    Returns
+    -------
+    report:dict
+    
+
+   .. py:method:: continual_start()
+
+      (1) Initialize training.
+      (2) Load model
+      (3) Load trainer
+      (3) Fit model
+
+      Parameter
+      ---------
+
+      Returns
+      -------
+      model:
+      form_of_labelling: str
+
+
+   .. py:method:: initialize_trainer(callbacks: List) -> lightning.Trainer
+
+      Initialize Trainer from input arguments 
+
+
+   .. py:method:: initialize_or_load_model()
+
+
+   .. py:method:: initialize_dataloader(dataset: torch.utils.data.Dataset) -> torch.utils.data.DataLoader
+
+
+   .. py:method:: initialize_dataset(dataset: dicee.knowledge_graph.KG, form_of_labelling) -> torch.utils.data.Dataset
+
+
+   .. py:method:: start(knowledge_graph: dicee.knowledge_graph.KG) -> Tuple[dicee.models.base_model.BaseKGE, str]
+
+      Train selected model via the selected training strategy 
+
+
+   .. py:method:: k_fold_cross_validation(dataset) -> Tuple[dicee.models.base_model.BaseKGE, str]
+
+      Perform K-fold Cross-Validation
+
+      1. Obtain K train and test splits.
+      2. For each split,
+          2.1 initialize trainer and model
+          2.2. Train model with configuration provided in args.
+          2.3. Compute the mean reciprocal rank (MRR) score of the model on the test respective split.
+      3. Report the mean and average MRR .
+
+      :param self:
+      :param dataset:
+      :return: model
+
+
+

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>dicee.models.pykeen_models &#8212; DICE Embeddings 0.1.3.2 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+    <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for dicee.models.pykeen_models</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.utils.data</span>
+<span class="kn">from</span> <span class="nn">.base_model</span> <span class="kn">import</span> <span class="n">BaseKGE</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+
+<span class="kn">import</span> <span class="nn">traceback</span>
+
+<div class="viewcode-block" id="PykeenKGE">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/pykeen_models/index.html#dicee.PykeenKGE">[docs]</a>
+<span class="k">class</span> <span class="nc">PykeenKGE</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; A class for using knowledge graph embedding models implemented in Pykeen</span>
+
+<span class="sd">    Notes:</span>
+<span class="sd">    Pykeen_DistMult: C</span>
+<span class="sd">    Pykeen_ComplEx:</span>
+<span class="sd">    Pykeen_QuatE:</span>
+<span class="sd">    Pykeen_MuRE:</span>
+<span class="sd">    Pykeen_CP:</span>
+<span class="sd">    Pykeen_HolE:</span>
+<span class="sd">    Pykeen_HolE:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;embedding_dim&#39;</span><span class="p">:</span> <span class="n">args</span><span class="p">[</span><span class="s1">&#39;embedding_dim&#39;</span><span class="p">],</span>
+                             <span class="s1">&#39;entity_initializer&#39;</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">args</span><span class="p">[</span><span class="s1">&#39;init_param&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">xavier_normal_</span><span class="p">,</span>
+                             <span class="s2">&quot;random_seed&quot;</span><span class="p">:</span> <span class="n">args</span><span class="p">[</span><span class="s2">&quot;random_seed&quot;</span><span class="p">]</span>
+                             <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;pykeen_model_kwargs&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># Solving memory issue of Pykeen models caused by the regularizers</span>
+        <span class="c1"># See https://github.com/pykeen/pykeen/issues/1297</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;MuRE&quot;</span><span class="p">:</span>
+            <span class="s2">&quot;No Regularizer =&gt;  no Memory Leakage&quot;</span>
+            <span class="c1"># https://pykeen.readthedocs.io/en/stable/api/pykeen.models.MuRE.html</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;QuatE&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_kwargs</span><span class="p">[</span><span class="s2">&quot;entity_regularizer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_kwargs</span><span class="p">[</span><span class="s2">&quot;relation_regularizer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;DistMult&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_kwargs</span><span class="p">[</span><span class="s2">&quot;regularizer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;BoxE&quot;</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;CP&quot;</span><span class="p">:</span>
+            <span class="c1"># No regularizers</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;HolE&quot;</span><span class="p">:</span>
+            <span class="c1"># No regularizers</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;ProjE&quot;</span><span class="p">:</span>
+            <span class="c1"># Nothing</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;RotatE&quot;</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;TransE&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_kwargs</span><span class="p">[</span><span class="s2">&quot;regularizer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Pykeen model have a memory leak caused by their implementation of regularizers&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> does not seem to have any regularizer&quot;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># lazy import</span>
+            <span class="kn">from</span> <span class="nn">pykeen.models</span> <span class="kn">import</span> <span class="n">model_resolver</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Pykeen does not work with pytorch&gt;2.0.0. Current pytorch version:&quot;</span><span class="p">,</span><span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+            <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model_resolver</span><span class="o">.</span> \
+            <span class="n">make</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_kwargs</span><span class="p">,</span> <span class="n">triples_factory</span><span class="o">=</span>
+        <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;triples_factory&#39;</span><span class="p">,</span>
+                   <span class="p">[</span><span class="s1">&#39;num_entities&#39;</span><span class="p">,</span> <span class="s1">&#39;num_relations&#39;</span><span class="p">,</span> <span class="s1">&#39;create_inverse_triples&#39;</span><span class="p">])(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss_history</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">named_modules</span><span class="p">():</span>
+            <span class="k">if</span> <span class="s2">&quot;entity_representations&quot;</span> <span class="o">==</span> <span class="n">k</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">_embeddings</span>
+            <span class="k">elif</span> <span class="s2">&quot;relation_representations&quot;</span> <span class="o">==</span> <span class="n">k</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">_embeddings</span>
+            <span class="k">elif</span> <span class="s2">&quot;interaction&quot;</span> <span class="o">==</span> <span class="n">k</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">interaction</span> <span class="o">=</span> <span class="n">v</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+<div class="viewcode-block" id="PykeenKGE.forward_k_vs_all">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/pykeen_models/index.html#dicee.PykeenKGE.forward_k_vs_all">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        # =&gt; Explicit version by this we can apply bn and dropout</span>
+
+<span class="sd">        # (1) Retrieve embeddings of heads and relations +  apply Dropout &amp; Normalization if given.</span>
+<span class="sd">        h, r = self.get_head_relation_representation(x)</span>
+<span class="sd">        # (2) Reshape (1).</span>
+<span class="sd">        if self.last_dim &gt; 0:</span>
+<span class="sd">            h = h.reshape(len(x), self.embedding_dim, self.last_dim)</span>
+<span class="sd">            r = r.reshape(len(x), self.embedding_dim, self.last_dim)</span>
+<span class="sd">        # (3) Reshape all entities.</span>
+<span class="sd">        if self.last_dim &gt; 0:</span>
+<span class="sd">            t = self.entity_embeddings.weight.reshape(self.num_entities, self.embedding_dim, self.last_dim)</span>
+<span class="sd">        else:</span>
+<span class="sd">            t = self.entity_embeddings.weight</span>
+<span class="sd">        # (4) Call the score_t from interactions to generate triple scores.</span>
+<span class="sd">        return self.interaction.score_t(h=h, r=r, all_entities=t, slice_size=1)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">score_t</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PykeenKGE.forward_triples">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/pykeen_models/index.html#dicee.PykeenKGE.forward_triples">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        # =&gt; Explicit version by this we can apply bn and dropout</span>
+
+<span class="sd">        # (1) Retrieve embeddings of heads, relations and tails and apply Dropout &amp; Normalization if given.</span>
+<span class="sd">        h, r, t = self.get_triple_representation(x)</span>
+<span class="sd">        # (2) Reshape (1).</span>
+<span class="sd">        if self.last_dim &gt; 0:</span>
+<span class="sd">            h = h.reshape(len(x), self.embedding_dim, self.last_dim)</span>
+<span class="sd">            r = r.reshape(len(x), self.embedding_dim, self.last_dim)</span>
+<span class="sd">            t = t.reshape(len(x), self.embedding_dim, self.last_dim)</span>
+<span class="sd">        # (3) Compute the triple score</span>
+<span class="sd">        return self.interaction.score(h=h, r=r, t=t, slice_size=None, slice_dim=0)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">score_hrt</span><span class="p">(</span><span class="n">hrt_batch</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="PykeenKGE.forward_k_vs_sample">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/pykeen_models/index.html#dicee.PykeenKGE.forward_k_vs_sample">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;KvsSample has not yet implemented for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">DICE Embeddings</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/dicee/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023, Caglar Demir.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

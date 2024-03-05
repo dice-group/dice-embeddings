@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>dicee.abstracts &#8212; DICE Embeddings 0.1.3.2 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+    <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="dicee.analyse_experiments" href="../analyse_experiments/index.html" />
+    <link rel="prev" title="dicee.trainer.torch_trainer_ddp" href="../trainer/torch_trainer_ddp/index.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-dicee.abstracts">
+<span id="dicee-abstracts"></span><h1><a class="reference internal" href="#module-dicee.abstracts" title="dicee.abstracts"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.abstracts</span></code></a><a class="headerlink" href="#module-dicee.abstracts" title="Link to this heading">¶</a></h1>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<section id="classes">
+<h3>Classes<a class="headerlink" href="#classes" title="Link to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.abstracts.AbstractTrainer" title="dicee.abstracts.AbstractTrainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AbstractTrainer</span></code></a></p></td>
+<td><p>Abstract class for Trainer class for knowledge graph embedding models</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.abstracts.BaseInteractiveKGE" title="dicee.abstracts.BaseInteractiveKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseInteractiveKGE</span></code></a></p></td>
+<td><p>Abstract/base class for using knowledge graph embedding models interactively.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AbstractCallback</span></code></a></p></td>
+<td><p>Abstract class for Callback class for knowledge graph embedding models</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.abstracts.AbstractPPECallback" title="dicee.abstracts.AbstractPPECallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AbstractPPECallback</span></code></a></p></td>
+<td><p>Abstract class for Callback class for knowledge graph embedding models</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractTrainer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.abstracts.</span></span><span class="sig-name descname"><span class="pre">AbstractTrainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractTrainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.AbstractTrainer" title="Link to this definition">¶</a></dt>
+<dd><p>Abstract class for Trainer class for knowledge graph embedding models</p>
+<section id="parameter">
+<h4>Parameter<a class="headerlink" href="#parameter" title="Link to this heading">¶</a></h4>
+<dl class="simple">
+<dt>args<span class="classifier">str</span></dt><dd><p>?</p>
+</dd>
+<dt>callbacks: list</dt><dd><p>?</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractTrainer.on_fit_start">
+<span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractTrainer.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.AbstractTrainer.on_fit_start" title="Link to this definition">¶</a></dt>
+<dd><p>A function to call callbacks before the training starts.</p>
+<section id="id1">
+<h5>Parameter<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h5>
+<p>args</p>
+<p>kwargs</p>
+</section>
+<section id="returns">
+<h5>Returns<a class="headerlink" href="#returns" title="Link to this heading">¶</a></h5>
+<p>None</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractTrainer.on_fit_end">
+<span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractTrainer.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.AbstractTrainer.on_fit_end" title="Link to this definition">¶</a></dt>
+<dd><p>A function to call callbacks at the ned of the training.</p>
+<section id="id2">
+<h5>Parameter<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h5>
+<p>args</p>
+<p>kwargs</p>
+</section>
+<section id="id3">
+<h5>Returns<a class="headerlink" href="#id3" title="Link to this heading">¶</a></h5>
+<p>None</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractTrainer.on_train_epoch_end">
+<span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractTrainer.on_train_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.AbstractTrainer.on_train_epoch_end" title="Link to this definition">¶</a></dt>
+<dd><p>A function to call callbacks at the end of an epoch.</p>
+<section id="id4">
+<h5>Parameter<a class="headerlink" href="#id4" title="Link to this heading">¶</a></h5>
+<p>args</p>
+<p>kwargs</p>
+</section>
+<section id="id5">
+<h5>Returns<a class="headerlink" href="#id5" title="Link to this heading">¶</a></h5>
+<p>None</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractTrainer.on_train_batch_end">
+<span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractTrainer.on_train_batch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.AbstractTrainer.on_train_batch_end" title="Link to this definition">¶</a></dt>
+<dd><p>A function to call callbacks at the end of each mini-batch during training.</p>
+<section id="id6">
+<h5>Parameter<a class="headerlink" href="#id6" title="Link to this heading">¶</a></h5>
+<p>args</p>
+<p>kwargs</p>
+</section>
+<section id="id7">
+<h5>Returns<a class="headerlink" href="#id7" title="Link to this heading">¶</a></h5>
+<p>None</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractTrainer.save_checkpoint">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">save_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">full_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractTrainer.save_checkpoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.AbstractTrainer.save_checkpoint" title="Link to this definition">¶</a></dt>
+<dd><p>A static function to save a model into disk</p>
+<section id="id8">
+<h5>Parameter<a class="headerlink" href="#id8" title="Link to this heading">¶</a></h5>
+<p>full_path : str</p>
+<p>model:</p>
+</section>
+<section id="id9">
+<h5>Returns<a class="headerlink" href="#id9" title="Link to this heading">¶</a></h5>
+<p>None</p>
+</section>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.abstracts.</span></span><span class="sig-name descname"><span class="pre">BaseInteractiveKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">construct_ensemble</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apply_semantic_constraint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE" title="Link to this definition">¶</a></dt>
+<dd><p>Abstract/base class for using knowledge graph embedding models interactively.</p>
+<section id="id10">
+<h4>Parameter<a class="headerlink" href="#id10" title="Link to this heading">¶</a></h4>
+<dl class="simple">
+<dt>path_of_pretrained_model_dir<span class="classifier">str</span></dt><dd><p>?</p>
+</dd>
+<dt>construct_ensemble: boolean</dt><dd><p>?</p>
+</dd>
+</dl>
+<p>model_name: str
+apply_semantic_constraint : boolean</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.name">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.get_eval_report">
+<span class="sig-name descname"><span class="pre">get_eval_report</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE.get_eval_report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.get_eval_report" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.get_bpe_token_representation">
+<span class="sig-name descname"><span class="pre">get_bpe_token_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">str_entity_or_relation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE.get_bpe_token_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.get_bpe_token_representation" title="Link to this definition">¶</a></dt>
+<dd><section id="parameters">
+<h5>Parameters<a class="headerlink" href="#parameters" title="Link to this heading">¶</a></h5>
+<p>str_entity_or_relation: corresponds to a str or a list of strings to be tokenized via BPE and shaped.</p>
+</section>
+<section id="id11">
+<h5>Returns<a class="headerlink" href="#id11" title="Link to this heading">¶</a></h5>
+<p>A list integer(s) or a list of lists containing integer(s)</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.get_padded_bpe_triple_representation">
+<span class="sig-name descname"><span class="pre">get_padded_bpe_triple_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">triples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE.get_padded_bpe_triple_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.get_padded_bpe_triple_representation" title="Link to this definition">¶</a></dt>
+<dd><section id="id12">
+<h5>Parameters<a class="headerlink" href="#id12" title="Link to this heading">¶</a></h5>
+<p>triples</p>
+</section>
+<section id="id13">
+<h5>Returns<a class="headerlink" href="#id13" title="Link to this heading">¶</a></h5>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.get_domain_of_relation">
+<span class="sig-name descname"><span class="pre">get_domain_of_relation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE.get_domain_of_relation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.get_domain_of_relation" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.get_range_of_relation">
+<span class="sig-name descname"><span class="pre">get_range_of_relation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE.get_range_of_relation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.get_range_of_relation" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.set_model_train_mode">
+<span class="sig-name descname"><span class="pre">set_model_train_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE.set_model_train_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.set_model_train_mode" title="Link to this definition">¶</a></dt>
+<dd><p>Setting the model into training mode</p>
+<section id="id14">
+<h5>Parameter<a class="headerlink" href="#id14" title="Link to this heading">¶</a></h5>
+</section>
+<section id="id15">
+<h5>Returns<a class="headerlink" href="#id15" title="Link to this heading">¶</a></h5>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.set_model_eval_mode">
+<span class="sig-name descname"><span class="pre">set_model_eval_mode</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE.set_model_eval_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.set_model_eval_mode" title="Link to this definition">¶</a></dt>
+<dd><p>Setting the model into eval mode</p>
+<section id="id16">
+<h5>Parameter<a class="headerlink" href="#id16" title="Link to this heading">¶</a></h5>
+</section>
+<section id="id17">
+<h5>Returns<a class="headerlink" href="#id17" title="Link to this heading">¶</a></h5>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.sample_entity">
+<span class="sig-name descname"><span class="pre">sample_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE.sample_entity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.sample_entity" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.sample_relation">
+<span class="sig-name descname"><span class="pre">sample_relation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE.sample_relation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.sample_relation" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.is_seen">
+<span class="sig-name descname"><span class="pre">is_seen</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE.is_seen"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.is_seen" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.save" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.get_entity_index">
+<span class="sig-name descname"><span class="pre">get_entity_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE.get_entity_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.get_entity_index" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.get_relation_index">
+<span class="sig-name descname"><span class="pre">get_relation_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE.get_relation_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.get_relation_index" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.index_triple">
+<span class="sig-name descname"><span class="pre">index_triple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">head_entity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tail_entity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE.index_triple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.index_triple" title="Link to this definition">¶</a></dt>
+<dd><p>Index Triple</p>
+<section id="id18">
+<h5>Parameter<a class="headerlink" href="#id18" title="Link to this heading">¶</a></h5>
+<p>head_entity: List[str]</p>
+<p>String representation of selected entities.</p>
+<p>relation: List[str]</p>
+<p>String representation of selected relations.</p>
+<p>tail_entity: List[str]</p>
+<p>String representation of selected entities.</p>
+</section>
+<section id="returns-tuple">
+<h5>Returns: Tuple<a class="headerlink" href="#returns-tuple" title="Link to this heading">¶</a></h5>
+<p>pytorch tensor of triple score</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.add_new_entity_embeddings">
+<span class="sig-name descname"><span class="pre">add_new_entity_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embeddings</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE.add_new_entity_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.add_new_entity_embeddings" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.get_entity_embeddings">
+<span class="sig-name descname"><span class="pre">get_entity_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">items</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE.get_entity_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.get_entity_embeddings" title="Link to this definition">¶</a></dt>
+<dd><p>Return embedding of an entity given its string representation</p>
+<section id="id19">
+<h5>Parameter<a class="headerlink" href="#id19" title="Link to this heading">¶</a></h5>
+<dl class="simple">
+<dt>items:</dt><dd><p>entities</p>
+</dd>
+</dl>
+</section>
+<section id="id20">
+<h5>Returns<a class="headerlink" href="#id20" title="Link to this heading">¶</a></h5>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.get_relation_embeddings">
+<span class="sig-name descname"><span class="pre">get_relation_embeddings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">items</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE.get_relation_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.get_relation_embeddings" title="Link to this definition">¶</a></dt>
+<dd><p>Return embedding of a relation given its string representation</p>
+<section id="id21">
+<h5>Parameter<a class="headerlink" href="#id21" title="Link to this heading">¶</a></h5>
+<dl class="simple">
+<dt>items:</dt><dd><p>relations</p>
+</dd>
+</dl>
+</section>
+<section id="id22">
+<h5>Returns<a class="headerlink" href="#id22" title="Link to this heading">¶</a></h5>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.construct_input_and_output">
+<span class="sig-name descname"><span class="pre">construct_input_and_output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">head_entity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tail_entity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE.construct_input_and_output"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.construct_input_and_output" title="Link to this definition">¶</a></dt>
+<dd><p>Construct a data point
+:param head_entity:
+:param relation:
+:param tail_entity:
+:param labels:
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE.parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.parameters" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractCallback">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.abstracts.</span></span><span class="sig-name descname"><span class="pre">AbstractCallback</span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractCallback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.AbstractCallback" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">abc.ABC</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">lightning.pytorch.callbacks.Callback</span></code></p>
+<p>Abstract class for Callback class for knowledge graph embedding models</p>
+<section id="id23">
+<h4>Parameter<a class="headerlink" href="#id23" title="Link to this heading">¶</a></h4>
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractCallback.on_init_start">
+<span class="sig-name descname"><span class="pre">on_init_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractCallback.on_init_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.AbstractCallback.on_init_start" title="Link to this definition">¶</a></dt>
+<dd><section id="id24">
+<h5>Parameter<a class="headerlink" href="#id24" title="Link to this heading">¶</a></h5>
+<p>trainer:</p>
+<p>model:</p>
+</section>
+<section id="id25">
+<h5>Returns<a class="headerlink" href="#id25" title="Link to this heading">¶</a></h5>
+<p>None</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractCallback.on_init_end">
+<span class="sig-name descname"><span class="pre">on_init_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractCallback.on_init_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.AbstractCallback.on_init_end" title="Link to this definition">¶</a></dt>
+<dd><p>Call at the beginning of the training.</p>
+<section id="id26">
+<h5>Parameter<a class="headerlink" href="#id26" title="Link to this heading">¶</a></h5>
+<p>trainer:</p>
+<p>model:</p>
+</section>
+<section id="id27">
+<h5>Returns<a class="headerlink" href="#id27" title="Link to this heading">¶</a></h5>
+<p>None</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractCallback.on_fit_start">
+<span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractCallback.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.AbstractCallback.on_fit_start" title="Link to this definition">¶</a></dt>
+<dd><p>Call at the beginning of the training.</p>
+<section id="id28">
+<h5>Parameter<a class="headerlink" href="#id28" title="Link to this heading">¶</a></h5>
+<p>trainer:</p>
+<p>model:</p>
+</section>
+<section id="id29">
+<h5>Returns<a class="headerlink" href="#id29" title="Link to this heading">¶</a></h5>
+<p>None</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractCallback.on_train_epoch_end">
+<span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractCallback.on_train_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.AbstractCallback.on_train_epoch_end" title="Link to this definition">¶</a></dt>
+<dd><p>Call at the end of each epoch during training.</p>
+<section id="id30">
+<h5>Parameter<a class="headerlink" href="#id30" title="Link to this heading">¶</a></h5>
+<p>trainer:</p>
+<p>model:</p>
+</section>
+<section id="id31">
+<h5>Returns<a class="headerlink" href="#id31" title="Link to this heading">¶</a></h5>
+<p>None</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractCallback.on_train_batch_end">
+<span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractCallback.on_train_batch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.AbstractCallback.on_train_batch_end" title="Link to this definition">¶</a></dt>
+<dd><p>Call at the end of each mini-batch during the training.</p>
+<section id="id32">
+<h5>Parameter<a class="headerlink" href="#id32" title="Link to this heading">¶</a></h5>
+<p>trainer:</p>
+<p>model:</p>
+</section>
+<section id="id33">
+<h5>Returns<a class="headerlink" href="#id33" title="Link to this heading">¶</a></h5>
+<p>None</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractCallback.on_fit_end">
+<span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractCallback.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.AbstractCallback.on_fit_end" title="Link to this definition">¶</a></dt>
+<dd><p>Call at the end of the training.</p>
+<section id="id34">
+<h5>Parameter<a class="headerlink" href="#id34" title="Link to this heading">¶</a></h5>
+<p>trainer:</p>
+<p>model:</p>
+</section>
+<section id="id35">
+<h5>Returns<a class="headerlink" href="#id35" title="Link to this heading">¶</a></h5>
+<p>None</p>
+</section>
+</dd></dl>
+
+</section>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractPPECallback">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.abstracts.</span></span><span class="sig-name descname"><span class="pre">AbstractPPECallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch_to_start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last_percent_to_consider</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractPPECallback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.AbstractPPECallback" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AbstractCallback</span></code></a></p>
+<p>Abstract class for Callback class for knowledge graph embedding models</p>
+<section id="id36">
+<h4>Parameter<a class="headerlink" href="#id36" title="Link to this heading">¶</a></h4>
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractPPECallback.on_fit_start">
+<span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractPPECallback.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.AbstractPPECallback.on_fit_start" title="Link to this definition">¶</a></dt>
+<dd><p>Call at the beginning of the training.</p>
+<section id="id37">
+<h5>Parameter<a class="headerlink" href="#id37" title="Link to this heading">¶</a></h5>
+<p>trainer:</p>
+<p>model:</p>
+</section>
+<section id="id38">
+<h5>Returns<a class="headerlink" href="#id38" title="Link to this heading">¶</a></h5>
+<p>None</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractPPECallback.on_fit_end">
+<span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractPPECallback.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.AbstractPPECallback.on_fit_end" title="Link to this definition">¶</a></dt>
+<dd><p>Call at the end of the training.</p>
+<section id="id39">
+<h5>Parameter<a class="headerlink" href="#id39" title="Link to this heading">¶</a></h5>
+<p>trainer:</p>
+<p>model:</p>
+</section>
+<section id="id40">
+<h5>Returns<a class="headerlink" href="#id40" title="Link to this heading">¶</a></h5>
+<p>None</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractPPECallback.store_ensemble">
+<span class="sig-name descname"><span class="pre">store_ensemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param_ensemble</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractPPECallback.store_ensemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.AbstractPPECallback.store_ensemble" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">DICE Embeddings</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#subpackages">Subpackages</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a><ul>
+      <li>Previous: <a href="../trainer/torch_trainer_ddp/index.html" title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.trainer.torch_trainer_ddp</span></code></a></li>
+      <li>Next: <a href="../analyse_experiments/index.html" title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.analyse_experiments</span></code></a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023, Caglar Demir.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../../../_sources/autoapi/dicee/abstracts/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

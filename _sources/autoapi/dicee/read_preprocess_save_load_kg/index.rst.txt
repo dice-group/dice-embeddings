@@ -1,0 +1,130 @@
+:py:mod:`dicee.read_preprocess_save_load_kg`
+============================================
+
+.. py:module:: dicee.read_preprocess_save_load_kg
+
+
+Submodules
+----------
+.. toctree::
+   :titlesonly:
+   :maxdepth: 1
+
+   preprocess/index.rst
+   read_from_disk/index.rst
+   save_load_disk/index.rst
+   util/index.rst
+
+
+Package Contents
+----------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.read_preprocess_save_load_kg.PreprocessKG
+   dicee.read_preprocess_save_load_kg.LoadSaveToDisk
+   dicee.read_preprocess_save_load_kg.ReadFromDisk
+
+
+
+
+.. py:class:: PreprocessKG(kg)
+
+
+   Preprocess the data in memory 
+
+   .. py:method:: start() -> None
+
+      Preprocess train, valid and test datasets stored in knowledge graph instance
+
+      Parameter
+      ---------
+
+      Returns
+      -------
+      None
+
+
+   .. py:method:: preprocess_with_byte_pair_encoding()
+
+
+   .. py:method:: preprocess_with_byte_pair_encoding_with_padding() -> None
+
+      Returns
+      -------
+
+
+
+   .. py:method:: preprocess_with_pandas() -> None
+
+      Preprocess train, valid and test datasets stored in knowledge graph instance with pandas
+
+      (1) Add recipriocal or noisy triples
+      (2) Construct vocabulary
+      (3) Index datasets
+
+      Parameter
+      ---------
+
+      Returns
+      -------
+      None
+
+
+   .. py:method:: preprocess_with_polars() -> None
+
+      Returns
+      -------
+
+
+
+   .. py:method:: sequential_vocabulary_construction() -> None
+
+      (1) Read input data into memory
+      (2) Remove triples with a condition
+      (3) Serialize vocabularies in a pandas dataframe where
+                  => the index is integer and
+                  => a single column is string (e.g. URI)
+
+
+   .. py:method:: remove_triples_from_train_with_condition()
+
+
+
+.. py:class:: LoadSaveToDisk(kg)
+
+
+   .. py:method:: save()
+
+
+   .. py:method:: load()
+
+
+
+.. py:class:: ReadFromDisk(kg)
+
+
+   Read the data from disk into memory
+
+   .. py:method:: start() -> None
+
+      Read a knowledge graph from disk into memory
+
+      Data will be available at the train_set, test_set, valid_set attributes.
+
+      Parameter
+      ---------
+      None
+
+      Returns
+      -------
+      None
+
+
+   .. py:method:: add_noisy_triples_into_training()
+
+
+

@@ -1,0 +1,36 @@
+:py:mod:`dicee.knowledge_graph`
+===============================
+
+.. py:module:: dicee.knowledge_graph
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.knowledge_graph.KG
+
+
+
+
+.. py:class:: KG(dataset_dir: str = None, byte_pair_encoding: bool = False, padding: bool = False, add_noise_rate: float = None, sparql_endpoint: str = None, path_single_kg: str = None, path_for_deserialization: str = None, add_reciprical: bool = None, eval_model: str = None, read_only_few: int = None, sample_triples_ratio: float = None, path_for_serialization: str = None, entity_to_idx=None, relation_to_idx=None, backend=None, training_technique: str = None)
+
+
+   Knowledge Graph 
+
+   .. py:property:: entities_str
+      :type: List
+
+
+   .. py:property:: relations_str
+      :type: List
+
+
+   .. py:method:: func_triple_to_bpe_representation(triple: List[str])
+
+
+

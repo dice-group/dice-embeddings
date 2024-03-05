@@ -1,0 +1,145 @@
+:py:mod:`dicee.models.complex`
+==============================
+
+.. py:module:: dicee.models.complex
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.models.complex.ConEx
+   dicee.models.complex.AConEx
+   dicee.models.complex.ComplEx
+
+
+
+
+.. py:class:: ConEx(args)
+
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+   Convolutional ComplEx Knowledge Graph Embeddings
+
+   .. py:method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor], C_2: Tuple[torch.Tensor, torch.Tensor]) -> torch.FloatTensor
+
+      Compute residual score of two complex-valued embeddings.
+      :param C_1: a tuple of two pytorch tensors that corresponds complex-valued embeddings
+      :param C_2: a tuple of two pytorch tensors that corresponds complex-valued embeddings
+      :return:
+
+
+   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
+
+
+   .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
+
+      Parameters
+      ----------
+      x
+
+      Returns
+      -------
+
+
+
+   .. py:method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor)
+
+
+
+.. py:class:: AConEx(args)
+
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+   Additive Convolutional ComplEx Knowledge Graph Embeddings 
+
+   .. py:method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor], C_2: Tuple[torch.Tensor, torch.Tensor]) -> torch.FloatTensor
+
+      Compute residual score of two complex-valued embeddings.
+      :param C_1: a tuple of two pytorch tensors that corresponds complex-valued embeddings
+      :param C_2: a tuple of two pytorch tensors that corresponds complex-valued embeddings
+      :return:
+
+
+   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
+
+
+   .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
+
+      Parameters
+      ----------
+      x
+
+      Returns
+      -------
+
+
+
+   .. py:method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor)
+
+
+
+.. py:class:: ComplEx(args)
+
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+   .. py:method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor)
+      :staticmethod:
+
+
+   .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor)
+      :staticmethod:
+
+      Parameters
+      ----------
+      emb_h
+      emb_r
+      emb_E
+
+      Returns
+      -------
+
+
+
+   .. py:method:: forward_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
+
+
+

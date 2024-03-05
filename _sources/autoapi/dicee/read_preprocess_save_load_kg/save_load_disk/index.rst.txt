@@ -1,0 +1,29 @@
+:py:mod:`dicee.read_preprocess_save_load_kg.save_load_disk`
+===========================================================
+
+.. py:module:: dicee.read_preprocess_save_load_kg.save_load_disk
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk
+
+
+
+
+.. py:class:: LoadSaveToDisk(kg)
+
+
+   .. py:method:: save()
+
+
+   .. py:method:: load()
+
+
+

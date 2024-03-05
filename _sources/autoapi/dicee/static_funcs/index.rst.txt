@@ -1,0 +1,197 @@
+:py:mod:`dicee.static_funcs`
+============================
+
+.. py:module:: dicee.static_funcs
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   dicee.static_funcs.create_recipriocal_triples
+   dicee.static_funcs.get_er_vocab
+   dicee.static_funcs.get_re_vocab
+   dicee.static_funcs.get_ee_vocab
+   dicee.static_funcs.timeit
+   dicee.static_funcs.save_pickle
+   dicee.static_funcs.load_pickle
+   dicee.static_funcs.select_model
+   dicee.static_funcs.load_model
+   dicee.static_funcs.load_model_ensemble
+   dicee.static_funcs.save_numpy_ndarray
+   dicee.static_funcs.numpy_data_type_changer
+   dicee.static_funcs.save_checkpoint_model
+   dicee.static_funcs.store
+   dicee.static_funcs.add_noisy_triples
+   dicee.static_funcs.read_or_load_kg
+   dicee.static_funcs.intialize_model
+   dicee.static_funcs.load_json
+   dicee.static_funcs.save_embeddings
+   dicee.static_funcs.random_prediction
+   dicee.static_funcs.deploy_triple_prediction
+   dicee.static_funcs.deploy_tail_entity_prediction
+   dicee.static_funcs.deploy_head_entity_prediction
+   dicee.static_funcs.deploy_relation_prediction
+   dicee.static_funcs.vocab_to_parquet
+   dicee.static_funcs.create_experiment_folder
+   dicee.static_funcs.continual_training_setup_executor
+   dicee.static_funcs.exponential_function
+   dicee.static_funcs.load_numpy
+   dicee.static_funcs.evaluate
+   dicee.static_funcs.download_file
+   dicee.static_funcs.download_files_from_url
+   dicee.static_funcs.download_pretrained_model
+
+
+
+.. py:function:: create_recipriocal_triples(x)
+
+   Add inverse triples into dask dataframe
+   :param x:
+   :return:
+
+
+.. py:function:: get_er_vocab(data, file_path: str = None)
+
+
+.. py:function:: get_re_vocab(data, file_path: str = None)
+
+
+.. py:function:: get_ee_vocab(data, file_path: str = None)
+
+
+.. py:function:: timeit(func)
+
+
+.. py:function:: save_pickle(*, data: object = None, file_path=str)
+
+
+.. py:function:: load_pickle(file_path=str)
+
+
+.. py:function:: select_model(args: dict, is_continual_training: bool = None, storage_path: str = None)
+
+
+.. py:function:: load_model(path_of_experiment_folder: str, model_name='model.pt', verbose=0) -> Tuple[object, Tuple[dict, dict]]
+
+   Load weights and initialize pytorch module from namespace arguments
+
+
+.. py:function:: load_model_ensemble(path_of_experiment_folder: str) -> Tuple[dicee.models.base_model.BaseKGE, Tuple[pandas.DataFrame, pandas.DataFrame]]
+
+   Construct Ensemble Of weights and initialize pytorch module from namespace arguments
+
+   (1) Detect models under given path
+   (2) Accumulate parameters of detected models
+   (3) Normalize parameters
+   (4) Insert (3) into model.
+
+
+.. py:function:: save_numpy_ndarray(*, data: numpy.ndarray, file_path: str)
+
+
+.. py:function:: numpy_data_type_changer(train_set: numpy.ndarray, num: int) -> numpy.ndarray
+
+   Detect most efficient data type for a given triples
+   :param train_set:
+   :param num:
+   :return:
+
+
+.. py:function:: save_checkpoint_model(model, path: str) -> None
+
+   Store Pytorch model into disk
+
+
+.. py:function:: store(trainer, trained_model, model_name: str = 'model', full_storage_path: str = None, save_embeddings_as_csv=False) -> None
+
+   Store trained_model model and save embeddings into csv file.
+   :param trainer: an instance of trainer class
+   :param full_storage_path: path to save parameters.
+   :param model_name: string representation of the name of the model.
+   :param trained_model: an instance of BaseKGE see core.models.base_model .
+   :param save_embeddings_as_csv: for easy access of embeddings.
+   :return:
+
+
+.. py:function:: add_noisy_triples(train_set: pandas.DataFrame, add_noise_rate: float) -> pandas.DataFrame
+
+   Add randomly constructed triples
+   :param train_set:
+   :param add_noise_rate:
+   :return:
+
+
+.. py:function:: read_or_load_kg(args, cls)
+
+
+.. py:function:: intialize_model(args: dict, verbose=0) -> Tuple[object, str]
+
+
+.. py:function:: load_json(p: str) -> dict
+
+
+.. py:function:: save_embeddings(embeddings: numpy.ndarray, indexes, path: str) -> None
+
+   Save it as CSV if memory allows.
+   :param embeddings:
+   :param indexes:
+   :param path:
+   :return:
+
+
+.. py:function:: random_prediction(pre_trained_kge)
+
+
+.. py:function:: deploy_triple_prediction(pre_trained_kge, str_subject, str_predicate, str_object)
+
+
+.. py:function:: deploy_tail_entity_prediction(pre_trained_kge, str_subject, str_predicate, top_k)
+
+
+.. py:function:: deploy_head_entity_prediction(pre_trained_kge, str_object, str_predicate, top_k)
+
+
+.. py:function:: deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k)
+
+
+.. py:function:: vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into)
+
+
+.. py:function:: create_experiment_folder(folder_name='Experiments')
+
+
+.. py:function:: continual_training_setup_executor(executor) -> None
+
+   storage_path:str A path leading to a parent directory, where a subdirectory containing KGE related data
+
+   full_storage_path:str A path leading to a subdirectory containing KGE related data
+
+
+
+.. py:function:: exponential_function(x: numpy.ndarray, lam: float, ascending_order=True) -> torch.FloatTensor
+
+
+.. py:function:: load_numpy(path) -> numpy.ndarray
+
+
+.. py:function:: evaluate(entity_to_idx, scores, easy_answers, hard_answers)
+
+   # @TODO: CD: Renamed this function
+   Evaluate multi hop query answering on different query types
+
+
+.. py:function:: download_file(url, destination_folder='.')
+
+
+.. py:function:: download_files_from_url(base_url, destination_folder='.')
+
+
+.. py:function:: download_pretrained_model(url: str) -> str
+
+

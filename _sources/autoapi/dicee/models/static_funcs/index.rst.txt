@@ -1,0 +1,27 @@
+:py:mod:`dicee.models.static_funcs`
+===================================
+
+.. py:module:: dicee.models.static_funcs
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   dicee.models.static_funcs.quaternion_mul
+
+
+
+.. py:function:: quaternion_mul(*, Q_1, Q_2) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
+
+   Perform quaternion multiplication
+   :param Q_1:
+   :param Q_2:
+   :return:
+
+

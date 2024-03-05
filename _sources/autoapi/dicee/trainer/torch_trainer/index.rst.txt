@@ -1,0 +1,76 @@
+:py:mod:`dicee.trainer.torch_trainer`
+=====================================
+
+.. py:module:: dicee.trainer.torch_trainer
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.trainer.torch_trainer.TorchTrainer
+
+
+
+
+.. py:class:: TorchTrainer(args, callbacks)
+
+
+   Bases: :py:obj:`dicee.abstracts.AbstractTrainer`
+
+    TorchTrainer for using single GPU or multi CPUs on a single node
+
+    Arguments
+   ----------
+   args: ?
+
+   callbacks: list of Abstract callback instances
+
+
+   .. py:method:: fit(*args, train_dataloaders, **kwargs) -> None
+
+       Training starts
+
+       Arguments
+      ----------
+      args:tuple
+      (BASEKGE,)
+      kwargs:Tuple
+          empty dictionary
+      Returns
+      -------
+      batch loss (float)
+
+
+   .. py:method:: forward_backward_update(x_batch: torch.Tensor, y_batch: torch.Tensor) -> torch.Tensor
+
+       Compute forward, loss, backward, and parameter update
+
+       Arguments
+      ----------
+      x_batch:(torch.Tensor) mini-batch inputs
+      y_batch:(torch.Tensor) mini-batch outputs
+
+      Returns
+      -------
+      batch loss (float)
+
+
+   .. py:method:: extract_input_outputs_set_device(batch: list) -> Tuple
+
+       Construct inputs and outputs from a batch of inputs with outputs From a batch of inputs and put
+
+       Arguments
+      ----------
+      batch: (list) mini-batch inputs on CPU
+
+      Returns
+      -------
+      (tuple) mini-batch on select device
+
+
+

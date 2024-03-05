@@ -1,0 +1,226 @@
+:py:mod:`dicee.models.function_space`
+=====================================
+
+.. py:module:: dicee.models.function_space
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.models.function_space.FMult
+   dicee.models.function_space.GFMult
+   dicee.models.function_space.FMult2
+   dicee.models.function_space.LFMult1
+   dicee.models.function_space.LFMult
+
+
+
+
+.. py:class:: FMult(args)
+
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+   Learning Knowledge Neural Graphs
+
+   .. py:method:: compute_func(weights: torch.FloatTensor, x) -> torch.FloatTensor
+
+
+   .. py:method:: chain_func(weights, x: torch.FloatTensor)
+
+
+   .. py:method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
+
+      Parameters
+      ----------
+      x
+
+      Returns
+      -------
+
+
+
+
+.. py:class:: GFMult(args)
+
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+   Learning Knowledge Neural Graphs
+
+   .. py:method:: compute_func(weights: torch.FloatTensor, x) -> torch.FloatTensor
+
+
+   .. py:method:: chain_func(weights, x: torch.FloatTensor)
+
+
+   .. py:method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
+
+      Parameters
+      ----------
+      x
+
+      Returns
+      -------
+
+
+
+
+.. py:class:: FMult2(args)
+
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+   Learning Knowledge Neural Graphs
+
+   .. py:method:: build_func(Vec)
+
+
+   .. py:method:: build_chain_funcs(list_Vec)
+
+
+   .. py:method:: compute_func(W, b, x) -> torch.FloatTensor
+
+
+   .. py:method:: function(list_W, list_b)
+
+
+   .. py:method:: trapezoid(list_W, list_b)
+
+
+   .. py:method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
+
+      Parameters
+      ----------
+      x
+
+      Returns
+      -------
+
+
+
+
+.. py:class:: LFMult1(args)
+
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+   Embedding with trigonometric functions. We represent all entities and relations in the complex number space as:
+   f(x) = \sum_{k=0}^{k=d-1}wk e^{kix}. and use the three differents scoring function as in the paper to evaluate the score
+
+   .. py:method:: forward_triples(idx_triple)
+
+      Parameters
+      ----------
+      x
+
+      Returns
+      -------
+
+
+
+   .. py:method:: tri_score(h, r, t)
+
+
+   .. py:method:: vtp_score(h, r, t)
+
+
+
+.. py:class:: LFMult(args)
+
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+   Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:
+   f(x) = \sum_{i=0}^{d-1} a_k x^{i%d} and use the three differents scoring function as in the paper to evaluate the score.
+   We also consider combining with Neural Networks.
+
+   .. py:method:: forward_triples(idx_triple)
+
+      Parameters
+      ----------
+      x
+
+      Returns
+      -------
+
+
+
+   .. py:method:: construct_multi_coeff(x)
+
+
+   .. py:method:: poly_NN(x, coefh, coefr, coeft)
+
+      Constructing a 2 layers NN to represent the embeddings. 
+      h = \sigma(wh^T x + bh ),  r = \sigma(wr^T x + br ),  t = \sigma(wt^T x + bt )
+
+
+   .. py:method:: linear(x, w, b)
+
+
+   .. py:method:: scalar_batch_NN(a, b, c)
+
+      element wise multiplication between a,b and c:
+      Inputs : a, b, c ====> torch.tensor of size batch_size x m x d
+      Output : a tensor of size batch_size x d
+
+
+   .. py:method:: tri_score(coeff_h, coeff_r, coeff_t)
+
+      this part implement the trilinear scoring techniques: 
+
+      score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*b_j*c_k}{1+(i+j+k)%d} 
+
+      1. generate the range for i,j and k from [0 d-1]
+
+      2. perform
+      \dfrac{a_i*b_j*c_k}{1+(i+j+k)%d} in parallel for every batch
+
+      3. take the sum over each batch
+
+
+
+   .. py:method:: vtp_score(h, r, t)
+
+      this part implement the vector triple product scoring techniques: 
+
+      score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*c_j*b_k - b_i*c_j*a_k}{(1+(i+j)%d)(1+k)} 
+
+      1. generate the range for i,j and k from [0 d-1]
+
+      2. Compute the first and second terms of the sum
+
+      3.  Multiply with then denominator and take the sum
+
+      4. take the sum over each batch
+
+
+
+   .. py:method:: comp_func(h, r, t)
+
+      this part implement the function composition scoring techniques: i.e. score = <hor, t>
+
+
+   .. py:method:: polynomial(coeff, x, degree)
+
+      This function takes a matrix tensor of coefficients (coeff), a tensor vector of points x  and range of integer [0,1,...d]
+      and return a vector tensor (coeff[0][0] + coeff[0][1]x +...+ coeff[0][d]x^d,
+                          coeff[1][0] + coeff[1][1]x +...+ coeff[1][d]x^d)
+                                  ....
+
+
+   .. py:method:: pop(coeff, x, degree)
+
+      This function allow us to evaluate the composition of two polynomes without for loops :) 
+      it takes a matrix tensor of coefficients (coeff), a matrix tensor of points x  and range of integer [0,1,...d]
+          and return a tensor (coeff[0][0] + coeff[0][1]x +...+ coeff[0][d]x^d,
+                              coeff[1][0] + coeff[1][1]x +...+ coeff[1][d]x^d)
+                                      ....
+
+
+

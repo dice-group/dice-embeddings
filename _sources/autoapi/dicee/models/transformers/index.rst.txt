@@ -1,0 +1,388 @@
+:py:mod:`dicee.models.transformers`
+===================================
+
+.. py:module:: dicee.models.transformers
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.models.transformers.BytE
+   dicee.models.transformers.LayerNorm
+   dicee.models.transformers.CausalSelfAttention
+   dicee.models.transformers.MLP
+   dicee.models.transformers.Block
+   dicee.models.transformers.GPTConfig
+   dicee.models.transformers.GPT
+
+
+
+
+.. py:class:: BytE(*args, **kwargs)
+
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+   .. py:method:: loss_function(yhat_batch, y_batch)
+
+      Parameters
+      ----------
+      yhat_batch
+      y_batch
+
+      Returns
+      -------
+
+
+
+   .. py:method:: forward(x: torch.LongTensor)
+
+      Parameters
+      ----------
+      x: B by T tensor
+
+      Returns
+      -------
+
+
+
+   .. py:method:: generate(idx, max_new_tokens, temperature=1.0, top_k=None)
+
+      Take a conditioning sequence of indices idx (LongTensor of shape (b,t)) and complete
+      the sequence max_new_tokens times, feeding the predictions back into the model each time.
+      Most likely you'll want to make sure to be in model.eval() mode of operation for this.
+
+
+   .. py:method:: training_step(batch, batch_idx=None)
+
+      Here you compute and return the training loss and some additional metrics for e.g. the progress bar or
+      logger.
+
+      Args:
+          batch: The output of your data iterable, normally a :class:`~torch.utils.data.DataLoader`.
+          batch_idx: The index of this batch.
+          dataloader_idx: The index of the dataloader that produced this batch.
+              (only if multiple dataloaders used)
+
+      Return:
+          - :class:`~torch.Tensor` - The loss tensor
+          - ``dict`` - A dictionary which can include any keys, but must include the key ``'loss'`` in the case of
+            automatic optimization.
+          - ``None`` - In automatic optimization, this will skip to the next batch (but is not supported for
+            multi-GPU, TPU, or DeepSpeed). For manual optimization, this has no special meaning, as returning
+            the loss is not required.
+
+      In this step you'd normally do the forward pass and calculate the loss for a batch.
+      You can also do fancier things like multiple forward passes or something model specific.
+
+      Example::
+
+          def training_step(self, batch, batch_idx):
+              x, y, z = batch
+              out = self.encoder(x)
+              loss = self.loss(out, x)
+              return loss
+
+      To use multiple optimizers, you can switch to 'manual optimization' and control their stepping:
+
+      .. code-block:: python
+
+          def __init__(self):
+              super().__init__()
+              self.automatic_optimization = False
+
+
+          # Multiple optimizers (e.g.: GANs)
+          def training_step(self, batch, batch_idx):
+              opt1, opt2 = self.optimizers()
+
+              # do training_step with encoder
+              ...
+              opt1.step()
+              # do training_step with decoder
+              ...
+              opt2.step()
+
+      Note:
+          When ``accumulate_grad_batches`` > 1, the loss returned here will be automatically
+          normalized by ``accumulate_grad_batches`` internally.
+
+
+
+
+.. py:class:: LayerNorm(ndim, bias)
+
+
+   Bases: :py:obj:`torch.nn.Module`
+
+   LayerNorm but with an optional bias. PyTorch doesn't support simply bias=False 
+
+   .. py:method:: forward(input)
+
+
+
+.. py:class:: CausalSelfAttention(config)
+
+
+   Bases: :py:obj:`torch.nn.Module`
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+   .. py:method:: forward(x)
+
+
+
+.. py:class:: MLP(config)
+
+
+   Bases: :py:obj:`torch.nn.Module`
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+   .. py:method:: forward(x)
+
+
+
+.. py:class:: Block(config)
+
+
+   Bases: :py:obj:`torch.nn.Module`
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+   .. py:method:: forward(x)
+
+
+
+.. py:class:: GPTConfig
+
+
+   .. py:attribute:: block_size
+      :type: int
+      :value: 1024
+
+      
+
+   .. py:attribute:: vocab_size
+      :type: int
+      :value: 50304
+
+      
+
+   .. py:attribute:: n_layer
+      :type: int
+      :value: 12
+
+      
+
+   .. py:attribute:: n_head
+      :type: int
+      :value: 12
+
+      
+
+   .. py:attribute:: n_embd
+      :type: int
+      :value: 768
+
+      
+
+   .. py:attribute:: dropout
+      :type: float
+      :value: 0.0
+
+      
+
+   .. py:attribute:: bias
+      :type: bool
+      :value: False
+
+      
+
+
+.. py:class:: GPT(config)
+
+
+   Bases: :py:obj:`torch.nn.Module`
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+   .. py:method:: get_num_params(non_embedding=True)
+
+      Return the number of parameters in the model.
+      For non-embedding count (default), the position embeddings get subtracted.
+      The token embeddings would too, except due to the parameter sharing these
+      params are actually used as weights in the final layer, so we include them.
+
+
+   .. py:method:: forward(idx, targets=None)
+
+
+   .. py:method:: crop_block_size(block_size)
+
+
+   .. py:method:: from_pretrained(model_type, override_args=None)
+      :classmethod:
+
+
+   .. py:method:: configure_optimizers(weight_decay, learning_rate, betas, device_type)
+
+
+   .. py:method:: estimate_mfu(fwdbwd_per_iter, dt)
+
+      estimate model flops utilization (MFU) in units of A100 bfloat16 peak FLOPS 
+
+
+

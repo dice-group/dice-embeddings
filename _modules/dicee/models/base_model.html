@@ -1,206 +1,186 @@
-<!doctype html>
-<html class="no-js" lang="en" data-content_root="../../../">
-  <head><meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="../../../genindex.html" /><link rel="search" title="Search" href="../../../search.html" />
+<!DOCTYPE html>
 
-    <!-- Generated with Sphinx 7.2.6 and Furo 2024.01.29 -->
-        <title>dicee.models.base_model - DICE Embeddings 0.0.6 documentation</title>
-      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo.css?v=135e06be" />
-    <link rel="stylesheet" type="text/css" href="../../../_static/styles/furo-extensions.css?v=36a5483c" />
-    
-    
-
-
-<style>
-  body {
-    --color-code-background: #f8f8f8;
-  --color-code-foreground: black;
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>dicee.models.base_model &#8212; DICE Embeddings 0.1.3.2 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+    <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
   
-  }
-  @media not print {
-    body[data-theme="dark"] {
-      --color-code-background: #202020;
-  --color-code-foreground: #d0d0d0;
-  
-    }
-    @media (prefers-color-scheme: dark) {
-      body:not([data-theme="light"]) {
-        --color-code-background: #202020;
-  --color-code-foreground: #d0d0d0;
-  
-      }
-    }
-  }
-</style></head>
-  <body>
-    
-    <script>
-      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
-    </script>
-    
 
-<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
-  <symbol id="svg-toc" viewBox="0 0 24 24">
-    <title>Contents</title>
-    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
-      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
-    </svg>
-  </symbol>
-  <symbol id="svg-menu" viewBox="0 0 24 24">
-    <title>Menu</title>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
-      <line x1="3" y1="12" x2="21" y2="12"></line>
-      <line x1="3" y1="6" x2="21" y2="6"></line>
-      <line x1="3" y1="18" x2="21" y2="18"></line>
-    </svg>
-  </symbol>
-  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
-    <title>Expand</title>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
-      <polyline points="9 18 15 12 9 6"></polyline>
-    </svg>
-  </symbol>
-  <symbol id="svg-sun" viewBox="0 0 24 24">
-    <title>Light mode</title>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
-      <circle cx="12" cy="12" r="5"></circle>
-      <line x1="12" y1="1" x2="12" y2="3"></line>
-      <line x1="12" y1="21" x2="12" y2="23"></line>
-      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-      <line x1="1" y1="12" x2="3" y2="12"></line>
-      <line x1="21" y1="12" x2="23" y2="12"></line>
-      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-    </svg>
-  </symbol>
-  <symbol id="svg-moon" viewBox="0 0 24 24">
-    <title>Dark mode</title>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
-      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
-    </svg>
-  </symbol>
-  <symbol id="svg-sun-half" viewBox="0 0 24 24">
-    <title>Auto light/dark mode</title>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-      stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-shadow">
-      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M13 12h5" />
-      <path d="M13 15h4" />
-      <path d="M13 18h1" />
-      <path d="M13 9h4" />
-      <path d="M13 6h1" />
-    </svg>
-  </symbol>
-</svg>
-
-<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
-<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
-<label class="overlay sidebar-overlay" for="__navigation">
-  <div class="visually-hidden">Hide navigation sidebar</div>
-</label>
-<label class="overlay toc-overlay" for="__toc">
-  <div class="visually-hidden">Hide table of contents sidebar</div>
-</label>
-
-
-
-<div class="page">
-  <header class="mobile-header">
-    <div class="header-left">
-      <label class="nav-overlay-icon" for="__navigation">
-        <div class="visually-hidden">Toggle site navigation sidebar</div>
-        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
-      </label>
-    </div>
-    <div class="header-center">
-      <a href="../../../index.html"><div class="brand">DICE Embeddings 0.0.6 documentation</div></a>
-    </div>
-    <div class="header-right">
-      <div class="theme-toggle-container theme-toggle-header">
-        <button class="theme-toggle">
-          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
-          <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
-          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
-          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
-        </button>
-      </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
-        <div class="visually-hidden">Toggle table of contents sidebar</div>
-        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
-      </label>
-    </div>
-  </header>
-  <aside class="sidebar-drawer">
-    <div class="sidebar-container">
-      
-      <div class="sidebar-sticky"><a class="sidebar-brand" href="../../../index.html">
   
   
-  <span class="sidebar-brand-text">DICE Embeddings 0.0.6 documentation</span>
-  
-</a><form class="sidebar-search-container" method="get" action="../../../search.html" role="search">
-  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
-  <input type="hidden" name="check_keywords" value="yes">
-  <input type="hidden" name="area" value="default">
-</form>
-<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  
-</div>
-</div>
 
-      </div>
-      
-    </div>
-  </aside>
-  <div class="main">
-    <div class="content">
-      <div class="article-container">
-        <a href="#" class="back-to-top muted-link">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
-          </svg>
-          <span>Back to top</span>
-        </a>
-        <div class="content-icon-container">
-          <div class="theme-toggle-container theme-toggle-content">
-            <button class="theme-toggle">
-              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
-              <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
-              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
-              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
-            </button>
-          </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
-            <div class="visually-hidden">Toggle table of contents sidebar</div>
-            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
-          </label>
-        </div>
-        <article role="main">
-          <h1>Source code for dicee.models.base_model</h1><div class="highlight"><pre>
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for dicee.models.base_model</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Dict</span>
-<span class="kn">import</span> <span class="nn">pytorch_lightning</span>
+<span class="kn">import</span> <span class="nn">lightning</span> <span class="k">as</span> <span class="nn">pl</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
+<span class="kn">from</span> <span class="nn">torch.nn</span> <span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span>
+
+<div class="viewcode-block" id="BaseKGELightning">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGELightning">[docs]</a>
+<span class="k">class</span> <span class="nc">BaseKGELightning</span><span class="p">(</span><span class="n">pl</span><span class="o">.</span><span class="n">LightningModule</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">training_step_outputs</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="BaseKGELightning.mem_of_model">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGELightning.mem_of_model">[docs]</a>
+    <span class="k">def</span> <span class="nf">mem_of_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Size of model in MB and number of params&quot;&quot;&quot;</span>
+        <span class="c1"># https://discuss.pytorch.org/t/finding-model-size/130275/2</span>
+        <span class="c1"># (2) Store NumParam and EstimatedSizeMB</span>
+        <span class="n">num_params</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
+        <span class="c1"># Not quite sure about EstimatedSizeMB ?</span>
+        <span class="n">buffer_size</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">buffer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">():</span>
+            <span class="n">buffer_size</span> <span class="o">+=</span> <span class="n">buffer</span><span class="o">.</span><span class="n">nelement</span><span class="p">()</span> <span class="o">*</span> <span class="n">buffer</span><span class="o">.</span><span class="n">element_size</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;EstimatedSizeMB&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">num_params</span> <span class="o">+</span> <span class="n">buffer_size</span><span class="p">)</span> <span class="o">/</span> <span class="mi">1024</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;NumParam&#39;</span><span class="p">:</span> <span class="n">num_params</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="BaseKGELightning.training_step">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGELightning.training_step">[docs]</a>
+    <span class="k">def</span> <span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">batch</span>
+        <span class="n">yhat_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">x_batch</span><span class="p">)</span>
+        <span class="n">loss_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_function</span><span class="p">(</span><span class="n">yhat_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">training_step_outputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss_batch</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="s2">&quot;loss&quot;</span><span class="p">,</span>
+                 <span class="n">value</span><span class="o">=</span><span class="n">loss_batch</span><span class="p">,</span>
+                 <span class="n">on_step</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">on_epoch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">prog_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">sync_dist</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">logger</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">loss_batch</span></div>
+
+
+<div class="viewcode-block" id="BaseKGELightning.loss_function">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGELightning.loss_function">[docs]</a>
+    <span class="k">def</span> <span class="nf">loss_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">yhat_batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        yhat_batch</span>
+<span class="sd">        y_batch</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">yhat_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseKGELightning.on_train_epoch_end">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGELightning.on_train_epoch_end">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Arguments must not be empty:</span><span class="si">{</span><span class="n">args</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Keyword Arguments must not be empty:</span><span class="si">{</span><span class="n">kwargs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_step_outputs</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">training_step_outputs</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">training_step_outputs</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseKGELightning.test_epoch_end">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGELightning.test_epoch_end">[docs]</a>
+    <span class="k">def</span> <span class="nf">test_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="BaseKGELightning.test_dataloader">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGELightning.test_dataloader">[docs]</a>
+    <span class="k">def</span> <span class="nf">test_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseKGELightning.val_dataloader">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGELightning.val_dataloader">[docs]</a>
+    <span class="k">def</span> <span class="nf">val_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseKGELightning.predict_dataloader">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGELightning.predict_dataloader">[docs]</a>
+    <span class="k">def</span> <span class="nf">predict_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseKGELightning.train_dataloader">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGELightning.train_dataloader">[docs]</a>
+    <span class="k">def</span> <span class="nf">train_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseKGELightning.configure_optimizers">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGELightning.configure_optimizers">[docs]</a>
+    <span class="k">def</span> <span class="nf">configure_optimizers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">parameters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span>
+
+        <span class="c1"># default params in pytorch.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_name</span> <span class="o">==</span> <span class="s1">&#39;SGD&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">selected_optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">SGD</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">parameters</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
+                                                      <span class="n">momentum</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dampening</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_decay</span><span class="p">,</span>
+                                                      <span class="n">nesterov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_name</span> <span class="o">==</span> <span class="s1">&#39;Adam&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">selected_optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
+                                                       <span class="n">weight_decay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_decay</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_name</span> <span class="o">==</span> <span class="s1">&#39;AdamW&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">selected_optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">AdamW</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
+                                                       <span class="n">weight_decay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_decay</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_name</span> <span class="o">==</span> <span class="s1">&#39;NAdam&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">selected_optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">NAdam</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">betas</span><span class="o">=</span><span class="p">(</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">),</span>
+                                                        <span class="n">eps</span><span class="o">=</span><span class="mf">1e-08</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_decay</span><span class="p">,</span> <span class="n">momentum_decay</span><span class="o">=</span><span class="mf">0.004</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_name</span> <span class="o">==</span> <span class="s1">&#39;Adagrad&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">selected_optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adagrad</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span>
+                                                          <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span>
+                                                          <span class="n">weight_decay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_decay</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_name</span> <span class="o">==</span> <span class="s1">&#39;ASGD&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">selected_optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">ASGD</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span>
+                                                       <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">lambd</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span>
+                                                       <span class="n">weight_decay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_decay</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">selected_optimizer</span></div>
+</div>
+
 
 
 <div class="viewcode-block" id="BaseKGE">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE">[docs]</a>
-<span class="k">class</span> <span class="nc">BaseKGE</span><span class="p">(</span><span class="n">pytorch_lightning</span><span class="o">.</span><span class="n">LightningModule</span><span class="p">):</span>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE">[docs]</a>
+<span class="k">class</span> <span class="nc">BaseKGE</span><span class="p">(</span><span class="n">BaseKGELightning</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_tokens</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">apply_unit_norm</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">input_dropout_rate</span> <span class="o">=</span> <span class="kc">None</span>
@@ -217,7 +197,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">normalize_relation_embeddings</span> <span class="o">=</span> <span class="n">IdentityClass</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">normalize_tail_entity_embeddings</span> <span class="o">=</span> <span class="n">IdentityClass</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hidden_normalizer</span> <span class="o">=</span> <span class="n">IdentityClass</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span> <span class="o">=</span> <span class="n">IdentityClass</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">init_params_with_sanity_checking</span><span class="p">()</span>
 
         <span class="c1"># Dropouts</span>
@@ -226,23 +206,102 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dropout</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_dropout_rate</span><span class="p">)</span>
         <span class="c1"># average minibatch loss per epoch</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loss_history</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">byte_pair_encoding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;byte_pair_encoding&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_length_subword_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_length_subword_tokens&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;block_size&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">byte_pair_encoding</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s2">&quot;BytE&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">token_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_tokens</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">token_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 
-<div class="viewcode-block" id="BaseKGE.mem_of_model">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.mem_of_model">[docs]</a>
-    <span class="k">def</span> <span class="nf">mem_of_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot; Size of model in MB and number of params&quot;&quot;&quot;</span>
-        <span class="c1"># https://discuss.pytorch.org/t/finding-model-size/130275/2</span>
-        <span class="c1"># (2) Store NumParam and EstimatedSizeMB</span>
-        <span class="n">num_params</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">())</span>
-        <span class="c1"># Not quite sure about EstimatedSizeMB ?</span>
-        <span class="n">buffer_size</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">for</span> <span class="n">buffer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">buffers</span><span class="p">():</span>
-            <span class="n">buffer_size</span> <span class="o">+=</span> <span class="n">buffer</span><span class="o">.</span><span class="n">nelement</span><span class="p">()</span> <span class="o">*</span> <span class="n">buffer</span><span class="o">.</span><span class="n">element_size</span><span class="p">()</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;EstimatedSizeMB&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">num_params</span> <span class="o">+</span> <span class="n">buffer_size</span><span class="p">)</span> <span class="o">/</span> <span class="mi">1024</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;NumParam&#39;</span><span class="p">:</span> <span class="n">num_params</span><span class="p">}</span></div>
+            <span class="c1"># Reduces subword units embedding matrix from T x D into D.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lf</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_length_subword_tokens</span><span class="p">,</span>
+                                              <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;scoring_technique&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;AllvsAll&quot;</span><span class="p">,</span> <span class="s2">&quot;KvsAll&quot;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">str_to_bpe_entity_to_idx</span> <span class="o">=</span> <span class="p">{</span><span class="n">str_ent</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">str_ent</span><span class="p">,</span> <span class="n">bpe_ent</span><span class="p">,</span> <span class="n">shaped_bpe_ent</span><span class="p">)</span> <span class="ow">in</span>
+                                                 <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;ordered_bpe_entities&quot;</span><span class="p">])}</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bpe_entity_to_idx</span> <span class="o">=</span> <span class="p">{</span><span class="n">shaped_bpe_ent</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">str_ent</span><span class="p">,</span> <span class="n">bpe_ent</span><span class="p">,</span> <span class="n">shaped_bpe_ent</span><span class="p">)</span> <span class="ow">in</span>
+                                          <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;ordered_bpe_entities&quot;</span><span class="p">])}</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ordered_bpe_entities</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bpe_entity_to_idx</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">byte_pair_encoding</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;model&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;BytE&quot;</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot; Transformer implements token embeddings&quot;&quot;&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+<div class="viewcode-block" id="BaseKGE.forward_byte_pair_encoded_k_vs_all">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.forward_byte_pair_encoded_k_vs_all">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward_byte_pair_encoded_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : B x 2 x T</span>
+
+
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># (1) Get unit normalized subword units embedding matrices: (B, T, D)</span>
+        <span class="n">bpe_head_ent_emb</span><span class="p">,</span> <span class="n">bpe_rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_bpe_head_and_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="c1"># Future work: Use attention to model similarity between subword units comprising head and relation</span>
+        <span class="c1"># attentive_head_rel_emb = self.attention_block(torch.cat((bpe_head_ent_emb, bpe_rel_ent_emb), 1))</span>
+        <span class="c1"># bpe_head_ent_emb = attentive_head_rel_emb[:, :self.max_length_subword_tokens, :]</span>
+        <span class="c1"># bpe_rel_ent_emb = attentive_head_rel_emb[:, self.max_length_subword_tokens:, :]</span>
+
+        <span class="c1"># (2) Reshaping (1) into row vectors.</span>
+        <span class="n">B</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">D</span> <span class="o">=</span> <span class="n">bpe_head_ent_emb</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="c1"># Multi-node GPU setting.</span>
+        <span class="n">device_r</span> <span class="o">=</span> <span class="n">bpe_head_ent_emb</span><span class="o">.</span><span class="n">get_device</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">device_r</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ordered_bpe_entities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ordered_bpe_entities</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device_r</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ordered_bpe_entities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ordered_bpe_entities</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+
+        <span class="c1"># (3) Get unit normalized subword units embedding matrices of all entities : (E, T, D)</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ordered_bpe_entities</span><span class="p">)</span>
+        <span class="c1"># (4) Reshaping (3) into row vectors (E, T*D) .</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">E</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">E</span><span class="p">),</span> <span class="n">T</span> <span class="o">*</span> <span class="n">D</span><span class="p">)</span>
+
+        <span class="c1"># (5) Reshape and Reduce from (_, T*D) into row vectors.</span>
+        <span class="n">bpe_head_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dp_ent_real</span><span class="p">(</span><span class="n">bpe_head_ent_emb</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">T</span> <span class="o">*</span> <span class="n">D</span><span class="p">))</span>
+        <span class="n">bpe_rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_dp_rel_real</span><span class="p">(</span><span class="n">bpe_rel_ent_emb</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">T</span> <span class="o">*</span> <span class="n">D</span><span class="p">))</span>
+        <span class="n">bpe_head_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lf</span><span class="p">(</span><span class="n">bpe_head_ent_emb</span><span class="p">)</span>
+        <span class="n">bpe_rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lf</span><span class="p">(</span><span class="n">bpe_rel_ent_emb</span><span class="p">)</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lf</span><span class="p">(</span><span class="n">E</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_vs_all_score</span><span class="p">(</span><span class="n">bpe_head_ent_emb</span><span class="p">,</span> <span class="n">bpe_rel_ent_emb</span><span class="p">,</span> <span class="n">E</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="BaseKGE.forward_byte_pair_encoded_triple">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.forward_byte_pair_encoded_triple">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward_byte_pair_encoded_triple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        byte pair encoded neural link predictors</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        -------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">bpe_head_ent_emb</span><span class="p">,</span> <span class="n">bpe_rel_ent_emb</span><span class="p">,</span> <span class="n">bpe_tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_sentence_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">B</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">C</span> <span class="o">=</span> <span class="n">bpe_head_ent_emb</span><span class="o">.</span><span class="n">shape</span>
+        <span class="n">bpe_head_ent_emb</span> <span class="o">=</span> <span class="n">bpe_head_ent_emb</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">T</span> <span class="o">*</span> <span class="n">C</span><span class="p">)</span>
+        <span class="n">bpe_rel_ent_emb</span> <span class="o">=</span> <span class="n">bpe_rel_ent_emb</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">T</span> <span class="o">*</span> <span class="n">C</span><span class="p">)</span>
+        <span class="n">bpe_tail_ent_emb</span> <span class="o">=</span> <span class="n">bpe_tail_ent_emb</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">T</span> <span class="o">*</span> <span class="n">C</span><span class="p">)</span>
+        <span class="n">bpe_triple_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lf</span><span class="p">(</span><span class="n">bpe_head_ent_emb</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">lf</span><span class="p">(</span><span class="n">bpe_rel_ent_emb</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">lf</span><span class="p">(</span><span class="n">bpe_tail_ent_emb</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">bpe_triple_score</span></div>
 
 
 <div class="viewcode-block" id="BaseKGE.init_params_with_sanity_checking">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.init_params_with_sanity_checking">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.init_params_with_sanity_checking">[docs]</a>
     <span class="k">def</span> <span class="nf">init_params_with_sanity_checking</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;weight_decay&#39;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">weight_decay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;weight_decay&#39;</span><span class="p">]</span>
@@ -253,15 +312,9 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">=</span> <span class="mi">1</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;num_entities&#39;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;num_entities&#39;</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="mi">1</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;num_relations&#39;</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;num_relations&#39;</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;num_entities&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;num_relations&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;num_tokens&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;learning_rate&#39;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;learning_rate&#39;</span><span class="p">]</span>
@@ -306,7 +359,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">normalizer_class</span> <span class="o">=</span> <span class="n">IdentityClass</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;optim&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;NAdam&#39;</span><span class="p">,</span> <span class="s1">&#39;Adam&#39;</span><span class="p">,</span> <span class="s1">&#39;SGD&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;optim&quot;</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;AdamW&#39;</span><span class="p">,</span> <span class="s1">&#39;Adam&#39;</span><span class="p">,</span> <span class="s1">&#39;SGD&#39;</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;optim&#39;</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;--optim (***</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;optim&quot;</span><span class="p">)</span><span class="si">}</span><span class="s1">***) not found&#39;</span><span class="p">)</span>
@@ -321,210 +374,77 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_name</span> <span class="o">=</span> <span class="n">IdentityClass</span></div>
 
 
-<div class="viewcode-block" id="BaseKGE.get_embeddings">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.get_embeddings">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-        <span class="c1"># @TODO why twice data.data.?</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span></div>
-
-
-<div class="viewcode-block" id="BaseKGE.configure_optimizers">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.configure_optimizers">[docs]</a>
-    <span class="k">def</span> <span class="nf">configure_optimizers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">parameters</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">parameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span>
-
-        <span class="c1"># default params in pytorch.</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_name</span> <span class="o">==</span> <span class="s1">&#39;SGD&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">selected_optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">SGD</span><span class="p">(</span><span class="n">params</span><span class="o">=</span><span class="n">parameters</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
-                                                      <span class="n">momentum</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dampening</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_decay</span><span class="p">,</span>
-                                                      <span class="n">nesterov</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_name</span> <span class="o">==</span> <span class="s1">&#39;Adam&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">selected_optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span>
-                                                       <span class="n">weight_decay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_decay</span><span class="p">)</span>
-
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_name</span> <span class="o">==</span> <span class="s1">&#39;NAdam&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">selected_optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">NAdam</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">betas</span><span class="o">=</span><span class="p">(</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">),</span>
-                                                        <span class="n">eps</span><span class="o">=</span><span class="mf">1e-08</span><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_decay</span><span class="p">,</span> <span class="n">momentum_decay</span><span class="o">=</span><span class="mf">0.004</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_name</span> <span class="o">==</span> <span class="s1">&#39;Adagrad&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">selected_optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adagrad</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span>
-                                                          <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-10</span><span class="p">,</span>
-                                                          <span class="n">weight_decay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_decay</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">optimizer_name</span> <span class="o">==</span> <span class="s1">&#39;ASGD&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">selected_optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">ASGD</span><span class="p">(</span><span class="n">parameters</span><span class="p">,</span>
-                                                       <span class="n">lr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_rate</span><span class="p">,</span> <span class="n">lambd</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span>
-                                                       <span class="n">weight_decay</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_decay</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">()</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">selected_optimizer</span></div>
-
-
-<div class="viewcode-block" id="BaseKGE.loss_function">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.loss_function">[docs]</a>
-    <span class="k">def</span> <span class="nf">loss_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">yhat_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">yhat_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="BaseKGE.forward_triples">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.forward_triples">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;MODEL:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> does not have forward_triples function&#39;</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="BaseKGE.forward_k_vs_all">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.forward_k_vs_all">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;MODEL:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> does not have forward_k_vs_all function&#39;</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="BaseKGE.forward_k_vs_sample">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.forward_k_vs_sample">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;MODEL:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> does not have forward_k_vs_sample function&#39;</span><span class="p">)</span></div>
-
-
 <div class="viewcode-block" id="BaseKGE.forward">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.forward">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.forward">[docs]</a>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">]],</span>
                 <span class="n">y_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
-<span class="sd">        :param x: a batch of inputs</span>
-<span class="sd">        :param y_idx: indices of selected outputs.</span>
-<span class="sd">        :return:</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x</span>
+<span class="sd">        y_idx</span>
+<span class="sd">        ordered_bpe_entities</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
             <span class="n">x</span><span class="p">,</span> <span class="n">y_idx</span> <span class="o">=</span> <span class="n">x</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_k_vs_sample</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="o">=</span><span class="n">y_idx</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">batch_size</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
-            <span class="k">if</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_triples</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="c1"># h, y = x[0], x[1]</span>
-                <span class="c1"># Note that y can be relation or tail entity.</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_k_vs_all</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
+            <span class="n">shape_info</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape_info</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">batch_size</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+                <span class="k">if</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_triples</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="c1"># h, y = x[0], x[1]</span>
+                    <span class="c1"># Note that y can be relation or tail entity.</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_k_vs_all</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_sequence</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">)</span></div>
+                <span class="n">size_of_input_data</span> <span class="o">=</span> <span class="n">shape_info</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">size_of_input_data</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                    <span class="c1"># NegSample with BPE</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_byte_pair_encoded_triple</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">size_of_input_data</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="c1"># KvsAll with BPE</span>
+                    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_byte_pair_encoded_k_vs_all</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
 
 
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    def training_step(self, batch, batch_idx):</span>
-<span class="sd">        if len(batch) == 2:</span>
-<span class="sd">            x_batch, y_batch = batch</span>
-<span class="sd">            yhat_batch = self.forward(x_batch)</span>
-<span class="sd">        elif len(batch) == 3:</span>
-<span class="sd">            x_batch, y_idx_batch, y_batch, = batch</span>
-<span class="sd">            yhat_batch = self.forward(x_batch, y_idx_batch)</span>
-<span class="sd">        else:</span>
-<span class="sd">            print(len(batch))</span>
-<span class="sd">            raise ValueError(&#39;Unexpected batch shape..&#39;)</span>
-<span class="sd">        train_loss = self.loss_function(yhat_batch=yhat_batch, y_batch=y_batch)</span>
-<span class="sd">        return train_loss</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<div class="viewcode-block" id="BaseKGE.training_step">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.training_step">[docs]</a>
-    <span class="k">def</span> <span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-        <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">batch</span>
-        <span class="n">yhat_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">x_batch</span><span class="p">)</span>
-        <span class="n">loss_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_function</span><span class="p">(</span><span class="n">yhat_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">loss_batch</span></div>
-
-
-<div class="viewcode-block" id="BaseKGE.training_epoch_end">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.training_epoch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">training_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">training_step_outputs</span><span class="p">):</span>
-        <span class="n">batch_losses</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="p">[</span><span class="s1">&#39;loss&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">training_step_outputs</span><span class="p">]</span>
-        <span class="n">avg</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">batch_losses</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch_losses</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">loss_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">avg</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="BaseKGE.validation_step">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.validation_step">[docs]</a>
-    <span class="k">def</span> <span class="nf">validation_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">):</span>
+<div class="viewcode-block" id="BaseKGE.forward_triples">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.forward_triples">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        @ TODO</span>
-<span class="sd">        # from torchmetrics import Accuracy as accuracy</span>
-<span class="sd">        if len(batch) == 4:</span>
-<span class="sd">            h, r, t, y_batch = batch</span>
-<span class="sd">            predictions = self.forward_triples(h, r, t)</span>
-<span class="sd">        else:</span>
-<span class="sd">            h, x, y_batch = batch[:, 0], batch[:, 1], batch[:, 2]</span>
-<span class="sd">            predictions = self.forward_k_vs_all(h, x)</span>
 
-<span class="sd">        val_loss = self.loss_function(predictions, y_batch)</span>
-<span class="sd">        val_accuracy = accuracy(predictions, y_batch)</span>
-<span class="sd">        return {&#39;val_acc&#39;: val_accuracy, &#39;val_loss&#39;: val_loss}</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x</span>
 
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
 
-<div class="viewcode-block" id="BaseKGE.validation_epoch_end">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.validation_epoch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">validation_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        @ TODO</span>
-
-<span class="sd">        x = [[x[&#39;val_acc&#39;], x[&#39;val_loss&#39;]] for x in outputs]</span>
-<span class="sd">        avg_val_acc, avg_loss = torch.tensor(x).mean(dim=0)[:]</span>
-<span class="sd">        self.log(&#39;avg_loss_per_epoch&#39;, avg_loss, on_epoch=True, prog_bar=True)</span>
-<span class="sd">        self.log(&#39;avg_val_acc_per_epoch&#39;, avg_val_acc, on_epoch=True, prog_bar=True)</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
+        <span class="n">h_emb</span><span class="p">,</span> <span class="n">r_emb</span><span class="p">,</span> <span class="n">t_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">score</span><span class="p">(</span><span class="n">h_emb</span><span class="p">,</span> <span class="n">r_emb</span><span class="p">,</span> <span class="n">t_emb</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="BaseKGE.test_step">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.test_step">[docs]</a>
-    <span class="k">def</span> <span class="nf">test_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        @ TODO</span>
-
-<span class="sd">        if len(batch) == 4:</span>
-<span class="sd">            h, r, t, y_batch = batch</span>
-<span class="sd">            predictions = self.forward_triples(h, r, t)</span>
-<span class="sd">        else:</span>
-<span class="sd">            h, x, y_batch = batch[:, 0], batch[:, 1], batch[:, 2]</span>
-<span class="sd">            predictions = self.forward_k_vs_all(h, x)</span>
-<span class="sd">        test_accuracy = accuracy(predictions, y_batch)</span>
-<span class="sd">        return {&#39;test_accuracy&#39;: test_accuracy}</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<div class="viewcode-block" id="BaseKGE.forward_k_vs_all">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.forward_k_vs_all">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;MODEL:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> does not have forward_k_vs_all function&#39;</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="BaseKGE.test_epoch_end">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.test_epoch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">test_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">outputs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        @ TODO</span>
-<span class="sd">        avg_test_accuracy = torch.stack([x[&#39;test_accuracy&#39;] for x in outputs]).mean()</span>
-<span class="sd">        self.log(&#39;avg_test_accuracy&#39;, avg_test_accuracy, on_epoch=True, prog_bar=True)</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
-
-
-<div class="viewcode-block" id="BaseKGE.test_dataloader">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.test_dataloader">[docs]</a>
-    <span class="k">def</span> <span class="nf">test_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">pass</span></div>
-
-
-<div class="viewcode-block" id="BaseKGE.val_dataloader">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.val_dataloader">[docs]</a>
-    <span class="k">def</span> <span class="nf">val_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">pass</span></div>
-
-
-<div class="viewcode-block" id="BaseKGE.predict_dataloader">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.predict_dataloader">[docs]</a>
-    <span class="k">def</span> <span class="nf">predict_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">pass</span></div>
-
-
-<div class="viewcode-block" id="BaseKGE.train_dataloader">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.train_dataloader">[docs]</a>
-    <span class="k">def</span> <span class="nf">train_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">pass</span></div>
+<div class="viewcode-block" id="BaseKGE.forward_k_vs_sample">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.forward_k_vs_sample">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;MODEL:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> does not have forward_k_vs_sample function&#39;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BaseKGE.get_triple_representation">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.get_triple_representation">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.get_triple_representation">[docs]</a>
     <span class="k">def</span> <span class="nf">get_triple_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx_hrt</span><span class="p">):</span>
         <span class="c1"># (1) Split input into indexes.</span>
         <span class="n">idx_head_entity</span><span class="p">,</span> <span class="n">idx_relation</span><span class="p">,</span> <span class="n">idx_tail_entity</span> <span class="o">=</span> <span class="n">idx_hrt</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">idx_hrt</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">idx_hrt</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
@@ -537,7 +457,7 @@
 
 
 <div class="viewcode-block" id="BaseKGE.get_head_relation_representation">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.BaseKGE.get_head_relation_representation">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.get_head_relation_representation">[docs]</a>
     <span class="k">def</span> <span class="nf">get_head_relation_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indexed_triple</span><span class="p">):</span>
         <span class="c1"># (1) Split input into indexes.</span>
         <span class="n">idx_head_entity</span><span class="p">,</span> <span class="n">idx_relation</span> <span class="o">=</span> <span class="n">indexed_triple</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">indexed_triple</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
@@ -546,59 +466,152 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">input_dp_ent_real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="p">(</span><span class="n">idx_head_entity</span><span class="p">)))</span>
         <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalize_relation_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_dp_rel_real</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="p">(</span><span class="n">idx_relation</span><span class="p">)))</span>
         <span class="k">return</span> <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span></div>
+
+
+<div class="viewcode-block" id="BaseKGE.get_sentence_representation">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.get_sentence_representation">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_sentence_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x shape (b,3,t)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:],</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:],</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">head_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_embeddings</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+        <span class="n">rel_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_embeddings</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+        <span class="n">tail_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_embeddings</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_emb</span><span class="p">,</span> <span class="n">tail_emb</span></div>
+
+
+<div class="viewcode-block" id="BaseKGE.get_bpe_head_and_relation_representation">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.get_bpe_head_and_relation_representation">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_bpe_head_and_relation_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : B x 2 x T</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># h: batchsize, T where T represents the maximum shaped token size</span>
+        <span class="c1"># h: B x T, r: B x T</span>
+        <span class="n">h</span><span class="p">,</span> <span class="n">r</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:],</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="c1"># B, T, D</span>
+        <span class="n">head_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_embeddings</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+        <span class="c1"># B, T, D</span>
+        <span class="n">rel_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_embeddings</span><span class="p">(</span><span class="n">r</span><span class="p">)</span>
+
+        <span class="c1"># A sequence of sub-list embeddings representing an embedding of a head entity should be normalized to 0.</span>
+        <span class="c1"># Therefore, the norm of a row vector obtained from T by D matrix must be 1.</span>
+        <span class="c1"># B, T, D</span>
+        <span class="n">head_ent_emb</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="c1"># B, T, D</span>
+        <span class="n">rel_emb</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">rel_emb</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_emb</span></div>
+
+
+<div class="viewcode-block" id="BaseKGE.get_embeddings">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.get_embeddings">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span></div>
 </div>
 
 
 
 <div class="viewcode-block" id="IdentityClass">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.IdentityClass">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.IdentityClass">[docs]</a>
 <span class="k">class</span> <span class="nc">IdentityClass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
 
 <div class="viewcode-block" id="IdentityClass.forward">
-<a class="viewcode-back" href="../../../dicee.models.html#dicee.models.base_model.IdentityClass.forward">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.IdentityClass.forward">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">x</span></div>
 </div>
 
 </pre></div>
-        </article>
+
+          </div>
+          
+        </div>
       </div>
-      <footer>
-        
-        <div class="related-pages">
-          
-          
-        </div>
-        <div class="bottom-of-page">
-          <div class="left-details">
-            <div class="copyright">
-                Copyright &#169; 2023, Caglar Demir
-            </div>
-            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
-            
-            <a href="https://github.com/pradyunsg/furo">Furo</a>
-            
-          </div>
-          <div class="right-details">
-            
-          </div>
-        </div>
-        
-      </footer>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">DICE Embeddings</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/dicee/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
     </div>
-    <aside class="toc-drawer no-toc">
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023, Caglar Demir.
       
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
       
-      
-    </aside>
-  </div>
-</div><script src="../../../_static/documentation_options.js?v=1fd71caa"></script>
-    <script src="../../../_static/doctools.js?v=888ff710"></script>
-    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="../../../_static/scripts/furo.js?v=32e29ea5"></script>
-    </body>
+    </div>
+
+    
+
+    
+  </body>
 </html>

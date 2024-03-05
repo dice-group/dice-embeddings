@@ -1,0 +1,82 @@
+:py:mod:`dicee.read_preprocess_save_load_kg.preprocess`
+=======================================================
+
+.. py:module:: dicee.read_preprocess_save_load_kg.preprocess
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG
+
+
+
+
+.. py:class:: PreprocessKG(kg)
+
+
+   Preprocess the data in memory 
+
+   .. py:method:: start() -> None
+
+      Preprocess train, valid and test datasets stored in knowledge graph instance
+
+      Parameter
+      ---------
+
+      Returns
+      -------
+      None
+
+
+   .. py:method:: preprocess_with_byte_pair_encoding()
+
+
+   .. py:method:: preprocess_with_byte_pair_encoding_with_padding() -> None
+
+      Returns
+      -------
+
+
+
+   .. py:method:: preprocess_with_pandas() -> None
+
+      Preprocess train, valid and test datasets stored in knowledge graph instance with pandas
+
+      (1) Add recipriocal or noisy triples
+      (2) Construct vocabulary
+      (3) Index datasets
+
+      Parameter
+      ---------
+
+      Returns
+      -------
+      None
+
+
+   .. py:method:: preprocess_with_polars() -> None
+
+      Returns
+      -------
+
+
+
+   .. py:method:: sequential_vocabulary_construction() -> None
+
+      (1) Read input data into memory
+      (2) Remove triples with a condition
+      (3) Serialize vocabularies in a pandas dataframe where
+                  => the index is integer and
+                  => a single column is string (e.g. URI)
+
+
+   .. py:method:: remove_triples_from_train_with_condition()
+
+
+

@@ -1,0 +1,49 @@
+:py:mod:`dicee.analyse_experiments`
+===================================
+
+.. py:module:: dicee.analyse_experiments
+
+.. autoapi-nested-parse::
+
+   This script should be moved to dicee/scripts
+
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.analyse_experiments.Experiment
+
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   dicee.analyse_experiments.get_default_arguments
+   dicee.analyse_experiments.analyse
+
+
+
+.. py:function:: get_default_arguments()
+
+
+.. py:class:: Experiment
+
+
+   .. py:method:: save_experiment(x)
+
+
+   .. py:method:: to_df()
+
+
+
+.. py:function:: analyse(args)
+
+

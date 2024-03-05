@@ -1,0 +1,101 @@
+:py:mod:`dicee.evaluator`
+=========================
+
+.. py:module:: dicee.evaluator
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.evaluator.Evaluator
+
+
+
+
+.. py:class:: Evaluator(args, is_continual_training=None)
+
+
+    Evaluator class to evaluate KGE models in various downstream tasks
+
+    Arguments
+   ----------
+   executor: Executor class instance
+
+   .. py:method:: vocab_preparation(dataset) -> None
+
+      A function to wait future objects for the attributes of executor
+
+      Arguments
+      ----------
+
+      Return
+      ----------
+      None
+
+
+   .. py:method:: eval(dataset: dicee.knowledge_graph.KG, trained_model, form_of_labelling, during_training=False) -> None
+
+
+   .. py:method:: eval_rank_of_head_and_tail_entity(*, train_set, valid_set=None, test_set=None, trained_model)
+
+
+   .. py:method:: eval_rank_of_head_and_tail_byte_pair_encoded_entity(*, train_set=None, valid_set=None, test_set=None, ordered_bpe_entities, trained_model)
+
+
+   .. py:method:: eval_with_byte(*, raw_train_set, raw_valid_set=None, raw_test_set=None, trained_model, form_of_labelling) -> None
+
+      Evaluate model after reciprocal triples are added 
+
+
+   .. py:method:: eval_with_bpe_vs_all(*, raw_train_set, raw_valid_set=None, raw_test_set=None, trained_model, form_of_labelling) -> None
+
+      Evaluate model after reciprocal triples are added 
+
+
+   .. py:method:: eval_with_vs_all(*, train_set, valid_set=None, test_set=None, trained_model, form_of_labelling) -> None
+
+      Evaluate model after reciprocal triples are added 
+
+
+   .. py:method:: evaluate_lp_k_vs_all(model, triple_idx, info=None, form_of_labelling=None)
+
+      Filtered link prediction evaluation.
+      :param model:
+      :param triple_idx: test triples
+      :param info:
+      :param form_of_labelling:
+      :return:
+
+
+   .. py:method:: evaluate_lp_with_byte(model, triples: List[List[str]], info=None)
+
+
+   .. py:method:: evaluate_lp_bpe_k_vs_all(model, triples: List[List[str]], info=None, form_of_labelling=None)
+
+      Parameters
+      ----------
+      model
+      triples: List of lists
+      info
+      form_of_labelling
+
+      Returns
+      -------
+
+
+
+   .. py:method:: evaluate_lp(model, triple_idx, info: str)
+
+
+   .. py:method:: dummy_eval(trained_model, form_of_labelling: str)
+
+
+   .. py:method:: eval_with_data(dataset, trained_model, triple_idx: numpy.ndarray, form_of_labelling: str)
+
+
+

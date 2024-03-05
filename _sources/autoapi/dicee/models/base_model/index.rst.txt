@@ -1,0 +1,541 @@
+:py:mod:`dicee.models.base_model`
+=================================
+
+.. py:module:: dicee.models.base_model
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.models.base_model.BaseKGELightning
+   dicee.models.base_model.BaseKGE
+   dicee.models.base_model.IdentityClass
+
+
+
+
+.. py:class:: BaseKGELightning(*args, **kwargs)
+
+
+   Bases: :py:obj:`lightning.LightningModule`
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+   .. py:method:: mem_of_model() -> Dict
+
+      Size of model in MB and number of params
+
+
+   .. py:method:: training_step(batch, batch_idx=None)
+
+      Here you compute and return the training loss and some additional metrics for e.g. the progress bar or
+      logger.
+
+      Args:
+          batch: The output of your data iterable, normally a :class:`~torch.utils.data.DataLoader`.
+          batch_idx: The index of this batch.
+          dataloader_idx: The index of the dataloader that produced this batch.
+              (only if multiple dataloaders used)
+
+      Return:
+          - :class:`~torch.Tensor` - The loss tensor
+          - ``dict`` - A dictionary which can include any keys, but must include the key ``'loss'`` in the case of
+            automatic optimization.
+          - ``None`` - In automatic optimization, this will skip to the next batch (but is not supported for
+            multi-GPU, TPU, or DeepSpeed). For manual optimization, this has no special meaning, as returning
+            the loss is not required.
+
+      In this step you'd normally do the forward pass and calculate the loss for a batch.
+      You can also do fancier things like multiple forward passes or something model specific.
+
+      Example::
+
+          def training_step(self, batch, batch_idx):
+              x, y, z = batch
+              out = self.encoder(x)
+              loss = self.loss(out, x)
+              return loss
+
+      To use multiple optimizers, you can switch to 'manual optimization' and control their stepping:
+
+      .. code-block:: python
+
+          def __init__(self):
+              super().__init__()
+              self.automatic_optimization = False
+
+
+          # Multiple optimizers (e.g.: GANs)
+          def training_step(self, batch, batch_idx):
+              opt1, opt2 = self.optimizers()
+
+              # do training_step with encoder
+              ...
+              opt1.step()
+              # do training_step with decoder
+              ...
+              opt2.step()
+
+      Note:
+          When ``accumulate_grad_batches`` > 1, the loss returned here will be automatically
+          normalized by ``accumulate_grad_batches`` internally.
+
+
+
+   .. py:method:: loss_function(yhat_batch: torch.FloatTensor, y_batch: torch.FloatTensor)
+
+      Parameters
+      ----------
+      yhat_batch
+      y_batch
+
+      Returns
+      -------
+
+
+
+   .. py:method:: on_train_epoch_end(*args, **kwargs)
+
+      Called in the training loop at the very end of the epoch.
+
+      To access all batch outputs at the end of the epoch, you can cache step outputs as an attribute of the
+      :class:`~lightning.pytorch.LightningModule` and access them in this hook:
+
+      .. code-block:: python
+
+          class MyLightningModule(L.LightningModule):
+              def __init__(self):
+                  super().__init__()
+                  self.training_step_outputs = []
+
+              def training_step(self):
+                  loss = ...
+                  self.training_step_outputs.append(loss)
+                  return loss
+
+              def on_train_epoch_end(self):
+                  # do something with all training_step outputs, for example:
+                  epoch_mean = torch.stack(self.training_step_outputs).mean()
+                  self.log("training_epoch_mean", epoch_mean)
+                  # free up the memory
+                  self.training_step_outputs.clear()
+
+
+
+   .. py:method:: test_epoch_end(outputs: List[Any])
+
+
+   .. py:method:: test_dataloader() -> None
+
+      An iterable or collection of iterables specifying test samples.
+
+      For more information about multiple dataloaders, see this :ref:`section <multiple-dataloaders>`.
+
+      For data processing use the following pattern:
+
+          - download in :meth:`prepare_data`
+          - process and split in :meth:`setup`
+
+      However, the above are only necessary for distributed processing.
+
+      .. warning:: do not assign state in prepare_data
+
+
+      - :meth:`~lightning.pytorch.trainer.trainer.Trainer.test`
+      - :meth:`prepare_data`
+      - :meth:`setup`
+
+      Note:
+          Lightning tries to add the correct sampler for distributed and arbitrary hardware.
+          There is no need to set it yourself.
+
+      Note:
+          If you don't need a test dataset and a :meth:`test_step`, you don't need to implement
+          this method.
+
+
+
+   .. py:method:: val_dataloader() -> None
+
+      An iterable or collection of iterables specifying validation samples.
+
+      For more information about multiple dataloaders, see this :ref:`section <multiple-dataloaders>`.
+
+      The dataloader you return will not be reloaded unless you set
+      :paramref:`~lightning.pytorch.trainer.trainer.Trainer.reload_dataloaders_every_n_epochs` to
+      a positive integer.
+
+      It's recommended that all data downloads and preparation happen in :meth:`prepare_data`.
+
+      - :meth:`~lightning.pytorch.trainer.trainer.Trainer.fit`
+      - :meth:`~lightning.pytorch.trainer.trainer.Trainer.validate`
+      - :meth:`prepare_data`
+      - :meth:`setup`
+
+      Note:
+          Lightning tries to add the correct sampler for distributed and arbitrary hardware
+          There is no need to set it yourself.
+
+      Note:
+          If you don't need a validation dataset and a :meth:`validation_step`, you don't need to
+          implement this method.
+
+
+
+   .. py:method:: predict_dataloader() -> None
+
+      An iterable or collection of iterables specifying prediction samples.
+
+      For more information about multiple dataloaders, see this :ref:`section <multiple-dataloaders>`.
+
+      It's recommended that all data downloads and preparation happen in :meth:`prepare_data`.
+
+      - :meth:`~lightning.pytorch.trainer.trainer.Trainer.predict`
+      - :meth:`prepare_data`
+      - :meth:`setup`
+
+      Note:
+          Lightning tries to add the correct sampler for distributed and arbitrary hardware
+          There is no need to set it yourself.
+
+      Return:
+          A :class:`torch.utils.data.DataLoader` or a sequence of them specifying prediction samples.
+
+
+
+   .. py:method:: train_dataloader() -> None
+
+      An iterable or collection of iterables specifying training samples.
+
+      For more information about multiple dataloaders, see this :ref:`section <multiple-dataloaders>`.
+
+      The dataloader you return will not be reloaded unless you set
+      :paramref:`~lightning.pytorch.trainer.trainer.Trainer.reload_dataloaders_every_n_epochs` to
+      a positive integer.
+
+      For data processing use the following pattern:
+
+          - download in :meth:`prepare_data`
+          - process and split in :meth:`setup`
+
+      However, the above are only necessary for distributed processing.
+
+      .. warning:: do not assign state in prepare_data
+
+      - :meth:`~lightning.pytorch.trainer.trainer.Trainer.fit`
+      - :meth:`prepare_data`
+      - :meth:`setup`
+
+      Note:
+          Lightning tries to add the correct sampler for distributed and arbitrary hardware.
+          There is no need to set it yourself.
+
+
+
+   .. py:method:: configure_optimizers(parameters=None)
+
+      Choose what optimizers and learning-rate schedulers to use in your optimization. Normally you'd need one.
+      But in the case of GANs or similar you might have multiple. Optimization with multiple optimizers only works in
+      the manual optimization mode.
+
+      Return:
+          Any of these 6 options.
+
+          - **Single optimizer**.
+          - **List or Tuple** of optimizers.
+          - **Two lists** - The first list has multiple optimizers, and the second has multiple LR schedulers
+            (or multiple ``lr_scheduler_config``).
+          - **Dictionary**, with an ``"optimizer"`` key, and (optionally) a ``"lr_scheduler"``
+            key whose value is a single LR scheduler or ``lr_scheduler_config``.
+          - **None** - Fit will run without any optimizer.
+
+      The ``lr_scheduler_config`` is a dictionary which contains the scheduler and its associated configuration.
+      The default configuration is shown below.
+
+      .. code-block:: python
+
+          lr_scheduler_config = {
+              # REQUIRED: The scheduler instance
+              "scheduler": lr_scheduler,
+              # The unit of the scheduler's step size, could also be 'step'.
+              # 'epoch' updates the scheduler on epoch end whereas 'step'
+              # updates it after a optimizer update.
+              "interval": "epoch",
+              # How many epochs/steps should pass between calls to
+              # `scheduler.step()`. 1 corresponds to updating the learning
+              # rate after every epoch/step.
+              "frequency": 1,
+              # Metric to to monitor for schedulers like `ReduceLROnPlateau`
+              "monitor": "val_loss",
+              # If set to `True`, will enforce that the value specified 'monitor'
+              # is available when the scheduler is updated, thus stopping
+              # training if not found. If set to `False`, it will only produce a warning
+              "strict": True,
+              # If using the `LearningRateMonitor` callback to monitor the
+              # learning rate progress, this keyword can be used to specify
+              # a custom logged name
+              "name": None,
+          }
+
+      When there are schedulers in which the ``.step()`` method is conditioned on a value, such as the
+      :class:`torch.optim.lr_scheduler.ReduceLROnPlateau` scheduler, Lightning requires that the
+      ``lr_scheduler_config`` contains the keyword ``"monitor"`` set to the metric name that the scheduler
+      should be conditioned on.
+
+      .. testcode::
+
+          # The ReduceLROnPlateau scheduler requires a monitor
+          def configure_optimizers(self):
+              optimizer = Adam(...)
+              return {
+                  "optimizer": optimizer,
+                  "lr_scheduler": {
+                      "scheduler": ReduceLROnPlateau(optimizer, ...),
+                      "monitor": "metric_to_track",
+                      "frequency": "indicates how often the metric is updated",
+                      # If "monitor" references validation metrics, then "frequency" should be set to a
+                      # multiple of "trainer.check_val_every_n_epoch".
+                  },
+              }
+
+
+          # In the case of two optimizers, only one using the ReduceLROnPlateau scheduler
+          def configure_optimizers(self):
+              optimizer1 = Adam(...)
+              optimizer2 = SGD(...)
+              scheduler1 = ReduceLROnPlateau(optimizer1, ...)
+              scheduler2 = LambdaLR(optimizer2, ...)
+              return (
+                  {
+                      "optimizer": optimizer1,
+                      "lr_scheduler": {
+                          "scheduler": scheduler1,
+                          "monitor": "metric_to_track",
+                      },
+                  },
+                  {"optimizer": optimizer2, "lr_scheduler": scheduler2},
+              )
+
+      Metrics can be made available to monitor by simply logging it using
+      ``self.log('metric_to_track', metric_val)`` in your :class:`~lightning.pytorch.core.LightningModule`.
+
+      Note:
+          Some things to know:
+
+          - Lightning calls ``.backward()`` and ``.step()`` automatically in case of automatic optimization.
+          - If a learning rate scheduler is specified in ``configure_optimizers()`` with key
+            ``"interval"`` (default "epoch") in the scheduler configuration, Lightning will call
+            the scheduler's ``.step()`` method automatically in case of automatic optimization.
+          - If you use 16-bit precision (``precision=16``), Lightning will automatically handle the optimizer.
+          - If you use :class:`torch.optim.LBFGS`, Lightning handles the closure function automatically for you.
+          - If you use multiple optimizers, you will have to switch to 'manual optimization' mode and step them
+            yourself.
+          - If you need to control how often the optimizer steps, override the :meth:`optimizer_step` hook.
+
+
+
+
+.. py:class:: BaseKGE(args: dict)
+
+
+   Bases: :py:obj:`BaseKGELightning`
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+   .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
+
+      Parameters
+      ----------
+      x : B x 2 x T
+
+
+
+      Returns
+      -------
+
+
+
+   .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
+
+      byte pair encoded neural link predictors
+
+      Parameters
+      ----------
+
+      -------
+
+
+
+   .. py:method:: init_params_with_sanity_checking()
+
+
+   .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
+
+      Parameters
+      ----------
+      x
+      y_idx
+      ordered_bpe_entities
+
+      Returns
+      -------
+
+
+
+   .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
+
+      Parameters
+      ----------
+      x
+
+      Returns
+      -------
+
+
+
+   .. py:method:: forward_k_vs_all(*args, **kwargs)
+
+
+   .. py:method:: forward_k_vs_sample(*args, **kwargs)
+
+
+   .. py:method:: get_triple_representation(idx_hrt)
+
+
+   .. py:method:: get_head_relation_representation(indexed_triple)
+
+
+   .. py:method:: get_sentence_representation(x: torch.LongTensor)
+
+      Parameters
+      ----------
+      x shape (b,3,t)
+
+      Returns
+      -------
+
+
+
+   .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
+
+      Parameters
+      ----------
+      x : B x 2 x T
+
+      Returns
+      -------
+
+
+
+   .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
+
+      Returns
+      -------
+
+
+
+
+.. py:class:: IdentityClass(args=None)
+
+
+   Bases: :py:obj:`torch.nn.Module`
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+   .. py:method:: forward(x)
+      :staticmethod:
+
+
+

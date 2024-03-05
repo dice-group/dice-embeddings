@@ -1,0 +1,186 @@
+:py:mod:`dicee.models.octonion`
+===============================
+
+.. py:module:: dicee.models.octonion
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.models.octonion.OMult
+   dicee.models.octonion.ConvO
+   dicee.models.octonion.AConvO
+
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   dicee.models.octonion.octonion_mul
+   dicee.models.octonion.octonion_mul_norm
+
+
+
+.. py:function:: octonion_mul(*, O_1, O_2)
+
+
+.. py:function:: octonion_mul_norm(*, O_1, O_2)
+
+
+.. py:class:: OMult(args)
+
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+   .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
+      :staticmethod:
+
+
+   .. py:method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor)
+
+
+   .. py:method:: k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
+
+
+   .. py:method:: forward_k_vs_all(x)
+
+      Completed.
+      Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,
+      [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
+      Given a batch of head entities and relations => shape (size of batch,| Entities|)
+
+
+
+.. py:class:: ConvO(args: dict)
+
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+   .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
+      :staticmethod:
+
+
+   .. py:method:: residual_convolution(O_1, O_2)
+
+
+   .. py:method:: forward_triples(x: torch.Tensor) -> torch.Tensor
+
+      Parameters
+      ----------
+      x
+
+      Returns
+      -------
+
+
+
+   .. py:method:: forward_k_vs_all(x: torch.Tensor)
+
+      Given a head entity and a relation (h,r), we compute scores for all entities.
+      [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
+      Given a batch of head entities and relations => shape (size of batch,| Entities|)
+
+
+
+.. py:class:: AConvO(args: dict)
+
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+   Additive Convolutional Octonion Knowledge Graph Embeddings 
+
+   .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
+      :staticmethod:
+
+
+   .. py:method:: residual_convolution(O_1, O_2)
+
+
+   .. py:method:: forward_triples(x: torch.Tensor) -> torch.Tensor
+
+      Parameters
+      ----------
+      x
+
+      Returns
+      -------
+
+
+
+   .. py:method:: forward_k_vs_all(x: torch.Tensor)
+
+      Given a head entity and a relation (h,r), we compute scores for all entities.
+      [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
+      Given a batch of head entities and relations => shape (size of batch,| Entities|)
+
+
+

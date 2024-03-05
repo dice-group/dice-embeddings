@@ -1,0 +1,28 @@
+:py:mod:`dicee.scripts.run`
+===========================
+
+.. py:module:: dicee.scripts.run
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   dicee.scripts.run.get_default_arguments
+   dicee.scripts.run.main
+
+
+
+.. py:function:: get_default_arguments(description=None)
+
+   Extends pytorch_lightning Trainer's arguments with ours 
+
+
+.. py:function:: main()
+
+

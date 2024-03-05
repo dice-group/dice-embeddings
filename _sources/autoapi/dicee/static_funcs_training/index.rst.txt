@@ -1,0 +1,40 @@
+:py:mod:`dicee.static_funcs_training`
+=====================================
+
+.. py:module:: dicee.static_funcs_training
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   dicee.static_funcs_training.evaluate_lp
+   dicee.static_funcs_training.evaluate_bpe_lp
+   dicee.static_funcs_training.efficient_zero_grad
+
+
+
+.. py:function:: evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info='Eval Starts')
+
+   Evaluate model in a standard link prediction task
+
+   for each triple
+   the rank is computed by taking the mean of the filtered missing head entity rank and
+   the filtered missing tail entity rank
+   :param model:
+   :param triple_idx:
+   :param info:
+   :return:
+
+
+.. py:function:: evaluate_bpe_lp(model, triple_idx: List[Tuple], all_bpe_shaped_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info='Eval Starts')
+
+
+.. py:function:: efficient_zero_grad(model)
+
+

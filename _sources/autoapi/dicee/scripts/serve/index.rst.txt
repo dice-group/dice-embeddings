@@ -1,0 +1,76 @@
+:py:mod:`dicee.scripts.serve`
+=============================
+
+.. py:module:: dicee.scripts.serve
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.scripts.serve.NeuralSearcher
+
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   dicee.scripts.serve.get_default_arguments
+   dicee.scripts.serve.root
+   dicee.scripts.serve.search_embeddings
+   dicee.scripts.serve.retrieve_embeddings
+   dicee.scripts.serve.main
+
+
+
+Attributes
+~~~~~~~~~~
+
+.. autoapisummary::
+
+   dicee.scripts.serve.app
+   dicee.scripts.serve.neural_searcher
+
+
+.. py:data:: app
+
+   
+
+.. py:data:: neural_searcher
+
+   
+
+.. py:function:: get_default_arguments()
+
+
+.. py:function:: root()
+   :async:
+
+
+.. py:function:: search_embeddings(q: str)
+   :async:
+
+
+.. py:function:: retrieve_embeddings(q: str)
+   :async:
+
+
+.. py:class:: NeuralSearcher(args)
+
+
+   .. py:method:: get(entity: str)
+
+
+   .. py:method:: search(entity: str)
+
+
+
+.. py:function:: main()
+
+

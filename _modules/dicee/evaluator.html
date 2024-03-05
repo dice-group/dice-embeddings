@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>dicee.evaluator &#8212; DICE Embeddings 0.1.3.2 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/theme_tweak.css?v=f0ad19f3" />
+    <script src="../../_static/documentation_options.js?v=c6726a90"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for dicee.evaluator</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">.static_funcs</span> <span class="kn">import</span> <span class="n">pickle</span>
+<span class="kn">from</span> <span class="nn">.static_funcs_training</span> <span class="kn">import</span> <span class="n">evaluate_lp</span><span class="p">,</span> <span class="n">evaluate_bpe_lp</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">from</span> <span class="nn">.knowledge_graph</span> <span class="kn">import</span> <span class="n">KG</span>
+
+
+<div class="viewcode-block" id="Evaluator">
+<a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator">[docs]</a>
+<span class="k">class</span> <span class="nc">Evaluator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Evaluator class to evaluate KGE models in various downstream tasks</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">       ----------</span>
+<span class="sd">       executor: Executor class instance</span>
+<span class="sd">   &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">is_continual_training</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ee_vocab</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func_triple_to_bpe_representation</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_continual_training</span> <span class="o">=</span> <span class="n">is_continual_training</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">domain_constraints_per_rel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">range_constraints_per_rel</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">report</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">during_training</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="Evaluator.vocab_preparation">
+<a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.vocab_preparation">[docs]</a>
+    <span class="k">def</span> <span class="nf">vocab_preparation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A function to wait future objects for the attributes of executor</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        Return</span>
+<span class="sd">        ----------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># print(&quot;** VOCAB Prep **&quot;)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">er_vocab</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">er_vocab</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">re_vocab</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">re_vocab</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">re_vocab</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">ee_vocab</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ee_vocab</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">ee_vocab</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ee_vocab</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">ee_vocab</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        if isinstance(dataset.constraints, tuple):</span>
+<span class="sd">            self.domain_constraints_per_rel, self.range_constraints_per_rel = dataset.constraints</span>
+<span class="sd">        else:</span>
+<span class="sd">            try:</span>
+<span class="sd">                self.domain_constraints_per_rel, self.range_constraints_per_rel = dataset.constraints.result()</span>
+<span class="sd">            except RuntimeError:</span>
+<span class="sd">                print(&#39;Domain constraint exception occurred&#39;)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">num_entities</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">num_relations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func_triple_to_bpe_representation</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">func_triple_to_bpe_representation</span>
+
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s2">&quot;/er_vocab.p&quot;</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">))</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s2">&quot;/re_vocab.p&quot;</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">))</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ee_vocab</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s2">&quot;/ee_vocab.p&quot;</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">))</span></div>
+
+
+    <span class="c1"># @timeit</span>
+<div class="viewcode-block" id="Evaluator.eval">
+<a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.eval">[docs]</a>
+    <span class="k">def</span> <span class="nf">eval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">KG</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">,</span> <span class="n">during_training</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># @TODO: Why this reassigment ?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">during_training</span> <span class="o">=</span> <span class="n">during_training</span>
+        <span class="c1"># (1) Exit, if the flag is not set</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vocab_preparation</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">num_folds_for_cv</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Wrong input:RESET&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="o">=</span> <span class="s1">&#39;train_val_test&#39;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="o">==</span> <span class="s1">&#39;NegSample&#39;</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">byte_pair_encoding</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eval_rank_of_head_and_tail_byte_pair_encoded_entity</span><span class="p">(</span><span class="n">train_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">train_set</span><span class="p">,</span>
+                                                                     <span class="n">valid_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">valid_set</span><span class="p">,</span>
+                                                                     <span class="n">test_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">test_set</span><span class="p">,</span>
+                                                                     <span class="n">ordered_bpe_entities</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">ordered_bpe_entities</span><span class="p">,</span>
+                                                                     <span class="n">trained_model</span><span class="o">=</span><span class="n">trained_model</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;AllvsAll&quot;</span><span class="p">,</span>
+                                             <span class="s2">&quot;KvsAll&quot;</span><span class="p">,</span>
+                                             <span class="s1">&#39;KvsSample&#39;</span><span class="p">,</span>
+                                             <span class="s2">&quot;1vsAll&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">byte_pair_encoding</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="o">!=</span> <span class="s2">&quot;BytE&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">eval_with_bpe_vs_all</span><span class="p">(</span><span class="n">raw_train_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">raw_train_set</span><span class="p">,</span>
+                                          <span class="n">raw_valid_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">raw_valid_set</span><span class="p">,</span>
+                                          <span class="n">raw_test_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">raw_test_set</span><span class="p">,</span>
+                                          <span class="n">trained_model</span><span class="o">=</span><span class="n">trained_model</span><span class="p">,</span>
+                                          <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">eval_with_byte</span><span class="p">(</span><span class="n">raw_train_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">raw_train_set</span><span class="p">,</span>
+                                    <span class="n">raw_valid_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">raw_valid_set</span><span class="p">,</span>
+                                    <span class="n">raw_test_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">raw_test_set</span><span class="p">,</span>
+                                    <span class="n">trained_model</span><span class="o">=</span><span class="n">trained_model</span><span class="p">,</span>
+                                    <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="o">==</span> <span class="s1">&#39;NegSample&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eval_rank_of_head_and_tail_entity</span><span class="p">(</span><span class="n">train_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">train_set</span><span class="p">,</span>
+                                                   <span class="n">valid_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">valid_set</span><span class="p">,</span>
+                                                   <span class="n">test_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">test_set</span><span class="p">,</span>
+                                                   <span class="n">trained_model</span><span class="o">=</span><span class="n">trained_model</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;AllvsAll&quot;</span><span class="p">,</span> <span class="s2">&quot;KvsAll&quot;</span><span class="p">,</span> <span class="s1">&#39;KvsSample&#39;</span><span class="p">,</span> <span class="s2">&quot;1vsAll&quot;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eval_with_vs_all</span><span class="p">(</span><span class="n">train_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">train_set</span><span class="p">,</span>
+                                  <span class="n">valid_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">valid_set</span><span class="p">,</span>
+                                  <span class="n">test_set</span><span class="o">=</span><span class="n">dataset</span><span class="o">.</span><span class="n">test_set</span><span class="p">,</span>
+                                  <span class="n">trained_model</span><span class="o">=</span><span class="n">trained_model</span><span class="p">,</span>
+                                  <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid argument: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">during_training</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s1">&#39;/eval_report.json&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_descriptor</span><span class="p">:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">,</span> <span class="n">file_descriptor</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
+
+
+    <span class="k">def</span> <span class="nf">__load_indexed_datasets</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="s1">&#39;train&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="n">train_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s2">&quot;/train_set.npy&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">train_set</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="s1">&#39;val&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="n">valid_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s2">&quot;/valid_set.npy&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">valid_set</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="n">test_set</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s2">&quot;/test_set.npy&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">test_set</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">valid_set</span><span class="p">,</span> <span class="n">test_set</span>
+
+    <span class="k">def</span> <span class="nf">__load_and_set_mappings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s2">&quot;/er_vocab.p&quot;</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s2">&quot;/re_vocab.p&quot;</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ee_vocab</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s2">&quot;/ee_vocab.p&quot;</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Evaluator.eval_rank_of_head_and_tail_entity">
+<a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.eval_rank_of_head_and_tail_entity">[docs]</a>
+    <span class="k">def</span> <span class="nf">eval_rank_of_head_and_tail_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">valid_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">test_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">):</span>
+        <span class="c1"># 4. Test model on the training dataset if it is needed.</span>
+        <span class="k">if</span> <span class="s1">&#39;train&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span>
+                                   <span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on Train set&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Train&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">res</span>
+        <span class="c1"># 5. Test model on the validation and test dataset if it is needed.</span>
+        <span class="k">if</span> <span class="s1">&#39;val&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Val&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">valid_set</span><span class="p">,</span>
+                                                      <span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> of Validation set&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">test_set</span><span class="p">,</span>
+                                                   <span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> of Test set&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Evaluator.eval_rank_of_head_and_tail_byte_pair_encoded_entity">
+<a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.eval_rank_of_head_and_tail_byte_pair_encoded_entity">[docs]</a>
+    <span class="k">def</span> <span class="nf">eval_rank_of_head_and_tail_byte_pair_encoded_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                                                            <span class="n">train_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                            <span class="n">valid_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                            <span class="n">test_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                                            <span class="n">ordered_bpe_entities</span><span class="p">,</span>
+                                                            <span class="n">trained_model</span><span class="p">):</span>
+        <span class="c1"># 4. Test model on the training dataset if it is needed.</span>
+        <span class="k">if</span> <span class="s1">&#39;train&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Train&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluate_bpe_lp</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">ordered_bpe_entities</span><span class="p">,</span>
+                                                   <span class="n">er_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">,</span> <span class="n">re_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span><span class="p">,</span>
+                                                   <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on NegSample BPE Train set&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="s1">&#39;val&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span> <span class="ow">and</span> <span class="n">valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Val&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluate_bpe_lp</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">valid_set</span><span class="p">,</span> <span class="n">ordered_bpe_entities</span><span class="p">,</span>
+                                                 <span class="n">er_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">,</span> <span class="n">re_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span><span class="p">,</span>
+                                                 <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on NegSample BPE Valid set&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaluate_bpe_lp</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">test_set</span><span class="p">,</span> <span class="n">ordered_bpe_entities</span><span class="p">,</span>
+                                                  <span class="n">er_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">,</span> <span class="n">re_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span><span class="p">,</span>
+                                                  <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on NegSample BPE Test set&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Evaluator.eval_with_byte">
+<a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.eval_with_byte">[docs]</a>
+    <span class="k">def</span> <span class="nf">eval_with_byte</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">raw_train_set</span><span class="p">,</span> <span class="n">raw_valid_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">raw_test_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span>
+                       <span class="n">form_of_labelling</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Evaluate model after reciprocal triples are added &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;train&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Train&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="k">if</span> <span class="s1">&#39;val&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">raw_valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_valid_set</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Val&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_with_byte</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">raw_valid_set</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                                                                <span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on BytE Validation set&#39;</span><span class="p">,</span>
+                                                                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">raw_test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_with_byte</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">raw_test_set</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                                                             <span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on BytE Test set&#39;</span><span class="p">,</span>
+                                                             <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Evaluator.eval_with_bpe_vs_all">
+<a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.eval_with_bpe_vs_all">[docs]</a>
+    <span class="k">def</span> <span class="nf">eval_with_bpe_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">raw_train_set</span><span class="p">,</span> <span class="n">raw_valid_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">raw_test_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span>
+                             <span class="n">form_of_labelling</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Evaluate model after reciprocal triples are added &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;train&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_bpe_k_vs_all</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">raw_train_set</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                                                <span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on BPE Train set&#39;</span><span class="p">,</span>
+                                                <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Train&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">res</span>
+
+        <span class="k">if</span> <span class="s1">&#39;val&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">raw_valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw_valid_set</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Val&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_bpe_k_vs_all</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">raw_valid_set</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                                                                   <span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on BPE Validation set&#39;</span><span class="p">,</span>
+                                                                   <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">raw_test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_bpe_k_vs_all</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">raw_test_set</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                                                                <span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on BPE Test set&#39;</span><span class="p">,</span>
+                                                                <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Evaluator.eval_with_vs_all">
+<a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.eval_with_vs_all">[docs]</a>
+    <span class="k">def</span> <span class="nf">eval_with_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span> <span class="n">valid_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">test_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Evaluate model after reciprocal triples are added &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="s1">&#39;train&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_k_vs_all</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">train_set</span><span class="p">,</span>
+                                            <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on Train set&#39;</span><span class="p">,</span>
+                                            <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Train&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">res</span>
+
+        <span class="k">if</span> <span class="s1">&#39;val&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">valid_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_k_vs_all</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">valid_set</span><span class="p">,</span>
+                                                <span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on Validation set&#39;</span><span class="p">,</span>
+                                                <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Val&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">res</span>
+
+        <span class="k">if</span> <span class="n">test_set</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_k_vs_all</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">test_set</span><span class="p">,</span>
+                                            <span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on Test set&#39;</span><span class="p">,</span>
+                                            <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">[</span><span class="s1">&#39;Test&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">res</span></div>
+
+
+<div class="viewcode-block" id="Evaluator.evaluate_lp_k_vs_all">
+<a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.evaluate_lp_k_vs_all">[docs]</a>
+    <span class="k">def</span> <span class="nf">evaluate_lp_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Filtered link prediction evaluation.</span>
+<span class="sd">        :param model:</span>
+<span class="sd">        :param triple_idx: test triples</span>
+<span class="sd">        :param info:</span>
+<span class="sd">        :param form_of_labelling:</span>
+<span class="sd">        :return:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># (1) set model to eval model</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+        <span class="n">num_triples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">triple_idx</span><span class="p">)</span>
+        <span class="n">ranks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Hit range</span>
+        <span class="n">hits_range</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">)]</span>
+        <span class="n">hits</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">hits_range</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">info</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">during_training</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">info</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">form_of_labelling</span> <span class="o">==</span> <span class="s1">&#39;RelationPrediction&#39;</span><span class="p">:</span>
+            <span class="c1"># Iterate over integer indexed triples in mini batch fashion</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_triples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">):</span>
+                <span class="n">data_batch</span> <span class="o">=</span> <span class="n">triple_idx</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">]</span>
+                <span class="n">e1_idx_e2_idx</span><span class="p">,</span> <span class="n">r_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">data_batch</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]]),</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">data_batch</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+                <span class="c1"># Generate predictions</span>
+                <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">forward_k_vs_all</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">e1_idx_e2_idx</span><span class="p">)</span>
+                <span class="c1"># Filter entities except the target entity</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data_batch</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                    <span class="n">filt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ee_vocab</span><span class="p">[(</span><span class="n">data_batch</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">data_batch</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">2</span><span class="p">])]</span>
+                    <span class="n">target_value</span> <span class="o">=</span> <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">r_idx</span><span class="p">[</span><span class="n">j</span><span class="p">]]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                    <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">filt</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+                    <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">r_idx</span><span class="p">[</span><span class="n">j</span><span class="p">]]</span> <span class="o">=</span> <span class="n">target_value</span>
+                <span class="c1"># Sort predictions.</span>
+                <span class="n">sort_values</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="c1"># This can be also done in parallel</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data_batch</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                    <span class="n">rank</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sort_idxs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="n">r_idx</span><span class="p">[</span><span class="n">j</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="n">ranks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rank</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">hits_level</span> <span class="ow">in</span> <span class="n">hits_range</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">rank</span> <span class="o">&lt;=</span> <span class="n">hits_level</span><span class="p">:</span>
+                            <span class="n">hits</span><span class="p">[</span><span class="n">hits_level</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Iterate over integer indexed triples in mini batch fashion</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_triples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">):</span>
+                <span class="c1"># (1) Get a batch of data.</span>
+                <span class="n">data_batch</span> <span class="o">=</span> <span class="n">triple_idx</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">]</span>
+                <span class="c1"># (2) Extract entities and relations.</span>
+                <span class="n">e1_idx_r_idx</span><span class="p">,</span> <span class="n">e2_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">data_batch</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]),</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">data_batch</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span>
+                <span class="c1"># (3) Predict missing entities, i.e., assign probs to all entities.</span>
+                <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+                    <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">e1_idx_r_idx</span><span class="p">)</span>
+                <span class="c1"># (4) Filter entities except the target entity</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data_batch</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                    <span class="c1"># (4.1) Get the ids of the head entity, the relation and the target tail entity in the j.th triple.</span>
+                    <span class="n">id_e</span><span class="p">,</span> <span class="n">id_r</span><span class="p">,</span> <span class="n">id_e_target</span> <span class="o">=</span> <span class="n">data_batch</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                    <span class="c1"># (4.2) Get all ids of all entities occurring with the head entity and relation extracted in 4.1.</span>
+                    <span class="n">filt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">[(</span><span class="n">id_e</span><span class="p">,</span> <span class="n">id_r</span><span class="p">)]</span>
+                    <span class="c1"># (4.3) Store the assigned score of the target tail entity extracted in 4.1.</span>
+                    <span class="n">target_value</span> <span class="o">=</span> <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">id_e_target</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                    <span class="c1"># (4.4.1) Filter all assigned scores for entities.</span>
+                    <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">filt</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+                    <span class="c1"># (4.4.2) Filter entities based on the range of a relation as well.</span>
+                    <span class="k">if</span> <span class="s1">&#39;constraint&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">eval_model</span><span class="p">:</span>
+                        <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">range_constraints_per_rel</span><span class="p">[</span><span class="n">data_batch</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+                    <span class="c1"># (4.5) Insert 4.3. after filtering.</span>
+                    <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">id_e_target</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_value</span>
+                <span class="c1"># (5) Sort predictions.</span>
+                <span class="n">sort_values</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="c1"># (6) Compute the filtered ranks.</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data_batch</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                    <span class="c1"># index between 0 and \inf</span>
+                    <span class="n">rank</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sort_idxs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="n">e2_idx</span><span class="p">[</span><span class="n">j</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="n">ranks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rank</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">hits_level</span> <span class="ow">in</span> <span class="n">hits_range</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">rank</span> <span class="o">&lt;=</span> <span class="n">hits_level</span><span class="p">:</span>
+                            <span class="n">hits</span><span class="p">[</span><span class="n">hits_level</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="c1"># (7) Sanity checking: a rank for a triple</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">triple_idx</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">ranks</span><span class="p">)</span> <span class="o">==</span> <span class="n">num_triples</span>
+        <span class="n">hit_1</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="n">num_triples</span>
+        <span class="n">hit_3</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">/</span> <span class="n">num_triples</span>
+        <span class="n">hit_10</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="mi">10</span><span class="p">])</span> <span class="o">/</span> <span class="n">num_triples</span>
+        <span class="n">mean_reciprocal_rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ranks</span><span class="p">))</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;H@1&#39;</span><span class="p">:</span> <span class="n">hit_1</span><span class="p">,</span> <span class="s1">&#39;H@3&#39;</span><span class="p">:</span> <span class="n">hit_3</span><span class="p">,</span> <span class="s1">&#39;H@10&#39;</span><span class="p">:</span> <span class="n">hit_10</span><span class="p">,</span> <span class="s1">&#39;MRR&#39;</span><span class="p">:</span> <span class="n">mean_reciprocal_rank</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">info</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">during_training</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">results</span></div>
+
+
+<div class="viewcode-block" id="Evaluator.evaluate_lp_with_byte">
+<a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.evaluate_lp_with_byte">[docs]</a>
+    <span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">evaluate_lp_with_byte</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">triples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">info</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="c1"># (1) set model to eval model</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+        <span class="n">num_triples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span>
+        <span class="kn">import</span> <span class="nn">tiktoken</span>
+
+        <span class="n">enc</span> <span class="o">=</span> <span class="n">tiktoken</span><span class="o">.</span><span class="n">get_encoding</span><span class="p">(</span><span class="s2">&quot;gpt2&quot;</span><span class="p">)</span>
+
+        <span class="n">ranks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Hit range</span>
+        <span class="n">hits_range</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">)]</span>
+        <span class="n">hits</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">hits_range</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">info</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">during_training</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">info</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+        <span class="c1"># Iterate over integer indexed triples in mini batch fashion</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_triples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">):</span>
+            <span class="n">str_data_batch</span> <span class="o">=</span> <span class="n">triples</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">str_data_batch</span><span class="p">:</span>
+                <span class="n">s</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">o</span> <span class="o">=</span> <span class="n">i</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span><span class="n">enc</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">s</span> <span class="o">+</span> <span class="s2">&quot; &quot;</span> <span class="o">+</span> <span class="n">p</span><span class="p">)])</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Triple:&quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">max_new_tokens</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span> <span class="n">top_k</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">topk</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Generated:&quot;</span><span class="p">,</span> <span class="n">enc</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;H@1&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;H@3&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;H@10&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;MRR&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">results</span></div>
+
+
+<div class="viewcode-block" id="Evaluator.evaluate_lp_bpe_k_vs_all">
+<a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.evaluate_lp_bpe_k_vs_all">[docs]</a>
+    <span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">evaluate_lp_bpe_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">triples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">info</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model</span>
+<span class="sd">        triples: List of lists</span>
+<span class="sd">        info</span>
+<span class="sd">        form_of_labelling</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># (1) set model to eval model</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+        <span class="n">num_triples</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span>
+        <span class="n">ranks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Hit range</span>
+        <span class="n">hits_range</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">11</span><span class="p">)]</span>
+        <span class="n">hits</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">hits_range</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">info</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">during_training</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">info</span> <span class="o">+</span> <span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+        <span class="c1"># Iterate over integer indexed triples in mini batch fashion</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_triples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">):</span>
+            <span class="n">str_data_batch</span> <span class="o">=</span> <span class="n">triples</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">batch_size</span><span class="p">]</span>
+            <span class="c1"># (1) Get a batch of data.</span>
+            <span class="n">torch_batch_bpe_triple</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span>
+                <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">func_triple_to_bpe_representation</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">str_data_batch</span><span class="p">])</span>
+
+            <span class="c1"># (2) Extract entities and relations.</span>
+            <span class="n">bpe_hr</span> <span class="o">=</span> <span class="n">torch_batch_bpe_triple</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">:]</span>
+            <span class="c1"># (3) Predict missing entities, i.e., assign probs to all entities.</span>
+            <span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">bpe_hr</span><span class="p">)</span>
+            <span class="c1"># (4) Filter entities except the target entity</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">predictions</span><span class="p">)):</span>
+                <span class="c1"># (4.2) Get all ids of all entities occurring with the head entity and relation extracted in 4.1.</span>
+                <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">str_data_batch</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                <span class="n">id_e_target</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">str_to_bpe_entity_to_idx</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+                <span class="n">filt_idx_entities</span> <span class="o">=</span> <span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">str_to_bpe_entity_to_idx</span><span class="p">[</span><span class="n">_</span><span class="p">]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">[(</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">)]]</span>
+
+                <span class="c1"># (4.3) Store the assigned score of the target tail entity extracted in 4.1.</span>
+                <span class="n">target_value</span> <span class="o">=</span> <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">id_e_target</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="c1"># (4.4.1) Filter all assigned scores for entities.</span>
+                <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">filt_idx_entities</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">Inf</span>
+                <span class="c1"># (4.4.2) Filter entities based on the range of a relation as well.</span>
+                <span class="c1"># (4.5) Insert 4.3. after filtering.</span>
+                <span class="n">predictions</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">id_e_target</span><span class="p">]</span> <span class="o">=</span> <span class="n">target_value</span>
+            <span class="c1"># (5) Sort predictions.</span>
+            <span class="n">sort_values</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="c1"># (6) Compute the filtered ranks.</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">predictions</span><span class="p">)):</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="n">str_data_batch</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+                <span class="c1"># index between 0 and \inf</span>
+                <span class="n">rank</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">sort_idxs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">==</span> <span class="n">model</span><span class="o">.</span><span class="n">str_to_bpe_entity_to_idx</span><span class="p">[</span><span class="n">t</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">ranks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rank</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">hits_level</span> <span class="ow">in</span> <span class="n">hits_range</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">rank</span> <span class="o">&lt;=</span> <span class="n">hits_level</span><span class="p">:</span>
+                        <span class="n">hits</span><span class="p">[</span><span class="n">hits_level</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="c1"># (7) Sanity checking: a rank for a triple</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">triples</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">ranks</span><span class="p">)</span> <span class="o">==</span> <span class="n">num_triples</span>
+        <span class="n">hit_1</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="n">num_triples</span>
+        <span class="n">hit_3</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span> <span class="o">/</span> <span class="n">num_triples</span>
+        <span class="n">hit_10</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="mi">10</span><span class="p">])</span> <span class="o">/</span> <span class="n">num_triples</span>
+        <span class="n">mean_reciprocal_rank</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mf">1.</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ranks</span><span class="p">))</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;H@1&#39;</span><span class="p">:</span> <span class="n">hit_1</span><span class="p">,</span> <span class="s1">&#39;H@3&#39;</span><span class="p">:</span> <span class="n">hit_3</span><span class="p">,</span> <span class="s1">&#39;H@10&#39;</span><span class="p">:</span> <span class="n">hit_10</span><span class="p">,</span> <span class="s1">&#39;MRR&#39;</span><span class="p">:</span> <span class="n">mean_reciprocal_rank</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">info</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">during_training</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">info</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">results</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">results</span></div>
+
+
+<div class="viewcode-block" id="Evaluator.evaluate_lp">
+<a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.evaluate_lp">[docs]</a>
+    <span class="k">def</span> <span class="nf">evaluate_lp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">evaluate_lp</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span> <span class="n">num_entities</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="n">er_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">er_vocab</span><span class="p">,</span>
+                           <span class="n">re_vocab</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">re_vocab</span><span class="p">,</span> <span class="n">info</span><span class="o">=</span><span class="n">info</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Evaluator.dummy_eval">
+<a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.dummy_eval">[docs]</a>
+    <span class="k">def</span> <span class="nf">dummy_eval</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_continual_training</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__load_and_set_mappings</span><span class="p">()</span>
+
+        <span class="n">train_set</span><span class="p">,</span> <span class="n">valid_set</span><span class="p">,</span> <span class="n">test_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__load_indexed_datasets</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="o">==</span> <span class="s1">&#39;NegSample&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eval_rank_of_head_and_tail_entity</span><span class="p">(</span><span class="n">train_set</span><span class="o">=</span><span class="n">train_set</span><span class="p">,</span>
+                                                   <span class="n">valid_set</span><span class="o">=</span><span class="n">valid_set</span><span class="p">,</span>
+                                                   <span class="n">test_set</span><span class="o">=</span><span class="n">test_set</span><span class="p">,</span>
+                                                   <span class="n">trained_model</span><span class="o">=</span><span class="n">trained_model</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;KvsAll&#39;</span><span class="p">,</span> <span class="s1">&#39;KvsSample&#39;</span><span class="p">,</span> <span class="s1">&#39;1vsAll&#39;</span><span class="p">,</span> <span class="s1">&#39;PvsAll&#39;</span><span class="p">,</span> <span class="s1">&#39;CCvsAll&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">eval_with_vs_all</span><span class="p">(</span><span class="n">train_set</span><span class="o">=</span><span class="n">train_set</span><span class="p">,</span>
+                                  <span class="n">valid_set</span><span class="o">=</span><span class="n">valid_set</span><span class="p">,</span>
+                                  <span class="n">test_set</span><span class="o">=</span><span class="n">test_set</span><span class="p">,</span>
+                                  <span class="n">trained_model</span><span class="o">=</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid argument: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s1">&#39;/eval_report.json&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">file_descriptor</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">report</span><span class="p">,</span> <span class="n">file_descriptor</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Evaluator.eval_with_data">
+<a class="viewcode-back" href="../../autoapi/dicee/evaluator/index.html#dicee.evaluator.Evaluator.eval_with_data">[docs]</a>
+    <span class="k">def</span> <span class="nf">eval_with_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">trained_model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">vocab_preparation</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Evaluate a trained model on a given a dataset&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="o">==</span> <span class="s1">&#39;NegSample&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span>
+                                    <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on a given dataset&#39;</span><span class="p">,</span> <span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;KvsAll&#39;</span><span class="p">,</span> <span class="s1">&#39;KvsSample&#39;</span><span class="p">,</span> <span class="s1">&#39;1vsAll&#39;</span><span class="p">,</span> <span class="s1">&#39;PvsAll&#39;</span><span class="p">,</span> <span class="s1">&#39;CCvsAll&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_k_vs_all</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span>
+                                             <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on a given dataset&#39;</span><span class="p">,</span>
+                                             <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;BatchRelaxedKvsAll&#39;</span><span class="p">,</span> <span class="s1">&#39;BatchRelaxed1vsAll&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate_lp_k_vs_all</span><span class="p">(</span><span class="n">trained_model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span>
+                                             <span class="n">info</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Evaluate </span><span class="si">{</span><span class="n">trained_model</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> on a given dataset&#39;</span><span class="p">,</span>
+                                             <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">form_of_labelling</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid argument: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">DICE Embeddings</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/dicee/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023, Caglar Demir.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

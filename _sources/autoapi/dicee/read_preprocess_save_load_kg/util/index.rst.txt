@@ -1,0 +1,120 @@
+:py:mod:`dicee.read_preprocess_save_load_kg.util`
+=================================================
+
+.. py:module:: dicee.read_preprocess_save_load_kg.util
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   dicee.read_preprocess_save_load_kg.util.apply_reciprical_or_noise
+   dicee.read_preprocess_save_load_kg.util.timeit
+   dicee.read_preprocess_save_load_kg.util.read_with_polars
+   dicee.read_preprocess_save_load_kg.util.read_with_pandas
+   dicee.read_preprocess_save_load_kg.util.read_from_disk
+   dicee.read_preprocess_save_load_kg.util.read_from_triple_store
+   dicee.read_preprocess_save_load_kg.util.get_er_vocab
+   dicee.read_preprocess_save_load_kg.util.get_re_vocab
+   dicee.read_preprocess_save_load_kg.util.get_ee_vocab
+   dicee.read_preprocess_save_load_kg.util.create_constraints
+   dicee.read_preprocess_save_load_kg.util.load_with_pandas
+   dicee.read_preprocess_save_load_kg.util.save_numpy_ndarray
+   dicee.read_preprocess_save_load_kg.util.load_numpy_ndarray
+   dicee.read_preprocess_save_load_kg.util.save_pickle
+   dicee.read_preprocess_save_load_kg.util.load_pickle
+   dicee.read_preprocess_save_load_kg.util.create_recipriocal_triples
+   dicee.read_preprocess_save_load_kg.util.index_triples_with_pandas
+   dicee.read_preprocess_save_load_kg.util.dataset_sanity_checking
+
+
+
+.. py:function:: apply_reciprical_or_noise(add_reciprical: bool, eval_model: str, df: object = None, info: str = None)
+
+   (1) Add reciprocal triples (2) Add noisy triples 
+
+
+.. py:function:: timeit(func)
+
+
+.. py:function:: read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None) -> polars.DataFrame
+
+   Load and Preprocess via Polars 
+
+
+.. py:function:: read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None)
+
+
+.. py:function:: read_from_disk(data_path: str, read_only_few: int = None, sample_triples_ratio: float = None, backend=None)
+
+
+.. py:function:: read_from_triple_store(endpoint: str = None)
+
+   Read triples from triple store into pandas dataframe 
+
+
+.. py:function:: get_er_vocab(data, file_path: str = None)
+
+
+.. py:function:: get_re_vocab(data, file_path: str = None)
+
+
+.. py:function:: get_ee_vocab(data, file_path: str = None)
+
+
+.. py:function:: create_constraints(triples, file_path: str = None)
+
+   (1) Extract domains and ranges of relations
+   (2) Store a mapping from relations to entities that are outside of the domain and range.
+   Crete constrainted entities based on the range of relations
+   :param triples:
+   :return:
+   Tuple[dict, dict]
+
+
+.. py:function:: load_with_pandas(self) -> None
+
+   Deserialize data 
+
+
+.. py:function:: save_numpy_ndarray(*, data: numpy.ndarray, file_path: str)
+
+
+.. py:function:: load_numpy_ndarray(*, file_path: str)
+
+
+.. py:function:: save_pickle(*, data: object, file_path=str)
+
+
+.. py:function:: load_pickle(*, file_path=str)
+
+
+.. py:function:: create_recipriocal_triples(x)
+
+   Add inverse triples into dask dataframe
+   :param x:
+   :return:
+
+
+.. py:function:: index_triples_with_pandas(train_set, entity_to_idx: dict, relation_to_idx: dict) -> pandas.core.frame.DataFrame
+
+   :param train_set: pandas dataframe
+   :param entity_to_idx: a mapping from str to integer index
+   :param relation_to_idx: a mapping from str to integer index
+   :param num_core: number of cores to be used
+   :return: indexed triples, i.e., pandas dataframe
+
+
+.. py:function:: dataset_sanity_checking(train_set: numpy.ndarray, num_entities: int, num_relations: int) -> None
+
+   :param train_set:
+   :param num_entities:
+   :param num_relations:
+   :return:
+
+

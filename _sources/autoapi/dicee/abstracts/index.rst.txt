@@ -1,0 +1,429 @@
+:py:mod:`dicee.abstracts`
+=========================
+
+.. py:module:: dicee.abstracts
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.abstracts.AbstractTrainer
+   dicee.abstracts.BaseInteractiveKGE
+   dicee.abstracts.AbstractCallback
+   dicee.abstracts.AbstractPPECallback
+
+
+
+
+.. py:class:: AbstractTrainer(args, callbacks)
+
+
+   Abstract class for Trainer class for knowledge graph embedding models
+
+
+   Parameter
+   ---------
+   args : str
+       ?
+
+   callbacks: list
+           ?
+
+   .. py:method:: on_fit_start(*args, **kwargs)
+
+      A function to call callbacks before the training starts.
+
+      Parameter
+      ---------
+      args
+
+      kwargs
+
+
+      Returns
+      -------
+      None
+
+
+   .. py:method:: on_fit_end(*args, **kwargs)
+
+      A function to call callbacks at the ned of the training.
+
+      Parameter
+      ---------
+      args
+
+      kwargs
+
+
+      Returns
+      -------
+      None
+
+
+   .. py:method:: on_train_epoch_end(*args, **kwargs)
+
+      A function to call callbacks at the end of an epoch.
+
+      Parameter
+      ---------
+      args
+
+      kwargs
+
+
+      Returns
+      -------
+      None
+
+
+   .. py:method:: on_train_batch_end(*args, **kwargs)
+
+      A function to call callbacks at the end of each mini-batch during training.
+
+      Parameter
+      ---------
+      args
+
+      kwargs
+
+
+      Returns
+      -------
+      None
+
+
+   .. py:method:: save_checkpoint(full_path: str, model) -> None
+      :staticmethod:
+
+      A static function to save a model into disk
+
+      Parameter
+      ---------
+      full_path : str
+
+      model:
+
+
+      Returns
+      -------
+      None
+
+
+
+.. py:class:: BaseInteractiveKGE(path: str = None, url: str = None, construct_ensemble: bool = False, model_name: str = None, apply_semantic_constraint: bool = False)
+
+
+   Abstract/base class for using knowledge graph embedding models interactively.
+
+
+   Parameter
+   ---------
+   path_of_pretrained_model_dir : str
+       ?
+
+   construct_ensemble: boolean
+           ?
+
+   model_name: str
+   apply_semantic_constraint : boolean
+
+   .. py:property:: name
+
+
+   .. py:method:: get_eval_report() -> dict
+
+
+   .. py:method:: get_bpe_token_representation(str_entity_or_relation: Union[List[str], str]) -> Union[List[List[int]], List[int]]
+
+      Parameters
+      ----------
+      str_entity_or_relation: corresponds to a str or a list of strings to be tokenized via BPE and shaped.
+
+      Returns
+      -------
+      A list integer(s) or a list of lists containing integer(s)
+
+
+
+   .. py:method:: get_padded_bpe_triple_representation(triples: List[List[str]]) -> Tuple[List, List, List]
+
+      Parameters
+      ----------
+      triples
+
+      Returns
+      -------
+
+
+
+   .. py:method:: get_domain_of_relation(rel: str) -> List[str]
+
+
+   .. py:method:: get_range_of_relation(rel: str) -> List[str]
+
+
+   .. py:method:: set_model_train_mode() -> None
+
+      Setting the model into training mode
+
+
+      Parameter
+      ---------
+
+      Returns
+      ---------
+
+
+   .. py:method:: set_model_eval_mode() -> None
+
+      Setting the model into eval mode
+
+
+      Parameter
+      ---------
+
+      Returns
+      ---------
+
+
+   .. py:method:: sample_entity(n: int) -> List[str]
+
+
+   .. py:method:: sample_relation(n: int) -> List[str]
+
+
+   .. py:method:: is_seen(entity: str = None, relation: str = None) -> bool
+
+
+   .. py:method:: save() -> None
+
+
+   .. py:method:: get_entity_index(x: str)
+
+
+   .. py:method:: get_relation_index(x: str)
+
+
+   .. py:method:: index_triple(head_entity: List[str], relation: List[str], tail_entity: List[str]) -> Tuple[torch.LongTensor, torch.LongTensor, torch.LongTensor]
+
+      Index Triple
+
+      Parameter
+      ---------
+      head_entity: List[str]
+
+      String representation of selected entities.
+
+      relation: List[str]
+
+      String representation of selected relations.
+
+      tail_entity: List[str]
+
+      String representation of selected entities.
+
+      Returns: Tuple
+      ---------
+
+      pytorch tensor of triple score
+
+
+   .. py:method:: add_new_entity_embeddings(entity_name: str = None, embeddings: torch.FloatTensor = None)
+
+
+   .. py:method:: get_entity_embeddings(items: List[str])
+
+      Return embedding of an entity given its string representation
+
+
+      Parameter
+      ---------
+      items:
+          entities
+
+      Returns
+      ---------
+
+
+   .. py:method:: get_relation_embeddings(items: List[str])
+
+      Return embedding of a relation given its string representation
+
+
+      Parameter
+      ---------
+      items:
+          relations
+
+      Returns
+      ---------
+
+
+   .. py:method:: construct_input_and_output(head_entity: List[str], relation: List[str], tail_entity: List[str], labels)
+
+      Construct a data point
+      :param head_entity:
+      :param relation:
+      :param tail_entity:
+      :param labels:
+      :return:
+
+
+   .. py:method:: parameters()
+
+
+
+.. py:class:: AbstractCallback
+
+
+   Bases: :py:obj:`abc.ABC`, :py:obj:`lightning.pytorch.callbacks.Callback`
+
+   Abstract class for Callback class for knowledge graph embedding models
+
+
+   Parameter
+   ---------
+
+
+   .. py:method:: on_init_start(*args, **kwargs)
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+   .. py:method:: on_init_end(*args, **kwargs)
+
+      Call at the beginning of the training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+   .. py:method:: on_fit_start(trainer, model)
+
+      Call at the beginning of the training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+   .. py:method:: on_train_epoch_end(trainer, model)
+
+      Call at the end of each epoch during training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+   .. py:method:: on_train_batch_end(*args, **kwargs)
+
+      Call at the end of each mini-batch during the training.
+
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+   .. py:method:: on_fit_end(*args, **kwargs)
+
+      Call at the end of the training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+
+.. py:class:: AbstractPPECallback(num_epochs, path, epoch_to_start, last_percent_to_consider)
+
+
+   Bases: :py:obj:`AbstractCallback`
+
+   Abstract class for Callback class for knowledge graph embedding models
+
+
+   Parameter
+   ---------
+
+
+   .. py:method:: on_fit_start(trainer, model)
+
+      Call at the beginning of the training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+   .. py:method:: on_fit_end(trainer, model)
+
+      Call at the end of the training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+   .. py:method:: store_ensemble(param_ensemble) -> None
+
+
+

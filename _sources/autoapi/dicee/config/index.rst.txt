@@ -1,0 +1,309 @@
+:py:mod:`dicee.config`
+======================
+
+.. py:module:: dicee.config
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.config.Namespace
+
+
+
+
+.. py:class:: Namespace(**kwargs)
+
+
+   Bases: :py:obj:`argparse.Namespace`
+
+   Simple object for storing attributes.
+
+   Implements equality by attribute names and values, and provides a simple
+   string representation.
+
+   .. py:attribute:: dataset_dir
+      :type: str
+
+      The path of a folder containing train.txt, and/or valid.txt and/or test.txt
+
+
+   .. py:attribute:: save_embeddings_as_csv
+      :type: bool
+      :value: False
+
+      Embeddings of entities and relations are stored into CSV files to facilitate easy usage.
+
+
+   .. py:attribute:: storage_path
+      :type: str
+      :value: 'Experiments'
+
+      A directory named with time of execution under --storage_path that contains related data about embeddings.
+
+
+   .. py:attribute:: path_to_store_single_run
+      :type: str
+
+      A single directory created that contains related data about embeddings.
+
+
+   .. py:attribute:: path_single_kg
+
+      Path of a file corresponding to the input knowledge graph
+
+
+   .. py:attribute:: sparql_endpoint
+
+      An endpoint of a triple store.
+
+
+   .. py:attribute:: model
+      :type: str
+      :value: 'Keci'
+
+      KGE model
+
+
+   .. py:attribute:: optim
+      :type: str
+      :value: 'Adam'
+
+      Optimizer
+
+
+   .. py:attribute:: embedding_dim
+      :type: int
+      :value: 64
+
+      Size of continuous vector representation of an entity/relation
+
+
+   .. py:attribute:: num_epochs
+      :type: int
+      :value: 150
+
+      Number of pass over the training data
+
+
+   .. py:attribute:: batch_size
+      :type: int
+      :value: 1024
+
+      Mini-batch size if it is None, an automatic batch finder technique applied
+
+
+   .. py:attribute:: lr
+      :type: float
+      :value: 0.1
+
+      Learning rate
+
+
+   .. py:attribute:: add_noise_rate
+      :type: float
+
+      The ratio of added random triples into training dataset
+
+
+   .. py:attribute:: gpus
+
+      Number GPUs to be used during training
+
+
+   .. py:attribute:: callbacks
+
+      Callbacks, e.g., {"PPE":{ "last_percent_to_consider": 10}}
+
+
+   .. py:attribute:: backend
+      :type: str
+      :value: 'pandas'
+
+      Backend to read, process, and index input knowledge graph. pandas, polars and rdflib available
+
+
+   .. py:attribute:: trainer
+      :type: str
+      :value: 'torchCPUTrainer'
+
+      Trainer for knowledge graph embedding model
+
+
+   .. py:attribute:: scoring_technique
+      :type: str
+      :value: 'KvsAll'
+
+      Scoring technique for knowledge graph embedding models
+
+
+   .. py:attribute:: neg_ratio
+      :type: int
+      :value: 0
+
+      Negative ratio for a true triple in NegSample training_technique
+
+
+   .. py:attribute:: weight_decay
+      :type: float
+      :value: 0.0
+
+      Weight decay for all trainable params
+
+
+   .. py:attribute:: normalization
+      :type: str
+      :value: 'None'
+
+      LayerNorm, BatchNorm1d, or None 
+
+
+   .. py:attribute:: init_param
+      :type: str
+
+      xavier_normal or None
+
+
+   .. py:attribute:: gradient_accumulation_steps
+      :type: int
+      :value: 0
+
+      Not tested e
+
+
+   .. py:attribute:: num_folds_for_cv
+      :type: int
+      :value: 0
+
+      Number of folds for CV
+
+
+   .. py:attribute:: eval_model
+      :type: str
+      :value: 'train_val_test'
+
+      Evaluate trained model choices:["None", "train", "train_val", "train_val_test", "test"]
+
+
+   .. py:attribute:: save_model_at_every_epoch
+      :type: int
+
+      Not tested 
+
+
+   .. py:attribute:: num_core
+      :type: int
+      :value: 0
+
+      Number of CPUs to be used in the mini-batch loading process
+
+
+   .. py:attribute:: random_seed
+      :type: int
+      :value: 0
+
+      Random Seed
+
+
+   .. py:attribute:: sample_triples_ratio
+      :type: float
+
+      Read some triples that are uniformly at random sampled. Ratio being between 0 and 1
+
+
+   .. py:attribute:: read_only_few
+      :type: int
+
+      Read only first few triples 
+
+
+   .. py:attribute:: pykeen_model_kwargs
+
+      Additional keyword arguments for pykeen models
+
+
+   .. py:attribute:: kernel_size
+      :type: int
+      :value: 3
+
+      Size of a square kernel in a convolution operation
+
+
+   .. py:attribute:: num_of_output_channels
+      :type: int
+      :value: 32
+
+      Number of slices in the generated feature map by convolution.
+
+
+   .. py:attribute:: p
+      :type: int
+      :value: 0
+
+      P parameter of Clifford Embeddings
+
+
+   .. py:attribute:: q
+      :type: int
+      :value: 1
+
+      Q parameter of Clifford Embeddings
+
+
+   .. py:attribute:: input_dropout_rate
+      :type: float
+      :value: 0.0
+
+      Dropout rate on embeddings of input triples
+
+
+   .. py:attribute:: hidden_dropout_rate
+      :type: float
+      :value: 0.0
+
+      Dropout rate on hidden representations of  input triples
+
+
+   .. py:attribute:: feature_map_dropout_rate
+      :type: float
+      :value: 0.0
+
+      Dropout rate on a feature map generated by a convolution operation
+
+
+   .. py:attribute:: byte_pair_encoding
+      :type: bool
+      :value: False
+
+      WIP: Byte pair encoding
+
+
+   .. py:attribute:: adaptive_swa
+      :type: bool
+      :value: False
+
+      Adaptive stochastic weight averaging
+
+
+   .. py:attribute:: swa
+      :type: bool
+      :value: False
+
+      Stochastic weight averaging
+
+
+   .. py:attribute:: block_size
+      :type: int
+
+      block size of LLM
+
+
+   .. py:method:: __iter__()
+
+
+

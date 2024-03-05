@@ -1,0 +1,443 @@
+:py:mod:`dicee.callbacks`
+=========================
+
+.. py:module:: dicee.callbacks
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.callbacks.AccumulateEpochLossCallback
+   dicee.callbacks.PrintCallback
+   dicee.callbacks.KGESaveCallback
+   dicee.callbacks.PseudoLabellingCallback
+   dicee.callbacks.ASWA
+   dicee.callbacks.Eval
+   dicee.callbacks.KronE
+   dicee.callbacks.Perturb
+
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   dicee.callbacks.estimate_q
+   dicee.callbacks.compute_convergence
+
+
+
+.. py:class:: AccumulateEpochLossCallback(path: str)
+
+
+   Bases: :py:obj:`dicee.abstracts.AbstractCallback`
+
+   Abstract class for Callback class for knowledge graph embedding models
+
+
+   Parameter
+   ---------
+
+
+   .. py:method:: on_fit_end(trainer, model) -> None
+
+      Store epoch loss
+
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+
+.. py:class:: PrintCallback
+
+
+   Bases: :py:obj:`dicee.abstracts.AbstractCallback`
+
+   Abstract class for Callback class for knowledge graph embedding models
+
+
+   Parameter
+   ---------
+
+
+   .. py:method:: on_fit_start(trainer, pl_module)
+
+      Call at the beginning of the training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+   .. py:method:: on_fit_end(trainer, pl_module)
+
+      Call at the end of the training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+   .. py:method:: on_train_batch_end(*args, **kwargs)
+
+      Call at the end of each mini-batch during the training.
+
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+   .. py:method:: on_train_epoch_end(*args, **kwargs)
+
+      Call at the end of each epoch during training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+
+.. py:class:: KGESaveCallback(every_x_epoch: int, max_epochs: int, path: str)
+
+
+   Bases: :py:obj:`dicee.abstracts.AbstractCallback`
+
+   Abstract class for Callback class for knowledge graph embedding models
+
+
+   Parameter
+   ---------
+
+
+   .. py:method:: on_train_batch_end(*args, **kwargs)
+
+      Call at the end of each mini-batch during the training.
+
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+   .. py:method:: on_fit_start(trainer, pl_module)
+
+      Call at the beginning of the training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+   .. py:method:: on_train_epoch_end(*args, **kwargs)
+
+      Call at the end of each epoch during training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+   .. py:method:: on_fit_end(*args, **kwargs)
+
+      Call at the end of the training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+   .. py:method:: on_epoch_end(model, trainer, **kwargs)
+
+
+
+.. py:class:: PseudoLabellingCallback(data_module, kg, batch_size)
+
+
+   Bases: :py:obj:`dicee.abstracts.AbstractCallback`
+
+   Abstract class for Callback class for knowledge graph embedding models
+
+
+   Parameter
+   ---------
+
+
+   .. py:method:: create_random_data()
+
+
+   .. py:method:: on_epoch_end(trainer, model)
+
+
+
+.. py:function:: estimate_q(eps)
+
+   estimate rate of convergence q from sequence esp
+
+
+.. py:function:: compute_convergence(seq, i)
+
+
+.. py:class:: ASWA(num_epochs, path)
+
+
+   Bases: :py:obj:`dicee.abstracts.AbstractCallback`
+
+   Adaptive stochastic weight averaging
+   ASWE keeps track of the validation performance and update s the ensemble model accordingly.
+
+   .. py:method:: on_fit_end(trainer, model)
+
+      Call at the end of the training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+   .. py:method:: compute_mrr(trainer, model) -> float
+      :staticmethod:
+
+
+   .. py:method:: get_aswa_state_dict(model)
+
+
+   .. py:method:: decide(running_model_state_dict, ensemble_state_dict, val_running_model, mrr_updated_ensemble_model)
+
+      Perform Hard Update, software or rejection
+
+      Parameters
+      ----------
+      running_model_state_dict
+      ensemble_state_dict
+      val_running_model
+      mrr_updated_ensemble_model
+
+      Returns
+      -------
+
+
+
+   .. py:method:: on_train_epoch_end(trainer, model)
+
+      Call at the end of each epoch during training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+
+.. py:class:: Eval(path, epoch_ratio: int = None)
+
+
+   Bases: :py:obj:`dicee.abstracts.AbstractCallback`
+
+   Abstract class for Callback class for knowledge graph embedding models
+
+
+   Parameter
+   ---------
+
+
+   .. py:method:: on_fit_start(trainer, model)
+
+      Call at the beginning of the training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+   .. py:method:: on_fit_end(trainer, model)
+
+      Call at the end of the training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+   .. py:method:: on_train_epoch_end(trainer, model)
+
+      Call at the end of each epoch during training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+   .. py:method:: on_train_batch_end(*args, **kwargs)
+
+      Call at the end of each mini-batch during the training.
+
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+
+.. py:class:: KronE
+
+
+   Bases: :py:obj:`dicee.abstracts.AbstractCallback`
+
+   Abstract class for Callback class for knowledge graph embedding models
+
+
+   Parameter
+   ---------
+
+
+   .. py:method:: batch_kronecker_product(a, b)
+      :staticmethod:
+
+      Kronecker product of matrices a and b with leading batch dimensions.
+      Batch dimensions are broadcast. The number of them mush
+      :type a: torch.Tensor
+      :type b: torch.Tensor
+      :rtype: torch.Tensor
+
+
+   .. py:method:: get_kronecker_triple_representation(indexed_triple: torch.LongTensor)
+
+      Get kronecker embeddings
+
+
+   .. py:method:: on_fit_start(trainer, model)
+
+      Call at the beginning of the training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      Returns
+      ---------
+      None
+
+
+
+.. py:class:: Perturb(level: str = 'input', ratio: float = 0.0, method: str = None, scaler: float = None, frequency=None)
+
+
+   Bases: :py:obj:`dicee.abstracts.AbstractCallback`
+
+   A callback for a three-Level Perturbation
+
+   Input Perturbation: During training an input x is perturbed by randomly replacing its element.
+   In the context of knowledge graph embedding models, x can denote a triple, a tuple of an entity and a relation,
+   or a tuple of two entities.
+   A perturbation means that a component of x is randomly replaced by an entity or a relation.
+
+   Parameter Perturbation:
+
+   Output Perturbation:
+
+   .. py:method:: on_train_batch_start(trainer, model, batch, batch_idx)
+
+      Called when the train batch begins.
+
+
+

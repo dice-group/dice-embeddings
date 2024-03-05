@@ -1,0 +1,112 @@
+:py:mod:`dicee.models.real`
+===========================
+
+.. py:module:: dicee.models.real
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.models.real.DistMult
+   dicee.models.real.TransE
+   dicee.models.real.Shallom
+   dicee.models.real.Pyke
+
+
+
+
+.. py:class:: DistMult(args)
+
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+   Embedding Entities and Relations for Learning and Inference in Knowledge Bases
+   https://arxiv.org/abs/1412.6575
+
+   .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor)
+
+      Parameters
+      ----------
+      emb_h
+      emb_r
+      emb_E
+
+      Returns
+      -------
+
+
+
+   .. py:method:: forward_k_vs_all(x: torch.LongTensor)
+
+
+   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor)
+
+
+   .. py:method:: score(h, r, t)
+
+
+
+.. py:class:: TransE(args)
+
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+   Translating Embeddings for Modeling
+   Multi-relational Data
+   https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf
+
+   .. py:method:: score(head_ent_emb, rel_ent_emb, tail_ent_emb)
+
+
+   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
+
+
+
+.. py:class:: Shallom(args)
+
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+   A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090) 
+
+   .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, None]
+
+      Returns
+      -------
+
+
+
+   .. py:method:: forward_k_vs_all(x) -> torch.FloatTensor
+
+
+   .. py:method:: forward_triples(x) -> torch.FloatTensor
+
+      :param x:
+      :return:
+
+
+
+.. py:class:: Pyke(args)
+
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+   A Physical Embedding Model for Knowledge Graphs 
+
+   .. py:method:: forward_triples(x: torch.LongTensor)
+
+      Parameters
+      ----------
+      x
+
+      Returns
+      -------
+
+
+
+

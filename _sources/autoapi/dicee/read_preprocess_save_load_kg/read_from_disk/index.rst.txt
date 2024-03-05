@@ -1,0 +1,43 @@
+:py:mod:`dicee.read_preprocess_save_load_kg.read_from_disk`
+===========================================================
+
+.. py:module:: dicee.read_preprocess_save_load_kg.read_from_disk
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk
+
+
+
+
+.. py:class:: ReadFromDisk(kg)
+
+
+   Read the data from disk into memory
+
+   .. py:method:: start() -> None
+
+      Read a knowledge graph from disk into memory
+
+      Data will be available at the train_set, test_set, valid_set attributes.
+
+      Parameter
+      ---------
+      None
+
+      Returns
+      -------
+      None
+
+
+   .. py:method:: add_noisy_triples_into_training()
+
+
+

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>dicee.read_preprocess_save_load_kg.read_from_disk &#8212; DICE Embeddings 0.1.3.2 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/theme_tweak.css?v=f0ad19f3" />
+    <script src="../../../../_static/documentation_options.js?v=c6726a90"></script>
+    <script src="../../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="dicee.read_preprocess_save_load_kg.save_load_disk" href="../save_load_disk/index.html" />
+    <link rel="prev" title="dicee.read_preprocess_save_load_kg.preprocess" href="../preprocess/index.html" />
+   
+  <link rel="stylesheet" href="../../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-dicee.read_preprocess_save_load_kg.read_from_disk">
+<span id="dicee-read-preprocess-save-load-kg-read-from-disk"></span><h1><a class="reference internal" href="#module-dicee.read_preprocess_save_load_kg.read_from_disk" title="dicee.read_preprocess_save_load_kg.read_from_disk"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg.read_from_disk</span></code></a><a class="headerlink" href="#module-dicee.read_preprocess_save_load_kg.read_from_disk" title="Link to this heading">¶</a></h1>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<section id="classes">
+<h3>Classes<a class="headerlink" href="#classes" title="Link to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk" title="dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ReadFromDisk</span></code></a></p></td>
+<td><p>Read the data from disk into memory</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.read_from_disk.</span></span><span class="sig-name descname"><span class="pre">ReadFromDisk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk" title="Link to this definition">¶</a></dt>
+<dd><p>Read the data from disk into memory</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.start" title="Link to this definition">¶</a></dt>
+<dd><p>Read a knowledge graph from disk into memory</p>
+<p>Data will be available at the train_set, test_set, valid_set attributes.</p>
+<section id="parameter">
+<h4>Parameter<a class="headerlink" href="#parameter" title="Link to this heading">¶</a></h4>
+<p>None</p>
+</section>
+<section id="returns">
+<h4>Returns<a class="headerlink" href="#returns" title="Link to this heading">¶</a></h4>
+<p>None</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.add_noisy_triples_into_training">
+<span class="sig-name descname"><span class="pre">add_noisy_triples_into_training</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk.add_noisy_triples_into_training"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.add_noisy_triples_into_training" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../../index.html">DICE Embeddings</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html#subpackages">Subpackages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a><ul>
+  <li><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg</span></code></a><ul>
+      <li>Previous: <a href="../preprocess/index.html" title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg.preprocess</span></code></a></li>
+      <li>Next: <a href="../save_load_disk/index.html" title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg.save_load_disk</span></code></a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023, Caglar Demir.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../../../../_sources/autoapi/dicee/read_preprocess_save_load_kg/read_from_disk/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

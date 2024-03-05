@@ -1,0 +1,91 @@
+:py:mod:`dicee.trainer.torch_trainer_ddp`
+=========================================
+
+.. py:module:: dicee.trainer.torch_trainer_ddp
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.trainer.torch_trainer_ddp.TorchDDPTrainer
+   dicee.trainer.torch_trainer_ddp.NodeTrainer
+   dicee.trainer.torch_trainer_ddp.DDPTrainer
+
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   dicee.trainer.torch_trainer_ddp.print_peak_memory
+
+
+
+.. py:function:: print_peak_memory(prefix, device)
+
+
+.. py:class:: TorchDDPTrainer(args, callbacks)
+
+
+   Bases: :py:obj:`dicee.abstracts.AbstractTrainer`
+
+    A Trainer based on torch.nn.parallel.DistributedDataParallel
+
+    Arguments
+   ----------
+   train_set_idx
+       Indexed triples for the training.
+   entity_idxs
+       mapping.
+   relation_idxs
+       mapping.
+   form
+       ?
+   store
+        ?
+   label_smoothing_rate
+        Using hard targets (0,1) drives weights to infinity.
+        An outlier produces enormous gradients.
+
+   Returns
+   -------
+   torch.utils.data.Dataset
+
+   .. py:method:: fit(*args, **kwargs)
+
+      Train model        
+
+
+
+.. py:class:: NodeTrainer(trainer, model: torch.nn.Module, train_dataset_loader: torch.utils.data.DataLoader, optimizer: torch.optim.Optimizer, callbacks, num_epochs: int)
+
+
+   .. py:method:: extract_input_outputs(z: list)
+
+
+   .. py:method:: train()
+
+      Training loop for DDP
+
+      Returns
+      -------
+
+
+
+
+.. py:class:: DDPTrainer(model: torch.nn.Module, train_dataset_loader: torch.utils.data.DataLoader, optimizer: torch.optim.Optimizer, gpu_id: int, callbacks, num_epochs)
+
+
+   .. py:method:: extract_input_outputs(z: list)
+
+
+   .. py:method:: train()
+
+
+

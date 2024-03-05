@@ -1,0 +1,149 @@
+:py:mod:`dicee.executer`
+========================
+
+.. py:module:: dicee.executer
+
+
+Module Contents
+---------------
+
+Classes
+~~~~~~~
+
+.. autoapisummary::
+
+   dicee.executer.Execute
+   dicee.executer.ContinuousExecute
+
+
+
+
+.. py:class:: Execute(args, continuous_training=False)
+
+
+   A class for Training, Retraining and Evaluation a model.
+
+   (1) Loading & Preprocessing & Serializing input data.
+   (2) Training & Validation & Testing
+   (3) Storing all necessary info
+
+   .. py:method:: read_or_load_kg()
+
+
+   .. py:method:: read_preprocess_index_serialize_data() -> None
+
+      Read & Preprocess & Index & Serialize Input Data
+
+      (1) Read or load the data from disk into memory.
+      (2) Store the statistics of the data.
+
+      Parameter
+      ----------
+
+      Return
+      ----------
+      None
+
+
+
+   .. py:method:: load_indexed_data() -> None
+
+      Load the indexed data from disk into memory
+
+      Parameter
+      ----------
+
+      Return
+      ----------
+      None
+
+
+
+   .. py:method:: save_trained_model() -> None
+
+      Save a knowledge graph embedding model
+
+      (1) Send model to eval mode and cpu.
+      (2) Store the memory footprint of the model.
+      (3) Save the model into disk.
+      (4) Update the stats of KG again ?
+
+      Parameter
+      ----------
+
+      Return
+      ----------
+      None
+
+
+
+   .. py:method:: end(form_of_labelling: str) -> dict
+
+      End training
+
+      (1) Store trained model.
+      (2) Report runtimes.
+      (3) Eval model if required.
+
+      Parameter
+      ---------
+
+      Returns
+      -------
+      A dict containing information about the training and/or evaluation
+
+
+
+   .. py:method:: write_report() -> None
+
+      Report training related information in a report.json file 
+
+
+   .. py:method:: start() -> dict
+
+      Start training
+
+      # (1) Loading the Data
+      # (2) Create an evaluator object.
+      # (3) Create a trainer object.
+      # (4) Start the training
+
+      Parameter
+      ---------
+
+      Returns
+      -------
+      A dict containing information about the training and/or evaluation
+
+
+
+
+.. py:class:: ContinuousExecute(args)
+
+
+   Bases: :py:obj:`Execute`
+
+   A subclass of Execute Class for retraining
+
+   (1) Loading & Preprocessing & Serializing input data.
+   (2) Training & Validation & Testing
+   (3) Storing all necessary info
+
+   .. py:method:: continual_start() -> dict
+
+      Start Continual Training
+
+      (1) Initialize training.
+      (2) Start continual training.
+      (3) Save trained model.
+
+      Parameter
+      ---------
+
+      Returns
+      -------
+      A dict containing information about the training and/or evaluation
+
+
+
+

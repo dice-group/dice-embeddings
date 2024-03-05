@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>dicee.knowledge_graph &#8212; DICE Embeddings 0.1.3.2 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" type="text/css" href="../../_static/theme_tweak.css?v=f0ad19f3" />
+    <script src="../../_static/documentation_options.js?v=c6726a90"></script>
+    <script src="../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for dicee.knowledge_graph</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<span class="kn">from</span> <span class="nn">.read_preprocess_save_load_kg</span> <span class="kn">import</span> <span class="n">ReadFromDisk</span><span class="p">,</span> <span class="n">PreprocessKG</span><span class="p">,</span> <span class="n">LoadSaveToDisk</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<div class="viewcode-block" id="KG">
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph/index.html#dicee.knowledge_graph.KG">[docs]</a>
+<span class="k">class</span> <span class="nc">KG</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Knowledge Graph &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">byte_pair_encoding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">padding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">add_noise_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">sparql_endpoint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">path_single_kg</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">path_for_deserialization</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">add_reciprical</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">eval_model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">read_only_few</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sample_triples_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">path_for_serialization</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">entity_to_idx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">relation_to_idx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">training_technique</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        :param dataset_dir: A path of a folder containing train.txt, valid.txt, test.text</span>
+<span class="sd">        :param byte_pair_encoding: Apply Byte pair encoding.</span>
+<span class="sd">        :param padding: Add empty string into byte-pair encoded subword units representing triples</span>
+<span class="sd">        :param add_noise_rate: Noisy triples added into the training adataset by x % of its size.</span>
+<span class="sd">        :param sparql_endpoint: An endpoint of a triple store</span>
+<span class="sd">        :param path_single_kg: The path of a single file containing the input knowledge graph</span>
+<span class="sd">        :param path_for_deserialization: A path of a folder containing previously parsed data</span>
+<span class="sd">        :param num_core: Number of subprocesses used for data loading</span>
+<span class="sd">        :param add_reciprical: A flag for applying reciprocal data augmentation technique</span>
+<span class="sd">        :param eval_model: A flag indicating whether evaluation will be applied.</span>
+<span class="sd">        If no eval, then entity relation mappings will be deleted to free memory.</span>
+<span class="sd">        :param add_noise_rate: Add say 10% noise in the input data</span>
+<span class="sd">        sample_triples_ratio</span>
+<span class="sd">        :param training_technique</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset_dir</span> <span class="o">=</span> <span class="n">dataset_dir</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">byte_pair_encoding</span> <span class="o">=</span> <span class="n">byte_pair_encoding</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ordered_shaped_bpe_tokens</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sparql_endpoint</span> <span class="o">=</span> <span class="n">sparql_endpoint</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_noise_rate</span> <span class="o">=</span> <span class="n">add_noise_rate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="o">=</span> <span class="n">path_single_kg</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_for_deserialization</span> <span class="o">=</span> <span class="n">path_for_deserialization</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_reciprical</span> <span class="o">=</span> <span class="n">add_reciprical</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eval_model</span> <span class="o">=</span> <span class="n">eval_model</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_only_few</span> <span class="o">=</span> <span class="n">read_only_few</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sample_triples_ratio</span> <span class="o">=</span> <span class="n">sample_triples_ratio</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_for_serialization</span> <span class="o">=</span> <span class="n">path_for_serialization</span>
+        <span class="c1"># dicts of str to int</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span> <span class="o">=</span> <span class="n">entity_to_idx</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span> <span class="o">=</span> <span class="n">relation_to_idx</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="s1">&#39;pandas&#39;</span> <span class="k">if</span> <span class="n">backend</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">backend</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">training_technique</span> <span class="o">=</span> <span class="n">training_technique</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">raw_train_set</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_valid_set</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_test_set</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">valid_set</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_set</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">idx_entity_to_bpe_shaped</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+
+        <span class="c1"># WIP:</span>
+        <span class="kn">import</span> <span class="nn">tiktoken</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enc</span> <span class="o">=</span> <span class="n">tiktoken</span><span class="o">.</span><span class="n">get_encoding</span><span class="p">(</span><span class="s2">&quot;gpt2&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enc</span><span class="o">.</span><span class="n">n_vocab</span>  <span class="c1"># ~ 50</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_bpe_entities</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">padding</span> <span class="o">=</span> <span class="n">padding</span>
+        <span class="c1"># TODO: Find a unique token later</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dummy_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enc</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_length_subword_tokens</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_set_target</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_dim</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_target_indices</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ordered_bpe_entities</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_for_deserialization</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ReadFromDisk</span><span class="p">(</span><span class="n">kg</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="n">PreprocessKG</span><span class="p">(</span><span class="n">kg</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+            <span class="n">LoadSaveToDisk</span><span class="p">(</span><span class="n">kg</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">LoadSaveToDisk</span><span class="p">(</span><span class="n">kg</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_describe</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_describe</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description_of_input</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">------------------- Description of Dataset </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_dir</span><span class="si">}</span><span class="s1"> -------------------&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">byte_pair_encoding</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">description_of_input</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Number of tokens:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_tokens</span><span class="si">}</span><span class="s1">&#39;</span> \
+                                         <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Number of max sequence of sub-words: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_length_subword_tokens</span><span class="si">}</span><span class="s1">&#39;</span> \
+                                         <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Number of triples on train set:&#39;</span> \
+                                         <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span> \
+                                         <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Number of triples on valid set:&#39;</span> \
+                                         <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">valid_set</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">valid_set</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="kc">None</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s1">&#39;</span> \
+                                         <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Number of triples on test set:&#39;</span> \
+                                         <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">test_set</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">test_set</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="kc">None</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">description_of_input</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Number of entities:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="si">}</span><span class="s1">&#39;</span> \
+                                         <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Number of relations:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="si">}</span><span class="s1">&#39;</span> \
+                                         <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Number of triples on train set:&#39;</span> \
+                                         <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span> \
+                                         <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Number of triples on valid set:&#39;</span> \
+                                         <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">valid_set</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">valid_set</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="kc">None</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="s1">&#39;</span> \
+                                         <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Number of triples on test set:&#39;</span> \
+                                         <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">test_set</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">test_set</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="kc">None</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="mi">0</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">description_of_input</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;Entity Index:</span><span class="si">{</span><span class="n">sys</span><span class="o">.</span><span class="n">getsizeof</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">1_000_000_000</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2"> in GB</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">description_of_input</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;Relation Index:</span><span class="si">{</span><span class="n">sys</span><span class="o">.</span><span class="n">getsizeof</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">1_000_000_000</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2"> in GB</span><span class="se">\n</span><span class="s2">&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">entities_str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">relations_str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+<div class="viewcode-block" id="KG.func_triple_to_bpe_representation">
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph/index.html#dicee.knowledge_graph.KG.func_triple_to_bpe_representation">[docs]</a>
+    <span class="k">def</span> <span class="nf">func_triple_to_bpe_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">triple</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">triple</span><span class="p">:</span>
+            <span class="n">unshaped_bpe_repr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enc</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unshaped_bpe_repr</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_length_subword_tokens</span><span class="p">:</span>
+                <span class="n">unshaped_bpe_repr</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">dummy_id</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span>
+                                          <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_length_subword_tokens</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">unshaped_bpe_repr</span><span class="p">))])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">unshaped_bpe_repr</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+</div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">DICE Embeddings</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/dicee/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023, Caglar Demir.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

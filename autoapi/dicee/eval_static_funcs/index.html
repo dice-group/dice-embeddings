@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>dicee.eval_static_funcs &#8212; DICE Embeddings 0.1.3.2 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=12dfc556" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=eafc0fe6" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+    <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
+    <script src="../../../_static/doctools.js?v=888ff710"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="next" title="dicee.evaluator" href="../evaluator/index.html" />
+    <link rel="prev" title="dicee.dataset_classes" href="../dataset_classes/index.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-dicee.eval_static_funcs">
+<span id="dicee-eval-static-funcs"></span><h1><a class="reference internal" href="#module-dicee.eval_static_funcs" title="dicee.eval_static_funcs"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.eval_static_funcs</span></code></a><a class="headerlink" href="#module-dicee.eval_static_funcs" title="Link to this heading">¶</a></h1>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading">¶</a></h2>
+<section id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Link to this heading">¶</a></h3>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.eval_static_funcs.evaluate_link_prediction_performance" title="dicee.eval_static_funcs.evaluate_link_prediction_performance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_link_prediction_performance</span></code></a>(→ Dict)</p></td>
+<td><p>Parameters</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.eval_static_funcs.evaluate_link_prediction_performance_with_reciprocals" title="dicee.eval_static_funcs.evaluate_link_prediction_performance_with_reciprocals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_link_prediction_performance_with_reciprocals</span></code></a>(...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.eval_static_funcs.evaluate_link_prediction_performance_with_bpe_reciprocals" title="dicee.eval_static_funcs.evaluate_link_prediction_performance_with_bpe_reciprocals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_link_prediction_performance_with_bpe_reciprocals</span></code></a>(...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.eval_static_funcs.evaluate_link_prediction_performance_with_bpe" title="dicee.eval_static_funcs.evaluate_link_prediction_performance_with_bpe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_link_prediction_performance_with_bpe</span></code></a>(model, ...)</p></td>
+<td><p>Parameters</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.eval_static_funcs.evaluate_lp_bpe_k_vs_all" title="dicee.eval_static_funcs.evaluate_lp_bpe_k_vs_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_lp_bpe_k_vs_all</span></code></a>(model, triples[, er_vocab, ...])</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.eval_static_funcs.evaluate_link_prediction_performance">
+<span class="sig-prename descclassname"><span class="pre">dicee.eval_static_funcs.</span></span><span class="sig-name descname"><span class="pre">evaluate_link_prediction_performance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../knowledge_graph_embeddings/index.html#dicee.knowledge_graph_embeddings.KGE" title="dicee.knowledge_graph_embeddings.KGE"><span class="pre">dicee.knowledge_graph_embeddings.KGE</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">triples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">er_vocab</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">re_vocab</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="../../../_modules/dicee/eval_static_funcs.html#evaluate_link_prediction_performance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.eval_static_funcs.evaluate_link_prediction_performance" title="Link to this definition">¶</a></dt>
+<dd><section id="parameters">
+<h4>Parameters<a class="headerlink" href="#parameters" title="Link to this heading">¶</a></h4>
+<p>model
+triples
+er_vocab
+re_vocab</p>
+</section>
+<section id="returns">
+<h4>Returns<a class="headerlink" href="#returns" title="Link to this heading">¶</a></h4>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.eval_static_funcs.evaluate_link_prediction_performance_with_reciprocals">
+<span class="sig-prename descclassname"><span class="pre">dicee.eval_static_funcs.</span></span><span class="sig-name descname"><span class="pre">evaluate_link_prediction_performance_with_reciprocals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../knowledge_graph_embeddings/index.html#dicee.knowledge_graph_embeddings.KGE" title="dicee.knowledge_graph_embeddings.KGE"><span class="pre">dicee.knowledge_graph_embeddings.KGE</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">triples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">er_vocab</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/eval_static_funcs.html#evaluate_link_prediction_performance_with_reciprocals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.eval_static_funcs.evaluate_link_prediction_performance_with_reciprocals" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.eval_static_funcs.evaluate_link_prediction_performance_with_bpe_reciprocals">
+<span class="sig-prename descclassname"><span class="pre">dicee.eval_static_funcs.</span></span><span class="sig-name descname"><span class="pre">evaluate_link_prediction_performance_with_bpe_reciprocals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../knowledge_graph_embeddings/index.html#dicee.knowledge_graph_embeddings.KGE" title="dicee.knowledge_graph_embeddings.KGE"><span class="pre">dicee.knowledge_graph_embeddings.KGE</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">within_entities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">er_vocab</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/eval_static_funcs.html#evaluate_link_prediction_performance_with_bpe_reciprocals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.eval_static_funcs.evaluate_link_prediction_performance_with_bpe_reciprocals" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.eval_static_funcs.evaluate_link_prediction_performance_with_bpe">
+<span class="sig-prename descclassname"><span class="pre">dicee.eval_static_funcs.</span></span><span class="sig-name descname"><span class="pre">evaluate_link_prediction_performance_with_bpe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../knowledge_graph_embeddings/index.html#dicee.knowledge_graph_embeddings.KGE" title="dicee.knowledge_graph_embeddings.KGE"><span class="pre">dicee.knowledge_graph_embeddings.KGE</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">within_entities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">er_vocab</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">re_vocab</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/eval_static_funcs.html#evaluate_link_prediction_performance_with_bpe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.eval_static_funcs.evaluate_link_prediction_performance_with_bpe" title="Link to this definition">¶</a></dt>
+<dd><section id="id1">
+<h4>Parameters<a class="headerlink" href="#id1" title="Link to this heading">¶</a></h4>
+<p>model
+triples
+within_entities
+er_vocab
+re_vocab</p>
+</section>
+<section id="id2">
+<h4>Returns<a class="headerlink" href="#id2" title="Link to this heading">¶</a></h4>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.eval_static_funcs.evaluate_lp_bpe_k_vs_all">
+<span class="sig-prename descclassname"><span class="pre">dicee.eval_static_funcs.</span></span><span class="sig-name descname"><span class="pre">evaluate_lp_bpe_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">er_vocab</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_triple_to_bpe_representation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">str_to_bpe_entity_to_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/eval_static_funcs.html#evaluate_lp_bpe_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.eval_static_funcs.evaluate_lp_bpe_k_vs_all" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">DICE Embeddings</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#subpackages">Subpackages</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a><ul>
+      <li>Previous: <a href="../dataset_classes/index.html" title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.dataset_classes</span></code></a></li>
+      <li>Next: <a href="../evaluator/index.html" title="next chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.evaluator</span></code></a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2023, Caglar Demir.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 7.2.6</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 0.7.16</a>
+      
+      |
+      <a href="../../../_sources/autoapi/dicee/eval_static_funcs/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
