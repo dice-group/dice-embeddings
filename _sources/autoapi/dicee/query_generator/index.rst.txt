@@ -73,7 +73,7 @@ Classes
 
    .. py:method:: save_queries(query_type: str, gen_num: int, save_path: str)
 
-              
+      
 
 
    .. py:method:: load_queries(path)

@@ -36,13 +36,7 @@ Classes
 
    .. py:method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
 
@@ -61,13 +55,7 @@ Classes
 
    .. py:method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
 
@@ -95,13 +83,7 @@ Classes
 
    .. py:method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
 
@@ -115,13 +97,7 @@ Classes
 
    .. py:method:: forward_triples(idx_triple)
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: tri_score(h, r, t)
@@ -142,13 +118,7 @@ Classes
 
    .. py:method:: forward_triples(idx_triple)
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: construct_multi_coeff(x)
@@ -156,7 +126,7 @@ Classes
 
    .. py:method:: poly_NN(x, coefh, coefr, coeft)
 
-      Constructing a 2 layers NN to represent the embeddings. 
+      Constructing a 2 layers NN to represent the embeddings.
       h = \sigma(wh^T x + bh ),  r = \sigma(wr^T x + br ),  t = \sigma(wt^T x + bt )
 
 
@@ -172,9 +142,9 @@ Classes
 
    .. py:method:: tri_score(coeff_h, coeff_r, coeff_t)
 
-      this part implement the trilinear scoring techniques: 
+      this part implement the trilinear scoring techniques:
 
-      score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*b_j*c_k}{1+(i+j+k)%d} 
+      score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*b_j*c_k}{1+(i+j+k)%d}
 
       1. generate the range for i,j and k from [0 d-1]
 
@@ -187,9 +157,9 @@ Classes
 
    .. py:method:: vtp_score(h, r, t)
 
-      this part implement the vector triple product scoring techniques: 
+      this part implement the vector triple product scoring techniques:
 
-      score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*c_j*b_k - b_i*c_j*a_k}{(1+(i+j)%d)(1+k)} 
+      score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*c_j*b_k - b_i*c_j*a_k}{(1+(i+j)%d)(1+k)}
 
       1. generate the range for i,j and k from [0 d-1]
 
@@ -216,7 +186,7 @@ Classes
 
    .. py:method:: pop(coeff, x, degree)
 
-      This function allow us to evaluate the composition of two polynomes without for loops :) 
+      This function allow us to evaluate the composition of two polynomes without for loops :)
       it takes a matrix tensor of coefficients (coeff), a matrix tensor of points x  and range of integer [0,1,...d]
           and return a tensor (coeff[0][0] + coeff[0][1]x +...+ coeff[0][d]x^d,
                               coeff[1][0] + coeff[1][1]x +...+ coeff[1][d]x^d)

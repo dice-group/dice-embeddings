@@ -121,17 +121,11 @@ Classes
 
    .. py:method:: predict(*, h: Union[List[str], str] = None, r: Union[List[str], str] = None, t: Union[List[str], str] = None, within=None, logits=True) -> torch.FloatTensor
 
-      Parameters
-      ----------
-      logits
-      h
-      r
-      t
-      within
-
-      Returns
-      -------
-
+      :param logits:
+      :param h:
+      :param r:
+      :param t:
+      :param within:
 
 
    .. py:method:: predict_topk(*, h: List[str] = None, r: List[str] = None, t: List[str] = None, topk: int = 10, within: List[str] = None)
@@ -242,18 +236,16 @@ Classes
       k: int
       The top-k substitutions for intermediate variables.
 
-      Returns
-      -------
-      List[Tuple[str, torch.Tensor]]
-      Entities and corresponding scores sorted in the descening order of scores
+      :returns: * *List[Tuple[str, torch.Tensor]]*
+                * *Entities and corresponding scores sorted in the descening order of scores*
 
 
    .. py:method:: find_missing_triples(confidence: float, entities: List[str] = None, relations: List[str] = None, topk: int = 10, at_most: int = sys.maxsize) -> Set
 
                Find missing triples
 
-               Iterative over a set of entities E and a set of relation R : 
-      orall e \in E and 
+               Iterative over a set of entities E and a set of relation R :
+      orall e \in E and
       orall r \in R f(e,r,x)
                Return (e,r,x)
       ot\in G and  f(e,r,x) > confidence
@@ -275,9 +267,9 @@ Classes
               Returns: Set
               ---------
 
-              {(e,r,x) | f(e,r,x) > confidence \land (e,r,x) 
+              {(e,r,x) | f(e,r,x) > confidence \land (e,r,x)
       ot\in G
-              
+
 
 
    .. py:method:: deploy(share: bool = False, top_k: int = 10)

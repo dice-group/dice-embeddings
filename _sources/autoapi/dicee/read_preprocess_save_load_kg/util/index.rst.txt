@@ -36,7 +36,7 @@ Functions
 
 .. py:function:: apply_reciprical_or_noise(add_reciprical: bool, eval_model: str, df: object = None, info: str = None)
 
-   (1) Add reciprocal triples (2) Add noisy triples 
+   (1) Add reciprocal triples (2) Add noisy triples
 
 
 .. py:function:: timeit(func)
@@ -44,7 +44,7 @@ Functions
 
 .. py:function:: read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None) -> polars.DataFrame
 
-   Load and Preprocess via Polars 
+   Load and Preprocess via Polars
 
 
 .. py:function:: read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None)
@@ -55,7 +55,7 @@ Functions
 
 .. py:function:: read_from_triple_store(endpoint: str = None)
 
-   Read triples from triple store into pandas dataframe 
+   Read triples from triple store into pandas dataframe
 
 
 .. py:function:: get_er_vocab(data, file_path: str = None)
@@ -79,7 +79,7 @@ Functions
 
 .. py:function:: load_with_pandas(self) -> None
 
-   Deserialize data 
+   Deserialize data
 
 
 .. py:function:: save_numpy_ndarray(*, data: numpy.ndarray, file_path: str)

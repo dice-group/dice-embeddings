@@ -45,9 +45,7 @@ Classes
       kwargs
 
 
-      Returns
-      -------
-      None
+      :rtype: None
 
 
    .. py:method:: on_fit_end(*args, **kwargs)
@@ -61,9 +59,7 @@ Classes
       kwargs
 
 
-      Returns
-      -------
-      None
+      :rtype: None
 
 
    .. py:method:: on_train_epoch_end(*args, **kwargs)
@@ -77,9 +73,7 @@ Classes
       kwargs
 
 
-      Returns
-      -------
-      None
+      :rtype: None
 
 
    .. py:method:: on_train_batch_end(*args, **kwargs)
@@ -93,9 +87,7 @@ Classes
       kwargs
 
 
-      Returns
-      -------
-      None
+      :rtype: None
 
 
    .. py:method:: save_checkpoint(full_path: str, model) -> None
@@ -110,9 +102,7 @@ Classes
       model:
 
 
-      Returns
-      -------
-      None
+      :rtype: None
 
 
 
@@ -141,25 +131,15 @@ Classes
 
    .. py:method:: get_bpe_token_representation(str_entity_or_relation: Union[List[str], str]) -> Union[List[List[int]], List[int]]
 
-      Parameters
-      ----------
-      str_entity_or_relation: corresponds to a str or a list of strings to be tokenized via BPE and shaped.
+      :param str_entity_or_relation:
+      :type str_entity_or_relation: corresponds to a str or a list of strings to be tokenized via BPE and shaped.
 
-      Returns
-      -------
-      A list integer(s) or a list of lists containing integer(s)
-
+      :rtype: A list integer(s) or a list of lists containing integer(s)
 
 
    .. py:method:: get_padded_bpe_triple_representation(triples: List[List[str]]) -> Tuple[List, List, List]
 
-      Parameters
-      ----------
-      triples
-
-      Returns
-      -------
-
+      :param triples:
 
 
    .. py:method:: get_domain_of_relation(rel: str) -> List[str]
@@ -176,9 +156,6 @@ Classes
       Parameter
       ---------
 
-      Returns
-      ---------
-
 
    .. py:method:: set_model_eval_mode() -> None
 
@@ -186,9 +163,6 @@ Classes
 
 
       Parameter
-      ---------
-
-      Returns
       ---------
 
 
@@ -247,9 +221,6 @@ Classes
       items:
           entities
 
-      Returns
-      ---------
-
 
    .. py:method:: get_relation_embeddings(items: List[str])
 
@@ -260,9 +231,6 @@ Classes
       ---------
       items:
           relations
-
-      Returns
-      ---------
 
 
    .. py:method:: construct_input_and_output(head_entity: List[str], relation: List[str], tail_entity: List[str], labels)
@@ -299,9 +267,7 @@ Classes
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
    .. py:method:: on_init_end(*args, **kwargs)
@@ -314,9 +280,7 @@ Classes
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
    .. py:method:: on_fit_start(trainer, model)
@@ -329,9 +293,7 @@ Classes
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
    .. py:method:: on_train_epoch_end(trainer, model)
@@ -344,9 +306,7 @@ Classes
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
    .. py:method:: on_train_batch_end(*args, **kwargs)
@@ -360,9 +320,7 @@ Classes
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
    .. py:method:: on_fit_end(*args, **kwargs)
@@ -375,9 +333,7 @@ Classes
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
 
@@ -403,9 +359,7 @@ Classes
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
    .. py:method:: on_fit_end(trainer, model)
@@ -418,9 +372,7 @@ Classes
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
    .. py:method:: store_ensemble(param_ensemble) -> None

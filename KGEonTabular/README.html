@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Knowledge Graph Embedding Boost on Tabular Data &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8775fe07" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=c6726a90"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            DICE Embeddings
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../autoapi/dicee/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Knowledge Graph Embedding Boost on Tabular Data</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/KGEonTabular/README.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="knowledge-graph-embedding-boost-on-tabular-data">
+<h1>Knowledge Graph Embedding Boost on Tabular Data<a class="headerlink" href="#knowledge-graph-embedding-boost-on-tabular-data" title="Link to this heading"></a></h1>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># (1) Clone the repositories. </span>
+git<span class="w"> </span>clone<span class="w"> </span>https://github.com/dice-group/dice-embeddings<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/dice-group/vectograph.git
+<span class="c1"># (2) Create a virtual environment and install the dependencies pertaining frameworks.</span>
+conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>dice<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.9.12<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>conda<span class="w"> </span>activate<span class="w"> </span>dice
+pip3<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>dice-embeddings/requirements.txt<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>pip3<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>vectograph/.
+</pre></div>
+</div>
+</section>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># (1) Fetch a tabular data (Regression Benchmark)</span>
+python<span class="w"> </span>vectograph/create_toy_data.py<span class="w"> </span>--toy_dataset_name<span class="w"> </span><span class="s2">&quot;california&quot;</span>
+<span class="c1"># (2) Remove labels signals to ensure </span>
+python<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;import pandas as pd;df=pd.read_csv(&#39;california.csv&#39;,index_col=0);df.drop(columns=[&#39;labels&#39;],inplace=True);df.to_csv(&#39;california_wo_labels.csv&#39;)&quot;</span>
+<span class="c1"># (3) Create a knowledge graph from a tabular data</span>
+python<span class="w"> </span>vectograph/main.py<span class="w"> </span>--tabularpath<span class="w"> </span><span class="s2">&quot;california_wo_labels.csv&quot;</span><span class="w"> </span>--kg_name<span class="w"> </span><span class="s2">&quot;california_wo_labels.nt&quot;</span><span class="w"> </span>--num_quantile<span class="o">=</span><span class="m">10</span><span class="w"> </span>--min_unique_val_per_column<span class="o">=</span><span class="m">12</span>
+<span class="c1"># (4) Preparation for KGE</span>
+<span class="c1"># (4.1) Create an experiment folder and Move the RDF knowledge graph into (6.1) and rename it</span>
+mkdir<span class="w"> </span>Example<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>mv<span class="w"> </span>california_wo_labels.nt<span class="w"> </span>Example/train.txt
+<span class="c1"># (5) Generate Embeddings</span>
+python<span class="w"> </span>dice-embeddings/main.py<span class="w"> </span>--path_dataset_folder<span class="w"> </span><span class="s2">&quot;Example&quot;</span><span class="w"> </span>--model<span class="w"> </span><span class="s2">&quot;QMult&quot;</span><span class="w"> </span>--embedding_dim<span class="w"> </span><span class="m">4</span><span class="w"> </span>--num_epochs<span class="w"> </span><span class="m">1</span><span class="w"> </span>--save_embeddings_as_csv<span class="w"> </span>True
+<span class="c1"># e.g. see Experiments folder</span>
+<span class="c1"># (6)</span>
+python<span class="w">  </span>regression.py<span class="w"> </span>--path_kg<span class="w"> </span><span class="s2">&quot;Example/train.txt&quot;</span><span class="w"> </span>--path_tabular_csv<span class="w"> </span><span class="s2">&quot;california.csv&quot;</span><span class="w"> </span>--path_entity_embeddings<span class="w"> </span><span class="s2">&quot;Experiments/2022-12-06 16:27:18.133871/QMult_entity_embeddings.csv&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="benchmarking">
+<h2>Benchmarking<a class="headerlink" href="#benchmarking" title="Link to this heading"></a></h2>
+<section id="fold-cv-results-on-california-housing-dataset-regression">
+<h3>10FOLD CV results on California housing dataset (regression).<a class="headerlink" href="#fold-cv-results-on-california-housing-dataset-regression" title="Link to this heading"></a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Linear Regression</p></th>
+<th class="head text-right"><p>Mean Squared Error</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Tabular</p></td>
+<td class="text-right"><p>1090+-47</p></td>
+</tr>
+<tr class="row-odd"><td><p>KGE</p></td>
+<td class="text-right"><p>1653+-51</p></td>
+</tr>
+<tr class="row-even"><td><p>Tabular &amp; KGE</p></td>
+<td class="text-right"><p>898+-22</p></td>
+</tr>
+</tbody>
+</table>
+<section id="tabular-10fold-detailed">
+<h4>Tabular 10Fold Detailed<a class="headerlink" href="#tabular-10fold-detailed" title="Link to this heading"></a></h4>
+<p>Tabular data:	X:(20640, 8) | y:(20640,)
+Linear Regression: results of 10 splits
+count      10.000000
+mean     1090.287544
+std        47.823181
+min      1023.775281
+25%      1063.200679
+50%      1093.047391
+75%      1107.809817
+max      1190.704755
+dtype: float64</p>
+</section>
+<section id="kge-10fold-detailed">
+<h4>KGE 10Fold Detailed<a class="headerlink" href="#kge-10fold-detailed" title="Link to this heading"></a></h4>
+<p>Tabular data:	X:(20640, 32) | y:(20640,)
+Linear Regression: results of 10 splits
+count      10.000000
+mean     1653.883685
+std        51.896592
+min      1571.634447
+25%      1627.806948
+50%      1656.219531
+75%      1666.211732
+max      1746.601478
+dtype: float64</p>
+</section>
+<section id="tabular-kge-10fold-detailed">
+<h4>TABULAR &amp; KGE 10Fold Detailed<a class="headerlink" href="#tabular-kge-10fold-detailed" title="Link to this heading"></a></h4>
+<p>Tabular data:	X:(20640, 40) | y:(20640,)
+Linear Regression: results of 10 splits
+count     10.000000
+mean     898.226317
+std       22.614693
+min      866.631540
+25%      879.495965
+50%      896.230564
+75%      915.368515
+max      929.895093
+dtype: float64</p>
+</section>
+</section>
+</section>
+<section id="fold-cv-results-on-todo-binary-classification">
+<h2>10FOLD CV results on TODO (binary classification).<a class="headerlink" href="#fold-cv-results-on-todo-binary-classification" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Logistic Regression</p></th>
+<th class="head text-right"><p>Accuracy</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Tabular</p></td>
+<td class="text-right"><p>?</p></td>
+</tr>
+<tr class="row-odd"><td><p>KGE</p></td>
+<td class="text-right"><p>?</p></td>
+</tr>
+<tr class="row-even"><td><p>Tabular &amp; KGE</p></td>
+<td class="text-right"><p>?</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

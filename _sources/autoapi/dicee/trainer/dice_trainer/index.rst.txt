@@ -53,7 +53,7 @@ Functions
     Returns
     -------
     report:dict
-    
+
 
    .. py:method:: continual_start()
 
@@ -65,15 +65,13 @@ Functions
       Parameter
       ---------
 
-      Returns
-      -------
-      model:
-      form_of_labelling: str
+      :returns: * *model*
+                * **form_of_labelling** (*str*)
 
 
    .. py:method:: initialize_trainer(callbacks: List) -> lightning.Trainer
 
-      Initialize Trainer from input arguments 
+      Initialize Trainer from input arguments
 
 
    .. py:method:: initialize_or_load_model()
@@ -87,7 +85,7 @@ Functions
 
    .. py:method:: start(knowledge_graph: dicee.knowledge_graph.KG) -> Tuple[dicee.models.base_model.BaseKGE, str]
 
-      Train selected model via the selected training strategy 
+      Train selected model via the selected training strategy
 
 
    .. py:method:: k_fold_cross_validation(dataset) -> Tuple[dicee.models.base_model.BaseKGE, str]

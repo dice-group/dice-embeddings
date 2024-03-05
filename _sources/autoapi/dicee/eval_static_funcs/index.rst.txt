@@ -23,16 +23,10 @@ Functions
 
 .. py:function:: evaluate_link_prediction_performance(model: dicee.knowledge_graph_embeddings.KGE, triples, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List]) -> Dict
 
-   Parameters
-   ----------
-   model
-   triples
-   er_vocab
-   re_vocab
-
-   Returns
-   -------
-
+   :param model:
+   :param triples:
+   :param er_vocab:
+   :param re_vocab:
 
 
 .. py:function:: evaluate_link_prediction_performance_with_reciprocals(model: dicee.knowledge_graph_embeddings.KGE, triples, er_vocab: Dict[Tuple, List])
@@ -43,17 +37,11 @@ Functions
 
 .. py:function:: evaluate_link_prediction_performance_with_bpe(model: dicee.knowledge_graph_embeddings.KGE, within_entities: List[str], triples: List[Tuple[str]], er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List])
 
-   Parameters
-   ----------
-   model
-   triples
-   within_entities
-   er_vocab
-   re_vocab
-
-   Returns
-   -------
-
+   :param model:
+   :param triples:
+   :param within_entities:
+   :param er_vocab:
+   :param re_vocab:
 
 
 .. py:function:: evaluate_lp_bpe_k_vs_all(model, triples: List[List[str]], er_vocab=None, batch_size=None, func_triple_to_bpe_representation: Callable = None, str_to_bpe_entity_to_idx=None)

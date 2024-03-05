@@ -65,19 +65,19 @@ Classes
       Here you compute and return the training loss and some additional metrics for e.g. the progress bar or
       logger.
 
-      Args:
-          batch: The output of your data iterable, normally a :class:`~torch.utils.data.DataLoader`.
-          batch_idx: The index of this batch.
-          dataloader_idx: The index of the dataloader that produced this batch.
-              (only if multiple dataloaders used)
+      :param batch: The output of your data iterable, normally a :class:`~torch.utils.data.DataLoader`.
+      :param batch_idx: The index of this batch.
+      :param dataloader_idx: The index of the dataloader that produced this batch.
+                             (only if multiple dataloaders used)
 
-      Return:
-          - :class:`~torch.Tensor` - The loss tensor
-          - ``dict`` - A dictionary which can include any keys, but must include the key ``'loss'`` in the case of
-            automatic optimization.
-          - ``None`` - In automatic optimization, this will skip to the next batch (but is not supported for
-            multi-GPU, TPU, or DeepSpeed). For manual optimization, this has no special meaning, as returning
-            the loss is not required.
+      :returns:
+
+                - :class:`~torch.Tensor` - The loss tensor
+                - ``dict`` - A dictionary which can include any keys, but must include the key ``'loss'`` in the case of
+                  automatic optimization.
+                - ``None`` - In automatic optimization, this will skip to the next batch (but is not supported for
+                  multi-GPU, TPU, or DeepSpeed). For manual optimization, this has no special meaning, as returning
+                  the loss is not required.
 
       In this step you'd normally do the forward pass and calculate the loss for a batch.
       You can also do fancier things like multiple forward passes or something model specific.
@@ -110,22 +110,16 @@ Classes
               ...
               opt2.step()
 
-      Note:
-          When ``accumulate_grad_batches`` > 1, the loss returned here will be automatically
-          normalized by ``accumulate_grad_batches`` internally.
+      .. note::
 
+         When ``accumulate_grad_batches`` > 1, the loss returned here will be automatically
+         normalized by ``accumulate_grad_batches`` internally.
 
 
    .. py:method:: loss_function(yhat_batch: torch.FloatTensor, y_batch: torch.FloatTensor)
 
-      Parameters
-      ----------
-      yhat_batch
-      y_batch
-
-      Returns
-      -------
-
+      :param yhat_batch:
+      :param y_batch:
 
 
    .. py:method:: on_train_epoch_end(*args, **kwargs)
@@ -179,14 +173,15 @@ Classes
       - :meth:`prepare_data`
       - :meth:`setup`
 
-      Note:
-          Lightning tries to add the correct sampler for distributed and arbitrary hardware.
-          There is no need to set it yourself.
+      .. note::
 
-      Note:
-          If you don't need a test dataset and a :meth:`test_step`, you don't need to implement
-          this method.
+         Lightning tries to add the correct sampler for distributed and arbitrary hardware.
+         There is no need to set it yourself.
 
+      .. note::
+
+         If you don't need a test dataset and a :meth:`test_step`, you don't need to implement
+         this method.
 
 
    .. py:method:: val_dataloader() -> None
@@ -206,14 +201,15 @@ Classes
       - :meth:`prepare_data`
       - :meth:`setup`
 
-      Note:
-          Lightning tries to add the correct sampler for distributed and arbitrary hardware
-          There is no need to set it yourself.
+      .. note::
 
-      Note:
-          If you don't need a validation dataset and a :meth:`validation_step`, you don't need to
-          implement this method.
+         Lightning tries to add the correct sampler for distributed and arbitrary hardware
+         There is no need to set it yourself.
 
+      .. note::
+
+         If you don't need a validation dataset and a :meth:`validation_step`, you don't need to
+         implement this method.
 
 
    .. py:method:: predict_dataloader() -> None
@@ -228,13 +224,12 @@ Classes
       - :meth:`prepare_data`
       - :meth:`setup`
 
-      Note:
-          Lightning tries to add the correct sampler for distributed and arbitrary hardware
-          There is no need to set it yourself.
+      .. note::
 
-      Return:
-          A :class:`torch.utils.data.DataLoader` or a sequence of them specifying prediction samples.
+         Lightning tries to add the correct sampler for distributed and arbitrary hardware
+         There is no need to set it yourself.
 
+      :returns: A :class:`torch.utils.data.DataLoader` or a sequence of them specifying prediction samples.
 
 
    .. py:method:: train_dataloader() -> None
@@ -260,10 +255,10 @@ Classes
       - :meth:`prepare_data`
       - :meth:`setup`
 
-      Note:
-          Lightning tries to add the correct sampler for distributed and arbitrary hardware.
-          There is no need to set it yourself.
+      .. note::
 
+         Lightning tries to add the correct sampler for distributed and arbitrary hardware.
+         There is no need to set it yourself.
 
 
    .. py:method:: configure_optimizers(parameters=None)
@@ -272,16 +267,15 @@ Classes
       But in the case of GANs or similar you might have multiple. Optimization with multiple optimizers only works in
       the manual optimization mode.
 
-      Return:
-          Any of these 6 options.
+      :returns: Any of these 6 options.
 
-          - **Single optimizer**.
-          - **List or Tuple** of optimizers.
-          - **Two lists** - The first list has multiple optimizers, and the second has multiple LR schedulers
-            (or multiple ``lr_scheduler_config``).
-          - **Dictionary**, with an ``"optimizer"`` key, and (optionally) a ``"lr_scheduler"``
-            key whose value is a single LR scheduler or ``lr_scheduler_config``.
-          - **None** - Fit will run without any optimizer.
+                - **Single optimizer**.
+                - **List or Tuple** of optimizers.
+                - **Two lists** - The first list has multiple optimizers, and the second has multiple LR schedulers
+                  (or multiple ``lr_scheduler_config``).
+                - **Dictionary**, with an ``"optimizer"`` key, and (optionally) a ``"lr_scheduler"``
+                  key whose value is a single LR scheduler or ``lr_scheduler_config``.
+                - **None** - Fit will run without any optimizer.
 
       The ``lr_scheduler_config`` is a dictionary which contains the scheduler and its associated configuration.
       The default configuration is shown below.
@@ -353,19 +347,19 @@ Classes
       Metrics can be made available to monitor by simply logging it using
       ``self.log('metric_to_track', metric_val)`` in your :class:`~lightning.pytorch.core.LightningModule`.
 
-      Note:
-          Some things to know:
+      .. note::
 
-          - Lightning calls ``.backward()`` and ``.step()`` automatically in case of automatic optimization.
-          - If a learning rate scheduler is specified in ``configure_optimizers()`` with key
-            ``"interval"`` (default "epoch") in the scheduler configuration, Lightning will call
-            the scheduler's ``.step()`` method automatically in case of automatic optimization.
-          - If you use 16-bit precision (``precision=16``), Lightning will automatically handle the optimizer.
-          - If you use :class:`torch.optim.LBFGS`, Lightning handles the closure function automatically for you.
-          - If you use multiple optimizers, you will have to switch to 'manual optimization' mode and step them
-            yourself.
-          - If you need to control how often the optimizer steps, override the :meth:`optimizer_step` hook.
-
+         Some things to know:
+         
+         - Lightning calls ``.backward()`` and ``.step()`` automatically in case of automatic optimization.
+         - If a learning rate scheduler is specified in ``configure_optimizers()`` with key
+           ``"interval"`` (default "epoch") in the scheduler configuration, Lightning will call
+           the scheduler's ``.step()`` method automatically in case of automatic optimization.
+         - If you use 16-bit precision (``precision=16``), Lightning will automatically handle the optimizer.
+         - If you use :class:`torch.optim.LBFGS`, Lightning handles the closure function automatically for you.
+         - If you use multiple optimizers, you will have to switch to 'manual optimization' mode and step them
+           yourself.
+         - If you need to control how often the optimizer steps, override the :meth:`optimizer_step` hook.
 
 
 
@@ -407,26 +401,15 @@ Classes
 
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x : B x 2 x T
-
-
-
-      Returns
-      -------
-
+      :param x:
+      :type x: B x 2 x T
 
 
    .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
 
       byte pair encoded neural link predictors
 
-      Parameters
-      ----------
-
-      -------
-
+      :param -------:
 
 
    .. py:method:: init_params_with_sanity_checking()
@@ -434,26 +417,14 @@ Classes
 
    .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
 
-      Parameters
-      ----------
-      x
-      y_idx
-      ordered_bpe_entities
-
-      Returns
-      -------
-
+      :param x:
+      :param y_idx:
+      :param ordered_bpe_entities:
 
 
    .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(*args, **kwargs)
@@ -470,31 +441,18 @@ Classes
 
    .. py:method:: get_sentence_representation(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x shape (b,3,t)
-
-      Returns
-      -------
-
+      :param x shape (b:
+      :param 3:
+      :param t):
 
 
    .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
 
-      Parameters
-      ----------
-      x : B x 2 x T
-
-      Returns
-      -------
-
+      :param x:
+      :type x: B x 2 x T
 
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
-
-      Returns
-      -------
-
 
 
 

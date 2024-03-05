@@ -106,26 +106,14 @@ Functions
 
    .. py:method:: k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
 
-      Parameters
-      ----------
-      bpe_head_ent_emb
-      bpe_rel_ent_emb
-      E
-
-      Returns
-      -------
-
+      :param bpe_head_ent_emb:
+      :param bpe_rel_ent_emb:
+      :param E:
 
 
    .. py:method:: forward_k_vs_all(x)
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_sample(x, target_entity_idx)
@@ -144,20 +132,14 @@ Functions
 
    Convolutional Quaternion Knowledge Graph Embeddings
 
-       
+
 
    .. py:method:: residual_convolution(Q_1, Q_2)
 
 
    .. py:method:: forward_triples(indexed_triple: torch.Tensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor)
@@ -173,20 +155,14 @@ Functions
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   Additive Convolutional Quaternion Knowledge Graph Embeddings 
+   Additive Convolutional Quaternion Knowledge Graph Embeddings
 
    .. py:method:: residual_convolution(Q_1, Q_2)
 
 
    .. py:method:: forward_triples(indexed_triple: torch.Tensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor)

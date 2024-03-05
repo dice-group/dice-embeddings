@@ -41,7 +41,7 @@ Attributes
 
 .. py:function:: preprocesses_input_args(args)
 
-   Sanity Checking in input arguments 
+   Sanity Checking in input arguments
 
 
 .. py:function:: create_constraints(triples: numpy.ndarray) -> Tuple[dict, dict, dict, dict]

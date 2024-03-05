@@ -30,15 +30,9 @@ Classes
 
    .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor)
 
-      Parameters
-      ----------
-      emb_h
-      emb_r
-      emb_E
-
-      Returns
-      -------
-
+      :param emb_h:
+      :param emb_r:
+      :param emb_E:
 
 
    .. py:method:: forward_k_vs_all(x: torch.LongTensor)
@@ -72,13 +66,9 @@ Classes
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090) 
+   A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090)
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, None]
-
-      Returns
-      -------
-
 
 
    .. py:method:: forward_k_vs_all(x) -> torch.FloatTensor
@@ -96,17 +86,11 @@ Classes
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   A Physical Embedding Model for Knowledge Graphs 
+   A Physical Embedding Model for Knowledge Graphs
 
    .. py:method:: forward_triples(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
 

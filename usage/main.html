@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dicee Manual &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/graphviz.css?v=eafc0fe6" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8775fe07" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=c6726a90"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="dicee" href="../autoapi/dicee/index.html" />
+    <link rel="prev" title="Welcome to DICE Embeddings!" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            DICE Embeddings
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#installation">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installation-from-source">Installation from Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#learning-embeddings">Learning Embeddings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#loading-embeddings-into-qdrant-vector-database">Loading Embeddings into Qdrant Vector Database</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#launching-webservice">Launching Webservice</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#retrieve-and-search">Retrieve and Search</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../autoapi/dicee/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Dicee Manual</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/usage/main.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="dicee-manual">
+<h1>Dicee Manual<a class="headerlink" href="#dicee-manual" title="Link to this heading"></a></h1>
+<p><strong>Version:</strong> dicee 0.1.3.2</p>
+<p><strong>GitHub repository:</strong> <a class="reference external" href="https://github.com/dice-group/dice-embeddings">https://github.com/dice-group/dice-embeddings</a></p>
+<p><strong>Publisher and maintainer:</strong> <a class="reference external" href="https://github.com/Demirrr">Caglar Demir</a></p>
+<p><strong>Contact</strong>: <a class="reference external" href="mailto:caglar&#46;demir&#37;&#52;&#48;upb&#46;de">caglar<span>&#46;</span>demir<span>&#64;</span>upb<span>&#46;</span>de</a></p>
+<p><strong>License:</strong> OSI Approved :: MIT License</p>
+<hr class="docutils" />
+<p>Dicee is a hardware-agnostic framework for large-scale knowledge graph embeddings.</p>
+<p>Knowledge graph embedding research has mainly focused on learning continuous
+representations of knowledge graphs towards the link prediction problem.
+Recently developed frameworks can be effectively applied in a wide range
+of research-related applications. Yet, using these frameworks in real-world
+applications becomes more challenging as the size of the knowledge graph
+grows</p>
+<p>We developed the DICE Embeddings framework (dicee) to compute embeddings for large-scale knowledge graphs in a hardware-agnostic manner.
+To achieve this goal, we rely on</p>
+<ol class="arabic simple">
+<li><p><strong><a class="reference external" href="https://pandas.pydata.org/">Pandas</a> &amp; Co.</strong> to use parallelism at preprocessing a large knowledge graph,</p></li>
+<li><p><strong><a class="reference external" href="https://pytorch.org/">PyTorch</a> &amp; Co.</strong> to learn knowledge graph embeddings via multi-CPUs, GPUs, TPUs or computing cluster, and</p></li>
+<li><p><strong><a class="reference external" href="https://huggingface.co/">Huggingface</a></strong> to ease the deployment of pre-trained models.</p></li>
+</ol>
+<p><strong>Why <a class="reference external" href="https://pandas.pydata.org/">Pandas</a> &amp; Co. ?</strong>
+A large knowledge graph can be read and preprocessed (e.g. removing literals) by pandas, modin, or polars in parallel.
+Through polars, a knowledge graph having more than 1 billion triples can be read in parallel fashion.
+Importantly, using these frameworks allow us to perform all necessary computations on a single CPU as well as a cluster of computers.</p>
+<p><strong>Why <a class="reference external" href="https://pytorch.org/">PyTorch</a> &amp; Co. ?</strong>
+PyTorch is one of the most popular machine learning frameworks available at the time of writing.
+PytorchLightning facilitates scaling the training procedure of PyTorch without boilerplate.
+In our framework, we combine <a class="reference external" href="https://pytorch.org/">PyTorch</a> &amp; <a class="reference external" href="https://www.pytorchlightning.ai/">PytorchLightning</a>.
+Users can choose the trainer class (e.g., DDP by Pytorch) to train large knowledge graph embedding models with billions of parameters.
+PytorchLightning allows us to use state-of-the-art model parallelism techniques (e.g. Fully Sharded Training, FairScale, or DeepSpeed)
+without extra effort.
+With our framework, practitioners can directly use PytorchLightning for model parallelism to train gigantic embedding models.</p>
+<p><strong>Why <a class="reference external" href="https://huggingface.co/gradio">Hugging-face Gradio</a>?</strong>
+Deploy a pre-trained embedding model without writing a single line of code.</p>
+</section>
+<section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h1>
+<section id="installation-from-source">
+<h2>Installation from Source<a class="headerlink" href="#installation-from-source" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/dice-group/dice-embeddings.git
+conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>dice<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.10.13<span class="w"> </span>--no-default-packages<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>conda<span class="w"> </span>activate<span class="w"> </span>dice<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>dice-embeddings<span class="w"> </span><span class="o">&amp;&amp;</span>
+pip3<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</pre></div>
+</div>
+<p>or</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>dicee
+</pre></div>
+</div>
+</section>
+</section>
+<section id="download-knowledge-graphs">
+<h1>Download Knowledge Graphs<a class="headerlink" href="#download-knowledge-graphs" title="Link to this heading"></a></h1>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>wget<span class="w"> </span>https://files.dice-research.org/datasets/dice-embeddings/KGs.zip<span class="w"> </span>--no-check-certificate<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>unzip<span class="w"> </span>KGs.zip
+</pre></div>
+</div>
+<p>To test the Installation</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-p<span class="w"> </span>no:warnings<span class="w"> </span>-x<span class="w"> </span><span class="c1"># Runs &gt;114 tests leading to &gt; 15 mins</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-p<span class="w"> </span>no:warnings<span class="w"> </span>--lf<span class="w"> </span><span class="c1"># run only the last failed test</span>
+python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-p<span class="w"> </span>no:warnings<span class="w"> </span>--ff<span class="w"> </span><span class="c1"># to run the failures first and then the rest of the tests.</span>
+</pre></div>
+</div>
+</section>
+<section id="knowledge-graph-embedding-models">
+<h1>Knowledge Graph Embedding Models<a class="headerlink" href="#knowledge-graph-embedding-models" title="Link to this heading"></a></h1>
+<ol class="arabic simple">
+<li><p>TransE, DistMult, ComplEx, ConEx, QMult, OMult, ConvO, ConvQ, Keci</p></li>
+<li><p>All 44 models available in https://github.com/pykeen/pykeen#models</p></li>
+</ol>
+<blockquote>
+<div><p>For more, please refer to <code class="docutils literal notranslate"><span class="pre">examples</span></code>.</p>
+</div></blockquote>
+</section>
+<section id="how-to-train">
+<h1>How to Train<a class="headerlink" href="#how-to-train" title="Link to this heading"></a></h1>
+<p>To Train a KGE model (KECI) and evaluate it on the train, validation, and test sets of the UMLS benchmark dataset.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dicee.executer</span> <span class="kn">import</span> <span class="n">Execute</span>
+<span class="kn">from</span> <span class="nn">dicee.config</span> <span class="kn">import</span> <span class="n">Namespace</span>
+<span class="n">args</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">()</span>
+<span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="s1">&#39;Keci&#39;</span>
+<span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="o">=</span> <span class="s2">&quot;KvsAll&quot;</span>  <span class="c1"># 1vsAll, or AllvsAll, or NegSample</span>
+<span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span> <span class="o">=</span> <span class="s2">&quot;KGs/UMLS&quot;</span>
+<span class="n">args</span><span class="o">.</span><span class="n">path_to_store_single_run</span> <span class="o">=</span> <span class="s2">&quot;Keci_UMLS&quot;</span>
+<span class="n">args</span><span class="o">.</span><span class="n">num_epochs</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">args</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">=</span> <span class="mi">32</span>
+<span class="n">args</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="mi">1024</span>
+<span class="n">reports</span> <span class="o">=</span> <span class="n">Execute</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">reports</span><span class="p">[</span><span class="s2">&quot;Train&quot;</span><span class="p">][</span><span class="s2">&quot;MRR&quot;</span><span class="p">])</span> <span class="c1"># =&gt; 0.9912</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">reports</span><span class="p">[</span><span class="s2">&quot;Test&quot;</span><span class="p">][</span><span class="s2">&quot;MRR&quot;</span><span class="p">])</span> <span class="c1"># =&gt; 0.8155</span>
+<span class="c1"># See the Keci_UMLS folder embeddings and all other files</span>
+</pre></div>
+</div>
+<p>where the data is in the following form</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>head<span class="w"> </span>-3<span class="w"> </span>KGs/UMLS/train.txt<span class="w"> </span>
+acquired_abnormality<span class="w">    </span>location_of<span class="w">     </span>experimental_model_of_disease
+anatomical_abnormality<span class="w">  </span>manifestation_of<span class="w">        </span>physiologic_function
+alga<span class="w">    </span>isa<span class="w">     </span>entity
+</pre></div>
+</div>
+<p>A KGE model can also be trained from the command line</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">&quot;KGs/UMLS&quot;</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">&quot;train_val_test&quot;</span>
+</pre></div>
+</div>
+<p>dicee automaticaly detects available GPUs and trains a model with distributed data parallels technique. Under the hood, dicee uses lighning as a default trainer.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Train a model by only using the GPU-0</span>
+<span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">0</span><span class="w"> </span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">&quot;KGs/UMLS&quot;</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">&quot;train_val_test&quot;</span>
+<span class="c1"># Train a model by only using GPU-1</span>
+<span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>dicee<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">&quot;KGs/UMLS&quot;</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">&quot;train_val_test&quot;</span>
+<span class="nv">NCCL_P2P_DISABLE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">0</span>,1<span class="w"> </span>python<span class="w"> </span>dicee/scripts/run.py<span class="w"> </span>--trainer<span class="w"> </span>PL<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">&quot;KGs/UMLS&quot;</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">&quot;train_val_test&quot;</span>
+</pre></div>
+</div>
+<p>Under the hood, dicee executes run.py script and uses lighning as a default trainer</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Two equivalent executions</span>
+<span class="c1"># (1)</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">&quot;KGs/UMLS&quot;</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">&quot;train_val_test&quot;</span>
+<span class="c1"># Evaluate Keci on Train set: Evaluate Keci on Train set</span>
+<span class="c1"># {&#39;H@1&#39;: 0.9518788343558282, &#39;H@3&#39;: 0.9988496932515337, &#39;H@10&#39;: 1.0, &#39;MRR&#39;: 0.9753123402351737}</span>
+<span class="c1"># Evaluate Keci on Validation set: Evaluate Keci on Validation set</span>
+<span class="c1"># {&#39;H@1&#39;: 0.6932515337423313, &#39;H@3&#39;: 0.9041411042944786, &#39;H@10&#39;: 0.9754601226993865, &#39;MRR&#39;: 0.8072362996241839}</span>
+<span class="c1"># Evaluate Keci on Test set: Evaluate Keci on Test set</span>
+<span class="c1"># {&#39;H@1&#39;: 0.6951588502269289, &#39;H@3&#39;: 0.9039334341906202, &#39;H@10&#39;: 0.9750378214826021, &#39;MRR&#39;: 0.8064032293278861}</span>
+
+<span class="c1"># (2)</span>
+<span class="nv">CUDA_VISIBLE_DEVICES</span><span class="o">=</span><span class="m">0</span>,1<span class="w"> </span>python<span class="w"> </span>dicee/scripts/run.py<span class="w"> </span>--trainer<span class="w"> </span>PL<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">&quot;KGs/UMLS&quot;</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">&quot;train_val_test&quot;</span>
+<span class="c1"># Evaluate Keci on Train set: Evaluate Keci on Train set</span>
+<span class="c1"># {&#39;H@1&#39;: 0.9518788343558282, &#39;H@3&#39;: 0.9988496932515337, &#39;H@10&#39;: 1.0, &#39;MRR&#39;: 0.9753123402351737}</span>
+<span class="c1"># Evaluate Keci on Train set: Evaluate Keci on Train set</span>
+<span class="c1"># Evaluate Keci on Validation set: Evaluate Keci on Validation set</span>
+<span class="c1"># {&#39;H@1&#39;: 0.6932515337423313, &#39;H@3&#39;: 0.9041411042944786, &#39;H@10&#39;: 0.9754601226993865, &#39;MRR&#39;: 0.8072362996241839}</span>
+<span class="c1"># Evaluate Keci on Test set: Evaluate Keci on Test set</span>
+<span class="c1"># {&#39;H@1&#39;: 0.6951588502269289, &#39;H@3&#39;: 0.9039334341906202, &#39;H@10&#39;: 0.9750378214826021, &#39;MRR&#39;: 0.8064032293278861}</span>
+</pre></div>
+</div>
+<p>Similarly, models can be easily trained with torchrun</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>torchrun<span class="w"> </span>--standalone<span class="w"> </span>--nnodes<span class="o">=</span><span class="m">1</span><span class="w"> </span>--nproc_per_node<span class="o">=</span>gpu<span class="w"> </span>dicee/scripts/run.py<span class="w"> </span>--trainer<span class="w"> </span>torchDDP<span class="w"> </span>--dataset_dir<span class="w"> </span><span class="s2">&quot;KGs/UMLS&quot;</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--eval_model<span class="w"> </span><span class="s2">&quot;train_val_test&quot;</span>
+<span class="c1"># Evaluate Keci on Train set: Evaluate Keci on Train set: Evaluate Keci on Train set</span>
+<span class="c1"># {&#39;H@1&#39;: 0.9518788343558282, &#39;H@3&#39;: 0.9988496932515337, &#39;H@10&#39;: 1.0, &#39;MRR&#39;: 0.9753123402351737}</span>
+<span class="c1"># Evaluate Keci on Validation set: Evaluate Keci on Validation set</span>
+<span class="c1"># {&#39;H@1&#39;: 0.6932515337423313, &#39;H@3&#39;: 0.9041411042944786, &#39;H@10&#39;: 0.9754601226993865, &#39;MRR&#39;: 0.8072499937521418}</span>
+<span class="c1"># Evaluate Keci on Test set: Evaluate Keci on Test set</span>
+<span class="o">{</span><span class="s1">&#39;H@1&#39;</span>:<span class="w"> </span><span class="m">0</span>.6951588502269289,<span class="w"> </span><span class="s1">&#39;H@3&#39;</span>:<span class="w"> </span><span class="m">0</span>.9039334341906202,<span class="w"> </span><span class="s1">&#39;H@10&#39;</span>:<span class="w"> </span><span class="m">0</span>.9750378214826021,<span class="w"> </span><span class="s1">&#39;MRR&#39;</span>:<span class="w"> </span><span class="m">0</span>.8064032293278861<span class="o">}</span>
+</pre></div>
+</div>
+<p>You can also train a model in multi-node multi-gpu setting.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>torchrun<span class="w"> </span>--nnodes<span class="w"> </span><span class="m">2</span><span class="w"> </span>--nproc_per_node<span class="o">=</span>gpu<span class="w">  </span>--node_rank<span class="w"> </span><span class="m">0</span><span class="w"> </span>--rdzv_id<span class="w"> </span><span class="m">455</span><span class="w"> </span>--rdzv_backend<span class="w"> </span>c10d<span class="w"> </span>--rdzv_endpoint<span class="o">=</span>nebula<span class="w">  </span>dicee/scripts/run.py<span class="w"> </span>--trainer<span class="w"> </span>torchDDP<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS
+torchrun<span class="w"> </span>--nnodes<span class="w"> </span><span class="m">2</span><span class="w"> </span>--nproc_per_node<span class="o">=</span>gpu<span class="w">  </span>--node_rank<span class="w"> </span><span class="m">1</span><span class="w"> </span>--rdzv_id<span class="w"> </span><span class="m">455</span><span class="w"> </span>--rdzv_backend<span class="w"> </span>c10d<span class="w"> </span>--rdzv_endpoint<span class="o">=</span>nebula<span class="w"> </span>dicee/scripts/run.py<span class="w"> </span>--trainer<span class="w"> </span>torchDDP<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/UMLS
+</pre></div>
+</div>
+<p>Train a KGE model by providing the path of a single file and store all parameters under newly created directory
+called <code class="docutils literal notranslate"><span class="pre">KeciFamilyRun</span></code>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--path_single_kg<span class="w"> </span><span class="s2">&quot;KGs/Family/family-benchmark_rich_background.owl&quot;</span><span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--path_to_store_single_run<span class="w"> </span>KeciFamilyRun<span class="w"> </span>--backend<span class="w"> </span>rdflib
+</pre></div>
+</div>
+<p>where the data is in the following form</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$<span class="w"> </span>head<span class="w"> </span>-3<span class="w"> </span>KGs/Family/train.txt<span class="w"> </span>
+_:1<span class="w"> </span>&lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt;<span class="w"> </span>&lt;http://www.w3.org/2002/07/owl#Ontology&gt;<span class="w"> </span>.
+&lt;http://www.benchmark.org/family#hasChild&gt;<span class="w"> </span>&lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt;<span class="w"> </span>&lt;http://www.w3.org/2002/07/owl#ObjectProperty&gt;<span class="w"> </span>.
+&lt;http://www.benchmark.org/family#hasParent&gt;<span class="w"> </span>&lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&gt;<span class="w"> </span>&lt;http://www.w3.org/2002/07/owl#ObjectProperty&gt;<span class="w"> </span>.
+</pre></div>
+</div>
+<p><strong>Apart from n-triples or standard link prediction dataset formats, we support [“owl”, “nt”, “turtle”, “rdf/xml”, “n3”]</strong>*.
+Moreover, a KGE model can be also trained  by providing <strong>an endpoint of a triple store</strong>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dicee<span class="w"> </span>--sparql_endpoint<span class="w"> </span><span class="s2">&quot;http://localhost:3030/mutagenesis/&quot;</span><span class="w"> </span>--model<span class="w"> </span>Keci
+</pre></div>
+</div>
+<p>For more, please refer to <code class="docutils literal notranslate"><span class="pre">examples</span></code>.</p>
+</section>
+<section id="creating-an-embedding-vector-database">
+<h1>Creating an Embedding Vector Database<a class="headerlink" href="#creating-an-embedding-vector-database" title="Link to this heading"></a></h1>
+<section id="learning-embeddings">
+<h2>Learning Embeddings<a class="headerlink" href="#learning-embeddings" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Train an embedding model</span>
+dicee<span class="w"> </span>--dataset_dir<span class="w"> </span>KGs/Countries-S1<span class="w"> </span>--path_to_store_single_run<span class="w"> </span>CountryEmbeddings<span class="w"> </span>--model<span class="w"> </span>Keci<span class="w"> </span>--p<span class="w"> </span><span class="m">0</span><span class="w"> </span>--q<span class="w"> </span><span class="m">1</span><span class="w"> </span>--embedding_dim<span class="w"> </span><span class="m">32</span><span class="w"> </span>--adaptive_swa
+</pre></div>
+</div>
+</section>
+<section id="loading-embeddings-into-qdrant-vector-database">
+<h2>Loading Embeddings into Qdrant Vector Database<a class="headerlink" href="#loading-embeddings-into-qdrant-vector-database" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Ensure that Qdrant available</span>
+<span class="c1"># docker pull qdrant/qdrant &amp;&amp; docker run -p 6333:6333 -p 6334:6334      -v $(pwd)/qdrant_storage:/qdrant/storage:z      qdrant/qdrant</span>
+diceeindex<span class="w"> </span>--path_model<span class="w"> </span><span class="s2">&quot;CountryEmbeddings&quot;</span><span class="w"> </span>--collection_name<span class="w"> </span><span class="s2">&quot;dummy&quot;</span><span class="w"> </span>--location<span class="w"> </span><span class="s2">&quot;localhost&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="launching-webservice">
+<h2>Launching Webservice<a class="headerlink" href="#launching-webservice" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>diceeserve<span class="w"> </span>--path_model<span class="w"> </span><span class="s2">&quot;CountryEmbeddings&quot;</span><span class="w"> </span>--collection_name<span class="w"> </span><span class="s2">&quot;dummy&quot;</span><span class="w"> </span>--collection_location<span class="w"> </span><span class="s2">&quot;localhost&quot;</span>
+</pre></div>
+</div>
+<section id="retrieve-and-search">
+<h3>Retrieve and Search<a class="headerlink" href="#retrieve-and-search" title="Link to this heading"></a></h3>
+<p>Get embedding of germany</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-X<span class="w"> </span><span class="s1">&#39;GET&#39;</span><span class="w"> </span><span class="s1">&#39;http://0.0.0.0:8000/api/get?q=germany&#39;</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">&#39;accept: application/json&#39;</span>
+</pre></div>
+</div>
+<p>Get most similar things to europe</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>curl<span class="w"> </span>-X<span class="w"> </span><span class="s1">&#39;GET&#39;</span><span class="w"> </span><span class="s1">&#39;http://0.0.0.0:8000/api/search?q=europe&#39;</span><span class="w"> </span>-H<span class="w"> </span><span class="s1">&#39;accept: application/json&#39;</span>
+<span class="o">{</span><span class="s2">&quot;result&quot;</span>:<span class="o">[{</span><span class="s2">&quot;hit&quot;</span>:<span class="s2">&quot;europe&quot;</span>,<span class="s2">&quot;score&quot;</span>:1.0<span class="o">}</span>,
+<span class="o">{</span><span class="s2">&quot;hit&quot;</span>:<span class="s2">&quot;northern_europe&quot;</span>,<span class="s2">&quot;score&quot;</span>:0.67126536<span class="o">}</span>,
+<span class="o">{</span><span class="s2">&quot;hit&quot;</span>:<span class="s2">&quot;western_europe&quot;</span>,<span class="s2">&quot;score&quot;</span>:0.6010134<span class="o">}</span>,
+<span class="o">{</span><span class="s2">&quot;hit&quot;</span>:<span class="s2">&quot;puerto_rico&quot;</span>,<span class="s2">&quot;score&quot;</span>:0.5051694<span class="o">}</span>,
+<span class="o">{</span><span class="s2">&quot;hit&quot;</span>:<span class="s2">&quot;southern_europe&quot;</span>,<span class="s2">&quot;score&quot;</span>:0.4829831<span class="o">}]}</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="answering-complex-queries">
+<h1>Answering Complex Queries<a class="headerlink" href="#answering-complex-queries" title="Link to this heading"></a></h1>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># pip install dicee</span>
+<span class="c1"># wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate &amp; unzip KGs.zip</span>
+<span class="kn">from</span> <span class="nn">dicee.executer</span> <span class="kn">import</span> <span class="n">Execute</span>
+<span class="kn">from</span> <span class="nn">dicee.config</span> <span class="kn">import</span> <span class="n">Namespace</span>
+<span class="kn">from</span> <span class="nn">dicee.knowledge_graph_embeddings</span> <span class="kn">import</span> <span class="n">KGE</span>
+<span class="c1"># (1) Train a KGE model</span>
+<span class="n">args</span> <span class="o">=</span> <span class="n">Namespace</span><span class="p">()</span>
+<span class="n">args</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="s1">&#39;Keci&#39;</span>
+<span class="n">args</span><span class="o">.</span><span class="n">p</span><span class="o">=</span><span class="mi">0</span>
+<span class="n">args</span><span class="o">.</span><span class="n">q</span><span class="o">=</span><span class="mi">1</span>
+<span class="n">args</span><span class="o">.</span><span class="n">optim</span> <span class="o">=</span> <span class="s1">&#39;Adam&#39;</span>
+<span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="o">=</span> <span class="s2">&quot;AllvsAll&quot;</span>
+<span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="o">=</span> <span class="s2">&quot;KGs/Family/family-benchmark_rich_background.owl&quot;</span>
+<span class="n">args</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="s2">&quot;rdflib&quot;</span>
+<span class="n">args</span><span class="o">.</span><span class="n">num_epochs</span> <span class="o">=</span> <span class="mi">200</span>
+<span class="n">args</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="mi">1024</span>
+<span class="n">args</span><span class="o">.</span><span class="n">lr</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="n">args</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">=</span> <span class="mi">512</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">Execute</span><span class="p">(</span><span class="n">args</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="c1"># (2) Load the pre-trained model</span>
+<span class="n">pre_trained_kge</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;path_experiment_folder&#39;</span><span class="p">])</span>
+<span class="c1"># (3) Single-hop query answering</span>
+<span class="c1"># Query: ?E : \exist E.hasSibling(E, F9M167)</span>
+<span class="c1"># Question: Who are the siblings of F9M167?</span>
+<span class="c1"># Answer: [F9M157, F9F141], as (F9M167, hasSibling, F9M157) and (F9M167, hasSibling, F9F141)</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span><span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;1p&quot;</span><span class="p">,</span>
+                                                     <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;http://www.benchmark.org/family#F9M167&#39;</span><span class="p">,</span>
+                                                            <span class="p">(</span><span class="s1">&#39;http://www.benchmark.org/family#hasSibling&#39;</span><span class="p">,)),</span>
+                                                     <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">top_entities</span> <span class="o">=</span> <span class="p">[</span><span class="n">topk_entity</span> <span class="k">for</span> <span class="n">topk_entity</span><span class="p">,</span> <span class="n">query_score</span> <span class="ow">in</span> <span class="n">predictions</span><span class="p">]</span>
+<span class="k">assert</span> <span class="s2">&quot;http://www.benchmark.org/family#F9F141&quot;</span> <span class="ow">in</span> <span class="n">top_entities</span>
+<span class="k">assert</span> <span class="s2">&quot;http://www.benchmark.org/family#F9M157&quot;</span> <span class="ow">in</span> <span class="n">top_entities</span>
+<span class="c1"># (2) Two-hop query answering</span>
+<span class="c1"># Query: ?D : \exist E.Married(D, E) \land hasSibling(E, F9M167)</span>
+<span class="c1"># Question: To whom a sibling of F9M167 is married to?</span>
+<span class="c1"># Answer: [F9F158, F9M142] as (F9M157 #married F9F158) and (F9F141 #married F9M142)</span>
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span><span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;2p&quot;</span><span class="p">,</span>
+                                                     <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;http://www.benchmark.org/family#F9M167&quot;</span><span class="p">,</span>
+                                                            <span class="p">(</span><span class="s2">&quot;http://www.benchmark.org/family#hasSibling&quot;</span><span class="p">,</span>
+                                                             <span class="s2">&quot;http://www.benchmark.org/family#married&quot;</span><span class="p">)),</span>
+                                                     <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">top_entities</span> <span class="o">=</span> <span class="p">[</span><span class="n">topk_entity</span> <span class="k">for</span> <span class="n">topk_entity</span><span class="p">,</span> <span class="n">query_score</span> <span class="ow">in</span> <span class="n">predictions</span><span class="p">]</span>
+<span class="k">assert</span> <span class="s2">&quot;http://www.benchmark.org/family#F9M142&quot;</span> <span class="ow">in</span> <span class="n">top_entities</span>
+<span class="k">assert</span> <span class="s2">&quot;http://www.benchmark.org/family#F9F158&quot;</span> <span class="ow">in</span> <span class="n">top_entities</span>
+<span class="c1"># (3) Three-hop query answering</span>
+<span class="c1"># Query: ?T : \exist D.type(D,T) \land Married(D,E) \land hasSibling(E, F9M167)</span>
+<span class="c1"># Question: What are the type of people who are married to a sibling of F9M167?</span>
+<span class="c1"># (3) Answer: [Person, Male, Father] since  F9M157 is [Brother Father Grandfather Male] and F9M142 is [Male Grandfather Father]</span>
+
+<span class="n">predictions</span> <span class="o">=</span> <span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">answer_multi_hop_query</span><span class="p">(</span><span class="n">query_type</span><span class="o">=</span><span class="s2">&quot;3p&quot;</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;http://www.benchmark.org/family#F9M167&quot;</span><span class="p">,</span>
+                                                                             <span class="p">(</span><span class="s2">&quot;http://www.benchmark.org/family#hasSibling&quot;</span><span class="p">,</span>
+                                                                             <span class="s2">&quot;http://www.benchmark.org/family#married&quot;</span><span class="p">,</span>
+                                                                             <span class="s2">&quot;http://www.w3.org/1999/02/22-rdf-syntax-ns#type&quot;</span><span class="p">)),</span>
+                                                     <span class="n">tnorm</span><span class="o">=</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">top_entities</span> <span class="o">=</span> <span class="p">[</span><span class="n">topk_entity</span> <span class="k">for</span> <span class="n">topk_entity</span><span class="p">,</span> <span class="n">query_score</span> <span class="ow">in</span> <span class="n">predictions</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">top_entities</span><span class="p">)</span>
+<span class="k">assert</span> <span class="s2">&quot;http://www.benchmark.org/family#Person&quot;</span> <span class="ow">in</span> <span class="n">top_entities</span>
+<span class="k">assert</span> <span class="s2">&quot;http://www.benchmark.org/family#Father&quot;</span> <span class="ow">in</span> <span class="n">top_entities</span>
+<span class="k">assert</span> <span class="s2">&quot;http://www.benchmark.org/family#Male&quot;</span> <span class="ow">in</span> <span class="n">top_entities</span>
+</pre></div>
+</div>
+<p>For more, please refer to <code class="docutils literal notranslate"><span class="pre">examples/multi_hop_query_answering</span></code>.</p>
+</section>
+<section id="predicting-missing-links">
+<h1>Predicting Missing Links<a class="headerlink" href="#predicting-missing-links" title="Link to this heading"></a></h1>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dicee</span> <span class="kn">import</span> <span class="n">KGE</span>
+<span class="c1"># (1) Train a knowledge graph embedding model..</span>
+<span class="c1"># (2) Load a pretrained model</span>
+<span class="n">pre_trained_kge</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;..&#39;</span><span class="p">)</span>
+<span class="c1"># (3) Predict missing links through head entity rankings</span>
+<span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">predict_topk</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;..&quot;</span><span class="p">],</span><span class="n">r</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;..&quot;</span><span class="p">],</span><span class="n">topk</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="c1"># (4) Predict missing links through relation rankings</span>
+<span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">predict_topk</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;..&quot;</span><span class="p">],</span><span class="n">t</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;..&quot;</span><span class="p">],</span><span class="n">topk</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="c1"># (5) Predict missing links through tail entity rankings</span>
+<span class="n">pre_trained_kge</span><span class="o">.</span><span class="n">predict_topk</span><span class="p">(</span><span class="n">r</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;..&quot;</span><span class="p">],</span><span class="n">t</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;..&quot;</span><span class="p">],</span><span class="n">topk</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="downloading-pretrained-models">
+<h1>Downloading Pretrained Models<a class="headerlink" href="#downloading-pretrained-models" title="Link to this heading"></a></h1>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dicee</span> <span class="kn">import</span> <span class="n">KGE</span>
+<span class="c1"># (1) Load a pretrained ConEx on DBpedia </span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">KGE</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://files.dice-research.org/projects/DiceEmbeddings/KINSHIP-Keci-dim128-epoch256-KvsAll&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p>For more please look at <a class="reference external" href="https://files.dice-research.org/projects/DiceEmbeddings/">dice-research.org/projects/DiceEmbeddings/</a></p></li>
+</ul>
+</section>
+<section id="how-to-deploy">
+<h1>How to Deploy<a class="headerlink" href="#how-to-deploy" title="Link to this heading"></a></h1>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">dicee</span> <span class="kn">import</span> <span class="n">KGE</span>
+<span class="n">KGE</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;...&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">deploy</span><span class="p">(</span><span class="n">share</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span><span class="n">top_k</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="docker">
+<h1>Docker<a class="headerlink" href="#docker" title="Link to this heading"></a></h1>
+<p>To build the Docker image:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">docker</span> <span class="n">build</span> <span class="o">-</span><span class="n">t</span> <span class="n">dice</span><span class="o">-</span><span class="n">embeddings</span> <span class="o">.</span>
+</pre></div>
+</div>
+<p>To test the Docker image:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">docker</span> <span class="n">run</span> <span class="o">--</span><span class="n">rm</span> <span class="o">-</span><span class="n">v</span> <span class="o">~/.</span><span class="n">local</span><span class="o">/</span><span class="n">share</span><span class="o">/</span><span class="n">dicee</span><span class="o">/</span><span class="n">KGs</span><span class="p">:</span><span class="o">/</span><span class="n">dicee</span><span class="o">/</span><span class="n">KGs</span> <span class="n">dice</span><span class="o">-</span><span class="n">embeddings</span> <span class="o">./</span><span class="n">main</span><span class="o">.</span><span class="n">py</span> <span class="o">--</span><span class="n">model</span> <span class="n">AConEx</span> <span class="o">--</span><span class="n">embedding_dim</span> <span class="mi">16</span>
+</pre></div>
+</div>
+</section>
+<section id="how-to-cite">
+<h1>How to cite<a class="headerlink" href="#how-to-cite" title="Link to this heading"></a></h1>
+<p>Currently, we are working on our manuscript describing our framework.
+If you really like our work and want to cite it now, feel free to chose one :)</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># Keci
+@inproceedings{demir2023clifford,
+  title={Clifford Embeddings--A Generalized Approach for Embedding in Normed Algebras},
+  author={Demir, Caglar and Ngonga Ngomo, Axel-Cyrille},
+  booktitle={Joint European Conference on Machine Learning and Knowledge Discovery in Databases},
+  pages={567--582},
+  year={2023},
+  organization={Springer}
+}
+# LitCQD
+@inproceedings{demir2023litcqd,
+  title={LitCQD: Multi-Hop Reasoning in Incomplete Knowledge Graphs with Numeric Literals},
+  author={Demir, Caglar and Wiebesiek, Michel and Lu, Renzhong and Ngonga Ngomo, Axel-Cyrille and Heindorf, Stefan},
+  booktitle={Joint European Conference on Machine Learning and Knowledge Discovery in Databases},
+  pages={617--633},
+  year={2023},
+  organization={Springer}
+}
+# DICE Embedding Framework
+@article{demir2022hardware,
+  title={Hardware-agnostic computation for large-scale knowledge graph embeddings},
+  author={Demir, Caglar and Ngomo, Axel-Cyrille Ngonga},
+  journal={Software Impacts},
+  year={2022},
+  publisher={Elsevier}
+}
+# KronE
+@inproceedings{demir2022kronecker,
+  title={Kronecker decomposition for knowledge graph embeddings},
+  author={Demir, Caglar and Lienen, Julian and Ngonga Ngomo, Axel-Cyrille},
+  booktitle={Proceedings of the 33rd ACM Conference on Hypertext and Social Media},
+  pages={1--10},
+  year={2022}
+}
+# QMult, OMult, ConvQ, ConvO
+@InProceedings{pmlr-v157-demir21a,
+  title = 	 {Convolutional Hypercomplex Embeddings for Link Prediction},
+  author =       {Demir, Caglar and Moussallem, Diego and Heindorf, Stefan and Ngonga Ngomo, Axel-Cyrille},
+  booktitle = 	 {Proceedings of The 13th Asian Conference on Machine Learning},
+  pages = 	 {656--671},
+  year = 	 {2021},
+  editor = 	 {Balasubramanian, Vineeth N. and Tsang, Ivor},
+  volume = 	 {157},
+  series = 	 {Proceedings of Machine Learning Research},
+  month = 	 {17--19 Nov},
+  publisher =    {PMLR},
+  pdf = 	 {https://proceedings.mlr.press/v157/demir21a/demir21a.pdf},
+  url = 	 {https://proceedings.mlr.press/v157/demir21a.html},
+}
+# ConEx
+@inproceedings{demir2021convolutional,
+title={Convolutional Complex Knowledge Graph Embeddings},
+author={Caglar Demir and Axel-Cyrille Ngonga Ngomo},
+booktitle={Eighteenth Extended Semantic Web Conference - Research Track},
+year={2021},
+url={https://openreview.net/forum?id=6T45-4TFqaX}}
+# Shallom
+@inproceedings{demir2021shallow,
+  title={A shallow neural model for relation prediction},
+  author={Demir, Caglar and Moussallem, Diego and Ngomo, Axel-Cyrille Ngonga},
+  booktitle={2021 IEEE 15th International Conference on Semantic Computing (ICSC)},
+  pages={179--182},
+  year={2021},
+  organization={IEEE}
+</pre></div>
+</div>
+<p>For any questions or wishes, please contact:  <code class="docutils literal notranslate"><span class="pre">caglar.demir&#64;upb.de</span></code></p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="Welcome to DICE Embeddings!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../autoapi/dicee/index.html" class="btn btn-neutral float-right" title="dicee" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

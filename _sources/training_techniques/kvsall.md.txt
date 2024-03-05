@@ -1,0 +1,1 @@
+# KvsAll Training Technique

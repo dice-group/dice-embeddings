@@ -20,7 +20,7 @@ Classes
 .. py:class:: PreprocessKG(kg)
 
 
-   Preprocess the data in memory 
+   Preprocess the data in memory
 
    .. py:method:: start() -> None
 
@@ -29,19 +29,13 @@ Classes
       Parameter
       ---------
 
-      Returns
-      -------
-      None
+      :rtype: None
 
 
    .. py:method:: preprocess_with_byte_pair_encoding()
 
 
    .. py:method:: preprocess_with_byte_pair_encoding_with_padding() -> None
-
-      Returns
-      -------
-
 
 
    .. py:method:: preprocess_with_pandas() -> None
@@ -55,16 +49,10 @@ Classes
       Parameter
       ---------
 
-      Returns
-      -------
-      None
+      :rtype: None
 
 
    .. py:method:: preprocess_with_polars() -> None
-
-      Returns
-      -------
-
 
 
    .. py:method:: sequential_vocabulary_construction() -> None

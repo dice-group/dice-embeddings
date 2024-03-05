@@ -53,13 +53,11 @@ Functions
         Using hard targets (0,1) drives weights to infinity.
         An outlier produces enormous gradients.
 
-   Returns
-   -------
-   torch.utils.data.Dataset
+   :rtype: torch.utils.data.Dataset
 
    .. py:method:: fit(*args, **kwargs)
 
-      Train model        
+      Train model
 
 
 
@@ -72,10 +70,6 @@ Functions
    .. py:method:: train()
 
       Training loop for DDP
-
-      Returns
-      -------
-
 
 
 

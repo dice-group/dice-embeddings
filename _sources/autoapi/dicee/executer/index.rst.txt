@@ -40,10 +40,7 @@ Classes
       Parameter
       ----------
 
-      Return
-      ----------
-      None
-
+      :rtype: None
 
 
    .. py:method:: load_indexed_data() -> None
@@ -53,10 +50,7 @@ Classes
       Parameter
       ----------
 
-      Return
-      ----------
-      None
-
+      :rtype: None
 
 
    .. py:method:: save_trained_model() -> None
@@ -71,10 +65,7 @@ Classes
       Parameter
       ----------
 
-      Return
-      ----------
-      None
-
+      :rtype: None
 
 
    .. py:method:: end(form_of_labelling: str) -> dict
@@ -88,15 +79,12 @@ Classes
       Parameter
       ---------
 
-      Returns
-      -------
-      A dict containing information about the training and/or evaluation
-
+      :rtype: A dict containing information about the training and/or evaluation
 
 
    .. py:method:: write_report() -> None
 
-      Report training related information in a report.json file 
+      Report training related information in a report.json file
 
 
    .. py:method:: start() -> dict
@@ -111,10 +99,7 @@ Classes
       Parameter
       ---------
 
-      Returns
-      -------
-      A dict containing information about the training and/or evaluation
-
+      :rtype: A dict containing information about the training and/or evaluation
 
 
 
@@ -140,10 +125,7 @@ Classes
       Parameter
       ---------
 
-      Returns
-      -------
-      A dict containing information about the training and/or evaluation
-
+      :rtype: A dict containing information about the training and/or evaluation
 
 
 

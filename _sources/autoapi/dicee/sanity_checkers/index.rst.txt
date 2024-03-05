@@ -24,7 +24,7 @@ Functions
 
 .. py:function:: validate_knowledge_graph(args)
 
-   Validating the source of knowledge graph 
+   Validating the source of knowledge graph
 
 
 .. py:function:: sanity_checking_with_arguments(args)

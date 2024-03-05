@@ -32,9 +32,7 @@ Classes
       ---------
       None
 
-      Returns
-      -------
-      None
+      :rtype: None
 
 
    .. py:method:: add_noisy_triples_into_training()

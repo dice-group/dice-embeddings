@@ -20,7 +20,7 @@ Functions
 
 .. py:function:: get_default_arguments(description=None)
 
-   Extends pytorch_lightning Trainer's arguments with ours 
+   Extends pytorch_lightning Trainer's arguments with ours
 
 
 .. py:function:: main()

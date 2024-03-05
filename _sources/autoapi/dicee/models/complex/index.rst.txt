@@ -39,13 +39,7 @@ Classes
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor)
@@ -57,7 +51,7 @@ Classes
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   Additive Convolutional ComplEx Knowledge Graph Embeddings 
+   Additive Convolutional ComplEx Knowledge Graph Embeddings
 
    .. py:method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor], C_2: Tuple[torch.Tensor, torch.Tensor]) -> torch.FloatTensor
 
@@ -72,13 +66,7 @@ Classes
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor)
@@ -128,15 +116,9 @@ Classes
    .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor)
       :staticmethod:
 
-      Parameters
-      ----------
-      emb_h
-      emb_r
-      emb_E
-
-      Returns
-      -------
-
+      :param emb_h:
+      :param emb_r:
+      :param emb_E:
 
 
    .. py:method:: forward_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor

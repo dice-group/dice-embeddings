@@ -30,12 +30,8 @@ Classes
 
       A function to wait future objects for the attributes of executor
 
-      Arguments
-      ----------
 
-      Return
-      ----------
-      None
+      :rtype: None
 
 
    .. py:method:: eval(dataset: dicee.knowledge_graph.KG, trained_model, form_of_labelling, during_training=False) -> None
@@ -49,17 +45,17 @@ Classes
 
    .. py:method:: eval_with_byte(*, raw_train_set, raw_valid_set=None, raw_test_set=None, trained_model, form_of_labelling) -> None
 
-      Evaluate model after reciprocal triples are added 
+      Evaluate model after reciprocal triples are added
 
 
    .. py:method:: eval_with_bpe_vs_all(*, raw_train_set, raw_valid_set=None, raw_test_set=None, trained_model, form_of_labelling) -> None
 
-      Evaluate model after reciprocal triples are added 
+      Evaluate model after reciprocal triples are added
 
 
    .. py:method:: eval_with_vs_all(*, train_set, valid_set=None, test_set=None, trained_model, form_of_labelling) -> None
 
-      Evaluate model after reciprocal triples are added 
+      Evaluate model after reciprocal triples are added
 
 
    .. py:method:: evaluate_lp_k_vs_all(model, triple_idx, info=None, form_of_labelling=None)
@@ -77,16 +73,11 @@ Classes
 
    .. py:method:: evaluate_lp_bpe_k_vs_all(model, triples: List[List[str]], info=None, form_of_labelling=None)
 
-      Parameters
-      ----------
-      model
-      triples: List of lists
-      info
-      form_of_labelling
-
-      Returns
-      -------
-
+      :param model:
+      :param triples:
+      :type triples: List of lists
+      :param info:
+      :param form_of_labelling:
 
 
    .. py:method:: evaluate_lp(model, triple_idx, info: str)

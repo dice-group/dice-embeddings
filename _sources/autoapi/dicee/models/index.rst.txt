@@ -125,19 +125,19 @@ Functions
       Here you compute and return the training loss and some additional metrics for e.g. the progress bar or
       logger.
 
-      Args:
-          batch: The output of your data iterable, normally a :class:`~torch.utils.data.DataLoader`.
-          batch_idx: The index of this batch.
-          dataloader_idx: The index of the dataloader that produced this batch.
-              (only if multiple dataloaders used)
+      :param batch: The output of your data iterable, normally a :class:`~torch.utils.data.DataLoader`.
+      :param batch_idx: The index of this batch.
+      :param dataloader_idx: The index of the dataloader that produced this batch.
+                             (only if multiple dataloaders used)
 
-      Return:
-          - :class:`~torch.Tensor` - The loss tensor
-          - ``dict`` - A dictionary which can include any keys, but must include the key ``'loss'`` in the case of
-            automatic optimization.
-          - ``None`` - In automatic optimization, this will skip to the next batch (but is not supported for
-            multi-GPU, TPU, or DeepSpeed). For manual optimization, this has no special meaning, as returning
-            the loss is not required.
+      :returns:
+
+                - :class:`~torch.Tensor` - The loss tensor
+                - ``dict`` - A dictionary which can include any keys, but must include the key ``'loss'`` in the case of
+                  automatic optimization.
+                - ``None`` - In automatic optimization, this will skip to the next batch (but is not supported for
+                  multi-GPU, TPU, or DeepSpeed). For manual optimization, this has no special meaning, as returning
+                  the loss is not required.
 
       In this step you'd normally do the forward pass and calculate the loss for a batch.
       You can also do fancier things like multiple forward passes or something model specific.
@@ -170,22 +170,16 @@ Functions
               ...
               opt2.step()
 
-      Note:
-          When ``accumulate_grad_batches`` > 1, the loss returned here will be automatically
-          normalized by ``accumulate_grad_batches`` internally.
+      .. note::
 
+         When ``accumulate_grad_batches`` > 1, the loss returned here will be automatically
+         normalized by ``accumulate_grad_batches`` internally.
 
 
    .. py:method:: loss_function(yhat_batch: torch.FloatTensor, y_batch: torch.FloatTensor)
 
-      Parameters
-      ----------
-      yhat_batch
-      y_batch
-
-      Returns
-      -------
-
+      :param yhat_batch:
+      :param y_batch:
 
 
    .. py:method:: on_train_epoch_end(*args, **kwargs)
@@ -239,14 +233,15 @@ Functions
       - :meth:`prepare_data`
       - :meth:`setup`
 
-      Note:
-          Lightning tries to add the correct sampler for distributed and arbitrary hardware.
-          There is no need to set it yourself.
+      .. note::
 
-      Note:
-          If you don't need a test dataset and a :meth:`test_step`, you don't need to implement
-          this method.
+         Lightning tries to add the correct sampler for distributed and arbitrary hardware.
+         There is no need to set it yourself.
 
+      .. note::
+
+         If you don't need a test dataset and a :meth:`test_step`, you don't need to implement
+         this method.
 
 
    .. py:method:: val_dataloader() -> None
@@ -266,14 +261,15 @@ Functions
       - :meth:`prepare_data`
       - :meth:`setup`
 
-      Note:
-          Lightning tries to add the correct sampler for distributed and arbitrary hardware
-          There is no need to set it yourself.
+      .. note::
 
-      Note:
-          If you don't need a validation dataset and a :meth:`validation_step`, you don't need to
-          implement this method.
+         Lightning tries to add the correct sampler for distributed and arbitrary hardware
+         There is no need to set it yourself.
 
+      .. note::
+
+         If you don't need a validation dataset and a :meth:`validation_step`, you don't need to
+         implement this method.
 
 
    .. py:method:: predict_dataloader() -> None
@@ -288,13 +284,12 @@ Functions
       - :meth:`prepare_data`
       - :meth:`setup`
 
-      Note:
-          Lightning tries to add the correct sampler for distributed and arbitrary hardware
-          There is no need to set it yourself.
+      .. note::
 
-      Return:
-          A :class:`torch.utils.data.DataLoader` or a sequence of them specifying prediction samples.
+         Lightning tries to add the correct sampler for distributed and arbitrary hardware
+         There is no need to set it yourself.
 
+      :returns: A :class:`torch.utils.data.DataLoader` or a sequence of them specifying prediction samples.
 
 
    .. py:method:: train_dataloader() -> None
@@ -320,10 +315,10 @@ Functions
       - :meth:`prepare_data`
       - :meth:`setup`
 
-      Note:
-          Lightning tries to add the correct sampler for distributed and arbitrary hardware.
-          There is no need to set it yourself.
+      .. note::
 
+         Lightning tries to add the correct sampler for distributed and arbitrary hardware.
+         There is no need to set it yourself.
 
 
    .. py:method:: configure_optimizers(parameters=None)
@@ -332,16 +327,15 @@ Functions
       But in the case of GANs or similar you might have multiple. Optimization with multiple optimizers only works in
       the manual optimization mode.
 
-      Return:
-          Any of these 6 options.
+      :returns: Any of these 6 options.
 
-          - **Single optimizer**.
-          - **List or Tuple** of optimizers.
-          - **Two lists** - The first list has multiple optimizers, and the second has multiple LR schedulers
-            (or multiple ``lr_scheduler_config``).
-          - **Dictionary**, with an ``"optimizer"`` key, and (optionally) a ``"lr_scheduler"``
-            key whose value is a single LR scheduler or ``lr_scheduler_config``.
-          - **None** - Fit will run without any optimizer.
+                - **Single optimizer**.
+                - **List or Tuple** of optimizers.
+                - **Two lists** - The first list has multiple optimizers, and the second has multiple LR schedulers
+                  (or multiple ``lr_scheduler_config``).
+                - **Dictionary**, with an ``"optimizer"`` key, and (optionally) a ``"lr_scheduler"``
+                  key whose value is a single LR scheduler or ``lr_scheduler_config``.
+                - **None** - Fit will run without any optimizer.
 
       The ``lr_scheduler_config`` is a dictionary which contains the scheduler and its associated configuration.
       The default configuration is shown below.
@@ -413,19 +407,19 @@ Functions
       Metrics can be made available to monitor by simply logging it using
       ``self.log('metric_to_track', metric_val)`` in your :class:`~lightning.pytorch.core.LightningModule`.
 
-      Note:
-          Some things to know:
+      .. note::
 
-          - Lightning calls ``.backward()`` and ``.step()`` automatically in case of automatic optimization.
-          - If a learning rate scheduler is specified in ``configure_optimizers()`` with key
-            ``"interval"`` (default "epoch") in the scheduler configuration, Lightning will call
-            the scheduler's ``.step()`` method automatically in case of automatic optimization.
-          - If you use 16-bit precision (``precision=16``), Lightning will automatically handle the optimizer.
-          - If you use :class:`torch.optim.LBFGS`, Lightning handles the closure function automatically for you.
-          - If you use multiple optimizers, you will have to switch to 'manual optimization' mode and step them
-            yourself.
-          - If you need to control how often the optimizer steps, override the :meth:`optimizer_step` hook.
-
+         Some things to know:
+         
+         - Lightning calls ``.backward()`` and ``.step()`` automatically in case of automatic optimization.
+         - If a learning rate scheduler is specified in ``configure_optimizers()`` with key
+           ``"interval"`` (default "epoch") in the scheduler configuration, Lightning will call
+           the scheduler's ``.step()`` method automatically in case of automatic optimization.
+         - If you use 16-bit precision (``precision=16``), Lightning will automatically handle the optimizer.
+         - If you use :class:`torch.optim.LBFGS`, Lightning handles the closure function automatically for you.
+         - If you use multiple optimizers, you will have to switch to 'manual optimization' mode and step them
+           yourself.
+         - If you need to control how often the optimizer steps, override the :meth:`optimizer_step` hook.
 
 
 
@@ -467,26 +461,15 @@ Functions
 
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x : B x 2 x T
-
-
-
-      Returns
-      -------
-
+      :param x:
+      :type x: B x 2 x T
 
 
    .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
 
       byte pair encoded neural link predictors
 
-      Parameters
-      ----------
-
-      -------
-
+      :param -------:
 
 
    .. py:method:: init_params_with_sanity_checking()
@@ -494,26 +477,14 @@ Functions
 
    .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
 
-      Parameters
-      ----------
-      x
-      y_idx
-      ordered_bpe_entities
-
-      Returns
-      -------
-
+      :param x:
+      :param y_idx:
+      :param ordered_bpe_entities:
 
 
    .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(*args, **kwargs)
@@ -530,31 +501,18 @@ Functions
 
    .. py:method:: get_sentence_representation(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x shape (b,3,t)
-
-      Returns
-      -------
-
+      :param x shape (b:
+      :param 3:
+      :param t):
 
 
    .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
 
-      Parameters
-      ----------
-      x : B x 2 x T
-
-      Returns
-      -------
-
+      :param x:
+      :type x: B x 2 x T
 
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
-
-      Returns
-      -------
-
 
 
 
@@ -637,26 +595,15 @@ Functions
 
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x : B x 2 x T
-
-
-
-      Returns
-      -------
-
+      :param x:
+      :type x: B x 2 x T
 
 
    .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
 
       byte pair encoded neural link predictors
 
-      Parameters
-      ----------
-
-      -------
-
+      :param -------:
 
 
    .. py:method:: init_params_with_sanity_checking()
@@ -664,26 +611,14 @@ Functions
 
    .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
 
-      Parameters
-      ----------
-      x
-      y_idx
-      ordered_bpe_entities
-
-      Returns
-      -------
-
+      :param x:
+      :param y_idx:
+      :param ordered_bpe_entities:
 
 
    .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(*args, **kwargs)
@@ -700,31 +635,18 @@ Functions
 
    .. py:method:: get_sentence_representation(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x shape (b,3,t)
-
-      Returns
-      -------
-
+      :param x shape (b:
+      :param 3:
+      :param t):
 
 
    .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
 
-      Parameters
-      ----------
-      x : B x 2 x T
-
-      Returns
-      -------
-
+      :param x:
+      :type x: B x 2 x T
 
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
-
-      Returns
-      -------
-
 
 
 
@@ -738,15 +660,9 @@ Functions
 
    .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor)
 
-      Parameters
-      ----------
-      emb_h
-      emb_r
-      emb_E
-
-      Returns
-      -------
-
+      :param emb_h:
+      :param emb_r:
+      :param emb_E:
 
 
    .. py:method:: forward_k_vs_all(x: torch.LongTensor)
@@ -780,13 +696,9 @@ Functions
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090) 
+   A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090)
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, None]
-
-      Returns
-      -------
-
 
 
    .. py:method:: forward_k_vs_all(x) -> torch.FloatTensor
@@ -804,17 +716,11 @@ Functions
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   A Physical Embedding Model for Knowledge Graphs 
+   A Physical Embedding Model for Knowledge Graphs
 
    .. py:method:: forward_triples(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
 
@@ -856,26 +762,15 @@ Functions
 
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x : B x 2 x T
-
-
-
-      Returns
-      -------
-
+      :param x:
+      :type x: B x 2 x T
 
 
    .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
 
       byte pair encoded neural link predictors
 
-      Parameters
-      ----------
-
-      -------
-
+      :param -------:
 
 
    .. py:method:: init_params_with_sanity_checking()
@@ -883,26 +778,14 @@ Functions
 
    .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
 
-      Parameters
-      ----------
-      x
-      y_idx
-      ordered_bpe_entities
-
-      Returns
-      -------
-
+      :param x:
+      :param y_idx:
+      :param ordered_bpe_entities:
 
 
    .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(*args, **kwargs)
@@ -919,31 +802,18 @@ Functions
 
    .. py:method:: get_sentence_representation(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x shape (b,3,t)
-
-      Returns
-      -------
-
+      :param x shape (b:
+      :param 3:
+      :param t):
 
 
    .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
 
-      Parameters
-      ----------
-      x : B x 2 x T
-
-      Returns
-      -------
-
+      :param x:
+      :type x: B x 2 x T
 
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
-
-      Returns
-      -------
-
 
 
 
@@ -967,13 +837,7 @@ Functions
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor)
@@ -985,7 +849,7 @@ Functions
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   Additive Convolutional ComplEx Knowledge Graph Embeddings 
+   Additive Convolutional ComplEx Knowledge Graph Embeddings
 
    .. py:method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor], C_2: Tuple[torch.Tensor, torch.Tensor]) -> torch.FloatTensor
 
@@ -1000,13 +864,7 @@ Functions
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor)
@@ -1056,15 +914,9 @@ Functions
    .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor)
       :staticmethod:
 
-      Parameters
-      ----------
-      emb_h
-      emb_r
-      emb_E
-
-      Returns
-      -------
-
+      :param emb_h:
+      :param emb_r:
+      :param emb_E:
 
 
    .. py:method:: forward_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
@@ -1117,26 +969,15 @@ Functions
 
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x : B x 2 x T
-
-
-
-      Returns
-      -------
-
+      :param x:
+      :type x: B x 2 x T
 
 
    .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
 
       byte pair encoded neural link predictors
 
-      Parameters
-      ----------
-
-      -------
-
+      :param -------:
 
 
    .. py:method:: init_params_with_sanity_checking()
@@ -1144,26 +985,14 @@ Functions
 
    .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
 
-      Parameters
-      ----------
-      x
-      y_idx
-      ordered_bpe_entities
-
-      Returns
-      -------
-
+      :param x:
+      :param y_idx:
+      :param ordered_bpe_entities:
 
 
    .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(*args, **kwargs)
@@ -1180,31 +1009,18 @@ Functions
 
    .. py:method:: get_sentence_representation(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x shape (b,3,t)
-
-      Returns
-      -------
-
+      :param x shape (b:
+      :param 3:
+      :param t):
 
 
    .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
 
-      Parameters
-      ----------
-      x : B x 2 x T
-
-      Returns
-      -------
-
+      :param x:
+      :type x: B x 2 x T
 
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
-
-      Returns
-      -------
-
 
 
 
@@ -1328,26 +1144,14 @@ Functions
 
    .. py:method:: k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
 
-      Parameters
-      ----------
-      bpe_head_ent_emb
-      bpe_rel_ent_emb
-      E
-
-      Returns
-      -------
-
+      :param bpe_head_ent_emb:
+      :param bpe_rel_ent_emb:
+      :param E:
 
 
    .. py:method:: forward_k_vs_all(x)
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_sample(x, target_entity_idx)
@@ -1366,20 +1170,14 @@ Functions
 
    Convolutional Quaternion Knowledge Graph Embeddings
 
-       
+
 
    .. py:method:: residual_convolution(Q_1, Q_2)
 
 
    .. py:method:: forward_triples(indexed_triple: torch.Tensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor)
@@ -1395,20 +1193,14 @@ Functions
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   Additive Convolutional Quaternion Knowledge Graph Embeddings 
+   Additive Convolutional Quaternion Knowledge Graph Embeddings
 
    .. py:method:: residual_convolution(Q_1, Q_2)
 
 
    .. py:method:: forward_triples(indexed_triple: torch.Tensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor)
@@ -1457,26 +1249,15 @@ Functions
 
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x : B x 2 x T
-
-
-
-      Returns
-      -------
-
+      :param x:
+      :type x: B x 2 x T
 
 
    .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
 
       byte pair encoded neural link predictors
 
-      Parameters
-      ----------
-
-      -------
-
+      :param -------:
 
 
    .. py:method:: init_params_with_sanity_checking()
@@ -1484,26 +1265,14 @@ Functions
 
    .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
 
-      Parameters
-      ----------
-      x
-      y_idx
-      ordered_bpe_entities
-
-      Returns
-      -------
-
+      :param x:
+      :param y_idx:
+      :param ordered_bpe_entities:
 
 
    .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(*args, **kwargs)
@@ -1520,31 +1289,18 @@ Functions
 
    .. py:method:: get_sentence_representation(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x shape (b,3,t)
-
-      Returns
-      -------
-
+      :param x shape (b:
+      :param 3:
+      :param t):
 
 
    .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
 
-      Parameters
-      ----------
-      x : B x 2 x T
-
-      Returns
-      -------
-
+      :param x:
+      :type x: B x 2 x T
 
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
-
-      Returns
-      -------
-
 
 
 
@@ -1695,13 +1451,7 @@ Functions
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor)
@@ -1717,7 +1467,7 @@ Functions
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   Additive Convolutional Octonion Knowledge Graph Embeddings 
+   Additive Convolutional Octonion Knowledge Graph Embeddings
 
    .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
       :staticmethod:
@@ -1728,13 +1478,7 @@ Functions
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor)
@@ -1839,7 +1583,7 @@ Functions
 
    .. py:method:: apply_coefficients(h0, hp, hq, r0, rp, rq)
 
-      Multiplying a base vector with its scalar coefficient 
+      Multiplying a base vector with its scalar coefficient
 
 
    .. py:method:: clifford_multiplication(h0, hp, hq, r0, rp, rq)
@@ -1851,7 +1595,7 @@ Functions
 
               ei ^2 = +1     for i =< i =< p
               ej ^2 = -1     for p < j =< p+q
-              ei ej = -eje1  for i 
+              ei ej = -eje1  for i
       eq j
 
               h r =   sigma_0 + sigma_p + sigma_q + sigma_{pp} + sigma_{q}+ sigma_{pq}
@@ -1868,7 +1612,7 @@ Functions
 
                       (6) sigma_{pq} = \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
 
-              
+
 
 
    .. py:method:: construct_cl_multivector(x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
@@ -1879,11 +1623,9 @@ Functions
       ---------
       x: torch.FloatTensor with (n,d) shape
 
-      Returns
-      -------
-      a0: torch.FloatTensor with (n,r) shape
-      ap: torch.FloatTensor with (n,r,p) shape
-      aq: torch.FloatTensor with (n,r,q) shape
+      :returns: * **a0** (*torch.FloatTensor with (n,r) shape*)
+                * **ap** (*torch.FloatTensor with (n,r,p) shape*)
+                * **aq** (*torch.FloatTensor with (n,r,q) shape*)
 
 
    .. py:method:: forward_k_vs_with_explicit(x: torch.Tensor)
@@ -1905,9 +1647,7 @@ Functions
       Parameter
       ---------
       x: torch.LongTensor with (n,2) shape
-      Returns
-      -------
-      torch.FloatTensor with (n, |E|) shape
+      :rtype: torch.FloatTensor with (n, |E|) shape
 
 
    .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor
@@ -1923,9 +1663,7 @@ Functions
       ---------
       x: torch.LongTensor with (n,2) shape
 
-      Returns
-      -------
-      torch.FloatTensor with (n, |E|) shape
+      :rtype: torch.FloatTensor with (n, |E|) shape
 
 
    .. py:method:: score(h, r, t)
@@ -1937,9 +1675,7 @@ Functions
       ---------
       x: torch.LongTensor with (n,3) shape
 
-      Returns
-      -------
-      torch.FloatTensor with (n) shape
+      :rtype: torch.FloatTensor with (n) shape
 
 
 
@@ -1982,7 +1718,7 @@ Functions
 
               ei ^2 = +1     for i =< i =< p
               ej ^2 = -1     for p < j =< p+q
-              ei ej = -eje1  for i 
+              ei ej = -eje1  for i
       eq j
 
               Parameter
@@ -1999,7 +1735,7 @@ Functions
               Returns
               -------
 
-              
+
 
 
    .. py:method:: score(head_ent_emb, rel_ent_emb, tail_ent_emb)
@@ -2014,10 +1750,7 @@ Functions
       x: torch.LongTensor with shape n by 3
 
 
-      Returns
-      -------
-      torch.LongTensor with shape n
-
+      :rtype: torch.LongTensor with shape n
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
@@ -2029,10 +1762,7 @@ Functions
       x: torch.LongTensor with shape n by 3
 
 
-      Returns
-      -------
-      torch.LongTensor with shape n
-
+      :rtype: torch.LongTensor with shape n
 
 
 
@@ -2078,18 +1808,16 @@ Functions
       ---------
       x: torch.LongTensor with (n,3) shape
 
-      Returns
-      -------
-      torch.FloatTensor with (n) shape
+      :rtype: torch.FloatTensor with (n) shape
 
 
    .. py:method:: cl_pqr(a)
 
       Input: tensor(batch_size, emb_dim) ----> output: tensor with 1+p+q+r components with size (batch_size, emb_dim/(1+p+q+r)) each.
 
-      1) takes a tensor of size (batch_size, emb_dim), split it into 1 + p + q +r components, hence 1+p+q+r must be a divisor 
-      of the emb_dim. 
-      2) Return a list of the 1+p+q+r components vectors, each are tensors of size (batch_size, emb_dim/(1+p+q+r)) 
+      1) takes a tensor of size (batch_size, emb_dim), split it into 1 + p + q +r components, hence 1+p+q+r must be a divisor
+      of the emb_dim.
+      2) Return a list of the 1+p+q+r components vectors, each are tensors of size (batch_size, emb_dim/(1+p+q+r))
 
 
    .. py:method:: compute_sigmas_single(list_h_emb, list_r_emb, list_t_emb)
@@ -2116,7 +1844,7 @@ Functions
 
       1) \sigma_pp = \sum_{i=1}^{p-1}\sum_{i'=i+1}^{p}(h_ir_{i'}-h_{i'}r_i) (models the interactions between e_i and e_i' for 1 <= i, i' <= p)
       2) \sigma_qq = \sum_{j=p+1}^{p+q-1}\sum_{j'=j+1}^{p+q}(h_jr_{j'}-h_{j'} (models the interactions between e_j and e_j' for p+1 <= j, j' <= p+q)
-      3) \sigma_rr = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(h_kr_{k'}-h_{k'}r_k) (models the interactions between e_k and e_k' for p+q+1 <= k, k' <= p+q+r) 
+      3) \sigma_rr = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(h_kr_{k'}-h_{k'}r_k) (models the interactions between e_k and e_k' for p+q+1 <= k, k' <= p+q+r)
 
       For different base vector interactions, we have
 
@@ -2139,14 +1867,12 @@ Functions
       Parameter
       ---------
       x: torch.LongTensor with (n,2) shape
-      Returns
-      -------
-      torch.FloatTensor with (n, |E|) shape
+      :rtype: torch.FloatTensor with (n, |E|) shape
 
 
    .. py:method:: apply_coefficients(h0, hp, hq, hk, r0, rp, rq, rk)
 
-      Multiplying a base vector with its scalar coefficient 
+      Multiplying a base vector with its scalar coefficient
 
 
    .. py:method:: construct_cl_multivector(x: torch.FloatTensor, re: int, p: int, q: int, r: int) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
@@ -2157,12 +1883,10 @@ Functions
       ---------
       x: torch.FloatTensor with (n,d) shape
 
-      Returns
-      -------
-      a0: torch.FloatTensor 
-      ap: torch.FloatTensor 
-      aq: torch.FloatTensor 
-      ar: torch.FloatTensor 
+      :returns: * **a0** (*torch.FloatTensor*)
+                * **ap** (*torch.FloatTensor*)
+                * **aq** (*torch.FloatTensor*)
+                * **ar** (*torch.FloatTensor*)
 
 
    .. py:method:: compute_sigma_pp(hp, rp)
@@ -2292,26 +2016,15 @@ Functions
 
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x : B x 2 x T
-
-
-
-      Returns
-      -------
-
+      :param x:
+      :type x: B x 2 x T
 
 
    .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
 
       byte pair encoded neural link predictors
 
-      Parameters
-      ----------
-
-      -------
-
+      :param -------:
 
 
    .. py:method:: init_params_with_sanity_checking()
@@ -2319,26 +2032,14 @@ Functions
 
    .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
 
-      Parameters
-      ----------
-      x
-      y_idx
-      ordered_bpe_entities
-
-      Returns
-      -------
-
+      :param x:
+      :param y_idx:
+      :param ordered_bpe_entities:
 
 
    .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(*args, **kwargs)
@@ -2355,31 +2056,18 @@ Functions
 
    .. py:method:: get_sentence_representation(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x shape (b,3,t)
-
-      Returns
-      -------
-
+      :param x shape (b:
+      :param 3:
+      :param t):
 
 
    .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
 
-      Parameters
-      ----------
-      x : B x 2 x T
-
-      Returns
-      -------
-
+      :param x:
+      :type x: B x 2 x T
 
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
-
-      Returns
-      -------
-
 
 
 
@@ -2476,26 +2164,15 @@ Functions
 
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x : B x 2 x T
-
-
-
-      Returns
-      -------
-
+      :param x:
+      :type x: B x 2 x T
 
 
    .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
 
       byte pair encoded neural link predictors
 
-      Parameters
-      ----------
-
-      -------
-
+      :param -------:
 
 
    .. py:method:: init_params_with_sanity_checking()
@@ -2503,26 +2180,14 @@ Functions
 
    .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
 
-      Parameters
-      ----------
-      x
-      y_idx
-      ordered_bpe_entities
-
-      Returns
-      -------
-
+      :param x:
+      :param y_idx:
+      :param ordered_bpe_entities:
 
 
    .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(*args, **kwargs)
@@ -2539,31 +2204,18 @@ Functions
 
    .. py:method:: get_sentence_representation(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x shape (b,3,t)
-
-      Returns
-      -------
-
+      :param x shape (b:
+      :param 3:
+      :param t):
 
 
    .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
 
-      Parameters
-      ----------
-      x : B x 2 x T
-
-      Returns
-      -------
-
+      :param x:
+      :type x: B x 2 x T
 
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
-
-      Returns
-      -------
-
 
 
 
@@ -2582,13 +2234,7 @@ Functions
 
    .. py:method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
 
@@ -2607,13 +2253,7 @@ Functions
 
    .. py:method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
 
@@ -2641,13 +2281,7 @@ Functions
 
    .. py:method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
 
@@ -2661,13 +2295,7 @@ Functions
 
    .. py:method:: forward_triples(idx_triple)
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: tri_score(h, r, t)
@@ -2688,13 +2316,7 @@ Functions
 
    .. py:method:: forward_triples(idx_triple)
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: construct_multi_coeff(x)
@@ -2702,7 +2324,7 @@ Functions
 
    .. py:method:: poly_NN(x, coefh, coefr, coeft)
 
-      Constructing a 2 layers NN to represent the embeddings. 
+      Constructing a 2 layers NN to represent the embeddings.
       h = \sigma(wh^T x + bh ),  r = \sigma(wr^T x + br ),  t = \sigma(wt^T x + bt )
 
 
@@ -2718,9 +2340,9 @@ Functions
 
    .. py:method:: tri_score(coeff_h, coeff_r, coeff_t)
 
-      this part implement the trilinear scoring techniques: 
+      this part implement the trilinear scoring techniques:
 
-      score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*b_j*c_k}{1+(i+j+k)%d} 
+      score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*b_j*c_k}{1+(i+j+k)%d}
 
       1. generate the range for i,j and k from [0 d-1]
 
@@ -2733,9 +2355,9 @@ Functions
 
    .. py:method:: vtp_score(h, r, t)
 
-      this part implement the vector triple product scoring techniques: 
+      this part implement the vector triple product scoring techniques:
 
-      score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*c_j*b_k - b_i*c_j*a_k}{(1+(i+j)%d)(1+k)} 
+      score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*c_j*b_k - b_i*c_j*a_k}{(1+(i+j)%d)(1+k)}
 
       1. generate the range for i,j and k from [0 d-1]
 
@@ -2762,7 +2384,7 @@ Functions
 
    .. py:method:: pop(coeff, x, degree)
 
-      This function allow us to evaluate the composition of two polynomes without for loops :) 
+      This function allow us to evaluate the composition of two polynomes without for loops :)
       it takes a matrix tensor of coefficients (coeff), a matrix tensor of points x  and range of integer [0,1,...d]
           and return a tensor (coeff[0][0] + coeff[0][1]x +...+ coeff[0][d]x^d,
                               coeff[1][0] + coeff[1][1]x +...+ coeff[1][d]x^d)

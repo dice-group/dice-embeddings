@@ -56,9 +56,7 @@ Functions
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
 
@@ -84,9 +82,7 @@ Functions
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
    .. py:method:: on_fit_end(trainer, pl_module)
@@ -99,9 +95,7 @@ Functions
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
    .. py:method:: on_train_batch_end(*args, **kwargs)
@@ -115,9 +109,7 @@ Functions
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
    .. py:method:: on_train_epoch_end(*args, **kwargs)
@@ -130,9 +122,7 @@ Functions
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
 
@@ -159,9 +149,7 @@ Functions
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
    .. py:method:: on_fit_start(trainer, pl_module)
@@ -174,9 +162,7 @@ Functions
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
    .. py:method:: on_train_epoch_end(*args, **kwargs)
@@ -189,9 +175,7 @@ Functions
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
    .. py:method:: on_fit_end(*args, **kwargs)
@@ -204,9 +188,7 @@ Functions
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
    .. py:method:: on_epoch_end(model, trainer, **kwargs)
@@ -258,9 +240,7 @@ Functions
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
    .. py:method:: compute_mrr(trainer, model) -> float
@@ -274,16 +254,10 @@ Functions
 
       Perform Hard Update, software or rejection
 
-      Parameters
-      ----------
-      running_model_state_dict
-      ensemble_state_dict
-      val_running_model
-      mrr_updated_ensemble_model
-
-      Returns
-      -------
-
+      :param running_model_state_dict:
+      :param ensemble_state_dict:
+      :param val_running_model:
+      :param mrr_updated_ensemble_model:
 
 
    .. py:method:: on_train_epoch_end(trainer, model)
@@ -296,9 +270,7 @@ Functions
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
 
@@ -324,9 +296,7 @@ Functions
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
    .. py:method:: on_fit_end(trainer, model)
@@ -339,9 +309,7 @@ Functions
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
    .. py:method:: on_train_epoch_end(trainer, model)
@@ -354,9 +322,7 @@ Functions
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
    .. py:method:: on_train_batch_end(*args, **kwargs)
@@ -370,9 +336,7 @@ Functions
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
 
@@ -413,9 +377,7 @@ Functions
 
       model:
 
-      Returns
-      ---------
-      None
+      :rtype: None
 
 
 

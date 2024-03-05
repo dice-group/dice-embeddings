@@ -61,25 +61,14 @@ Classes
 
    .. py:method:: loss_function(yhat_batch, y_batch)
 
-      Parameters
-      ----------
-      yhat_batch
-      y_batch
-
-      Returns
-      -------
-
+      :param yhat_batch:
+      :param y_batch:
 
 
    .. py:method:: forward(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x: B by T tensor
-
-      Returns
-      -------
-
+      :param x:
+      :type x: B by T tensor
 
 
    .. py:method:: generate(idx, max_new_tokens, temperature=1.0, top_k=None)
@@ -94,19 +83,19 @@ Classes
       Here you compute and return the training loss and some additional metrics for e.g. the progress bar or
       logger.
 
-      Args:
-          batch: The output of your data iterable, normally a :class:`~torch.utils.data.DataLoader`.
-          batch_idx: The index of this batch.
-          dataloader_idx: The index of the dataloader that produced this batch.
-              (only if multiple dataloaders used)
+      :param batch: The output of your data iterable, normally a :class:`~torch.utils.data.DataLoader`.
+      :param batch_idx: The index of this batch.
+      :param dataloader_idx: The index of the dataloader that produced this batch.
+                             (only if multiple dataloaders used)
 
-      Return:
-          - :class:`~torch.Tensor` - The loss tensor
-          - ``dict`` - A dictionary which can include any keys, but must include the key ``'loss'`` in the case of
-            automatic optimization.
-          - ``None`` - In automatic optimization, this will skip to the next batch (but is not supported for
-            multi-GPU, TPU, or DeepSpeed). For manual optimization, this has no special meaning, as returning
-            the loss is not required.
+      :returns:
+
+                - :class:`~torch.Tensor` - The loss tensor
+                - ``dict`` - A dictionary which can include any keys, but must include the key ``'loss'`` in the case of
+                  automatic optimization.
+                - ``None`` - In automatic optimization, this will skip to the next batch (but is not supported for
+                  multi-GPU, TPU, or DeepSpeed). For manual optimization, this has no special meaning, as returning
+                  the loss is not required.
 
       In this step you'd normally do the forward pass and calculate the loss for a batch.
       You can also do fancier things like multiple forward passes or something model specific.
@@ -139,10 +128,10 @@ Classes
               ...
               opt2.step()
 
-      Note:
-          When ``accumulate_grad_batches`` > 1, the loss returned here will be automatically
-          normalized by ``accumulate_grad_batches`` internally.
+      .. note::
 
+         When ``accumulate_grad_batches`` > 1, the loss returned here will be automatically
+         normalized by ``accumulate_grad_batches`` internally.
 
 
 
@@ -151,7 +140,7 @@ Classes
 
    Bases: :py:obj:`torch.nn.Module`
 
-   LayerNorm but with an optional bias. PyTorch doesn't support simply bias=False 
+   LayerNorm but with an optional bias. PyTorch doesn't support simply bias=False
 
    .. py:method:: forward(input)
 
@@ -382,7 +371,7 @@ Classes
 
    .. py:method:: estimate_mfu(fwdbwd_per_iter, dt)
 
-      estimate model flops utilization (MFU) in units of A100 bfloat16 peak FLOPS 
+      estimate model flops utilization (MFU) in units of A100 bfloat16 peak FLOPS
 
 
 

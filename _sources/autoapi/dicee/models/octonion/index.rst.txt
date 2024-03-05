@@ -134,13 +134,7 @@ Functions
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor)
@@ -156,7 +150,7 @@ Functions
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   Additive Convolutional Octonion Knowledge Graph Embeddings 
+   Additive Convolutional Octonion Knowledge Graph Embeddings
 
    .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
       :staticmethod:
@@ -167,13 +161,7 @@ Functions
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor)

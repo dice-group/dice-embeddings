@@ -41,9 +41,7 @@ Classes
       (BASEKGE,)
       kwargs:Tuple
           empty dictionary
-      Returns
-      -------
-      batch loss (float)
+      :rtype: batch loss (float)
 
 
    .. py:method:: forward_backward_update(x_batch: torch.Tensor, y_batch: torch.Tensor) -> torch.Tensor
@@ -55,9 +53,7 @@ Classes
       x_batch:(torch.Tensor) mini-batch inputs
       y_batch:(torch.Tensor) mini-batch outputs
 
-      Returns
-      -------
-      batch loss (float)
+      :rtype: batch loss (float)
 
 
    .. py:method:: extract_input_outputs_set_device(batch: list) -> Tuple
@@ -68,9 +64,7 @@ Classes
       ----------
       batch: (list) mini-batch inputs on CPU
 
-      Returns
-      -------
-      (tuple) mini-batch on select device
+      :rtype: (tuple) mini-batch on select device
 
 
 

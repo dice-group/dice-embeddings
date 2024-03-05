@@ -170,7 +170,7 @@ Attributes
 
               ei ^2 = +1     for i =< i =< p
               ej ^2 = -1     for p < j =< p+q
-              ei ej = -eje1  for i 
+              ei ej = -eje1  for i
       eq j
 
               Parameter
@@ -187,7 +187,7 @@ Attributes
               Returns
               -------
 
-              
+
 
 
    .. py:method:: score(head_ent_emb, rel_ent_emb, tail_ent_emb)
@@ -202,10 +202,7 @@ Attributes
       x: torch.LongTensor with shape n by 3
 
 
-      Returns
-      -------
-      torch.LongTensor with shape n
-
+      :rtype: torch.LongTensor with shape n
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
@@ -217,10 +214,7 @@ Attributes
       x: torch.LongTensor with shape n by 3
 
 
-      Returns
-      -------
-      torch.LongTensor with shape n
-
+      :rtype: torch.LongTensor with shape n
 
 
 
@@ -229,17 +223,11 @@ Attributes
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   A Physical Embedding Model for Knowledge Graphs 
+   A Physical Embedding Model for Knowledge Graphs
 
    .. py:method:: forward_triples(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
 
@@ -253,15 +241,9 @@ Attributes
 
    .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor)
 
-      Parameters
-      ----------
-      emb_h
-      emb_r
-      emb_E
-
-      Returns
-      -------
-
+      :param emb_h:
+      :param emb_r:
+      :param emb_E:
 
 
    .. py:method:: forward_k_vs_all(x: torch.LongTensor)
@@ -376,7 +358,7 @@ Attributes
 
    .. py:method:: apply_coefficients(h0, hp, hq, r0, rp, rq)
 
-      Multiplying a base vector with its scalar coefficient 
+      Multiplying a base vector with its scalar coefficient
 
 
    .. py:method:: clifford_multiplication(h0, hp, hq, r0, rp, rq)
@@ -388,7 +370,7 @@ Attributes
 
               ei ^2 = +1     for i =< i =< p
               ej ^2 = -1     for p < j =< p+q
-              ei ej = -eje1  for i 
+              ei ej = -eje1  for i
       eq j
 
               h r =   sigma_0 + sigma_p + sigma_q + sigma_{pp} + sigma_{q}+ sigma_{pq}
@@ -405,7 +387,7 @@ Attributes
 
                       (6) sigma_{pq} = \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
 
-              
+
 
 
    .. py:method:: construct_cl_multivector(x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
@@ -416,11 +398,9 @@ Attributes
       ---------
       x: torch.FloatTensor with (n,d) shape
 
-      Returns
-      -------
-      a0: torch.FloatTensor with (n,r) shape
-      ap: torch.FloatTensor with (n,r,p) shape
-      aq: torch.FloatTensor with (n,r,q) shape
+      :returns: * **a0** (*torch.FloatTensor with (n,r) shape*)
+                * **ap** (*torch.FloatTensor with (n,r,p) shape*)
+                * **aq** (*torch.FloatTensor with (n,r,q) shape*)
 
 
    .. py:method:: forward_k_vs_with_explicit(x: torch.Tensor)
@@ -442,9 +422,7 @@ Attributes
       Parameter
       ---------
       x: torch.LongTensor with (n,2) shape
-      Returns
-      -------
-      torch.FloatTensor with (n, |E|) shape
+      :rtype: torch.FloatTensor with (n, |E|) shape
 
 
    .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor
@@ -460,9 +438,7 @@ Attributes
       ---------
       x: torch.LongTensor with (n,2) shape
 
-      Returns
-      -------
-      torch.FloatTensor with (n, |E|) shape
+      :rtype: torch.FloatTensor with (n, |E|) shape
 
 
    .. py:method:: score(h, r, t)
@@ -474,9 +450,7 @@ Attributes
       ---------
       x: torch.LongTensor with (n,3) shape
 
-      Returns
-      -------
-      torch.FloatTensor with (n) shape
+      :rtype: torch.FloatTensor with (n) shape
 
 
 
@@ -538,18 +512,16 @@ Attributes
       ---------
       x: torch.LongTensor with (n,3) shape
 
-      Returns
-      -------
-      torch.FloatTensor with (n) shape
+      :rtype: torch.FloatTensor with (n) shape
 
 
    .. py:method:: cl_pqr(a)
 
       Input: tensor(batch_size, emb_dim) ----> output: tensor with 1+p+q+r components with size (batch_size, emb_dim/(1+p+q+r)) each.
 
-      1) takes a tensor of size (batch_size, emb_dim), split it into 1 + p + q +r components, hence 1+p+q+r must be a divisor 
-      of the emb_dim. 
-      2) Return a list of the 1+p+q+r components vectors, each are tensors of size (batch_size, emb_dim/(1+p+q+r)) 
+      1) takes a tensor of size (batch_size, emb_dim), split it into 1 + p + q +r components, hence 1+p+q+r must be a divisor
+      of the emb_dim.
+      2) Return a list of the 1+p+q+r components vectors, each are tensors of size (batch_size, emb_dim/(1+p+q+r))
 
 
    .. py:method:: compute_sigmas_single(list_h_emb, list_r_emb, list_t_emb)
@@ -576,7 +548,7 @@ Attributes
 
       1) \sigma_pp = \sum_{i=1}^{p-1}\sum_{i'=i+1}^{p}(h_ir_{i'}-h_{i'}r_i) (models the interactions between e_i and e_i' for 1 <= i, i' <= p)
       2) \sigma_qq = \sum_{j=p+1}^{p+q-1}\sum_{j'=j+1}^{p+q}(h_jr_{j'}-h_{j'} (models the interactions between e_j and e_j' for p+1 <= j, j' <= p+q)
-      3) \sigma_rr = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(h_kr_{k'}-h_{k'}r_k) (models the interactions between e_k and e_k' for p+q+1 <= k, k' <= p+q+r) 
+      3) \sigma_rr = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(h_kr_{k'}-h_{k'}r_k) (models the interactions between e_k and e_k' for p+q+1 <= k, k' <= p+q+r)
 
       For different base vector interactions, we have
 
@@ -599,14 +571,12 @@ Attributes
       Parameter
       ---------
       x: torch.LongTensor with (n,2) shape
-      Returns
-      -------
-      torch.FloatTensor with (n, |E|) shape
+      :rtype: torch.FloatTensor with (n, |E|) shape
 
 
    .. py:method:: apply_coefficients(h0, hp, hq, hk, r0, rp, rq, rk)
 
-      Multiplying a base vector with its scalar coefficient 
+      Multiplying a base vector with its scalar coefficient
 
 
    .. py:method:: construct_cl_multivector(x: torch.FloatTensor, re: int, p: int, q: int, r: int) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
@@ -617,12 +587,10 @@ Attributes
       ---------
       x: torch.FloatTensor with (n,d) shape
 
-      Returns
-      -------
-      a0: torch.FloatTensor 
-      ap: torch.FloatTensor 
-      aq: torch.FloatTensor 
-      ar: torch.FloatTensor 
+      :returns: * **a0** (*torch.FloatTensor*)
+                * **ap** (*torch.FloatTensor*)
+                * **aq** (*torch.FloatTensor*)
+                * **ar** (*torch.FloatTensor*)
 
 
    .. py:method:: compute_sigma_pp(hp, rp)
@@ -757,15 +725,9 @@ Attributes
    .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor)
       :staticmethod:
 
-      Parameters
-      ----------
-      emb_h
-      emb_r
-      emb_E
-
-      Returns
-      -------
-
+      :param emb_h:
+      :param emb_r:
+      :param emb_E:
 
 
    .. py:method:: forward_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
@@ -777,7 +739,7 @@ Attributes
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   Additive Convolutional ComplEx Knowledge Graph Embeddings 
+   Additive Convolutional ComplEx Knowledge Graph Embeddings
 
    .. py:method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor], C_2: Tuple[torch.Tensor, torch.Tensor]) -> torch.FloatTensor
 
@@ -792,13 +754,7 @@ Attributes
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor)
@@ -810,7 +766,7 @@ Attributes
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   Additive Convolutional Octonion Knowledge Graph Embeddings 
+   Additive Convolutional Octonion Knowledge Graph Embeddings
 
    .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
       :staticmethod:
@@ -821,13 +777,7 @@ Attributes
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor)
@@ -843,20 +793,14 @@ Attributes
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   Additive Convolutional Quaternion Knowledge Graph Embeddings 
+   Additive Convolutional Quaternion Knowledge Graph Embeddings
 
    .. py:method:: residual_convolution(Q_1, Q_2)
 
 
    .. py:method:: forward_triples(indexed_triple: torch.Tensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor)
@@ -874,20 +818,14 @@ Attributes
 
    Convolutional Quaternion Knowledge Graph Embeddings
 
-       
+
 
    .. py:method:: residual_convolution(Q_1, Q_2)
 
 
    .. py:method:: forward_triples(indexed_triple: torch.Tensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor)
@@ -943,13 +881,7 @@ Attributes
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor)
@@ -980,13 +912,7 @@ Attributes
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor)
@@ -1069,26 +995,14 @@ Attributes
 
    .. py:method:: k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
 
-      Parameters
-      ----------
-      bpe_head_ent_emb
-      bpe_rel_ent_emb
-      E
-
-      Returns
-      -------
-
+      :param bpe_head_ent_emb:
+      :param bpe_rel_ent_emb:
+      :param E:
 
 
    .. py:method:: forward_k_vs_all(x)
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_sample(x, target_entity_idx)
@@ -1160,13 +1074,9 @@ Attributes
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090) 
+   A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090)
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, None]
-
-      Returns
-      -------
-
 
 
    .. py:method:: forward_k_vs_all(x) -> torch.FloatTensor
@@ -1190,13 +1100,7 @@ Attributes
 
    .. py:method:: forward_triples(idx_triple)
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: construct_multi_coeff(x)
@@ -1204,7 +1108,7 @@ Attributes
 
    .. py:method:: poly_NN(x, coefh, coefr, coeft)
 
-      Constructing a 2 layers NN to represent the embeddings. 
+      Constructing a 2 layers NN to represent the embeddings.
       h = \sigma(wh^T x + bh ),  r = \sigma(wr^T x + br ),  t = \sigma(wt^T x + bt )
 
 
@@ -1220,9 +1124,9 @@ Attributes
 
    .. py:method:: tri_score(coeff_h, coeff_r, coeff_t)
 
-      this part implement the trilinear scoring techniques: 
+      this part implement the trilinear scoring techniques:
 
-      score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*b_j*c_k}{1+(i+j+k)%d} 
+      score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*b_j*c_k}{1+(i+j+k)%d}
 
       1. generate the range for i,j and k from [0 d-1]
 
@@ -1235,9 +1139,9 @@ Attributes
 
    .. py:method:: vtp_score(h, r, t)
 
-      this part implement the vector triple product scoring techniques: 
+      this part implement the vector triple product scoring techniques:
 
-      score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*c_j*b_k - b_i*c_j*a_k}{(1+(i+j)%d)(1+k)} 
+      score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*c_j*b_k - b_i*c_j*a_k}{(1+(i+j)%d)(1+k)}
 
       1. generate the range for i,j and k from [0 d-1]
 
@@ -1264,7 +1168,7 @@ Attributes
 
    .. py:method:: pop(coeff, x, degree)
 
-      This function allow us to evaluate the composition of two polynomes without for loops :) 
+      This function allow us to evaluate the composition of two polynomes without for loops :)
       it takes a matrix tensor of coefficients (coeff), a matrix tensor of points x  and range of integer [0,1,...d]
           and return a tensor (coeff[0][0] + coeff[0][1]x +...+ coeff[0][d]x^d,
                               coeff[1][0] + coeff[1][1]x +...+ coeff[1][d]x^d)
@@ -1365,25 +1269,14 @@ Attributes
 
    .. py:method:: loss_function(yhat_batch, y_batch)
 
-      Parameters
-      ----------
-      yhat_batch
-      y_batch
-
-      Returns
-      -------
-
+      :param yhat_batch:
+      :param y_batch:
 
 
    .. py:method:: forward(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x: B by T tensor
-
-      Returns
-      -------
-
+      :param x:
+      :type x: B by T tensor
 
 
    .. py:method:: generate(idx, max_new_tokens, temperature=1.0, top_k=None)
@@ -1398,19 +1291,19 @@ Attributes
       Here you compute and return the training loss and some additional metrics for e.g. the progress bar or
       logger.
 
-      Args:
-          batch: The output of your data iterable, normally a :class:`~torch.utils.data.DataLoader`.
-          batch_idx: The index of this batch.
-          dataloader_idx: The index of the dataloader that produced this batch.
-              (only if multiple dataloaders used)
+      :param batch: The output of your data iterable, normally a :class:`~torch.utils.data.DataLoader`.
+      :param batch_idx: The index of this batch.
+      :param dataloader_idx: The index of the dataloader that produced this batch.
+                             (only if multiple dataloaders used)
 
-      Return:
-          - :class:`~torch.Tensor` - The loss tensor
-          - ``dict`` - A dictionary which can include any keys, but must include the key ``'loss'`` in the case of
-            automatic optimization.
-          - ``None`` - In automatic optimization, this will skip to the next batch (but is not supported for
-            multi-GPU, TPU, or DeepSpeed). For manual optimization, this has no special meaning, as returning
-            the loss is not required.
+      :returns:
+
+                - :class:`~torch.Tensor` - The loss tensor
+                - ``dict`` - A dictionary which can include any keys, but must include the key ``'loss'`` in the case of
+                  automatic optimization.
+                - ``None`` - In automatic optimization, this will skip to the next batch (but is not supported for
+                  multi-GPU, TPU, or DeepSpeed). For manual optimization, this has no special meaning, as returning
+                  the loss is not required.
 
       In this step you'd normally do the forward pass and calculate the loss for a batch.
       You can also do fancier things like multiple forward passes or something model specific.
@@ -1443,10 +1336,10 @@ Attributes
               ...
               opt2.step()
 
-      Note:
-          When ``accumulate_grad_batches`` > 1, the loss returned here will be automatically
-          normalized by ``accumulate_grad_batches`` internally.
+      .. note::
 
+         When ``accumulate_grad_batches`` > 1, the loss returned here will be automatically
+         normalized by ``accumulate_grad_batches`` internally.
 
 
 
@@ -1488,26 +1381,15 @@ Attributes
 
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x : B x 2 x T
-
-
-
-      Returns
-      -------
-
+      :param x:
+      :type x: B x 2 x T
 
 
    .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
 
       byte pair encoded neural link predictors
 
-      Parameters
-      ----------
-
-      -------
-
+      :param -------:
 
 
    .. py:method:: init_params_with_sanity_checking()
@@ -1515,26 +1397,14 @@ Attributes
 
    .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
 
-      Parameters
-      ----------
-      x
-      y_idx
-      ordered_bpe_entities
-
-      Returns
-      -------
-
+      :param x:
+      :param y_idx:
+      :param ordered_bpe_entities:
 
 
    .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
 
-      Parameters
-      ----------
-      x
-
-      Returns
-      -------
-
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(*args, **kwargs)
@@ -1551,31 +1421,18 @@ Attributes
 
    .. py:method:: get_sentence_representation(x: torch.LongTensor)
 
-      Parameters
-      ----------
-      x shape (b,3,t)
-
-      Returns
-      -------
-
+      :param x shape (b:
+      :param 3:
+      :param t):
 
 
    .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
 
-      Parameters
-      ----------
-      x : B x 2 x T
-
-      Returns
-      -------
-
+      :param x:
+      :type x: B x 2 x T
 
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
-
-      Returns
-      -------
-
 
 
 
@@ -1746,7 +1603,7 @@ Attributes
     Returns
     -------
     report:dict
-    
+
 
    .. py:method:: continual_start()
 
@@ -1758,15 +1615,13 @@ Attributes
       Parameter
       ---------
 
-      Returns
-      -------
-      model:
-      form_of_labelling: str
+      :returns: * *model*
+                * **form_of_labelling** (*str*)
 
 
    .. py:method:: initialize_trainer(callbacks: List) -> lightning.Trainer
 
-      Initialize Trainer from input arguments 
+      Initialize Trainer from input arguments
 
 
    .. py:method:: initialize_or_load_model()
@@ -1780,7 +1635,7 @@ Attributes
 
    .. py:method:: start(knowledge_graph: dicee.knowledge_graph.KG) -> Tuple[dicee.models.base_model.BaseKGE, str]
 
-      Train selected model via the selected training strategy 
+      Train selected model via the selected training strategy
 
 
    .. py:method:: k_fold_cross_validation(dataset) -> Tuple[dicee.models.base_model.BaseKGE, str]
@@ -1904,17 +1759,11 @@ Attributes
 
    .. py:method:: predict(*, h: Union[List[str], str] = None, r: Union[List[str], str] = None, t: Union[List[str], str] = None, within=None, logits=True) -> torch.FloatTensor
 
-      Parameters
-      ----------
-      logits
-      h
-      r
-      t
-      within
-
-      Returns
-      -------
-
+      :param logits:
+      :param h:
+      :param r:
+      :param t:
+      :param within:
 
 
    .. py:method:: predict_topk(*, h: List[str] = None, r: List[str] = None, t: List[str] = None, topk: int = 10, within: List[str] = None)
@@ -2025,18 +1874,16 @@ Attributes
       k: int
       The top-k substitutions for intermediate variables.
 
-      Returns
-      -------
-      List[Tuple[str, torch.Tensor]]
-      Entities and corresponding scores sorted in the descening order of scores
+      :returns: * *List[Tuple[str, torch.Tensor]]*
+                * *Entities and corresponding scores sorted in the descening order of scores*
 
 
    .. py:method:: find_missing_triples(confidence: float, entities: List[str] = None, relations: List[str] = None, topk: int = 10, at_most: int = sys.maxsize) -> Set
 
                Find missing triples
 
-               Iterative over a set of entities E and a set of relation R : 
-      orall e \in E and 
+               Iterative over a set of entities E and a set of relation R :
+      orall e \in E and
       orall r \in R f(e,r,x)
                Return (e,r,x)
       ot\in G and  f(e,r,x) > confidence
@@ -2058,9 +1905,9 @@ Attributes
               Returns: Set
               ---------
 
-              {(e,r,x) | f(e,r,x) > confidence \land (e,r,x) 
+              {(e,r,x) | f(e,r,x) > confidence \land (e,r,x)
       ot\in G
-              
+
 
 
    .. py:method:: deploy(share: bool = False, top_k: int = 10)
@@ -2107,10 +1954,7 @@ Attributes
       Parameter
       ----------
 
-      Return
-      ----------
-      None
-
+      :rtype: None
 
 
    .. py:method:: load_indexed_data() -> None
@@ -2120,10 +1964,7 @@ Attributes
       Parameter
       ----------
 
-      Return
-      ----------
-      None
-
+      :rtype: None
 
 
    .. py:method:: save_trained_model() -> None
@@ -2138,10 +1979,7 @@ Attributes
       Parameter
       ----------
 
-      Return
-      ----------
-      None
-
+      :rtype: None
 
 
    .. py:method:: end(form_of_labelling: str) -> dict
@@ -2155,15 +1993,12 @@ Attributes
       Parameter
       ---------
 
-      Returns
-      -------
-      A dict containing information about the training and/or evaluation
-
+      :rtype: A dict containing information about the training and/or evaluation
 
 
    .. py:method:: write_report() -> None
 
-      Report training related information in a report.json file 
+      Report training related information in a report.json file
 
 
    .. py:method:: start() -> dict
@@ -2178,10 +2013,7 @@ Attributes
       Parameter
       ---------
 
-      Returns
-      -------
-      A dict containing information about the training and/or evaluation
-
+      :rtype: A dict containing information about the training and/or evaluation
 
 
 
@@ -2196,7 +2028,7 @@ Attributes
 
 .. py:function:: reload_dataset(path: str, form_of_labelling, scoring_technique, neg_ratio, label_smoothing_rate)
 
-   Reload the files from disk to construct the Pytorch dataset 
+   Reload the files from disk to construct the Pytorch dataset
 
 
 .. py:function:: construct_dataset(*, train_set: Union[numpy.ndarray, list], valid_set=None, test_set=None, ordered_bpe_entities=None, train_target_indices=None, target_dim: int = None, entity_to_idx: dict, relation_to_idx: dict, form_of_labelling: str, scoring_technique: str, neg_ratio: int, label_smoothing_rate: float, byte_pair_encoding=None, block_size: int = None) -> torch.utils.data.Dataset
@@ -2270,24 +2102,13 @@ Attributes
 
    Dataset for the 1vsALL training strategy
 
-   Parameters
-   ----------
-   train_set_idx
-       Indexed triples for the training.
-   entity_idxs
-       mapping.
-   relation_idxs
-       mapping.
-   form
-       ?
-   num_workers
-       int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
+   :param train_set_idx: Indexed triples for the training.
+   :param entity_idxs: mapping.
+   :param relation_idxs: mapping.
+   :param form: ?
+   :param num_workers: int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
 
-
-
-   Returns
-   -------
-   torch.utils.data.Dataset
+   :rtype: torch.utils.data.Dataset
 
    .. py:method:: __len__()
 
@@ -2303,24 +2124,13 @@ Attributes
 
    Dataset for the 1vsALL training strategy
 
-   Parameters
-   ----------
-   train_set_idx
-       Indexed triples for the training.
-   entity_idxs
-       mapping.
-   relation_idxs
-       mapping.
-   form
-       ?
-   num_workers
-       int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
+   :param train_set_idx: Indexed triples for the training.
+   :param entity_idxs: mapping.
+   :param relation_idxs: mapping.
+   :param form: ?
+   :param num_workers: int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
 
-
-
-   Returns
-   -------
-   torch.utils.data.Dataset
+   :rtype: torch.utils.data.Dataset
 
    .. py:method:: __len__()
 
@@ -2337,7 +2147,7 @@ Attributes
    Creates a dataset for KvsAll training by inheriting from torch.utils.data.Dataset.
        Let D denote a dataset for KvsAll training and be defined as D:= {(x,y)_i}_i ^N, where
        x: (h,r) is an unique tuple of an entity h \in E and a relation r \in R that has been seed in the input graph.
-       y: denotes a multi-label vector \in [0,1]^{|E|} is a binary label. 
+       y: denotes a multi-label vector \in [0,1]^{|E|} is a binary label.
    orall y_i =1 s.t. (h r E_i) \in KG
 
        .. note::
@@ -2369,7 +2179,7 @@ Attributes
        >>> a = KvsAll()
        >>> a
        ? array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-       
+
 
    .. py:method:: __len__()
 
@@ -2386,7 +2196,7 @@ Attributes
    Creates a dataset for AllvsAll training by inheriting from torch.utils.data.Dataset.
        Let D denote a dataset for AllvsAll training and be defined as D:= {(x,y)_i}_i ^N, where
        x: (h,r) is a possible unique tuple of an entity h \in E and a relation r \in R. Hence N = |E| x |R|
-       y: denotes a multi-label vector \in [0,1]^{|E|} is a binary label. 
+       y: denotes a multi-label vector \in [0,1]^{|E|} is a binary label.
    orall y_i =1 s.t. (h r E_i) \in KG
 
        .. note::
@@ -2419,7 +2229,7 @@ Attributes
        >>> a = AllvsAll()
        >>> a
        ? array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-       
+
 
    .. py:method:: __len__()
 
@@ -2436,7 +2246,7 @@ Attributes
        KvsSample a Dataset:
            D:= {(x,y)_i}_i ^N, where
                . x:(h,r) is a unique h \in E and a relation r \in R and
-               . y \in [0,1]^{|E|} is a binary label. 
+               . y \in [0,1]^{|E|} is a binary label.
    orall y_i =1 s.t. (h r E_i) \in KG
               At each mini-batch construction, we subsample(y), hence n
                |new_y| << |E|
@@ -2459,7 +2269,7 @@ Attributes
           Returns
           -------
           torch.utils.data.Dataset
-          
+
 
    .. py:method:: __len__()
 
@@ -2508,7 +2318,7 @@ Attributes
                . x:(h,r, t) \in KG is a unique h \in E and a relation r \in R and
                . collact_fn => Generates negative triples
 
-           collect_fn:  
+           collect_fn:
    orall (h,r,t) \in G obtain, create negative triples{(h,r,x),(,r,t),(h,m,t)}
 
            y:labels are represented in torch.float16
@@ -2531,7 +2341,7 @@ Attributes
           Returns
           -------
           torch.utils.data.Dataset
-          
+
 
    .. py:method:: __len__()
 
@@ -2550,26 +2360,14 @@ Attributes
 
    Create a Dataset for cross validation
 
-   Parameters
-   ----------
-   train_set_idx
-       Indexed triples for the training.
-   num_entities
-       entity to index mapping.
-   num_relations
-       relation to index mapping.
-   batch_size
-       int
-   form
-       ?
-   num_workers
-       int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
+   :param train_set_idx: Indexed triples for the training.
+   :param num_entities: entity to index mapping.
+   :param num_relations: relation to index mapping.
+   :param batch_size: int
+   :param form: ?
+   :param num_workers: int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
 
-
-
-   Returns
-   -------
-   ?
+   :rtype: ?
 
    .. py:method:: train_dataloader() -> torch.utils.data.DataLoader
 
@@ -2594,10 +2392,10 @@ Attributes
       - :meth:`prepare_data`
       - :meth:`setup`
 
-      Note:
-          Lightning tries to add the correct sampler for distributed and arbitrary hardware.
-          There is no need to set it yourself.
+      .. note::
 
+         Lightning tries to add the correct sampler for distributed and arbitrary hardware.
+         There is no need to set it yourself.
 
 
    .. py:method:: setup(*args, **kwargs)
@@ -2606,8 +2404,7 @@ Attributes
       need to build models dynamically or adjust something about them. This hook is called on every process when
       using DDP.
 
-      Args:
-          stage: either ``'fit'``, ``'validate'``, ``'test'``, or ``'predict'``
+      :param stage: either ``'fit'``, ``'validate'``, ``'test'``, or ``'predict'``
 
       Example::
 
@@ -2642,20 +2439,19 @@ Attributes
 
       For anything else, you need to define how the data is moved to the target device (CPU, GPU, TPU, ...).
 
-      Note:
-          This hook should only transfer the data and not modify it, nor should it move the data to
-          any other device than the one passed in as argument (unless you know what you are doing).
-          To check the current state of execution of this hook you can use
-          ``self.trainer.training/testing/validating/predicting`` so that you can
-          add different logic as per your requirement.
+      .. note::
 
-      Args:
-          batch: A batch of data that needs to be transferred to a new device.
-          device: The target device as defined in PyTorch.
-          dataloader_idx: The index of the dataloader to which the batch belongs.
+         This hook should only transfer the data and not modify it, nor should it move the data to
+         any other device than the one passed in as argument (unless you know what you are doing).
+         To check the current state of execution of this hook you can use
+         ``self.trainer.training/testing/validating/predicting`` so that you can
+         add different logic as per your requirement.
 
-      Returns:
-          A reference to the data on the new device.
+      :param batch: A batch of data that needs to be transferred to a new device.
+      :param device: The target device as defined in PyTorch.
+      :param dataloader_idx: The index of the dataloader to which the batch belongs.
+
+      :returns: A reference to the data on the new device.
 
       Example::
 
@@ -2671,14 +2467,12 @@ Attributes
                   batch = super().transfer_batch_to_device(batch, device, dataloader_idx)
               return batch
 
-      Raises:
-          MisconfigurationException:
-              If using IPUs, ``Trainer(accelerator='ipu')``.
+      :raises MisconfigurationException: If using IPUs, ``Trainer(accelerator='ipu')``.
 
-      See Also:
-          - :meth:`move_data_to_device`
-          - :meth:`apply_to_collection`
+      .. seealso::
 
+         - :meth:`move_data_to_device`
+         - :meth:`apply_to_collection`
 
 
    .. py:method:: prepare_data(*args, **kwargs)
@@ -2795,7 +2589,7 @@ Attributes
 
    .. py:method:: save_queries(query_type: str, gen_num: int, save_path: str)
 
-              
+      
 
 
    .. py:method:: load_queries(path)
