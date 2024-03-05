@@ -45,8 +45,9 @@ jobs:
       uses: docker://texlive/texlive:latest
       with:
         args: make -C docs/_build/latex
-    - run: |
-        cp docs/_build/latex/dicee.pdf docs/_build/html/
+    - name: Copy Latex pdf to ./html
+      run: |
+        cp docs/_build/latex/diceembeddings.pdf docs/_build/html/
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
