@@ -1,4 +1,4 @@
-## Dice Embeddings!
+## Dicee Manual
 
 **Version:** dicee 0.1.3.2
 
@@ -312,8 +312,6 @@ model = KGE(url="https://files.dice-research.org/projects/DiceEmbeddings/KINSHIP
 from dicee import KGE
 KGE(path='...').deploy(share=True,top_k=10)
 ```
-
-<img src="dicee/lp.png" alt="Italian Trulli">
 
 ## Docker
 To build the Docker image:
