@@ -95,15 +95,16 @@ A KGE model can also be trained from the command line
 ```bash
 dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
 ```
-dicee automaticaly detects available GPUs and trains a model with distributed data parallels technique. Under the hood, dicee uses lighning as a default trainer.
+dicee automatically detects available GPUs and trains a model with distributed data parallels technique.
 ```bash
 # Train a model by only using the GPU-0
 CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
 # Train a model by only using GPU-1
 CUDA_VISIBLE_DEVICES=1 dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
-NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES=0,1 python dicee/scripts/run.py --trainer PL --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
+# Train a model by using all available GPUs
+dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
 ```
-Under the hood, dicee executes run.py script and uses lighning as a default trainer
+Under the hood, dicee executes the run.py script and uses [lightning](https://lightning.ai/) as a default trainer.
 ```bash
 # Two equivalent executions
 # (1)
