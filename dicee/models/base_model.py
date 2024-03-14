@@ -431,6 +431,8 @@ class IdentityClass(torch.nn.Module):
     def __init__(self, args=None):
         super().__init__()
         self.args = args
+    def __call__(self, x):
+        return x
 
     @staticmethod
     def forward(x):
