@@ -624,7 +624,19 @@ def download_file(url, destination_folder="."):
         print(f"Failed to download: {url}")
 
 
-def download_files_from_url(base_url, destination_folder="."):
+def download_files_from_url(base_url:str, destination_folder=".")->None:
+    """
+
+    Parameters
+    ----------
+    base_url: e.g. "https://files.dice-research.org/projects/DiceEmbeddings/KINSHIP-Keci-dim128-epoch256-KvsAll"
+
+    destination_folder: e.g. "KINSHIP-Keci-dim128-epoch256-KvsAll"
+
+    Returns
+    -------
+
+    """
     # lazy import
     from bs4 import BeautifulSoup
 
@@ -639,7 +651,8 @@ def download_files_from_url(base_url, destination_folder="."):
         hrefs = [i for i in hrefs if len(i) > 3 and "." in i]
         for file_url in hrefs:
             download_file(base_url + "/" + file_url, destination_folder)
-
+    else:
+        print("ERROR:", response.status_code)
 
 def download_pretrained_model(url: str) -> str:
     assert url[-1] != "/"
