@@ -721,8 +721,12 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.download_file" title="dicee.download_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_file</span></code></a>(url[, destination_folder])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.download_files_from_url" title="dicee.download_files_from_url"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_files_from_url</span></code></a>(base_url[, destination_folder])</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.download_files_from_url" title="dicee.download_files_from_url"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_files_from_url</span></code></a>(→ None)</p></td>
+<td><p><dl class="field-list simple">
+<dt class="field-odd">param base_url<span class="colon">:</span></dt>
+<dd class="field-odd"><p></p></dd>
+</dl>
+</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.download_pretrained_model" title="dicee.download_pretrained_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_pretrained_model</span></code></a>(→ str)</p></td>
 <td><p></p></td>
@@ -2514,8 +2518,16 @@ Evaluate multi hop query answering on different query types</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.download_files_from_url">
-<span class="sig-prename descclassname"><span class="pre">dicee.</span></span><span class="sig-name descname"><span class="pre">download_files_from_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination_folder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/static_funcs.html#download_files_from_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.download_files_from_url" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.</span></span><span class="sig-name descname"><span class="pre">download_files_from_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination_folder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'.'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../_modules/dicee/static_funcs.html#download_files_from_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.download_files_from_url" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>base_url</strong> (e.g. “<a class="reference external" href="https://files.dice-research.org/projects/DiceEmbeddings/KINSHIP-Keci-dim128-epoch256-KvsAll">https://files.dice-research.org/projects/DiceEmbeddings/KINSHIP-Keci-dim128-epoch256-KvsAll</a>”) – </p></li>
+<li><p><strong>destination_folder</strong> (<em>e.g. &quot;KINSHIP-Keci-dim128-epoch256-KvsAll&quot;</em>) – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.download_pretrained_model">

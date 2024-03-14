@@ -1576,7 +1576,12 @@ Attributes
 .. py:function:: download_file(url, destination_folder='.')
 
 
-.. py:function:: download_files_from_url(base_url, destination_folder='.')
+.. py:function:: download_files_from_url(base_url: str, destination_folder='.') -> None
+
+   :param base_url:
+   :type base_url: e.g. "https://files.dice-research.org/projects/DiceEmbeddings/KINSHIP-Keci-dim128-epoch256-KvsAll"
+   :param destination_folder:
+   :type destination_folder: e.g. "KINSHIP-Keci-dim128-epoch256-KvsAll"
 
 
 .. py:function:: download_pretrained_model(url: str) -> str

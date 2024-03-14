@@ -114,6 +114,10 @@ Classes
    (2) Training & Validation & Testing
    (3) Storing all necessary info
 
+   During the continual learning we can only modify *** num_epochs *** parameter.
+   Trained model stored in the same folder as the seed model for the training.
+   Trained model is noted with the current time.
+
    .. py:method:: continual_start() -> dict
 
       Start Continual Training

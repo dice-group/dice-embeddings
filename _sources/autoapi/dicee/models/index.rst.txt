@@ -552,6 +552,9 @@ Functions
                    evaluation mode.
    :vartype training: bool
 
+   .. py:method:: __call__(x)
+
+
    .. py:method:: forward(x)
       :staticmethod:
 
@@ -1060,6 +1063,9 @@ Functions
                    evaluation mode.
    :vartype training: bool
 
+   .. py:method:: __call__(x)
+
+
    .. py:method:: forward(x)
       :staticmethod:
 
@@ -1339,6 +1345,9 @@ Functions
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+   .. py:method:: __call__(x)
+
 
    .. py:method:: forward(x)
       :staticmethod:

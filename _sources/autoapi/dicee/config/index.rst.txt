@@ -269,6 +269,10 @@ Classes
 
       block size of LLM
 
+   .. py:attribute:: continual_learning
+
+      Path of a pretrained model size of LLM
+
    .. py:method:: __iter__()
 
 
