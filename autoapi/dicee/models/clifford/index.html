@@ -130,15 +130,21 @@
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.clifford.CMult" title="dicee.models.clifford.CMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CMult</span></code></a></p></td>
-<td><p>Cl_(0,0) =&gt; Real Numbers</p></td>
+<td><p>The CMult class represents a specific kind of mathematical object used in knowledge graph embeddings,</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.clifford.Keci" title="dicee.models.clifford.Keci"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keci</span></code></a></p></td>
+<td><p>The Keci class is a knowledge graph embedding model that incorporates Clifford algebra for embeddings.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id17" title="dicee.models.clifford.KeciBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KeciBase</span></code></a></p></td>
+<td><p>The KeciBase class is a variant of the Keci class for knowledge graph embeddings, with the key difference being</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id18" title="dicee.models.clifford.DeCaL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeCaL</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.clifford.KeciBase" title="dicee.models.clifford.KeciBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KeciBase</span></code></a></p></td>
-<td><p>Without learning dimension scaling</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id17" title="dicee.models.clifford.KeciBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KeciBase</span></code></a></p></td>
+<td><p>The KeciBase class is a variant of the Keci class for knowledge graph embeddings, with the key difference being</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.clifford.DeCaL" title="dicee.models.clifford.DeCaL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeCaL</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#id18" title="dicee.models.clifford.DeCaL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeCaL</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
 </tbody>
@@ -147,6 +153,11 @@
 <dt class="sig sig-object py" id="dicee.models.clifford.CMult">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.clifford.</span></span><span class="sig-name descname"><span class="pre">CMult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#CMult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.CMult" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
+<p>The CMult class represents a specific kind of mathematical object used in knowledge graph embeddings,
+involving Clifford algebra multiplication. It defines several algebraic structures based on the signature (p, q),
+such as Real Numbers, Complex Numbers, Quaternions, and others. The class provides functionality for
+performing Clifford multiplication, a generalization of the geometric product for vectors in a Clifford algebra.</p>
+<p>TODO: Add mathematical format for sphinx.</p>
 <p>Cl_(0,0) =&gt; Real Numbers</p>
 <dl>
 <dt>Cl_(0,1) =&gt;</dt><dd><p>A multivector mathbf{a} = a_0 + a_1 e_1
@@ -168,100 +179,340 @@ A multivector mathbf{b} = b_0 + b_1 e_1 + b_2 e_2 + b_{12} e_1 e_2</p>
 </dd>
 </dl>
 <p>Cl_(0,2) =&gt; Quaternions</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.CMult.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#dicee.models.clifford.CMult.name" title="Link to this definition"></a></dt>
+<dd><p>The name identifier for the CMult class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.CMult.entity_embeddings">
+<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.models.clifford.CMult.entity_embeddings" title="Link to this definition"></a></dt>
+<dd><p>Embedding layer for entities in the knowledge graph.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.nn.Embedding</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.CMult.relation_embeddings">
+<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.models.clifford.CMult.relation_embeddings" title="Link to this definition"></a></dt>
+<dd><p>Embedding layer for relations in the knowledge graph.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.nn.Embedding</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.CMult.p">
+<span class="sig-name descname"><span class="pre">p</span></span><a class="headerlink" href="#dicee.models.clifford.CMult.p" title="Link to this definition"></a></dt>
+<dd><p>Non-negative integer representing the number of positive square terms in the Clifford algebra.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.CMult.q">
+<span class="sig-name descname"><span class="pre">q</span></span><a class="headerlink" href="#dicee.models.clifford.CMult.q" title="Link to this definition"></a></dt>
+<dd><p>Non-negative integer representing the number of negative square terms in the Clifford algebra.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.clifford.CMult.clifford_mul">
 <span class="sig-name descname"><span class="pre">clifford_mul</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#CMult.clifford_mul"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.CMult.clifford_mul" title="Link to this definition"></a></dt>
+<dd><p>Performs Clifford multiplication based on the given signature (p, q).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.clifford.CMult.score">
+<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">head_ent_emb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_ent_emb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tail_ent_emb</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#CMult.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.CMult.score" title="Link to this definition"></a></dt>
+<dd><p>Computes a scoring function for a head entity, relation, and tail entity embeddings.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.clifford.CMult.forward_triples">
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#CMult.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.CMult.forward_triples" title="Link to this definition"></a></dt>
+<dd><p>Computes scores for a batch of triples.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.clifford.CMult.forward_k_vs_all">
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#CMult.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.CMult.forward_k_vs_all" title="Link to this definition"></a></dt>
+<dd><p>Computes scores for a batch of triples against all entities in the knowledge graph.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">clifford_mul</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#CMult.clifford_mul"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
 <dd><blockquote>
-<div><p>Clifford multiplication Cl_{p,q} (mathbb{R})</p>
+<div><p>Performs Clifford multiplication in the Clifford algebra Cl_{p,q}. This method generalizes the geometric product
+of vectors in a Clifford algebra, handling different algebraic structures like real numbers, complex numbers,
+quaternions, etc., based on the signature (p, q).</p>
+<p>Clifford multiplication Cl_{p,q} (mathbb{R})</p>
 <p>ei ^2 = +1     for i =&lt; i =&lt; p
 ej ^2 = -1     for p &lt; j =&lt; p+q
 ei ej = -eje1  for i</p>
 </div></blockquote>
 <p>eq j</p>
 <blockquote>
-<div><p>x: torch.FloatTensor with (n,d) shape</p>
-<p>y: torch.FloatTensor with (n,d) shape</p>
-<p>p: a non-negative integer p&gt;= 0
-q: a non-negative integer q&gt;= 0</p>
+<div><dl class="simple">
+<dt>x<span class="classifier">torch.FloatTensor</span></dt><dd><p>The first multivector operand with shape (n, d).</p>
+</dd>
+<dt>y<span class="classifier">torch.FloatTensor</span></dt><dd><p>The second multivector operand with shape (n, d).</p>
+</dd>
+<dt>p<span class="classifier">int</span></dt><dd><p>A non-negative integer representing the number of positive square terms in the Clifford algebra.</p>
+</dd>
+<dt>q<span class="classifier">int</span></dt><dd><p>A non-negative integer representing the number of negative square terms in the Clifford algebra.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>tuple</dt><dd><p>The result of Clifford multiplication, a tuple of tensors representing the components of the resulting multivector.</p>
+</dd>
+</dl>
 </div></blockquote>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.clifford.CMult.score">
-<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">head_ent_emb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_ent_emb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tail_ent_emb</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#CMult.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.CMult.score" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.clifford.CMult.forward_triples">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#CMult.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.CMult.forward_triples" title="Link to this definition"></a></dt>
-<dd><p>Compute batch triple scores</p>
-<section id="parameter">
-<h4>Parameter<a class="headerlink" href="#parameter" title="Link to this heading"></a></h4>
-<p>x: torch.LongTensor with shape n by 3</p>
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">head_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tail_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#CMult.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd><p>Computes a scoring function for a given triple of head entity, relation, and tail entity embeddings.
+The method involves Clifford multiplication of the head entity and relation embeddings, followed by
+a calculation of the score with the tail entity embedding.</p>
 <dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.LongTensor with shape n</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>head_ent_emb</strong> (<em>torch.FloatTensor</em>) – Embedding of the head entity.</p></li>
+<li><p><strong>rel_ent_emb</strong> (<em>torch.FloatTensor</em>) – Embedding of the relation.</p></li>
+<li><p><strong>tail_ent_emb</strong> (<em>torch.FloatTensor</em>) – Embedding of the tail entity.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tensor representing the score of the given triple.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
 </dd>
 </dl>
-</section>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.clifford.CMult.forward_k_vs_all">
-<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#CMult.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.CMult.forward_k_vs_all" title="Link to this definition"></a></dt>
-<dd><p>Compute batch KvsAll triple scores</p>
-<section id="id1">
-<h4>Parameter<a class="headerlink" href="#id1" title="Link to this heading"></a></h4>
-<p>x: torch.LongTensor with shape n by 3</p>
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#CMult.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd><p>Computes scores for a batch of triples. This method is typically used in training or evaluation
+of knowledge graph embedding models. It applies Clifford multiplication to the embeddings of head
+entities and relations and then calculates the score with respect to the tail entity embeddings.</p>
 <dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.LongTensor with shape n</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.LongTensor</em>) – A tensor with shape (n, 3) representing a batch of triples, where each triple consists of indices
+for a head entity, a relation, and a tail entity.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tensor with shape (n,) containing the scores for each triple in the batch.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
 </dd>
 </dl>
-</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#CMult.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dd><p>Computes scores for a batch of triples against all entities in the knowledge graph, often used in KvsAll evaluation.
+This method retrieves embeddings for heads and relations, performs Clifford multiplication, and then computes the
+inner product with all entity embeddings to get scores for every possible triple involving the given heads and relations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.Tensor</em>) – A tensor with shape (n, 3) representing a batch of triples, where each triple consists of indices
+for a head entity and a relation. The tail entity is to be compared against all possible entities.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tensor with shape (n,) containing scores for each triple against all possible tail entities.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.models.clifford.Keci">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.clifford.</span></span><span class="sig-name descname"><span class="pre">Keci</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.clifford.</span></span><span class="sig-name descname"><span class="pre">Keci</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
-<p>Base class for all neural network modules.</p>
-<p>Your models should also subclass this class.</p>
-<p>Modules can also contain other Modules, allowing to nest them in
-a tree structure. You can assign the submodules as regular attributes:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-</pre></div>
-</div>
-<p>Submodules assigned in this way will be registered, and will have their
-parameters converted too when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
-must be made before assignment on the child.</p>
-</div>
+<p>The Keci class is a knowledge graph embedding model that incorporates Clifford algebra for embeddings.
+It supports different dimensions of Clifford algebra by setting the parameters p and q. The class
+utilizes Clifford multiplication for embedding interactions and computes scores for knowledge graph triples.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
-evaluation mode.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> (<em>dict</em>) – A dictionary of arguments containing hyperparameters and settings for the model.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#dicee.models.clifford.Keci.name" title="Link to this definition"></a></dt>
+<dd><p>The name identifier for the Keci class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.p">
+<span class="sig-name descname"><span class="pre">p</span></span><a class="headerlink" href="#dicee.models.clifford.Keci.p" title="Link to this definition"></a></dt>
+<dd><p>The parameter ‘p’ in Clifford algebra, representing the number of positive square terms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.q">
+<span class="sig-name descname"><span class="pre">q</span></span><a class="headerlink" href="#dicee.models.clifford.Keci.q" title="Link to this definition"></a></dt>
+<dd><p>The parameter ‘q’ in Clifford algebra, representing the number of negative square terms.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.r">
+<span class="sig-name descname"><span class="pre">r</span></span><a class="headerlink" href="#dicee.models.clifford.Keci.r" title="Link to this definition"></a></dt>
+<dd><p>A derived attribute for dimension scaling based on ‘p’ and ‘q’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.p_coefficients">
+<span class="sig-name descname"><span class="pre">p_coefficients</span></span><a class="headerlink" href="#dicee.models.clifford.Keci.p_coefficients" title="Link to this definition"></a></dt>
+<dd><p>Embedding for scaling coefficients of ‘p’ terms, if ‘p’ &gt; 0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.nn.Embedding (optional)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.q_coefficients">
+<span class="sig-name descname"><span class="pre">q_coefficients</span></span><a class="headerlink" href="#dicee.models.clifford.Keci.q_coefficients" title="Link to this definition"></a></dt>
+<dd><p>Embedding for scaling coefficients of ‘q’ terms, if ‘q’ &gt; 0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.nn.Embedding (optional)</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.clifford.Keci.compute_sigma_pp">
-<span class="sig-name descname"><span class="pre">compute_sigma_pp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.compute_sigma_pp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.compute_sigma_pp" title="Link to this definition"></a></dt>
-<dd><p>Compute  sigma_{pp} = sum_{i=1}^{p-1} sum_{k=i+1}^p (h_i r_k - h_k r_i) e_i e_k</p>
+<span class="sig-name descname"><span class="pre">compute_sigma_pp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.compute_sigma_pp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.compute_sigma_pp" title="Link to this definition"></a></dt>
+<dd><p>Computes the sigma_pp component in Clifford multiplication.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.compute_sigma_qq">
+<span class="sig-name descname"><span class="pre">compute_sigma_qq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.compute_sigma_qq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.compute_sigma_qq" title="Link to this definition"></a></dt>
+<dd><p>Computes the sigma_qq component in Clifford multiplication.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.compute_sigma_pq">
+<span class="sig-name descname"><span class="pre">compute_sigma_pq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.compute_sigma_pq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.compute_sigma_pq" title="Link to this definition"></a></dt>
+<dd><p>Computes the sigma_pq component in Clifford multiplication.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.apply_coefficients">
+<span class="sig-name descname"><span class="pre">apply_coefficients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.apply_coefficients"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.apply_coefficients" title="Link to this definition"></a></dt>
+<dd><p>Applies scaling coefficients to the base vectors in Clifford algebra.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.clifford_multiplication">
+<span class="sig-name descname"><span class="pre">clifford_multiplication</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.clifford_multiplication"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.clifford_multiplication" title="Link to this definition"></a></dt>
+<dd><p>Performs Clifford multiplication of head and relation embeddings.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.construct_cl_multivector">
+<span class="sig-name descname"><span class="pre">construct_cl_multivector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.construct_cl_multivector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.construct_cl_multivector" title="Link to this definition"></a></dt>
+<dd><p>Constructs a multivector in Clifford algebra Cl_{p,q}(mathbb{R}^d).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.forward_k_vs_with_explicit">
+<span class="sig-name descname"><span class="pre">forward_k_vs_with_explicit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.forward_k_vs_with_explicit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.forward_k_vs_with_explicit" title="Link to this definition"></a></dt>
+<dd><p>Computes scores for a batch of triples against all entities using explicit Clifford multiplication.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.k_vs_all_score">
+<span class="sig-name descname"><span class="pre">k_vs_all_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bpe_head_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bpe_rel_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.k_vs_all_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.k_vs_all_score" title="Link to this definition"></a></dt>
+<dd><p>Computes scores for all triples using Clifford multiplication in a K-vs-All setup.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.forward_k_vs_all">
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.forward_k_vs_all" title="Link to this definition"></a></dt>
+<dd><p>Wrapper function for K-vs-All scoring.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.forward_k_vs_sample">
+<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.forward_k_vs_sample" title="Link to this definition"></a></dt>
+<dd><p>Computes scores for a sampled subset of entities.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.score">
+<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.score" title="Link to this definition"></a></dt>
+<dd><p>Computes the score for a given triple using Clifford multiplication.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.forward_triples">
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.forward_triples" title="Link to this definition"></a></dt>
+<dd><p>Computes scores for a batch of triples.</p>
+</dd></dl>
+
+<p class="rubric">Notes</p>
+<p>The class is designed to work with embeddings in the context of knowledge graph completion tasks,
+leveraging the properties of Clifford algebra for embedding interactions.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">compute_sigma_pp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.compute_sigma_pp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dd><p>Computes the sigma_pp component in Clifford multiplication, representing the interactions
+between the positive square terms in the Clifford algebra.</p>
+<p>sigma_{pp} = sum_{i=1}^{p-1} sum_{k=i+1}^p (h_i r_k - h_k r_i) e_i e_k, TODO: Add mathematical format for sphinx.</p>
 <p>sigma_{pp} captures the interactions between along p bases
 For instance, let p e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
 This can be implemented with a nested two for loops</p>
@@ -284,12 +535,29 @@ e.g., e1e1, e1e2, e1e3,</p>
 e3e1, e3e2, e3e3</p>
 </div></blockquote>
 <p>Then select the triangular matrix without diagonals: e1e2, e1e3, e2e3.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hp</strong> (<em>torch.Tensor</em>) – The ‘p’ part of the head entity embedding in Clifford algebra.</p></li>
+<li><p><strong>rp</strong> (<em>torch.Tensor</em>) – The ‘p’ part of the relation embedding in Clifford algebra.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sigma_pp</strong> – The sigma_pp component of the Clifford multiplication.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.clifford.Keci.compute_sigma_qq">
-<span class="sig-name descname"><span class="pre">compute_sigma_qq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rq</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.compute_sigma_qq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.compute_sigma_qq" title="Link to this definition"></a></dt>
-<dd><p>Compute  sigma_{qq} = sum_{j=1}^{p+q-1} sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">compute_sigma_qq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.compute_sigma_qq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dd><p>Computes the sigma_qq component in Clifford multiplication, representing the interactions
+between the negative square terms in the Clifford algebra.</p>
+<p>TODO: Add mathematical format for sphinx.</p>
+<p>sigma_{qq} = sum_{j=1}^{p+q-1} sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k
 sigma_{q} captures the interactions between along q bases
 For instance, let q e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
 This can be implemented with a nested two for loops</p>
@@ -312,36 +580,86 @@ e.g., e1e1, e1e2, e1e3,</p>
 e3e1, e3e2, e3e3</p>
 </div></blockquote>
 <p>Then select the triangular matrix without diagonals: e1e2, e1e3, e2e3.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.clifford.Keci.compute_sigma_pq">
-<span class="sig-name descname"><span class="pre">compute_sigma_pq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rq</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.compute_sigma_pq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.compute_sigma_pq" title="Link to this definition"></a></dt>
-<dd><p>sum_{i=1}^{p} sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j</p>
-<p>results = []
-sigma_pq = torch.zeros(b, r, p, q)
-for i in range(p):</p>
-<blockquote>
-<div><dl class="simple">
-<dt>for j in range(q):</dt><dd><p>sigma_pq[:, :, i, j] = hp[:, :, i] * rq[:, :, j] - hq[:, :, j] * rp[:, :, i]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hq</strong> (<em>torch.Tensor</em>) – The ‘q’ part of the head entity embedding in Clifford algebra.</p></li>
+<li><p><strong>rq</strong> (<em>torch.Tensor</em>) – The ‘q’ part of the relation embedding in Clifford algebra.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sigma_qq</strong> – The sigma_qq component of the Clifford multiplication.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
 </dd>
 </dl>
-</div></blockquote>
-<p>print(sigma_pq.shape)</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.clifford.Keci.apply_coefficients">
-<span class="sig-name descname"><span class="pre">apply_coefficients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rq</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.apply_coefficients"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.apply_coefficients" title="Link to this definition"></a></dt>
-<dd><p>Multiplying a base vector with its scalar coefficient</p>
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">compute_sigma_pq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.compute_sigma_pq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<dd><p>Computes the sigma_pq component in Clifford multiplication, representing the interactions
+between the positive and negative square terms in the Clifford algebra.</p>
+<p>TODO: Add mathematical format for sphinx.</p>
+<p>sum_{i=1}^{p} sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j</p>
+<p># results = []
+# sigma_pq = torch.zeros(b, r, p, q)
+# for i in range(p):
+#     for j in range(q):
+#         sigma_pq[:, :, i, j] = hp[:, :, i] * rq[:, :, j] - hq[:, :, j] * rp[:, :, i]
+# print(sigma_pq.shape)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hp</strong> (<em>torch.Tensor</em>) – The ‘p’ part of the head entity embedding in Clifford algebra.</p></li>
+<li><p><strong>hq</strong> (<em>torch.Tensor</em>) – The ‘q’ part of the head entity embedding in Clifford algebra.</p></li>
+<li><p><strong>rp</strong> (<em>torch.Tensor</em>) – The ‘p’ part of the relation embedding in Clifford algebra.</p></li>
+<li><p><strong>rq</strong> (<em>torch.Tensor</em>) – The ‘q’ part of the relation embedding in Clifford algebra.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>sigma_pq</strong> – The sigma_pq component of the Clifford multiplication.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.clifford.Keci.clifford_multiplication">
-<span class="sig-name descname"><span class="pre">clifford_multiplication</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rq</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.clifford_multiplication"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.clifford_multiplication" title="Link to this definition"></a></dt>
-<dd><p>Compute our CL multiplication</p>
-<blockquote>
-<div><p>h = h_0 + sum_{i=1}^p h_i e_i + sum_{j=p+1}^{p+q} h_j e_j
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">apply_coefficients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.apply_coefficients"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<dd><p>Applies scaling coefficients to the base vectors in the Clifford algebra.
+This method is used for adjusting the contributions of different components in the algebra.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>h0</strong> (<em>torch.Tensor</em>) – The scalar part of the head entity embedding.</p></li>
+<li><p><strong>hp</strong> (<em>torch.Tensor</em>) – The ‘p’ part of the head entity embedding.</p></li>
+<li><p><strong>hq</strong> (<em>torch.Tensor</em>) – The ‘q’ part of the head entity embedding.</p></li>
+<li><p><strong>r0</strong> (<em>torch.Tensor</em>) – The scalar part of the relation embedding.</p></li>
+<li><p><strong>rp</strong> (<em>torch.Tensor</em>) – The ‘p’ part of the relation embedding.</p></li>
+<li><p><strong>rq</strong> (<em>torch.Tensor</em>) – The ‘q’ part of the relation embedding.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tuple containing the scaled components of the head and relation embeddings.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">clifford_multiplication</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r0</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rq</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.clifford_multiplication"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Performs Clifford multiplication of head and relation embeddings. This method computes the
+various components of the Clifford product, combining the scalar, ‘p’, and ‘q’ parts of the embeddings.</p>
+<p>TODO: Add mathematical format for sphinx.</p>
+<p>h = h_0 + sum_{i=1}^p h_i e_i + sum_{j=p+1}^{p+q} h_j e_j
 r = r_0 + sum_{i=1}^p r_i e_i + sum_{j=p+1}^{p+q} r_j e_j</p>
 <p>ei ^2 = +1     for i =&lt; i =&lt; p
 ej ^2 = -1     for p &lt; j =&lt; p+q
@@ -361,22 +679,49 @@ where</p>
 <li><p>sigma_{pq} = sum_{i=1}^{p} sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j</p></li>
 </ol>
 </div></blockquote>
+<dl class="simple">
+<dt>h0<span class="classifier">torch.Tensor</span></dt><dd><p>The scalar part of the head entity embedding.</p>
+</dd>
+<dt>hp<span class="classifier">torch.Tensor</span></dt><dd><p>The ‘p’ part of the head entity embedding.</p>
+</dd>
+<dt>hq<span class="classifier">torch.Tensor</span></dt><dd><p>The ‘q’ part of the head entity embedding.</p>
+</dd>
+<dt>r0<span class="classifier">torch.Tensor</span></dt><dd><p>The scalar part of the relation embedding.</p>
+</dd>
+<dt>rp<span class="classifier">torch.Tensor</span></dt><dd><p>The ‘p’ part of the relation embedding.</p>
+</dd>
+<dt>rq<span class="classifier">torch.Tensor</span></dt><dd><p>The ‘q’ part of the relation embedding.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>tuple</dt><dd><p>Tuple containing the components of the Clifford product.</p>
+</dd>
+</dl>
 </div></blockquote>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.clifford.Keci.construct_cl_multivector">
-<span class="sig-name descname"><span class="pre">construct_cl_multivector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.construct_cl_multivector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.construct_cl_multivector" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">construct_cl_multivector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.construct_cl_multivector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
 <dd><p>Construct a batch of multivectors Cl_{p,q}(mathbb{R}^d)</p>
-<section id="id2">
-<h4>Parameter<a class="headerlink" href="#id2" title="Link to this heading"></a></h4>
-<p>x: torch.FloatTensor with (n,d) shape</p>
+<section id="parameter">
+<h4>Parameter<a class="headerlink" href="#parameter" title="Link to this heading"></a></h4>
+<dl class="simple">
+<dt>x<span class="classifier">torch.FloatTensor</span></dt><dd><p>The embedding vector with shape (n, d).</p>
+</dd>
+<dt>r<span class="classifier">int</span></dt><dd><p>The dimension of the scalar part.</p>
+</dd>
+<dt>p<span class="classifier">int</span></dt><dd><p>The number of positive square terms.</p>
+</dd>
+<dt>q<span class="classifier">int</span></dt><dd><p>The number of negative square terms.</p>
+</dd>
+</dl>
 <dl class="field-list simple">
 <dt class="field-odd">returns<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>a0</strong> (<em>torch.FloatTensor with (n,r) shape</em>)</p></li>
-<li><p><strong>ap</strong> (<em>torch.FloatTensor with (n,r,p) shape</em>)</p></li>
-<li><p><strong>aq</strong> (<em>torch.FloatTensor with (n,r,q) shape</em>)</p></li>
+<li><p><strong>a0</strong> (<em>torch.FloatTensor</em>) – Tensor with (n,r) shape</p></li>
+<li><p><strong>ap</strong> (<em>torch.FloatTensor</em>) – Tensor with (n,r,p) shape</p></li>
+<li><p><strong>aq</strong> (<em>torch.FloatTensor</em>) – Tensor with (n,r,q) shape</p></li>
 </ul>
 </dd>
 </dl>
@@ -384,70 +729,162 @@ where</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.clifford.Keci.forward_k_vs_with_explicit">
-<span class="sig-name descname"><span class="pre">forward_k_vs_with_explicit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.forward_k_vs_with_explicit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.forward_k_vs_with_explicit" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.clifford.Keci.k_vs_all_score">
-<span class="sig-name descname"><span class="pre">k_vs_all_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bpe_head_ent_emb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bpe_rel_ent_emb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.k_vs_all_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.k_vs_all_score" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.clifford.Keci.forward_k_vs_all">
-<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.forward_k_vs_all" title="Link to this definition"></a></dt>
-<dd><p>Kvsall training</p>
-<ol class="arabic simple">
-<li><p>Retrieve real-valued embedding vectors for heads and relations mathbb{R}^d .</p></li>
-<li><p>Construct head entity and relation embeddings according to Cl_{p,q}(mathbb{R}^d) .</p></li>
-<li><p>Perform Cl multiplication</p></li>
-<li><p>Inner product of (3) and all entity embeddings</p></li>
-</ol>
-<p>forward_k_vs_with_explicit and this funcitons are identical
-Parameter
-———
-x: torch.LongTensor with (n,2) shape
-:rtype: torch.FloatTensor with (n, <a href="#id11"><span class="problematic" id="id12">|E|</span></a>) shape</p>
+<dt class="sig sig-object py" id="id10">
+<span class="sig-name descname"><span class="pre">forward_k_vs_with_explicit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.forward_k_vs_with_explicit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
+<dd><p>Computes scores for a batch of triples against all entities using explicit Clifford multiplication.
+This method is used for K-vs-All training and evaluation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.Tensor</em>) – Tensor representing a batch of head entities and relations.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tensor containing scores for each triple against all entities.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.clifford.Keci.forward_k_vs_sample">
-<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.forward_k_vs_sample" title="Link to this definition"></a></dt>
-<dd><p>Kvsall training</p>
-<ol class="arabic simple">
-<li><p>Retrieve real-valued embedding vectors for heads and relations mathbb{R}^d .</p></li>
-<li><p>Construct head entity and relation embeddings according to Cl_{p,q}(mathbb{R}^d) .</p></li>
-<li><p>Perform Cl multiplication</p></li>
-<li><p>Inner product of (3) and all entity embeddings</p></li>
-</ol>
-<section id="id3">
-<h4>Parameter<a class="headerlink" href="#id3" title="Link to this heading"></a></h4>
-<p>x: torch.LongTensor with (n,2) shape</p>
+<dt class="sig sig-object py" id="id11">
+<span class="sig-name descname"><span class="pre">k_vs_all_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bpe_head_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bpe_rel_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.k_vs_all_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
+<dd><p>Computes scores for all triples using Clifford multiplication in a K-vs-All setup. This method involves constructing
+multivectors for head entities and relations in Clifford algebra, applying coefficients, and computing interaction
+scores based on different components of the Clifford algebra.</p>
 <dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.FloatTensor with (n, <a href="#id13"><span class="problematic" id="id14">|E|</span></a>) shape</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bpe_head_ent_emb</strong> (<em>torch.Tensor</em>) – Batch of head entity embeddings in BPE (Byte Pair Encoding) format. Tensor shape: (batch_size, embedding_dim).</p></li>
+<li><p><strong>bpe_rel_ent_emb</strong> (<em>torch.Tensor</em>) – Batch of relation embeddings in BPE format. Tensor shape: (batch_size, embedding_dim).</p></li>
+<li><p><strong>E</strong> (<em>torch.Tensor</em>) – Tensor containing all entity embeddings. Tensor shape: (num_entities, embedding_dim).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the scores for each triple in the K-vs-All setting. Tensor shape: (batch_size, num_entities).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
 </dd>
 </dl>
-</section>
+<p class="rubric">Notes</p>
+<p>The method computes scores based on the basis of 1 (scalar part), the bases of ‘p’ (positive square terms),
+and the bases of ‘q’ (negative square terms). Additional computations involve sigma_pp, sigma_qq, and sigma_pq
+components in Clifford multiplication, corresponding to different interaction terms.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.clifford.Keci.score">
-<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.score" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.clifford.Keci.forward_triples">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.forward_triples" title="Link to this definition"></a></dt>
-<dd><section id="id4">
-<h4>Parameter<a class="headerlink" href="#id4" title="Link to this heading"></a></h4>
-<p>x: torch.LongTensor with (n,3) shape</p>
+<dt class="sig sig-object py" id="id12">
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id12" title="Link to this definition"></a></dt>
+<dd><p>TODO: Add mathematical format for sphinx.
+Performs the forward pass for K-vs-All training and evaluation in knowledge graph embeddings.
+This method involves retrieving real-valued embedding vectors for head entities and relations mathbb{R}^d,
+constructing Clifford algebra multivectors for these embeddings according to Cl_{p,q}(mathbb{R}^d), performing Clifford multiplication,
+and computing the inner product with all entity embeddings.</p>
 <dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.FloatTensor with (n) shape</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.Tensor</em>) – A tensor representing a batch of head entities and relations for the K-vs-All evaluation.
+Expected tensor shape: (n, 2), where ‘n’ is the batch size and ‘2’ represents head entity
+and relation pairs.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tensor containing the scores for each head entity and relation pair against all possible
+tail entities in the knowledge graph. Tensor shape: (n, <a href="#id26"><span class="problematic" id="id27">|E|</span></a>), where ‘<a href="#id28"><span class="problematic" id="id29">|E|</span></a>’ is the number
+of entities in the knowledge graph.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
 </dd>
 </dl>
-</section>
+<p class="rubric">Notes</p>
+<p>This method is similar to the ‘forward_k_vs_with_explicit’ function in functionality. It is
+typically used in scenarios where every possible combination of a head entity and a relation
+is scored against all tail entities, commonly used in knowledge graph completion tasks.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id13">
+<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id13" title="Link to this definition"></a></dt>
+<dd><p>TODO: Add mathematical format for sphinx.</p>
+<p>Performs the forward pass for K-vs-Sample training in knowledge graph embeddings. This method involves
+retrieving real-valued embedding vectors for head entities and relations mathbb{R}^d, constructing Clifford algebra
+multivectors for these embeddings according to Cl_{p,q}(mathbb{R}^d), performing Clifford multiplication,
+and computing the inner product with a sampled subset of entity embeddings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>torch.LongTensor</em>) – A tensor representing a batch of head entities and relations for the K-vs-Sample evaluation.
+Expected tensor shape: (n, 2), where ‘n’ is the batch size and ‘2’ represents head entity
+and relation pairs.</p></li>
+<li><p><strong>target_entity_idx</strong> (<em>torch.LongTensor</em>) – A tensor of target entity indices for sampling in the K-vs-Sample evaluation.
+Tensor shape: (n, sample_size), where ‘sample_size’ is the number of entities sampled.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tensor containing the scores for each head entity and relation pair against the sampled
+subset of tail entities. Tensor shape: (n, sample_size).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This method is used in scenarios where every possible combination of a head entity and a relation
+is scored against a sampled subset of tail entities, commonly used in knowledge graph completion tasks
+with a large number of entities.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id14">
+<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id14" title="Link to this definition"></a></dt>
+<dd><p>Computes the score for a given triple using Clifford multiplication in the context of knowledge graph embeddings.
+This method involves constructing Clifford algebra multivectors for head entities, relations, and tail entities,
+applying coefficients, and computing interaction scores based on different components of the Clifford algebra.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>h</strong> (<em>torch.Tensor</em>) – Tensor representing the embeddings of head entities. Expected shape: (n, d), where ‘n’ is the number of triples
+and ‘d’ is the embedding dimension.</p></li>
+<li><p><strong>r</strong> (<em>torch.Tensor</em>) – Tensor representing the embeddings of relations. Expected shape: (n, d).</p></li>
+<li><p><strong>t</strong> (<em>torch.Tensor</em>) – Tensor representing the embeddings of tail entities. Expected shape: (n, d).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tensor containing the scores for each triple. Tensor shape: (n,).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The method computes scores based on the scalar part, the bases of ‘p’ (positive square terms),
+and the bases of ‘q’ (negative square terms) in Clifford algebra. It includes additional computations
+involving sigma_pp, sigma_qq, and sigma_pq components, which correspond to different interaction terms
+in the Clifford product.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id15">
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id15" title="Link to this definition"></a></dt>
+<dd><p>Computes scores for a batch of triples using Clifford multiplication.
+This method is involved in the forward pass of the model during training or evaluation.
+It retrieves embeddings for head entities, relations, and tail entities, constructs Clifford algebra multivectors,
+applies coefficients, and computes interaction scores based on different components of Clifford algebra.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>torch.Tensor</em>) – A tensor representing a batch of triples. Each triple consists of indices for a head entity, a relation, and a tail entity.
+Expected tensor shape: (n, 3), where ‘n’ is the number of triples.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tensor containing the scores for each triple in the batch. Tensor shape: (n,), where ‘n’ is the number of triples.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The method computes scores based on the scalar part, the bases of ‘p’ (positive square terms), and the bases of ‘q’ (negative square terms) in Clifford algebra.
+It includes additional computations involving sigma_pp, sigma_qq, and sigma_pq components, corresponding to different interaction terms in the Clifford product.</p>
 </dd></dl>
 
 </dd></dl>
@@ -456,7 +893,63 @@ x: torch.LongTensor with (n,2) shape
 <dt class="sig sig-object py" id="dicee.models.clifford.KeciBase">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.clifford.</span></span><span class="sig-name descname"><span class="pre">KeciBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#KeciBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.KeciBase" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#dicee.models.clifford.Keci" title="dicee.models.clifford.Keci"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keci</span></code></a></p>
-<p>Without learning dimension scaling</p>
+<p>The KeciBase class is a variant of the Keci class for knowledge graph embeddings, with the key difference being
+the lack of learning for dimension scaling. It inherits the core functionality from the Keci class but sets
+the gradient requirement for interaction coefficients to False, indicating these coefficients are not updated
+during training.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> (<em>dict</em>) – A dictionary of arguments containing hyperparameters and settings for the model, including ‘p’, ‘q’,
+and embedding dimensions.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.KeciBase.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#dicee.models.clifford.KeciBase.name" title="Link to this definition"></a></dt>
+<dd><p>The name identifier for the KeciBase class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.KeciBase.requires_grad_for_interactions">
+<span class="sig-name descname"><span class="pre">requires_grad_for_interactions</span></span><a class="headerlink" href="#dicee.models.clifford.KeciBase.requires_grad_for_interactions" title="Link to this definition"></a></dt>
+<dd><p>Flag to indicate if the interaction coefficients require gradients. In KeciBase, this is set to False.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.KeciBase.p_coefficients">
+<span class="sig-name descname"><span class="pre">p_coefficients</span></span><a class="headerlink" href="#dicee.models.clifford.KeciBase.p_coefficients" title="Link to this definition"></a></dt>
+<dd><p>Embedding for scaling coefficients of ‘p’ terms, initialized to ones if ‘p’ &gt; 0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.nn.Embedding (optional)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.KeciBase.q_coefficients">
+<span class="sig-name descname"><span class="pre">q_coefficients</span></span><a class="headerlink" href="#dicee.models.clifford.KeciBase.q_coefficients" title="Link to this definition"></a></dt>
+<dd><p>Embedding for scaling coefficients of ‘q’ terms, initialized to ones if ‘q’ &gt; 0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.nn.Embedding (optional)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">Notes</p>
+<p>KeciBase is designed for scenarios where fixed coefficients are preferred over learnable parameters
+for dimension scaling in the Clifford algebra-based embedding interactions.</p>
 </dd></dl>
 
 <dl class="py class">
@@ -497,8 +990,66 @@ evaluation mode.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.clifford.DeCaL.forward_triples">
 <span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#DeCaL.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.DeCaL.forward_triples" title="Link to this definition"></a></dt>
-<dd><section id="id5">
-<h4>Parameter<a class="headerlink" href="#id5" title="Link to this heading"></a></h4>
+<dd><section id="id16">
+<h4>Parameter<a class="headerlink" href="#id16" title="Link to this heading"></a></h4>
+<p>x: torch.LongTensor with (n,3) shape</p>
+<dl class="field-list simple">
+<dt class="field-odd">rtype<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.FloatTensor with (n) shape</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="id17">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.clifford.</span></span><span class="sig-name descname"><span class="pre">KeciBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#KeciBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id17" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#dicee.models.clifford.Keci" title="dicee.models.clifford.Keci"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keci</span></code></a></p>
+<p>Without learning dimension scaling</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="id18">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.clifford.</span></span><span class="sig-name descname"><span class="pre">DeCaL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#DeCaL"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id18" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
+<p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing to nest them in
+a tree structure. You can assign the submodules as regular attributes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Submodules assigned in this way will be registered, and will have their
+parameters converted too when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
+evaluation mode.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="id19">
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#DeCaL.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id19" title="Link to this definition"></a></dt>
+<dd><section id="id20">
+<h4>Parameter<a class="headerlink" href="#id20" title="Link to this heading"></a></h4>
 <p>x: torch.LongTensor with (n,3) shape</p>
 <dl class="field-list simple">
 <dt class="field-odd">rtype<span class="colon">:</span></dt>
@@ -528,8 +1079,8 @@ of the emb_dim.
 5) s4 = sum_{i=p+1}^{p+q}(h_0r_it_i + h_ir_0t_i)
 5) s5 = sum_{i=p+q+1}^{p+q+r}(h_0r_it_i + h_ir_0t_i)</p>
 <p>and return:</p>
-<p><a href="#id6"><span class="problematic" id="id7">*</span></a>) sigma_0t = sigma_0 cdot t_0 = s0 + s1 -s2
-<a href="#id8"><span class="problematic" id="id9">*</span></a>) s3, s4 and s5</p>
+<p><a href="#id21"><span class="problematic" id="id22">*</span></a>) sigma_0t = sigma_0 cdot t_0 = s0 + s1 -s2
+<a href="#id23"><span class="problematic" id="id24">*</span></a>) s3, s4 and s5</p>
 </dd></dl>
 
 <dl class="py method">
@@ -564,7 +1115,7 @@ of the emb_dim.
 Parameter
 ———
 x: torch.LongTensor with (n,2) shape
-:rtype: torch.FloatTensor with (n, <a href="#id15"><span class="problematic" id="id16">|E|</span></a>) shape</p>
+:rtype: torch.FloatTensor with (n, <a href="#id30"><span class="problematic" id="id31">|E|</span></a>) shape</p>
 </dd></dl>
 
 <dl class="py method">
@@ -577,8 +1128,8 @@ x: torch.LongTensor with (n,2) shape
 <dt class="sig sig-object py" id="dicee.models.clifford.DeCaL.construct_cl_multivector">
 <span class="sig-name descname"><span class="pre">construct_cl_multivector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">re</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#DeCaL.construct_cl_multivector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.DeCaL.construct_cl_multivector" title="Link to this definition"></a></dt>
 <dd><p>Construct a batch of multivectors Cl_{p,q,r}(mathbb{R}^d)</p>
-<section id="id10">
-<h4>Parameter<a class="headerlink" href="#id10" title="Link to this heading"></a></h4>
+<section id="id25">
+<h4>Parameter<a class="headerlink" href="#id25" title="Link to this heading"></a></h4>
 <p>x: torch.FloatTensor with (n,d) shape</p>
 <dl class="field-list simple">
 <dt class="field-odd">returns<span class="colon">:</span></dt>

@@ -124,22 +124,92 @@
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk" title="dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LoadSaveToDisk</span></code></a></p></td>
-<td><p></p></td>
+<td><p>Handle the saving and loading of a knowledge graph to and from disk.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.save_load_disk.</span></span><span class="sig-name descname"><span class="pre">LoadSaveToDisk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk" title="Link to this definition"></a></dt>
-<dd><dl class="py method">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.save_load_disk.</span></span><span class="sig-name descname"><span class="pre">LoadSaveToDisk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk" title="Link to this definition"></a></dt>
+<dd><p>Handle the saving and loading of a knowledge graph to and from disk.</p>
+<p>This class provides functionality to serialize and deserialize the components of a knowledge graph,
+such as entity and relation indices, datasets, and byte-pair encoding mappings, to and from disk storage.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.kg">
+<span class="sig-name descname"><span class="pre">kg</span></span><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.kg" title="Link to this definition"></a></dt>
+<dd><p>An instance of the knowledge graph to be saved or loaded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.save">
-<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.save" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.save" title="Link to this definition"></a></dt>
+<dd><p>Save the knowledge graph components to disk.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.load">
-<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.load" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.load" title="Link to this definition"></a></dt>
+<dd><p>Load the knowledge graph components from disk.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd><p>Save the knowledge graph components to disk.</p>
+<p>This method serializes various components of the knowledge graph such as entity and relation indices,
+datasets, and byte-pair encoding mappings, and saves them to the specified file paths in the knowledge
+graph instance. The method handles different data types and structures based on the configuration of
+the knowledge graph.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>AssertionError</strong> – If the path for serialization is not set or other required conditions are not met.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The method checks if the ‘path_for_serialization’ attribute is set in the knowledge graph instance.</p></li>
+<li><p>Depending on the configuration (e.g., whether byte-pair encoding is used), different components are saved.</p></li>
+<li><p>The method uses custom functions like ‘save_pickle’ and ‘save_numpy_ndarray’ for serialization.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd><p>Load the knowledge graph components from disk.</p>
+<p>This method deserializes various components of the knowledge graph such as entity and relation indices,
+datasets, and byte-pair encoding mappings from the specified file paths in the knowledge graph instance.
+The method reconstructs the knowledge graph instance with the loaded data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>AssertionError</strong> – If the path for deserialization is not set or other required conditions are not met.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The method checks if the ‘path_for_deserialization’ attribute is set in the knowledge graph instance.</p></li>
+<li><p>The method updates the knowledge graph instance with the loaded components.</p></li>
+<li><p>The method uses custom functions like ‘load_pickle’ and ‘load_numpy_ndarray’ for deserialization.</p></li>
+<li><p>If evaluation models are used, additional components like vocabularies and constraints are also loaded.</p></li>
+</ul>
+</dd></dl>
 
 </dd></dl>
 

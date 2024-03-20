@@ -130,7 +130,7 @@
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.pykeen_models.PykeenKGE" title="dicee.models.pykeen_models.PykeenKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PykeenKGE</span></code></a></p></td>
-<td><p>A class for using knowledge graph embedding models implemented in Pykeen</p></td>
+<td><p>A class for using knowledge graph embedding models implemented in Pykeen.</p></td>
 </tr>
 </tbody>
 </table>
@@ -138,19 +138,117 @@
 <dt class="sig sig-object py" id="dicee.models.pykeen_models.PykeenKGE">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.pykeen_models.</span></span><span class="sig-name descname"><span class="pre">PykeenKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/pykeen_models.html#PykeenKGE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
-<p>A class for using knowledge graph embedding models implemented in Pykeen</p>
-<p>Notes:
-Pykeen_DistMult: C
-Pykeen_ComplEx:
-Pykeen_QuatE:
-Pykeen_MuRE:
-Pykeen_CP:
-Pykeen_HolE:
-Pykeen_HolE:</p>
+<p>A class for using knowledge graph embedding models implemented in Pykeen.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> (<em>dict</em>) – A dictionary of arguments containing hyperparameters and settings for the model,
+such as embedding dimensions, random seed, and model-specific kwargs.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.pykeen_models.PykeenKGE.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.name" title="Link to this definition"></a></dt>
+<dd><p>The name identifier for the PykeenKGE model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.pykeen_models.PykeenKGE.model">
+<span class="sig-name descname"><span class="pre">model</span></span><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.model" title="Link to this definition"></a></dt>
+<dd><p>The Pykeen model instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pykeen.models.base.Model</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.pykeen_models.PykeenKGE.loss_history">
+<span class="sig-name descname"><span class="pre">loss_history</span></span><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.loss_history" title="Link to this definition"></a></dt>
+<dd><p>A list to store the training loss history.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>list</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.pykeen_models.PykeenKGE.args">
+<span class="sig-name descname"><span class="pre">args</span></span><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.args" title="Link to this definition"></a></dt>
+<dd><p>The arguments used to initialize the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.pykeen_models.PykeenKGE.entity_embeddings">
+<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.entity_embeddings" title="Link to this definition"></a></dt>
+<dd><p>Entity embeddings learned by the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.nn.Embedding</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.pykeen_models.PykeenKGE.relation_embeddings">
+<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.relation_embeddings" title="Link to this definition"></a></dt>
+<dd><p>Relation embeddings learned by the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.nn.Embedding</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.pykeen_models.PykeenKGE.interaction">
+<span class="sig-name descname"><span class="pre">interaction</span></span><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.interaction" title="Link to this definition"></a></dt>
+<dd><p>Interaction module used by the Pykeen model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pykeen.nn.modules.Interaction</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.pykeen_models.PykeenKGE.forward_k_vs_all">
-<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/pykeen_models.html#PykeenKGE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.forward_k_vs_all" title="Link to this definition"></a></dt>
-<dd><p># =&gt; Explicit version by this we can apply bn and dropout</p>
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/pykeen_models.html#PykeenKGE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.forward_k_vs_all" title="Link to this definition"></a></dt>
+<dd><p>Compute scores for all entities given a batch of head entities and relations.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.pykeen_models.PykeenKGE.forward_triples">
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/pykeen_models.html#PykeenKGE.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.forward_triples" title="Link to this definition"></a></dt>
+<dd><p>Compute scores for a batch of triples.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.pykeen_models.PykeenKGE.forward_k_vs_sample">
+<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/pykeen_models.html#PykeenKGE.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.forward_k_vs_sample" title="Link to this definition"></a></dt>
+<dd><p>Compute scores against a sampled subset of entities.</p>
+</dd></dl>
+
+<p class="rubric">Notes</p>
+<p>This class provides an interface for using knowledge graph embedding models implemented
+in Pykeen. It initializes Pykeen models based on the provided arguments and allows for
+scoring triples and conducting knowledge graph embedding experiments.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/pykeen_models.html#PykeenKGE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd><p>TODO: Format in Numpy-style documentation</p>
+<p># =&gt; Explicit version by this we can apply bn and dropout</p>
 <p># (1) Retrieve embeddings of heads and relations +  apply Dropout &amp; Normalization if given.
 h, r = self.get_head_relation_representation(x)
 # (2) Reshape (1).
@@ -173,9 +271,10 @@ return self.interaction.score_t(h=h, r=r, all_entities=t, slice_size=1)</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.pykeen_models.PykeenKGE.forward_triples">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/pykeen_models.html#PykeenKGE.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.forward_triples" title="Link to this definition"></a></dt>
-<dd><p># =&gt; Explicit version by this we can apply bn and dropout</p>
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/pykeen_models.html#PykeenKGE.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd><p>TODO: Format in Numpy-style documentation</p>
+<p># =&gt; Explicit version by this we can apply bn and dropout</p>
 <p># (1) Retrieve embeddings of heads, relations and tails and apply Dropout &amp; Normalization if given.
 h, r, t = self.get_triple_representation(x)
 # (2) Reshape (1).
@@ -190,9 +289,15 @@ return self.interaction.score(h=h, r=r, t=t, slice_size=None, slice_dim=0)</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.pykeen_models.PykeenKGE.forward_k_vs_sample">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/pykeen_models.html#PykeenKGE.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.pykeen_models.PykeenKGE.forward_k_vs_sample" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="id2">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/pykeen_models.html#PykeenKGE.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd><p>Forward pass for K vs. Sample.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – This function is not implemented in the current model.</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 

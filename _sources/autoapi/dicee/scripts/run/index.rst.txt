@@ -18,9 +18,19 @@ Functions
 
 
 
-.. py:function:: get_default_arguments(description=None)
+.. py:function:: get_default_arguments(description: Optional[str] = None) -> argparse.Namespace
 
-   Extends pytorch_lightning Trainer's arguments with ours
+   Get default command-line arguments for the knowledge graph embedding execution.
+
+   This function returns a set of default command-line arguments that can be used to configure the knowledge graph
+   embedding execution. It includes parameters related to dataset paths, model selection, training settings, optimization,
+   and more.
+
+   :param description: A description of the command-line arguments (default is None).
+   :type description: str, optional
+
+   :returns: A namespace containing the default command-line arguments.
+   :rtype: argparse.Namespace
 
 
 .. py:function:: main()

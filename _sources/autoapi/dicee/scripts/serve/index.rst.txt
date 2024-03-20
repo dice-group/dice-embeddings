@@ -46,7 +46,16 @@ Attributes
 
    
 
-.. py:function:: get_default_arguments()
+.. py:function:: get_default_arguments() -> argparse.Namespace
+
+   Get default command-line arguments for a specific task.
+
+   This function returns a set of default command-line arguments that are used for a specific task. The arguments
+   include options for specifying the path to a pre-trained model, the name of a vector database collection,
+   the location of the collection, host information, and port number.
+
+   :returns: A namespace containing the default command-line arguments.
+   :rtype: argparse.Namespace
 
 
 .. py:function:: root()
@@ -64,10 +73,46 @@ Attributes
 .. py:class:: NeuralSearcher(args)
 
 
-   .. py:method:: get(entity: str)
+   A class for performing neural-based vector search using a pre-trained model and a vector database.
+
+   This class is designed for searching for entities in a vector database using a neural network-based model.
+   It initializes the model and the Qdrant client for performing vector searches.
+
+   :param args: A namespace containing the configuration and settings for the searcher.
+   :type args: argparse.Namespace
+
+   .. attribute:: collection_name
+
+      The name of the vector database collection to perform searches in.
+
+      :type: str
+
+   .. attribute:: model
+
+      An instance of the knowledge graph embedding model for encoding entities into vectors.
+
+      :type: KGE
+
+   .. attribute:: qdrant_client
+
+      An instance of the Qdrant client for interacting with the vector database.
+
+      :type: QdrantClient
+
+   .. method:: search(entity: str) -> List[Dict[str, Union[str, float]]]
+
+      Search for the closest vectors to the input entity in the vector database.
 
 
-   .. py:method:: search(entity: str)
+   .. py:method:: search(entity: str) -> List[Dict[str, Union[str, float]]]
+
+      Search for the closest vectors to the input entity in the vector database.
+
+      :param entity: The entity for which to find the closest matches in the database.
+      :type entity: str
+
+      :returns: A list of dictionaries containing search results, where each dictionary has "hit" (str) and "score" (float) keys.
+      :rtype: List[Dict[str, Union[str, float]]]
 
 
 

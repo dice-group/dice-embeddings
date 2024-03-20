@@ -123,61 +123,168 @@
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.torch_trainer.TorchTrainer" title="dicee.trainer.torch_trainer.TorchTrainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TorchTrainer</span></code></a></p></td>
-<td><p>TorchTrainer for using single GPU or multi CPUs on a single node</p></td>
+<td><p>A trainer class for PyTorch models that supports training on a single GPU or multiple CPUs.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.trainer.torch_trainer.TorchTrainer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.trainer.torch_trainer.</span></span><span class="sig-name descname"><span class="pre">TorchTrainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/torch_trainer.html#TorchTrainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer.TorchTrainer" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.trainer.torch_trainer.</span></span><span class="sig-name descname"><span class="pre">TorchTrainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.trainer.torch_trainer.TorchTrainer" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../../abstracts/index.html#dicee.abstracts.AbstractTrainer" title="dicee.abstracts.AbstractTrainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractTrainer</span></code></a></p>
-<blockquote>
-<div><p>TorchTrainer for using single GPU or multi CPUs on a single node</p>
-<p>Arguments</p>
-</div></blockquote>
-<p>callbacks: list of Abstract callback instances</p>
+<p>A trainer class for PyTorch models that supports training on a single GPU or multiple CPUs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>args</strong> (<em>dict</em>) – Configuration arguments for training, including model hyperparameters and training options.</p></li>
+<li><p><strong>callbacks</strong> (<em>List</em><em>[</em><em>Callable</em><em>]</em>) – List of callback functions to be called at various points of the training process.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.TorchTrainer.loss_function">
+<span class="sig-name descname"><span class="pre">loss_function</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer.TorchTrainer.loss_function" title="Link to this definition"></a></dt>
+<dd><p>The loss function used for training.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Callable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.TorchTrainer.optimizer">
+<span class="sig-name descname"><span class="pre">optimizer</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer.TorchTrainer.optimizer" title="Link to this definition"></a></dt>
+<dd><p>The optimizer used for training.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.optim.Optimizer</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.TorchTrainer.model">
+<span class="sig-name descname"><span class="pre">model</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer.TorchTrainer.model" title="Link to this definition"></a></dt>
+<dd><p>The PyTorch model being trained.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.nn.Module</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.TorchTrainer.train_dataloaders">
+<span class="sig-name descname"><span class="pre">train_dataloaders</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer.TorchTrainer.train_dataloaders" title="Link to this definition"></a></dt>
+<dd><p>torch.utils.data.DataLoader providing access to the training data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.utils.data.DataLoader</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.TorchTrainer.training_step">
+<span class="sig-name descname"><span class="pre">training_step</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer.TorchTrainer.training_step" title="Link to this definition"></a></dt>
+<dd><p>The training step function defining the forward pass and loss computation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Callable</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.TorchTrainer.device">
+<span class="sig-name descname"><span class="pre">device</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer.TorchTrainer.device" title="Link to this definition"></a></dt>
+<dd><p>The device (CPU or GPU) on which training is performed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.device</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.TorchTrainer._run_batch">
+<span class="sig-name descname"><span class="pre">_run_batch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">i</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float:</span></span></span><a class="headerlink" href="#dicee.trainer.torch_trainer.TorchTrainer._run_batch" title="Link to this definition"></a></dt>
+<dd><p>Executes a training step for a single batch and returns the loss value.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.TorchTrainer._run_epoch">
+<span class="sig-name descname"><span class="pre">_run_epoch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epoch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float:</span></span></span><a class="headerlink" href="#dicee.trainer.torch_trainer.TorchTrainer._run_epoch" title="Link to this definition"></a></dt>
+<dd><p>Executes training for one epoch and returns the average loss.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.trainer.torch_trainer.TorchTrainer.fit">
-<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_dataloaders</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/trainer/torch_trainer.html#TorchTrainer.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer.TorchTrainer.fit" title="Link to this definition"></a></dt>
-<dd><blockquote>
-<div><p>Training starts</p>
-<p>Arguments</p>
-</div></blockquote>
-<dl class="simple">
-<dt>kwargs:Tuple</dt><dd><p>empty dictionary</p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>batch loss (float)</p>
-</dd>
-</dl>
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_dataloaders:</span> <span class="pre">torch.utils.data.DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">\*\*kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None:</span></span></span><a class="headerlink" href="#dicee.trainer.torch_trainer.TorchTrainer.fit" title="Link to this definition"></a></dt>
+<dd><p>Starts the training process for the given model and data.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.trainer.torch_trainer.TorchTrainer.forward_backward_update">
-<span class="sig-name descname"><span class="pre">forward_backward_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/trainer/torch_trainer.html#TorchTrainer.forward_backward_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer.TorchTrainer.forward_backward_update" title="Link to this definition"></a></dt>
-<dd><blockquote>
-<div><p>Compute forward, loss, backward, and parameter update</p>
-<p>Arguments</p>
-</div></blockquote>
+<span class="sig-name descname"><span class="pre">forward_backward_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float:</span></span></span><a class="headerlink" href="#dicee.trainer.torch_trainer.TorchTrainer.forward_backward_update" title="Link to this definition"></a></dt>
+<dd><p>Performs the forward pass, computes the loss, and updates model weights.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.TorchTrainer.extract_input_outputs_set_device">
+<span class="sig-name descname"><span class="pre">extract_input_outputs_set_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple[torch.Tensor,</span> <span class="pre">torch.Tensor]:</span></span></span><a class="headerlink" href="#dicee.trainer.torch_trainer.TorchTrainer.extract_input_outputs_set_device" title="Link to this definition"></a></dt>
+<dd><p>Prepares and moves batch data to the appropriate device.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_dataloaders</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.DataLoader</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd><p>Starts the training process for the given model and training data.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>batch loss (float)</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<em>torch.nn.Module</em>) – The model to be trained.</p></li>
+<li><p><strong>train_dataloaders</strong> (<em>torch.utils.data.DataLoader</em>) – A DataLoader instance providing access to the training data.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.TorchTrainer.extract_input_outputs_set_device">
-<span class="sig-name descname"><span class="pre">extract_input_outputs_set_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span></span></span><a class="reference internal" href="../../../../_modules/dicee/trainer/torch_trainer.html#TorchTrainer.extract_input_outputs_set_device"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer.TorchTrainer.extract_input_outputs_set_device" title="Link to this definition"></a></dt>
-<dd><blockquote>
-<div><p>Construct inputs and outputs from a batch of inputs with outputs From a batch of inputs and put</p>
-<p>Arguments</p>
-</div></blockquote>
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">forward_backward_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd><p>Performs the forward pass, computes the loss, performs the backward pass to compute gradients,
+and updates the model weights.</p>
 <dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_batch</strong> (<em>torch.Tensor</em>) – The batch of input features.</p></li>
+<li><p><strong>y_batch</strong> (<em>torch.Tensor</em>) – The batch of target outputs.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The loss value computed for the batch.</p>
+</dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>(tuple) mini-batch on select device</p>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">extract_input_outputs_set_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd><p>Prepares a batch by extracting inputs and outputs and moving them to the correct device.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>batch</strong> (<em>list</em>) – A list containing inputs and outputs for the batch.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple containing the batch of input features and target outputs,
+both moved to the appropriate device.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[torch.Tensor, torch.Tensor]</p>
 </dd>
 </dl>
 </dd></dl>

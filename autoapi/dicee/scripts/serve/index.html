@@ -122,7 +122,7 @@
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.scripts.serve.NeuralSearcher" title="dicee.scripts.serve.NeuralSearcher"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NeuralSearcher</span></code></a></p></td>
-<td><p></p></td>
+<td><p>A class for performing neural-based vector search using a pre-trained model and a vector database.</p></td>
 </tr>
 </tbody>
 </table>
@@ -131,8 +131,8 @@
 <h3>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h3>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.scripts.serve.get_default_arguments" title="dicee.scripts.serve.get_default_arguments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_default_arguments</span></code></a>()</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.scripts.serve.get_default_arguments" title="dicee.scripts.serve.get_default_arguments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_default_arguments</span></code></a>(→ argparse.Namespace)</p></td>
+<td><p>Get default command-line arguments for a specific task.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.scripts.serve.root" title="dicee.scripts.serve.root"><code class="xref py py-obj docutils literal notranslate"><span class="pre">root</span></code></a>()</p></td>
 <td><p></p></td>
@@ -173,8 +173,20 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.scripts.serve.get_default_arguments">
-<span class="sig-prename descclassname"><span class="pre">dicee.scripts.serve.</span></span><span class="sig-name descname"><span class="pre">get_default_arguments</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#dicee.scripts.serve.get_default_arguments" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.scripts.serve.</span></span><span class="sig-name descname"><span class="pre">get_default_arguments</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">argparse.Namespace</span></span></span><a class="headerlink" href="#dicee.scripts.serve.get_default_arguments" title="Link to this definition"></a></dt>
+<dd><p>Get default command-line arguments for a specific task.</p>
+<p>This function returns a set of default command-line arguments that are used for a specific task. The arguments
+include options for specifying the path to a pre-trained model, the name of a vector database collection,
+the location of the collection, host information, and port number.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A namespace containing the default command-line arguments.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>argparse.Namespace</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.scripts.serve.root">
@@ -194,15 +206,69 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.scripts.serve.NeuralSearcher">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.scripts.serve.</span></span><span class="sig-name descname"><span class="pre">NeuralSearcher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.scripts.serve.NeuralSearcher" title="Link to this definition"></a></dt>
-<dd><dl class="py method">
-<dt class="sig sig-object py" id="dicee.scripts.serve.NeuralSearcher.get">
-<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.scripts.serve.NeuralSearcher.get" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>A class for performing neural-based vector search using a pre-trained model and a vector database.</p>
+<p>This class is designed for searching for entities in a vector database using a neural network-based model.
+It initializes the model and the Qdrant client for performing vector searches.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>args</strong> (<em>argparse.Namespace</em>) – A namespace containing the configuration and settings for the searcher.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.scripts.serve.NeuralSearcher.collection_name">
+<span class="sig-name descname"><span class="pre">collection_name</span></span><a class="headerlink" href="#dicee.scripts.serve.NeuralSearcher.collection_name" title="Link to this definition"></a></dt>
+<dd><p>The name of the vector database collection to perform searches in.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.scripts.serve.NeuralSearcher.model">
+<span class="sig-name descname"><span class="pre">model</span></span><a class="headerlink" href="#dicee.scripts.serve.NeuralSearcher.model" title="Link to this definition"></a></dt>
+<dd><p>An instance of the knowledge graph embedding model for encoding entities into vectors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="../../index.html#dicee.KGE" title="dicee.KGE">KGE</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.scripts.serve.NeuralSearcher.qdrant_client">
+<span class="sig-name descname"><span class="pre">qdrant_client</span></span><a class="headerlink" href="#dicee.scripts.serve.NeuralSearcher.qdrant_client" title="Link to this definition"></a></dt>
+<dd><p>An instance of the Qdrant client for interacting with the vector database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>QdrantClient</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.scripts.serve.NeuralSearcher.search">
-<span class="sig-name descname"><span class="pre">search</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.scripts.serve.NeuralSearcher.search" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">search</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#dicee.scripts.serve.NeuralSearcher.search" title="Link to this definition"></a></dt>
+<dd><p>Search for the closest vectors to the input entity in the vector database.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">search</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd><p>Search for the closest vectors to the input entity in the vector database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>entity</strong> (<em>str</em>) – The entity for which to find the closest matches in the database.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of dictionaries containing search results, where each dictionary has “hit” (str) and “score” (float) keys.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[Dict[str, Union[str, float]]]</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 

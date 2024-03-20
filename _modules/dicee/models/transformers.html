@@ -109,7 +109,7 @@
 
 
 <div class="viewcode-block" id="BytE">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.BytE">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.BytE">[docs]</a>
 <span class="k">class</span> <span class="nc">BytE</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -134,13 +134,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="o">.</span><span class="n">wte</span><span class="o">.</span><span class="n">weight</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lm_head</span><span class="o">.</span><span class="n">weight</span>
 
 <div class="viewcode-block" id="BytE.loss_function">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.BytE.loss_function">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.BytE.loss_function">[docs]</a>
     <span class="k">def</span> <span class="nf">loss_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">yhat_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span><span class="n">yhat_batch</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">yhat_batch</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)),</span> <span class="n">y_batch</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">ignore_index</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BytE.forward">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.BytE.forward">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.BytE.forward">[docs]</a>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -172,7 +172,7 @@
 
 
 <div class="viewcode-block" id="BytE.generate">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.BytE.generate">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.BytE.generate">[docs]</a>
     <span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
     <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">max_new_tokens</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">top_k</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -202,7 +202,7 @@
 
 
 <div class="viewcode-block" id="BytE.training_step">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.BytE.training_step">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.BytE.training_step">[docs]</a>
     <span class="k">def</span> <span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">batch</span>
         <span class="n">yhat_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">x_batch</span><span class="p">)</span>
@@ -221,7 +221,7 @@
 
 
 <div class="viewcode-block" id="LayerNorm">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.LayerNorm">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.LayerNorm">[docs]</a>
 <span class="k">class</span> <span class="nc">LayerNorm</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; LayerNorm but with an optional bias. PyTorch doesn&#39;t support simply bias=False &quot;&quot;&quot;</span>
 
@@ -231,7 +231,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">bias</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">ndim</span><span class="p">))</span> <span class="k">if</span> <span class="n">bias</span> <span class="k">else</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="LayerNorm.forward">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.LayerNorm.forward">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.LayerNorm.forward">[docs]</a>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">layer_norm</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span> <span class="mf">1e-5</span><span class="p">)</span></div>
 </div>
@@ -239,7 +239,7 @@
 
 
 <div class="viewcode-block" id="CausalSelfAttention">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.CausalSelfAttention">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.CausalSelfAttention">[docs]</a>
 <span class="k">class</span> <span class="nc">CausalSelfAttention</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
@@ -264,7 +264,7 @@
                                  <span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">block_size</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">block_size</span><span class="p">))</span>
 
 <div class="viewcode-block" id="CausalSelfAttention.forward">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.CausalSelfAttention.forward">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.CausalSelfAttention.forward">[docs]</a>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="n">B</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">C</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>  <span class="c1"># batch size, sequence length, embedding dimensionality (n_embd)</span>
 
@@ -297,7 +297,7 @@
 
 
 <div class="viewcode-block" id="MLP">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.MLP">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.MLP">[docs]</a>
 <span class="k">class</span> <span class="nc">MLP</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
@@ -308,7 +308,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">dropout</span><span class="p">)</span>
 
 <div class="viewcode-block" id="MLP.forward">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.MLP.forward">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.MLP.forward">[docs]</a>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">c_fc</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gelu</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -320,7 +320,7 @@
 
 
 <div class="viewcode-block" id="Block">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.Block">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.Block">[docs]</a>
 <span class="k">class</span> <span class="nc">Block</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
@@ -331,7 +331,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span> <span class="o">=</span> <span class="n">MLP</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Block.forward">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.Block.forward">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.Block.forward">[docs]</a>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ln_1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ln_2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
@@ -341,7 +341,7 @@
 
 
 <div class="viewcode-block" id="GPTConfig">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.GPTConfig">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.GPTConfig">[docs]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span> <span class="nc">GPTConfig</span><span class="p">:</span>
     <span class="n">block_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1024</span>
@@ -355,7 +355,7 @@
 
 
 <div class="viewcode-block" id="GPT">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.GPT">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.GPT">[docs]</a>
 <span class="k">class</span> <span class="nc">GPT</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
@@ -389,7 +389,7 @@
         <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;number of parameters: </span><span class="si">%.2f</span><span class="s2">M&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_num_params</span><span class="p">()</span> <span class="o">/</span> <span class="mf">1e6</span><span class="p">,))</span>
 
 <div class="viewcode-block" id="GPT.get_num_params">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.GPT.get_num_params">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.GPT.get_num_params">[docs]</a>
     <span class="k">def</span> <span class="nf">get_num_params</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">non_embedding</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return the number of parameters in the model.</span>
@@ -412,7 +412,7 @@
             <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">normal_</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="mf">0.02</span><span class="p">)</span>
 
 <div class="viewcode-block" id="GPT.forward">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.GPT.forward">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.GPT.forward">[docs]</a>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">targets</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">device</span> <span class="o">=</span> <span class="n">idx</span><span class="o">.</span><span class="n">device</span>
         <span class="n">b</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">idx</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
@@ -443,7 +443,7 @@
 
 
 <div class="viewcode-block" id="GPT.crop_block_size">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.GPT.crop_block_size">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.GPT.crop_block_size">[docs]</a>
     <span class="k">def</span> <span class="nf">crop_block_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_size</span><span class="p">):</span>
         <span class="c1"># model surgery to decrease the block size if necessary</span>
         <span class="c1"># e.g. we may load the GPT2 pretrained model checkpoint (block size 1024)</span>
@@ -457,7 +457,7 @@
 
 
 <div class="viewcode-block" id="GPT.from_pretrained">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.GPT.from_pretrained">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.GPT.from_pretrained">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">from_pretrained</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model_type</span><span class="p">,</span> <span class="n">override_args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">assert</span> <span class="n">model_type</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;gpt2&#39;</span><span class="p">,</span> <span class="s1">&#39;gpt2-medium&#39;</span><span class="p">,</span> <span class="s1">&#39;gpt2-large&#39;</span><span class="p">,</span> <span class="s1">&#39;gpt2-xl&#39;</span><span class="p">}</span>
@@ -517,7 +517,7 @@
 
 
 <div class="viewcode-block" id="GPT.configure_optimizers">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.GPT.configure_optimizers">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.GPT.configure_optimizers">[docs]</a>
     <span class="k">def</span> <span class="nf">configure_optimizers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weight_decay</span><span class="p">,</span> <span class="n">learning_rate</span><span class="p">,</span> <span class="n">betas</span><span class="p">,</span> <span class="n">device_type</span><span class="p">):</span>
         <span class="c1"># start with all of the candidate parameters</span>
         <span class="n">param_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">pn</span><span class="p">:</span> <span class="n">p</span> <span class="k">for</span> <span class="n">pn</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">()}</span>
@@ -546,7 +546,7 @@
 
 
 <div class="viewcode-block" id="GPT.estimate_mfu">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.GPT.estimate_mfu">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/transformers/index.html#dicee.models.transformers.GPT.estimate_mfu">[docs]</a>
     <span class="k">def</span> <span class="nf">estimate_mfu</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fwdbwd_per_iter</span><span class="p">,</span> <span class="n">dt</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; estimate model flops utilization (MFU) in units of A100 bfloat16 peak FLOPS &quot;&quot;&quot;</span>
         <span class="c1"># first estimate the number of flops we do per iteration.</span>
