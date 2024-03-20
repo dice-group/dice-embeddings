@@ -24,7 +24,8 @@ def quaternion_mul_with_unit_norm(
 
     Notes
     -----
-    The function assumes that the input quaternions have unit norm. It first normalizes the second quaternion to eliminate the scaling effect, and then performs the Hamilton product of the two quaternions.
+    The function assumes that the input quaternions have unit norm. 
+    It first normalizes the second quaternion to eliminate the scaling effect, and then performs the Hamilton product of the two quaternions.
     """
     (
         a_h,
@@ -359,7 +360,8 @@ class QMult(BaseKGE):
         Computes scores for a batch of triples against a sampled subset of entities in a K-vs-Sample setting.
 
         Given a batch of head entities and relations (h,r), this method computes the scores for all possible triples
-        formed with these head entities and relations against a subset of entities, i.e., [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|). TODO: Add mathematical format for sphinx.
+        formed with these head entities and relations against a subset of entities, i.e., 
+        [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|). TODO: Add mathematical format for sphinx.
         The subset of entities is specified by the `target_entity_idx`, which is an integer index representing a specific entity.
         Given a batch of head entities and relations => shape (size of batch,| Entities|).
 
