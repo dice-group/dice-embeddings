@@ -8,13 +8,6 @@ from qdrant_client import QdrantClient
 app = FastAPI()
 # Create a neural searcher instance
 neural_searcher = None
-
-
-@app.get("/api/search")
-def search_startup(q: str):
-    return {"result": neural_searcher.search(entity=q)}
-
-
 def get_default_arguments() -> argparse.Namespace:
     """
     Get default command-line arguments for a specific task.
@@ -46,9 +39,19 @@ def get_default_arguments() -> argparse.Namespace:
     )
     parser.add_argument("--host", type=str, default="0.0.0.0")
     parser.add_argument("--port", type=int, default=8000)
-
     return parser.parse_args()
 
+@app.get("/")
+async def root():
+    return {"message": "Hello Dice Embedding User"}
+
+@app.get("/api/search")
+async def search_embeddings(q: str):
+    return {"result": neural_searcher.search(entity=q)}
+
+@app.get("/api/get")
+async def retrieve_embeddings(q: str):
+    return {"result": neural_searcher.get(entity=q)}
 
 class NeuralSearcher:
     """
@@ -99,9 +102,7 @@ class NeuralSearcher:
             A list of dictionaries containing search results, where each dictionary has "hit" (str) and "score" (float) keys.
         """
         # Convert text query into vector
-        vector = self.model.get_transductive_entity_embeddings(
-            indices=[entity], as_list=True
-        )[0]
+        vector = self.model.get_transductive_entity_embeddings(indices=[entity], as_list=True)[0]
 
         # Use `vector` for search for closest vectors in the collection
         search_result = self.qdrant_client.search(

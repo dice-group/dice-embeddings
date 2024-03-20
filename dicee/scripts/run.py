@@ -91,6 +91,8 @@ def get_default_arguments(description: Optional[str] = None) -> argparse.Namespa
             "Shallom",
             "DistMult",
             "TransE",
+            "DeCaL",
+            "BytE",
             "Pykeen_MuRE",
             "Pykeen_QuatE",
             "Pykeen_DistMult",
@@ -105,6 +107,7 @@ def get_default_arguments(description: Optional[str] = None) -> argparse.Namespa
             "Pykeen_TransR",
             "Pykeen_TuckER",
             "Pykeen_ComplEx",
+            "LFMult",
         ],
         help="Available knowledge graph embedding models. "
         "To use other knowledge graph embedding models available in python, e.g.,"
@@ -115,16 +118,16 @@ def get_default_arguments(description: Optional[str] = None) -> argparse.Namespa
         type=str,
         default="Adam",
         help="An optimizer",
-        choices=["Adam", "SGD"],
+        choices=["Adam", "SGD","NAdam", "Adagrad", "ASGD"],
     )
     parser.add_argument(
         "--embedding_dim",
         type=int,
-        default=32,
+        default=256,
         help="Number of dimensions for an embedding vector. ",
     )
     parser.add_argument(
-        "--num_epochs", type=int, default=200, help="Number of epochs for training. "
+        "--num_epochs", type=int, default=100, help="Number of epochs for training. "
     )
     parser.add_argument(
         "--batch_size",
@@ -132,7 +135,7 @@ def get_default_arguments(description: Optional[str] = None) -> argparse.Namespa
         default=1024,
         help="Mini batch size. If None, automatic batch finder is applied",
     )
-    parser.add_argument("--lr", type=float, default=0.1)
+    parser.add_argument("--lr", type=float, default=0.01)
     parser.add_argument(
         "--callbacks",
         type=json.loads,
@@ -233,6 +236,24 @@ def get_default_arguments(description: Optional[str] = None) -> argparse.Namespa
         default=1,
         help="Seed for all, see pl seed_everything().",
     )
+    parser.add_argument('--p', type=int, default=0,
+                        help='P for Clifford Algebra')
+    parser.add_argument('--q', type=int, default=1,
+                        help='Q for Clifford Algebra')
+    parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
+
+    # Evaluation Related
+    parser.add_argument('--num_folds_for_cv', type=int, default=0,
+                        help='Number of folds in k-fold cross validation.'
+                             'If >2 ,no evaluation scenario is applied implies no evaluation.')
+    parser.add_argument("--eval_model", type=str, default="train_val_test",
+                        choices=["None", "train", "train_val", "train_val_test", "test"],
+                        help='Evaluating link prediction performance on data splits. ')
+    parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
+                        help='At every X number of epochs model will be saved. If None, we save 4 times.')
+    # Continual Learning
+    parser.add_argument("--continual_learning", type=str, default=None,
+                        help="The path of a folder containing a pretrained model and configurations")
     parser.add_argument(
         "--sample_triples_ratio", type=float, default=None, help="Sample input data."
     )
@@ -268,7 +289,12 @@ def get_default_arguments(description: Optional[str] = None) -> argparse.Namespa
 
 
 def main():
-    Execute(get_default_arguments()).start()
+
+    args = get_default_arguments()
+    if args.continual_learning:
+        ContinuousExecute(args).continual_start()
+    else:
+        Execute(get_default_arguments()).start()
 
 
 if __name__ == "__main__":

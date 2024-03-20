@@ -1,9 +1,9 @@
 import torch
 import torch.utils.data
-from pykeen.models import model_resolver
 from .base_model import BaseKGE
 from collections import namedtuple
 
+import traceback
 
 class PykeenKGE(BaseKGE):
     """
@@ -89,15 +89,18 @@ class PykeenKGE(BaseKGE):
                 "Pykeen model have a memory leak caused by their implementation of regularizers"
             )
             print(f"{self.name} does not seem to have any regularizer")
-
-        self.model = model_resolver.make(
-            self.name,
-            self.model_kwargs,
-            triples_factory=namedtuple(
-                "triples_factory",
-                ["num_entities", "num_relations", "create_inverse_triples"],
-            )(self.num_entities, self.num_relations, False),
-        )
+        try:
+            # lazy import
+            from pykeen.models import model_resolver
+        except:
+            print(traceback.format_exc())
+            print("Pykeen does not work with pytorch>2.0.0. Current pytorch version:",torch.__version__)
+            exit(1)
+        self.model = model_resolver. \
+            make(self.name, self.model_kwargs, triples_factory=
+        namedtuple('triples_factory',
+                   ['num_entities', 'num_relations', 'create_inverse_triples'])(
+            self.num_entities, self.num_relations, False))
         self.loss_history = []
         self.args = args
         self.entity_embeddings = None

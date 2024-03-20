@@ -2,9 +2,10 @@ import numpy as np
 import torch
 import datetime
 from typing import Tuple, List
-from .models import CMult, Pyke, DistMult, KeciBase, Keci, TransE, \
-    ComplEx, AConEx, AConvO, AConvQ, ConvQ, ConvO, ConEx, QMult, OMult, Shallom
+from .models import CMult, Pyke, DistMult, KeciBase, Keci, TransE, DeCaL,\
+    ComplEx, AConEx, AConvO, AConvQ, ConvQ, ConvO, ConEx, QMult, OMult, Shallom, LFMult
 from .models.pykeen_models import PykeenKGE
+from .models.transformers import BytE
 import time
 import pandas as pd
 import json
@@ -75,9 +76,11 @@ def timeit(func):
     return timeit_wrapper
 
 
-def save_pickle(*, data: object, file_path=str):
-    pickle.dump(data, open(file_path, "wb"))
-
+def save_pickle(*, data: object=None, file_path=str):
+    if data:
+        pickle.dump(data, open(file_path, "wb"))
+    else:
+        print("Input data is None. Nothing to save.")
 
 def load_pickle(file_path=str):
     with open(file_path, 'rb') as f:
@@ -106,9 +109,10 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
         return intialize_model(args)
 
 
-def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[object, Tuple[dict, dict]]:
+def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) -> Tuple[object, Tuple[dict, dict]]:
     """ Load weights and initialize pytorch module from namespace arguments"""
-    print(f'Loading model {model_name}...', end=' ')
+    if verbose>0:
+        print(f'Loading model {model_name}...', end=' ')
     start_time = time.time()
     # (1) Load weights..
     weights = torch.load(path_of_experiment_folder + f'/{model_name}', torch.device('cpu'))
@@ -130,9 +134,10 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[o
         # Update the training configuration
         configs["num_entities"] = num_ent
         configs["num_relations"] = num_rel
-    print(f'Done! It took {time.time() - start_time:.3f}')
+    if verbose>0:
+        print(f'Done! It took {time.time() - start_time:.3f}')
     # (4) Select the model
-    model, _ = intialize_model(configs)
+    model, _ = intialize_model(configs,verbose)
     # (5) Put (1) into (4)
     model.load_state_dict(weights)
     # (6) Set it into eval model.
@@ -143,7 +148,8 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[o
     if configs.get("byte_pair_encoding", None):
         return model, None
     else:
-        print('Loading entity and relation indexes...', end=' ')
+        if verbose>0:
+            print('Loading entity and relation indexes...', end=' ')
         try:
             # Maybe ? https://docs.python.org/3/library/mmap.html
             with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
@@ -157,7 +163,8 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt') -> Tuple[o
         except FileNotFoundError:
             print("relation_to_idx.p not found")
             relation_to_idx = dict()
-        print(f'Done! It took {time.time() - start_time:.4f}')
+        if verbose > 0:
+            print(f'Done! It took {time.time() - start_time:.4f}')
         return model, (entity_to_idx, relation_to_idx)
 
 
@@ -350,8 +357,9 @@ def read_or_load_kg(args, cls):
     return kg
 
 
-def intialize_model(args: dict) -> Tuple[object, str]:
-    print(f"Initializing {args['model']}...")
+def intialize_model(args: dict,verbose=0) -> Tuple[object, str]:
+    if verbose>0:
+        print(f"Initializing {args['model']}...")
     model_name = args['model']
     if "pykeen" in model_name.lower():
         model = PykeenKGE(args=args)
@@ -403,6 +411,15 @@ def intialize_model(args: dict) -> Tuple[object, str]:
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'CMult':
         model = CMult(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'BytE':
+        model = BytE(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'LFMult':
+        model = LFMult(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'DeCaL':
+        model =DeCaL(args=args)
         form_of_labelling = 'EntityPrediction'
     else:
         raise ValueError(f"--model_name: {model_name} is not found.")
@@ -607,7 +624,19 @@ def download_file(url, destination_folder="."):
         print(f"Failed to download: {url}")
 
 
-def download_files_from_url(base_url, destination_folder="."):
+def download_files_from_url(base_url:str, destination_folder=".")->None:
+    """
+
+    Parameters
+    ----------
+    base_url: e.g. "https://files.dice-research.org/projects/DiceEmbeddings/KINSHIP-Keci-dim128-epoch256-KvsAll"
+
+    destination_folder: e.g. "KINSHIP-Keci-dim128-epoch256-KvsAll"
+
+    Returns
+    -------
+
+    """
     # lazy import
     from bs4 import BeautifulSoup
 
@@ -622,7 +651,8 @@ def download_files_from_url(base_url, destination_folder="."):
         hrefs = [i for i in hrefs if len(i) > 3 and "." in i]
         for file_url in hrefs:
             download_file(base_url + "/" + file_url, destination_folder)
-
+    else:
+        print("ERROR:", response.status_code)
 
 def download_pretrained_model(url: str) -> str:
     assert url[-1] != "/"

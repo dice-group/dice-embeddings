@@ -34,21 +34,24 @@ def construct_dataset(*,
                       scoring_technique: str,
                       neg_ratio: int,
                       label_smoothing_rate: float,
-                      byte_pair_encoding=None
+                      byte_pair_encoding=None,
+                      block_size: int = None
                       ) -> torch.utils.data.Dataset:
-    if byte_pair_encoding and scoring_technique == 'NegSample':
+    if ordered_bpe_entities and byte_pair_encoding and scoring_technique == 'NegSample':
         train_set = BPE_NegativeSamplingDataset(
             train_set=torch.tensor(train_set, dtype=torch.long),
             ordered_shaped_bpe_entities=torch.tensor(
                 [shaped_bpe_ent for (str_ent, bpe_ent, shaped_bpe_ent) in ordered_bpe_entities]),
             neg_ratio=neg_ratio)
-    elif byte_pair_encoding and scoring_technique in ['KvsAll', "AllvsAll"]:
+    elif ordered_bpe_entities and byte_pair_encoding and scoring_technique in ['KvsAll', "AllvsAll"]:
         train_set = MultiLabelDataset(train_set=torch.tensor(train_set, dtype=torch.long),
                                       train_indices_target=train_target_indices, target_dim=target_dim,
                                       torch_ordered_shaped_bpe_entities=torch.tensor(
                                           [shaped_bpe_ent for (str_ent, bpe_ent, shaped_bpe_ent) in
-                                           ordered_bpe_entities])
-                                      )
+                                           ordered_bpe_entities]))
+    elif byte_pair_encoding:
+        # Multi-class classification based on transformer model's training.
+        train_set = MultiClassClassificationDataset(train_set, block_size=block_size)
     elif scoring_technique == 'NegSample':
         # Binary-class.
         train_set = TriplePredictionDataset(train_set=train_set,
@@ -162,6 +165,48 @@ class MultiLabelDataset(torch.utils.data.Dataset):
         if len(indices) > 0:
             y_vec[indices] = 1.0
         return self.train_set[idx], y_vec
+
+
+class MultiClassClassificationDataset(torch.utils.data.Dataset):
+    """
+       Dataset for the 1vsALL training strategy
+
+       Parameters
+       ----------
+       train_set_idx
+           Indexed triples for the training.
+       entity_idxs
+           mapping.
+       relation_idxs
+           mapping.
+       form
+           ?
+       num_workers
+           int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
+
+
+
+       Returns
+       -------
+       torch.utils.data.Dataset
+       """
+
+    def __init__(self, subword_units: np.ndarray, block_size: int = 8):
+        super().__init__()
+        assert isinstance(subword_units, np.ndarray)
+        assert len(subword_units) > 0
+        self.train_data = torch.LongTensor(subword_units)
+        self.block_size = block_size
+        self.num_of_data_points = len(self.train_data) - block_size
+        self.collate_fn = None
+
+    def __len__(self):
+        return self.num_of_data_points
+
+    def __getitem__(self, idx):
+        x = self.train_data[idx:idx + self.block_size]
+        y = self.train_data[idx + 1: idx + 1 + self.block_size]
+        return x, y
 
 
 class OnevsAllDataset(torch.utils.data.Dataset):

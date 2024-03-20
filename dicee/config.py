@@ -125,8 +125,16 @@ class Namespace(argparse.Namespace):
         "WIP: Byte pair encoding"
 
         self.adaptive_swa: bool = False
-        "WIP: Adaptive stochastic weight averaging"
+        "Adaptive stochastic weight averaging"
 
+        self.swa: bool = False
+        "Stochastic weight averaging"
+
+        self.block_size: int = None
+        "block size of LLM"
+
+        self.continual_learning=None
+        "Path of a pretrained model size of LLM"
 
     def __iter__(self):
         # Iterate

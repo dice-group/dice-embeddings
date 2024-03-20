@@ -5,8 +5,8 @@ import numpy as np
 import torch
 
 import dicee.models.base_model
-from .static_funcs import save_checkpoint_model, exponential_function, save_pickle
-from .abstracts import AbstractCallback, AbstractPPECallback
+from .static_funcs import save_checkpoint_model, save_pickle
+from .abstracts import AbstractCallback
 import pandas as pd
 from lightning import *
 
@@ -592,6 +592,7 @@ class ASWA(AbstractPPECallback):
             num_epochs, path, epoch_to_start=None, last_percent_to_consider=None
         )
         self.initial_eval_setting = None
+        self.epoch_count=0
         self.alphas = []
         self.val_aswa = -1
 

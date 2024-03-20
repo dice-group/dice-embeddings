@@ -13,6 +13,7 @@ import numpy as np
 import concurrent
 from typing import Callable, Dict, List, Tuple
 from typing import Union
+import itertools
 
 
 class PreprocessKG:
@@ -70,7 +71,9 @@ class PreprocessKG:
             If the specified backend is not supported.
         """
         # Process
-        if self.kg.byte_pair_encoding:
+        if self.kg.byte_pair_encoding and self.kg.padding:
+            self.preprocess_with_byte_pair_encoding_with_padding()
+        elif self.kg.byte_pair_encoding:
             self.preprocess_with_byte_pair_encoding()
         elif self.kg.backend == "polars":
             self.preprocess_with_polars()
@@ -125,12 +128,13 @@ class PreprocessKG:
         )
 
         print("Creating dataset...")
-        if self.kg.byte_pair_encoding:
+        if self.kg.byte_pair_encoding and self.kg.padding:
             assert isinstance(self.kg.train_set, list)
             assert isinstance(self.kg.train_set[0], tuple)
             assert isinstance(self.kg.train_set[0][0], tuple)
             assert isinstance(self.kg.train_set[0][1], tuple)
             assert isinstance(self.kg.train_set[0][2], tuple)
+
             if self.kg.training_technique == "NegSample":
                 """No need to do anything"""
             elif self.kg.training_technique == "KvsAll":
@@ -209,6 +213,25 @@ class PreprocessKG:
                 )
             if self.kg.max_length_subword_tokens is None and self.kg.byte_pair_encoding:
                 self.kg.max_length_subword_tokens = len(self.kg.train_set[0][0])
+        elif self.kg.byte_pair_encoding:
+            # (1) self.kg.train_set list of tuples, where each tuple consists of three tuples representing input triple.
+            # (2) Flatten (1) twice to obtain list of numbers
+
+            space_token = self.kg.enc.encode(" ")[0]
+            end_token = self.kg.enc.encode(".")[0]
+            triples = []
+            for (h, r, t) in self.kg.train_set:
+                x = []
+                x.extend(h)
+                x.append(space_token)
+                x.extend(r)
+                x.append(space_token)
+                x.extend(t)
+                x.append(end_token)
+                # print(self.kg.enc.decode(x))
+                triples.extend(x)
+            self.kg.train_set = np.array(triples)
+
         else:
             """No need to do anything. We create datasets for other models in the pyorch dataset construction"""
             # @TODO: Either we should move the all pytorch dataset construciton into here
@@ -417,6 +440,15 @@ class PreprocessKG:
             "object",
         ]
         # (1)  Add recipriocal or noisy triples into raw_train_set, raw_valid_set, raw_test_set
+        self.kg.raw_train_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprical,
+                                                          eval_model=self.kg.eval_model,
+                                                          df=self.kg.raw_train_set, info="Train")
+        self.kg.raw_valid_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprical,
+                                                          eval_model=self.kg.eval_model,
+                                                          df=self.kg.raw_valid_set, info="Validation")
+        self.kg.raw_test_set = apply_reciprical_or_noise(add_reciprical=self.kg.add_reciprical,
+                                                         eval_model=self.kg.eval_model,
+                                                         df=self.kg.raw_test_set, info="Test")
         self.kg.raw_train_set = apply_reciprical_or_noise(
             add_reciprical=self.kg.add_reciprical,
             eval_model=self.kg.eval_model,
@@ -437,6 +469,11 @@ class PreprocessKG:
         )
 
         # (2) Transformation from DataFrame to list of tuples.
+
+        self.kg.train_set = self.__replace_values_df(df=self.kg.raw_train_set, f=self.kg.enc.encode)
+        # We need to add empty space for transformers
+        self.kg.valid_set = self.__replace_values_df(df=self.kg.raw_valid_set, f=self.kg.enc.encode)
+        self.kg.test_set = self.__replace_values_df(df=self.kg.raw_test_set, f=self.kg.enc.encode)
         # self.kg.train_set: List[Tuple[Tuple[int], Tuple[int], Tuple[int]]]
         # valid_set: Union[List, List[Tuple[Tuple[int], Tuple[int], Tuple[int]]]]
         # test_set: Union[List, List[Tuple[Tuple[int], Tuple[int], Tuple[int]]]]
@@ -452,6 +489,18 @@ class PreprocessKG:
             df=self.kg.raw_test_set, f=self.kg.enc.encode
         )
 
+    @timeit
+    def preprocess_with_byte_pair_encoding_with_padding(self) -> None:
+        """
+
+
+        Returns
+        -------
+
+        """
+
+        self.preprocess_with_byte_pair_encoding()
+
         self.kg.max_length_subword_tokens = self.__finding_max_token(
             self.kg.train_set + self.kg.valid_set + self.kg.test_set
         )
@@ -460,6 +509,8 @@ class PreprocessKG:
         bpe_subwords_to_shaped_bpe_entities = dict()
         bpe_subwords_to_shaped_bpe_relations = dict()
 
+        print("The longest sequence of sub-word units of entities and relations is ",
+              self.kg.max_length_subword_tokens)
         print(
             "The longest sequence of sub-word units of entities and relations is ",
             self.kg.max_length_subword_tokens,

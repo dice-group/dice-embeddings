@@ -18,7 +18,6 @@ logging.getLogger('pytorch_lightning').setLevel(0)
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 os.environ["TORCH_DISTRIBUTED_DEBUG"] = "INFO"
 
-
 class Execute:
     """ A class for Training, Retraining and Evaluation a model.
 
@@ -53,6 +52,7 @@ class Execute:
         start_time = time.time()
         kg = KG(dataset_dir=self.args.dataset_dir,
                 byte_pair_encoding=self.args.byte_pair_encoding,
+                padding=True if self.args.byte_pair_encoding and self.args.model != "BytE" else False,
                 add_noise_rate=self.args.add_noise_rate,
                 sparql_endpoint=self.args.sparql_endpoint,
                 path_single_kg=self.args.path_single_kg,
@@ -234,31 +234,32 @@ class ContinuousExecute(Execute):
     (1) Loading & Preprocessing & Serializing input data.
     (2) Training & Validation & Testing
     (3) Storing all necessary info
+
+    During the continual learning we can only modify *** num_epochs *** parameter.
+    Trained model stored in the same folder as the seed model for the training.
+    Trained model is noted with the current time.
     """
 
     def __init__(self, args):
-        assert os.path.exists(args.path_experiment_folder)
-        assert os.path.isfile(args.path_experiment_folder + '/configuration.json')
-        # (1) Load Previous input configuration
-        previous_args = load_json(args.path_experiment_folder + '/configuration.json')
-        dargs = vars(args)
-        del args
-        for k in list(dargs.keys()):
-            if dargs[k] is None:
-                del dargs[k]
-        # (2) Update (1) with new input
-        previous_args.update(dargs)
+        # (1) Current input configuration.
+        assert os.path.exists(args.continual_learning)
+        assert os.path.isfile(args.continual_learning + '/configuration.json')
+        # (2) Load previous input configuration.
+        previous_args = load_json(args.continual_learning + '/configuration.json')
+        args=vars(args)
+        #
+        previous_args["num_epochs"]=args["num_epochs"]
+        previous_args["continual_learning"]=args["continual_learning"]
+        print("Updated configuration:",previous_args)
         try:
-            report = load_json(dargs['path_experiment_folder'] + '/report.json')
+            report = load_json(args['continual_learning'] + '/report.json')
             previous_args['num_entities'] = report['num_entities']
             previous_args['num_relations'] = report['num_relations']
         except AssertionError:
             print("Couldn't find report.json.")
         previous_args = SimpleNamespace(**previous_args)
-        previous_args.full_storage_path = previous_args.path_experiment_folder
         print('ContinuousExecute starting...')
         print(previous_args)
-        # TODO: can we remove continuous_training from Execute ?
         super().__init__(previous_args, continuous_training=True)
 
     def continual_start(self) -> dict:
@@ -279,7 +280,7 @@ class ContinuousExecute(Execute):
         """
         # (1)
         self.trainer = DICE_Trainer(args=self.args, is_continual_training=True,
-                                    storage_path=self.args.path_experiment_folder)
+                                    storage_path=self.args.continual_learning)
         # (2)
         self.trained_model, form_of_labelling = self.trainer.continual_start()
 

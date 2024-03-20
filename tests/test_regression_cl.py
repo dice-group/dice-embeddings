@@ -25,7 +25,7 @@ class TestRegressionAConEx:
         args.init_param = 'xavier_normal'
         result = Execute(args).start()
 
-        args.path_experiment_folder = result['path_experiment_folder']
+        args.continual_learning = result['path_experiment_folder']
         cl_result = ContinuousExecute(args).continual_start()
 
         assert cl_result['Train']['H@10'] >= result['Train']['H@10']

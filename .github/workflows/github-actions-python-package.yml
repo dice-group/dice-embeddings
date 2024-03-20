@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9.18"]
+        python-version: ["3.10.13"]
 
     steps:
       - uses: actions/checkout@v3
@@ -18,11 +18,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip3 install .
+          pip install -e .["dev"]
+
       - name: Lint with ruff
         run: |
-          ruff  dicee/
+          ruff  --select=E501 --line-length=200 dicee/
       - name: Test with pytest
         run: |
           wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate && unzip KGs.zip
-          pytest -p no:warnings -x
+          python -m pytest -p no:warnings -x
