@@ -115,7 +115,8 @@
 
 <span class="sd">    Notes</span>
 <span class="sd">    -----</span>
-<span class="sd">    The function assumes that the input quaternions have unit norm. It first normalizes the second quaternion to eliminate the scaling effect, and then performs the Hamilton product of the two quaternions.</span>
+<span class="sd">    The function assumes that the input quaternions have unit norm. </span>
+<span class="sd">    It first normalizes the second quaternion to eliminate the scaling effect, and then performs the Hamilton product of the two quaternions.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="p">(</span>
         <span class="n">a_h</span><span class="p">,</span>
@@ -470,7 +471,8 @@
 <span class="sd">        Computes scores for a batch of triples against a sampled subset of entities in a K-vs-Sample setting.</span>
 
 <span class="sd">        Given a batch of head entities and relations (h,r), this method computes the scores for all possible triples</span>
-<span class="sd">        formed with these head entities and relations against a subset of entities, i.e., [score(h,r,x)|x \in Entities] =&gt; [0.0,0.1,...,0.8], shape=&gt; (1, |Entities|). TODO: Add mathematical format for sphinx.</span>
+<span class="sd">        formed with these head entities and relations against a subset of entities, i.e., </span>
+<span class="sd">        [score(h,r,x)|x \in Entities] =&gt; [0.0,0.1,...,0.8], shape=&gt; (1, |Entities|). TODO: Add mathematical format for sphinx.</span>
 <span class="sd">        The subset of entities is specified by the `target_entity_idx`, which is an integer index representing a specific entity.</span>
 <span class="sd">        Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|).</span>
 

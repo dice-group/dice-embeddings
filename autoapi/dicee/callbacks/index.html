@@ -77,9 +77,7 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.PseudoLabellingCallback"><code class="docutils literal notranslate"><span class="pre">PseudoLabellingCallback</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.estimate_q"><code class="docutils literal notranslate"><span class="pre">estimate_q()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.compute_convergence"><code class="docutils literal notranslate"><span class="pre">compute_convergence()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.PPE"><code class="docutils literal notranslate"><span class="pre">PPE</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.ASWA"><code class="docutils literal notranslate"><span class="pre">ASWA</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.FPPE"><code class="docutils literal notranslate"><span class="pre">FPPE</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.Eval"><code class="docutils literal notranslate"><span class="pre">Eval</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.KronE"><code class="docutils literal notranslate"><span class="pre">KronE</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.Perturb"><code class="docutils literal notranslate"><span class="pre">Perturb</span></code></a></li>
@@ -153,14 +151,8 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.PseudoLabellingCallback" title="dicee.callbacks.PseudoLabellingCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PseudoLabellingCallback</span></code></a></p></td>
 <td><p>A callback for implementing pseudo-labelling during training.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.PPE" title="dicee.callbacks.PPE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PPE</span></code></a></p></td>
-<td><p>Polyak Parameter Ensemble (PPE) callback for maintaining a running average of model parameters.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.ASWA" title="dicee.callbacks.ASWA"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ASWA</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.ASWA" title="dicee.callbacks.ASWA"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ASWA</span></code></a></p></td>
 <td><p>Implements the Adaptive Stochastic Weight Averaging (ASWA) technique.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.FPPE" title="dicee.callbacks.FPPE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FPPE</span></code></a></p></td>
-<td><p>import matplotlib.pyplot as plt</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.Eval" title="dicee.callbacks.Eval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Eval</span></code></a></p></td>
 <td><p>Callback for evaluating the model at certain epochs during training and logging the results.</p></td>
@@ -188,7 +180,7 @@
 </table>
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.callbacks.AccumulateEpochLossCallback">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">AccumulateEpochLossCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.AccumulateEpochLossCallback" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">AccumulateEpochLossCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#AccumulateEpochLossCallback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.AccumulateEpochLossCallback" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
 <p>A callback to accumulate and save epoch losses to a CSV file at the end of training.</p>
 <p>This callback listens to the end of the training process and saves the accumulated
@@ -212,7 +204,7 @@ in the specified directory.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.AccumulateEpochLossCallback.on_fit_end">
-<span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.callbacks.AccumulateEpochLossCallback.on_fit_end" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#AccumulateEpochLossCallback.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.AccumulateEpochLossCallback.on_fit_end" title="Link to this definition"></a></dt>
 <dd><p>Invoked at the end of the training process to save the epoch losses.</p>
 <p>This method is called automatically by the training loop at the end of training.
 It retrieves the loss history from the model and saves it as a CSV file in the
@@ -236,7 +228,7 @@ containing the losses of each epoch.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.callbacks.PrintCallback">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">PrintCallback</span></span><a class="headerlink" href="#dicee.callbacks.PrintCallback" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">PrintCallback</span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PrintCallback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PrintCallback" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
 <p>A callback that prints the start time of training and its total runtime upon completion.</p>
 <p>This callback demonstrates a simple usage of the PyTorch Lightning callback system,
@@ -244,7 +236,7 @@ printing a message when the training starts and another when it ends, showing ho
 long the training took.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.PrintCallback.on_fit_start">
-<span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.LightningModule</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.PrintCallback.on_fit_start" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.LightningModule</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PrintCallback.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PrintCallback.on_fit_start" title="Link to this definition"></a></dt>
 <dd><p>Invoked at the start of the fit process.</p>
 <p>Prints a message indicating that the training is starting, along with the current date and time.</p>
 <dl class="field-list simple">
@@ -262,7 +254,7 @@ long the training took.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.PrintCallback.on_fit_end">
-<span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.LightningModule</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.PrintCallback.on_fit_end" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.LightningModule</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PrintCallback.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PrintCallback.on_fit_end" title="Link to this definition"></a></dt>
 <dd><p>Invoked at the end of the fit process.</p>
 <p>Calculates and prints the total training time in an appropriate time unit (seconds, minutes, or hours).</p>
 <dl class="field-list simple">
@@ -280,7 +272,7 @@ long the training took.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.PrintCallback.on_train_batch_end">
-<span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.PrintCallback.on_train_batch_end" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PrintCallback.on_train_batch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PrintCallback.on_train_batch_end" title="Link to this definition"></a></dt>
 <dd><p>Dummy method for handling the end of a training batch. Implemented as a placeholder.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -297,7 +289,7 @@ long the training took.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.PrintCallback.on_train_epoch_end">
-<span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.PrintCallback.on_train_epoch_end" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PrintCallback.on_train_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PrintCallback.on_train_epoch_end" title="Link to this definition"></a></dt>
 <dd><p>Dummy method for handling the end of a training epoch. Implemented as a placeholder.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -316,7 +308,7 @@ long the training took.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.callbacks.KGESaveCallback">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">KGESaveCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">every_x_epoch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.KGESaveCallback" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">KGESaveCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">every_x_epoch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KGESaveCallback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KGESaveCallback" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
 <p>A callback to save the model periodically during training.</p>
 <p>This callback is intended to periodically save the current state of the model during training,
@@ -343,13 +335,13 @@ allowing for checkpointing and potential recovery of intermediate states.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.KGESaveCallback.on_epoch_end">
-<span class="sig-name descname"><span class="pre">on_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">\*\*kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.KGESaveCallback.on_epoch_end" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">\*\*kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KGESaveCallback.on_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KGESaveCallback.on_epoch_end" title="Link to this definition"></a></dt>
 <dd><p>Saves the model at specified intervals.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.KGESaveCallback.on_train_batch_end">
-<span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.KGESaveCallback.on_train_batch_end" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KGESaveCallback.on_train_batch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KGESaveCallback.on_train_batch_end" title="Link to this definition"></a></dt>
 <dd><p>Call at the end of each mini-batch during the training.</p>
 <section id="parameter">
 <h4>Parameter<a class="headerlink" href="#parameter" title="Link to this heading"></a></h4>
@@ -365,7 +357,7 @@ allowing for checkpointing and potential recovery of intermediate states.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.KGESaveCallback.on_fit_start">
-<span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.KGESaveCallback.on_fit_start" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KGESaveCallback.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KGESaveCallback.on_fit_start" title="Link to this definition"></a></dt>
 <dd><p>Called at the very beginning of fit.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -379,7 +371,7 @@ allowing for checkpointing and potential recovery of intermediate states.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.KGESaveCallback.on_train_epoch_end">
-<span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.KGESaveCallback.on_train_epoch_end" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KGESaveCallback.on_train_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KGESaveCallback.on_train_epoch_end" title="Link to this definition"></a></dt>
 <dd><p>Called at the end of the training epoch.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -393,7 +385,7 @@ allowing for checkpointing and potential recovery of intermediate states.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.KGESaveCallback.on_fit_end">
-<span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.KGESaveCallback.on_fit_end" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KGESaveCallback.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KGESaveCallback.on_fit_end" title="Link to this definition"></a></dt>
 <dd><p>Called at the end of fit.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -407,7 +399,7 @@ allowing for checkpointing and potential recovery of intermediate states.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id0">
-<span class="sig-name descname"><span class="pre">on_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.LightningModule</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.LightningModule</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KGESaveCallback.on_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
 <dd><p>Invoked at the end of each epoch to potentially save the model.</p>
 <p>Checks if the current epoch matches the saving criteria. If so, the model’s state is saved as a checkpoint.</p>
 <dl class="field-list simple">
@@ -428,7 +420,7 @@ allowing for checkpointing and potential recovery of intermediate states.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.callbacks.PseudoLabellingCallback">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">PseudoLabellingCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.LightningDataModule</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.PseudoLabellingCallback" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">PseudoLabellingCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_module</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.LightningDataModule</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PseudoLabellingCallback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PseudoLabellingCallback" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
 <p>A callback for implementing pseudo-labelling during training.</p>
 <p>Pseudo-labelling is a semi-supervised learning technique that uses the model’s predictions
@@ -467,7 +459,7 @@ for a batch of randomly created or selected unlabeled data and adds them to the 
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.PseudoLabellingCallback.create_random_data">
-<span class="sig-name descname"><span class="pre">create_random_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#dicee.callbacks.PseudoLabellingCallback.create_random_data" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">create_random_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PseudoLabellingCallback.create_random_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PseudoLabellingCallback.create_random_data" title="Link to this definition"></a></dt>
 <dd><p>Generates a batch of random triples (head entity, relation, tail entity).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -481,7 +473,7 @@ for a batch of randomly created or selected unlabeled data and adds them to the 
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.PseudoLabellingCallback.on_epoch_end">
-<span class="sig-name descname"><span class="pre">on_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.LightningModule</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.callbacks.PseudoLabellingCallback.on_epoch_end" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.LightningModule</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PseudoLabellingCallback.on_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PseudoLabellingCallback.on_epoch_end" title="Link to this definition"></a></dt>
 <dd><p>Invoked at the end of each epoch to perform pseudo-labelling.</p>
 <p>Generates or selects a batch of unlabeled data, uses the model to predict pseudo-labels,
 and adds the selected triples with high-confidence pseudo-labels to the training set.</p>
@@ -502,7 +494,7 @@ and adds the selected triples with high-confidence pseudo-labels to the training
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.callbacks.estimate_q">
-<span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">estimate_q</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eps</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#dicee.callbacks.estimate_q" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">estimate_q</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eps</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#estimate_q"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.estimate_q" title="Link to this definition"></a></dt>
 <dd><p>Estimate the rate of convergence, q, from a sequence of errors.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -535,7 +527,7 @@ that halve at each step.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.callbacks.compute_convergence">
-<span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">compute_convergence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#dicee.callbacks.compute_convergence" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">compute_convergence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">i</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#compute_convergence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.compute_convergence" title="Link to this definition"></a></dt>
 <dd><p>Compute the convergence rate of the last <cite>i</cite> elements in a sequence.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -571,131 +563,9 @@ to 2.0, indicating quadratic convergence.</p>
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="dicee.callbacks.PPE">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">PPE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch_to_start</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last_percent_to_consider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.PPE" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">AbstractPPECallback</span></code></p>
-<p>Polyak Parameter Ensemble (PPE) callback for maintaining a running average of model parameters.</p>
-<p>This callback implements the Polyak Parameter Ensemble technique, which maintains
-a running average of the model parameters across epochs to potentially improve
-generalization performance of the model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>num_epochs</strong> (<em>int</em>) – Total number of epochs in the training process.</p></li>
-<li><p><strong>path</strong> (<em>str</em>) – Path where the ensemble model and intermediate states are stored.</p></li>
-<li><p><strong>epoch_to_start</strong> (<em>int</em><em>, </em><em>optional</em>) – Epoch number from which to start applying PPE. If not specified, PPE will start from the beginning.</p></li>
-<li><p><strong>last_percent_to_consider</strong> (<em>float</em><em>, </em><em>optional</em>) – Last X percent of the epochs to consider for PPE. This parameter is used if <cite>epoch_to_start</cite> is not provided.</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.callbacks.PPE.epoch_count">
-<span class="sig-name descname"><span class="pre">epoch_count</span></span><a class="headerlink" href="#dicee.callbacks.PPE.epoch_count" title="Link to this definition"></a></dt>
-<dd><p>Counter to track the current epoch number.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.callbacks.PPE.sample_counter">
-<span class="sig-name descname"><span class="pre">sample_counter</span></span><a class="headerlink" href="#dicee.callbacks.PPE.sample_counter" title="Link to this definition"></a></dt>
-<dd><p>Counter to track the number of samples (epochs) considered in the ensemble.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.callbacks.PPE.initialize_ensemble">
-<span class="sig-name descname"><span class="pre">initialize_ensemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#dicee.callbacks.PPE.initialize_ensemble" title="Link to this definition"></a></dt>
-<dd><p>Initializes the ensemble by saving the current model’s state dict.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>model</strong> (<em>torch.nn.Module</em>) – The model from which to initialize the ensemble.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The state dict of the model used to initialize the ensemble.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.callbacks.PPE.should_averaging_start">
-<span class="sig-name descname"><span class="pre">should_averaging_start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#dicee.callbacks.PPE.should_averaging_start" title="Link to this definition"></a></dt>
-<dd><p>Checks whether parameter averaging should start based on the current epoch.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>True if averaging should start, False otherwise.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.callbacks.PPE.get_ensemble_model">
-<span class="sig-name descname"><span class="pre">get_ensemble_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#dicee.callbacks.PPE.get_ensemble_model" title="Link to this definition"></a></dt>
-<dd><p>Retrieves the ensemble model’s state dict.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>model</strong> (<em>torch.nn.Module</em>) – The current model being trained.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The state dict of the ensemble model.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.callbacks.PPE.update_ensemble">
-<span class="sig-name descname"><span class="pre">update_ensemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ensemble_state_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.PPE.update_ensemble" title="Link to this definition"></a></dt>
-<dd><p>Updates the ensemble model’s state dict with the current model’s parameters.
-This method performs an in-place update of the ensemble model’s state dict
-using the Polyak averaging formula.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>ensemble_state_dict</strong> (<em>dict</em>) – The state dict of the ensemble model to be updated.</p></li>
-<li><p><strong>current_model</strong> (<em>torch.nn.Module</em>) – The current model from which parameters are extracted to update the ensemble.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.callbacks.PPE.on_train_epoch_end">
-<span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.callbacks.PPE.on_train_epoch_end" title="Link to this definition"></a></dt>
-<dd><p>Called at the end of each training epoch to possibly update the ensemble model.
-This method checks if the conditions for starting parameter averaging are met
-and, if so, updates the ensemble model with the current model’s parameters.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>trainer</strong> (<em>Trainer</em>) – The PyTorch Lightning trainer instance.</p></li>
-<li><p><strong>model</strong> (<em>torch.nn.Module</em>) – The model being trained.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
 <dt class="sig sig-object py" id="dicee.callbacks.ASWA">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">ASWA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.ASWA" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">AbstractPPECallback</span></code></p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">ASWA</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#ASWA"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.ASWA" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
 <p>Implements the Adaptive Stochastic Weight Averaging (ASWA) technique.
 This technique keeps track of validation performance and updates the ensemble model accordingly.</p>
 <dl class="field-list simple">
@@ -741,37 +611,37 @@ This technique keeps track of validation performance and updates the ensemble mo
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.ASWA.on_fit_end">
-<span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None:</span></span></span><a class="headerlink" href="#dicee.callbacks.ASWA.on_fit_end" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None:</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#ASWA.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.ASWA.on_fit_end" title="Link to this definition"></a></dt>
 <dd><p>Applies the ASWA technique at the end of training.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.ASWA.compute_mrr">
-<span class="sig-name descname"><span class="pre">compute_mrr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float:</span></span></span><a class="headerlink" href="#dicee.callbacks.ASWA.compute_mrr" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">compute_mrr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float:</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#ASWA.compute_mrr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.ASWA.compute_mrr" title="Link to this definition"></a></dt>
 <dd><p>Computes the Mean Reciprocal Rank (MRR) on the validation dataset.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.ASWA.get_aswa_state_dict">
-<span class="sig-name descname"><span class="pre">get_aswa_state_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">OrderedDict:</span></span></span><a class="headerlink" href="#dicee.callbacks.ASWA.get_aswa_state_dict" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_aswa_state_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">OrderedDict:</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#ASWA.get_aswa_state_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.ASWA.get_aswa_state_dict" title="Link to this definition"></a></dt>
 <dd><p>Retrieves the state dictionary for the ASWA model.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.ASWA.decide">
-<span class="sig-name descname"><span class="pre">decide</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">running_model_state_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_state_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_running_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mrr_updated_ensemble_model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None:</span></span></span><a class="headerlink" href="#dicee.callbacks.ASWA.decide" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">decide</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">running_model_state_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_state_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_running_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mrr_updated_ensemble_model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None:</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#ASWA.decide"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.ASWA.decide" title="Link to this definition"></a></dt>
 <dd><p>Decides whether to update ASWA based on validation performance.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.ASWA.on_train_epoch_end">
-<span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None:</span></span></span><a class="headerlink" href="#dicee.callbacks.ASWA.on_train_epoch_end" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None:</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#ASWA.on_train_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.ASWA.on_train_epoch_end" title="Link to this definition"></a></dt>
 <dd><p>Performs the ASWA update process at the end of each training epoch.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id1">
-<span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#ASWA.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
 <dd><p>Called at the end of the fit process to apply the ASWA technique.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -785,7 +655,7 @@ This technique keeps track of validation performance and updates the ensemble mo
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id2">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">compute_mrr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">compute_mrr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#ASWA.compute_mrr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
 <dd><p>Computes the Mean Reciprocal Rank (MRR) for the model on the validation dataset.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -805,7 +675,7 @@ This technique keeps track of validation performance and updates the ensemble mo
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id3">
-<span class="sig-name descname"><span class="pre">get_aswa_state_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">OrderedDict</span></span></span><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_aswa_state_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">OrderedDict</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#ASWA.get_aswa_state_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
 <dd><p>Retrieves the state dictionary for the ASWA model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -822,7 +692,7 @@ This technique keeps track of validation performance and updates the ensemble mo
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id4">
-<span class="sig-name descname"><span class="pre">decide</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">running_model_state_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">OrderedDict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_state_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">OrderedDict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_running_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mrr_updated_ensemble_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">decide</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">running_model_state_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">OrderedDict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ensemble_state_dict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">OrderedDict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_running_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mrr_updated_ensemble_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#ASWA.decide"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
 <dd><p>Decides whether to update the ASWA model based on the validation performance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -844,7 +714,7 @@ This technique keeps track of validation performance and updates the ensemble mo
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id5">
-<span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#ASWA.on_train_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
 <dd><p>Called at the end of each training epoch to possibly update the ASWA model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -859,37 +729,8 @@ This technique keeps track of validation performance and updates the ensemble mo
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="dicee.callbacks.FPPE">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">FPPE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last_percent_to_consider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.FPPE" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">AbstractPPECallback</span></code></p>
-<p>import matplotlib.pyplot as plt
-import numpy as np
-def exponential_function(x: np.ndarray, lam: float, ascending_order=True) -&gt; torch.FloatTensor:</p>
-<blockquote>
-<div><p># A sequence in exponentially decreasing order
-result = np.exp(-lam * x) / np.sum(np.exp(-lam * x))
-assert 0.999 &lt; sum(result) &lt; 1.0001
-result = np.flip(result) if ascending_order else result
-return torch.tensor(result.tolist())</p>
-</div></blockquote>
-<p>N = 100
-equal_weights = np.ones(N) / N
-plt.plot(equal_weights, ‘r’, label=”Equal”)
-plt.plot(exponential_function(np.arange(N), lam=0.1,), ‘c-’, label=”Exp. forgetful with 0.1”)
-plt.plot(exponential_function(np.arange(N), lam=0.05), ‘g-’, label=”Exp. forgetful with 0.05”)
-plt.plot(exponential_function(np.arange(N), lam=0.025), ‘b-’, label=”Exp. forgetful with 0.025”)
-plt.plot(exponential_function(np.arange(N), lam=0.01), ‘k-’, label=”Exp. forgetful with 0.01”)
-plt.title(‘Ensemble coefficients’)
-plt.xlabel(‘Epochs’)
-plt.ylabel(‘Coefficients’)
-plt.legend()
-plt.savefig(‘ensemble_coefficients.pdf’)
-plt.show()</p>
-</dd></dl>
-
-<dl class="py class">
 <dt class="sig sig-object py" id="dicee.callbacks.Eval">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">Eval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.Eval" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">Eval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#Eval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.Eval" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
 <p>Callback for evaluating the model at certain epochs during training and logging the results.</p>
 <dl class="field-list simple">
@@ -924,19 +765,19 @@ plt.show()</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.Eval.on_fit_end">
-<span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None:</span></span></span><a class="headerlink" href="#dicee.callbacks.Eval.on_fit_end" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None:</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#Eval.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.Eval.on_fit_end" title="Link to this definition"></a></dt>
 <dd><p>Saves the evaluation reports to a file and optionally generates plots for training and validation MRR.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.Eval.on_train_epoch_end">
-<span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None:</span></span></span><a class="headerlink" href="#dicee.callbacks.Eval.on_train_epoch_end" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None:</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#Eval.on_train_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.Eval.on_train_epoch_end" title="Link to this definition"></a></dt>
 <dd><p>Evaluates the model if the current epoch matches the specified epoch ratio and appends the report to <cite>reports</cite>.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.Eval.on_fit_start">
-<span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.Eval.on_fit_start" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#Eval.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.Eval.on_fit_start" title="Link to this definition"></a></dt>
 <dd><p>Called at the very beginning of fit.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -950,7 +791,7 @@ plt.show()</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id6">
-<span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#Eval.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
 <dd><p>Called at the end of the fit process. Saves the collected evaluation reports to a file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -964,7 +805,7 @@ plt.show()</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id7">
-<span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#Eval.on_train_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
 <dd><p>Called at the end of each training epoch. Performs evaluation if the current epoch matches the epoch_ratio.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -978,7 +819,7 @@ plt.show()</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.Eval.on_train_batch_end">
-<span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.callbacks.Eval.on_train_batch_end" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#Eval.on_train_batch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.Eval.on_train_batch_end" title="Link to this definition"></a></dt>
 <dd><p>Called at the end of each training batch. This method is not implemented in this callback.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -994,30 +835,30 @@ plt.show()</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.callbacks.KronE">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">KronE</span></span><a class="headerlink" href="#dicee.callbacks.KronE" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">KronE</span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KronE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KronE" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
 <p>Callback for augmenting triple representations with Kronecker product embeddings during training.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.KronE.batch_kronecker_product">
-<span class="sig-name descname"><span class="pre">batch_kronecker_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor:</span></span></span><a class="headerlink" href="#dicee.callbacks.KronE.batch_kronecker_product" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">batch_kronecker_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor:</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KronE.batch_kronecker_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KronE.batch_kronecker_product" title="Link to this definition"></a></dt>
 <dd><p>Computes the Kronecker product of two tensors with batch dimensions.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.KronE.get_kronecker_triple_representation">
-<span class="sig-name descname"><span class="pre">get_kronecker_triple_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexed_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple[torch.Tensor,</span> <span class="pre">torch.Tensor,</span> <span class="pre">torch.Tensor]:</span></span></span><a class="headerlink" href="#dicee.callbacks.KronE.get_kronecker_triple_representation" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_kronecker_triple_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexed_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple[torch.Tensor,</span> <span class="pre">torch.Tensor,</span> <span class="pre">torch.Tensor]:</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KronE.get_kronecker_triple_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KronE.get_kronecker_triple_representation" title="Link to this definition"></a></dt>
 <dd><p>Augments triple representations with Kronecker product embeddings.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.KronE.on_fit_start">
-<span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None:</span></span></span><a class="headerlink" href="#dicee.callbacks.KronE.on_fit_start" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None:</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KronE.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KronE.on_fit_start" title="Link to this definition"></a></dt>
 <dd><p>Overrides the model’s method to get triple representations with a method that includes Kronecker product embeddings.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id8">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">batch_kronecker_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">batch_kronecker_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KronE.batch_kronecker_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
 <dd><p>Computes the Kronecker product of two tensors <cite>a</cite> and <cite>b</cite> with batch dimensions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1037,7 +878,7 @@ plt.show()</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id9">
-<span class="sig-name descname"><span class="pre">get_kronecker_triple_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexed_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">get_kronecker_triple_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexed_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KronE.get_kronecker_triple_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
 <dd><p>Augments triple representations with Kronecker product embeddings.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1054,7 +895,7 @@ plt.show()</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="id10">
-<span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KronE.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
 <dd><p>Overrides the model’s method to get triple representations with a method that includes Kronecker product embeddings.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1070,7 +911,7 @@ plt.show()</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.callbacks.Perturb">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">Perturb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'input'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.callbacks.Perturb" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">Perturb</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'input'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaler</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#Perturb"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.Perturb" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
 <p>Implements a three-level perturbation technique for knowledge graph embedding models during training.
 The perturbations can be applied at the input, parameter, or output levels.</p>
@@ -1137,7 +978,7 @@ The perturbations can be applied at the input, parameter, or output levels.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.Perturb.on_train_batch_start">
-<span class="sig-name descname"><span class="pre">on_train_batch_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.callbacks.Perturb.on_train_batch_start" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_train_batch_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">lightning.Trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#Perturb.on_train_batch_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.Perturb.on_train_batch_start" title="Link to this definition"></a></dt>
 <dd><p>Applies perturbation to the batch data points before the training batch starts.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>

@@ -16,9 +16,7 @@ Classes
    dicee.callbacks.PrintCallback
    dicee.callbacks.KGESaveCallback
    dicee.callbacks.PseudoLabellingCallback
-   dicee.callbacks.PPE
    dicee.callbacks.ASWA
-   dicee.callbacks.FPPE
    dicee.callbacks.Eval
    dicee.callbacks.KronE
    dicee.callbacks.Perturb
@@ -337,97 +335,10 @@ Functions
    to 2.0, indicating quadratic convergence.
 
 
-.. py:class:: PPE(num_epochs: int, path: str, epoch_to_start: int = None, last_percent_to_consider=None)
-
-
-   Bases: :py:obj:`AbstractPPECallback`
-
-   Polyak Parameter Ensemble (PPE) callback for maintaining a running average of model parameters.
-
-   This callback implements the Polyak Parameter Ensemble technique, which maintains
-   a running average of the model parameters across epochs to potentially improve
-   generalization performance of the model.
-
-   :param num_epochs: Total number of epochs in the training process.
-   :type num_epochs: int
-   :param path: Path where the ensemble model and intermediate states are stored.
-   :type path: str
-   :param epoch_to_start: Epoch number from which to start applying PPE. If not specified, PPE will start from the beginning.
-   :type epoch_to_start: int, optional
-   :param last_percent_to_consider: Last X percent of the epochs to consider for PPE. This parameter is used if `epoch_to_start` is not provided.
-   :type last_percent_to_consider: float, optional
-
-   .. attribute:: epoch_count
-
-      Counter to track the current epoch number.
-
-      :type: int
-
-   .. attribute:: sample_counter
-
-      Counter to track the number of samples (epochs) considered in the ensemble.
-
-      :type: int
-
-   .. py:method:: initialize_ensemble(model: torch.nn.Module) -> dict
-
-      Initializes the ensemble by saving the current model's state dict.
-
-      :param model: The model from which to initialize the ensemble.
-      :type model: torch.nn.Module
-
-      :returns: The state dict of the model used to initialize the ensemble.
-      :rtype: dict
-
-
-   .. py:method:: should_averaging_start() -> bool
-
-      Checks whether parameter averaging should start based on the current epoch.
-
-      :returns: True if averaging should start, False otherwise.
-      :rtype: bool
-
-
-   .. py:method:: get_ensemble_model(model: torch.nn.Module) -> dict
-
-      Retrieves the ensemble model's state dict.
-
-      :param model: The current model being trained.
-      :type model: torch.nn.Module
-
-      :returns: The state dict of the ensemble model.
-      :rtype: dict
-
-
-   .. py:method:: update_ensemble(ensemble_state_dict: dict, current_model: torch.nn.Module)
-
-      Updates the ensemble model's state dict with the current model's parameters.
-      This method performs an in-place update of the ensemble model's state dict
-      using the Polyak averaging formula.
-
-      :param ensemble_state_dict: The state dict of the ensemble model to be updated.
-      :type ensemble_state_dict: dict
-      :param current_model: The current model from which parameters are extracted to update the ensemble.
-      :type current_model: torch.nn.Module
-
-
-   .. py:method:: on_train_epoch_end(trainer: lightning.Trainer, model: torch.nn.Module) -> None
-
-      Called at the end of each training epoch to possibly update the ensemble model.
-      This method checks if the conditions for starting parameter averaging are met
-      and, if so, updates the ensemble model with the current model's parameters.
-
-      :param trainer: The PyTorch Lightning trainer instance.
-      :type trainer: Trainer
-      :param model: The model being trained.
-      :type model: torch.nn.Module
-
-
-
 .. py:class:: ASWA(num_epochs: int, path: str)
 
 
-   Bases: :py:obj:`AbstractPPECallback`
+   Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
    Implements the Adaptive Stochastic Weight Averaging (ASWA) technique.
    This technique keeps track of validation performance and updates the ensemble model accordingly.
@@ -537,35 +448,6 @@ Functions
       :param model: The model being trained.
       :type model: torch.nn.Module
 
-
-
-.. py:class:: FPPE(num_epochs, path, last_percent_to_consider=None)
-
-
-   Bases: :py:obj:`AbstractPPECallback`
-
-   import matplotlib.pyplot as plt
-   import numpy as np
-   def exponential_function(x: np.ndarray, lam: float, ascending_order=True) -> torch.FloatTensor:
-       # A sequence in exponentially decreasing order
-       result = np.exp(-lam * x) / np.sum(np.exp(-lam * x))
-       assert 0.999 < sum(result) < 1.0001
-       result = np.flip(result) if ascending_order else result
-       return torch.tensor(result.tolist())
-
-   N = 100
-   equal_weights = np.ones(N) / N
-   plt.plot(equal_weights, 'r', label="Equal")
-   plt.plot(exponential_function(np.arange(N), lam=0.1,), 'c-', label="Exp. forgetful with 0.1")
-   plt.plot(exponential_function(np.arange(N), lam=0.05), 'g-', label="Exp. forgetful with 0.05")
-   plt.plot(exponential_function(np.arange(N), lam=0.025), 'b-', label="Exp. forgetful with 0.025")
-   plt.plot(exponential_function(np.arange(N), lam=0.01), 'k-', label="Exp. forgetful with 0.01")
-   plt.title('Ensemble coefficients')
-   plt.xlabel('Epochs')
-   plt.ylabel('Coefficients')
-   plt.legend()
-   plt.savefig('ensemble_coefficients.pdf')
-   plt.show()
 
 
 .. py:class:: Eval(path, epoch_ratio: int = None)

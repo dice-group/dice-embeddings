@@ -3793,7 +3793,8 @@ and relation.</p>
 <span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="headerlink" href="#id56" title="Link to this definition"></a></dt>
 <dd><p>Computes scores for a batch of triples against a sampled subset of entities in a K-vs-Sample setting.</p>
 <p>Given a batch of head entities and relations (h,r), this method computes the scores for all possible triples
-formed with these head entities and relations against a subset of entities, i.e., [score(h,r,x)|x in Entities] =&gt; [0.0,0.1,…,0.8], shape=&gt; (1, <a href="#id109"><span class="problematic" id="id110">|Entities|</span></a>). TODO: Add mathematical format for sphinx.
+formed with these head entities and relations against a subset of entities, i.e.,
+[score(h,r,x)|x in Entities] =&gt; [0.0,0.1,…,0.8], shape=&gt; (1, <a href="#id109"><span class="problematic" id="id110">|Entities|</span></a>). TODO: Add mathematical format for sphinx.
 The subset of entities is specified by the <cite>target_entity_idx</cite>, which is an integer index representing a specific entity.
 Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|).</p>
 <dl class="field-list simple">
