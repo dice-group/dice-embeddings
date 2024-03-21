@@ -7,8 +7,6 @@ from dicee.models.base_model import BaseKGE
 from dicee.static_funcs import select_model
 from dicee.callbacks import (
     ASWA,
-    PPE,
-    FPPE,
     Eval,
     KronE,
     PrintCallback,
