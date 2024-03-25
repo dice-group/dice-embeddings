@@ -245,22 +245,27 @@ class LFMult(BaseKGE):
     def __init__(self,args):
         super().__init__(args)
         self.name = 'LFMult'
+        self.device_ = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
         self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
         self.degree = self.args.get("degree",0)
         self.m = int(self.embedding_dim/(1+self.degree))
-        self.x_values = torch.linspace(-2, 1, 100)
         self.num_layers = 2
         self.score_func = "comp"
         self.weight_bias = "diff"
-
-    def forward_triples(self, idx_triple): # idx_triplet = (h_idx, r_idx, t_idx) #change this to the forward_triples
+        self.x_values = torch.linspace(-2, 1, 100).to(self.device_)
+        
+    def forward_triples(self, idx_triple): 
 
         head_ent_emb, rel_emb, tail_ent_emb = self.get_triple_representation(idx_triple)
 
-        coeff_head, coeff_rel, coeff_tail = self.construct_multi_coeff(head_ent_emb), self.construct_multi_coeff(rel_emb), self.construct_multi_coeff(tail_ent_emb)
+        head_ent_emb = head_ent_emb.to(self.device_)
+        rel_emb = rel_emb.to(self.device_)
+        tail_ent_emb = tail_ent_emb.to(self.device_)
 
-    
+        coeff_head = self.construct_multi_coeff(head_ent_emb)#.cuda()
+        coeff_rel = self.construct_multi_coeff(rel_emb)#.cuda()
+        coeff_tail = self.construct_multi_coeff(tail_ent_emb)#.cuda()
        
 
         if self.weight_bias == "same":
@@ -345,6 +350,7 @@ class LFMult(BaseKGE):
         """Construct multiple layers with different weigths and bias at every layer"""
 
         w, b = coef[:, :self.m, 1], coef[:, :self.m, 0] 
+        # w  =  coef[:, :self.m, 0]
 
         #split weights and bias for every layers
 
