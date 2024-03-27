@@ -407,13 +407,9 @@ Classes
 
    .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
 
-      Perform the forward pass for byte pair encoded triples.
+      byte pair encoded neural link predictors
 
-      :param x: The input tuple containing byte pair encoded entities and relations.
-      :type x: Tuple[torch.LongTensor, torch.LongTensor]
-
-      :returns: The output tensor containing the scores for the byte pair encoded triples.
-      :rtype: torch.Tensor
+      :param -------:
 
 
    .. py:method:: init_params_with_sanity_checking()
@@ -421,110 +417,86 @@ Classes
 
    .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
 
-      Perform the forward pass of the model.
-
-      :param x: The input tensor or a tuple containing the input tensor and target entity indexes.
-      :type x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]]
-      :param y_idx: The target entity indexes (default is None).
-      :type y_idx: torch.LongTensor, optional
-
-      :returns: The output of the forward pass.
-      :rtype: Any
+      :param x:
+      :param y_idx:
+      :param ordered_bpe_entities:
 
 
    .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
 
-      Perform the forward pass for triples.
-
-      :param x: The input tensor containing the indexes of head, relation, and tail entities.
-      :type x: torch.LongTensor
-
-      :returns: The output tensor containing the scores for the input triples.
-      :rtype: torch.Tensor
+      :param x:
 
 
    .. py:method:: forward_k_vs_all(*args, **kwargs)
 
-      Forward pass for K vs. All.
-
-      :raises ValueError: This function is not implemented in the current model.
-
 
    .. py:method:: forward_k_vs_sample(*args, **kwargs)
-
-      Forward pass for K vs. Sample.
-
-      :raises ValueError: This function is not implemented in the current model.
 
 
    .. py:method:: get_triple_representation(idx_hrt)
 
 
-   .. py:method:: get_head_relation_representation(indexed_triple: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
-
-      Get the representation for the head and relation entities.
-
-      :param indexed_triple: The indexes of the head and relation entities.
-      :type indexed_triple: torch.LongTensor
-
-      :returns: The representation for the head and relation entities.
-      :rtype: Tuple[torch.FloatTensor, torch.FloatTensor]
+   .. py:method:: get_head_relation_representation(indexed_triple)
 
 
-   .. py:method:: get_sentence_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+   .. py:method:: get_sentence_representation(x: torch.LongTensor)
 
-      Get the representation for a sentence.
-
-      :param x: The input tensor containing the indexes of head, relation, and tail entities.
-      :type x: torch.LongTensor
-
-      :returns: The representation for the input sentence.
-      :rtype: Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+      :param x shape (b:
+      :param 3:
+      :param t):
 
 
    .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
 
-      Get the representation for BPE head and relation entities.
-
       :param x:
       :type x: B x 2 x T
-
-      :returns: The representation for BPE head and relation entities.
-      :rtype: Tuple[torch.FloatTensor, torch.FloatTensor]
 
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
 
-      Get the entity and relation embeddings.
-
-      :returns: The entity and relation embeddings.
-      :rtype: Tuple[np.ndarray, np.ndarray]
 
 
-
-.. py:class:: IdentityClass(args: Optional[Dict] = None)
+.. py:class:: IdentityClass(args=None)
 
 
    Bases: :py:obj:`torch.nn.Module`
 
-   A class that represents an identity function.
+   Base class for all neural network modules.
 
-   :param args: A dictionary containing arguments (default is None).
-   :type args: dict, optional
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
 
    .. py:method:: __call__(x)
 
 
-   .. py:method:: forward(x: torch.Tensor) -> torch.Tensor
+   .. py:method:: forward(x)
       :staticmethod:
-
-      The forward pass of the identity function.
-
-      :param x: The input tensor.
-      :type x: torch.Tensor
-
-      :returns: The output tensor, which is the same as the input.
-      :rtype: torch.Tensor
 
 
 

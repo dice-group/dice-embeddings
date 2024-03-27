@@ -89,31 +89,28 @@
   <h1>Source code for dicee.abstracts</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">datetime</span>
-<span class="kn">from</span> <span class="nn">.static_funcs</span> <span class="kn">import</span> <span class="p">(</span>
-    <span class="n">load_model_ensemble</span><span class="p">,</span>
-    <span class="n">load_model</span><span class="p">,</span>
-    <span class="n">save_checkpoint_model</span><span class="p">,</span>
-    <span class="n">load_json</span><span class="p">,</span>
-    <span class="n">download_pretrained_model</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">.static_funcs</span> <span class="kn">import</span> <span class="n">load_model_ensemble</span><span class="p">,</span> <span class="n">load_model</span><span class="p">,</span> <span class="n">save_checkpoint_model</span><span class="p">,</span> <span class="n">load_json</span><span class="p">,</span> <span class="n">download_pretrained_model</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 <span class="kn">import</span> <span class="nn">random</span>
 <span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span>
 <span class="kn">import</span> <span class="nn">lightning</span>
 
 
+<div class="viewcode-block" id="AbstractTrainer">
+<a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractTrainer">[docs]</a>
 <span class="k">class</span> <span class="nc">AbstractTrainer</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Abstract base class for Trainer classes used in training knowledge graph embedding models.</span>
-<span class="sd">    Defines common functionalities and lifecycle hooks for training processes.</span>
+<span class="sd">    Abstract class for Trainer class for knowledge graph embedding models</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    args : Namespace or similar</span>
-<span class="sd">        A container for various training configurations and hyperparameters.</span>
-<span class="sd">    callbacks : list of Callback objects</span>
-<span class="sd">        A list of callback instances to be invoked at various stages of the training process.</span>
+
+<span class="sd">    Parameter</span>
+<span class="sd">    ---------</span>
+<span class="sd">    args : str</span>
+<span class="sd">        ?</span>
+
+<span class="sd">    callbacks: list</span>
+<span class="sd">            ?</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">):</span>
@@ -124,20 +121,20 @@
         <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">random_seed</span><span class="p">)</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">manual_seed_all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">random_seed</span><span class="p">)</span>
         <span class="c1"># To be able to use pl callbacks with our trainers.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">strategy</span><span class="o">=</span><span class="kc">None</span>
 
 <div class="viewcode-block" id="AbstractTrainer.on_fit_start">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractTrainer.on_fit_start">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Invokes the `on_fit_start` method of each registered callback before the training starts.</span>
+<span class="sd">        A function to call callbacks before the training starts.</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        *args</span>
-<span class="sd">            Variable length argument list.</span>
-<span class="sd">        **kwargs</span>
-<span class="sd">            Arbitrary keyword arguments.</span>
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
+<span class="sd">        args</span>
+
+<span class="sd">        kwargs</span>
+
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -149,16 +146,16 @@
 
 <div class="viewcode-block" id="AbstractTrainer.on_fit_end">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractTrainer.on_fit_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Invokes the `on_fit_end` method of each registered callback after the training ends.</span>
+<span class="sd">        A function to call callbacks at the ned of the training.</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        *args</span>
-<span class="sd">            Variable length argument list.</span>
-<span class="sd">        **kwargs</span>
-<span class="sd">            Arbitrary keyword arguments.</span>
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
+<span class="sd">        args</span>
+
+<span class="sd">        kwargs</span>
+
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -170,16 +167,16 @@
 
 <div class="viewcode-block" id="AbstractTrainer.on_train_epoch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractTrainer.on_train_epoch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Invokes the `on_train_epoch_end` method of each registered callback after each epoch ends.</span>
+<span class="sd">        A function to call callbacks at the end of an epoch.</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        *args</span>
-<span class="sd">            Variable length argument list.</span>
-<span class="sd">        **kwargs</span>
-<span class="sd">            Arbitrary keyword arguments.</span>
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
+<span class="sd">        args</span>
+
+<span class="sd">        kwargs</span>
+
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -191,16 +188,16 @@
 
 <div class="viewcode-block" id="AbstractTrainer.on_train_batch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractTrainer.on_train_batch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_train_batch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">on_train_batch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Invokes the `on_train_batch_end` method of each registered callback after each training batch ends.</span>
+<span class="sd">        A function to call callbacks at the end of each mini-batch during training.</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        *args</span>
-<span class="sd">            Variable length argument list.</span>
-<span class="sd">        **kwargs</span>
-<span class="sd">            Arbitrary keyword arguments.</span>
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
+<span class="sd">        args</span>
+
+<span class="sd">        kwargs</span>
+
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -213,22 +210,23 @@
 <div class="viewcode-block" id="AbstractTrainer.save_checkpoint">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractTrainer.save_checkpoint">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">save_checkpoint</span><span class="p">(</span><span class="n">full_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">save_checkpoint</span><span class="p">(</span><span class="n">full_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Saves the model&#39;s state dictionary to a file.</span>
+<span class="sd">        A static function to save a model into disk</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
 <span class="sd">        full_path : str</span>
-<span class="sd">            The file path where the model checkpoint will be saved.</span>
-<span class="sd">        model : torch.nn.Module</span>
-<span class="sd">            The model instance whose parameters are to be saved.</span>
+
+<span class="sd">        model:</span>
+
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">full_path</span><span class="p">)</span></div>
+</div>
 
 
 
@@ -236,46 +234,23 @@
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE">[docs]</a>
 <span class="k">class</span> <span class="nc">BaseInteractiveKGE</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Base class for interactively utilizing knowledge graph embedding models.</span>
-<span class="sd">    Supports operations such as loading pretrained models, querying the model, and adding new embeddings.</span>
+<span class="sd">    Abstract/base class for using knowledge graph embedding models interactively.</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    path : str, optional</span>
-<span class="sd">        Path to the directory where the pretrained model is stored. Either `path` or `url` must be provided.</span>
-<span class="sd">    url : str, optional</span>
-<span class="sd">        URL to download the pretrained model. If provided, `path` is ignored and the model is downloaded to a local path.</span>
-<span class="sd">    construct_ensemble : bool, default=False</span>
-<span class="sd">        Whether to construct an ensemble model from the pretrained models available in the specified directory.</span>
-<span class="sd">    model_name : str, optional</span>
-<span class="sd">        Name of the specific model to load. Required if multiple models are present and `construct_ensemble` is False.</span>
-<span class="sd">    apply_semantic_constraint : bool, default=False</span>
-<span class="sd">        Whether to apply semantic constraints based on domain and range information during inference.</span>
 
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    model : torch.nn.Module</span>
-<span class="sd">        The loaded or constructed knowledge graph embedding model.</span>
-<span class="sd">    entity_to_idx : dict</span>
-<span class="sd">        Mapping from entity names to their corresponding indices in the embedding matrix.</span>
-<span class="sd">    relation_to_idx : dict</span>
-<span class="sd">        Mapping from relation names to their corresponding indices in the embedding matrix.</span>
-<span class="sd">    num_entities : int</span>
-<span class="sd">        The number of unique entities in the knowledge graph.</span>
-<span class="sd">    num_relations : int</span>
-<span class="sd">        The number of unique relations in the knowledge graph.</span>
-<span class="sd">    configs : dict</span>
-<span class="sd">        Configuration settings and performance metrics of the pretrained model.</span>
+<span class="sd">    Parameter</span>
+<span class="sd">    ---------</span>
+<span class="sd">    path_of_pretrained_model_dir : str</span>
+<span class="sd">        ?</span>
+
+<span class="sd">    construct_ensemble: boolean</span>
+<span class="sd">            ?</span>
+
+<span class="sd">    model_name: str</span>
+<span class="sd">    apply_semantic_constraint : boolean</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">construct_ensemble</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">apply_semantic_constraint</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">construct_ensemble</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">apply_semantic_constraint</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">url</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">download_pretrained_model</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
@@ -284,21 +259,19 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not find a directory </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Could not find a directory </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
         <span class="c1"># (1) Load model...</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">construct_ensemble</span> <span class="o">=</span> <span class="n">construct_ensemble</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">apply_semantic_constraint</span> <span class="o">=</span> <span class="n">apply_semantic_constraint</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">configs</span> <span class="o">=</span> <span class="n">load_json</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="s2">&quot;/configuration.json&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">load_json</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="s2">&quot;/report.json&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">configs</span> <span class="o">=</span> <span class="n">load_json</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="s1">&#39;/configuration.json&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">load_json</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="s1">&#39;/report.json&#39;</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="n">construct_ensemble</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">tuple_of_entity_relation_idx</span> <span class="o">=</span> <span class="n">load_model_ensemble</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">model_name</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">tuple_of_entity_relation_idx</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span>
-                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">tuple_of_entity_relation_idx</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">tuple_of_entity_relation_idx</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;byte_pair_encoding&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
@@ -314,12 +287,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">:</span> <span class="nb">dict</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">:</span> <span class="nb">dict</span>
-            <span class="k">assert</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">==</span> <span class="nb">list</span><span class="p">(</span>
-                <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">))</span>
-            <span class="p">)</span>
-            <span class="k">assert</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">==</span> <span class="nb">list</span><span class="p">(</span>
-                <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">))</span>
-            <span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">==</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">)))</span>
+            <span class="k">assert</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">==</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">)))</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">idx_to_entity</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">idx_to_relations</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
@@ -336,53 +305,34 @@
 <div class="viewcode-block" id="BaseInteractiveKGE.get_eval_report">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_eval_report">[docs]</a>
     <span class="k">def</span> <span class="nf">get_eval_report</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves the evaluation report of the pretrained model.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        dict</span>
-<span class="sd">            A dictionary containing evaluation metrics and their values.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">load_json</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="s2">&quot;/eval_report.json&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BaseInteractiveKGE.get_bpe_token_representation">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_bpe_token_representation">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_bpe_token_representation</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">str_entity_or_relation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+    <span class="k">def</span> <span class="nf">get_bpe_token_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">str_entity_or_relation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span>
+        <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Converts a string entity or relation name (or a list of them) to its Byte Pair Encoding (BPE) token representation.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        str_entity_or_relation : Union[List[str], str]</span>
-<span class="sd">            The entity or relation name(s) to be converted.</span>
+<span class="sd">        str_entity_or_relation: corresponds to a str or a list of strings to be tokenized via BPE and shaped.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        Union[List[List[int]], List[int]]</span>
-<span class="sd">            The BPE token representation as a list of integers or a list of lists of integers.</span>
+<span class="sd">        A list integer(s) or a list of lists containing integer(s)</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">str_entity_or_relation</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="k">return</span> <span class="p">[</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">get_bpe_token_representation</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">str_entity_or_relation</span>
-            <span class="p">]</span>
+            <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_bpe_token_representation</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">str_entity_or_relation</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># (1) Map a string into its binary representation</span>
             <span class="n">unshaped_bpe_repr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enc</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">str_entity_or_relation</span><span class="p">)</span>
             <span class="c1"># (2)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unshaped_bpe_repr</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_length_subword_tokens</span><span class="p">:</span>
                 <span class="n">unshaped_bpe_repr</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
-                    <span class="p">[</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">dummy_id</span>
-                        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">max_length_subword_tokens</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">unshaped_bpe_repr</span><span class="p">)</span>
-                        <span class="p">)</span>
-                    <span class="p">]</span>
-                <span class="p">)</span>
+                    <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dummy_id</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_length_subword_tokens</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">unshaped_bpe_repr</span><span class="p">))])</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># @TODO: What to do ?</span>
                 <span class="c1"># print(f&#39;Larger length is detected from all lengths have seen:{str_entity_or_relation} | {len(unshaped_bpe_repr)}&#39;)</span>
@@ -393,21 +343,16 @@
 
 <div class="viewcode-block" id="BaseInteractiveKGE.get_padded_bpe_triple_representation">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_padded_bpe_triple_representation">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_padded_bpe_triple_representation</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">triples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">List</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">get_padded_bpe_triple_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">triples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">List</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Converts a list of triples to their padded BPE token representations.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        triples : List[List[str]]</span>
-<span class="sd">            A list of triples, where each triple is a list of strings [head entity, relation, tail entity].</span>
+<span class="sd">        triples</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        Tuple[List, List, List]</span>
-<span class="sd">            Three lists corresponding to the padded BPE token representations of head entities, relations, and tail entities.</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">triples</span><span class="p">,</span> <span class="n">List</span><span class="p">)</span>
 
@@ -429,23 +374,7 @@
 <div class="viewcode-block" id="BaseInteractiveKGE.get_domain_of_relation">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_domain_of_relation">[docs]</a>
     <span class="k">def</span> <span class="nf">get_domain_of_relation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rel</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves the domain of a given relation.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        rel : str</span>
-<span class="sd">            The relation name.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        List[str]</span>
-<span class="sd">            A list of entity names that constitute the domain of the specified relation.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">idx_to_entity</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain_per_rel</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">[</span><span class="n">rel</span><span class="p">]]</span>
-        <span class="p">]</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_to_entity</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain_per_rel</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">[</span><span class="n">rel</span><span class="p">]]]</span>
         <span class="n">res</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">res</span></div>
@@ -454,22 +383,7 @@
 <div class="viewcode-block" id="BaseInteractiveKGE.get_range_of_relation">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_range_of_relation">[docs]</a>
     <span class="k">def</span> <span class="nf">get_range_of_relation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rel</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves the range of a given relation.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        rel : str</span>
-<span class="sd">            The relation name.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        List[str]</span>
-<span class="sd">            A list of entity names that constitute the range of the specified relation.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">idx_to_entity</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">range_per_rel</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">[</span><span class="n">rel</span><span class="p">]]</span>
-        <span class="p">]</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_to_entity</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">range_per_rel</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">[</span><span class="n">rel</span><span class="p">]]]</span>
         <span class="n">res</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">res</span></div>
@@ -478,7 +392,16 @@
 <div class="viewcode-block" id="BaseInteractiveKGE.set_model_train_mode">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.set_model_train_mode">[docs]</a>
     <span class="k">def</span> <span class="nf">set_model_train_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the model to training mode. This enables gradient computation and backpropagation.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Setting the model into training mode</span>
+
+
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ---------</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
             <span class="n">parameter</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">True</span></div>
@@ -487,40 +410,29 @@
 <div class="viewcode-block" id="BaseInteractiveKGE.set_model_eval_mode">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.set_model_eval_mode">[docs]</a>
     <span class="k">def</span> <span class="nf">set_model_eval_mode</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sets the model to evaluation mode. This disables gradient computation, making the model read-only and faster for inference.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Setting the model into eval mode</span>
+
+
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ---------</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
             <span class="n">parameter</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
     <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Property that returns the model&#39;s name.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        str</span>
-<span class="sd">            The name of the model.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">name</span>
 
 <div class="viewcode-block" id="BaseInteractiveKGE.sample_entity">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.sample_entity">[docs]</a>
     <span class="k">def</span> <span class="nf">sample_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Randomly samples a specified number of unique entities from the knowledge graph.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        n : int</span>
-<span class="sd">            The number of entities to sample.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        List[str]</span>
-<span class="sd">            A list of sampled entity names.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
         <span class="k">assert</span> <span class="n">n</span> <span class="o">&gt;=</span> <span class="mi">0</span>
         <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="o">.</span><span class="n">keys</span><span class="p">()],</span> <span class="n">n</span><span class="p">)</span></div>
@@ -529,19 +441,6 @@
 <div class="viewcode-block" id="BaseInteractiveKGE.sample_relation">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.sample_relation">[docs]</a>
     <span class="k">def</span> <span class="nf">sample_relation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Randomly samples a specified number of unique relations from the knowledge graph.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        n : int</span>
-<span class="sd">            The number of relations to sample.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        List[str]</span>
-<span class="sd">            A list of sampled relation names.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
         <span class="k">assert</span> <span class="n">n</span> <span class="o">&gt;=</span> <span class="mi">0</span>
         <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">([</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="o">.</span><span class="n">keys</span><span class="p">()],</span> <span class="n">n</span><span class="p">)</span></div>
@@ -550,21 +449,6 @@
 <div class="viewcode-block" id="BaseInteractiveKGE.is_seen">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.is_seen">[docs]</a>
     <span class="k">def</span> <span class="nf">is_seen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">relation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Checks if the specified entity or relation is known to the model.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        entity : str, optional</span>
-<span class="sd">            The entity name to check.</span>
-<span class="sd">        relation : str, optional</span>
-<span class="sd">            The relation name to check.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        bool</span>
-<span class="sd">            True if the entity or relation is known; False otherwise.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">entity</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">True</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">entity</span><span class="p">)</span> <span class="k">else</span> <span class="kc">False</span>
         <span class="k">if</span> <span class="n">relation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -574,226 +458,132 @@
 <div class="viewcode-block" id="BaseInteractiveKGE.save">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.save">[docs]</a>
     <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Saves the current state of the model to disk. The filename is timestamped.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        None</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">t</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_ensemble</span><span class="p">:</span>
-            <span class="n">save_checkpoint_model</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;/model_ensemble_interactive_</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="si">}</span><span class="s2">.pt&quot;</span>
-            <span class="p">)</span>
+            <span class="n">save_checkpoint_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;/model_ensemble_interactive_</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="si">}</span><span class="s1">.pt&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">save_checkpoint_model</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;/model_interactive_</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="si">}</span><span class="s2">.pt&quot;</span>
-            <span class="p">)</span></div>
+            <span class="n">save_checkpoint_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;/model_interactive_</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="si">}</span><span class="s1">.pt&#39;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BaseInteractiveKGE.get_entity_index">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_entity_index">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_entity_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves the index of the specified entity.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        x : str</span>
-<span class="sd">            The entity name.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        int</span>
-<span class="sd">            The index of the entity.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">get_entity_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">[</span><span class="n">x</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="BaseInteractiveKGE.get_relation_index">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_relation_index">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_relation_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves the index of the specified relation.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        x : str</span>
-<span class="sd">            The relation name.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        int</span>
-<span class="sd">            The index of the relation.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">get_relation_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">[</span><span class="n">x</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="BaseInteractiveKGE.index_triple">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.index_triple">[docs]</a>
-    <span class="k">def</span> <span class="nf">index_triple</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">head_entity</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">relation</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">tail_entity</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">index_triple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_entity</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">relation</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">tail_entity</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Converts a list of triples from string representation to tensor indices.</span>
+<span class="sd">        Index Triple</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        head_entity : List[str]</span>
-<span class="sd">            The list of head entities.</span>
-<span class="sd">        relation : List[str]</span>
-<span class="sd">            The list of relations.</span>
-<span class="sd">        tail_entity : List[str]</span>
-<span class="sd">            The list of tail entities.</span>
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
+<span class="sd">        head_entity: List[str]</span>
 
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Tuple[torch.LongTensor, torch.LongTensor, torch.LongTensor]</span>
-<span class="sd">            The tensor indices of head entities, relations, and tail entities.</span>
+<span class="sd">        String representation of selected entities.</span>
+
+<span class="sd">        relation: List[str]</span>
+
+<span class="sd">        String representation of selected relations.</span>
+
+<span class="sd">        tail_entity: List[str]</span>
+
+<span class="sd">        String representation of selected entities.</span>
+
+<span class="sd">        Returns: Tuple</span>
+<span class="sd">        ---------</span>
+
+<span class="sd">        pytorch tensor of triple score</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">head_entity</span><span class="p">)</span>
         <span class="k">assert</span> <span class="n">n</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">relation</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">tail_entity</span><span class="p">)</span>
-        <span class="n">idx_head_entity</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span>
-            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">head_entity</span><span class="p">]</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">idx_relation</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span>
-            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">relation</span><span class="p">]</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">idx_tail_entity</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span>
-            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tail_entity</span><span class="p">]</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">idx_head_entity</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">head_entity</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">idx_relation</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">relation</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">idx_tail_entity</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tail_entity</span><span class="p">])</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">idx_head_entity</span><span class="p">,</span> <span class="n">idx_relation</span><span class="p">,</span> <span class="n">idx_tail_entity</span></div>
 
 
 <div class="viewcode-block" id="BaseInteractiveKGE.add_new_entity_embeddings">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.add_new_entity_embeddings">[docs]</a>
-    <span class="k">def</span> <span class="nf">add_new_entity_embeddings</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">entity_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Adds a new entity and its embeddings to the model.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        entity_name : str</span>
-<span class="sd">            The name of the new entity.</span>
-<span class="sd">        embeddings : torch.FloatTensor</span>
-<span class="sd">            The embedding vector of the new entity.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        None</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
-            <span class="n">embeddings</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span>
-        <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">add_new_entity_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entity_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">embeddings</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">entity_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Entity (</span><span class="si">{</span><span class="n">entity_name</span><span class="si">}</span><span class="s2">) exists..&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Entity (</span><span class="si">{</span><span class="n">entity_name</span><span class="si">}</span><span class="s1">) exists..&#39;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">[</span><span class="n">entity_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">idx_to_entity</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">[</span><span class="n">entity_name</span><span class="p">]]</span> <span class="o">=</span> <span class="n">entity_name</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">num_entities</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
-                <span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span>
-                    <span class="n">embeddings</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
-                <span class="p">),</span>
-                <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-            <span class="p">)</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">embeddings</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">num_embeddings</span> <span class="o">+=</span> <span class="mi">1</span></div>
 
 
 <div class="viewcode-block" id="BaseInteractiveKGE.get_entity_embeddings">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_entity_embeddings">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_entity_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">get_entity_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves embeddings for a list of entities.</span>
+<span class="sd">        Return embedding of an entity given its string representation</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        items : List[str]</span>
-<span class="sd">            A list of entity names.</span>
+
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
+<span class="sd">        items:</span>
+<span class="sd">            entities</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        torch.FloatTensor</span>
-<span class="sd">            A tensor containing the embeddings of the specified entities.</span>
+<span class="sd">        ---------</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="p">[</span><span class="s2">&quot;byte_pair_encoding&quot;</span><span class="p">]:</span>
             <span class="n">t_encode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enc</span><span class="o">.</span><span class="n">encode_batch</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">t_encode</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="p">[</span><span class="s2">&quot;max_length_subword_tokens&quot;</span><span class="p">]:</span>
                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">t_encode</span><span class="p">)):</span>
                     <span class="n">t_encode</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
-                        <span class="p">[</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">dummy_id</span>
-                            <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span>
-                                <span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="p">[</span><span class="s2">&quot;max_length_subword_tokens&quot;</span><span class="p">]</span>
-                                <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">t_encode</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-                            <span class="p">)</span>
-                        <span class="p">]</span>
-                    <span class="p">)</span>
+                        <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dummy_id</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="p">[</span><span class="s2">&quot;max_length_subword_tokens&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">t_encode</span><span class="p">[</span><span class="n">i</span><span class="p">]))])</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">token_embeddings</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">(</span><span class="n">t_encode</span><span class="p">))</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="p">(</span>
-                <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">items</span><span class="p">])</span>
-            <span class="p">)</span></div>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_to_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">items</span><span class="p">]))</span></div>
 
 
 <div class="viewcode-block" id="BaseInteractiveKGE.get_relation_embeddings">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_relation_embeddings">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_relation_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">get_relation_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">items</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves embeddings for a list of relations.</span>
+<span class="sd">        Return embedding of a relation given its string representation</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        items : List[str]</span>
-<span class="sd">            A list of relation names.</span>
+
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
+<span class="sd">        items:</span>
+<span class="sd">            relations</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        torch.FloatTensor</span>
-<span class="sd">            A tensor containing the embeddings of the specified relations.</span>
+<span class="sd">        ---------</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="p">(</span>
-            <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">items</span><span class="p">])</span>
-        <span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">items</span><span class="p">]))</span></div>
 
 
 <div class="viewcode-block" id="BaseInteractiveKGE.construct_input_and_output">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.construct_input_and_output">[docs]</a>
-    <span class="k">def</span> <span class="nf">construct_input_and_output</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">head_entity</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-        <span class="n">relation</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-        <span class="n">tail_entity</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-        <span class="n">labels</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">construct_input_and_output</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_entity</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">relation</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">tail_entity</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">labels</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Constructs input and output tensors for a given set of triples and labels.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        head_entity : List[str]</span>
-<span class="sd">            A list of head entities.</span>
-<span class="sd">        relation : List[str]</span>
-<span class="sd">            A list of relations.</span>
-<span class="sd">        tail_entity : List[str]</span>
-<span class="sd">            A list of tail entities.</span>
-<span class="sd">        labels : List[int] or torch.Tensor</span>
-<span class="sd">            The labels associated with each triple.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Tuple[torch.Tensor, torch.Tensor]</span>
-<span class="sd">            The input tensor consisting of indexed triples and the output tensor of labels.</span>
+<span class="sd">        Construct a data point</span>
+<span class="sd">        :param head_entity:</span>
+<span class="sd">        :param relation:</span>
+<span class="sd">        :param tail_entity:</span>
+<span class="sd">        :param labels:</span>
+<span class="sd">        :return:</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">idx_head_entity</span><span class="p">,</span> <span class="n">idx_relation</span><span class="p">,</span> <span class="n">idx_tail_entity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index_triple</span><span class="p">(</span>
-            <span class="n">head_entity</span><span class="p">,</span> <span class="n">relation</span><span class="p">,</span> <span class="n">tail_entity</span>
-        <span class="p">)</span>
+        <span class="n">idx_head_entity</span><span class="p">,</span> <span class="n">idx_relation</span><span class="p">,</span> <span class="n">idx_tail_entity</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index_triple</span><span class="p">(</span><span class="n">head_entity</span><span class="p">,</span> <span class="n">relation</span><span class="p">,</span> <span class="n">tail_entity</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">idx_head_entity</span><span class="p">,</span> <span class="n">idx_relation</span><span class="p">,</span> <span class="n">idx_tail_entity</span><span class="p">))</span>
         <span class="c1"># Hard Labels</span>
         <span class="n">labels</span><span class="p">:</span> <span class="nb">object</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
@@ -803,16 +593,6 @@
 <div class="viewcode-block" id="BaseInteractiveKGE.parameters">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.parameters">[docs]</a>
     <span class="k">def</span> <span class="nf">parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves the parameters of the model.</span>
-
-<span class="sd">        This method is typically used to access the parameters of the model for optimization or inspection.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Iterator[torch.nn.parameter.Parameter]</span>
-<span class="sd">            An iterator over the model parameters, which are instances of torch.nn.parameter.Parameter.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span></div>
 </div>
 
@@ -822,9 +602,12 @@
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractCallback">[docs]</a>
 <span class="k">class</span> <span class="nc">AbstractCallback</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="n">lightning</span><span class="o">.</span><span class="n">pytorch</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">Callback</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Abstract base class for implementing custom callbacks for knowledge graph embedding models during training with PyTorch Lightning.</span>
+<span class="sd">    Abstract class for Callback class for knowledge graph embedding models</span>
 
-<span class="sd">    This class is designed to be subclassed, with methods overridden to perform actions at various points during the training life cycle.</span>
+
+<span class="sd">    Parameter</span>
+<span class="sd">    ---------</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -834,12 +617,16 @@
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractCallback.on_init_start">[docs]</a>
     <span class="k">def</span> <span class="nf">on_init_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Called before the trainer initialization starts.</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        trainer : pl.Trainer</span>
-<span class="sd">            The trainer instance.</span>
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
+<span class="sd">        trainer:</span>
+
+<span class="sd">        model:</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ---------</span>
+<span class="sd">        None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
@@ -848,12 +635,17 @@
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractCallback.on_init_end">[docs]</a>
     <span class="k">def</span> <span class="nf">on_init_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Called after the trainer initialization ends.</span>
+<span class="sd">        Call at the beginning of the training.</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        trainer : pl.Trainer</span>
-<span class="sd">            The trainer instance.</span>
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
+<span class="sd">        trainer:</span>
+
+<span class="sd">        model:</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ---------</span>
+<span class="sd">        None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
@@ -862,14 +654,17 @@
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractCallback.on_fit_start">[docs]</a>
     <span class="k">def</span> <span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Called at the very beginning of fit.</span>
+<span class="sd">        Call at the beginning of the training.</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        trainer : pl.Trainer</span>
-<span class="sd">            The trainer instance.</span>
-<span class="sd">        pl_module : pl.LightningModule</span>
-<span class="sd">            The model that is being trained.</span>
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
+<span class="sd">        trainer:</span>
+
+<span class="sd">        model:</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ---------</span>
+<span class="sd">        None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span></div>
 
@@ -878,14 +673,17 @@
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractCallback.on_train_epoch_end">[docs]</a>
     <span class="k">def</span> <span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Called at the end of the training epoch.</span>
+<span class="sd">        Call at the end of each epoch during training.</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        trainer : pl.Trainer</span>
-<span class="sd">            The trainer instance.</span>
-<span class="sd">        pl_module : pl.LightningModule</span>
-<span class="sd">            The model that is being trained.</span>
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
+<span class="sd">        trainer:</span>
+
+<span class="sd">        model:</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ---------</span>
+<span class="sd">        None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
@@ -895,6 +693,7 @@
     <span class="k">def</span> <span class="nf">on_train_batch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Call at the end of each mini-batch during the training.</span>
+
 
 <span class="sd">        Parameter</span>
 <span class="sd">        ---------</span>
@@ -913,14 +712,17 @@
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractCallback.on_fit_end">[docs]</a>
     <span class="k">def</span> <span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Called at the end of fit.</span>
+<span class="sd">        Call at the end of the training.</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        trainer : pl.Trainer</span>
-<span class="sd">            The trainer instance.</span>
-<span class="sd">        pl_module : pl.LightningModule</span>
-<span class="sd">            The model that has been trained.</span>
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
+<span class="sd">        trainer:</span>
+
+<span class="sd">        model:</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        ---------</span>
+<span class="sd">        None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 </div>
@@ -931,30 +733,15 @@
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractPPECallback">[docs]</a>
 <span class="k">class</span> <span class="nc">AbstractPPECallback</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Abstract base class for implementing Parameter Prediction Ensemble (PPE) callbacks for knowledge graph embedding models.</span>
+<span class="sd">    Abstract class for Callback class for knowledge graph embedding models</span>
 
-<span class="sd">    This class provides a structure for creating ensemble models by averaging model parameters over epochs,</span>
-<span class="sd">    which can potentially improve model performance and robustness.</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    num_epochs : int</span>
-<span class="sd">        Total number of epochs for training.</span>
-<span class="sd">    path : str</span>
-<span class="sd">        Path to save or load the ensemble model.</span>
-<span class="sd">    epoch_to_start : Optional[int]</span>
-<span class="sd">        The epoch number to start creating the ensemble. If None, a percentage of epochs to consider can be specified instead.</span>
-<span class="sd">    last_percent_to_consider : Optional[float]</span>
-<span class="sd">        The last percentage of epochs to consider for creating the ensemble. If both `epoch_to_start` and `last_percent_to_consider` are None, ensemble starts from epoch 1.</span>
+<span class="sd">    Parameter</span>
+<span class="sd">    ---------</span>
+
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">num_epochs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">epoch_to_start</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">last_percent_to_consider</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_epochs</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">epoch_to_start</span><span class="p">,</span> <span class="n">last_percent_to_consider</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">AbstractPPECallback</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span> <span class="o">=</span> <span class="n">num_epochs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
@@ -966,72 +753,36 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">epoch_to_start</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span>
             <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;--epoch_to_start </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">epoch_to_start</span><span class="si">}</span><span class="s2"> &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;must be less than --num_epochs </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--epoch_to_start </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">epoch_to_start</span><span class="si">}</span><span class="s2"> &quot;</span>
+                                     <span class="sa">f</span><span class="s2">&quot;must be less than --num_epochs </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">num_ensemble_coefficient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">epoch_to_start</span> <span class="o">+</span> <span class="mi">1</span>
         <span class="k">elif</span> <span class="n">last_percent_to_consider</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">epoch_to_start</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">num_ensemble_coefficient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span> <span class="o">-</span> <span class="mi">1</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># Compute the last X % of the training</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">epoch_to_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span> <span class="o">*</span> <span class="n">last_percent_to_consider</span> <span class="o">/</span> <span class="mi">100</span>
-            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">epoch_to_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span> <span class="o">*</span> <span class="n">last_percent_to_consider</span> <span class="o">/</span> <span class="mi">100</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">num_ensemble_coefficient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">epoch_to_start</span>
 
 <div class="viewcode-block" id="AbstractPPECallback.on_fit_start">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractPPECallback.on_fit_start">[docs]</a>
     <span class="k">def</span> <span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Called at the very beginning of fit.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        trainer : Trainer instance</span>
-<span class="sd">            The trainer instance.</span>
-<span class="sd">        model : LightningModule</span>
-<span class="sd">            The model that is being trained.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
 
 <div class="viewcode-block" id="AbstractPPECallback.on_fit_end">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractPPECallback.on_fit_end">[docs]</a>
     <span class="k">def</span> <span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Called at the end of fit. It loads the ensemble parameters if they exist.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        trainer : Trainer instance</span>
-<span class="sd">            The trainer instance.</span>
-<span class="sd">        model : LightningModule</span>
-<span class="sd">            The model that has been trained.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/trainer_checkpoint_main.pt&quot;</span><span class="p">):</span>
-            <span class="n">param_ensemble</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/trainer_checkpoint_main.pt&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
-            <span class="p">)</span>
+            <span class="n">param_ensemble</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/trainer_checkpoint_main.pt&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">))</span>
             <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">param_ensemble</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;No parameter ensemble found at </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/trainer_checkpoint_main.pt&quot;</span>
-            <span class="p">)</span></div>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No parameter ensemble found at </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/trainer_checkpoint_main.pt&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AbstractPPECallback.store_ensemble">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.AbstractPPECallback.store_ensemble">[docs]</a>
-    <span class="k">def</span> <span class="nf">store_ensemble</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param_ensemble</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Saves the updated parameter ensemble model to disk.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        param_ensemble : torch.Tensor</span>
-<span class="sd">            The ensemble of model parameters to be saved.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">store_ensemble</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param_ensemble</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># (3) Save the updated parameter ensemble model.</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">param_ensemble</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/trainer_checkpoint_main.pt&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_counter</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>

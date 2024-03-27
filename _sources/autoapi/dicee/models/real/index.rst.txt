@@ -25,103 +25,23 @@ Classes
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   DistMult model for learning and inference in knowledge bases. It represents both entities
-   and relations using embeddings and uses a simple bilinear form to compute scores for triples.
+   Embedding Entities and Relations for Learning and Inference in Knowledge Bases
+   https://arxiv.org/abs/1412.6575
 
-   This implementation of the DistMult model is based on the paper:
-   'Embedding Entities and Relations for Learning and Inference in Knowledge Bases'
-   (https://arxiv.org/abs/1412.6575).
+   .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor)
 
-   .. attribute:: name
-
-      The name identifier for the DistMult model.
-
-      :type: str
-
-   .. method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor) -> torch.FloatTensor
-
-      Computes scores in a K-vs-All setting using embeddings for a batch of head entities and relations.
+      :param emb_h:
+      :param emb_r:
+      :param emb_E:
 
 
-   .. method:: forward_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
-
-      Computes scores for all entities given a batch of head entities and relations.
+   .. py:method:: forward_k_vs_all(x: torch.LongTensor)
 
 
-   .. method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor
-
-      Computes scores for a sampled subset of entities given a batch of head entities and relations.
+   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor)
 
 
-   .. method:: score(h: torch.FloatTensor, r: torch.FloatTensor, t: torch.FloatTensor) -> torch.FloatTensor
-
-      Computes the score of triples using DistMult's scoring function.
-
-
-   .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor) -> torch.FloatTensor
-
-      Computes scores in a K-vs-All setting using embeddings for a batch of head entities and relations.
-
-      This method multiplies the head entity and relation embeddings, applies a dropout and a normalization,
-      and then computes the dot product with all tail entity embeddings.
-
-      :param emb_h: Embeddings of head entities.
-      :type emb_h: torch.FloatTensor
-      :param emb_r: Embeddings of relations.
-      :type emb_r: torch.FloatTensor
-      :param emb_E: Embeddings of all entities.
-      :type emb_E: torch.FloatTensor
-
-      :returns: Scores for all possible triples formed with the given head entities and relations against all entities.
-      :rtype: torch.FloatTensor
-
-
-   .. py:method:: forward_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
-
-      Computes scores for all entities given a batch of head entities and relations.
-
-      This method is used for K-vs-All scoring, where the model predicts the likelihood of each entity
-      being the tail entity in a triple with each head entity and relation pair in the batch.
-
-      :param x: Tensor containing indices for head entities and relations.
-      :type x: torch.LongTensor
-
-      :returns: Scores for all entities for each head entity and relation pair in the batch.
-      :rtype: torch.FloatTensor
-
-
-   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor
-
-      Computes scores for a sampled subset of entities given a batch of head entities and relations.
-
-      This method is particularly useful when the full set of entities is too large to score
-      with every batch and only a subset of entities is required.
-
-      :param x: Tensor containing indices for head entities and relations.
-      :type x: torch.LongTensor
-      :param target_entity_idx: Indices of the target entities against which the scores are to be computed.
-      :type target_entity_idx: torch.LongTensor
-
-      :returns: Scores for each head entity and relation pair against the sampled subset of entities.
-      :rtype: torch.FloatTensor
-
-
-   .. py:method:: score(h: torch.FloatTensor, r: torch.FloatTensor, t: torch.FloatTensor) -> torch.FloatTensor
-
-      Computes the score of triples using DistMult's scoring function.
-
-      The scoring function multiplies head entity and relation embeddings, applies dropout and normalization,
-      and computes the dot product with the tail entity embeddings.
-
-      :param h: Embedding of the head entity.
-      :type h: torch.FloatTensor
-      :param r: Embedding of the relation.
-      :type r: torch.FloatTensor
-      :param t: Embedding of the tail entity.
-      :type t: torch.FloatTensor
-
-      :returns: The score of the triple.
-      :rtype: torch.FloatTensor
+   .. py:method:: score(h, r, t)
 
 
 
@@ -130,195 +50,47 @@ Classes
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   TransE model for learning embeddings in multi-relational data. It is based on the idea of translating
-   embeddings for head entities by the relation vector to approach the tail entity embeddings in the embedding space.
+   Translating Embeddings for Modeling
+   Multi-relational Data
+   https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf
 
-   This implementation of TransE is based on the paper:
-   'Translating Embeddings for Modeling Multi-relational Data'
-   (https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf).
-
-   .. attribute:: name
-
-      The name identifier for the TransE model.
-
-      :type: str
-
-   .. attribute:: _norm
-
-      The norm used for computing pairwise distances in the embedding space.
-
-      :type: int
-
-   .. attribute:: margin
-
-      The margin value used in the scoring function.
-
-      :type: int
-
-   .. method:: score(head_ent_emb: torch.Tensor, rel_ent_emb: torch.Tensor, tail_ent_emb: torch.Tensor) -> torch.Tensor
-
-      Computes the score of triples using the TransE scoring function.
-
-
-   .. method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
-
-      Computes scores for all entities given a head entity and a relation.
-
-
-   .. py:method:: score(head_ent_emb: torch.Tensor, rel_ent_emb: torch.Tensor, tail_ent_emb: torch.Tensor) -> torch.Tensor
-
-      Computes the score of triples using the TransE scoring function.
-
-      The scoring function computes the L2 distance between the translated head entity
-      and the tail entity embeddings and subtracts this distance from the margin.
-
-      :param head_ent_emb: Embedding of the head entity.
-      :type head_ent_emb: torch.Tensor
-      :param rel_ent_emb: Embedding of the relation.
-      :type rel_ent_emb: torch.Tensor
-      :param tail_ent_emb: Embedding of the tail entity.
-      :type tail_ent_emb: torch.Tensor
-
-      :returns: The score of the triple.
-      :rtype: torch.Tensor
+   .. py:method:: score(head_ent_emb, rel_ent_emb, tail_ent_emb)
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
 
-      Computes scores for all entities given a head entity and a relation.
-
-      This method is used for K-vs-All scoring, where the model predicts the likelihood of each entity
-      being the tail entity in a triple with each head entity and relation.
-
-      :param x: Tensor containing indices for head entities and relations.
-      :type x: torch.Tensor
-
-      :returns: Scores for all entities for each head entity and relation pair.
-      :rtype: torch.FloatTensor
 
 
-
-.. py:class:: Shallom(args: dict)
+.. py:class:: Shallom(args)
 
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   Shallom is a shallow neural model designed for relation prediction in knowledge graphs.
-   The model combines entity embeddings and passes them through a neural network to predict
-   the likelihood of different relations. It's based on the paper:
-   'A Shallow Neural Model for Relation Prediction'
-   (https://arxiv.org/abs/2101.09090).
-
-   .. attribute:: name
-
-      The name identifier for the Shallom model.
-
-      :type: str
-
-   .. attribute:: shallom
-
-      A sequential neural network model used for predicting relations.
-
-      :type: torch.nn.Sequential
-
-   .. method:: get_embeddings() -> Tuple[np.ndarray, None]
-
-      Retrieves the entity embeddings.
-
-
-   .. method:: forward_k_vs_all(x) -> torch.FloatTensor
-
-      Computes relation scores for all pairs of entities in the batch.
-
-
-   .. method:: forward_triples(x) -> torch.FloatTensor
-
-      Computes relation scores for a batch of triples.
-
+   A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090)
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, None]
 
-      Retrieves the entity embeddings from the model.
 
-      :returns: A tuple containing the entity embeddings as a NumPy array and None for the relation embeddings.
-      :rtype: Tuple[np.ndarray, None]
+   .. py:method:: forward_k_vs_all(x) -> torch.FloatTensor
 
 
-   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
+   .. py:method:: forward_triples(x) -> torch.FloatTensor
 
-      Computes relation scores for all pairs of entities in the batch.
-
-      Each pair of entities is passed through the Shallom neural network to predict
-      the likelihood of various relations between them.
-
-      :param x: A tensor of entity pairs.
-      :type x: torch.Tensor
-
-      :returns: A tensor of relation scores for each pair of entities in the batch.
-      :rtype: torch.FloatTensor
-
-
-   .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
-
-      Computes relation scores for a batch of triples.
-
-      This method first computes relation scores for all possible relations for each pair of entities
-      and then selects the scores corresponding to the actual relations in the triples.
-
-      :param x: A tensor containing a batch of triples.
-      :type x: torch.Tensor
-
-      :returns: A flattened tensor of relation scores for the given batch of triples.
-      :rtype: torch.FloatTensor
+      :param x:
+      :return:
 
 
 
-.. py:class:: Pyke(args: dict)
+.. py:class:: Pyke(args)
 
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   Pyke is a physical embedding model for knowledge graphs, emphasizing the geometric relationships
-   in the embedding space. The model aims to represent entities and relations in a way that captures
-   the underlying structure of the knowledge graph.
+   A Physical Embedding Model for Knowledge Graphs
 
-   .. attribute:: name
+   .. py:method:: forward_triples(x: torch.LongTensor)
 
-      The name identifier for the Pyke model.
-
-      :type: str
-
-   .. attribute:: dist_func
-
-      A pairwise distance function to compute distances in the embedding space.
-
-      :type: torch.nn.PairwiseDistance
-
-   .. attribute:: margin
-
-      The margin value used in the scoring function.
-
-      :type: float
-
-   .. method:: forward_triples(x: torch.LongTensor) -> torch.FloatTensor
-
-      Computes scores for a batch of triples based on the physical embedding approach.
-
-
-   .. py:method:: forward_triples(x: torch.LongTensor) -> torch.FloatTensor
-
-      Computes scores for a batch of triples based on the physical embedding approach.
-
-      The method calculates the Euclidean distance between the head and relation embeddings,
-      and between the relation and tail embeddings. The average of these distances is subtracted
-      from the margin to compute the score for each triple.
-
-      :param x: A tensor containing indices for head entities, relations, and tail entities.
-      :type x: torch.LongTensor
-
-      :returns: Scores for the given batch of triples. Lower scores indicate more likely triples
-                according to the geometric arrangement of embeddings.
-      :rtype: torch.FloatTensor
+      :param x:
 
 
 

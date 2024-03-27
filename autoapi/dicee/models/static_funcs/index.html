@@ -69,6 +69,7 @@
 <li class="toctree-l5"><a class="reference internal" href="../base_model/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.base_model</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="../clifford/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.clifford</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="../complex/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.complex</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="../dualE/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.dualE</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="../function_space/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.function_space</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="../octonion/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.octonion</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="../pykeen_models/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.pykeen_models</span></code></a></li>
@@ -130,37 +131,17 @@
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.static_funcs.quaternion_mul" title="dicee.models.static_funcs.quaternion_mul"><code class="xref py py-obj docutils literal notranslate"><span class="pre">quaternion_mul</span></code></a>(→ Tuple[torch.Tensor, torch.Tensor, ...)</p></td>
-<td><p>Perform quaternion multiplication.</p></td>
+<td><p>Perform quaternion multiplication</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.models.static_funcs.quaternion_mul">
-<span class="sig-prename descclassname"><span class="pre">dicee.models.static_funcs.</span></span><span class="sig-name descname"><span class="pre">quaternion_mul</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/static_funcs.html#quaternion_mul"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.static_funcs.quaternion_mul" title="Link to this definition"></a></dt>
-<dd><p>Perform quaternion multiplication.</p>
-<p>This function multiplies two quaternions, Q_1 and Q_2, and returns the result as a quaternion.
-Quaternion multiplication is a non-commutative operation used in various applications,
-including 3D rotation and orientation tasks.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>Q_1</strong> (<em>Tuple</em><em>[</em><em>torch.Tensor</em><em>, </em><em>torch.Tensor</em><em>, </em><em>torch.Tensor</em><em>, </em><em>torch.Tensor</em><em>]</em>) – The first quaternion, represented as a tuple of four components (a_h, b_h, c_h, d_h).</p></li>
-<li><p><strong>Q_2</strong> (<em>Tuple</em><em>[</em><em>torch.Tensor</em><em>, </em><em>torch.Tensor</em><em>, </em><em>torch.Tensor</em><em>, </em><em>torch.Tensor</em><em>]</em>) – The second quaternion, represented as a tuple of four components (a_r, b_r, c_r, d_r).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The resulting quaternion from the multiplication, represented as a tuple of four components (r_val, i_val, j_val, k_val).</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<p>The quaternion multiplication is defined as:
-r_val = a_h * a_r - b_h * b_r - c_h * c_r - d_h * d_r
-i_val = a_h * b_r + b_h * a_r + c_h * d_r - d_h * c_r
-j_val = a_h * c_r - b_h * d_r + c_h * a_r + d_h * b_r
-k_val = a_h * d_r + b_h * c_r - c_h * b_r + d_h * a_r</p>
+<span class="sig-prename descclassname"><span class="pre">dicee.models.static_funcs.</span></span><span class="sig-name descname"><span class="pre">quaternion_mul</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_2</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/static_funcs.html#quaternion_mul"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.static_funcs.quaternion_mul" title="Link to this definition"></a></dt>
+<dd><p>Perform quaternion multiplication
+:param Q_1:
+:param Q_2:
+:return:</p>
 </dd></dl>
 
 </section>

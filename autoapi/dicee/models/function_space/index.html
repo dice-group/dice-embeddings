@@ -26,7 +26,7 @@
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
     <link rel="next" title="dicee.models.octonion" href="../octonion/index.html" />
-    <link rel="prev" title="dicee.models.complex" href="../complex/index.html" /> 
+    <link rel="prev" title="dicee.models.dualE" href="../dualE/index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -69,6 +69,7 @@
 <li class="toctree-l5"><a class="reference internal" href="../base_model/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.base_model</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="../clifford/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.clifford</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="../complex/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.complex</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="../dualE/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.dualE</span></code></a></li>
 <li class="toctree-l5 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.function_space</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#module-contents">Module Contents</a></li>
 </ul>
@@ -130,13 +131,13 @@
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.function_space.FMult" title="dicee.models.function_space.FMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FMult</span></code></a></p></td>
-<td><p>FMult is a model for learning neural networks on knowledge graphs. It extends</p></td>
+<td><p>Learning Knowledge Neural Graphs</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.function_space.GFMult" title="dicee.models.function_space.GFMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GFMult</span></code></a></p></td>
-<td><p>GFMult (Graph Function Multiplication) extends the base knowledge graph embedding</p></td>
+<td><p>Learning Knowledge Neural Graphs</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.function_space.FMult2" title="dicee.models.function_space.FMult2"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FMult2</span></code></a></p></td>
-<td><p>FMult2 is a model for learning neural networks on knowledge graphs, offering</p></td>
+<td><p>Learning Knowledge Neural Graphs</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.function_space.LFMult1" title="dicee.models.function_space.LFMult1"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LFMult1</span></code></a></p></td>
 <td><p>Embedding with trigonometric functions. We represent all entities and relations in the complex number space as:</p></td>
@@ -148,177 +149,25 @@
 </table>
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.models.function_space.FMult">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.function_space.</span></span><span class="sig-name descname"><span class="pre">FMult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.function_space.</span></span><span class="sig-name descname"><span class="pre">FMult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
-<p>FMult is a model for learning neural networks on knowledge graphs. It extends
-the base knowledge graph embedding model by integrating neural network computations
-with entity and relation embeddings. The model is designed to work with complex
-embeddings and utilizes a neural network-based approach for embedding interactions.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>args</strong> (<em>dict</em>) – A dictionary of arguments containing hyperparameters and settings for the model,
-such as embedding dimensions and other model-specific parameters.</p>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.FMult.name">
-<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#dicee.models.function_space.FMult.name" title="Link to this definition"></a></dt>
-<dd><p>The name identifier for the FMult model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.FMult.entity_embeddings">
-<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.models.function_space.FMult.entity_embeddings" title="Link to this definition"></a></dt>
-<dd><p>Embedding layer for entities in the knowledge graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.nn.Embedding</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.FMult.relation_embeddings">
-<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.models.function_space.FMult.relation_embeddings" title="Link to this definition"></a></dt>
-<dd><p>Embedding layer for relations in the knowledge graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.nn.Embedding</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.FMult.k">
-<span class="sig-name descname"><span class="pre">k</span></span><a class="headerlink" href="#dicee.models.function_space.FMult.k" title="Link to this definition"></a></dt>
-<dd><p>Dimension size for reshaping weights in neural network layers.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.FMult.num_sample">
-<span class="sig-name descname"><span class="pre">num_sample</span></span><a class="headerlink" href="#dicee.models.function_space.FMult.num_sample" title="Link to this definition"></a></dt>
-<dd><p>The number of samples to consider in the model computations.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.FMult.gamma">
-<span class="sig-name descname"><span class="pre">gamma</span></span><a class="headerlink" href="#dicee.models.function_space.FMult.gamma" title="Link to this definition"></a></dt>
-<dd><p>Randomly initialized weights for the neural network layers.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.FMult.roots">
-<span class="sig-name descname"><span class="pre">roots</span></span><a class="headerlink" href="#dicee.models.function_space.FMult.roots" title="Link to this definition"></a></dt>
-<dd><p>Precomputed roots for Legendre polynomials.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.FMult.weights">
-<span class="sig-name descname"><span class="pre">weights</span></span><a class="headerlink" href="#dicee.models.function_space.FMult.weights" title="Link to this definition"></a></dt>
-<dd><p>Precomputed weights for Legendre polynomials.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
-</dd>
-</dl>
-</dd></dl>
-
+<p>Learning Knowledge Neural Graphs</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.function_space.FMult.compute_func">
-<span class="sig-name descname"><span class="pre">compute_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult.compute_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult.compute_func" title="Link to this definition"></a></dt>
-<dd><p>Computes the output of a two-layer neural network for given weights and input.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">compute_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult.compute_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult.compute_func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.function_space.FMult.chain_func">
-<span class="sig-name descname"><span class="pre">chain_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult.chain_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult.chain_func" title="Link to this definition"></a></dt>
-<dd><p>Chains two linear neural network layers for a given input.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">chain_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult.chain_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult.chain_func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.function_space.FMult.forward_triples">
 <span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult.forward_triples" title="Link to this definition"></a></dt>
-<dd><p>Performs a forward pass for a batch of triples and computes the embedding interactions.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id0">
-<span class="sig-name descname"><span class="pre">compute_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult.compute_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
-<dd><p>Compute the output of a two-layer neural network.</p>
-<dl class="field-list simple">
+<dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>weights</strong> (<em>torch.FloatTensor</em>) – The weights of the neural network, split into two sets for two layers.</p></li>
-<li><p><strong>x</strong> (<em>torch.Tensor</em>) – The input tensor for the neural network.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The output tensor after passing through the two-layer neural network.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.FloatTensor</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id1">
-<span class="sig-name descname"><span class="pre">chain_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult.chain_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
-<dd><p>Chain two linear layers of a neural network for given weights and input.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>weights</strong> (<em>torch.FloatTensor</em>) – The weights of the neural network, split into two sets for two layers.</p></li>
-<li><p><strong>x</strong> (<em>torch.Tensor</em>) – The input tensor for the neural network.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The output tensor after chaining the two linear layers.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id2">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
-<dd><p>Forward pass for a batch of triples to compute embedding interactions.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>idx_triple</strong> (<em>torch.Tensor</em>) – Tensor containing indices of triples.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The computed scores for the batch of triples.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
+<dd class="field-odd"><p><strong>x</strong> – </p>
 </dd>
 </dl>
 </dd></dl>
@@ -327,166 +176,25 @@ such as embedding dimensions and other model-specific parameters.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.models.function_space.GFMult">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.function_space.</span></span><span class="sig-name descname"><span class="pre">GFMult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#GFMult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.GFMult" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.function_space.</span></span><span class="sig-name descname"><span class="pre">GFMult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#GFMult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.GFMult" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
-<p>GFMult (Graph Function Multiplication) extends the base knowledge graph embedding
-model by integrating neural network computations with entity and relation embeddings.
-This model is designed to leverage the strengths of neural networks in capturing
-complex interactions within knowledge graphs.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>args</strong> (<em>dict</em>) – A dictionary of arguments containing hyperparameters and settings for the model,
-such as embedding dimensions, learning rate, and other model-specific parameters.</p>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.GFMult.name">
-<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#dicee.models.function_space.GFMult.name" title="Link to this definition"></a></dt>
-<dd><p>The name identifier for the GFMult model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.GFMult.entity_embeddings">
-<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.models.function_space.GFMult.entity_embeddings" title="Link to this definition"></a></dt>
-<dd><p>Embedding layer for entities in the knowledge graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.nn.Embedding</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.GFMult.relation_embeddings">
-<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.models.function_space.GFMult.relation_embeddings" title="Link to this definition"></a></dt>
-<dd><p>Embedding layer for relations in the knowledge graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.nn.Embedding</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.GFMult.k">
-<span class="sig-name descname"><span class="pre">k</span></span><a class="headerlink" href="#dicee.models.function_space.GFMult.k" title="Link to this definition"></a></dt>
-<dd><p>The dimension size for reshaping weights in neural network layers.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.GFMult.num_sample">
-<span class="sig-name descname"><span class="pre">num_sample</span></span><a class="headerlink" href="#dicee.models.function_space.GFMult.num_sample" title="Link to this definition"></a></dt>
-<dd><p>The number of samples to use in the model computations.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.GFMult.roots">
-<span class="sig-name descname"><span class="pre">roots</span></span><a class="headerlink" href="#dicee.models.function_space.GFMult.roots" title="Link to this definition"></a></dt>
-<dd><p>Precomputed roots for Legendre polynomials, repeated for each dimension.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.GFMult.weights">
-<span class="sig-name descname"><span class="pre">weights</span></span><a class="headerlink" href="#dicee.models.function_space.GFMult.weights" title="Link to this definition"></a></dt>
-<dd><p>Precomputed weights for Legendre polynomials.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
-</dd>
-</dl>
-</dd></dl>
-
+<p>Learning Knowledge Neural Graphs</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.function_space.GFMult.compute_func">
-<span class="sig-name descname"><span class="pre">compute_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#GFMult.compute_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.GFMult.compute_func" title="Link to this definition"></a></dt>
-<dd><p>Computes the output of a two-layer neural network for given weights and input.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">compute_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#GFMult.compute_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.GFMult.compute_func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.function_space.GFMult.chain_func">
-<span class="sig-name descname"><span class="pre">chain_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#GFMult.chain_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.GFMult.chain_func" title="Link to this definition"></a></dt>
-<dd><p>Chains two linear neural network layers for a given input.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">chain_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#GFMult.chain_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.GFMult.chain_func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.function_space.GFMult.forward_triples">
 <span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#GFMult.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.GFMult.forward_triples" title="Link to this definition"></a></dt>
-<dd><p>Performs a forward pass for a batch of triples and computes the embedding interactions.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id3">
-<span class="sig-name descname"><span class="pre">compute_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#GFMult.compute_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
-<dd><p>Compute the output of a two-layer neural network.</p>
-<dl class="field-list simple">
+<dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>weights</strong> (<em>torch.FloatTensor</em>) – The weights of the neural network, split into two sets for two layers.</p></li>
-<li><p><strong>x</strong> (<em>torch.Tensor</em>) – The input tensor for the neural network.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The output tensor after passing through the two-layer neural network.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.FloatTensor</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id4">
-<span class="sig-name descname"><span class="pre">chain_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#GFMult.chain_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
-<dd><p>Chain two linear layers of a neural network for given weights and input.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>weights</strong> (<em>torch.FloatTensor</em>) – The weights of the neural network, split into two sets for two layers.</p></li>
-<li><p><strong>x</strong> (<em>torch.Tensor</em>) – The input tensor for the neural network.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The output tensor after chaining the two linear layers.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id5">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#GFMult.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
-<dd><p>Forward pass for a batch of triples to compute embedding interactions.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>idx_triple</strong> (<em>torch.Tensor</em>) – Tensor containing indices of triples.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The computed scores for the batch of triples.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
+<dd class="field-odd"><p><strong>x</strong> – </p>
 </dd>
 </dl>
 </dd></dl>
@@ -495,318 +203,40 @@ such as embedding dimensions, learning rate, and other model-specific parameters
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.models.function_space.FMult2">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.function_space.</span></span><span class="sig-name descname"><span class="pre">FMult2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult2" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.function_space.</span></span><span class="sig-name descname"><span class="pre">FMult2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult2" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
-<p>FMult2 is a model for learning neural networks on knowledge graphs, offering
-enhanced capabilities for capturing complex interactions in the graph. It extends
-the base knowledge graph embedding model by integrating multi-layer neural network
-computations with entity and relation embeddings.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>args</strong> (<em>dict</em>) – A dictionary of arguments containing hyperparameters and settings for the model,
-such as embedding dimensions, learning rate, number of layers, and other model-specific parameters.</p>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.FMult2.name">
-<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#dicee.models.function_space.FMult2.name" title="Link to this definition"></a></dt>
-<dd><p>The name identifier for the FMult2 model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.FMult2.n_layers">
-<span class="sig-name descname"><span class="pre">n_layers</span></span><a class="headerlink" href="#dicee.models.function_space.FMult2.n_layers" title="Link to this definition"></a></dt>
-<dd><p>Number of layers in the neural network.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.FMult2.k">
-<span class="sig-name descname"><span class="pre">k</span></span><a class="headerlink" href="#dicee.models.function_space.FMult2.k" title="Link to this definition"></a></dt>
-<dd><p>Dimension size for reshaping weights in neural network layers.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.FMult2.n">
-<span class="sig-name descname"><span class="pre">n</span></span><a class="headerlink" href="#dicee.models.function_space.FMult2.n" title="Link to this definition"></a></dt>
-<dd><p>The number of discrete points for computations.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.FMult2.a">
-<span class="sig-name descname"><span class="pre">a</span></span><a class="headerlink" href="#dicee.models.function_space.FMult2.a" title="Link to this definition"></a></dt>
-<dd><p>Lower bound of the range for discrete points.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.FMult2.b">
-<span class="sig-name descname"><span class="pre">b</span></span><a class="headerlink" href="#dicee.models.function_space.FMult2.b" title="Link to this definition"></a></dt>
-<dd><p>Upper bound of the range for discrete points.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.FMult2.score_func">
-<span class="sig-name descname"><span class="pre">score_func</span></span><a class="headerlink" href="#dicee.models.function_space.FMult2.score_func" title="Link to this definition"></a></dt>
-<dd><p>The scoring function used in the model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.FMult2.discrete_points">
-<span class="sig-name descname"><span class="pre">discrete_points</span></span><a class="headerlink" href="#dicee.models.function_space.FMult2.discrete_points" title="Link to this definition"></a></dt>
-<dd><p>Tensor of discrete points used in the computations.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.FMult2.entity_embeddings">
-<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.models.function_space.FMult2.entity_embeddings" title="Link to this definition"></a></dt>
-<dd><p>Embedding layer for entities in the knowledge graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.nn.Embedding</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.function_space.FMult2.relation_embeddings">
-<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.models.function_space.FMult2.relation_embeddings" title="Link to this definition"></a></dt>
-<dd><p>Embedding layer for relations in the knowledge graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.nn.Embedding</p>
-</dd>
-</dl>
-</dd></dl>
-
+<p>Learning Knowledge Neural Graphs</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.function_space.FMult2.build_func">
-<span class="sig-name descname"><span class="pre">build_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Vec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2.build_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult2.build_func" title="Link to this definition"></a></dt>
-<dd><p>Constructs a multi-layer neural network from a vector representation.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">build_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Vec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2.build_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult2.build_func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.function_space.FMult2.build_chain_funcs">
-<span class="sig-name descname"><span class="pre">build_chain_funcs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_Vec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2.build_chain_funcs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult2.build_chain_funcs" title="Link to this definition"></a></dt>
-<dd><p>Builds chained functions from a list of vector representations.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">build_chain_funcs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_Vec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2.build_chain_funcs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult2.build_chain_funcs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.function_space.FMult2.compute_func">
-<span class="sig-name descname"><span class="pre">compute_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">W</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2.compute_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult2.compute_func" title="Link to this definition"></a></dt>
-<dd><p>Computes the output of a multi-layer neural network.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">compute_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">W</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2.compute_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult2.compute_func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.function_space.FMult2.function">
-<span class="sig-name descname"><span class="pre">function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_W</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2.function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult2.function" title="Link to this definition"></a></dt>
-<dd><p>Defines a function for neural network computation based on weights and biases.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_W</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_b</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2.function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult2.function" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.function_space.FMult2.trapezoid">
-<span class="sig-name descname"><span class="pre">trapezoid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_W</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2.trapezoid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult2.trapezoid" title="Link to this definition"></a></dt>
-<dd><p>Applies the trapezoidal rule for integration on the function output.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">trapezoid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_W</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_b</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2.trapezoid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult2.trapezoid" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.function_space.FMult2.forward_triples">
 <span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult2.forward_triples" title="Link to this definition"></a></dt>
-<dd><p>Performs a forward pass for a batch of triples and computes the embedding interactions.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id6">
-<span class="sig-name descname"><span class="pre">build_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Vec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2.build_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
-<dd><p>Constructs a multi-layer neural network from a vector representation.</p>
-<dl class="field-list simple">
+<dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>Vec</strong> (<em>torch.Tensor</em>) – The vector representation from which the neural network is constructed.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A tuple containing the list of weight matrices for each layer and the bias vector.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[List[torch.Tensor], torch.Tensor]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id7">
-<span class="sig-name descname"><span class="pre">build_chain_funcs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_Vec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2.build_chain_funcs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
-<dd><p>Builds chained functions from a list of vector representations. This method
-constructs a sequence of neural network layers and their corresponding biases
-based on the provided vector representations.</p>
-<p>Each vector representation in the list is first transformed into a set of weights
-and biases for a neural network layer using the <cite>build_func</cite> method. The method
-then computes a chained multiplication of these weights, adjusted by biases,
-to form a composite neural network function.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>list_Vec</strong> (<em>List</em><em>[</em><em>torch.Tensor</em><em>]</em>) – A list of vector representations, each corresponding to a set of parameters
-for constructing a neural network layer.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A tuple where the first element is a list of weight tensors for each layer of
-the composite neural network, and the second element is the bias tensor for
-the last layer in the list.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[List[torch.Tensor], torch.Tensor]</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<p>This method is specifically designed to work with the neural network architecture
-defined in the FMult2 model. It assumes that each vector in <cite>list_Vec</cite> can be
-decomposed into weights and biases suitable for a layer in a neural network.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id8">
-<span class="sig-name descname"><span class="pre">compute_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">W</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2.compute_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
-<dd><p>Computes the output of a multi-layer neural network defined by the given weights and bias.</p>
-<p>This method sequentially applies a series of matrix multiplications and non-linear
-transformations to an input tensor <cite>x</cite>, using the provided weights <cite>W</cite>. The method
-alternates between applying a non-linear function (tanh) and a linear transformation
-to the intermediate outputs. The final output is adjusted with a bias term <cite>b</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>W</strong> (<em>List</em><em>[</em><em>torch.Tensor</em><em>]</em>) – A list of weight tensors for each layer in the neural network. Each tensor
-in the list represents the weights of a layer.</p></li>
-<li><p><strong>b</strong> (<em>torch.Tensor</em>) – The bias tensor to be added to the output of the final layer.</p></li>
-<li><p><strong>x</strong> (<em>torch.Tensor</em>) – The input tensor to be processed by the neural network.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The output tensor after processing by the multi-layer neural network.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.FloatTensor</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<p>The method assumes an odd-indexed layer applies a non-linearity (tanh), while
-even-indexed layers apply linear transformations. This design choice is based on
-empirical observations for better performance in the context of the FMult2 model.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id9">
-<span class="sig-name descname"><span class="pre">function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_W</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2.function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
-<dd><p>Defines a function that computes the output of a composite neural network.
-This higher-order function returns a callable that applies a sequence of
-transformations defined by the provided weights and biases.</p>
-<p>The returned function (<cite>f</cite>) takes an input tensor <cite>x</cite> and applies a series of
-neural network computations on it. If only one set of weights and biases is provided,
-it directly computes the output using <cite>compute_func</cite>. Otherwise, it sequentially
-multiplies the outputs of multiple calls to <cite>compute_func</cite>, each using a different
-set of weights and biases from <cite>list_W</cite> and <cite>list_b</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>list_W</strong> (<em>List</em><em>[</em><em>List</em><em>[</em><em>torch.Tensor</em><em>]</em><em>]</em>) – A list where each element is a list of weight tensors for a neural network.</p></li>
-<li><p><strong>list_b</strong> (<em>List</em><em>[</em><em>torch.Tensor</em><em>]</em>) – A list of bias tensors corresponding to each set of weights in <cite>list_W</cite>.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A function that takes an input tensor and returns the output of the composite
-neural network.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Callable[[torch.Tensor], torch.Tensor]</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<p>This method is part of the FMult2 model’s approach to construct complex scoring
-functions for knowledge graph embeddings. The flexibility in combining multiple
-neural network layers enables capturing intricate patterns in the data.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id10">
-<span class="sig-name descname"><span class="pre">trapezoid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_W</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2.trapezoid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
-<dd><p>Computes the integral of the output of a composite neural network function over a
-range of discrete points using the trapezoidal rule.</p>
-<p>This method first constructs a composite neural network function using the <cite>function</cite>
-method with the provided weights <cite>list_W</cite> and biases <cite>list_b</cite>. It then evaluates this
-function at a series of discrete points (<cite>self.discrete_points</cite>) and applies the
-trapezoidal rule to approximate the integral of the function over these points. The
-sum of the integral approximations across all dimensions is returned.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>list_W</strong> (<em>List</em><em>[</em><em>List</em><em>[</em><em>torch.Tensor</em><em>]</em><em>]</em>) – A list where each element is a list of weight tensors for a neural network.</p></li>
-<li><p><strong>list_b</strong> (<em>List</em><em>[</em><em>torch.Tensor</em><em>]</em>) – A list of bias tensors corresponding to each set of weights in <cite>list_W</cite>.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The sum of the integral of the composite function’s output over the range
-of discrete points, computed using the trapezoidal rule.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<p>The trapezoidal rule is a numerical method to approximate definite integrals.
-In the context of the FMult2 model, this method is used to integrate the output
-of the neural network over a range of inputs, which is crucial for certain types
-of calculations in knowledge graph embeddings.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id11">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
-<dd><p>Forward pass for a batch of triples to compute embedding interactions.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>idx_triple</strong> (<em>torch.Tensor</em>) – Tensor containing indices of triples.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The computed scores for the batch of triples.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
+<dd class="field-odd"><p><strong>x</strong> – </p>
 </dd>
 </dl>
 </dd></dl>
@@ -822,16 +252,9 @@ f(x) = sum_{k=0}^{k=d-1}wk e^{kix}. and use the three differents scoring functio
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.function_space.LFMult1.forward_triples">
 <span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#LFMult1.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.LFMult1.forward_triples" title="Link to this definition"></a></dt>
-<dd><p>Perform the forward pass for triples.</p>
-<dl class="field-list simple">
+<dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>torch.LongTensor</em>) – The input tensor containing the indexes of head, relation, and tail entities.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The output tensor containing the scores for the input triples.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
+<dd class="field-odd"><p><strong>x</strong> – </p>
 </dd>
 </dl>
 </dd></dl>
@@ -858,16 +281,9 @@ We also consider combining with Neural Networks.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.function_space.LFMult.forward_triples">
 <span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#LFMult.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.LFMult.forward_triples" title="Link to this definition"></a></dt>
-<dd><p>Perform the forward pass for triples.</p>
-<dl class="field-list simple">
+<dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>torch.LongTensor</em>) – The input tensor containing the indexes of head, relation, and tail entities.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The output tensor containing the scores for the input triples.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.Tensor</p>
+<dd class="field-odd"><p><strong>x</strong> – </p>
 </dd>
 </dl>
 </dd></dl>
@@ -968,7 +384,7 @@ it takes a matrix tensor of coefficients (coeff), a matrix tensor of points x  a
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../complex/index.html" class="btn btn-neutral float-left" title="dicee.models.complex" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../dualE/index.html" class="btn btn-neutral float-left" title="dicee.models.dualE" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="../octonion/index.html" class="btn btn-neutral float-right" title="dicee.models.octonion" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

@@ -124,81 +124,34 @@
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk" title="dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ReadFromDisk</span></code></a></p></td>
-<td><p>Read the data from disk into memory.</p></td>
+<td><p>Read the data from disk into memory</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.read_from_disk.</span></span><span class="sig-name descname"><span class="pre">ReadFromDisk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk" title="Link to this definition"></a></dt>
-<dd><p>Read the data from disk into memory.</p>
-<p>This class is responsible for loading a knowledge graph from various sources such as
-disk files, triple stores, or SPARQL endpoints, and then making it available in memory
-for further processing.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.kg">
-<span class="sig-name descname"><span class="pre">kg</span></span><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.kg" title="Link to this definition"></a></dt>
-<dd><p>An instance representing the knowledge graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>object</p>
-</dd>
-</dl>
-</dd></dl>
-
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.read_from_disk.</span></span><span class="sig-name descname"><span class="pre">ReadFromDisk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk" title="Link to this definition"></a></dt>
+<dd><p>Read the data from disk into memory</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.start">
-<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.start" title="Link to this definition"></a></dt>
-<dd><p>Read a knowledge graph from disk into memory.</p>
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.start" title="Link to this definition"></a></dt>
+<dd><p>Read a knowledge graph from disk into memory</p>
+<p>Data will be available at the train_set, test_set, valid_set attributes.</p>
+<section id="parameter">
+<h4>Parameter<a class="headerlink" href="#parameter" title="Link to this heading"></a></h4>
+<p>None</p>
+<dl class="field-list simple">
+<dt class="field-odd">rtype<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</section>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.add_noisy_triples_into_training">
-<span class="sig-name descname"><span class="pre">add_noisy_triples_into_training</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.add_noisy_triples_into_training" title="Link to this definition"></a></dt>
-<dd><p>Add noisy triples into the training set of the knowledge graph.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id0">
-<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
-<dd><p>Read a knowledge graph from disk into memory.</p>
-<p>This method reads the knowledge graph data from the specified source (disk, triple store,
-or SPARQL endpoint) and loads it into memory. The data is made available in the
-train_set, test_set, and valid_set attributes of the knowledge graph instance.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>None</strong> – </p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
-</dd>
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>RuntimeError</strong> – If the data source is invalid or not specified correctly.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id1">
-<span class="sig-name descname"><span class="pre">add_noisy_triples_into_training</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
-<dd><p>Add noisy triples into the training set of the knowledge graph.</p>
-<p>This method injects a specified proportion of noisy triples into the training set.
-Noisy triples are randomly generated by shuffling the entities and relations in the
-knowledge graph. The purpose of adding noisy triples is often to test the robustness
-of the model or to augment the training data.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>None</strong> – </p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<p>The number of noisy triples added is determined by the ‘add_noise_rate’ attribute
-of the knowledge graph. The method ensures that the total number of triples (original
-plus noisy) in the training set matches the expected count after adding the noisy triples.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">add_noisy_triples_into_training</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk.add_noisy_triples_into_training"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.add_noisy_triples_into_training" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 

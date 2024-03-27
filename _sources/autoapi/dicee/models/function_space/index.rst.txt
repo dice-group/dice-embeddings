@@ -21,464 +21,69 @@ Classes
 
 
 
-.. py:class:: FMult(args: dict)
+.. py:class:: FMult(args)
 
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   FMult is a model for learning neural networks on knowledge graphs. It extends
-   the base knowledge graph embedding model by integrating neural network computations
-   with entity and relation embeddings. The model is designed to work with complex
-   embeddings and utilizes a neural network-based approach for embedding interactions.
+   Learning Knowledge Neural Graphs
 
-   :param args: A dictionary of arguments containing hyperparameters and settings for the model,
-                such as embedding dimensions and other model-specific parameters.
-   :type args: dict
-
-   .. attribute:: name
-
-      The name identifier for the FMult model.
-
-      :type: str
-
-   .. attribute:: entity_embeddings
-
-      Embedding layer for entities in the knowledge graph.
-
-      :type: torch.nn.Embedding
-
-   .. attribute:: relation_embeddings
-
-      Embedding layer for relations in the knowledge graph.
-
-      :type: torch.nn.Embedding
-
-   .. attribute:: k
-
-      Dimension size for reshaping weights in neural network layers.
-
-      :type: int
-
-   .. attribute:: num_sample
-
-      The number of samples to consider in the model computations.
-
-      :type: int
-
-   .. attribute:: gamma
-
-      Randomly initialized weights for the neural network layers.
-
-      :type: torch.Tensor
-
-   .. attribute:: roots
-
-      Precomputed roots for Legendre polynomials.
-
-      :type: torch.Tensor
-
-   .. attribute:: weights
-
-      Precomputed weights for Legendre polynomials.
-
-      :type: torch.Tensor
-
-   .. method:: compute_func(weights: torch.FloatTensor, x: torch.Tensor) -> torch.FloatTensor
-
-      Computes the output of a two-layer neural network for given weights and input.
+   .. py:method:: compute_func(weights: torch.FloatTensor, x) -> torch.FloatTensor
 
 
-   .. method:: chain_func(weights: torch.FloatTensor, x: torch.Tensor) -> torch.Tensor
-
-      Chains two linear neural network layers for a given input.
-
-
-   .. method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
-
-      Performs a forward pass for a batch of triples and computes the embedding interactions.
-
-
-   .. py:method:: compute_func(weights: torch.FloatTensor, x: torch.Tensor) -> torch.FloatTensor
-
-      Compute the output of a two-layer neural network.
-
-      :param weights: The weights of the neural network, split into two sets for two layers.
-      :type weights: torch.FloatTensor
-      :param x: The input tensor for the neural network.
-      :type x: torch.Tensor
-
-      :returns: The output tensor after passing through the two-layer neural network.
-      :rtype: torch.FloatTensor
-
-
-   .. py:method:: chain_func(weights: torch.FloatTensor, x: torch.Tensor) -> torch.Tensor
-
-      Chain two linear layers of a neural network for given weights and input.
-
-      :param weights: The weights of the neural network, split into two sets for two layers.
-      :type weights: torch.FloatTensor
-      :param x: The input tensor for the neural network.
-      :type x: torch.Tensor
-
-      :returns: The output tensor after chaining the two linear layers.
-      :rtype: torch.Tensor
+   .. py:method:: chain_func(weights, x: torch.FloatTensor)
 
 
    .. py:method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
 
-      Forward pass for a batch of triples to compute embedding interactions.
-
-      :param idx_triple: Tensor containing indices of triples.
-      :type idx_triple: torch.Tensor
-
-      :returns: The computed scores for the batch of triples.
-      :rtype: torch.Tensor
+      :param x:
 
 
 
-.. py:class:: GFMult(args: dict)
+.. py:class:: GFMult(args)
 
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   GFMult (Graph Function Multiplication) extends the base knowledge graph embedding
-   model by integrating neural network computations with entity and relation embeddings.
-   This model is designed to leverage the strengths of neural networks in capturing
-   complex interactions within knowledge graphs.
+   Learning Knowledge Neural Graphs
 
-   :param args: A dictionary of arguments containing hyperparameters and settings for the model,
-                such as embedding dimensions, learning rate, and other model-specific parameters.
-   :type args: dict
-
-   .. attribute:: name
-
-      The name identifier for the GFMult model.
-
-      :type: str
-
-   .. attribute:: entity_embeddings
-
-      Embedding layer for entities in the knowledge graph.
-
-      :type: torch.nn.Embedding
-
-   .. attribute:: relation_embeddings
-
-      Embedding layer for relations in the knowledge graph.
-
-      :type: torch.nn.Embedding
-
-   .. attribute:: k
-
-      The dimension size for reshaping weights in neural network layers.
-
-      :type: int
-
-   .. attribute:: num_sample
-
-      The number of samples to use in the model computations.
-
-      :type: int
-
-   .. attribute:: roots
-
-      Precomputed roots for Legendre polynomials, repeated for each dimension.
-
-      :type: torch.Tensor
-
-   .. attribute:: weights
-
-      Precomputed weights for Legendre polynomials.
-
-      :type: torch.Tensor
-
-   .. method:: compute_func(weights: torch.FloatTensor, x: torch.Tensor) -> torch.FloatTensor
-
-      Computes the output of a two-layer neural network for given weights and input.
+   .. py:method:: compute_func(weights: torch.FloatTensor, x) -> torch.FloatTensor
 
 
-   .. method:: chain_func(weights: torch.FloatTensor, x: torch.Tensor) -> torch.Tensor
-
-      Chains two linear neural network layers for a given input.
-
-
-   .. method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
-
-      Performs a forward pass for a batch of triples and computes the embedding interactions.
-
-
-   .. py:method:: compute_func(weights: torch.FloatTensor, x: torch.Tensor) -> torch.FloatTensor
-
-      Compute the output of a two-layer neural network.
-
-      :param weights: The weights of the neural network, split into two sets for two layers.
-      :type weights: torch.FloatTensor
-      :param x: The input tensor for the neural network.
-      :type x: torch.Tensor
-
-      :returns: The output tensor after passing through the two-layer neural network.
-      :rtype: torch.FloatTensor
-
-
-   .. py:method:: chain_func(weights: torch.FloatTensor, x: torch.Tensor) -> torch.Tensor
-
-      Chain two linear layers of a neural network for given weights and input.
-
-      :param weights: The weights of the neural network, split into two sets for two layers.
-      :type weights: torch.FloatTensor
-      :param x: The input tensor for the neural network.
-      :type x: torch.Tensor
-
-      :returns: The output tensor after chaining the two linear layers.
-      :rtype: torch.Tensor
+   .. py:method:: chain_func(weights, x: torch.FloatTensor)
 
 
    .. py:method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
 
-      Forward pass for a batch of triples to compute embedding interactions.
-
-      :param idx_triple: Tensor containing indices of triples.
-      :type idx_triple: torch.Tensor
-
-      :returns: The computed scores for the batch of triples.
-      :rtype: torch.Tensor
+      :param x:
 
 
 
-.. py:class:: FMult2(args: dict)
+.. py:class:: FMult2(args)
 
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   FMult2 is a model for learning neural networks on knowledge graphs, offering
-   enhanced capabilities for capturing complex interactions in the graph. It extends
-   the base knowledge graph embedding model by integrating multi-layer neural network
-   computations with entity and relation embeddings.
+   Learning Knowledge Neural Graphs
 
-   :param args: A dictionary of arguments containing hyperparameters and settings for the model,
-                such as embedding dimensions, learning rate, number of layers, and other model-specific parameters.
-   :type args: dict
+   .. py:method:: build_func(Vec)
 
-   .. attribute:: name
 
-      The name identifier for the FMult2 model.
+   .. py:method:: build_chain_funcs(list_Vec)
 
-      :type: str
 
-   .. attribute:: n_layers
+   .. py:method:: compute_func(W, b, x) -> torch.FloatTensor
 
-      Number of layers in the neural network.
 
-      :type: int
+   .. py:method:: function(list_W, list_b)
 
-   .. attribute:: k
 
-      Dimension size for reshaping weights in neural network layers.
-
-      :type: int
-
-   .. attribute:: n
-
-      The number of discrete points for computations.
-
-      :type: int
-
-   .. attribute:: a
-
-      Lower bound of the range for discrete points.
-
-      :type: float
-
-   .. attribute:: b
-
-      Upper bound of the range for discrete points.
-
-      :type: float
-
-   .. attribute:: score_func
-
-      The scoring function used in the model.
-
-      :type: str
-
-   .. attribute:: discrete_points
-
-      Tensor of discrete points used in the computations.
-
-      :type: torch.Tensor
-
-   .. attribute:: entity_embeddings
-
-      Embedding layer for entities in the knowledge graph.
-
-      :type: torch.nn.Embedding
-
-   .. attribute:: relation_embeddings
-
-      Embedding layer for relations in the knowledge graph.
-
-      :type: torch.nn.Embedding
-
-   .. method:: build_func(Vec: torch.Tensor) -> Tuple[List[torch.Tensor], torch.Tensor]
-
-      Constructs a multi-layer neural network from a vector representation.
-
-
-   .. method:: build_chain_funcs(list_Vec: List[torch.Tensor]) -> Tuple[List[torch.Tensor], torch.Tensor]
-
-      Builds chained functions from a list of vector representations.
-
-
-   .. method:: compute_func(W: List[torch.Tensor], b: torch.Tensor, x: torch.Tensor) -> torch.FloatTensor
-
-      Computes the output of a multi-layer neural network.
-
-
-   .. method:: function(list_W: List[List[torch.Tensor]], list_b: List[torch.Tensor]) -> Callable[[torch.Tensor], torch.Tensor]
-
-      Defines a function for neural network computation based on weights and biases.
-
-
-   .. method:: trapezoid(list_W: List[List[torch.Tensor]], list_b: List[torch.Tensor]) -> torch.Tensor
-
-      Applies the trapezoidal rule for integration on the function output.
-
-
-   .. method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
-
-      Performs a forward pass for a batch of triples and computes the embedding interactions.
-
-
-   .. py:method:: build_func(Vec: torch.Tensor) -> Tuple[List[torch.Tensor], torch.Tensor]
-
-      Constructs a multi-layer neural network from a vector representation.
-
-      :param Vec: The vector representation from which the neural network is constructed.
-      :type Vec: torch.Tensor
-
-      :returns: A tuple containing the list of weight matrices for each layer and the bias vector.
-      :rtype: Tuple[List[torch.Tensor], torch.Tensor]
-
-
-   .. py:method:: build_chain_funcs(list_Vec: List[torch.Tensor]) -> Tuple[List[torch.Tensor], torch.Tensor]
-
-      Builds chained functions from a list of vector representations. This method
-      constructs a sequence of neural network layers and their corresponding biases
-      based on the provided vector representations.
-
-      Each vector representation in the list is first transformed into a set of weights
-      and biases for a neural network layer using the `build_func` method. The method
-      then computes a chained multiplication of these weights, adjusted by biases,
-      to form a composite neural network function.
-
-      :param list_Vec: A list of vector representations, each corresponding to a set of parameters
-                       for constructing a neural network layer.
-      :type list_Vec: List[torch.Tensor]
-
-      :returns: A tuple where the first element is a list of weight tensors for each layer of
-                the composite neural network, and the second element is the bias tensor for
-                the last layer in the list.
-      :rtype: Tuple[List[torch.Tensor], torch.Tensor]
-
-      .. rubric:: Notes
-
-      This method is specifically designed to work with the neural network architecture
-      defined in the FMult2 model. It assumes that each vector in `list_Vec` can be
-      decomposed into weights and biases suitable for a layer in a neural network.
-
-
-   .. py:method:: compute_func(W: List[torch.Tensor], b: torch.Tensor, x: torch.Tensor) -> torch.FloatTensor
-
-      Computes the output of a multi-layer neural network defined by the given weights and bias.
-
-      This method sequentially applies a series of matrix multiplications and non-linear
-      transformations to an input tensor `x`, using the provided weights `W`. The method
-      alternates between applying a non-linear function (tanh) and a linear transformation
-      to the intermediate outputs. The final output is adjusted with a bias term `b`.
-
-      :param W: A list of weight tensors for each layer in the neural network. Each tensor
-                in the list represents the weights of a layer.
-      :type W: List[torch.Tensor]
-      :param b: The bias tensor to be added to the output of the final layer.
-      :type b: torch.Tensor
-      :param x: The input tensor to be processed by the neural network.
-      :type x: torch.Tensor
-
-      :returns: The output tensor after processing by the multi-layer neural network.
-      :rtype: torch.FloatTensor
-
-      .. rubric:: Notes
-
-      The method assumes an odd-indexed layer applies a non-linearity (tanh), while
-      even-indexed layers apply linear transformations. This design choice is based on
-      empirical observations for better performance in the context of the FMult2 model.
-
-
-   .. py:method:: function(list_W: List[List[torch.Tensor]], list_b: List[torch.Tensor]) -> Callable[[torch.Tensor], torch.Tensor]
-
-      Defines a function that computes the output of a composite neural network.
-      This higher-order function returns a callable that applies a sequence of
-      transformations defined by the provided weights and biases.
-
-      The returned function (`f`) takes an input tensor `x` and applies a series of
-      neural network computations on it. If only one set of weights and biases is provided,
-      it directly computes the output using `compute_func`. Otherwise, it sequentially
-      multiplies the outputs of multiple calls to `compute_func`, each using a different
-      set of weights and biases from `list_W` and `list_b`.
-
-      :param list_W: A list where each element is a list of weight tensors for a neural network.
-      :type list_W: List[List[torch.Tensor]]
-      :param list_b: A list of bias tensors corresponding to each set of weights in `list_W`.
-      :type list_b: List[torch.Tensor]
-
-      :returns: A function that takes an input tensor and returns the output of the composite
-                neural network.
-      :rtype: Callable[[torch.Tensor], torch.Tensor]
-
-      .. rubric:: Notes
-
-      This method is part of the FMult2 model's approach to construct complex scoring
-      functions for knowledge graph embeddings. The flexibility in combining multiple
-      neural network layers enables capturing intricate patterns in the data.
-
-
-   .. py:method:: trapezoid(list_W: List[List[torch.Tensor]], list_b: List[torch.Tensor]) -> torch.Tensor
-
-      Computes the integral of the output of a composite neural network function over a
-      range of discrete points using the trapezoidal rule.
-
-      This method first constructs a composite neural network function using the `function`
-      method with the provided weights `list_W` and biases `list_b`. It then evaluates this
-      function at a series of discrete points (`self.discrete_points`) and applies the
-      trapezoidal rule to approximate the integral of the function over these points. The
-      sum of the integral approximations across all dimensions is returned.
-
-      :param list_W: A list where each element is a list of weight tensors for a neural network.
-      :type list_W: List[List[torch.Tensor]]
-      :param list_b: A list of bias tensors corresponding to each set of weights in `list_W`.
-      :type list_b: List[torch.Tensor]
-
-      :returns: The sum of the integral of the composite function's output over the range
-                of discrete points, computed using the trapezoidal rule.
-      :rtype: torch.Tensor
-
-      .. rubric:: Notes
-
-      The trapezoidal rule is a numerical method to approximate definite integrals.
-      In the context of the FMult2 model, this method is used to integrate the output
-      of the neural network over a range of inputs, which is crucial for certain types
-      of calculations in knowledge graph embeddings.
+   .. py:method:: trapezoid(list_W, list_b)
 
 
    .. py:method:: forward_triples(idx_triple: torch.Tensor) -> torch.Tensor
 
-      Forward pass for a batch of triples to compute embedding interactions.
-
-      :param idx_triple: Tensor containing indices of triples.
-      :type idx_triple: torch.Tensor
-
-      :returns: The computed scores for the batch of triples.
-      :rtype: torch.Tensor
+      :param x:
 
 
 
@@ -492,13 +97,7 @@ Classes
 
    .. py:method:: forward_triples(idx_triple)
 
-      Perform the forward pass for triples.
-
-      :param x: The input tensor containing the indexes of head, relation, and tail entities.
-      :type x: torch.LongTensor
-
-      :returns: The output tensor containing the scores for the input triples.
-      :rtype: torch.Tensor
+      :param x:
 
 
    .. py:method:: tri_score(h, r, t)
@@ -519,13 +118,7 @@ Classes
 
    .. py:method:: forward_triples(idx_triple)
 
-      Perform the forward pass for triples.
-
-      :param x: The input tensor containing the indexes of head, relation, and tail entities.
-      :type x: torch.LongTensor
-
-      :returns: The output tensor containing the scores for the input triples.
-      :rtype: torch.Tensor
+      :param x:
 
 
    .. py:method:: construct_multi_coeff(x)

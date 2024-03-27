@@ -28,201 +28,76 @@ Classes
 
 
 
-.. py:class:: DICE_Trainer(args, is_continual_training: bool, storage_path: str, evaluator: Optional[object] = None)
+.. py:class:: DICE_Trainer(args, is_continual_training, storage_path, evaluator=None)
 
 
-   Implements a training framework for knowledge graph embedding models using [PyTorch Lightning](https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html),
-   supporting [multi-GPU](https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html) and CPU training. This trainer can handle continual training scenarios and supports
-   different forms of labeling and evaluation methods.
+   DICE_Trainer implement
+    1- Pytorch Lightning trainer (https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html)
+    2- Multi-GPU Trainer(https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html)
+    3- CPU Trainer
 
-   :param args: Command line arguments or configurations specifying training parameters and model settings.
-   :type args: Namespace
-   :param is_continual_training: Flag indicating whether the training session is part of a continual learning process.
-   :type is_continual_training: bool
-   :param storage_path: Path to the directory where training checkpoints and models are stored.
-   :type storage_path: str
-   :param evaluator: An evaluation object responsible for model evaluation. This can be any object that implements
-                     an `eval` method accepting model predictions and returning evaluation metrics.
-   :type evaluator: object, optional
+    Parameter
+    ---------
+    args
 
-   .. attribute:: report
+    is_continual_training:bool
 
-      A dictionary to store training reports and metrics.
+    storage_path:str
 
-      :type: dict
+    evaluator:
 
-   .. attribute:: trainer
-
-      The PyTorch Lightning Trainer instance used for model training.
-
-      :type: lightening.Trainer or None
-
-   .. attribute:: form_of_labelling
-
-      The form of labeling used during training, which can be "EntityPrediction", "RelationPrediction", or "Pyke".
-
-      :type: str or None
-
-   .. method:: continual_start()
-
-      Initializes and starts the training process, including model loading and fitting.
-
-   .. method:: initialize_trainer(callbacks: List) -> lightening.Trainer
-
-      Initializes a PyTorch Lightning Trainer instance with the specified callbacks.
-
-   .. method:: initialize_or_load_model()
-
-      Initializes or loads a model for training based on the training configuration.
-
-   .. method:: initialize_dataloader(dataset: torch.utils.data.Dataset) -> torch.utils.data.DataLoader
-
-      Initializes a DataLoader for the given dataset.
-
-   .. method:: initialize_dataset(dataset: KG, form_of_labelling) -> torch.utils.data.Dataset
-
-      Prepares and initializes a dataset for training.
-
-   .. method:: start(knowledge_graph: KG) -> Tuple[BaseKGE, str]
-
-      Starts the training process for a given knowledge graph.
-
-   .. method:: k_fold_cross_validation(dataset) -> Tuple[BaseKGE, str]
-
-      Performs K-fold cross-validation on the dataset and returns the trained model and form of labelling.
+    Returns
+    -------
+    report:dict
 
 
    .. py:method:: continual_start()
 
-      Initializes and starts the training process, including model loading and fitting.
-      This method is specifically designed for continual training scenarios.
+      (1) Initialize training.
+      (2) Load model
+      (3) Load trainer
+      (3) Fit model
 
-      :returns: * **model** (*BaseKGE*) -- The trained knowledge graph embedding model instance. `BaseKGE` is a placeholder
-                  for the actual model class, which should be a subclass of the base model class
-                  used in your framework.
-                * **form_of_labelling** (*str*) -- The form of labeling used during the training. This can indicate the type of
-                  prediction task the model is trained for, such as "EntityPrediction",
-                  "RelationPrediction", or other custom labeling forms defined in your implementation.
+      Parameter
+      ---------
+
+      :returns: * *model*
+                * **form_of_labelling** (*str*)
 
 
    .. py:method:: initialize_trainer(callbacks: List) -> lightning.Trainer
 
-      Initializes a PyTorch Lightning Trainer instance.
-
-      :param callbacks: A list of PyTorch Lightning callbacks to be used during training.
-      :type callbacks: List
-
-      :returns: The initialized PyTorch Lightning Trainer instance.
-      :rtype: pl.Trainer
+      Initialize Trainer from input arguments
 
 
-   .. py:method:: initialize_or_load_model() -> Tuple[dicee.models.base_model.BaseKGE, str]
-
-      Initializes or loads a knowledge graph embedding model based on the training configuration.
-      This method decides whether to start training from scratch or to continue training from a
-      previously saved model state, depending on the `is_continual_training` attribute.
-
-      :returns: * **model** (*BaseKGE*) -- The model instance that is either initialized from scratch or loaded from a saved state.
-                  `BaseKGE` is a generic placeholder for the actual model class, which is a subclass of the
-                  base knowledge graph embedding model class used in your implementation.
-                * **form_of_labelling** (*str*) -- A string indicating the type of prediction task the model is configured for. Possible values
-                  include "EntityPrediction" and "RelationPrediction", which signify whether the model is
-                  trained to predict missing entities or relations in a knowledge graph. The actual values
-                  depend on the specific tasks supported by your implementation.
-
-      .. rubric:: Notes
-
-      The method uses the `is_continual_training` attribute to determine if the model should be loaded
-      from a saved state. If `is_continual_training` is True, the method attempts to load the model and its
-      configuration from the specified `storage_path`. If `is_continual_training` is False or the model
-      cannot be loaded, a new model instance is initialized.
-
-      This method also sets the `form_of_labelling` attribute based on the model's configuration, which
-      is used to inform downstream training and evaluation processes about the type of prediction task.
+   .. py:method:: initialize_or_load_model()
 
 
    .. py:method:: initialize_dataloader(dataset: torch.utils.data.Dataset) -> torch.utils.data.DataLoader
 
-      Initializes and returns a PyTorch DataLoader object for the given dataset.
 
-      This DataLoader is configured based on the training arguments provided,
-      including batch size, shuffle status, and the number of workers.
-
-      :param dataset: The dataset to be loaded into the DataLoader. This dataset should already
-                      be processed and ready for training or evaluation.
-      :type dataset: torch.utils.data.Dataset
-
-      :returns: A DataLoader instance ready for training or evaluation, configured with the
-                appropriate batch size, shuffle setting, and number of workers.
-      :rtype: torch.utils.data.DataLoader
-
-
-   .. py:method:: initialize_dataset(dataset: dicee.knowledge_graph.KG, form_of_labelling: str) -> torch.utils.data.Dataset
-
-      Initializes and returns a dataset suitable for training or evaluation, based on the
-      knowledge graph data and the specified form of labelling.
-
-      :param dataset: The knowledge graph data used to construct the dataset. This should include
-                      training, validation, and test sets along with any other necessary information
-                      like entity and relation mappings.
-      :type dataset: KG
-      :param form_of_labelling: The form of labelling to be used for the dataset, indicating the prediction
-                                task (e.g., "EntityPrediction", "RelationPrediction").
-      :type form_of_labelling: str
-
-      :returns: A processed dataset ready for use with a PyTorch DataLoader, tailored to the
-                specified form of labelling and containing all necessary data for training
-                or evaluation.
-      :rtype: torch.utils.data.Dataset
+   .. py:method:: initialize_dataset(dataset: dicee.knowledge_graph.KG, form_of_labelling) -> torch.utils.data.Dataset
 
 
    .. py:method:: start(knowledge_graph: dicee.knowledge_graph.KG) -> Tuple[dicee.models.base_model.BaseKGE, str]
 
-      Starts the training process for the selected model using the provided knowledge graph data.
-      The method selects and trains the model based on the configuration specified in the arguments.
-
-      :param knowledge_graph: The knowledge graph data containing entities, relations, and triples, which will be used
-                              for training the model.
-      :type knowledge_graph: KG
-
-      :returns: A tuple containing the trained model instance and the form of labelling used during
-                training. The form of labelling indicates the type of prediction task.
-      :rtype: Tuple[BaseKGE, str]
+      Train selected model via the selected training strategy
 
 
-   .. py:method:: k_fold_cross_validation(dataset: dicee.knowledge_graph.KG) -> Tuple[dicee.models.base_model.BaseKGE, str]
+   .. py:method:: k_fold_cross_validation(dataset) -> Tuple[dicee.models.base_model.BaseKGE, str]
 
-      Conducts K-fold cross-validation on the provided dataset to assess the performance
-      of the model specified in the training arguments. The process involves partitioning
-      the dataset into K distinct subsets, iteratively using one subset for testing and
-      the remainder for training. The model's performance is evaluated on each test split
-      to compute the Mean Reciprocal Rank (MRR) scores.
+      Perform K-fold Cross-Validation
 
-      Steps:
-      1. The dataset is divided into K train and test splits.
-      2. For each split:
-      2.1. A trainer and model are initialized based on the provided configuration.
-      2.2. The model is trained using the training portion of the split.
-      2.3. The MRR score of the trained model is computed using the test portion of the split.
-      3. The process aggregates the MRR scores across all splits to report the mean and standard deviation
-      of the MRR, providing a comprehensive evaluation of the model's performance.
+      1. Obtain K train and test splits.
+      2. For each split,
+          2.1 initialize trainer and model
+          2.2. Train model with configuration provided in args.
+          2.3. Compute the mean reciprocal rank (MRR) score of the model on the test respective split.
+      3. Report the mean and average MRR .
 
-      :param dataset: The dataset to be used for K-fold cross-validation. This dataset should include
-                      the triples (head entity, relation, tail entity) for the entire knowledge graph.
-      :type dataset: KG
-
-      :returns: A tuple containing:
-                - The trained model instance from the last fold of the cross-validation.
-                - The form of labelling used during training, indicating the prediction task
-                (e.g., "EntityPrediction", "RelationPrediction").
-      :rtype: Tuple[BaseKGE, str]
-
-      .. rubric:: Notes
-
-      The function assumes the presence of a predefined number of folds (K) specified in
-      the training arguments. It utilizes PyTorch Lightning for model training and evaluation,
-      leveraging GPU acceleration if available. The final output includes the model trained
-      on the last fold and a summary of the cross-validation performance metrics.
+      :param self:
+      :param dataset:
+      :return: model
 
 
 

@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dicee.trainer.torch_trainer_ddp &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=eafc0fe6" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            DICE Embeddings
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/dicee/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dicee.trainer.torch_trainer_ddp</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dicee.trainer.torch_trainer_ddp</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">torch.nn.parallel</span> <span class="kn">import</span> <span class="n">DistributedDataParallel</span> <span class="k">as</span> <span class="n">DDP</span>
+
+<span class="kn">from</span> <span class="nn">dicee.abstracts</span> <span class="kn">import</span> <span class="n">AbstractTrainer</span>
+<span class="kn">from</span> <span class="nn">dicee.static_funcs_training</span> <span class="kn">import</span> <span class="n">efficient_zero_grad</span>
+<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span>
+
+
+<span class="c1"># DDP with gradiant accumulation https://gist.github.com/mcarilli/bf013d2d2f4b4dd21ade30c9b52d5e2e</span>
+<div class="viewcode-block" id="print_peak_memory">
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.print_peak_memory">[docs]</a>
+<span class="k">def</span> <span class="nf">print_peak_memory</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">device</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">device</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">max_memory_allocated</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="mf">1e6</span><span class="si">}</span><span class="s2">MB &quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="TorchDDPTrainer">
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.TorchDDPTrainer">[docs]</a>
+<span class="k">class</span> <span class="nc">TorchDDPTrainer</span><span class="p">(</span><span class="n">AbstractTrainer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        A Trainer based on torch.nn.parallel.DistributedDataParallel</span>
+
+<span class="sd">        Arguments</span>
+<span class="sd">       ----------</span>
+<span class="sd">       train_set_idx</span>
+<span class="sd">           Indexed triples for the training.</span>
+<span class="sd">       entity_idxs</span>
+<span class="sd">           mapping.</span>
+<span class="sd">       relation_idxs</span>
+<span class="sd">           mapping.</span>
+<span class="sd">       form</span>
+<span class="sd">           ?</span>
+<span class="sd">       store</span>
+<span class="sd">            ?</span>
+<span class="sd">       label_smoothing_rate</span>
+<span class="sd">            Using hard targets (0,1) drives weights to infinity.</span>
+<span class="sd">            An outlier produces enormous gradients.</span>
+
+<span class="sd">       Returns</span>
+<span class="sd">       -------</span>
+<span class="sd">       torch.utils.data.Dataset</span>
+<span class="sd">       &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TorchDDPTrainer.fit">
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.TorchDDPTrainer.fit">[docs]</a>
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Train model        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="n">model</span><span class="p">,</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="c1"># (1) Run the fit the start callback.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;DDP starts&quot;</span><span class="p">)</span>
+        <span class="c1"># (2) Setup DDP.</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;NCCL is being initialized....&quot;</span><span class="p">)</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">init_process_group</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="s2">&quot;nccl&quot;</span><span class="p">)</span>
+        <span class="n">train_dataset_loader</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;train_dataloaders&#39;</span><span class="p">]</span>
+        <span class="c1"># (1) Create DATA LOADER.</span>
+        <span class="n">train_dataset_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">train_dataset_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
+                                          <span class="n">batch_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+                                          <span class="n">pin_memory</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                          <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                          <span class="n">num_workers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">num_core</span><span class="p">,</span>
+                                          <span class="n">persistent_workers</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                          <span class="n">collate_fn</span><span class="o">=</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;train_dataloaders&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">collate_fn</span><span class="p">,</span>
+                                          <span class="n">sampler</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">DistributedSampler</span><span class="p">(</span>
+                                              <span class="n">train_dataset_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">))</span>
+
+        <span class="c1"># (2) Initialize OPTIMIZER.</span>
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">configure_optimizers</span><span class="p">()</span>
+        <span class="c1"># (3) Start NodeTrainer.</span>
+        <span class="n">NodeTrainer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">train_dataset_loader</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">num_epochs</span><span class="p">)</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">destroy_process_group</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="NodeTrainer">
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.NodeTrainer">[docs]</a>
+<span class="k">class</span> <span class="nc">NodeTrainer</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">trainer</span><span class="p">,</span>
+                 <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+                 <span class="n">train_dataset_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+                 <span class="n">optimizer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">,</span>
+                 <span class="n">callbacks</span><span class="p">,</span>
+                 <span class="n">num_epochs</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Initializing Node Trainer....&quot;</span><span class="p">)</span>
+        <span class="c1"># (1) Trainer.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span> <span class="o">=</span> <span class="n">trainer</span>
+        <span class="c1"># (2) Local and Global Ranks.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;LOCAL_RANK&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">global_rank</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;RANK&quot;</span><span class="p">])</span>
+        <span class="c1"># (3) Send model to local trainer.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_dataset_loader</span> <span class="o">=</span> <span class="n">train_dataset_loader</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">loss</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span> <span class="o">=</span> <span class="n">callbacks</span>
+        <span class="c1"># (3) Wrap the model with DDP() along with GPU ID that model lives on.</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Initializing device on&quot;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">parallel</span><span class="o">.</span><span class="n">DistributedDataParallel</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">device_ids</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span><span class="p">],</span><span class="n">output_device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span> <span class="o">=</span> <span class="n">num_epochs</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;HEREEE&quot;</span><span class="p">)</span>
+        <span class="n">print_peak_memory</span><span class="p">(</span><span class="s2">&quot;Max memory allocated after creating DDP local local_rank:&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Global Rank </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">global_rank</span><span class="si">}</span><span class="se">\t</span><span class="s1"> Local Rank:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Global:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">global_rank</span><span class="si">}</span><span class="s1">&#39;</span>
+              <span class="sa">f</span><span class="s1">&#39; | Local:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span><span class="si">}</span><span class="s1">&#39;</span>
+              <span class="sa">f</span><span class="s1">&#39; | NumOfDataPoints:</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataset_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+              <span class="sa">f</span><span class="s1">&#39; | NumOfEpochs:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span><span class="si">}</span><span class="s1">&#39;</span>
+              <span class="sa">f</span><span class="s1">&#39; | LearningRate:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">learning_rate</span><span class="si">}</span><span class="s1">&#39;</span>
+              <span class="sa">f</span><span class="s1">&#39; | BatchSize:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataset_loader</span><span class="o">.</span><span class="n">batch_size</span><span class="si">}</span><span class="s1">&#39;</span>
+              <span class="sa">f</span><span class="s1">&#39; | EpochBatchsize:</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataset_loader</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss_history</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">_load_snapshot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">snapshot_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">_run_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">targets</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Forward + Backward + Update over a single batch</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        source:</span>
+<span class="sd">        targets</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        batch loss</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_func</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
+        <span class="n">batch_loss</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">batch_loss</span>
+
+<div class="viewcode-block" id="NodeTrainer.extract_input_outputs">
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.NodeTrainer.extract_input_outputs">[docs]</a>
+    <span class="k">def</span> <span class="nf">extract_input_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">z</span>
+            <span class="k">return</span> <span class="n">x_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span><span class="p">),</span> <span class="n">y_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_idx_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">,</span> <span class="o">=</span> <span class="n">z</span>
+            <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_idx_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">x_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span><span class="p">),</span> <span class="n">y_idx_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span><span class="p">),</span> <span class="n">y_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">x_batch</span><span class="p">,</span> <span class="n">y_idx_batch</span><span class="p">),</span> <span class="n">y_batch</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unexpected batch shape..&#39;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_run_epoch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epoch</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Single pass/iteration over the training dataset</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        epoch:int epoch number of the DistributedSampler</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Average mini batch loss over the training dataset</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_dataset_loader</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">set_epoch</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span>
+        <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">construct_mini_batch_time</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataset_loader</span><span class="p">):</span>
+            <span class="n">source</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_input_outputs</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+            <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">construct_mini_batch_time</span><span class="p">:</span>
+                <span class="n">construct_mini_batch_time</span> <span class="o">=</span> <span class="n">start_time</span> <span class="o">-</span> <span class="n">construct_mini_batch_time</span>
+            <span class="n">batch_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_batch</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
+            <span class="n">epoch_loss</span> <span class="o">+=</span> <span class="n">batch_loss</span>
+            <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>  <span class="c1"># self.local_rank == self.global_rank==0:</span>
+                <span class="k">if</span> <span class="n">construct_mini_batch_time</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Global:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">global_rank</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot; | Local:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot; | Epoch:</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot; | Batch:</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot; | Loss:</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot; | ForwardBackwardUpdate:</span><span class="si">{</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">sec&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot; | BatchConst.:</span><span class="si">{</span><span class="n">construct_mini_batch_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">sec&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Global:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">global_rank</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot; | Local:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot; | Epoch:</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot; | Batch:</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot; | Loss:</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot; | ForwardBackwardUpdate:</span><span class="si">{</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">secs&quot;</span><span class="p">)</span>
+            <span class="n">construct_mini_batch_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">epoch_loss</span> <span class="o">/</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+<div class="viewcode-block" id="NodeTrainer.train">
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.NodeTrainer.train">[docs]</a>
+    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Training loop for DDP</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span><span class="p">):</span>
+            <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">epoch_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_epoch</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Global:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">global_rank</span><span class="si">}</span><span class="s2">&quot;</span>
+                  <span class="sa">f</span><span class="s2">&quot; | Local:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span><span class="si">}</span><span class="s2">&quot;</span>
+                  <span class="sa">f</span><span class="s2">&quot; | Epoch:</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+                  <span class="sa">f</span><span class="s2">&quot; | Loss:</span><span class="si">{</span><span class="n">epoch_loss</span><span class="si">:</span><span class="s2">.8f</span><span class="si">}</span><span class="s2">&quot;</span>
+                  <span class="sa">f</span><span class="s2">&quot; | Runtime:</span><span class="si">{</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">60</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">mins&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>  <span class="c1"># self.local_rank == self.global_rank == 0:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">loss_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch_loss</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span><span class="p">:</span>
+                    <span class="n">c</span><span class="o">.</span><span class="n">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">module</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DDPTrainer">
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.DDPTrainer">[docs]</a>
+<span class="k">class</span> <span class="nc">DDPTrainer</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+                 <span class="n">train_dataset_loader</span><span class="p">:</span> <span class="n">DataLoader</span><span class="p">,</span>
+                 <span class="n">optimizer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span><span class="p">,</span>
+                 <span class="n">gpu_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">,</span> <span class="n">num_epochs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gpu_id</span> <span class="o">=</span> <span class="n">gpu_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">gpu_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_dataset_loader</span> <span class="o">=</span> <span class="n">train_dataset_loader</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">loss</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optimizer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span> <span class="o">=</span> <span class="n">callbacks</span>
+        <span class="c1"># (1) Wrap the model with DDP() along with GPU ID that model lives on.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">DDP</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">device_ids</span><span class="o">=</span><span class="p">[</span><span class="n">gpu_id</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span> <span class="o">=</span> <span class="n">num_epochs</span>
+        <span class="n">print_peak_memory</span><span class="p">(</span><span class="s2">&quot;Max memory allocated after creating DDP:&quot;</span><span class="p">,</span> <span class="n">gpu_id</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;GPU:</span><span class="si">{self.gpu_id}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;NumOfDataPoints:</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataset_loader</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;|NumOfEpochs:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;|LearningRate:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">learning_rate</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;|BatchSize:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataset_loader</span><span class="o">.</span><span class="n">batch_size</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;|EpochBatchsize:</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataset_loader</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss_history</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">_run_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">targets</span><span class="p">):</span>
+        <span class="c1"># (1) Zero the gradients.</span>
+        <span class="c1"># self.optimizer.zero_grad()</span>
+        <span class="n">efficient_zero_grad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_func</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
+        <span class="n">batch_loss</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+        <span class="c1"># @TODO: Tips to decrease mem usage</span>
+        <span class="c1">#  https://github.com/pytorch/pytorch/issues/13246#issuecomment-905703662</span>
+        <span class="c1">#  torch.cuda.empty_cache()</span>
+        <span class="k">return</span> <span class="n">batch_loss</span>
+
+<div class="viewcode-block" id="DDPTrainer.extract_input_outputs">
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.DDPTrainer.extract_input_outputs">[docs]</a>
+    <span class="k">def</span> <span class="nf">extract_input_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">z</span>
+            <span class="k">return</span> <span class="n">x_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_id</span><span class="p">),</span> <span class="n">y_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_id</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_idx_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">,</span> <span class="o">=</span> <span class="n">z</span>
+            <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_idx_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">x_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_id</span><span class="p">),</span> <span class="n">y_idx_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gpu_id</span><span class="p">),</span> <span class="n">y_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">gpu_id</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">x_batch</span><span class="p">,</span> <span class="n">y_idx_batch</span><span class="p">),</span> <span class="n">y_batch</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unexpected batch shape..&#39;</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_run_epoch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epoch</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_dataset_loader</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">set_epoch</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span>
+        <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">construct_mini_batch_time</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataset_loader</span><span class="p">):</span>
+            <span class="n">source</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_input_outputs</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+            <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">construct_mini_batch_time</span><span class="p">:</span>
+                <span class="n">construct_mini_batch_time</span> <span class="o">=</span> <span class="n">start_time</span> <span class="o">-</span> <span class="n">construct_mini_batch_time</span>
+            <span class="n">batch_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_batch</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
+            <span class="n">epoch_loss</span> <span class="o">+=</span> <span class="n">batch_loss</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_id</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">construct_mini_batch_time</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Epoch:</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">|Batch:</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;|Loss:</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;|ForwardBackwardUpdate:</span><span class="si">{</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">sec&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;|BatchConst.:</span><span class="si">{</span><span class="n">construct_mini_batch_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">sec&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Epoch:</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">|Batch:</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;|Loss:</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;|ForwardBackwardUpdate:</span><span class="si">{</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">secs&quot;</span><span class="p">)</span>
+            <span class="n">construct_mini_batch_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">epoch_loss</span> <span class="o">/</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+<div class="viewcode-block" id="DDPTrainer.train">
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.DDPTrainer.train">[docs]</a>
+    <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span><span class="p">):</span>
+            <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">epoch_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_epoch</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gpu_id</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Epoch:</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> | Loss:</span><span class="si">{</span><span class="n">epoch_loss</span><span class="si">:</span><span class="s2">.8f</span><span class="si">}</span><span class="s2"> | Runtime:</span><span class="si">{</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">60</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">mins&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">loss_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch_loss</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">callbacks</span><span class="p">:</span>
+                    <span class="n">c</span><span class="o">.</span><span class="n">on_train_epoch_end</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">module</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
