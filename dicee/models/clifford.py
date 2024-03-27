@@ -764,7 +764,7 @@ class DeCaL(BaseKGE):
 
         Parameter
         ---------
-        x: torch.LongTensor with (n,3) shape
+        x: torch.LongTensor with (n, ) shape
 
         Returns
         -------
@@ -844,9 +844,9 @@ class DeCaL(BaseKGE):
             sigma_qr = 0
         return h0r0t0 + score_p + score_q + score_r + sigma_pp + sigma_qq + sigma_rr + sigma_pq + sigma_qr + sigma_pr
 
-    def cl_pqr(self, a):
+    def cl_pqr(self, a:torch.tensor)->torch.tensor:
 
-        ''' Input: tensor(batch_size, emb_dim) ----> output: tensor with 1+p+q+r components with size (batch_size, emb_dim/(1+p+q+r)) each.
+        ''' Input: tensor(batch_size, emb_dim) ---> output: tensor with 1+p+q+r components with size (batch_size, emb_dim/(1+p+q+r)) each.
 
         1) takes a tensor of size (batch_size, emb_dim), split it into 1 + p + q +r components, hence 1+p+q+r must be a divisor 
         of the emb_dim. 
@@ -861,17 +861,25 @@ class DeCaL(BaseKGE):
     def compute_sigmas_single(self, list_h_emb, list_r_emb, list_t_emb):
 
         '''here we compute all the sums with no others vectors interaction taken with the scalar product with t, that is,
-        1) s0 = h_0r_0t_0
-        2) s1 = \sum_{i=1}^{p}h_ir_it_0
-        3) s2 = \sum_{j=p+1}^{p+q}h_jr_jt_0
-        4) s3 = \sum_{i=1}^{q}(h_0r_it_i + h_ir_0t_i)
-        5) s4 = \sum_{i=p+1}^{p+q}(h_0r_it_i + h_ir_0t_i)
-        5) s5 = \sum_{i=p+q+1}^{p+q+r}(h_0r_it_i + h_ir_0t_i)
+        
+        .. math::
+
+             s0 = h_0r_0t_0
+             s1 = \sum_{i=1}^{p}h_ir_it_0
+             s2 = \sum_{j=p+1}^{p+q}h_jr_jt_0
+             s3 = \sum_{i=1}^{q}(h_0r_it_i + h_ir_0t_i)
+             s4 = \sum_{i=p+1}^{p+q}(h_0r_it_i + h_ir_0t_i)
+             s5 = \sum_{i=p+q+1}^{p+q+r}(h_0r_it_i + h_ir_0t_i)
         
         and return:
         
-        *) sigma_0t = \sigma_0 \cdot t_0 = s0 + s1 -s2
-        *) s3, s4 and s5'''
+        .. math::
+
+            sigma_0t = \sigma_0 \cdot t_0 = s0 + s1 -s2
+            s3, s4 and s5
+        
+        
+        '''
 
         p = self.p
         q = self.q
@@ -906,15 +914,19 @@ class DeCaL(BaseKGE):
 
            For same bases vectors interaction we have
 
-           1) \sigma_pp = \sum_{i=1}^{p-1}\sum_{i'=i+1}^{p}(h_ir_{i'}-h_{i'}r_i) (models the interactions between e_i and e_i' for 1 <= i, i' <= p)
-           2) \sigma_qq = \sum_{j=p+1}^{p+q-1}\sum_{j'=j+1}^{p+q}(h_jr_{j'}-h_{j'} (models the interactions between e_j and e_j' for p+1 <= j, j' <= p+q)
-           3) \sigma_rr = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(h_kr_{k'}-h_{k'}r_k) (models the interactions between e_k and e_k' for p+q+1 <= k, k' <= p+q+r) 
-           
+           .. math::
+
+                \sigma_pp = \sum_{i=1}^{p-1}\sum_{i'=i+1}^{p}(h_ir_{i'}-h_{i'}r_i) (models the interactions between e_i and e_i' for 1 <= i, i' <= p)
+                \sigma_qq = \sum_{j=p+1}^{p+q-1}\sum_{j'=j+1}^{p+q}(h_jr_{j'}-h_{j'} (models the interactions between e_j and e_j' for p+1 <= j, j' <= p+q)
+                \sigma_rr = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(h_kr_{k'}-h_{k'}r_k) (models the interactions between e_k and e_k' for p+q+1 <= k, k' <= p+q+r) 
+            
            For different base vector interactions, we have
            
-           4) \sigma_pq = \sum_{i=1}^{p}\sum_{j=p+1}^{p+q}(h_ir_j - h_jr_i) (interactionsn between e_i and e_j for 1<=i <=p and p+1<= j <= p+q)
-           5) \sigma_pr = \sum_{i=1}^{p}\sum_{k=p+q+1}^{p+q+r}(h_ir_k - h_kr_i) (interactionsn between e_i and e_k for 1<=i <=p and p+q+1<= k <= p+q+r)
-           6) \sigma_qr = \sum_{j=p+1}^{p+q}\sum_{j=p+q+1}^{p+q+r}(h_jr_k - h_kr_j) (interactionsn between e_j and e_k for p+1 <= j <=p+q and p+q+1<= j <= p+q+r)
+            .. math::
+
+                \sigma_pq = \sum_{i=1}^{p}\sum_{j=p+1}^{p+q}(h_ir_j - h_jr_i) (interactionsn between e_i and e_j for 1<=i <=p and p+1<= j <= p+q)
+                \sigma_pr = \sum_{i=1}^{p}\sum_{k=p+q+1}^{p+q+r}(h_ir_k - h_kr_i) (interactionsn between e_i and e_k for 1<=i <=p and p+q+1<= k <= p+q+r)
+                \sigma_qr = \sum_{j=p+1}^{p+q}\sum_{j=p+q+1}^{p+q+r}(h_jr_k - h_kr_j) (interactionsn between e_j and e_k for p+1 <= j <=p+q and p+q+1<= j <= p+q+r)
            
            '''
 
@@ -958,15 +970,15 @@ class DeCaL(BaseKGE):
         """
             Kvsall training
 
-            (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .
-            (2) Construct head entity and relation embeddings according to Cl_{p,q}(\mathbb{R}^d) .
+            (1) Retrieve real-valued embedding vectors for heads and relations
+            (2) Construct head entity and relation embeddings according to Cl_{p,q, r}(\mathbb{R}^d) .
             (3) Perform Cl multiplication
             (4) Inner product of (3) and all entity embeddings
 
             forward_k_vs_with_explicit and this funcitons are identical
             Parameter
             ---------
-            x: torch.LongTensor with (n,2) shape
+            x: torch.LongTensor with (n, ) shape
             Returns
             -------
             torch.FloatTensor with (n, |E|) shape
@@ -1097,9 +1109,12 @@ class DeCaL(BaseKGE):
 
     def compute_sigma_pp(self, hp, rp):
         """
-        \sigma_{p,p}^* = \sum_{i=1}^{p-1}\sum_{i'=i+1}^{p}(x_iy_{i'}-x_{i'}y_i)
+        Compute 
+        .. math::
+        
+            \sigma_{p,p}^* = \sum_{i=1}^{p-1}\sum_{i'=i+1}^{p}(x_iy_{i'}-x_{i'}y_i)
 
-        sigma_{pp} captures the interactions between along p bases
+        \sigma_{pp} captures the interactions between along p bases
         For instance, let p e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
         This can be implemented with a nested two for loops
 
@@ -1125,7 +1140,12 @@ class DeCaL(BaseKGE):
 
     def compute_sigma_qq(self, hq, rq):
         """
-        Compute  \sigma_{q,q}^* = \sum_{j=p+1}^{p+q-1}\sum_{j'=j+1}^{p+q}(x_jy_{j'}-x_{j'}y_j) Eq. 16
+        Compute  
+
+        .. math::
+        
+            \sigma_{q,q}^* = \sum_{j=p+1}^{p+q-1}\sum_{j'=j+1}^{p+q}(x_jy_{j'}-x_{j'}y_j) Eq. 16
+
         sigma_{q} captures the interactions between along q bases
         For instance, let q e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
         This can be implemented with a nested two for loops
@@ -1157,7 +1177,9 @@ class DeCaL(BaseKGE):
 
     def compute_sigma_rr(self, hk, rk):
         """
-        \sigma_{r,r}^* = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(x_ky_{k'}-x_{k'}y_k)
+        .. math:: 
+        
+            \sigma_{r,r}^* = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(x_ky_{k'}-x_{k'}y_k)
 
         """
         # Compute indexes for the upper triangle of p by p matrix
@@ -1173,7 +1195,11 @@ class DeCaL(BaseKGE):
 
     def compute_sigma_pq(self, *, hp, hq, rp, rq):
         """
-        \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
+        Compute 
+
+        .. math:: 
+        
+            \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
 
         results = []
         sigma_pq = torch.zeros(b, r, p, q)
@@ -1189,7 +1215,11 @@ class DeCaL(BaseKGE):
 
     def compute_sigma_pr(self, *, hp, hk, rp, rk):
         """
-        \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
+        Compute
+
+        .. math:: 
+
+            \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
 
         results = []
         sigma_pq = torch.zeros(b, r, p, q)
@@ -1205,7 +1235,9 @@ class DeCaL(BaseKGE):
 
     def compute_sigma_qr(self, *, hq, hk, rq, rk):
         """
-        \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
+        .. math:: 
+
+            \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
 
         results = []
         sigma_pq = torch.zeros(b, r, p, q)
