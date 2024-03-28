@@ -28,23 +28,6 @@ class PreprocessKG:
     ----------
     kg : object
         An instance representing the knowledge graph.
-
-    Methods
-    -------
-    start() -> None
-        Preprocess train, valid, and test datasets stored in the knowledge graph instance.
-
-    preprocess_with_byte_pair_encoding() -> None
-        Preprocess the datasets using byte-pair encoding.
-
-    preprocess_with_pandas() -> None
-        Preprocess the datasets using pandas.
-
-    preprocess_with_polars() -> None
-        Preprocess the datasets using polars.
-
-    sequential_vocabulary_construction() -> None
-        Construct integer indexing for entities and relations.
     """
 
     def __init__(self, kg):
@@ -865,7 +848,7 @@ class PreprocessKG:
         self.kg.relation_to_idx = {k: i for i, k in enumerate(ordered_list)}
         del ordered_list
 
-    def dept_remove_triples_from_train_with_condition(self):
+    def remove_triples_from_train_with_condition(self):
         """
         Remove specific triples from the training set based on a predefined condition.
 
