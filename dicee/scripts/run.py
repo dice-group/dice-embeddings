@@ -73,68 +73,26 @@ def get_default_arguments(description: Optional[str] = None) -> argparse.Namespa
         help="Backend for loading, preprocessing, indexing input knowledge graph.",
     )
     # Model related arguments
-    parser.add_argument(
-        "--model",
-        type=str,
-        default="Keci",
-        choices=[
-            "ComplEx",
-            "Keci",
-            "ConEx",
-            "AConEx",
-            "ConvQ",
-            "AConvQ",
-            "ConvO",
-            "AConvO",
-            "QMult",
-            "OMult",
-            "Shallom",
-            "DistMult",
-            "TransE",
-            "DeCaL",
-            "BytE",
-            "Pykeen_MuRE",
-            "Pykeen_QuatE",
-            "Pykeen_DistMult",
-            "Pykeen_BoxE",
-            "Pykeen_CP",
-            "Pykeen_HolE",
-            "Pykeen_ProjE",
-            "Pykeen_RotatE",
-            "Pykeen_TransE",
-            "Pykeen_TransF",
-            "Pykeen_TransH",
-            "Pykeen_TransR",
-            "Pykeen_TuckER",
-            "Pykeen_ComplEx",
-            "LFMult",
-        ],
-        help="Available knowledge graph embedding models. "
-        "To use other knowledge graph embedding models available in python, e.g.,"
-        "**Pykeen_BoxE** and add this into choices",
-    )
-    parser.add_argument(
-        "--optim",
-        type=str,
-        default="Adam",
-        help="An optimizer",
-        choices=["Adam", "SGD","NAdam", "Adagrad", "ASGD"],
-    )
-    parser.add_argument(
-        "--embedding_dim",
-        type=int,
-        default=256,
-        help="Number of dimensions for an embedding vector. ",
-    )
-    parser.add_argument(
-        "--num_epochs", type=int, default=100, help="Number of epochs for training. "
-    )
-    parser.add_argument(
-        "--batch_size",
-        type=int,
-        default=1024,
-        help="Mini batch size. If None, automatic batch finder is applied",
-    )
+    parser.add_argument("--model", type=str,
+                        default="Keci",
+                        choices=["ComplEx", "Keci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
+                                 "OMult", "Shallom", "DistMult", "TransE", "DualE",
+                                 "BytE",
+                                 "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
+                                 "Pykeen_HolE", "Pykeen_ProjE", "Pykeen_RotatE",
+                                 "Pykeen_TransE", "Pykeen_TransF", "Pykeen_TransH",
+                                 "Pykeen_TransR", "Pykeen_TuckER", "Pykeen_ComplEx","LFMult", "DeCaL"],
+                        help="Available knowledge graph embedding models. "
+                             "To use other knowledge graph embedding models available in python, e.g.,"
+                             "**Pykeen_BoxE** and add this into choices")
+    parser.add_argument('--optim', type=str, default='Adam',
+                        help='An optimizer',
+                        choices=['Adam', 'AdamW', 'SGD',"NAdam", "Adagrad", "ASGD"])
+    parser.add_argument('--embedding_dim', type=int, default=256,
+                        help='Number of dimensions for an embedding vector. ')
+    parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
+    parser.add_argument('--batch_size', type=int, default=1024,
+                        help='Mini batch size. If None, automatic batch finder is applied')
     parser.add_argument("--lr", type=float, default=0.01)
     parser.add_argument(
         "--callbacks",
