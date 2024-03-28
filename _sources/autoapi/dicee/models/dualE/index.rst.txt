@@ -22,49 +22,54 @@ Classes
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   Base class for all neural network modules.
+   Dual Quaternion Knowledge Graph Embeddings (https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657)
 
-   Your models should also subclass this class.
+   .. py:method:: kvsall_score(e_1_h, e_2_h, e_3_h, e_4_h, e_5_h, e_6_h, e_7_h, e_8_h, e_1_t, e_2_t, e_3_t, e_4_t, e_5_t, e_6_t, e_7_t, e_8_t, r_1, r_2, r_3, r_4, r_5, r_6, r_7, r_8) -> torch.tensor
 
-   Modules can also contain other Modules, allowing to nest them in
-   a tree structure. You can assign the submodules as regular attributes::
+      KvsAll scoring function
 
-       import torch.nn as nn
-       import torch.nn.functional as F
+      Input
+      ---------
+      x: torch.LongTensor with (n, ) shape
 
-       class Model(nn.Module):
-           def __init__(self):
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
-
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
-
-   Submodules assigned in this way will be registered, and will have their
-   parameters converted too when you call :meth:`to`, etc.
-
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
-
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
-
-   .. py:method:: kvsall_score(e_1_h, e_2_h, e_3_h, e_4_h, e_5_h, e_6_h, e_7_h, e_8_h, e_1_t, e_2_t, e_3_t, e_4_t, e_5_t, e_6_t, e_7_t, e_8_t, r_1, r_2, r_3, r_4, r_5, r_6, r_7, r_8)
+      Output
+      -------
+      torch.FloatTensor with (n) shape
 
 
-   .. py:method:: forward_triples(idx_triple)
+   .. py:method:: forward_triples(idx_triple: torch.tensor) -> torch.tensor
 
-      :param x:
+      Negative Sampling forward pass:
+
+      Input
+      ---------
+      x: torch.LongTensor with (n, ) shape
+
+      Output
+      -------
+      torch.FloatTensor with (n) shape
 
 
    .. py:method:: forward_k_vs_all(x)
 
+      KvsAll forward pass
 
-   .. py:method:: T(x)
+      Input
+      ---------
+      x: torch.LongTensor with (n, ) shape
+
+      Output
+      -------
+      torch.FloatTensor with (n) shape
+
+
+
+   .. py:method:: T(x: torch.tensor) -> torch.tensor
+
+      Transpose function
+
+      Input: Tensor with shape (nxm)
+      Output: Tensor with shape (mxn)
 
 
 

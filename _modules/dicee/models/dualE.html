@@ -91,10 +91,10 @@
 <span class="kn">from</span> <span class="nn">.base_model</span> <span class="kn">import</span> <span class="n">BaseKGE</span>
 
 
-
 <div class="viewcode-block" id="DualE">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DualE">[docs]</a>
 <span class="k">class</span> <span class="nc">DualE</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dual Quaternion Knowledge Graph Embeddings (https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657)&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;DualE&#39;</span>
@@ -103,8 +103,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">num_ent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span>
 
 
-    <span class="c1">#Calculate the Dual Hamiltonian product</span>
+    
     <span class="k">def</span> <span class="nf">_omult</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a_0</span><span class="p">,</span> <span class="n">a_1</span><span class="p">,</span> <span class="n">a_2</span><span class="p">,</span> <span class="n">a_3</span><span class="p">,</span> <span class="n">b_0</span><span class="p">,</span> <span class="n">b_1</span><span class="p">,</span> <span class="n">b_2</span><span class="p">,</span> <span class="n">b_3</span><span class="p">,</span> <span class="n">c_0</span><span class="p">,</span> <span class="n">c_1</span><span class="p">,</span> <span class="n">c_2</span><span class="p">,</span> <span class="n">c_3</span><span class="p">,</span> <span class="n">d_0</span><span class="p">,</span> <span class="n">d_1</span><span class="p">,</span> <span class="n">d_2</span><span class="p">,</span> <span class="n">d_3</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the Dual Hamiltonian product&quot;&quot;&quot;</span>
 
         <span class="n">h_0</span><span class="o">=</span><span class="n">a_0</span><span class="o">*</span><span class="n">c_0</span><span class="o">-</span><span class="n">a_1</span><span class="o">*</span><span class="n">c_1</span><span class="o">-</span><span class="n">a_2</span><span class="o">*</span><span class="n">c_2</span><span class="o">-</span><span class="n">a_3</span><span class="o">*</span><span class="n">c_3</span>
         <span class="n">h1_0</span><span class="o">=</span><span class="n">a_0</span><span class="o">*</span><span class="n">d_0</span><span class="o">+</span><span class="n">b_0</span><span class="o">*</span><span class="n">c_0</span><span class="o">-</span><span class="n">a_1</span><span class="o">*</span><span class="n">d_1</span><span class="o">-</span><span class="n">b_1</span><span class="o">*</span><span class="n">c_1</span><span class="o">-</span><span class="n">a_2</span><span class="o">*</span><span class="n">d_2</span><span class="o">-</span><span class="n">b_2</span><span class="o">*</span><span class="n">c_2</span><span class="o">-</span><span class="n">a_3</span><span class="o">*</span><span class="n">d_3</span><span class="o">-</span><span class="n">b_3</span><span class="o">*</span><span class="n">c_3</span>
@@ -117,8 +118,35 @@
 
         <span class="k">return</span>  <span class="p">(</span><span class="n">h_0</span><span class="p">,</span><span class="n">h_1</span><span class="p">,</span><span class="n">h_2</span><span class="p">,</span><span class="n">h_3</span><span class="p">,</span><span class="n">h1_0</span><span class="p">,</span><span class="n">h1_1</span><span class="p">,</span><span class="n">h1_2</span><span class="p">,</span><span class="n">h1_3</span><span class="p">)</span>
 
-    <span class="c1">#Normalization of relationship embedding</span>
+    
     <span class="k">def</span> <span class="nf">_onorm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">r_1</span><span class="p">,</span> <span class="n">r_2</span><span class="p">,</span> <span class="n">r_3</span><span class="p">,</span> <span class="n">r_4</span><span class="p">,</span> <span class="n">r_5</span><span class="p">,</span> <span class="n">r_6</span><span class="p">,</span> <span class="n">r_7</span><span class="p">,</span> <span class="n">r_8</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Normalization of relationship embedding</span>
+<span class="sd">        </span>
+<span class="sd">        Inputs</span>
+<span class="sd">        --------</span>
+<span class="sd">        Real and Imaginary parts of the Relation embeddings </span>
+<span class="sd">        </span>
+<span class="sd">        .. math::</span>
+<span class="sd">        </span>
+<span class="sd">            W_r = (c,d)</span>
+<span class="sd">            c = (r_1, r_2, r_3, r_4)</span>
+<span class="sd">            d = (r_5, r_6, r_7, r_8)</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            \bar{d} = d -  \frac{&lt;d,c&gt;}{&lt;c,c&gt;} c</span>
+<span class="sd">            c&#39; = \frac{c}{\|c\|} = \frac{c_0 + c_1i + c_2j + c_3k}{c_0^2 + c_1^2 + c_2^2 + c_3^2}</span>
+
+<span class="sd">        </span>
+<span class="sd">        Outputs</span>
+<span class="sd">        --------</span>
+<span class="sd">        Normalized Real and Imaginary parts of the Relation embeddings</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">            W_r&#39; = (c&#39;, \bar{d})</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="n">denominator_0</span> <span class="o">=</span> <span class="n">r_1</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">r_2</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">r_3</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">r_4</span> <span class="o">**</span> <span class="mi">2</span>
         <span class="n">denominator_1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">denominator_0</span><span class="p">)</span>
         <span class="c1">#denominator_2 = torch.sqrt(r_5 ** 2 + r_6 ** 2 + r_7 ** 2 + r_8 ** 2)</span>
@@ -139,10 +167,19 @@
         <span class="c1">#r_8 = r_8 / denominator_2</span>
         <span class="k">return</span> <span class="n">r_1</span><span class="p">,</span> <span class="n">r_2</span><span class="p">,</span> <span class="n">r_3</span><span class="p">,</span> <span class="n">r_4</span><span class="p">,</span> <span class="n">r_5</span><span class="p">,</span> <span class="n">r_6</span><span class="p">,</span> <span class="n">r_7</span><span class="p">,</span> <span class="n">r_8</span>
 
-    <span class="c1">#Calculate the inner product of the head entity and the relationship Hamiltonian product and the tail entity</span>
+    
     <span class="k">def</span> <span class="nf">_calc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e_1_h</span><span class="p">,</span> <span class="n">e_2_h</span><span class="p">,</span> <span class="n">e_3_h</span><span class="p">,</span> <span class="n">e_4_h</span><span class="p">,</span> <span class="n">e_5_h</span><span class="p">,</span> <span class="n">e_6_h</span><span class="p">,</span> <span class="n">e_7_h</span><span class="p">,</span> <span class="n">e_8_h</span><span class="p">,</span>
               <span class="n">e_1_t</span><span class="p">,</span> <span class="n">e_2_t</span><span class="p">,</span> <span class="n">e_3_t</span><span class="p">,</span> <span class="n">e_4_t</span><span class="p">,</span> <span class="n">e_5_t</span><span class="p">,</span> <span class="n">e_6_t</span><span class="p">,</span> <span class="n">e_7_t</span><span class="p">,</span> <span class="n">e_8_t</span><span class="p">,</span>
-              <span class="n">r_1</span><span class="p">,</span> <span class="n">r_2</span><span class="p">,</span> <span class="n">r_3</span><span class="p">,</span> <span class="n">r_4</span><span class="p">,</span> <span class="n">r_5</span><span class="p">,</span> <span class="n">r_6</span><span class="p">,</span> <span class="n">r_7</span><span class="p">,</span> <span class="n">r_8</span> <span class="p">):</span>
+              <span class="n">r_1</span><span class="p">,</span> <span class="n">r_2</span><span class="p">,</span> <span class="n">r_3</span><span class="p">,</span> <span class="n">r_4</span><span class="p">,</span> <span class="n">r_5</span><span class="p">,</span> <span class="n">r_6</span><span class="p">,</span> <span class="n">r_7</span><span class="p">,</span> <span class="n">r_8</span> <span class="p">)</span><span class="o">-&gt;</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">:</span>
+<span class="w">        </span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the inner product of the head entity and the relationship Hamiltonian product and the tail entity ref(Eq.8)</span>
+<span class="sd">        \phi(h,r,t) = &lt;a&#39;_h, a_t&gt; + &lt;b&#39;_h, b_t&gt; + &lt;c&#39;_h, c_t&gt; + &lt;d&#39;_h, d_t&gt; </span>
+<span class="sd">        </span>
+<span class="sd">        Inputs:</span>
+<span class="sd">        ----------</span>
+<span class="sd">        (Tensors) Real and imaginary parts of the head, relation and tail embeddings</span>
+
+<span class="sd">        Output: inner product of the head entity and the relationship Hamiltonian product and the tail entity&quot;&quot;&quot;</span>
 
         <span class="n">r_1</span><span class="p">,</span> <span class="n">r_2</span><span class="p">,</span> <span class="n">r_3</span><span class="p">,</span> <span class="n">r_4</span><span class="p">,</span> <span class="n">r_5</span><span class="p">,</span> <span class="n">r_6</span><span class="p">,</span> <span class="n">r_7</span><span class="p">,</span> <span class="n">r_8</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_onorm</span><span class="p">(</span><span class="n">r_1</span><span class="p">,</span> <span class="n">r_2</span><span class="p">,</span> <span class="n">r_3</span><span class="p">,</span> <span class="n">r_4</span><span class="p">,</span> <span class="n">r_5</span><span class="p">,</span> <span class="n">r_6</span><span class="p">,</span> <span class="n">r_7</span><span class="p">,</span> <span class="n">r_8</span> <span class="p">)</span>
 
@@ -159,7 +196,17 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DualE.kvsall_score">[docs]</a>
     <span class="k">def</span> <span class="nf">kvsall_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">e_1_h</span><span class="p">,</span> <span class="n">e_2_h</span><span class="p">,</span> <span class="n">e_3_h</span><span class="p">,</span> <span class="n">e_4_h</span><span class="p">,</span> <span class="n">e_5_h</span><span class="p">,</span> <span class="n">e_6_h</span><span class="p">,</span> <span class="n">e_7_h</span><span class="p">,</span> <span class="n">e_8_h</span><span class="p">,</span>
               <span class="n">e_1_t</span><span class="p">,</span> <span class="n">e_2_t</span><span class="p">,</span> <span class="n">e_3_t</span><span class="p">,</span> <span class="n">e_4_t</span><span class="p">,</span> <span class="n">e_5_t</span><span class="p">,</span> <span class="n">e_6_t</span><span class="p">,</span> <span class="n">e_7_t</span><span class="p">,</span> <span class="n">e_8_t</span><span class="p">,</span>
-              <span class="n">r_1</span><span class="p">,</span> <span class="n">r_2</span><span class="p">,</span> <span class="n">r_3</span><span class="p">,</span> <span class="n">r_4</span><span class="p">,</span> <span class="n">r_5</span><span class="p">,</span> <span class="n">r_6</span><span class="p">,</span> <span class="n">r_7</span><span class="p">,</span> <span class="n">r_8</span> <span class="p">):</span>
+              <span class="n">r_1</span><span class="p">,</span> <span class="n">r_2</span><span class="p">,</span> <span class="n">r_3</span><span class="p">,</span> <span class="n">r_4</span><span class="p">,</span> <span class="n">r_5</span><span class="p">,</span> <span class="n">r_6</span><span class="p">,</span> <span class="n">r_7</span><span class="p">,</span> <span class="n">r_8</span> <span class="p">)</span><span class="o">-&gt;</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;KvsAll scoring function</span>
+<span class="sd">        </span>
+<span class="sd">            Input</span>
+<span class="sd">            ---------</span>
+<span class="sd">            x: torch.LongTensor with (n, ) shape</span>
+
+<span class="sd">            Output</span>
+<span class="sd">            -------</span>
+<span class="sd">            torch.FloatTensor with (n) shape</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">r_1</span><span class="p">,</span> <span class="n">r_2</span><span class="p">,</span> <span class="n">r_3</span><span class="p">,</span> <span class="n">r_4</span><span class="p">,</span> <span class="n">r_5</span><span class="p">,</span> <span class="n">r_6</span><span class="p">,</span> <span class="n">r_7</span><span class="p">,</span> <span class="n">r_8</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_onorm</span><span class="p">(</span><span class="n">r_1</span><span class="p">,</span> <span class="n">r_2</span><span class="p">,</span> <span class="n">r_3</span><span class="p">,</span> <span class="n">r_4</span><span class="p">,</span> <span class="n">r_5</span><span class="p">,</span> <span class="n">r_6</span><span class="p">,</span> <span class="n">r_7</span><span class="p">,</span> <span class="n">r_8</span> <span class="p">)</span>
 
@@ -176,7 +223,17 @@
     
 <div class="viewcode-block" id="DualE.forward_triples">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DualE.forward_triples">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx_triple</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx_triple</span><span class="p">:</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">)</span><span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Negative Sampling forward pass:</span>
+
+<span class="sd">        Input</span>
+<span class="sd">        ---------</span>
+<span class="sd">        x: torch.LongTensor with (n, ) shape</span>
+
+<span class="sd">        Output</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.FloatTensor with (n) shape</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">idx_triple</span><span class="p">)</span>
 
@@ -201,6 +258,18 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DualE.forward_k_vs_all">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">x</span><span class="p">):</span>
 
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;KvsAll forward pass</span>
+<span class="sd">        </span>
+<span class="sd">        Input</span>
+<span class="sd">        ---------</span>
+<span class="sd">        x: torch.LongTensor with (n, ) shape</span>
+
+<span class="sd">        Output</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.FloatTensor with (n) shape</span>
+<span class="sd">    </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         
@@ -223,7 +292,11 @@
     
 <div class="viewcode-block" id="DualE.T">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DualE.T">[docs]</a>
-    <span class="k">def</span> <span class="nf">T</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">T</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Transpose function</span>
+
+<span class="sd">            Input: Tensor with shape (nxm)</span>
+<span class="sd">            Output: Tensor with shape (mxn)&quot;&quot;&quot;</span>
       
         <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
 </div>

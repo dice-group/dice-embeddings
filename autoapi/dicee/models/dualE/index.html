@@ -131,7 +131,7 @@
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.dualE.DualE" title="dicee.models.dualE.DualE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DualE</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
+<td><p>Dual Quaternion Knowledge Graph Embeddings (<a class="reference external" href="https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657">https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657</a>)</p></td>
 </tr>
 </tbody>
 </table>
@@ -139,61 +139,56 @@
 <dt class="sig sig-object py" id="dicee.models.dualE.DualE">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.dualE.</span></span><span class="sig-name descname"><span class="pre">DualE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/dualE.html#DualE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.dualE.DualE" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
-<p>Base class for all neural network modules.</p>
-<p>Your models should also subclass this class.</p>
-<p>Modules can also contain other Modules, allowing to nest them in
-a tree structure. You can assign the submodules as regular attributes:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
-<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-</pre></div>
-</div>
-<p>Submodules assigned in this way will be registered, and will have their
-parameters converted too when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
-must be made before assignment on the child.</p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
-evaluation mode.</p>
-</dd>
-</dl>
+<p>Dual Quaternion Knowledge Graph Embeddings (<a class="reference external" href="https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657">https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657</a>)</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.dualE.DualE.kvsall_score">
-<span class="sig-name descname"><span class="pre">kvsall_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">e_1_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_2_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_3_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_4_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_5_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_6_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_7_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_8_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_1_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_2_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_3_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_4_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_5_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_6_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_7_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_8_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_8</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/dualE.html#DualE.kvsall_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.dualE.DualE.kvsall_score" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">kvsall_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">e_1_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_2_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_3_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_4_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_5_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_6_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_7_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_8_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_1_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_2_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_3_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_4_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_5_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_6_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_7_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_8_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_8</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/dualE.html#DualE.kvsall_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.dualE.DualE.kvsall_score" title="Link to this definition"></a></dt>
+<dd><p>KvsAll scoring function</p>
+<section id="input">
+<h4>Input<a class="headerlink" href="#input" title="Link to this heading"></a></h4>
+<p>x: torch.LongTensor with (n, ) shape</p>
+</section>
+<section id="output">
+<h4>Output<a class="headerlink" href="#output" title="Link to this heading"></a></h4>
+<p>torch.FloatTensor with (n) shape</p>
+</section>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.dualE.DualE.forward_triples">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/dualE.html#DualE.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.dualE.DualE.forward_triples" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> – </p>
-</dd>
-</dl>
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/dualE.html#DualE.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.dualE.DualE.forward_triples" title="Link to this definition"></a></dt>
+<dd><p>Negative Sampling forward pass:</p>
+<section id="id1">
+<h4>Input<a class="headerlink" href="#id1" title="Link to this heading"></a></h4>
+<p>x: torch.LongTensor with (n, ) shape</p>
+</section>
+<section id="id2">
+<h4>Output<a class="headerlink" href="#id2" title="Link to this heading"></a></h4>
+<p>torch.FloatTensor with (n) shape</p>
+</section>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.dualE.DualE.forward_k_vs_all">
 <span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/dualE.html#DualE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.dualE.DualE.forward_k_vs_all" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>KvsAll forward pass</p>
+<section id="id3">
+<h4>Input<a class="headerlink" href="#id3" title="Link to this heading"></a></h4>
+<p>x: torch.LongTensor with (n, ) shape</p>
+</section>
+<section id="id4">
+<h4>Output<a class="headerlink" href="#id4" title="Link to this heading"></a></h4>
+<p>torch.FloatTensor with (n) shape</p>
+</section>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.dualE.DualE.T">
-<span class="sig-name descname"><span class="pre">T</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/dualE.html#DualE.T"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.dualE.DualE.T" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">T</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/dualE.html#DualE.T"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.dualE.DualE.T" title="Link to this definition"></a></dt>
+<dd><p>Transpose function</p>
+<p>Input: Tensor with shape (nxm)
+Output: Tensor with shape (mxn)</p>
+</dd></dl>
 
 </dd></dl>
 
