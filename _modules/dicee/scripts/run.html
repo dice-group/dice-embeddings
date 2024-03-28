@@ -164,68 +164,26 @@
         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Backend for loading, preprocessing, indexing input knowledge graph.&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="c1"># Model related arguments</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--model&quot;</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;Keci&quot;</span><span class="p">,</span>
-        <span class="n">choices</span><span class="o">=</span><span class="p">[</span>
-            <span class="s2">&quot;ComplEx&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Keci&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;ConEx&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;AConEx&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;ConvQ&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;AConvQ&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;ConvO&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;AConvO&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;QMult&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;OMult&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Shallom&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;DistMult&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;TransE&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;DeCaL&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;BytE&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Pykeen_MuRE&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Pykeen_QuatE&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Pykeen_DistMult&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Pykeen_BoxE&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Pykeen_CP&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Pykeen_HolE&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Pykeen_ProjE&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Pykeen_RotatE&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Pykeen_TransE&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Pykeen_TransF&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Pykeen_TransH&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Pykeen_TransR&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Pykeen_TuckER&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;Pykeen_ComplEx&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;LFMult&quot;</span><span class="p">,</span>
-        <span class="p">],</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Available knowledge graph embedding models. &quot;</span>
-        <span class="s2">&quot;To use other knowledge graph embedding models available in python, e.g.,&quot;</span>
-        <span class="s2">&quot;**Pykeen_BoxE** and add this into choices&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--optim&quot;</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;Adam&quot;</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;An optimizer&quot;</span><span class="p">,</span>
-        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;Adam&quot;</span><span class="p">,</span> <span class="s2">&quot;SGD&quot;</span><span class="p">,</span><span class="s2">&quot;NAdam&quot;</span><span class="p">,</span> <span class="s2">&quot;Adagrad&quot;</span><span class="p">,</span> <span class="s2">&quot;ASGD&quot;</span><span class="p">],</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--embedding_dim&quot;</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of dimensions for an embedding vector. &quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--num_epochs&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of epochs for training. &quot;</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--batch_size&quot;</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Mini batch size. If None, automatic batch finder is applied&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--model&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;Keci&quot;</span><span class="p">,</span>
+                        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;ComplEx&quot;</span><span class="p">,</span> <span class="s2">&quot;Keci&quot;</span><span class="p">,</span> <span class="s2">&quot;ConEx&quot;</span><span class="p">,</span> <span class="s2">&quot;AConEx&quot;</span><span class="p">,</span> <span class="s2">&quot;ConvQ&quot;</span><span class="p">,</span> <span class="s2">&quot;AConvQ&quot;</span><span class="p">,</span> <span class="s2">&quot;ConvO&quot;</span><span class="p">,</span> <span class="s2">&quot;AConvO&quot;</span><span class="p">,</span> <span class="s2">&quot;QMult&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;OMult&quot;</span><span class="p">,</span> <span class="s2">&quot;Shallom&quot;</span><span class="p">,</span> <span class="s2">&quot;DistMult&quot;</span><span class="p">,</span> <span class="s2">&quot;TransE&quot;</span><span class="p">,</span> <span class="s2">&quot;DualE&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;BytE&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;Pykeen_MuRE&quot;</span><span class="p">,</span> <span class="s2">&quot;Pykeen_QuatE&quot;</span><span class="p">,</span> <span class="s2">&quot;Pykeen_DistMult&quot;</span><span class="p">,</span> <span class="s2">&quot;Pykeen_BoxE&quot;</span><span class="p">,</span> <span class="s2">&quot;Pykeen_CP&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;Pykeen_HolE&quot;</span><span class="p">,</span> <span class="s2">&quot;Pykeen_ProjE&quot;</span><span class="p">,</span> <span class="s2">&quot;Pykeen_RotatE&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;Pykeen_TransE&quot;</span><span class="p">,</span> <span class="s2">&quot;Pykeen_TransF&quot;</span><span class="p">,</span> <span class="s2">&quot;Pykeen_TransH&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;Pykeen_TransR&quot;</span><span class="p">,</span> <span class="s2">&quot;Pykeen_TuckER&quot;</span><span class="p">,</span> <span class="s2">&quot;Pykeen_ComplEx&quot;</span><span class="p">,</span><span class="s2">&quot;LFMult&quot;</span><span class="p">,</span> <span class="s2">&quot;DeCaL&quot;</span><span class="p">],</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Available knowledge graph embedding models. &quot;</span>
+                             <span class="s2">&quot;To use other knowledge graph embedding models available in python, e.g.,&quot;</span>
+                             <span class="s2">&quot;**Pykeen_BoxE** and add this into choices&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--optim&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;Adam&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;An optimizer&#39;</span><span class="p">,</span>
+                        <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Adam&#39;</span><span class="p">,</span> <span class="s1">&#39;AdamW&#39;</span><span class="p">,</span> <span class="s1">&#39;SGD&#39;</span><span class="p">,</span><span class="s2">&quot;NAdam&quot;</span><span class="p">,</span> <span class="s2">&quot;Adagrad&quot;</span><span class="p">,</span> <span class="s2">&quot;ASGD&quot;</span><span class="p">])</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--embedding_dim&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of dimensions for an embedding vector. &#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--num_epochs&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of epochs for training. &#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--batch_size&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Mini batch size. If None, automatic batch finder is applied&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--lr&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--callbacks&quot;</span><span class="p">,</span>

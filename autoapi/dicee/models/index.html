@@ -22,6 +22,7 @@
         <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
@@ -69,6 +70,7 @@
 <li class="toctree-l5"><a class="reference internal" href="base_model/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.base_model</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="clifford/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.clifford</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="complex/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.complex</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="dualE/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.dualE</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="function_space/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.function_space</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="octonion/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.octonion</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="pykeen_models/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.pykeen_models</span></code></a></li>
@@ -111,14 +113,15 @@
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.KeciBase"><code class="docutils literal notranslate"><span class="pre">KeciBase</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.CMult"><code class="docutils literal notranslate"><span class="pre">CMult</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.DeCaL"><code class="docutils literal notranslate"><span class="pre">DeCaL</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id126"><code class="docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id122"><code class="docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.PykeenKGE"><code class="docutils literal notranslate"><span class="pre">PykeenKGE</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#id142"><code class="docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#id138"><code class="docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.FMult"><code class="docutils literal notranslate"><span class="pre">FMult</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.GFMult"><code class="docutils literal notranslate"><span class="pre">GFMult</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.FMult2"><code class="docutils literal notranslate"><span class="pre">FMult2</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.LFMult1"><code class="docutils literal notranslate"><span class="pre">LFMult1</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.models.LFMult"><code class="docutils literal notranslate"><span class="pre">LFMult</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.models.DualE"><code class="docutils literal notranslate"><span class="pre">DualE</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -170,6 +173,7 @@
 <li class="toctree-l1"><a class="reference internal" href="base_model/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.base_model</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="clifford/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.clifford</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="complex/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.complex</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dualE/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.dualE</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="function_space/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.function_space</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="octonion/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.octonion</span></code></a></li>
 <li class="toctree-l1"><a class="reference internal" href="pykeen_models/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.pykeen_models</span></code></a></li>
@@ -189,13 +193,13 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.BaseKGELightning" title="dicee.models.BaseKGELightning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGELightning</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#id142" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#id138" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#id89" title="dicee.models.IdentityClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IdentityClass</span></code></a></p></td>
 <td><p>A class that represents an identity function.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#id142" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#id138" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.DistMult" title="dicee.models.DistMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DistMult</span></code></a></p></td>
@@ -210,7 +214,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.Pyke" title="dicee.models.Pyke"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pyke</span></code></a></p></td>
 <td><p>Pyke is a physical embedding model for knowledge graphs, emphasizing the geometric relationships</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id142" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id138" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.ConEx" title="dicee.models.ConEx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConEx</span></code></a></p></td>
@@ -222,7 +226,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.ComplEx" title="dicee.models.ComplEx"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ComplEx</span></code></a></p></td>
 <td><p>ComplEx (Complex Embeddings for Knowledge Graphs) is a model that extends</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id142" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id138" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#id89" title="dicee.models.IdentityClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IdentityClass</span></code></a></p></td>
@@ -237,7 +241,7 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.AConvQ" title="dicee.models.AConvQ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AConvQ</span></code></a></p></td>
 <td><p>Additive Convolutional Quaternion Knowledge Graph Embeddings (AConvQ) model integrates</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#id142" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#id138" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#id89" title="dicee.models.IdentityClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IdentityClass</span></code></a></p></td>
@@ -264,13 +268,13 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.DeCaL" title="dicee.models.DeCaL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeCaL</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id142" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id138" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.PykeenKGE" title="dicee.models.PykeenKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PykeenKGE</span></code></a></p></td>
 <td><p>A class for using knowledge graph embedding models implemented in Pykeen.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#id142" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id138" title="dicee.models.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.FMult" title="dicee.models.FMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FMult</span></code></a></p></td>
@@ -287,6 +291,9 @@
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.LFMult" title="dicee.models.LFMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LFMult</span></code></a></p></td>
 <td><p>Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.DualE" title="dicee.models.DualE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DualE</span></code></a></p></td>
+<td><p>Dual Quaternion Knowledge Graph Embeddings (<a class="reference external" href="https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657">https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657</a>)</p></td>
 </tr>
 </tbody>
 </table>
@@ -4796,7 +4803,7 @@ evaluation mode.</p>
 <span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/clifford.html#DeCaL.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DeCaL.forward_triples" title="Link to this definition"></a></dt>
 <dd><section id="id120">
 <h4>Parameter<a class="headerlink" href="#id120" title="Link to this heading"></a></h4>
-<p>x: torch.LongTensor with (n,3) shape</p>
+<p>x: torch.LongTensor with (n, ) shape</p>
 <dl class="field-list simple">
 <dt class="field-odd">rtype<span class="colon">:</span></dt>
 <dd class="field-odd"><p>torch.FloatTensor with (n) shape</p>
@@ -4807,8 +4814,8 @@ evaluation mode.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.DeCaL.cl_pqr">
-<span class="sig-name descname"><span class="pre">cl_pqr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/clifford.html#DeCaL.cl_pqr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DeCaL.cl_pqr" title="Link to this definition"></a></dt>
-<dd><p>Input: tensor(batch_size, emb_dim) —-&gt; output: tensor with 1+p+q+r components with size (batch_size, emb_dim/(1+p+q+r)) each.</p>
+<span class="sig-name descname"><span class="pre">cl_pqr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/clifford.html#DeCaL.cl_pqr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DeCaL.cl_pqr" title="Link to this definition"></a></dt>
+<dd><p>Input: tensor(batch_size, emb_dim) —&gt; output: tensor with 1+p+q+r components with size (batch_size, emb_dim/(1+p+q+r)) each.</p>
 <p>1) takes a tensor of size (batch_size, emb_dim), split it into 1 + p + q +r components, hence 1+p+q+r must be a divisor
 of the emb_dim.
 2) Return a list of the 1+p+q+r components vectors, each are tensors of size (batch_size, emb_dim/(1+p+q+r))</p>
@@ -4817,16 +4824,18 @@ of the emb_dim.
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.DeCaL.compute_sigmas_single">
 <span class="sig-name descname"><span class="pre">compute_sigmas_single</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_h_emb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_r_emb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_t_emb</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/clifford.html#DeCaL.compute_sigmas_single"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DeCaL.compute_sigmas_single" title="Link to this definition"></a></dt>
-<dd><p>here we compute all the sums with no others vectors interaction taken with the scalar product with t, that is,
-1) s0 = h_0r_0t_0
-2) s1 = sum_{i=1}^{p}h_ir_it_0
-3) s2 = sum_{j=p+1}^{p+q}h_jr_jt_0
-4) s3 = sum_{i=1}^{q}(h_0r_it_i + h_ir_0t_i)
-5) s4 = sum_{i=p+1}^{p+q}(h_0r_it_i + h_ir_0t_i)
-5) s5 = sum_{i=p+q+1}^{p+q+r}(h_0r_it_i + h_ir_0t_i)</p>
+<dd><p>here we compute all the sums with no others vectors interaction taken with the scalar product with t, that is,</p>
+<div class="math notranslate nohighlight">
+\[s0 = h_0r_0t_0
+s1 = \sum_{i=1}^{p}h_ir_it_0
+s2 = \sum_{j=p+1}^{p+q}h_jr_jt_0
+s3 = \sum_{i=1}^{q}(h_0r_it_i + h_ir_0t_i)
+s4 = \sum_{i=p+1}^{p+q}(h_0r_it_i + h_ir_0t_i)
+s5 = \sum_{i=p+q+1}^{p+q+r}(h_0r_it_i + h_ir_0t_i)\]</div>
 <p>and return:</p>
-<p><a href="#id121"><span class="problematic" id="id122">*</span></a>) sigma_0t = sigma_0 cdot t_0 = s0 + s1 -s2
-<a href="#id123"><span class="problematic" id="id124">*</span></a>) s3, s4 and s5</p>
+<div class="math notranslate nohighlight">
+\[sigma_0t = \sigma_0 \cdot t_0 = s0 + s1 -s2
+s3, s4 and s5\]</div>
 </dd></dl>
 
 <dl class="py method">
@@ -4834,17 +4843,17 @@ of the emb_dim.
 <span class="sig-name descname"><span class="pre">compute_sigmas_multivect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_h_emb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_r_emb</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/clifford.html#DeCaL.compute_sigmas_multivect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DeCaL.compute_sigmas_multivect" title="Link to this definition"></a></dt>
 <dd><p>Here we compute and return all the sums with vectors interaction for the same and different bases.</p>
 <p>For same bases vectors interaction we have</p>
-<ol class="arabic simple">
-<li><p>sigma_pp = sum_{i=1}^{p-1}sum_{i’=i+1}^{p}(h_ir_{i’}-h_{i’}r_i) (models the interactions between e_i and e_i’ for 1 &lt;= i, i’ &lt;= p)</p></li>
-<li><p>sigma_qq = sum_{j=p+1}^{p+q-1}sum_{j’=j+1}^{p+q}(h_jr_{j’}-h_{j’} (models the interactions between e_j and e_j’ for p+1 &lt;= j, j’ &lt;= p+q)</p></li>
-<li><p>sigma_rr = sum_{k=p+q+1}^{p+q+r-1}sum_{k’=k+1}^{p}(h_kr_{k’}-h_{k’}r_k) (models the interactions between e_k and e_k’ for p+q+1 &lt;= k, k’ &lt;= p+q+r)</p></li>
-</ol>
+<div class="math notranslate nohighlight">
+\[\sigma_pp = \sum_{i=1}^{p-1}\sum_{i'=i+1}^{p}(h_ir_{i'}-h_{i'}r_i) (models the interactions between e_i and e_i' for 1 &lt;= i, i' &lt;= p)
+\sigma_qq = \sum_{j=p+1}^{p+q-1}\sum_{j'=j+1}^{p+q}(h_jr_{j'}-h_{j'} (models the interactions between e_j and e_j' for p+1 &lt;= j, j' &lt;= p+q)
+\sigma_rr = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(h_kr_{k'}-h_{k'}r_k) (models the interactions between e_k and e_k' for p+q+1 &lt;= k, k' &lt;= p+q+r)\]</div>
 <p>For different base vector interactions, we have</p>
-<ol class="arabic simple" start="4">
-<li><p>sigma_pq = sum_{i=1}^{p}sum_{j=p+1}^{p+q}(h_ir_j - h_jr_i) (interactionsn between e_i and e_j for 1&lt;=i &lt;=p and p+1&lt;= j &lt;= p+q)</p></li>
-<li><p>sigma_pr = sum_{i=1}^{p}sum_{k=p+q+1}^{p+q+r}(h_ir_k - h_kr_i) (interactionsn between e_i and e_k for 1&lt;=i &lt;=p and p+q+1&lt;= k &lt;= p+q+r)</p></li>
-<li><p>sigma_qr = sum_{j=p+1}^{p+q}sum_{j=p+q+1}^{p+q+r}(h_jr_k - h_kr_j) (interactionsn between e_j and e_k for p+1 &lt;= j &lt;=p+q and p+q+1&lt;= j &lt;= p+q+r)</p></li>
-</ol>
+<blockquote>
+<div><div class="math notranslate nohighlight">
+\[\sigma_pq = \sum_{i=1}^{p}\sum_{j=p+1}^{p+q}(h_ir_j - h_jr_i) (interactionsn between e_i and e_j for 1&lt;=i &lt;=p and p+1&lt;= j &lt;= p+q)
+\sigma_pr = \sum_{i=1}^{p}\sum_{k=p+q+1}^{p+q+r}(h_ir_k - h_kr_i) (interactionsn between e_i and e_k for 1&lt;=i &lt;=p and p+q+1&lt;= k &lt;= p+q+r)
+\sigma_qr = \sum_{j=p+1}^{p+q}\sum_{j=p+q+1}^{p+q+r}(h_jr_k - h_kr_j) (interactionsn between e_j and e_k for p+1 &lt;= j &lt;=p+q and p+q+1&lt;= j &lt;= p+q+r)\]</div>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">
@@ -4852,15 +4861,15 @@ of the emb_dim.
 <span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/clifford.html#DeCaL.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DeCaL.forward_k_vs_all" title="Link to this definition"></a></dt>
 <dd><p>Kvsall training</p>
 <ol class="arabic simple">
-<li><p>Retrieve real-valued embedding vectors for heads and relations mathbb{R}^d .</p></li>
-<li><p>Construct head entity and relation embeddings according to Cl_{p,q}(mathbb{R}^d) .</p></li>
+<li><p>Retrieve real-valued embedding vectors for heads and relations</p></li>
+<li><p>Construct head entity and relation embeddings according to Cl_{p,q, r}(mathbb{R}^d) .</p></li>
 <li><p>Perform Cl multiplication</p></li>
 <li><p>Inner product of (3) and all entity embeddings</p></li>
 </ol>
 <p>forward_k_vs_with_explicit and this funcitons are identical
 Parameter
 ———
-x: torch.LongTensor with (n,2) shape
+x: torch.LongTensor with (n, ) shape
 :rtype: torch.FloatTensor with (n, <a href="#id185"><span class="problematic" id="id186">|E|</span></a>) shape</p>
 </dd></dl>
 
@@ -4874,8 +4883,8 @@ x: torch.LongTensor with (n,2) shape
 <dt class="sig sig-object py" id="dicee.models.DeCaL.construct_cl_multivector">
 <span class="sig-name descname"><span class="pre">construct_cl_multivector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">re</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/clifford.html#DeCaL.construct_cl_multivector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DeCaL.construct_cl_multivector" title="Link to this definition"></a></dt>
 <dd><p>Construct a batch of multivectors Cl_{p,q,r}(mathbb{R}^d)</p>
-<section id="id125">
-<h4>Parameter<a class="headerlink" href="#id125" title="Link to this heading"></a></h4>
+<section id="id121">
+<h4>Parameter<a class="headerlink" href="#id121" title="Link to this heading"></a></h4>
 <p>x: torch.FloatTensor with (n,d) shape</p>
 <dl class="field-list simple">
 <dt class="field-odd">returns<span class="colon">:</span></dt>
@@ -4893,7 +4902,11 @@ x: torch.LongTensor with (n,2) shape
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.DeCaL.compute_sigma_pp">
 <span class="sig-name descname"><span class="pre">compute_sigma_pp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/clifford.html#DeCaL.compute_sigma_pp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DeCaL.compute_sigma_pp" title="Link to this definition"></a></dt>
-<dd><p>sigma_{p,p}^* = sum_{i=1}^{p-1}sum_{i’=i+1}^{p}(x_iy_{i’}-x_{i’}y_i)</p>
+<dd><p>Compute
+.. math:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>\<span class="n">sigma_</span><span class="p">{</span><span class="n">p</span><span class="p">,</span><span class="n">p</span><span class="p">}</span><span class="o">^*</span> <span class="o">=</span> \<span class="n">sum_</span><span class="p">{</span><span class="n">i</span><span class="o">=</span><span class="mi">1</span><span class="p">}</span><span class="o">^</span><span class="p">{</span><span class="n">p</span><span class="o">-</span><span class="mi">1</span><span class="p">}</span>\<span class="n">sum_</span><span class="p">{</span><span class="n">i</span><span class="s1">&#39;=i+1}^</span><span class="si">{p}</span><span class="s1">(x_iy_{i&#39;</span><span class="p">}</span><span class="o">-</span><span class="n">x_</span><span class="p">{</span><span class="n">i</span><span class="s1">&#39;}y_i)</span>
+</pre></div>
+</div>
 <p>sigma_{pp} captures the interactions between along p bases
 For instance, let p e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
 This can be implemented with a nested two for loops</p>
@@ -4921,8 +4934,10 @@ e3e1, e3e2, e3e3</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.DeCaL.compute_sigma_qq">
 <span class="sig-name descname"><span class="pre">compute_sigma_qq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rq</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/clifford.html#DeCaL.compute_sigma_qq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DeCaL.compute_sigma_qq" title="Link to this definition"></a></dt>
-<dd><p>Compute  sigma_{q,q}^* = sum_{j=p+1}^{p+q-1}sum_{j’=j+1}^{p+q}(x_jy_{j’}-x_{j’}y_j) Eq. 16
-sigma_{q} captures the interactions between along q bases
+<dd><p>Compute</p>
+<div class="math notranslate nohighlight">
+\[\sigma_{q,q}^* = \sum_{j=p+1}^{p+q-1}\sum_{j'=j+1}^{p+q}(x_jy_{j'}-x_{j'}y_j) Eq. 16\]</div>
+<p>sigma_{q} captures the interactions between along q bases
 For instance, let q e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
 This can be implemented with a nested two for loops</p>
 <blockquote>
@@ -4949,13 +4964,16 @@ e3e1, e3e2, e3e3</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.DeCaL.compute_sigma_rr">
 <span class="sig-name descname"><span class="pre">compute_sigma_rr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rk</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/clifford.html#DeCaL.compute_sigma_rr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DeCaL.compute_sigma_rr" title="Link to this definition"></a></dt>
-<dd><p>sigma_{r,r}^* = sum_{k=p+q+1}^{p+q+r-1}sum_{k’=k+1}^{p}(x_ky_{k’}-x_{k’}y_k)</p>
+<dd><div class="math notranslate nohighlight">
+\[\sigma_{r,r}^* = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(x_ky_{k'}-x_{k'}y_k)\]</div>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.DeCaL.compute_sigma_pq">
 <span class="sig-name descname"><span class="pre">compute_sigma_pq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rq</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/clifford.html#DeCaL.compute_sigma_pq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DeCaL.compute_sigma_pq" title="Link to this definition"></a></dt>
-<dd><p>sum_{i=1}^{p} sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j</p>
+<dd><p>Compute</p>
+<div class="math notranslate nohighlight">
+\[\sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j\]</div>
 <p>results = []
 sigma_pq = torch.zeros(b, r, p, q)
 for i in range(p):</p>
@@ -4971,7 +4989,9 @@ for i in range(p):</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.DeCaL.compute_sigma_pr">
 <span class="sig-name descname"><span class="pre">compute_sigma_pr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rk</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/clifford.html#DeCaL.compute_sigma_pr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DeCaL.compute_sigma_pr" title="Link to this definition"></a></dt>
-<dd><p>sum_{i=1}^{p} sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j</p>
+<dd><p>Compute</p>
+<div class="math notranslate nohighlight">
+\[\sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j\]</div>
 <p>results = []
 sigma_pq = torch.zeros(b, r, p, q)
 for i in range(p):</p>
@@ -4987,7 +5007,8 @@ for i in range(p):</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.DeCaL.compute_sigma_qr">
 <span class="sig-name descname"><span class="pre">compute_sigma_qr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rk</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/clifford.html#DeCaL.compute_sigma_qr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DeCaL.compute_sigma_qr" title="Link to this definition"></a></dt>
-<dd><p>sum_{i=1}^{p} sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j</p>
+<dd><div class="math notranslate nohighlight">
+\[\sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j\]</div>
 <p>results = []
 sigma_pq = torch.zeros(b, r, p, q)
 for i in range(p):</p>
@@ -5003,8 +5024,8 @@ for i in range(p):</p>
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="id126">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">BaseKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id126" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id122">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">BaseKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id122" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#dicee.models.BaseKGELightning" title="dicee.models.BaseKGELightning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGELightning</span></code></a></p>
 <p>Base class for all neural network modules.</p>
 <p>Your models should also subclass this class.</p>
@@ -5038,8 +5059,8 @@ evaluation mode.</p>
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="id127">
-<span class="sig-name descname"><span class="pre">forward_byte_pair_encoded_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_byte_pair_encoded_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id127" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id123">
+<span class="sig-name descname"><span class="pre">forward_byte_pair_encoded_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_byte_pair_encoded_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id123" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>x</strong> (<em>B x 2 x T</em>) – </p>
@@ -5048,8 +5069,8 @@ evaluation mode.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id128">
-<span class="sig-name descname"><span class="pre">forward_byte_pair_encoded_triple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_byte_pair_encoded_triple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id128" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id124">
+<span class="sig-name descname"><span class="pre">forward_byte_pair_encoded_triple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_byte_pair_encoded_triple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id124" title="Link to this definition"></a></dt>
 <dd><p>Perform the forward pass for byte pair encoded triples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -5065,13 +5086,13 @@ evaluation mode.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id129">
-<span class="sig-name descname"><span class="pre">init_params_with_sanity_checking</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.init_params_with_sanity_checking"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id129" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id125">
+<span class="sig-name descname"><span class="pre">init_params_with_sanity_checking</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.init_params_with_sanity_checking"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id125" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id130">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id130" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id126">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id126" title="Link to this definition"></a></dt>
 <dd><p>Perform the forward pass of the model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -5090,8 +5111,8 @@ evaluation mode.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id131">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id131" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id127">
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id127" title="Link to this definition"></a></dt>
 <dd><p>Perform the forward pass for triples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -5107,8 +5128,8 @@ evaluation mode.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id132">
-<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id132" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id128">
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id128" title="Link to this definition"></a></dt>
 <dd><p>Forward pass for K vs. All.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
@@ -5118,8 +5139,8 @@ evaluation mode.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id133">
-<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id133" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id129">
+<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id129" title="Link to this definition"></a></dt>
 <dd><p>Forward pass for K vs. Sample.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
@@ -5129,13 +5150,13 @@ evaluation mode.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id134">
-<span class="sig-name descname"><span class="pre">get_triple_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_hrt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_triple_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id134" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id130">
+<span class="sig-name descname"><span class="pre">get_triple_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_hrt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_triple_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id130" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id135">
-<span class="sig-name descname"><span class="pre">get_head_relation_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexed_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_head_relation_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id135" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id131">
+<span class="sig-name descname"><span class="pre">get_head_relation_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexed_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_head_relation_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id131" title="Link to this definition"></a></dt>
 <dd><p>Get the representation for the head and relation entities.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -5151,8 +5172,8 @@ evaluation mode.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id136">
-<span class="sig-name descname"><span class="pre">get_sentence_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_sentence_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id136" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id132">
+<span class="sig-name descname"><span class="pre">get_sentence_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_sentence_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id132" title="Link to this definition"></a></dt>
 <dd><p>Get the representation for a sentence.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -5168,8 +5189,8 @@ evaluation mode.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id137">
-<span class="sig-name descname"><span class="pre">get_bpe_head_and_relation_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_bpe_head_and_relation_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id137" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id133">
+<span class="sig-name descname"><span class="pre">get_bpe_head_and_relation_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_bpe_head_and_relation_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id133" title="Link to this definition"></a></dt>
 <dd><p>Get the representation for BPE head and relation entities.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -5185,8 +5206,8 @@ evaluation mode.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id138">
-<span class="sig-name descname"><span class="pre">get_embeddings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id138" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id134">
+<span class="sig-name descname"><span class="pre">get_embeddings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id134" title="Link to this definition"></a></dt>
 <dd><p>Get the entity and relation embeddings.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -5311,8 +5332,8 @@ such as embedding dimensions, random seed, and model-specific kwargs.</p>
 in Pykeen. It initializes Pykeen models based on the provided arguments and allows for
 scoring triples and conducting knowledge graph embedding experiments.</p>
 <dl class="py method">
-<dt class="sig sig-object py" id="id139">
-<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/pykeen_models.html#PykeenKGE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id139" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id135">
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/pykeen_models.html#PykeenKGE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id135" title="Link to this definition"></a></dt>
 <dd><p>TODO: Format in Numpy-style documentation</p>
 <p># =&gt; Explicit version by this we can apply bn and dropout</p>
 <p># (1) Retrieve embeddings of heads and relations +  apply Dropout &amp; Normalization if given.
@@ -5337,8 +5358,8 @@ return self.interaction.score_t(h=h, r=r, all_entities=t, slice_size=1)</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id140">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/pykeen_models.html#PykeenKGE.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id140" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id136">
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/pykeen_models.html#PykeenKGE.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id136" title="Link to this definition"></a></dt>
 <dd><p>TODO: Format in Numpy-style documentation</p>
 <p># =&gt; Explicit version by this we can apply bn and dropout</p>
 <p># (1) Retrieve embeddings of heads, relations and tails and apply Dropout &amp; Normalization if given.
@@ -5355,8 +5376,8 @@ return self.interaction.score(h=h, r=r, t=t, slice_size=None, slice_dim=0)</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id141">
-<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/pykeen_models.html#PykeenKGE.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id141" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id137">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/pykeen_models.html#PykeenKGE.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id137" title="Link to this definition"></a></dt>
 <dd><p>Forward pass for K vs. Sample.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
@@ -5368,8 +5389,8 @@ return self.interaction.score(h=h, r=r, t=t, slice_size=None, slice_dim=0)</p>
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="id142">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">BaseKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id142" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id138">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">BaseKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id138" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#dicee.models.BaseKGELightning" title="dicee.models.BaseKGELightning"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGELightning</span></code></a></p>
 <p>Base class for all neural network modules.</p>
 <p>Your models should also subclass this class.</p>
@@ -5403,8 +5424,8 @@ evaluation mode.</p>
 </dd>
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="id143">
-<span class="sig-name descname"><span class="pre">forward_byte_pair_encoded_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_byte_pair_encoded_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id143" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id139">
+<span class="sig-name descname"><span class="pre">forward_byte_pair_encoded_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_byte_pair_encoded_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id139" title="Link to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>x</strong> (<em>B x 2 x T</em>) – </p>
@@ -5413,8 +5434,8 @@ evaluation mode.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id144">
-<span class="sig-name descname"><span class="pre">forward_byte_pair_encoded_triple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_byte_pair_encoded_triple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id144" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id140">
+<span class="sig-name descname"><span class="pre">forward_byte_pair_encoded_triple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_byte_pair_encoded_triple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id140" title="Link to this definition"></a></dt>
 <dd><p>Perform the forward pass for byte pair encoded triples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -5430,13 +5451,13 @@ evaluation mode.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id145">
-<span class="sig-name descname"><span class="pre">init_params_with_sanity_checking</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.init_params_with_sanity_checking"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id145" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id141">
+<span class="sig-name descname"><span class="pre">init_params_with_sanity_checking</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.init_params_with_sanity_checking"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id141" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id146">
-<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id146" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id142">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id142" title="Link to this definition"></a></dt>
 <dd><p>Perform the forward pass of the model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -5455,8 +5476,8 @@ evaluation mode.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id147">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id147" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id143">
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id143" title="Link to this definition"></a></dt>
 <dd><p>Perform the forward pass for triples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -5472,8 +5493,8 @@ evaluation mode.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id148">
-<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id148" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id144">
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id144" title="Link to this definition"></a></dt>
 <dd><p>Forward pass for K vs. All.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
@@ -5483,8 +5504,8 @@ evaluation mode.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id149">
-<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id149" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id145">
+<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id145" title="Link to this definition"></a></dt>
 <dd><p>Forward pass for K vs. Sample.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
@@ -5494,13 +5515,13 @@ evaluation mode.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id150">
-<span class="sig-name descname"><span class="pre">get_triple_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_hrt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_triple_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id150" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id146">
+<span class="sig-name descname"><span class="pre">get_triple_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_hrt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_triple_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id146" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id151">
-<span class="sig-name descname"><span class="pre">get_head_relation_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexed_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_head_relation_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id151" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id147">
+<span class="sig-name descname"><span class="pre">get_head_relation_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexed_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_head_relation_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id147" title="Link to this definition"></a></dt>
 <dd><p>Get the representation for the head and relation entities.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -5516,8 +5537,8 @@ evaluation mode.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id152">
-<span class="sig-name descname"><span class="pre">get_sentence_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_sentence_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id152" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id148">
+<span class="sig-name descname"><span class="pre">get_sentence_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_sentence_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id148" title="Link to this definition"></a></dt>
 <dd><p>Get the representation for a sentence.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -5533,8 +5554,8 @@ evaluation mode.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id153">
-<span class="sig-name descname"><span class="pre">get_bpe_head_and_relation_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_bpe_head_and_relation_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id153" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id149">
+<span class="sig-name descname"><span class="pre">get_bpe_head_and_relation_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_bpe_head_and_relation_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id149" title="Link to this definition"></a></dt>
 <dd><p>Get the representation for BPE head and relation entities.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -5550,8 +5571,8 @@ evaluation mode.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id154">
-<span class="sig-name descname"><span class="pre">get_embeddings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id154" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id150">
+<span class="sig-name descname"><span class="pre">get_embeddings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/base_model.html#BaseKGE.get_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id150" title="Link to this definition"></a></dt>
 <dd><p>Get the entity and relation embeddings.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -5686,8 +5707,8 @@ such as embedding dimensions and other model-specific parameters.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id155">
-<span class="sig-name descname"><span class="pre">compute_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#FMult.compute_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id155" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id151">
+<span class="sig-name descname"><span class="pre">compute_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#FMult.compute_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id151" title="Link to this definition"></a></dt>
 <dd><p>Compute the output of a two-layer neural network.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -5706,8 +5727,8 @@ such as embedding dimensions and other model-specific parameters.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id156">
-<span class="sig-name descname"><span class="pre">chain_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#FMult.chain_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id156" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id152">
+<span class="sig-name descname"><span class="pre">chain_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#FMult.chain_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id152" title="Link to this definition"></a></dt>
 <dd><p>Chain two linear layers of a neural network for given weights and input.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -5726,8 +5747,8 @@ such as embedding dimensions and other model-specific parameters.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id157">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#FMult.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id157" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id153">
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#FMult.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id153" title="Link to this definition"></a></dt>
 <dd><p>Forward pass for a batch of triples to compute embedding interactions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -5854,8 +5875,8 @@ such as embedding dimensions, learning rate, and other model-specific parameters
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id158">
-<span class="sig-name descname"><span class="pre">compute_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#GFMult.compute_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id158" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id154">
+<span class="sig-name descname"><span class="pre">compute_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#GFMult.compute_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id154" title="Link to this definition"></a></dt>
 <dd><p>Compute the output of a two-layer neural network.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -5874,8 +5895,8 @@ such as embedding dimensions, learning rate, and other model-specific parameters
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id159">
-<span class="sig-name descname"><span class="pre">chain_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#GFMult.chain_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id159" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id155">
+<span class="sig-name descname"><span class="pre">chain_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#GFMult.chain_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id155" title="Link to this definition"></a></dt>
 <dd><p>Chain two linear layers of a neural network for given weights and input.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -5894,8 +5915,8 @@ such as embedding dimensions, learning rate, and other model-specific parameters
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id160">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#GFMult.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id160" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id156">
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#GFMult.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id156" title="Link to this definition"></a></dt>
 <dd><p>Forward pass for a batch of triples to compute embedding interactions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -6073,8 +6094,8 @@ such as embedding dimensions, learning rate, number of layers, and other model-s
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id161">
-<span class="sig-name descname"><span class="pre">build_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Vec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#FMult2.build_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id161" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id157">
+<span class="sig-name descname"><span class="pre">build_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Vec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#FMult2.build_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id157" title="Link to this definition"></a></dt>
 <dd><p>Constructs a multi-layer neural network from a vector representation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -6090,8 +6111,8 @@ such as embedding dimensions, learning rate, number of layers, and other model-s
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id162">
-<span class="sig-name descname"><span class="pre">build_chain_funcs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_Vec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#FMult2.build_chain_funcs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id162" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id158">
+<span class="sig-name descname"><span class="pre">build_chain_funcs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_Vec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#FMult2.build_chain_funcs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id158" title="Link to this definition"></a></dt>
 <dd><p>Builds chained functions from a list of vector representations. This method
 constructs a sequence of neural network layers and their corresponding biases
 based on the provided vector representations.</p>
@@ -6120,8 +6141,8 @@ decomposed into weights and biases suitable for a layer in a neural network.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id163">
-<span class="sig-name descname"><span class="pre">compute_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">W</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#FMult2.compute_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id163" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id159">
+<span class="sig-name descname"><span class="pre">compute_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">W</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#FMult2.compute_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id159" title="Link to this definition"></a></dt>
 <dd><p>Computes the output of a multi-layer neural network defined by the given weights and bias.</p>
 <p>This method sequentially applies a series of matrix multiplications and non-linear
 transformations to an input tensor <cite>x</cite>, using the provided weights <cite>W</cite>. The method
@@ -6150,8 +6171,8 @@ empirical observations for better performance in the context of the FMult2 model
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id164">
-<span class="sig-name descname"><span class="pre">function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_W</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#FMult2.function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id164" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id160">
+<span class="sig-name descname"><span class="pre">function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_W</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#FMult2.function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id160" title="Link to this definition"></a></dt>
 <dd><p>Defines a function that computes the output of a composite neural network.
 This higher-order function returns a callable that applies a sequence of
 transformations defined by the provided weights and biases.</p>
@@ -6182,8 +6203,8 @@ neural network layers enables capturing intricate patterns in the data.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id165">
-<span class="sig-name descname"><span class="pre">trapezoid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_W</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#FMult2.trapezoid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id165" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id161">
+<span class="sig-name descname"><span class="pre">trapezoid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_W</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#FMult2.trapezoid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id161" title="Link to this definition"></a></dt>
 <dd><p>Computes the integral of the output of a composite neural network function over a
 range of discrete points using the trapezoidal rule.</p>
 <p>This method first constructs a composite neural network function using the <cite>function</cite>
@@ -6214,8 +6235,8 @@ of calculations in knowledge graph embeddings.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id166">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#FMult2.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id166" title="Link to this definition"></a></dt>
+<dt class="sig sig-object py" id="id162">
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/function_space.html#FMult2.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id162" title="Link to this definition"></a></dt>
 <dd><p>Forward pass for a batch of triples to compute embedding interactions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -6375,6 +6396,63 @@ it takes a matrix tensor of coefficients (coeff), a matrix tensor of points x  a
 </dd>
 </dl>
 </div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.DualE">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.</span></span><span class="sig-name descname"><span class="pre">DualE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/dualE.html#DualE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DualE" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
+<p>Dual Quaternion Knowledge Graph Embeddings (<a class="reference external" href="https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657">https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657</a>)</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.DualE.kvsall_score">
+<span class="sig-name descname"><span class="pre">kvsall_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">e_1_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_2_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_3_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_4_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_5_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_6_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_7_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_8_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_1_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_2_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_3_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_4_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_5_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_6_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_7_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_8_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_8</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/dualE.html#DualE.kvsall_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DualE.kvsall_score" title="Link to this definition"></a></dt>
+<dd><p>KvsAll scoring function</p>
+<section id="input">
+<h4>Input<a class="headerlink" href="#input" title="Link to this heading"></a></h4>
+<p>x: torch.LongTensor with (n, ) shape</p>
+</section>
+<section id="output">
+<h4>Output<a class="headerlink" href="#output" title="Link to this heading"></a></h4>
+<p>torch.FloatTensor with (n) shape</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.DualE.forward_triples">
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/dualE.html#DualE.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DualE.forward_triples" title="Link to this definition"></a></dt>
+<dd><p>Negative Sampling forward pass:</p>
+<section id="id163">
+<h4>Input<a class="headerlink" href="#id163" title="Link to this heading"></a></h4>
+<p>x: torch.LongTensor with (n, ) shape</p>
+</section>
+<section id="id164">
+<h4>Output<a class="headerlink" href="#id164" title="Link to this heading"></a></h4>
+<p>torch.FloatTensor with (n) shape</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.DualE.forward_k_vs_all">
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/models/dualE.html#DualE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DualE.forward_k_vs_all" title="Link to this definition"></a></dt>
+<dd><p>KvsAll forward pass</p>
+<section id="id165">
+<h4>Input<a class="headerlink" href="#id165" title="Link to this heading"></a></h4>
+<p>x: torch.LongTensor with (n, ) shape</p>
+</section>
+<section id="id166">
+<h4>Output<a class="headerlink" href="#id166" title="Link to this heading"></a></h4>
+<p>torch.FloatTensor with (n) shape</p>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.DualE.T">
+<span class="sig-name descname"><span class="pre">T</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.tensor</span></span></span><a class="reference internal" href="../../../_modules/dicee/models/dualE.html#DualE.T"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.DualE.T" title="Link to this definition"></a></dt>
+<dd><p>Transpose function</p>
+<p>Input: Tensor with shape (nxm)
+Output: Tensor with shape (mxn)</p>
 </dd></dl>
 
 </dd></dl>
