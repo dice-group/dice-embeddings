@@ -32,31 +32,6 @@ Classes
 
       :type: object
 
-   .. method:: start() -> None
-
-      Preprocess train, valid, and test datasets stored in the knowledge graph instance.
-
-
-   .. method:: preprocess_with_byte_pair_encoding() -> None
-
-      Preprocess the datasets using byte-pair encoding.
-
-
-   .. method:: preprocess_with_pandas() -> None
-
-      Preprocess the datasets using pandas.
-
-
-   .. method:: preprocess_with_polars() -> None
-
-      Preprocess the datasets using polars.
-
-
-   .. method:: sequential_vocabulary_construction() -> None
-
-      Construct integer indexing for entities and relations.
-
-
    .. py:method:: start() -> None
 
       Preprocess train, valid, and test datasets stored in the knowledge graph instance.
@@ -177,7 +152,7 @@ Classes
       - The method assumes that the raw datasets are available as Pandas DataFrames within the knowledge graph instance.
 
 
-   .. py:method:: dept_remove_triples_from_train_with_condition()
+   .. py:method:: remove_triples_from_train_with_condition()
 
       Remove specific triples from the training set based on a predefined condition.
 
