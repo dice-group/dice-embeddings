@@ -16,6 +16,8 @@ Classes
    dicee.models.clifford.Keci
    dicee.models.clifford.KeciBase
    dicee.models.clifford.DeCaL
+   dicee.models.clifford.KeciBase
+   dicee.models.clifford.DeCaL
 
 
 
@@ -24,6 +26,13 @@ Classes
 
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+   The CMult class represents a specific kind of mathematical object used in knowledge graph embeddings,
+   involving Clifford algebra multiplication. It defines several algebraic structures based on the signature (p, q),
+   such as Real Numbers, Complex Numbers, Quaternions, and others. The class provides functionality for
+   performing Clifford multiplication, a generalization of the geometric product for vectors in a Clifford algebra.
+
+   TODO: Add mathematical format for sphinx.
 
    Cl_(0,0) => Real Numbers
 
@@ -45,7 +54,58 @@ Classes
 
    Cl_(0,2) => Quaternions
 
+   .. attribute:: name
+
+      The name identifier for the CMult class.
+
+      :type: str
+
+   .. attribute:: entity_embeddings
+
+      Embedding layer for entities in the knowledge graph.
+
+      :type: torch.nn.Embedding
+
+   .. attribute:: relation_embeddings
+
+      Embedding layer for relations in the knowledge graph.
+
+      :type: torch.nn.Embedding
+
+   .. attribute:: p
+
+      Non-negative integer representing the number of positive square terms in the Clifford algebra.
+
+      :type: int
+
+   .. attribute:: q
+
+      Non-negative integer representing the number of negative square terms in the Clifford algebra.
+
+      :type: int
+
+   .. method:: clifford_mul(x: torch.FloatTensor, y: torch.FloatTensor, p: int, q: int) -> tuple
+
+      Performs Clifford multiplication based on the given signature (p, q).
+
+   .. method:: score(head_ent_emb, rel_ent_emb, tail_ent_emb) -> torch.FloatTensor
+
+      Computes a scoring function for a head entity, relation, and tail entity embeddings.
+
+   .. method:: forward_triples(x: torch.LongTensor) -> torch.FloatTensor
+
+      Computes scores for a batch of triples.
+
+   .. method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
+
+      Computes scores for a batch of triples against all entities in the knowledge graph.
+
+
    .. py:method:: clifford_mul(x: torch.FloatTensor, y: torch.FloatTensor, p: int, q: int) -> tuple
+
+              Performs Clifford multiplication in the Clifford algebra Cl_{p,q}. This method generalizes the geometric product
+              of vectors in a Clifford algebra, handling different algebraic structures like real numbers, complex numbers,
+              quaternions, etc., based on the signature (p, q).
 
               Clifford multiplication Cl_{p,q} (\mathbb{R})
 
@@ -54,52 +114,541 @@ Classes
               ei ej = -eje1  for i
       eq j
 
-              Parameter
-              ---------
-              x: torch.FloatTensor with (n,d) shape
-
-              y: torch.FloatTensor with (n,d) shape
-
-              p: a non-negative integer p>= 0
-              q: a non-negative integer q>= 0
-
-
+              Parameters
+              ----------
+              x : torch.FloatTensor
+                  The first multivector operand with shape (n, d).
+              y : torch.FloatTensor
+                  The second multivector operand with shape (n, d).
+              p : int
+                  A non-negative integer representing the number of positive square terms in the Clifford algebra.
+              q : int
+                  A non-negative integer representing the number of negative square terms in the Clifford algebra.
 
               Returns
               -------
+              tuple
+                  The result of Clifford multiplication, a tuple of tensors representing the components of the resulting multivector.
 
 
 
+   .. py:method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor) -> torch.FloatTensor
 
-   .. py:method:: score(head_ent_emb, rel_ent_emb, tail_ent_emb)
+      Computes a scoring function for a given triple of head entity, relation, and tail entity embeddings.
+      The method involves Clifford multiplication of the head entity and relation embeddings, followed by
+      a calculation of the score with the tail entity embedding.
+
+      :param head_ent_emb: Embedding of the head entity.
+      :type head_ent_emb: torch.FloatTensor
+      :param rel_ent_emb: Embedding of the relation.
+      :type rel_ent_emb: torch.FloatTensor
+      :param tail_ent_emb: Embedding of the tail entity.
+      :type tail_ent_emb: torch.FloatTensor
+
+      :returns: A tensor representing the score of the given triple.
+      :rtype: torch.FloatTensor
 
 
    .. py:method:: forward_triples(x: torch.LongTensor) -> torch.FloatTensor
 
-      Compute batch triple scores
+      Computes scores for a batch of triples. This method is typically used in training or evaluation
+      of knowledge graph embedding models. It applies Clifford multiplication to the embeddings of head
+      entities and relations and then calculates the score with respect to the tail entity embeddings.
 
-      Parameter
-      ---------
-      x: torch.LongTensor with shape n by 3
+      :param x: A tensor with shape (n, 3) representing a batch of triples, where each triple consists of indices
+                for a head entity, a relation, and a tail entity.
+      :type x: torch.LongTensor
 
-
-      :rtype: torch.LongTensor with shape n
+      :returns: A tensor with shape (n,) containing the scores for each triple in the batch.
+      :rtype: torch.FloatTensor
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
 
-      Compute batch KvsAll triple scores
+      Computes scores for a batch of triples against all entities in the knowledge graph, often used in KvsAll evaluation.
+      This method retrieves embeddings for heads and relations, performs Clifford multiplication, and then computes the
+      inner product with all entity embeddings to get scores for every possible triple involving the given heads and relations.
+
+      :param x: A tensor with shape (n, 3) representing a batch of triples, where each triple consists of indices
+                for a head entity and a relation. The tail entity is to be compared against all possible entities.
+      :type x: torch.Tensor
+
+      :returns: A tensor with shape (n,) containing scores for each triple against all possible tail entities.
+      :rtype: torch.FloatTensor
+
+
+
+.. py:class:: Keci(args: dict)
+
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+   The Keci class is a knowledge graph embedding model that incorporates Clifford algebra for embeddings.
+   It supports different dimensions of Clifford algebra by setting the parameters p and q. The class
+   utilizes Clifford multiplication for embedding interactions and computes scores for knowledge graph triples.
+
+   :param args: A dictionary of arguments containing hyperparameters and settings for the model.
+   :type args: dict
+
+   .. attribute:: name
+
+      The name identifier for the Keci class.
+
+      :type: str
+
+   .. attribute:: p
+
+      The parameter 'p' in Clifford algebra, representing the number of positive square terms.
+
+      :type: int
+
+   .. attribute:: q
+
+      The parameter 'q' in Clifford algebra, representing the number of negative square terms.
+
+      :type: int
+
+   .. attribute:: r
+
+      A derived attribute for dimension scaling based on 'p' and 'q'.
+
+      :type: int
+
+   .. attribute:: p_coefficients
+
+      Embedding for scaling coefficients of 'p' terms, if 'p' > 0.
+
+      :type: torch.nn.Embedding (optional)
+
+   .. attribute:: q_coefficients
+
+      Embedding for scaling coefficients of 'q' terms, if 'q' > 0.
+
+      :type: torch.nn.Embedding (optional)
+
+   .. method:: compute_sigma_pp(hp: torch.Tensor, rp: torch.Tensor) -> torch.Tensor
+
+      Computes the sigma_pp component in Clifford multiplication.
+
+   .. method:: compute_sigma_qq(hq: torch.Tensor, rq: torch.Tensor) -> torch.Tensor
+
+      Computes the sigma_qq component in Clifford multiplication.
+
+   .. method:: compute_sigma_pq(hp: torch.Tensor, hq: torch.Tensor, rp: torch.Tensor, rq: torch.Tensor) -> torch.Tensor
+
+      Computes the sigma_pq component in Clifford multiplication.
+
+   .. method:: apply_coefficients(h0: torch.Tensor, hp: torch.Tensor, hq: torch.Tensor, r0: torch.Tensor, rp: torch.Tensor, rq: torch.Tensor) -> tuple
+
+      Applies scaling coefficients to the base vectors in Clifford algebra.
+
+   .. method:: clifford_multiplication(h0: torch.Tensor, hp: torch.Tensor, hq: torch.Tensor, r0: torch.Tensor, rp: torch.Tensor, rq: torch.Tensor) -> tuple
+
+      Performs Clifford multiplication of head and relation embeddings.
+
+   .. method:: construct_cl_multivector(x: torch.FloatTensor, r: int, p: int, q: int) -> tuple
+
+      Constructs a multivector in Clifford algebra Cl_{p,q}(\mathbb{R}^d).
+
+   .. method:: forward_k_vs_with_explicit(x: torch.Tensor) -> torch.FloatTensor
+
+      Computes scores for a batch of triples against all entities using explicit Clifford multiplication.
+
+   .. method:: k_vs_all_score(bpe_head_ent_emb: torch.Tensor, bpe_rel_ent_emb: torch.Tensor, E: torch.Tensor) -> torch.FloatTensor
+
+      Computes scores for all triples using Clifford multiplication in a K-vs-All setup.
+
+   .. method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
+
+      Wrapper function for K-vs-All scoring.
+
+   .. method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor
+
+      Computes scores for a sampled subset of entities.
+
+   .. method:: score(h: torch.Tensor, r: torch.Tensor, t: torch.Tensor) -> torch.FloatTensor
+
+      Computes the score for a given triple using Clifford multiplication.
+
+   .. method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
+
+      Computes scores for a batch of triples.
+
+
+   .. rubric:: Notes
+
+   The class is designed to work with embeddings in the context of knowledge graph completion tasks,
+   leveraging the properties of Clifford algebra for embedding interactions.
+
+   .. py:method:: compute_sigma_pp(hp: torch.Tensor, rp: torch.Tensor) -> torch.Tensor
+
+      Computes the sigma_pp component in Clifford multiplication, representing the interactions
+      between the positive square terms in the Clifford algebra.
+
+      sigma_{pp} = \sum_{i=1}^{p-1} \sum_{k=i+1}^p (h_i r_k - h_k r_i) e_i e_k, TODO: Add mathematical format for sphinx.
+
+      sigma_{pp} captures the interactions between along p bases
+      For instance, let p e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
+      This can be implemented with a nested two for loops
+
+                      results = []
+                      for i in range(p - 1):
+                          for k in range(i + 1, p):
+                              results.append(hp[:, :, i] * rp[:, :, k] - hp[:, :, k] * rp[:, :, i])
+                      sigma_pp = torch.stack(results, dim=2)
+                      assert sigma_pp.shape == (b, r, int((p * (p - 1)) / 2))
+
+      Yet, this computation would be quite inefficient. Instead, we compute interactions along all p,
+      e.g., e1e1, e1e2, e1e3,
+            e2e1, e2e2, e2e3,
+            e3e1, e3e2, e3e3
+      Then select the triangular matrix without diagonals: e1e2, e1e3, e2e3.
+
+      :param hp: The 'p' part of the head entity embedding in Clifford algebra.
+      :type hp: torch.Tensor
+      :param rp: The 'p' part of the relation embedding in Clifford algebra.
+      :type rp: torch.Tensor
+
+      :returns: **sigma_pp** -- The sigma_pp component of the Clifford multiplication.
+      :rtype: torch.Tensor
+
+
+   .. py:method:: compute_sigma_qq(hq: torch.Tensor, rq: torch.Tensor) -> torch.Tensor
+
+      Computes the sigma_qq component in Clifford multiplication, representing the interactions
+      between the negative square terms in the Clifford algebra.
+
+      TODO: Add mathematical format for sphinx.
+
+      sigma_{qq} = \sum_{j=1}^{p+q-1} \sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k
+      sigma_{q} captures the interactions between along q bases
+      For instance, let q e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
+      This can be implemented with a nested two for loops
+
+                      results = []
+                      for j in range(q - 1):
+                          for k in range(j + 1, q):
+                              results.append(hq[:, :, j] * rq[:, :, k] - hq[:, :, k] * rq[:, :, j])
+                      sigma_qq = torch.stack(results, dim=2)
+                      assert sigma_qq.shape == (b, r, int((q * (q - 1)) / 2))
+
+      Yet, this computation would be quite inefficient. Instead, we compute interactions along all p,
+      e.g., e1e1, e1e2, e1e3,
+            e2e1, e2e2, e2e3,
+            e3e1, e3e2, e3e3
+      Then select the triangular matrix without diagonals: e1e2, e1e3, e2e3.
+
+      :param hq: The 'q' part of the head entity embedding in Clifford algebra.
+      :type hq: torch.Tensor
+      :param rq: The 'q' part of the relation embedding in Clifford algebra.
+      :type rq: torch.Tensor
+
+      :returns: **sigma_qq** -- The sigma_qq component of the Clifford multiplication.
+      :rtype: torch.Tensor
+
+
+   .. py:method:: compute_sigma_pq(*, hp: torch.Tensor, hq: torch.Tensor, rp: torch.Tensor, rq: torch.Tensor) -> torch.Tensor
+
+      Computes the sigma_pq component in Clifford multiplication, representing the interactions
+      between the positive and negative square terms in the Clifford algebra.
+
+      TODO: Add mathematical format for sphinx.
+
+      \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
+
+      # results = []
+      # sigma_pq = torch.zeros(b, r, p, q)
+      # for i in range(p):
+      #     for j in range(q):
+      #         sigma_pq[:, :, i, j] = hp[:, :, i] * rq[:, :, j] - hq[:, :, j] * rp[:, :, i]
+      # print(sigma_pq.shape)
+
+      :param hp: The 'p' part of the head entity embedding in Clifford algebra.
+      :type hp: torch.Tensor
+      :param hq: The 'q' part of the head entity embedding in Clifford algebra.
+      :type hq: torch.Tensor
+      :param rp: The 'p' part of the relation embedding in Clifford algebra.
+      :type rp: torch.Tensor
+      :param rq: The 'q' part of the relation embedding in Clifford algebra.
+      :type rq: torch.Tensor
+
+      :returns: **sigma_pq** -- The sigma_pq component of the Clifford multiplication.
+      :rtype: torch.Tensor
+
+
+   .. py:method:: apply_coefficients(h0: torch.Tensor, hp: torch.Tensor, hq: torch.Tensor, r0: torch.Tensor, rp: torch.Tensor, rq: torch.Tensor) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+      Applies scaling coefficients to the base vectors in the Clifford algebra.
+      This method is used for adjusting the contributions of different components in the algebra.
+
+      :param h0: The scalar part of the head entity embedding.
+      :type h0: torch.Tensor
+      :param hp: The 'p' part of the head entity embedding.
+      :type hp: torch.Tensor
+      :param hq: The 'q' part of the head entity embedding.
+      :type hq: torch.Tensor
+      :param r0: The scalar part of the relation embedding.
+      :type r0: torch.Tensor
+      :param rp: The 'p' part of the relation embedding.
+      :type rp: torch.Tensor
+      :param rq: The 'q' part of the relation embedding.
+      :type rq: torch.Tensor
+
+      :returns: Tuple containing the scaled components of the head and relation embeddings.
+      :rtype: tuple
+
+
+   .. py:method:: clifford_multiplication(h0: torch.Tensor, hp: torch.Tensor, hq: torch.Tensor, r0: torch.Tensor, rp: torch.Tensor, rq: torch.Tensor) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+              Performs Clifford multiplication of head and relation embeddings. This method computes the
+              various components of the Clifford product, combining the scalar, 'p', and 'q' parts of the embeddings.
+
+              TODO: Add mathematical format for sphinx.
+
+              h = h_0 + \sum_{i=1}^p h_i e_i + \sum_{j=p+1}^{p+q} h_j e_j
+              r = r_0 + \sum_{i=1}^p r_i e_i + \sum_{j=p+1}^{p+q} r_j e_j
+
+              ei ^2 = +1     for i =< i =< p
+              ej ^2 = -1     for p < j =< p+q
+              ei ej = -eje1  for i
+      eq j
+
+              h r =   sigma_0 + sigma_p + sigma_q + sigma_{pp} + sigma_{q}+ sigma_{pq}
+              where
+                      (1) sigma_0 = h_0 r_0 + \sum_{i=1}^p (h_0 r_i) e_i - \sum_{j=p+1}^{p+q} (h_j r_j) e_j
+
+                      (2) sigma_p = \sum_{i=1}^p (h_0 r_i + h_i r_0) e_i
+
+                      (3) sigma_q = \sum_{j=p+1}^{p+q} (h_0 r_j + h_j r_0) e_j
+
+                      (4) sigma_{pp} = \sum_{i=1}^{p-1} \sum_{k=i+1}^p (h_i r_k - h_k r_i) e_i e_k
+
+                      (5) sigma_{qq} = \sum_{j=1}^{p+q-1} \sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k
+
+                      (6) sigma_{pq} = \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
+
+              Parameters
+              ----------
+              h0 : torch.Tensor
+                  The scalar part of the head entity embedding.
+              hp : torch.Tensor
+                  The 'p' part of the head entity embedding.
+              hq : torch.Tensor
+                  The 'q' part of the head entity embedding.
+              r0 : torch.Tensor
+                  The scalar part of the relation embedding.
+              rp : torch.Tensor
+                  The 'p' part of the relation embedding.
+              rq : torch.Tensor
+                  The 'q' part of the relation embedding.
+
+              Returns
+              -------
+              tuple
+                  Tuple containing the components of the Clifford product.
+
+
+
+
+   .. py:method:: construct_cl_multivector(x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+      Construct a batch of multivectors Cl_{p,q}(\mathbb{R}^d)
 
       Parameter
       ---------
-      x: torch.LongTensor with shape n by 3
+      x : torch.FloatTensor
+          The embedding vector with shape (n, d).
+      r : int
+          The dimension of the scalar part.
+      p : int
+          The number of positive square terms.
+      q : int
+          The number of negative square terms.
+
+      :returns: * **a0** (*torch.FloatTensor*) -- Tensor with (n,r) shape
+                * **ap** (*torch.FloatTensor*) -- Tensor with (n,r,p) shape
+                * **aq** (*torch.FloatTensor*) -- Tensor with (n,r,q) shape
 
 
-      :rtype: torch.LongTensor with shape n
+   .. py:method:: forward_k_vs_with_explicit(x: torch.Tensor) -> torch.FloatTensor
+
+      Computes scores for a batch of triples against all entities using explicit Clifford multiplication.
+      This method is used for K-vs-All training and evaluation.
+
+      :param x: Tensor representing a batch of head entities and relations.
+      :type x: torch.Tensor
+
+      :returns: A tensor containing scores for each triple against all entities.
+      :rtype: torch.FloatTensor
+
+
+   .. py:method:: k_vs_all_score(bpe_head_ent_emb: torch.Tensor, bpe_rel_ent_emb: torch.Tensor, E: torch.Tensor) -> torch.FloatTensor
+
+      Computes scores for all triples using Clifford multiplication in a K-vs-All setup. This method involves constructing
+      multivectors for head entities and relations in Clifford algebra, applying coefficients, and computing interaction
+      scores based on different components of the Clifford algebra.
+
+      :param bpe_head_ent_emb: Batch of head entity embeddings in BPE (Byte Pair Encoding) format. Tensor shape: (batch_size, embedding_dim).
+      :type bpe_head_ent_emb: torch.Tensor
+      :param bpe_rel_ent_emb: Batch of relation embeddings in BPE format. Tensor shape: (batch_size, embedding_dim).
+      :type bpe_rel_ent_emb: torch.Tensor
+      :param E: Tensor containing all entity embeddings. Tensor shape: (num_entities, embedding_dim).
+      :type E: torch.Tensor
+
+      :returns: Tensor containing the scores for each triple in the K-vs-All setting. Tensor shape: (batch_size, num_entities).
+      :rtype: torch.FloatTensor
+
+      .. rubric:: Notes
+
+      The method computes scores based on the basis of 1 (scalar part), the bases of 'p' (positive square terms),
+      and the bases of 'q' (negative square terms). Additional computations involve sigma_pp, sigma_qq, and sigma_pq
+      components in Clifford multiplication, corresponding to different interaction terms.
+
+
+   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
+
+      TODO: Add mathematical format for sphinx.
+      Performs the forward pass for K-vs-All training and evaluation in knowledge graph embeddings.
+      This method involves retrieving real-valued embedding vectors for head entities and relations \mathbb{R}^d,
+      constructing Clifford algebra multivectors for these embeddings according to Cl_{p,q}(\mathbb{R}^d), performing Clifford multiplication,
+      and computing the inner product with all entity embeddings.
+
+      :param x: A tensor representing a batch of head entities and relations for the K-vs-All evaluation.
+                Expected tensor shape: (n, 2), where 'n' is the batch size and '2' represents head entity
+                and relation pairs.
+      :type x: torch.Tensor
+
+      :returns: A tensor containing the scores for each head entity and relation pair against all possible
+                tail entities in the knowledge graph. Tensor shape: (n, |E|), where '|E|' is the number
+                of entities in the knowledge graph.
+      :rtype: torch.FloatTensor
+
+      .. rubric:: Notes
+
+      This method is similar to the 'forward_k_vs_with_explicit' function in functionality. It is
+      typically used in scenarios where every possible combination of a head entity and a relation
+      is scored against all tail entities, commonly used in knowledge graph completion tasks.
+
+
+   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor
+
+      TODO: Add mathematical format for sphinx.
+
+      Performs the forward pass for K-vs-Sample training in knowledge graph embeddings. This method involves
+      retrieving real-valued embedding vectors for head entities and relations \mathbb{R}^d, constructing Clifford algebra
+      multivectors for these embeddings according to Cl_{p,q}(\mathbb{R}^d), performing Clifford multiplication,
+      and computing the inner product with a sampled subset of entity embeddings.
+
+      :param x: A tensor representing a batch of head entities and relations for the K-vs-Sample evaluation.
+                Expected tensor shape: (n, 2), where 'n' is the batch size and '2' represents head entity
+                and relation pairs.
+      :type x: torch.LongTensor
+      :param target_entity_idx: A tensor of target entity indices for sampling in the K-vs-Sample evaluation.
+                                Tensor shape: (n, sample_size), where 'sample_size' is the number of entities sampled.
+      :type target_entity_idx: torch.LongTensor
+
+      :returns: A tensor containing the scores for each head entity and relation pair against the sampled
+                subset of tail entities. Tensor shape: (n, sample_size).
+      :rtype: torch.FloatTensor
+
+      .. rubric:: Notes
+
+      This method is used in scenarios where every possible combination of a head entity and a relation
+      is scored against a sampled subset of tail entities, commonly used in knowledge graph completion tasks
+      with a large number of entities.
+
+
+   .. py:method:: score(h: torch.Tensor, r: torch.Tensor, t: torch.Tensor) -> torch.FloatTensor
+
+      Computes the score for a given triple using Clifford multiplication in the context of knowledge graph embeddings.
+      This method involves constructing Clifford algebra multivectors for head entities, relations, and tail entities,
+      applying coefficients, and computing interaction scores based on different components of the Clifford algebra.
+
+      :param h: Tensor representing the embeddings of head entities. Expected shape: (n, d), where 'n' is the number of triples
+                and 'd' is the embedding dimension.
+      :type h: torch.Tensor
+      :param r: Tensor representing the embeddings of relations. Expected shape: (n, d).
+      :type r: torch.Tensor
+      :param t: Tensor representing the embeddings of tail entities. Expected shape: (n, d).
+      :type t: torch.Tensor
+
+      :returns: Tensor containing the scores for each triple. Tensor shape: (n,).
+      :rtype: torch.FloatTensor
+
+      .. rubric:: Notes
+
+      The method computes scores based on the scalar part, the bases of 'p' (positive square terms),
+      and the bases of 'q' (negative square terms) in Clifford algebra. It includes additional computations
+      involving sigma_pp, sigma_qq, and sigma_pq components, which correspond to different interaction terms
+      in the Clifford product.
+
+
+   .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
+
+      Computes scores for a batch of triples using Clifford multiplication.
+      This method is involved in the forward pass of the model during training or evaluation.
+      It retrieves embeddings for head entities, relations, and tail entities, constructs Clifford algebra multivectors,
+      applies coefficients, and computes interaction scores based on different components of Clifford algebra.
+
+      :param x: A tensor representing a batch of triples. Each triple consists of indices for a head entity, a relation, and a tail entity.
+                Expected tensor shape: (n, 3), where 'n' is the number of triples.
+      :type x: torch.Tensor
+
+      :returns: A tensor containing the scores for each triple in the batch. Tensor shape: (n,), where 'n' is the number of triples.
+      :rtype: torch.FloatTensor
+
+      .. rubric:: Notes
+
+      The method computes scores based on the scalar part, the bases of 'p' (positive square terms), and the bases of 'q' (negative square terms) in Clifford algebra.
+      It includes additional computations involving sigma_pp, sigma_qq, and sigma_pq components, corresponding to different interaction terms in the Clifford product.
 
 
 
-.. py:class:: Keci(args)
+.. py:class:: KeciBase(args)
+
+
+   Bases: :py:obj:`Keci`
+
+   The KeciBase class is a variant of the Keci class for knowledge graph embeddings, with the key difference being
+   the lack of learning for dimension scaling. It inherits the core functionality from the Keci class but sets
+   the gradient requirement for interaction coefficients to False, indicating these coefficients are not updated
+   during training.
+
+   :param args: A dictionary of arguments containing hyperparameters and settings for the model, including 'p', 'q',
+                and embedding dimensions.
+   :type args: dict
+
+   .. attribute:: name
+
+      The name identifier for the KeciBase class.
+
+      :type: str
+
+   .. attribute:: requires_grad_for_interactions
+
+      Flag to indicate if the interaction coefficients require gradients. In KeciBase, this is set to False.
+
+      :type: bool
+
+   .. attribute:: p_coefficients
+
+      Embedding for scaling coefficients of 'p' terms, initialized to ones if 'p' > 0.
+
+      :type: torch.nn.Embedding (optional)
+
+   .. attribute:: q_coefficients
+
+      Embedding for scaling coefficients of 'q' terms, initialized to ones if 'q' > 0.
+
+      :type: torch.nn.Embedding (optional)
+
+   .. rubric:: Notes
+
+   KeciBase is designed for scenarios where fixed coefficients are preferred over learnable parameters
+   for dimension scaling in the Clifford algebra-based embedding interactions.
+
+
+.. py:class:: DeCaL(args)
 
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
@@ -134,150 +683,6 @@ Classes
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
-
-   .. py:method:: compute_sigma_pp(hp, rp)
-
-      Compute  sigma_{pp} = \sum_{i=1}^{p-1} \sum_{k=i+1}^p (h_i r_k - h_k r_i) e_i e_k
-
-      sigma_{pp} captures the interactions between along p bases
-      For instance, let p e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
-      This can be implemented with a nested two for loops
-
-                      results = []
-                      for i in range(p - 1):
-                          for k in range(i + 1, p):
-                              results.append(hp[:, :, i] * rp[:, :, k] - hp[:, :, k] * rp[:, :, i])
-                      sigma_pp = torch.stack(results, dim=2)
-                      assert sigma_pp.shape == (b, r, int((p * (p - 1)) / 2))
-
-      Yet, this computation would be quite inefficient. Instead, we compute interactions along all p,
-      e.g., e1e1, e1e2, e1e3,
-            e2e1, e2e2, e2e3,
-            e3e1, e3e2, e3e3
-      Then select the triangular matrix without diagonals: e1e2, e1e3, e2e3.
-
-
-   .. py:method:: compute_sigma_qq(hq, rq)
-
-      Compute  sigma_{qq} = \sum_{j=1}^{p+q-1} \sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k
-      sigma_{q} captures the interactions between along q bases
-      For instance, let q e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
-      This can be implemented with a nested two for loops
-
-                      results = []
-                      for j in range(q - 1):
-                          for k in range(j + 1, q):
-                              results.append(hq[:, :, j] * rq[:, :, k] - hq[:, :, k] * rq[:, :, j])
-                      sigma_qq = torch.stack(results, dim=2)
-                      assert sigma_qq.shape == (b, r, int((q * (q - 1)) / 2))
-
-      Yet, this computation would be quite inefficient. Instead, we compute interactions along all p,
-      e.g., e1e1, e1e2, e1e3,
-            e2e1, e2e2, e2e3,
-            e3e1, e3e2, e3e3
-      Then select the triangular matrix without diagonals: e1e2, e1e3, e2e3.
-
-
-   .. py:method:: compute_sigma_pq(*, hp, hq, rp, rq)
-
-      \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
-
-      results = []
-      sigma_pq = torch.zeros(b, r, p, q)
-      for i in range(p):
-          for j in range(q):
-              sigma_pq[:, :, i, j] = hp[:, :, i] * rq[:, :, j] - hq[:, :, j] * rp[:, :, i]
-      print(sigma_pq.shape)
-
-
-
-   .. py:method:: apply_coefficients(h0, hp, hq, r0, rp, rq)
-
-      Multiplying a base vector with its scalar coefficient
-
-
-   .. py:method:: clifford_multiplication(h0, hp, hq, r0, rp, rq)
-
-      Compute our CL multiplication
-
-              h = h_0 + \sum_{i=1}^p h_i e_i + \sum_{j=p+1}^{p+q} h_j e_j
-              r = r_0 + \sum_{i=1}^p r_i e_i + \sum_{j=p+1}^{p+q} r_j e_j
-
-              ei ^2 = +1     for i =< i =< p
-              ej ^2 = -1     for p < j =< p+q
-              ei ej = -eje1  for i
-      eq j
-
-              h r =   sigma_0 + sigma_p + sigma_q + sigma_{pp} + sigma_{q}+ sigma_{pq}
-              where
-                      (1) sigma_0 = h_0 r_0 + \sum_{i=1}^p (h_0 r_i) e_i - \sum_{j=p+1}^{p+q} (h_j r_j) e_j
-
-                      (2) sigma_p = \sum_{i=1}^p (h_0 r_i + h_i r_0) e_i
-
-                      (3) sigma_q = \sum_{j=p+1}^{p+q} (h_0 r_j + h_j r_0) e_j
-
-                      (4) sigma_{pp} = \sum_{i=1}^{p-1} \sum_{k=i+1}^p (h_i r_k - h_k r_i) e_i e_k
-
-                      (5) sigma_{qq} = \sum_{j=1}^{p+q-1} \sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k
-
-                      (6) sigma_{pq} = \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
-
-
-
-
-   .. py:method:: construct_cl_multivector(x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
-
-      Construct a batch of multivectors Cl_{p,q}(\mathbb{R}^d)
-
-      Parameter
-      ---------
-      x: torch.FloatTensor with (n,d) shape
-
-      :returns: * **a0** (*torch.FloatTensor with (n,r) shape*)
-                * **ap** (*torch.FloatTensor with (n,r,p) shape*)
-                * **aq** (*torch.FloatTensor with (n,r,q) shape*)
-
-
-   .. py:method:: forward_k_vs_with_explicit(x: torch.Tensor)
-
-
-   .. py:method:: k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
-
-
-   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
-
-      Kvsall training
-
-      (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .
-      (2) Construct head entity and relation embeddings according to Cl_{p,q}(\mathbb{R}^d) .
-      (3) Perform Cl multiplication
-      (4) Inner product of (3) and all entity embeddings
-
-      forward_k_vs_with_explicit and this funcitons are identical
-      Parameter
-      ---------
-      x: torch.LongTensor with (n,2) shape
-      :rtype: torch.FloatTensor with (n, |E|) shape
-
-
-   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor
-
-      Kvsall training
-
-      (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .
-      (2) Construct head entity and relation embeddings according to Cl_{p,q}(\mathbb{R}^d) .
-      (3) Perform Cl multiplication
-      (4) Inner product of (3) and all entity embeddings
-
-      Parameter
-      ---------
-      x: torch.LongTensor with (n,2) shape
-
-      :rtype: torch.FloatTensor with (n, |E|) shape
-
-
-   .. py:method:: score(h, r, t)
-
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
 
@@ -337,14 +742,14 @@ Classes
 
       Parameter
       ---------
-      x: torch.LongTensor with (n, ) shape
+      x: torch.LongTensor with (n,3) shape
 
       :rtype: torch.FloatTensor with (n) shape
 
 
-   .. py:method:: cl_pqr(a: torch.tensor) -> torch.tensor
+   .. py:method:: cl_pqr(a)
 
-      Input: tensor(batch_size, emb_dim) ---> output: tensor with 1+p+q+r components with size (batch_size, emb_dim/(1+p+q+r)) each.
+      Input: tensor(batch_size, emb_dim) ----> output: tensor with 1+p+q+r components with size (batch_size, emb_dim/(1+p+q+r)) each.
 
       1) takes a tensor of size (batch_size, emb_dim), split it into 1 + p + q +r components, hence 1+p+q+r must be a divisor
       of the emb_dim.
@@ -354,24 +759,17 @@ Classes
    .. py:method:: compute_sigmas_single(list_h_emb, list_r_emb, list_t_emb)
 
       here we compute all the sums with no others vectors interaction taken with the scalar product with t, that is,
-
-      .. math::
-
-           s0 = h_0r_0t_0
-           s1 = \sum_{i=1}^{p}h_ir_it_0
-           s2 = \sum_{j=p+1}^{p+q}h_jr_jt_0
-           s3 = \sum_{i=1}^{q}(h_0r_it_i + h_ir_0t_i)
-           s4 = \sum_{i=p+1}^{p+q}(h_0r_it_i + h_ir_0t_i)
-           s5 = \sum_{i=p+q+1}^{p+q+r}(h_0r_it_i + h_ir_0t_i)
+      1) s0 = h_0r_0t_0
+      2) s1 = \sum_{i=1}^{p}h_ir_it_0
+      3) s2 = \sum_{j=p+1}^{p+q}h_jr_jt_0
+      4) s3 = \sum_{i=1}^{q}(h_0r_it_i + h_ir_0t_i)
+      5) s4 = \sum_{i=p+1}^{p+q}(h_0r_it_i + h_ir_0t_i)
+      5) s5 = \sum_{i=p+q+1}^{p+q+r}(h_0r_it_i + h_ir_0t_i)
 
       and return:
 
-      .. math::
-
-          sigma_0t = \sigma_0 \cdot t_0 = s0 + s1 -s2
-          s3, s4 and s5
-
-
+      *) sigma_0t = \sigma_0 \cdot t_0 = s0 + s1 -s2
+      *) s3, s4 and s5
 
 
    .. py:method:: compute_sigmas_multivect(list_h_emb, list_r_emb)
@@ -380,19 +778,15 @@ Classes
 
       For same bases vectors interaction we have
 
-      .. math::
-
-           \sigma_pp = \sum_{i=1}^{p-1}\sum_{i'=i+1}^{p}(h_ir_{i'}-h_{i'}r_i) (models the interactions between e_i and e_i' for 1 <= i, i' <= p)
-           \sigma_qq = \sum_{j=p+1}^{p+q-1}\sum_{j'=j+1}^{p+q}(h_jr_{j'}-h_{j'} (models the interactions between e_j and e_j' for p+1 <= j, j' <= p+q)
-           \sigma_rr = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(h_kr_{k'}-h_{k'}r_k) (models the interactions between e_k and e_k' for p+q+1 <= k, k' <= p+q+r)
+      1) \sigma_pp = \sum_{i=1}^{p-1}\sum_{i'=i+1}^{p}(h_ir_{i'}-h_{i'}r_i) (models the interactions between e_i and e_i' for 1 <= i, i' <= p)
+      2) \sigma_qq = \sum_{j=p+1}^{p+q-1}\sum_{j'=j+1}^{p+q}(h_jr_{j'}-h_{j'} (models the interactions between e_j and e_j' for p+1 <= j, j' <= p+q)
+      3) \sigma_rr = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(h_kr_{k'}-h_{k'}r_k) (models the interactions between e_k and e_k' for p+q+1 <= k, k' <= p+q+r)
 
       For different base vector interactions, we have
 
-       .. math::
-
-           \sigma_pq = \sum_{i=1}^{p}\sum_{j=p+1}^{p+q}(h_ir_j - h_jr_i) (interactionsn between e_i and e_j for 1<=i <=p and p+1<= j <= p+q)
-           \sigma_pr = \sum_{i=1}^{p}\sum_{k=p+q+1}^{p+q+r}(h_ir_k - h_kr_i) (interactionsn between e_i and e_k for 1<=i <=p and p+q+1<= k <= p+q+r)
-           \sigma_qr = \sum_{j=p+1}^{p+q}\sum_{j=p+q+1}^{p+q+r}(h_jr_k - h_kr_j) (interactionsn between e_j and e_k for p+1 <= j <=p+q and p+q+1<= j <= p+q+r)
+      4) \sigma_pq = \sum_{i=1}^{p}\sum_{j=p+1}^{p+q}(h_ir_j - h_jr_i) (interactionsn between e_i and e_j for 1<=i <=p and p+1<= j <= p+q)
+      5) \sigma_pr = \sum_{i=1}^{p}\sum_{k=p+q+1}^{p+q+r}(h_ir_k - h_kr_i) (interactionsn between e_i and e_k for 1<=i <=p and p+q+1<= k <= p+q+r)
+      6) \sigma_qr = \sum_{j=p+1}^{p+q}\sum_{j=p+q+1}^{p+q+r}(h_jr_k - h_kr_j) (interactionsn between e_j and e_k for p+1 <= j <=p+q and p+q+1<= j <= p+q+r)
 
 
 
@@ -400,15 +794,15 @@ Classes
 
       Kvsall training
 
-      (1) Retrieve real-valued embedding vectors for heads and relations
-      (2) Construct head entity and relation embeddings according to Cl_{p,q, r}(\mathbb{R}^d) .
+      (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .
+      (2) Construct head entity and relation embeddings according to Cl_{p,q}(\mathbb{R}^d) .
       (3) Perform Cl multiplication
       (4) Inner product of (3) and all entity embeddings
 
       forward_k_vs_with_explicit and this funcitons are identical
       Parameter
       ---------
-      x: torch.LongTensor with (n, ) shape
+      x: torch.LongTensor with (n,2) shape
       :rtype: torch.FloatTensor with (n, |E|) shape
 
 
@@ -433,12 +827,9 @@ Classes
 
    .. py:method:: compute_sigma_pp(hp, rp)
 
-      Compute
-      .. math::
+      \sigma_{p,p}^* = \sum_{i=1}^{p-1}\sum_{i'=i+1}^{p}(x_iy_{i'}-x_{i'}y_i)
 
-          \sigma_{p,p}^* = \sum_{i=1}^{p-1}\sum_{i'=i+1}^{p}(x_iy_{i'}-x_{i'}y_i)
-
-      \sigma_{pp} captures the interactions between along p bases
+      sigma_{pp} captures the interactions between along p bases
       For instance, let p e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
       This can be implemented with a nested two for loops
 
@@ -458,12 +849,7 @@ Classes
 
    .. py:method:: compute_sigma_qq(hq, rq)
 
-      Compute
-
-      .. math::
-
-          \sigma_{q,q}^* = \sum_{j=p+1}^{p+q-1}\sum_{j'=j+1}^{p+q}(x_jy_{j'}-x_{j'}y_j) Eq. 16
-
+      Compute  \sigma_{q,q}^* = \sum_{j=p+1}^{p+q-1}\sum_{j'=j+1}^{p+q}(x_jy_{j'}-x_{j'}y_j) Eq. 16
       sigma_{q} captures the interactions between along q bases
       For instance, let q e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
       This can be implemented with a nested two for loops
@@ -484,19 +870,13 @@ Classes
 
    .. py:method:: compute_sigma_rr(hk, rk)
 
-      .. math::
-
-          \sigma_{r,r}^* = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(x_ky_{k'}-x_{k'}y_k)
+      \sigma_{r,r}^* = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(x_ky_{k'}-x_{k'}y_k)
 
 
 
    .. py:method:: compute_sigma_pq(*, hp, hq, rp, rq)
 
-      Compute
-
-      .. math::
-
-          \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
+      \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
 
       results = []
       sigma_pq = torch.zeros(b, r, p, q)
@@ -509,11 +889,7 @@ Classes
 
    .. py:method:: compute_sigma_pr(*, hp, hk, rp, rk)
 
-      Compute
-
-      .. math::
-
-          \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
+      \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
 
       results = []
       sigma_pq = torch.zeros(b, r, p, q)
@@ -526,9 +902,7 @@ Classes
 
    .. py:method:: compute_sigma_qr(*, hq, hk, rq, rk)
 
-      .. math::
-
-          \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
+      \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
 
       results = []
       sigma_pq = torch.zeros(b, r, p, q)

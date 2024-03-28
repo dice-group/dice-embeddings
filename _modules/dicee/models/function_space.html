@@ -87,22 +87,69 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.models.function_space</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">.base_model</span> <span class="kn">import</span> <span class="n">BaseKGE</span>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">.base_model</span> <span class="kn">import</span> <span class="n">BaseKGE</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
 <div class="viewcode-block" id="FMult">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult">[docs]</a>
 <span class="k">class</span> <span class="nc">FMult</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; Learning Knowledge Neural Graphs&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; Learning Neural Networks for Knowledge Graphs&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    FMult is a model for learning neural networks on knowledge graphs. It extends</span>
+<span class="sd">    the base knowledge graph embedding model by integrating neural network computations</span>
+<span class="sd">    with entity and relation embeddings. The model is designed to work with complex</span>
+<span class="sd">    embeddings and utilizes a neural network-based approach for embedding interactions.</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    args : dict</span>
+<span class="sd">        A dictionary of arguments containing hyperparameters and settings for the model,</span>
+<span class="sd">        such as embedding dimensions and other model-specific parameters.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        The name identifier for the FMult model.</span>
+<span class="sd">    entity_embeddings : torch.nn.Embedding</span>
+<span class="sd">        Embedding layer for entities in the knowledge graph.</span>
+<span class="sd">    relation_embeddings : torch.nn.Embedding</span>
+<span class="sd">        Embedding layer for relations in the knowledge graph.</span>
+<span class="sd">    k : int</span>
+<span class="sd">        Dimension size for reshaping weights in neural network layers.</span>
+<span class="sd">    num_sample : int</span>
+<span class="sd">        The number of samples to consider in the model computations.</span>
+<span class="sd">    gamma : torch.Tensor</span>
+<span class="sd">        Randomly initialized weights for the neural network layers.</span>
+<span class="sd">    roots : torch.Tensor</span>
+<span class="sd">        Precomputed roots for Legendre polynomials.</span>
+<span class="sd">    weights : torch.Tensor</span>
+<span class="sd">        Precomputed weights for Legendre polynomials.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    compute_func(weights: torch.FloatTensor, x: torch.Tensor) -&gt; torch.FloatTensor</span>
+<span class="sd">        Computes the output of a two-layer neural network for given weights and input.</span>
+
+<span class="sd">    chain_func(weights: torch.FloatTensor, x: torch.Tensor) -&gt; torch.Tensor</span>
+<span class="sd">        Chains two linear neural network layers for a given input.</span>
+
+<span class="sd">    forward_triples(idx_triple: torch.Tensor) -&gt; torch.Tensor</span>
+<span class="sd">        Performs a forward pass for a batch of triples and computes the embedding interactions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;FMult&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;FMult&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">2</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_sample</span> <span class="o">=</span> <span class="mi">50</span>
         <span class="c1"># self.gamma = torch.rand(self.k, self.num_sample) [0,1) uniform=&gt; worse results</span>
@@ -110,14 +157,35 @@
         <span class="c1"># Lazy import</span>
         <span class="kn">from</span> <span class="nn">scipy.special</span> <span class="kn">import</span> <span class="n">roots_legendre</span>
         <span class="kn">from</span> <span class="nn">scipy.special</span> <span class="kn">import</span> <span class="n">roots_legendre</span>
-        <span class="n">roots</span><span class="p">,</span> <span class="n">weights</span> <span class="o">=</span> <span class="n">roots_legendre</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_sample</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">roots</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">roots</span><span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>  <span class="c1"># shape self.k by self.n</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>  <span class="c1"># shape 1 by self.n</span>
 
+        <span class="n">roots</span><span class="p">,</span> <span class="n">weights</span> <span class="o">=</span> <span class="n">roots_legendre</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_sample</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">roots</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">roots</span><span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+        <span class="p">)</span>  <span class="c1"># shape self.k by self.n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+        <span class="p">)</span>  <span class="c1"># shape 1 by self.n</span>
 
 <div class="viewcode-block" id="FMult.compute_func">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult.compute_func">[docs]</a>
-    <span class="k">def</span> <span class="nf">compute_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">compute_func</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the output of a two-layer neural network.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        weights : torch.FloatTensor</span>
+<span class="sd">            The weights of the neural network, split into two sets for two layers.</span>
+<span class="sd">        x : torch.Tensor</span>
+<span class="sd">            The input tensor for the neural network.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.FloatTensor</span>
+<span class="sd">            The output tensor after passing through the two-layer neural network.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
         <span class="c1"># Weights for two linear layers.</span>
         <span class="n">w1</span><span class="p">,</span> <span class="n">w2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
@@ -132,7 +200,22 @@
 
 <div class="viewcode-block" id="FMult.chain_func">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult.chain_func">[docs]</a>
-    <span class="k">def</span> <span class="nf">chain_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">chain_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Chain two linear layers of a neural network for given weights and input.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        weights : torch.FloatTensor</span>
+<span class="sd">            The weights of the neural network, split into two sets for two layers.</span>
+<span class="sd">        x : torch.Tensor</span>
+<span class="sd">            The input tensor for the neural network.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.Tensor</span>
+<span class="sd">            The output tensor after chaining the two linear layers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
         <span class="c1"># Weights for two linear layers.</span>
         <span class="n">w1</span><span class="p">,</span> <span class="n">w2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
@@ -148,8 +231,23 @@
 <div class="viewcode-block" id="FMult.forward_triples">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult.forward_triples">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx_triple</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Forward pass for a batch of triples to compute embedding interactions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        idx_triple : torch.Tensor</span>
+<span class="sd">            Tensor containing indices of triples.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.Tensor</span>
+<span class="sd">            The computed scores for the batch of triples.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># (1) Retrieve embeddings: batch, \mathbb R^d</span>
-        <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">idx_triple</span><span class="p">)</span>
+        <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span>
+            <span class="n">idx_triple</span>
+        <span class="p">)</span>
         <span class="c1"># (2) Compute NNs on \Gamma</span>
         <span class="c1"># Logits via FDistMult...</span>
         <span class="c1"># h_x = self.compute_func(head_ent_emb, x=self.gamma)  # batch, \mathbb{R}^k, |\Gamma|</span>
@@ -157,11 +255,17 @@
         <span class="c1"># t_x = self.compute_func(tail_ent_emb, x=self.gamma)  # batch, \mathbb{R}^k, |\Gamma|</span>
         <span class="c1"># out = h_x * r_x * t_x  # batch, \mathbb{R}^k, |gamma|</span>
         <span class="c1"># (2) Compute NNs on \Gamma</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
 
-        <span class="n">h_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_func</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="p">)</span>  <span class="c1"># batch, \mathbb{R}^k, |\Gamma|</span>
-        <span class="n">t_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_func</span><span class="p">(</span><span class="n">tail_ent_emb</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="p">)</span>  <span class="c1"># batch, \mathbb{R}^k, |\Gamma|</span>
-        <span class="n">r_h_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain_func</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">h_x</span><span class="p">)</span>  <span class="c1"># batch, \mathbb{R}^k, |\Gamma|</span>
+        <span class="n">h_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_func</span><span class="p">(</span>
+            <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gamma</span>
+        <span class="p">)</span>  <span class="c1"># batch, \mathbb{R}^k, |\Gamma|</span>
+        <span class="n">t_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_func</span><span class="p">(</span>
+            <span class="n">tail_ent_emb</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">gamma</span>
+        <span class="p">)</span>  <span class="c1"># batch, \mathbb{R}^k, |\Gamma|</span>
+        <span class="n">r_h_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain_func</span><span class="p">(</span>
+            <span class="n">weights</span><span class="o">=</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">h_x</span>
+        <span class="p">)</span>  <span class="c1"># batch, \mathbb{R}^k, |\Gamma|</span>
         <span class="c1"># (3) Compute |\Gamma| predictions</span>
         <span class="n">out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_h_x</span> <span class="o">*</span> <span class="n">t_x</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># batch, |gamma| #</span>
         <span class="c1"># (4) Average (3) over \Gamma</span>
@@ -170,27 +274,93 @@
 </div>
 
 
+
 <div class="viewcode-block" id="GFMult">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.GFMult">[docs]</a>
 <span class="k">class</span> <span class="nc">GFMult</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; Learning Knowledge Neural Graphs&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; Learning Neural Networks for Knowledge Graphs&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    GFMult (Graph Function Multiplication) extends the base knowledge graph embedding</span>
+<span class="sd">    model by integrating neural network computations with entity and relation embeddings.</span>
+<span class="sd">    This model is designed to leverage the strengths of neural networks in capturing</span>
+<span class="sd">    complex interactions within knowledge graphs.</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    args : dict</span>
+<span class="sd">        A dictionary of arguments containing hyperparameters and settings for the model,</span>
+<span class="sd">        such as embedding dimensions, learning rate, and other model-specific parameters.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        The name identifier for the GFMult model.</span>
+<span class="sd">    entity_embeddings : torch.nn.Embedding</span>
+<span class="sd">        Embedding layer for entities in the knowledge graph.</span>
+<span class="sd">    relation_embeddings : torch.nn.Embedding</span>
+<span class="sd">        Embedding layer for relations in the knowledge graph.</span>
+<span class="sd">    k : int</span>
+<span class="sd">        The dimension size for reshaping weights in neural network layers.</span>
+<span class="sd">    num_sample : int</span>
+<span class="sd">        The number of samples to use in the model computations.</span>
+<span class="sd">    roots : torch.Tensor</span>
+<span class="sd">        Precomputed roots for Legendre polynomials, repeated for each dimension.</span>
+<span class="sd">    weights : torch.Tensor</span>
+<span class="sd">        Precomputed weights for Legendre polynomials.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    compute_func(weights: torch.FloatTensor, x: torch.Tensor) -&gt; torch.FloatTensor</span>
+<span class="sd">        Computes the output of a two-layer neural network for given weights and input.</span>
+
+<span class="sd">    chain_func(weights: torch.FloatTensor, x: torch.Tensor) -&gt; torch.Tensor</span>
+<span class="sd">        Chains two linear neural network layers for a given input.</span>
+
+<span class="sd">    forward_triples(idx_triple: torch.Tensor) -&gt; torch.Tensor</span>
+<span class="sd">        Performs a forward pass for a batch of triples and computes the embedding interactions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;GFMult&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;GFMult&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">2</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_sample</span> <span class="o">=</span> <span class="mi">250</span>
         <span class="n">roots</span><span class="p">,</span> <span class="n">weights</span> <span class="o">=</span> <span class="n">roots_legendre</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_sample</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">roots</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">roots</span><span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>  <span class="c1"># shape self.k by self.n</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>  <span class="c1"># shape 1 by self.n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">roots</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">roots</span><span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+        <span class="p">)</span>  <span class="c1"># shape self.k by self.n</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+        <span class="p">)</span>  <span class="c1"># shape 1 by self.n</span>
 
 <div class="viewcode-block" id="GFMult.compute_func">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.GFMult.compute_func">[docs]</a>
-    <span class="k">def</span> <span class="nf">compute_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">compute_func</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the output of a two-layer neural network.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        weights : torch.FloatTensor</span>
+<span class="sd">            The weights of the neural network, split into two sets for two layers.</span>
+<span class="sd">        x : torch.Tensor</span>
+<span class="sd">            The input tensor for the neural network.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.FloatTensor</span>
+<span class="sd">            The output tensor after passing through the two-layer neural network.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
         <span class="c1"># Weights for two linear layers.</span>
         <span class="n">w1</span><span class="p">,</span> <span class="n">w2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
@@ -205,7 +375,22 @@
 
 <div class="viewcode-block" id="GFMult.chain_func">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.GFMult.chain_func">[docs]</a>
-    <span class="k">def</span> <span class="nf">chain_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">chain_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Chain two linear layers of a neural network for given weights and input.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        weights : torch.FloatTensor</span>
+<span class="sd">            The weights of the neural network, split into two sets for two layers.</span>
+<span class="sd">        x : torch.Tensor</span>
+<span class="sd">            The input tensor for the neural network.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.Tensor</span>
+<span class="sd">            The output tensor after chaining the two linear layers.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
         <span class="c1"># Weights for two linear layers.</span>
         <span class="n">w1</span><span class="p">,</span> <span class="n">w2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
@@ -221,17 +406,38 @@
 <div class="viewcode-block" id="GFMult.forward_triples">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.GFMult.forward_triples">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx_triple</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-        <span class="c1"># (1) Retrieve embeddings: batch, \mathbb R^d</span>
-        <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">idx_triple</span><span class="p">)</span>
-        <span class="c1"># (2) Compute NNs on \Gamma</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">roots</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">roots</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Forward pass for a batch of triples to compute embedding interactions.</span>
 
-        <span class="n">h_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_func</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">roots</span><span class="p">)</span>  <span class="c1"># batch, \mathbb{R}^k, |\Gamma|</span>
-        <span class="n">t_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_func</span><span class="p">(</span><span class="n">tail_ent_emb</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">roots</span><span class="p">)</span>  <span class="c1"># batch, \mathbb{R}^k, |\Gamma|</span>
-        <span class="n">r_h_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain_func</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">h_x</span><span class="p">)</span>  <span class="c1"># batch, \mathbb{R}^k, |\Gamma|</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        idx_triple : torch.Tensor</span>
+<span class="sd">            Tensor containing indices of triples.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.Tensor</span>
+<span class="sd">            The computed scores for the batch of triples.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># (1) Retrieve embeddings: batch, \mathbb R^d</span>
+        <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span>
+            <span class="n">idx_triple</span>
+        <span class="p">)</span>
+        <span class="c1"># (2) Compute NNs on \Gamma</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">roots</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">roots</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+
+        <span class="n">h_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_func</span><span class="p">(</span>
+            <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">roots</span>
+        <span class="p">)</span>  <span class="c1"># batch, \mathbb{R}^k, |\Gamma|</span>
+        <span class="n">t_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_func</span><span class="p">(</span>
+            <span class="n">tail_ent_emb</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">roots</span>
+        <span class="p">)</span>  <span class="c1"># batch, \mathbb{R}^k, |\Gamma|</span>
+        <span class="n">r_h_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chain_func</span><span class="p">(</span>
+            <span class="n">weights</span><span class="o">=</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">h_x</span>
+        <span class="p">)</span>  <span class="c1"># batch, \mathbb{R}^k, |\Gamma|</span>
         <span class="c1"># (3) Compute |\Gamma| predictions.</span>
-        <span class="n">out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_h_x</span> <span class="o">*</span> <span class="n">t_x</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">weights</span>  <span class="c1"># batch, |gamma| #</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_h_x</span> <span class="o">*</span> <span class="n">t_x</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span>  <span class="c1"># batch, |gamma| #</span>
         <span class="c1"># (4) Average (3) over \Gamma</span>
         <span class="n">out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># batch</span>
         <span class="k">return</span> <span class="n">out</span></div>
@@ -242,20 +448,76 @@
 <div class="viewcode-block" id="FMult2">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult2">[docs]</a>
 <span class="k">class</span> <span class="nc">FMult2</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; Learning Knowledge Neural Graphs&quot;&quot;&quot;</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; Learning Neural Networks for Knowledge Graphs&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    FMult2 is a model for learning neural networks on knowledge graphs, offering</span>
+<span class="sd">    enhanced capabilities for capturing complex interactions in the graph. It extends</span>
+<span class="sd">    the base knowledge graph embedding model by integrating multi-layer neural network</span>
+<span class="sd">    computations with entity and relation embeddings.</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    args : dict</span>
+<span class="sd">        A dictionary of arguments containing hyperparameters and settings for the model,</span>
+<span class="sd">        such as embedding dimensions, learning rate, number of layers, and other model-specific parameters.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    name : str</span>
+<span class="sd">        The name identifier for the FMult2 model.</span>
+<span class="sd">    n_layers : int</span>
+<span class="sd">        Number of layers in the neural network.</span>
+<span class="sd">    k : int</span>
+<span class="sd">        Dimension size for reshaping weights in neural network layers.</span>
+<span class="sd">    n : int</span>
+<span class="sd">        The number of discrete points for computations.</span>
+<span class="sd">    a : float</span>
+<span class="sd">        Lower bound of the range for discrete points.</span>
+<span class="sd">    b : float</span>
+<span class="sd">        Upper bound of the range for discrete points.</span>
+<span class="sd">    score_func : str</span>
+<span class="sd">        The scoring function used in the model.</span>
+<span class="sd">    discrete_points : torch.Tensor</span>
+<span class="sd">        Tensor of discrete points used in the computations.</span>
+<span class="sd">    entity_embeddings : torch.nn.Embedding</span>
+<span class="sd">        Embedding layer for entities in the knowledge graph.</span>
+<span class="sd">    relation_embeddings : torch.nn.Embedding</span>
+<span class="sd">        Embedding layer for relations in the knowledge graph.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    build_func(Vec: torch.Tensor) -&gt; Tuple[List[torch.Tensor], torch.Tensor]</span>
+<span class="sd">        Constructs a multi-layer neural network from a vector representation.</span>
+
+<span class="sd">    build_chain_funcs(list_Vec: List[torch.Tensor]) -&gt; Tuple[List[torch.Tensor], torch.Tensor]</span>
+<span class="sd">        Builds chained functions from a list of vector representations.</span>
+
+<span class="sd">    compute_func(W: List[torch.Tensor], b: torch.Tensor, x: torch.Tensor) -&gt; torch.FloatTensor</span>
+<span class="sd">        Computes the output of a multi-layer neural network.</span>
+
+<span class="sd">    function(list_W: List[List[torch.Tensor]], list_b: List[torch.Tensor]) -&gt; Callable[[torch.Tensor], torch.Tensor]</span>
+<span class="sd">        Defines a function for neural network computation based on weights and biases.</span>
+
+<span class="sd">    trapezoid(list_W: List[List[torch.Tensor]], list_b: List[torch.Tensor]) -&gt; torch.Tensor</span>
+<span class="sd">        Applies the trapezoidal rule for integration on the function output.</span>
+
+<span class="sd">    forward_triples(idx_triple: torch.Tensor) -&gt; torch.Tensor</span>
+<span class="sd">        Performs a forward pass for a batch of triples and computes the embedding interactions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;FMult2&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;FMult2&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_layers</span> <span class="o">=</span> <span class="mi">3</span>
         <span class="n">tuned_embedding_dim</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">while</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_layers</span><span class="p">))</span> <span class="o">!=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
-                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_layers</span><span class="p">):</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_layers</span>
+        <span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="n">tuned_embedding_dim</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">if</span> <span class="n">tuned_embedding_dim</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">*****Embedding dimension reset to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="si">}</span><span class="s2"> to fit model architecture!*****</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">*****Embedding dimension reset to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="si">}</span><span class="s2"> to fit model architecture!*****</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_layers</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="mi">50</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span>
@@ -264,15 +526,36 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">score_func</span> <span class="o">=</span> <span class="s2">&quot;compositional&quot;</span>
         <span class="c1"># self.score_func = &quot;full-compositional&quot;</span>
         <span class="c1"># self.discrete_points = torch.linspace(self.a, self.b, steps=self.n)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">discrete_points</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">discrete_points</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">a</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="mi">1</span>
+        <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span>
+        <span class="p">)</span>
 
 <div class="viewcode-block" id="FMult2.build_func">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult2.build_func">[docs]</a>
-    <span class="k">def</span> <span class="nf">build_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Vec</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">build_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Vec</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Constructs a multi-layer neural network from a vector representation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        Vec : torch.Tensor</span>
+<span class="sd">            The vector representation from which the neural network is constructed.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Tuple[List[torch.Tensor], torch.Tensor]</span>
+<span class="sd">            A tuple containing the list of weight matrices for each layer and the bias vector.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">Vec</span><span class="p">)</span>
         <span class="c1"># (1) Construct self.n_layers layered neural network</span>
         <span class="n">W</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">Vec</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_layers</span><span class="p">))</span>
@@ -284,7 +567,38 @@
 
 <div class="viewcode-block" id="FMult2.build_chain_funcs">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult2.build_chain_funcs">[docs]</a>
-    <span class="k">def</span> <span class="nf">build_chain_funcs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_Vec</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">build_chain_funcs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">list_Vec</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Builds chained functions from a list of vector representations. This method</span>
+<span class="sd">        constructs a sequence of neural network layers and their corresponding biases</span>
+<span class="sd">        based on the provided vector representations.</span>
+
+<span class="sd">        Each vector representation in the list is first transformed into a set of weights</span>
+<span class="sd">        and biases for a neural network layer using the `build_func` method. The method</span>
+<span class="sd">        then computes a chained multiplication of these weights, adjusted by biases,</span>
+<span class="sd">        to form a composite neural network function.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        list_Vec : List[torch.Tensor]</span>
+<span class="sd">            A list of vector representations, each corresponding to a set of parameters</span>
+<span class="sd">            for constructing a neural network layer.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Tuple[List[torch.Tensor], torch.Tensor]</span>
+<span class="sd">            A tuple where the first element is a list of weight tensors for each layer of</span>
+<span class="sd">            the composite neural network, and the second element is the bias tensor for</span>
+<span class="sd">            the last layer in the list.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        This method is specifically designed to work with the neural network architecture</span>
+<span class="sd">        defined in the FMult2 model. It assumes that each vector in `list_Vec` can be</span>
+<span class="sd">        decomposed into weights and biases suitable for a layer in a neural network.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">list_W</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">list_b</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">Vec</span> <span class="ow">in</span> <span class="n">list_Vec</span><span class="p">:</span>
@@ -307,7 +621,38 @@
 
 <div class="viewcode-block" id="FMult2.compute_func">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult2.compute_func">[docs]</a>
-    <span class="k">def</span> <span class="nf">compute_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">W</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">compute_func</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">W</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">b</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the output of a multi-layer neural network defined by the given weights and bias.</span>
+
+<span class="sd">        This method sequentially applies a series of matrix multiplications and non-linear</span>
+<span class="sd">        transformations to an input tensor `x`, using the provided weights `W`. The method</span>
+<span class="sd">        alternates between applying a non-linear function (tanh) and a linear transformation</span>
+<span class="sd">        to the intermediate outputs. The final output is adjusted with a bias term `b`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        W : List[torch.Tensor]</span>
+<span class="sd">            A list of weight tensors for each layer in the neural network. Each tensor</span>
+<span class="sd">            in the list represents the weights of a layer.</span>
+<span class="sd">        b : torch.Tensor</span>
+<span class="sd">            The bias tensor to be added to the output of the final layer.</span>
+<span class="sd">        x : torch.Tensor</span>
+<span class="sd">            The input tensor to be processed by the neural network.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.FloatTensor</span>
+<span class="sd">            The output tensor after processing by the multi-layer neural network.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The method assumes an odd-indexed layer applies a non-linearity (tanh), while</span>
+<span class="sd">        even-indexed layers apply linear transformations. This design choice is based on</span>
+<span class="sd">        empirical observations for better performance in the context of the FMult2 model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">out</span> <span class="o">=</span> <span class="n">W</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">@</span> <span class="n">x</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">W</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
             <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># no non-linearity =&gt; better results</span>
@@ -319,8 +664,67 @@
 
 <div class="viewcode-block" id="FMult2.function">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult2.function">[docs]</a>
-    <span class="k">def</span> <span class="nf">function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_W</span><span class="p">,</span> <span class="n">list_b</span><span class="p">):</span>
-        <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">function</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">list_W</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span> <span class="n">list_b</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Defines a function that computes the output of a composite neural network.</span>
+<span class="sd">        This higher-order function returns a callable that applies a sequence of</span>
+<span class="sd">        transformations defined by the provided weights and biases.</span>
+
+<span class="sd">        The returned function (`f`) takes an input tensor `x` and applies a series of</span>
+<span class="sd">        neural network computations on it. If only one set of weights and biases is provided,</span>
+<span class="sd">        it directly computes the output using `compute_func`. Otherwise, it sequentially</span>
+<span class="sd">        multiplies the outputs of multiple calls to `compute_func`, each using a different</span>
+<span class="sd">        set of weights and biases from `list_W` and `list_b`.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        list_W : List[List[torch.Tensor]]</span>
+<span class="sd">            A list where each element is a list of weight tensors for a neural network.</span>
+<span class="sd">        list_b : List[torch.Tensor]</span>
+<span class="sd">            A list of bias tensors corresponding to each set of weights in `list_W`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Callable[[torch.Tensor], torch.Tensor]</span>
+<span class="sd">            A function that takes an input tensor and returns the output of the composite</span>
+<span class="sd">            neural network.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        This method is part of the FMult2 model&#39;s approach to construct complex scoring</span>
+<span class="sd">        functions for knowledge graph embeddings. The flexibility in combining multiple</span>
+<span class="sd">        neural network layers enables capturing intricate patterns in the data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            Applies a sequence of neural network transformations to the input tensor `x`.</span>
+
+<span class="sd">            If only one set of weights and biases is provided in `list_W` and `list_b`,</span>
+<span class="sd">            `f` applies a single neural network transformation using the `compute_func` method.</span>
+<span class="sd">            If multiple sets of weights and biases are provided, `f` sequentially multiplies</span>
+<span class="sd">            the outputs of `compute_func` applied with each set of weights and biases.</span>
+<span class="sd">            This creates a composite function from multiple neural network layers.</span>
+
+<span class="sd">            Parameters</span>
+<span class="sd">            ----------</span>
+<span class="sd">            x : torch.Tensor</span>
+<span class="sd">                The input tensor to be processed by the neural network layers.</span>
+
+<span class="sd">            Returns</span>
+<span class="sd">            -------</span>
+<span class="sd">            torch.Tensor</span>
+<span class="sd">                The output tensor after processing by the composite neural network.</span>
+
+<span class="sd">            Notes</span>
+<span class="sd">            -----</span>
+<span class="sd">            This function is designed to work within the `function` method of the FMult2 class.</span>
+<span class="sd">            It leverages the `compute_func` method for each layer&#39;s computation and combines</span>
+<span class="sd">            these layers in a multiplicative fashion to enhance the modeling capability of</span>
+<span class="sd">            the network, especially in the context of knowledge graph embeddings.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">list_W</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_func</span><span class="p">(</span><span class="n">list_W</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">list_b</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">)</span>
             <span class="n">score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_func</span><span class="p">(</span><span class="n">list_W</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">list_b</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">)</span>
@@ -333,14 +737,62 @@
 
 <div class="viewcode-block" id="FMult2.trapezoid">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult2.trapezoid">[docs]</a>
-    <span class="k">def</span> <span class="nf">trapezoid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_W</span><span class="p">,</span> <span class="n">list_b</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">trapezoid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="n">list_W</span><span class="p">,</span> <span class="n">list_b</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">discrete_points</span><span class="p">),</span> <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">discrete_points</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
-            <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
+    <span class="k">def</span> <span class="nf">trapezoid</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">list_W</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span> <span class="n">list_b</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the integral of the output of a composite neural network function over a</span>
+<span class="sd">        range of discrete points using the trapezoidal rule.</span>
+
+<span class="sd">        This method first constructs a composite neural network function using the `function`</span>
+<span class="sd">        method with the provided weights `list_W` and biases `list_b`. It then evaluates this</span>
+<span class="sd">        function at a series of discrete points (`self.discrete_points`) and applies the</span>
+<span class="sd">        trapezoidal rule to approximate the integral of the function over these points. The</span>
+<span class="sd">        sum of the integral approximations across all dimensions is returned.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        list_W : List[List[torch.Tensor]]</span>
+<span class="sd">            A list where each element is a list of weight tensors for a neural network.</span>
+<span class="sd">        list_b : List[torch.Tensor]</span>
+<span class="sd">            A list of bias tensors corresponding to each set of weights in `list_W`.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.Tensor</span>
+<span class="sd">            The sum of the integral of the composite function&#39;s output over the range</span>
+<span class="sd">            of discrete points, computed using the trapezoidal rule.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The trapezoidal rule is a numerical method to approximate definite integrals.</span>
+<span class="sd">        In the context of the FMult2 model, this method is used to integrate the output</span>
+<span class="sd">        of the neural network over a range of inputs, which is crucial for certain types</span>
+<span class="sd">        of calculations in knowledge graph embeddings.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">trapezoid</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="n">list_W</span><span class="p">,</span> <span class="n">list_b</span><span class="p">)(</span><span class="bp">self</span><span class="o">.</span><span class="n">discrete_points</span><span class="p">),</span>
+            <span class="n">x</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">discrete_points</span><span class="p">,</span>
+            <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="FMult2.forward_triples">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.FMult2.forward_triples">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx_triple</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Forward pass for a batch of triples to compute embedding interactions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        idx_triple : torch.Tensor</span>
+<span class="sd">            Tensor containing indices of triples.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.Tensor</span>
+<span class="sd">            The computed scores for the batch of triples.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># (1) Retrieve embeddings: batch, \mathbb R^d</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">idx_triple</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">discrete_points</span><span class="o">.</span><span class="n">device</span> <span class="o">!=</span> <span class="n">head_ent_emb</span><span class="o">.</span><span class="n">device</span><span class="p">:</span>
@@ -349,14 +801,17 @@
             <span class="n">h_W</span><span class="p">,</span> <span class="n">h_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_func</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">)</span>
             <span class="n">r_W</span><span class="p">,</span> <span class="n">r_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_func</span><span class="p">(</span><span class="n">rel_emb</span><span class="p">)</span>
             <span class="n">t_W</span><span class="p">,</span> <span class="n">t_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_func</span><span class="p">(</span><span class="n">tail_ent_emb</span><span class="p">)</span>
-            <span class="n">out</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">trapezoid</span><span class="p">([</span><span class="n">t_W</span><span class="p">],</span> <span class="p">[</span><span class="n">t_b</span><span class="p">])</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">trapezoid</span><span class="p">([</span><span class="n">h_W</span><span class="p">,</span> <span class="n">r_W</span><span class="p">],</span> <span class="p">[</span><span class="n">h_b</span><span class="p">,</span> <span class="n">r_b</span><span class="p">])</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">trapezoid</span><span class="p">([</span><span class="n">r_W</span><span class="p">],</span> <span class="p">[</span>
-                <span class="n">r_b</span><span class="p">])</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">trapezoid</span><span class="p">([</span><span class="n">t_W</span><span class="p">,</span> <span class="n">h_W</span><span class="p">],</span> <span class="p">[</span><span class="n">t_b</span><span class="p">,</span> <span class="n">h_b</span><span class="p">])</span>
+            <span class="n">out</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">trapezoid</span><span class="p">([</span><span class="n">t_W</span><span class="p">],</span> <span class="p">[</span><span class="n">t_b</span><span class="p">])</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">trapezoid</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">h_W</span><span class="p">,</span> <span class="n">r_W</span><span class="p">],</span> <span class="p">[</span><span class="n">h_b</span><span class="p">,</span> <span class="n">r_b</span><span class="p">]</span>
+            <span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">trapezoid</span><span class="p">([</span><span class="n">r_W</span><span class="p">],</span> <span class="p">[</span><span class="n">r_b</span><span class="p">])</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">trapezoid</span><span class="p">([</span><span class="n">t_W</span><span class="p">,</span> <span class="n">h_W</span><span class="p">],</span> <span class="p">[</span><span class="n">t_b</span><span class="p">,</span> <span class="n">h_b</span><span class="p">])</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">score_func</span> <span class="o">==</span> <span class="s2">&quot;compositional&quot;</span><span class="p">:</span>
             <span class="n">t_W</span><span class="p">,</span> <span class="n">t_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_func</span><span class="p">(</span><span class="n">tail_ent_emb</span><span class="p">)</span>
             <span class="n">chain_W</span><span class="p">,</span> <span class="n">chain_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_chain_funcs</span><span class="p">([</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_emb</span><span class="p">])</span>
             <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trapezoid</span><span class="p">([</span><span class="n">chain_W</span><span class="p">,</span> <span class="n">t_W</span><span class="p">],</span> <span class="p">[</span><span class="n">chain_b</span><span class="p">,</span> <span class="n">t_b</span><span class="p">])</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">score_func</span> <span class="o">==</span> <span class="s2">&quot;full-compositional&quot;</span><span class="p">:</span>
-            <span class="n">chain_W</span><span class="p">,</span> <span class="n">chain_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_chain_funcs</span><span class="p">([</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span><span class="p">])</span>
+            <span class="n">chain_W</span><span class="p">,</span> <span class="n">chain_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_chain_funcs</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span><span class="p">]</span>
+            <span class="p">)</span>
             <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trapezoid</span><span class="p">([</span><span class="n">chain_W</span><span class="p">],</span> <span class="p">[</span><span class="n">chain_b</span><span class="p">])</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">score_func</span> <span class="o">==</span> <span class="s2">&quot;trilinear&quot;</span><span class="p">:</span>
             <span class="n">h_W</span><span class="p">,</span> <span class="n">h_b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_func</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">)</span>

@@ -139,38 +139,114 @@
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.PreprocessKG" title="dicee.read_preprocess_save_load_kg.PreprocessKG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PreprocessKG</span></code></a></p></td>
-<td><p>Preprocess the data in memory</p></td>
+<td><p>Preprocess the data in memory for a knowledge graph.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.LoadSaveToDisk" title="dicee.read_preprocess_save_load_kg.LoadSaveToDisk"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LoadSaveToDisk</span></code></a></p></td>
-<td><p></p></td>
+<td><p>Handle the saving and loading of a knowledge graph to and from disk.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.ReadFromDisk" title="dicee.read_preprocess_save_load_kg.ReadFromDisk"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ReadFromDisk</span></code></a></p></td>
-<td><p>Read the data from disk into memory</p></td>
+<td><p>Read the data from disk into memory.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.PreprocessKG">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.</span></span><span class="sig-name descname"><span class="pre">PreprocessKG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.PreprocessKG" title="Link to this definition"></a></dt>
-<dd><p>Preprocess the data in memory</p>
+<dd><p>Preprocess the data in memory for a knowledge graph.</p>
+<p>This class handles the preprocessing of the knowledge graph data which includes
+reading the data, adding noise or reciprocal triples, constructing vocabularies,
+and indexing datasets based on the backend being used.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.PreprocessKG.kg">
+<span class="sig-name descname"><span class="pre">kg</span></span><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.PreprocessKG.kg" title="Link to this definition"></a></dt>
+<dd><p>An instance representing the knowledge graph.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>object</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.PreprocessKG.start">
 <span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.PreprocessKG.start" title="Link to this definition"></a></dt>
-<dd><p>Preprocess train, valid and test datasets stored in knowledge graph instance</p>
-<section id="parameter">
-<h4>Parameter<a class="headerlink" href="#parameter" title="Link to this heading"></a></h4>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
+<dd><p>Preprocess train, valid, and test datasets stored in the knowledge graph instance.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_byte_pair_encoding">
-<span class="sig-name descname"><span class="pre">preprocess_with_byte_pair_encoding</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.preprocess_with_byte_pair_encoding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_byte_pair_encoding" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">preprocess_with_byte_pair_encoding</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.preprocess_with_byte_pair_encoding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_byte_pair_encoding" title="Link to this definition"></a></dt>
+<dd><p>Preprocess the datasets using byte-pair encoding.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_pandas">
+<span class="sig-name descname"><span class="pre">preprocess_with_pandas</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.preprocess_with_pandas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_pandas" title="Link to this definition"></a></dt>
+<dd><p>Preprocess the datasets using pandas.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_polars">
+<span class="sig-name descname"><span class="pre">preprocess_with_polars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.preprocess_with_polars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_polars" title="Link to this definition"></a></dt>
+<dd><p>Preprocess the datasets using polars.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.PreprocessKG.sequential_vocabulary_construction">
+<span class="sig-name descname"><span class="pre">sequential_vocabulary_construction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.sequential_vocabulary_construction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.PreprocessKG.sequential_vocabulary_construction" title="Link to this definition"></a></dt>
+<dd><p>Construct integer indexing for entities and relations.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd><p>Preprocess train, valid, and test datasets stored in the knowledge graph instance.</p>
+<p>This method applies the appropriate preprocessing technique based on the backend
+specified in the knowledge graph instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>KeyError</strong> – If the specified backend is not supported.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">preprocess_with_byte_pair_encoding</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.preprocess_with_byte_pair_encoding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd><p>Preprocess the datasets using byte-pair encoding (BPE).</p>
+<p>This method applies byte-pair encoding to the raw training, validation, and test sets of
+the knowledge graph. It transforms string representations of entities and relations into
+sequences of subword tokens. The method also handles padding of these sequences and
+constructs the necessary mappings for entities and relations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Byte-pair encoding is used to handle the out-of-vocabulary problem in natural language</p></li>
+</ul>
+<p>processing by splitting words into more frequently occurring subword units.
+- This method modifies the knowledge graph instance in place by setting various attributes
+related to the byte-pair encoding such as padded sequences, mappings, and the maximum
+length of subword tokens.
+- The method assumes that the raw datasets are available as Pandas DataFrames within the
+knowledge graph instance.
+- If the ‘add_reciprical’ flag is set in the knowledge graph instance, reciprocal triples are
+added to the datasets.
+- After encoding and padding, the method also constructs mappings from the subword token
+sequences to their corresponding integer indices.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_byte_pair_encoding_with_padding">
@@ -178,90 +254,280 @@
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_pandas">
-<span class="sig-name descname"><span class="pre">preprocess_with_pandas</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.preprocess_with_pandas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_pandas" title="Link to this definition"></a></dt>
-<dd><p>Preprocess train, valid and test datasets stored in knowledge graph instance with pandas</p>
-<ol class="arabic simple">
-<li><p>Add recipriocal or noisy triples</p></li>
-<li><p>Construct vocabulary</p></li>
-<li><p>Index datasets</p></li>
-</ol>
-<section id="id1">
-<h4>Parameter<a class="headerlink" href="#id1" title="Link to this heading"></a></h4>
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">preprocess_with_pandas</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.preprocess_with_pandas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd><p>Preprocess train, valid, and test datasets stored in the knowledge graph instance using pandas.</p>
+<p>This method involves adding reciprocal or noisy triples, constructing vocabularies for entities and relations,
+and indexing the datasets. The preprocessing is performed using the pandas library, which facilitates the handling
+and transformation of the data.</p>
 <dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
 </dd>
 </dl>
-</section>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The method begins by optionally adding reciprocal or noisy triples to the raw training, validation, and test sets.</p></li>
+<li><p>Sequential vocabulary construction is performed to create a bijection mapping of entities and relations to integer indices.</p></li>
+<li><p>The datasets (train, valid, test) are then indexed based on these mappings.</p></li>
+<li><p>The method modifies the knowledge graph instance in place by setting various attributes such as the indexed datasets,</p></li>
+</ul>
+<p>the number of entities, and the number of relations.
+- The method assumes that the raw datasets are available as pandas DataFrames within the knowledge graph instance.
+- This preprocessing is crucial for converting the raw string-based datasets into a numerical format suitable for
+training machine learning models.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_polars">
-<span class="sig-name descname"><span class="pre">preprocess_with_polars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.preprocess_with_polars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_polars" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.PreprocessKG.sequential_vocabulary_construction">
-<span class="sig-name descname"><span class="pre">sequential_vocabulary_construction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.sequential_vocabulary_construction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.PreprocessKG.sequential_vocabulary_construction" title="Link to this definition"></a></dt>
-<dd><ol class="arabic simple">
-<li><p>Read input data into memory</p></li>
-<li><p>Remove triples with a condition</p></li>
-<li><dl class="simple">
-<dt>Serialize vocabularies in a pandas dataframe where</dt><dd><p>=&gt; the index is integer and
-=&gt; a single column is string (e.g. URI)</p>
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">preprocess_with_polars</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.preprocess_with_polars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dd><p>Preprocess train, valid, and test datasets stored in the knowledge graph instance using Polars.</p>
+<p>This method involves preprocessing the datasets with the Polars library, which is designed for efficient data
+manipulation and indexing. The process includes adding reciprocal triples, indexing entities and relations,
+and transforming the datasets from string-based to integer-based formats.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
 </dd>
 </dl>
-</li>
-</ol>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The method begins by adding reciprocal triples to the raw datasets if the ‘add_reciprical’ flag is set</p></li>
+</ul>
+<p>in the knowledge graph instance.
+- It then constructs a bijection mapping from entities and relations to integer indices, using the unique
+entities and relations found in the concatenated datasets.
+- The datasets (train, valid, test) are indexed based on these mappings and converted to NumPy arrays.
+- The method updates the knowledge graph instance by setting attributes such as the number of entities,
+the number of relations, and the indexed datasets.
+- Polars is used for its performance advantages in handling large datasets and its efficient data manipulation capabilities.
+- This preprocessing step is crucial for converting the raw string-based datasets into a numerical format suitable
+for training machine learning models.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.PreprocessKG.remove_triples_from_train_with_condition">
-<span class="sig-name descname"><span class="pre">remove_triples_from_train_with_condition</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.remove_triples_from_train_with_condition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.PreprocessKG.remove_triples_from_train_with_condition" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">sequential_vocabulary_construction</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.sequential_vocabulary_construction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dd><p>Construct sequential vocabularies for entities and relations in the knowledge graph.</p>
+<p>This method processes the raw training, validation, and test sets to create sequential mappings (bijection)
+of entities and relations to integer indices. These mappings are essential for converting the string-based
+representations of entities and relations to numerical formats that can be processed by machine learning models.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The method first concatenates the raw datasets and then creates unique lists of all entities and relations.</p></li>
+<li><p>It then assigns a unique integer index to each entity and relation, creating two dictionaries:</p></li>
+</ul>
+<p>‘entity_to_idx’ and ‘relation_to_idx’.
+- These dictionaries are used to index entities and relations in the knowledge graph.
+- The method updates the knowledge graph instance by setting attributes such as ‘entity_to_idx’,
+‘relation_to_idx’, ‘num_entities’, and ‘num_relations’.
+- This method is a crucial preprocessing step for transforming knowledge graph data into a format suitable
+for training and evaluating machine learning models.
+- The method assumes that the raw datasets are available as Pandas DataFrames within the knowledge graph instance.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.PreprocessKG.dept_remove_triples_from_train_with_condition">
+<span class="sig-name descname"><span class="pre">dept_remove_triples_from_train_with_condition</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.dept_remove_triples_from_train_with_condition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.PreprocessKG.dept_remove_triples_from_train_with_condition" title="Link to this definition"></a></dt>
+<dd><p>Remove specific triples from the training set based on a predefined condition.</p>
+<p>This method filters out triples from the raw training dataset of the knowledge graph based on
+a condition, such as the frequency of entities or relations. This is often used to refine the
+training data, for instance, by removing infrequent entities or relations that may not be
+significant for the model’s training.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The method specifically targets the removal of triples that contain entities or relations</p></li>
+</ul>
+<p>occurring below a certain frequency threshold.
+- The frequency threshold is determined by the ‘min_freq_for_vocab’ attribute of the knowledge graph instance.
+- The method updates the knowledge graph instance by modifying the ‘raw_train_set’ attribute,
+which holds the raw training dataset.
+- This preprocessing step is crucial for ensuring the quality of the training data and can impact
+the performance and generalization ability of the resulting machine learning models.
+- The method assumes that the raw training dataset is available as a Pandas DataFrame within the
+knowledge graph instance.</p>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.LoadSaveToDisk">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.</span></span><span class="sig-name descname"><span class="pre">LoadSaveToDisk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.LoadSaveToDisk" title="Link to this definition"></a></dt>
-<dd><dl class="py method">
+<dd><p>Handle the saving and loading of a knowledge graph to and from disk.</p>
+<p>This class provides functionality to serialize and deserialize the components of a knowledge graph,
+such as entity and relation indices, datasets, and byte-pair encoding mappings, to and from disk storage.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.LoadSaveToDisk.kg">
+<span class="sig-name descname"><span class="pre">kg</span></span><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.LoadSaveToDisk.kg" title="Link to this definition"></a></dt>
+<dd><p>An instance of the knowledge graph to be saved or loaded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.LoadSaveToDisk.save">
-<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.LoadSaveToDisk.save" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.LoadSaveToDisk.save" title="Link to this definition"></a></dt>
+<dd><p>Save the knowledge graph components to disk.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.LoadSaveToDisk.load">
-<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.LoadSaveToDisk.load" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.LoadSaveToDisk.load" title="Link to this definition"></a></dt>
+<dd><p>Load the knowledge graph components from disk.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dd><p>Save the knowledge graph components to disk.</p>
+<p>This method serializes various components of the knowledge graph such as entity and relation indices,
+datasets, and byte-pair encoding mappings, and saves them to the specified file paths in the knowledge
+graph instance. The method handles different data types and structures based on the configuration of
+the knowledge graph.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>AssertionError</strong> – If the path for serialization is not set or other required conditions are not met.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The method checks if the ‘path_for_serialization’ attribute is set in the knowledge graph instance.</p></li>
+<li><p>Depending on the configuration (e.g., whether byte-pair encoding is used), different components are saved.</p></li>
+<li><p>The method uses custom functions like ‘save_pickle’ and ‘save_numpy_ndarray’ for serialization.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<dd><p>Load the knowledge graph components from disk.</p>
+<p>This method deserializes various components of the knowledge graph such as entity and relation indices,
+datasets, and byte-pair encoding mappings from the specified file paths in the knowledge graph instance.
+The method reconstructs the knowledge graph instance with the loaded data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>AssertionError</strong> – If the path for deserialization is not set or other required conditions are not met.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The method checks if the ‘path_for_deserialization’ attribute is set in the knowledge graph instance.</p></li>
+<li><p>The method updates the knowledge graph instance with the loaded components.</p></li>
+<li><p>The method uses custom functions like ‘load_pickle’ and ‘load_numpy_ndarray’ for deserialization.</p></li>
+<li><p>If evaluation models are used, additional components like vocabularies and constraints are also loaded.</p></li>
+</ul>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.ReadFromDisk">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.</span></span><span class="sig-name descname"><span class="pre">ReadFromDisk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.ReadFromDisk" title="Link to this definition"></a></dt>
-<dd><p>Read the data from disk into memory</p>
+<dd><p>Read the data from disk into memory.</p>
+<p>This class is responsible for loading a knowledge graph from various sources such as
+disk files, triple stores, or SPARQL endpoints, and then making it available in memory
+for further processing.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.ReadFromDisk.kg">
+<span class="sig-name descname"><span class="pre">kg</span></span><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.ReadFromDisk.kg" title="Link to this definition"></a></dt>
+<dd><p>An instance representing the knowledge graph.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>object</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.ReadFromDisk.start">
 <span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.ReadFromDisk.start" title="Link to this definition"></a></dt>
-<dd><p>Read a knowledge graph from disk into memory</p>
-<p>Data will be available at the train_set, test_set, valid_set attributes.</p>
-<section id="id2">
-<h4>Parameter<a class="headerlink" href="#id2" title="Link to this heading"></a></h4>
-<p>None</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
+<dd><p>Read a knowledge graph from disk into memory.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.ReadFromDisk.add_noisy_triples_into_training">
-<span class="sig-name descname"><span class="pre">add_noisy_triples_into_training</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk.add_noisy_triples_into_training"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.ReadFromDisk.add_noisy_triples_into_training" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">add_noisy_triples_into_training</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk.add_noisy_triples_into_training"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.ReadFromDisk.add_noisy_triples_into_training" title="Link to this definition"></a></dt>
+<dd><p>Add noisy triples into the training set of the knowledge graph.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<dd><p>Read a knowledge graph from disk into memory.</p>
+<p>This method reads the knowledge graph data from the specified source (disk, triple store,
+or SPARQL endpoint) and loads it into memory. The data is made available in the
+train_set, test_set, and valid_set attributes of the knowledge graph instance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>RuntimeError</strong> – If the data source is invalid or not specified correctly.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">add_noisy_triples_into_training</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk.add_noisy_triples_into_training"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
+<dd><p>Add noisy triples into the training set of the knowledge graph.</p>
+<p>This method injects a specified proportion of noisy triples into the training set.
+Noisy triples are randomly generated by shuffling the entities and relations in the
+knowledge graph. The purpose of adding noisy triples is often to test the robustness
+of the model or to augment the training data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The number of noisy triples added is determined by the ‘add_noise_rate’ attribute
+of the knowledge graph. The method ensures that the total number of triples (original
+plus noisy) in the training set matches the expected count after adding the noisy triples.</p>
+</dd></dl>
 
 </dd></dl>
 

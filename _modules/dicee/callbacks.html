@@ -89,6 +89,7 @@
   <h1>Source code for dicee.callbacks</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">datetime</span>
 <span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">OrderedDict</span><span class="p">,</span> <span class="n">Tuple</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 
@@ -96,33 +97,60 @@
 <span class="kn">from</span> <span class="nn">.static_funcs</span> <span class="kn">import</span> <span class="n">save_checkpoint_model</span><span class="p">,</span> <span class="n">save_pickle</span>
 <span class="kn">from</span> <span class="nn">.abstracts</span> <span class="kn">import</span> <span class="n">AbstractCallback</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">lightning</span> <span class="kn">import</span> <span class="o">*</span>
 
 
 <div class="viewcode-block" id="AccumulateEpochLossCallback">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.AccumulateEpochLossCallback">[docs]</a>
 <span class="k">class</span> <span class="nc">AccumulateEpochLossCallback</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A callback to accumulate and save epoch losses to a CSV file at the end of training.</span>
+
+<span class="sd">    This callback listens to the end of the training process and saves the accumulated</span>
+<span class="sd">    epoch losses stored in the model&#39;s loss history to a CSV file. The file is saved</span>
+<span class="sd">    in the specified directory.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : str</span>
+<span class="sd">        The directory path where the epoch loss CSV file will be saved.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : str</span>
+<span class="sd">        Stores the provided directory path for later use in saving the epoch losses.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
 
 <div class="viewcode-block" id="AccumulateEpochLossCallback.on_fit_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.AccumulateEpochLossCallback.on_fit_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">:</span> <span class="n">Trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Store epoch loss</span>
+<span class="sd">        Invoked at the end of the training process to save the epoch losses.</span>
 
+<span class="sd">        This method is called automatically by the training loop at the end of training.</span>
+<span class="sd">        It retrieves the loss history from the model and saves it as a CSV file in the</span>
+<span class="sd">        specified directory.</span>
 
-<span class="sd">        Parameter</span>
-<span class="sd">        ---------</span>
-<span class="sd">        trainer:</span>
-
-<span class="sd">        model:</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        trainer : Trainer</span>
+<span class="sd">            The trainer instance conducting the training process. Not used in this method,</span>
+<span class="sd">            but required for compatibility with the callback interface.</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            The model being trained. This model should have a `loss_history` attribute</span>
+<span class="sd">            containing the losses of each epoch.</span>
 
 <span class="sd">        Returns</span>
-<span class="sd">        ---------</span>
+<span class="sd">        -------</span>
 <span class="sd">        None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">loss_history</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;EpochLoss&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s1">/epoch_losses.csv&#39;</span><span class="p">)</span></div>
+        <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">loss_history</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;EpochLoss&quot;</span><span class="p">])</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/epoch_losses.csv&quot;</span>
+        <span class="p">)</span></div>
 </div>
 
 
@@ -130,13 +158,37 @@
 <div class="viewcode-block" id="PrintCallback">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PrintCallback">[docs]</a>
 <span class="k">class</span> <span class="nc">PrintCallback</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A callback that prints the start time of training and its total runtime upon completion.</span>
+
+<span class="sd">    This callback demonstrates a simple usage of the PyTorch Lightning callback system,</span>
+<span class="sd">    printing a message when the training starts and another when it ends, showing how</span>
+<span class="sd">    long the training took.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
 <div class="viewcode-block" id="PrintCallback.on_fit_start">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PrintCallback.on_fit_start">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">pl_module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">:</span> <span class="n">Trainer</span><span class="p">,</span> <span class="n">pl_module</span><span class="p">:</span> <span class="n">LightningModule</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Invoked at the start of the fit process.</span>
+
+<span class="sd">        Prints a message indicating that the training is starting, along with the current date and time.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        trainer : Trainer</span>
+<span class="sd">            The trainer instance conducting the training process.</span>
+<span class="sd">        pl_module : LightningModule</span>
+<span class="sd">            The LightningModule instance being trained.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># print(pl_module)</span>
         <span class="c1"># print(pl_module.summarize())</span>
         <span class="c1"># print(pl_module.selected_optimizer)</span>
@@ -145,28 +197,72 @@
 
 <div class="viewcode-block" id="PrintCallback.on_fit_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PrintCallback.on_fit_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">pl_module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">:</span> <span class="n">Trainer</span><span class="p">,</span> <span class="n">pl_module</span><span class="p">:</span> <span class="n">LightningModule</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Invoked at the end of the fit process.</span>
+
+<span class="sd">        Calculates and prints the total training time in an appropriate time unit (seconds, minutes, or hours).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        trainer : Trainer</span>
+<span class="sd">            The trainer instance conducting the training process.</span>
+<span class="sd">        pl_module : LightningModule</span>
+<span class="sd">            The LightningModule instance that was trained.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">training_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span>
         <span class="k">if</span> <span class="mi">60</span> <span class="o">&gt;</span> <span class="n">training_time</span><span class="p">:</span>
-            <span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">training_time</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> seconds.&#39;</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">training_time</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> seconds.&quot;</span>
         <span class="k">elif</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">&gt;</span> <span class="n">training_time</span> <span class="o">&gt;</span> <span class="mi">60</span><span class="p">:</span>
-            <span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">training_time</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">60</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> minutes.&#39;</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">training_time</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">60</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> minutes.&quot;</span>
         <span class="k">elif</span> <span class="n">training_time</span> <span class="o">&gt;</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span><span class="p">:</span>
-            <span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">training_time</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="mi">60</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">60</span><span class="p">)</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> hours.&#39;</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">training_time</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="mi">60</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">60</span><span class="p">)</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> hours.&quot;</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">training_time</span><span class="si">:</span><span class="s1">.3f</span><span class="si">}</span><span class="s1"> seconds.&#39;</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">training_time</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> seconds.&quot;</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Training Runtime: </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="PrintCallback.on_train_batch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PrintCallback.on_train_batch_end">[docs]</a>
     <span class="k">def</span> <span class="nf">on_train_batch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Dummy method for handling the end of a training batch. Implemented as a placeholder.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        *args</span>
+<span class="sd">            Variable length argument list.</span>
+<span class="sd">        **kwargs</span>
+<span class="sd">            Arbitrary keyword arguments.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span></div>
 
 
 <div class="viewcode-block" id="PrintCallback.on_train_epoch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PrintCallback.on_train_epoch_end">[docs]</a>
     <span class="k">def</span> <span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Dummy method for handling the end of a training epoch. Implemented as a placeholder.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        *args</span>
+<span class="sd">            Variable length argument list.</span>
+<span class="sd">        **kwargs</span>
+<span class="sd">            Arbitrary keyword arguments.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span></div>
 </div>
 
@@ -175,6 +271,32 @@
 <div class="viewcode-block" id="KGESaveCallback">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.KGESaveCallback">[docs]</a>
 <span class="k">class</span> <span class="nc">KGESaveCallback</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A callback to save the model periodically during training.</span>
+
+<span class="sd">    This callback is intended to periodically save the current state of the model during training,</span>
+<span class="sd">    allowing for checkpointing and potential recovery of intermediate states.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    every_x_epoch : int</span>
+<span class="sd">        Interval between epochs to save the model. The model will be saved every &#39;every_x_epoch&#39; epochs.</span>
+<span class="sd">    max_epochs : int</span>
+<span class="sd">        The maximum number of epochs for the training. Used to calculate the default saving interval if &#39;every_x_epoch&#39; is not provided.</span>
+<span class="sd">    path : str</span>
+<span class="sd">        The directory path where the model checkpoints will be saved.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    epoch_counter : int</span>
+<span class="sd">        A counter to keep track of the current epoch.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    on_epoch_end(model, trainer, **kwargs)</span>
+<span class="sd">        Saves the model at specified intervals.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">every_x_epoch</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">max_epochs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">every_x_epoch</span> <span class="o">=</span> <span class="n">every_x_epoch</span>
@@ -210,12 +332,32 @@
 
 <div class="viewcode-block" id="KGESaveCallback.on_epoch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.KGESaveCallback.on_epoch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">on_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">LightningModule</span><span class="p">,</span> <span class="n">trainer</span><span class="p">:</span> <span class="n">Trainer</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Invoked at the end of each epoch to potentially save the model.</span>
+
+<span class="sd">        Checks if the current epoch matches the saving criteria. If so, the model&#39;s state is saved as a checkpoint.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model : LightningModule</span>
+<span class="sd">            The model being trained.</span>
+<span class="sd">        trainer : Trainer</span>
+<span class="sd">            The trainer instance conducting the training process.</span>
+<span class="sd">        **kwargs</span>
+<span class="sd">            Arbitrary keyword arguments.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">every_x_epoch</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Storing model </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span><span class="si">}</span><span class="s1">...&#39;</span><span class="p">)</span>
-            <span class="n">save_checkpoint_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span>
-                                  <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;/model_at_</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span><span class="p">)</span><span class="si">}</span><span class="s1">_&#39;</span>
-                                                   <span class="sa">f</span><span class="s1">&#39;epoch_</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()))</span><span class="si">}</span><span class="s1">.pt&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Storing model </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
+            <span class="n">save_checkpoint_model</span><span class="p">(</span>
+                <span class="n">model</span><span class="p">,</span>
+                <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;/model_at_</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span><span class="p">)</span><span class="si">}</span><span class="s2">_&quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;epoch_</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()))</span><span class="si">}</span><span class="s2">.pt&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span> <span class="o">+=</span> <span class="mi">1</span></div>
 </div>
 
@@ -224,7 +366,31 @@
 <div class="viewcode-block" id="PseudoLabellingCallback">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PseudoLabellingCallback">[docs]</a>
 <span class="k">class</span> <span class="nc">PseudoLabellingCallback</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_module</span><span class="p">,</span> <span class="n">kg</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A callback for implementing pseudo-labelling during training.</span>
+
+<span class="sd">    Pseudo-labelling is a semi-supervised learning technique that uses the model&#39;s predictions</span>
+<span class="sd">    on unlabeled data as labels for retraining the model. This callback generates pseudo-labels</span>
+<span class="sd">    for a batch of randomly created or selected unlabeled data and adds them to the training set.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data_module : LightningDataModule</span>
+<span class="sd">        The data module that provides data loaders for the training process.</span>
+<span class="sd">    kg : KnowledgeGraph</span>
+<span class="sd">        The knowledge graph object that contains information about the entities, relations, and the unlabeled set.</span>
+<span class="sd">    batch_size : int</span>
+<span class="sd">        The size of the batch to generate or select for pseudo-labelling.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    num_of_epochs : int</span>
+<span class="sd">        Tracks the number of epochs that have been processed.</span>
+<span class="sd">    unlabelled_size : int</span>
+<span class="sd">        The size of the unlabeled dataset in the knowledge graph.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_module</span><span class="p">:</span> <span class="n">LightningDataModule</span><span class="p">,</span> <span class="n">kg</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">data_module</span> <span class="o">=</span> <span class="n">data_module</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kg</span> <span class="o">=</span> <span class="n">kg</span>
@@ -234,16 +400,45 @@
 
 <div class="viewcode-block" id="PseudoLabellingCallback.create_random_data">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PseudoLabellingCallback.create_random_data">[docs]</a>
-    <span class="k">def</span> <span class="nf">create_random_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">entities</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-        <span class="n">relations</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,))</span>
+    <span class="k">def</span> <span class="nf">create_random_data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generates a batch of random triples (head entity, relation, tail entity).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.Tensor</span>
+<span class="sd">            A batch of randomly generated triples.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">entities</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span>
+            <span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">relations</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span>
+            <span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,)</span>
+        <span class="p">)</span>
         <span class="c1"># unlabelled triples</span>
         <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">entities</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">relations</span><span class="p">,</span> <span class="n">entities</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="PseudoLabellingCallback.on_epoch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.PseudoLabellingCallback.on_epoch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">on_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">:</span> <span class="n">Trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">LightningModule</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Invoked at the end of each epoch to perform pseudo-labelling.</span>
+
+<span class="sd">        Generates or selects a batch of unlabeled data, uses the model to predict pseudo-labels,</span>
+<span class="sd">        and adds the selected triples with high-confidence pseudo-labels to the training set.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        trainer : Trainer</span>
+<span class="sd">            The trainer instance conducting the training process.</span>
+<span class="sd">        model : LightningModule</span>
+<span class="sd">            The model being trained.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Create random triples</span>
         <span class="c1"># if trainer.current_epoch &lt; 10:</span>
         <span class="c1">#    return None</span>
@@ -254,17 +449,21 @@
             <span class="c1"># unlabelled_input_batch = self.create_random_data()</span>
             <span class="c1"># (2) or use unlabelled batch</span>
             <span class="n">unlabelled_input_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">unlabelled_set</span><span class="p">[</span>
-                <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">unlabelled_size</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,))]</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">unlabelled_size</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,))</span>
+            <span class="p">]</span>
             <span class="c1"># (2) Predict unlabelled batch, and use prediction as pseudo-labels</span>
             <span class="n">pseudo_label</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">model</span><span class="p">(</span><span class="n">unlabelled_input_batch</span><span class="p">))</span>
-            <span class="n">selected_triples</span> <span class="o">=</span> <span class="n">unlabelled_input_batch</span><span class="p">[</span><span class="n">pseudo_label</span> <span class="o">&gt;=</span> <span class="mf">.90</span><span class="p">]</span>
+            <span class="n">selected_triples</span> <span class="o">=</span> <span class="n">unlabelled_input_batch</span><span class="p">[</span><span class="n">pseudo_label</span> <span class="o">&gt;=</span> <span class="mf">0.90</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">selected_triples</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="c1"># Update dataset</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data_module</span><span class="o">.</span><span class="n">train_set_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
                 <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_module</span><span class="o">.</span><span class="n">train_set_idx</span><span class="p">,</span> <span class="n">selected_triples</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()),</span>
-                <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="p">)</span>
             <span class="n">trainer</span><span class="o">.</span><span class="n">train_dataloader</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_module</span><span class="o">.</span><span class="n">train_dataloader</span><span class="p">()</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">Epoch:</span><span class="si">{</span><span class="n">trainer</span><span class="o">.</span><span class="n">current_epoch</span><span class="si">}</span><span class="s1">: Pseudo-labelling</span><span class="se">\t</span><span class="s1"> |D|= </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_module</span><span class="o">.</span><span class="n">train_set_idx</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">Epoch:</span><span class="si">{</span><span class="n">trainer</span><span class="o">.</span><span class="n">current_epoch</span><span class="si">}</span><span class="s2">: Pseudo-labelling</span><span class="se">\t</span><span class="s2"> |D|= </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data_module</span><span class="o">.</span><span class="n">train_set_idx</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
         <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span></div>
 </div>
 
@@ -272,8 +471,39 @@
 
 <div class="viewcode-block" id="estimate_q">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.estimate_q">[docs]</a>
-<span class="k">def</span> <span class="nf">estimate_q</span><span class="p">(</span><span class="n">eps</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; estimate rate of convergence q from sequence esp&quot;&quot;&quot;</span>
+<span class="k">def</span> <span class="nf">estimate_q</span><span class="p">(</span><span class="n">eps</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Estimate the rate of convergence, q, from a sequence of errors.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    eps : array-like</span>
+<span class="sd">        A sequence of errors (epsilons) from which the rate of convergence is to be estimated.</span>
+<span class="sd">        It&#39;s expected that `eps` represents a decreasing sequence of errors as the approximation</span>
+<span class="sd">        improves, typically from an iterative numerical method.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The estimated rate of convergence, q.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The function estimates the rate of convergence by fitting a line to the logarithm of the</span>
+<span class="sd">    absolute difference of the logarithm of the errors. The slope of this line corresponds to</span>
+<span class="sd">    the logarithm of the rate of convergence, q. This method assumes exponential convergence,</span>
+<span class="sd">    where the error decreases as a power of the number of iterations.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; eps = [1/2**n for n in range(1, 6)]</span>
+<span class="sd">    &gt;&gt;&gt; q = estimate_q(eps)</span>
+<span class="sd">    &gt;&gt;&gt; print(q)</span>
+<span class="sd">    2.0</span>
+
+<span class="sd">    This indicates a quadratic convergence rate, as expected for the given sequence of errors</span>
+<span class="sd">    that halve at each step.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">eps</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
     <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">eps</span><span class="p">))))</span>
     <span class="n">line</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polyfit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># fit degree 1 polynomial</span>
@@ -284,23 +514,89 @@
 
 <div class="viewcode-block" id="compute_convergence">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.compute_convergence">[docs]</a>
-<span class="k">def</span> <span class="nf">compute_convergence</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">compute_convergence</span><span class="p">(</span><span class="n">seq</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the convergence rate of the last `i` elements in a sequence.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    seq : array-like</span>
+<span class="sd">        The sequence of numeric values for which the convergence rate is to be computed.</span>
+<span class="sd">    i : int</span>
+<span class="sd">        The number of elements from the end of `seq` to use for computing the convergence rate.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        The estimated rate of convergence over the last `i` elements of `seq`.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    AssertionError</span>
+<span class="sd">        If `i` is not less than or equal to the length of `seq` or if `i` is not greater than 0.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    This function wraps the `estimate_q` function to specifically evaluate the convergence rate</span>
+<span class="sd">    of a subsection of a given sequence. It modifies the sequence to fit the model of `estimate_q`</span>
+<span class="sd">    by dividing each element by its index (adjusted for Python&#39;s 0-indexing), which normalizes</span>
+<span class="sd">    the sequence in preparation for estimating the convergence rate.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; seq = np.array([1/2**n for n in range(10)])</span>
+<span class="sd">    &gt;&gt;&gt; compute_convergence(seq, 5)</span>
+<span class="sd">    2.0</span>
+
+<span class="sd">    Here, `compute_convergence` estimates the rate of convergence using the last 5 elements</span>
+<span class="sd">    of a sequence exhibiting quadratic convergence. The function should return a value close</span>
+<span class="sd">    to 2.0, indicating quadratic convergence.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span>
     <span class="k">return</span> <span class="n">estimate_q</span><span class="p">(</span><span class="n">seq</span><span class="p">[</span><span class="o">-</span><span class="n">i</span><span class="p">:]</span> <span class="o">/</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span></div>
-
 
 
 <div class="viewcode-block" id="ASWA">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.ASWA">[docs]</a>
 <span class="k">class</span> <span class="nc">ASWA</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; Adaptive stochastic weight averaging</span>
-<span class="sd">        ASWE keeps track of the validation performance and update s the ensemble model accordingly.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Implements the Adaptive Stochastic Weight Averaging (ASWA) technique.</span>
+<span class="sd">    This technique keeps track of validation performance and updates the ensemble model accordingly.</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_epochs</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">=</span><span class="n">path</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span><span class="o">=</span><span class="n">num_epochs</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    num_epochs : int</span>
+<span class="sd">        The total number of epochs to train the model.</span>
+<span class="sd">    path : str</span>
+<span class="sd">        Path where the model and intermediate results will be saved.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    initial_eval_setting : None or str</span>
+<span class="sd">        Initial evaluation setting, used to restore the original evaluation mode of the model after ASWA is applied.</span>
+<span class="sd">    alphas : list of float</span>
+<span class="sd">        Weights for each model state in the ensemble.</span>
+<span class="sd">    val_aswa : float</span>
+<span class="sd">        Validation performance (MRR) of the current ASWA model.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    on_fit_end(trainer, model) -&gt; None:</span>
+<span class="sd">        Applies the ASWA technique at the end of training.</span>
+<span class="sd">    compute_mrr(trainer, model) -&gt; float:</span>
+<span class="sd">        Computes the Mean Reciprocal Rank (MRR) on the validation dataset.</span>
+<span class="sd">    get_aswa_state_dict(model) -&gt; OrderedDict:</span>
+<span class="sd">        Retrieves the state dictionary for the ASWA model.</span>
+<span class="sd">    decide(running_model_state_dict, ensemble_state_dict, val_running_model, mrr_updated_ensemble_model) -&gt; None:</span>
+<span class="sd">        Decides whether to update ASWA based on validation performance.</span>
+<span class="sd">    on_train_epoch_end(trainer, model) -&gt; None:</span>
+<span class="sd">        Performs the ASWA update process at the end of each training epoch.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_epochs</span><span class="p">:</span><span class="nb">int</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">num_epochs</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">epoch_to_start</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">last_percent_to_consider</span><span class="o">=</span><span class="kc">None</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">initial_eval_setting</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">epoch_count</span><span class="o">=</span><span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">alphas</span> <span class="o">=</span> <span class="p">[]</span>
@@ -308,7 +604,17 @@
 
 <div class="viewcode-block" id="ASWA.on_fit_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.ASWA.on_fit_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">:</span> <span class="n">Trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called at the end of the fit process to apply the ASWA technique.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        trainer : Trainer</span>
+<span class="sd">            The PyTorch Lightning trainer instance.</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            The model being trained.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># super().on_fit_end(trainer, model)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_eval_setting</span><span class="p">:</span>
             <span class="c1"># ADD this info back</span>
@@ -321,16 +627,33 @@
 <div class="viewcode-block" id="ASWA.compute_mrr">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.ASWA.compute_mrr">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">compute_mrr</span><span class="p">(</span><span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">compute_mrr</span><span class="p">(</span><span class="n">trainer</span><span class="p">:</span> <span class="n">Trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Computes the Mean Reciprocal Rank (MRR) for the model on the validation dataset.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        trainer : Trainer</span>
+<span class="sd">            The PyTorch Lightning trainer instance.</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            The model for which MRR will be computed.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The MRR score of the model on the validation dataset.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># (2) Enable eval mode.</span>
         <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
         <span class="c1"># (3) MRR performance on the validation data of running model.</span>
         <span class="n">device_name</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">device</span>
         <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
-        <span class="n">last_val_mrr_running_model</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
-                                                            <span class="n">trained_model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
-                                                            <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">form_of_labelling</span><span class="p">,</span>
-                                                            <span class="n">during_training</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="s2">&quot;Val&quot;</span><span class="p">][</span><span class="s2">&quot;MRR&quot;</span><span class="p">]</span>
+        <span class="n">last_val_mrr_running_model</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span>
+            <span class="n">dataset</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
+            <span class="n">trained_model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+            <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">form_of_labelling</span><span class="p">,</span>
+            <span class="n">during_training</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)[</span><span class="s2">&quot;Val&quot;</span><span class="p">][</span><span class="s2">&quot;MRR&quot;</span><span class="p">]</span>
         <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device_name</span><span class="p">)</span>
         <span class="c1"># (4) Enable train mode.</span>
         <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
@@ -339,40 +662,71 @@
 
 <div class="viewcode-block" id="ASWA.get_aswa_state_dict">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.ASWA.get_aswa_state_dict">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_aswa_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_aswa_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OrderedDict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves the state dictionary for the ASWA model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            The current model from which the ASWA state will be derived.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        OrderedDict</span>
+<span class="sd">            The state dictionary of the ASWA model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># (2) Question: Soft update or Rejection?!</span>
-        <span class="n">ensemble_state_dict</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/aswa.pt&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">))</span>
+        <span class="n">ensemble_state_dict</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/aswa.pt&quot;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="p">)</span>
         <span class="c1"># Perform provision parameter update.</span>
         <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
             <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">parameters</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">parameters</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">:</span>
-                    <span class="n">ensemble_state_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ensemble_state_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alphas</span><span class="p">)</span> <span class="o">+</span> <span class="n">parameters</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alphas</span><span class="p">))</span>
+                    <span class="n">ensemble_state_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">ensemble_state_dict</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alphas</span><span class="p">)</span> <span class="o">+</span> <span class="n">parameters</span>
+                    <span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alphas</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">ensemble_state_dict</span></div>
 
 
 <div class="viewcode-block" id="ASWA.decide">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.ASWA.decide">[docs]</a>
-    <span class="k">def</span> <span class="nf">decide</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">running_model_state_dict</span><span class="p">,</span> <span class="n">ensemble_state_dict</span><span class="p">,</span> <span class="n">val_running_model</span><span class="p">,</span> <span class="n">mrr_updated_ensemble_model</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">decide</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">running_model_state_dict</span><span class="p">:</span> <span class="n">OrderedDict</span><span class="p">,</span>
+        <span class="n">ensemble_state_dict</span><span class="p">:</span> <span class="n">OrderedDict</span><span class="p">,</span>
+        <span class="n">val_running_model</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">mrr_updated_ensemble_model</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Perform Hard Update, software or rejection</span>
+<span class="sd">        Decides whether to update the ASWA model based on the validation performance.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        running_model_state_dict</span>
-<span class="sd">        ensemble_state_dict</span>
-<span class="sd">        val_running_model</span>
-<span class="sd">        mrr_updated_ensemble_model</span>
+<span class="sd">        running_model_state_dict : OrderedDict</span>
+<span class="sd">            The state dictionary of the current running model.</span>
+<span class="sd">        ensemble_state_dict : OrderedDict</span>
+<span class="sd">            The state dictionary of the current ASWA model.</span>
+<span class="sd">        val_running_model : float</span>
+<span class="sd">            The validation performance (MRR) of the running model.</span>
+<span class="sd">        mrr_updated_ensemble_model : float</span>
+<span class="sd">            The validation performance (MRR) of the updated ASWA model.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-
+<span class="sd">        bool</span>
+<span class="sd">            The boolean flag to determine the updation of the ASWA model.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># (1) HARD UPDATE:</span>
         <span class="c1"># If the validation performance of the running model is greater than</span>
         <span class="c1"># the validation performance of updated ASWA and</span>
         <span class="c1"># the validation performance of ASWA</span>
-        <span class="k">if</span> <span class="n">val_running_model</span> <span class="o">&gt;</span> <span class="n">mrr_updated_ensemble_model</span> <span class="ow">and</span> <span class="n">val_running_model</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">val_aswa</span><span class="p">:</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Hard Update &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">val_running_model</span> <span class="o">&gt;</span> <span class="n">mrr_updated_ensemble_model</span>
+            <span class="ow">and</span> <span class="n">val_running_model</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">val_aswa</span>
+        <span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Hard Update&quot;&quot;&quot;</span>
             <span class="c1"># (1.1) Save the running model as ASWA</span>
             <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">running_model_state_dict</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">/aswa.pt&quot;</span><span class="p">)</span>
             <span class="c1"># (2.1) Resect alphas/ensemble weights</span>
@@ -392,14 +746,24 @@
             <span class="k">return</span> <span class="kc">True</span>
         <span class="c1"># (3) Rejection:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">val_aswa</span> <span class="o">&gt;</span> <span class="n">mrr_updated_ensemble_model</span><span class="p">:</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot; Ignore &quot;&quot;&quot;</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Ignore&quot;&quot;&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">alphas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">True</span></div>
 
 
 <div class="viewcode-block" id="ASWA.on_train_epoch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.ASWA.on_train_epoch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">:</span> <span class="n">Trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called at the end of each training epoch to possibly update the ASWA model.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        trainer : Trainer</span>
+<span class="sd">            The PyTorch Lightning trainer instance.</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            The model being trained.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># (1) Increment epoch counter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">epoch_count</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="c1"># (2) Save the given eval setting if it is not saved.</span>
@@ -422,19 +786,52 @@
             <span class="n">ensemble</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">model</span><span class="p">)(</span><span class="n">model</span><span class="o">.</span><span class="n">args</span><span class="p">)</span>
             <span class="n">ensemble</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">ensemble_state_dict</span><span class="p">)</span>
             <span class="c1"># (7) Evaluate (6) on the validation data, i.e., perform the lookahead operation.</span>
-            <span class="n">mrr_updated_ensemble_model</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
-                                                                <span class="n">trained_model</span><span class="o">=</span><span class="n">ensemble</span><span class="p">,</span>
-                                                                <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">form_of_labelling</span><span class="p">,</span>
-                                                                <span class="n">during_training</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="s2">&quot;Val&quot;</span><span class="p">][</span><span class="s2">&quot;MRR&quot;</span><span class="p">]</span>
+            <span class="n">mrr_updated_ensemble_model</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span>
+                <span class="n">dataset</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
+                <span class="n">trained_model</span><span class="o">=</span><span class="n">ensemble</span><span class="p">,</span>
+                <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">form_of_labelling</span><span class="p">,</span>
+                <span class="n">during_training</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)[</span><span class="s2">&quot;Val&quot;</span><span class="p">][</span><span class="s2">&quot;MRR&quot;</span><span class="p">]</span>
             <span class="c1"># print(f&quot;| MRR Running {val_running_model:.4f} | MRR ASWA: {self.val_aswa:.4f} |ASWA|:{sum(self.alphas)}&quot;)</span>
             <span class="c1"># (8) Decide whether ASWA should be updated via the current running model.</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">decide</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">ensemble_state_dict</span><span class="p">,</span> <span class="n">val_running_model</span><span class="p">,</span> <span class="n">mrr_updated_ensemble_model</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">decide</span><span class="p">(</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
+                <span class="n">ensemble_state_dict</span><span class="p">,</span>
+                <span class="n">val_running_model</span><span class="p">,</span>
+                <span class="n">mrr_updated_ensemble_model</span><span class="p">,</span>
+            <span class="p">)</span></div>
 </div>
+
 
 
 <div class="viewcode-block" id="Eval">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.Eval">[docs]</a>
 <span class="k">class</span> <span class="nc">Eval</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Callback for evaluating the model at certain epochs during training and logging the results.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : str</span>
+<span class="sd">        Path where evaluation reports will be saved.</span>
+<span class="sd">    epoch_ratio : int, optional</span>
+<span class="sd">        Interval of epochs after which the evaluation will be performed. Default is 1, meaning evaluation after every epoch.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    reports : list of dict</span>
+<span class="sd">        List of evaluation reports generated after each evaluation.</span>
+<span class="sd">    epoch_counter : int</span>
+<span class="sd">        Counter for keeping track of the number of epochs passed.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    on_fit_end(trainer, model) -&gt; None:</span>
+<span class="sd">        Saves the evaluation reports to a file and optionally generates plots for training and validation MRR.</span>
+<span class="sd">    on_train_epoch_end(trainer, model) -&gt; None:</span>
+<span class="sd">        Evaluates the model if the current epoch matches the specified epoch ratio and appends the report to `reports`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">epoch_ratio</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
@@ -450,8 +847,21 @@
 
 <div class="viewcode-block" id="Eval.on_fit_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.Eval.on_fit_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="n">save_pickle</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reports</span><span class="p">,</span> <span class="n">file_path</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s1">&#39;/evals_per_epoch&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">on_fit_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">:</span> <span class="n">Trainer</span><span class="p">,</span> <span class="n">model</span> <span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called at the end of the fit process. Saves the collected evaluation reports to a file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        trainer : Trainer</span>
+<span class="sd">            The PyTorch Lightning trainer instance.</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            The model being trained.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">save_pickle</span><span class="p">(</span>
+            <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">reports</span><span class="p">,</span>
+            <span class="n">file_path</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">full_storage_path</span> <span class="o">+</span> <span class="s2">&quot;/evals_per_epoch&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7, 7))</span>
@@ -472,19 +882,43 @@
 
 <div class="viewcode-block" id="Eval.on_train_epoch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.Eval.on_train_epoch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">on_train_epoch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">:</span> <span class="n">Trainer</span><span class="p">,</span> <span class="n">model</span> <span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called at the end of each training epoch. Performs evaluation if the current epoch matches the epoch_ratio.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        trainer : Trainer</span>
+<span class="sd">            The PyTorch Lightning trainer instance.</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            The model being trained.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">epoch_counter</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">epoch_ratio</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
-            <span class="n">report</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span> <span class="n">trained_model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
-                                            <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">form_of_labelling</span><span class="p">,</span> <span class="n">during_training</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">report</span> <span class="o">=</span> <span class="n">trainer</span><span class="o">.</span><span class="n">evaluator</span><span class="o">.</span><span class="n">eval</span><span class="p">(</span>
+                <span class="n">dataset</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span>
+                <span class="n">trained_model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+                <span class="n">form_of_labelling</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">form_of_labelling</span><span class="p">,</span>
+                <span class="n">during_training</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
             <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">reports</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">report</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Eval.on_train_batch_end">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.Eval.on_train_batch_end">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_train_batch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">on_train_batch_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called at the end of each training batch. This method is not implemented in this callback.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        *args</span>
+<span class="sd">            Variable length argument list.</span>
+<span class="sd">        **kwargs</span>
+<span class="sd">            Arbitrary keyword arguments.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span></div>
 </div>
 
@@ -493,6 +927,19 @@
 <div class="viewcode-block" id="KronE">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.KronE">[docs]</a>
 <span class="k">class</span> <span class="nc">KronE</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Callback for augmenting triple representations with Kronecker product embeddings during training.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    batch_kronecker_product(a: torch.Tensor, b: torch.Tensor) -&gt; torch.Tensor:</span>
+<span class="sd">        Computes the Kronecker product of two tensors with batch dimensions.</span>
+<span class="sd">    get_kronecker_triple_representation(indexed_triple: torch.LongTensor) -&gt; Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:</span>
+<span class="sd">        Augments triple representations with Kronecker product embeddings.</span>
+<span class="sd">    on_fit_start(trainer, model) -&gt; None:</span>
+<span class="sd">        Overrides the model&#39;s method to get triple representations with a method that includes Kronecker product embeddings.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="kc">None</span>
@@ -500,13 +947,21 @@
 <div class="viewcode-block" id="KronE.batch_kronecker_product">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.KronE.batch_kronecker_product">[docs]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span> <span class="nf">batch_kronecker_product</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">batch_kronecker_product</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Kronecker product of matrices a and b with leading batch dimensions.</span>
-<span class="sd">        Batch dimensions are broadcast. The number of them mush</span>
-<span class="sd">        :type a: torch.Tensor</span>
-<span class="sd">        :type b: torch.Tensor</span>
-<span class="sd">        :rtype: torch.Tensor</span>
+<span class="sd">        Computes the Kronecker product of two tensors `a` and `b` with batch dimensions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        a : torch.Tensor</span>
+<span class="sd">            The first tensor with batch dimensions.</span>
+<span class="sd">        b : torch.Tensor</span>
+<span class="sd">            The second tensor with batch dimensions.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        torch.Tensor</span>
+<span class="sd">            The Kronecker product of `a` and `b`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">b</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
@@ -520,9 +975,21 @@
 
 <div class="viewcode-block" id="KronE.get_kronecker_triple_representation">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.KronE.get_kronecker_triple_representation">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_kronecker_triple_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indexed_triple</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_kronecker_triple_representation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">indexed_triple</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Get kronecker embeddings</span>
+<span class="sd">        Augments triple representations with Kronecker product embeddings.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        indexed_triple : torch.LongTensor</span>
+<span class="sd">            Indexed triple representations.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Tuple[torch.Tensor, torch.Tensor, torch.Tensor]</span>
+<span class="sd">            Augmented head entity, relation, and tail entity embeddings.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">indexed_triple</span><span class="o">.</span><span class="n">shape</span>
         <span class="k">assert</span> <span class="n">d</span> <span class="o">==</span> <span class="mi">3</span>
@@ -533,20 +1000,35 @@
         <span class="n">rel_ent_kron_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_kronecker_product</span><span class="p">(</span><span class="o">*</span><span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
         <span class="n">tail_ent_kron_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_kronecker_product</span><span class="p">(</span><span class="o">*</span><span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">tail_ent_emb</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
 
-        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">head_ent_kron_emb</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> \
-            <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_kron_emb</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> \
-            <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">tail_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_kron_emb</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">head_ent_kron_emb</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_kron_emb</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">tail_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_kron_emb</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="KronE.on_fit_start">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.KronE.on_fit_start">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">normalize_head_entity_embeddings</span><span class="p">,</span> <span class="n">dicee</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">base_model</span><span class="o">.</span><span class="n">IdentityClass</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">:</span> <span class="n">Trainer</span><span class="p">,</span> <span class="n">model</span> <span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Overrides the model&#39;s method to get triple representations with a method that includes Kronecker product embeddings.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        trainer : Trainer</span>
+<span class="sd">            The PyTorch Lightning trainer instance.</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            The model being trained.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">normalize_head_entity_embeddings</span><span class="p">,</span>
+            <span class="n">dicee</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">base_model</span><span class="o">.</span><span class="n">IdentityClass</span><span class="p">,</span>
+        <span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_triple_representation</span>
             <span class="n">model</span><span class="o">.</span><span class="n">get_triple_representation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_kronecker_triple_representation</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Normalizer should be reinitialized&#39;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Normalizer should be reinitialized&quot;</span><span class="p">)</span></div>
 </div>
 
 
@@ -554,25 +1036,37 @@
 <div class="viewcode-block" id="Perturb">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.Perturb">[docs]</a>
 <span class="k">class</span> <span class="nc">Perturb</span><span class="p">(</span><span class="n">AbstractCallback</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; A callback for a three-Level Perturbation</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Implements a three-level perturbation technique for knowledge graph embedding models during training.</span>
+<span class="sd">    The perturbations can be applied at the input, parameter, or output levels.</span>
 
-<span class="sd">    Input Perturbation: During training an input x is perturbed by randomly replacing its element.</span>
-<span class="sd">    In the context of knowledge graph embedding models, x can denote a triple, a tuple of an entity and a relation,</span>
-<span class="sd">    or a tuple of two entities.</span>
-<span class="sd">    A perturbation means that a component of x is randomly replaced by an entity or a relation.</span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    level : str</span>
+<span class="sd">        The perturbation level. Must be one of {&quot;input&quot;, &quot;param&quot;, &quot;out&quot;}.</span>
+<span class="sd">    ratio : float</span>
+<span class="sd">        The ratio of the mini-batch data points to be perturbed, between [0, 1].</span>
+<span class="sd">    method : str, optional</span>
+<span class="sd">        The method used for perturbation.</span>
+<span class="sd">    scaler : float, optional</span>
+<span class="sd">        The scaler factor used for perturbation.</span>
+<span class="sd">    frequency : int, optional</span>
+<span class="sd">        The frequency of perturbation, e.g., per epoch or per mini-batch.</span>
 
-<span class="sd">    Parameter Perturbation:</span>
-
-<span class="sd">    Output Perturbation:</span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    on_train_batch_start(trainer, model, batch, batch_idx):</span>
+<span class="sd">        Applies perturbation to the batch data points before the training batch starts.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;input&quot;</span><span class="p">,</span> <span class="n">ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">scaler</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-                 <span class="n">frequency</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        level in {input, param, output}</span>
-<span class="sd">        ratio:float btw [0,1] a percentage of mini-batch data point to be perturbed.</span>
-<span class="sd">        method = ?</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">level</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;input&quot;</span><span class="p">,</span>
+        <span class="n">ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">scaler</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">frequency</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="k">assert</span> <span class="n">level</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;input&quot;</span><span class="p">,</span> <span class="s2">&quot;param&quot;</span><span class="p">,</span> <span class="s2">&quot;out&quot;</span><span class="p">}</span>
@@ -585,7 +1079,25 @@
 
 <div class="viewcode-block" id="Perturb.on_train_batch_start">
 <a class="viewcode-back" href="../../autoapi/dicee/callbacks/index.html#dicee.callbacks.Perturb.on_train_batch_start">[docs]</a>
-    <span class="k">def</span> <span class="nf">on_train_batch_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">on_train_batch_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trainer</span><span class="p">:</span> <span class="n">Trainer</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">batch_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Applies perturbation to the batch data points before the training batch starts.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        trainer : Trainer</span>
+<span class="sd">            The PyTorch Lightning trainer instance.</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            The model being trained.</span>
+<span class="sd">        batch : torch.Tensor</span>
+<span class="sd">            The current mini-batch of data.</span>
+<span class="sd">        batch_idx : int</span>
+<span class="sd">            The index of the current batch.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Modifications should be in-place</span>
         <span class="c1"># (1) Extract the input and output data points in a given batch.</span>
         <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">batch</span>
@@ -607,19 +1119,28 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">==</span> <span class="s2">&quot;input&quot;</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.5</span><span class="p">:</span>
                 <span class="c1"># (5.1.1) Perturb input via heads: Sample random indices for heads.</span>
-                <span class="n">perturbation</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span>
-                                             <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">num_of_perturbed_data</span><span class="p">,),</span>
-                                             <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">perturbation</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span>
+                    <span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">high</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span>
+                    <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">num_of_perturbed_data</span><span class="p">,),</span>
+                    <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+                <span class="p">)</span>
                 <span class="c1"># Replace the head entities with (5.1.1) on given randomly selected data points in a mini-batch.</span>
-                <span class="n">x</span><span class="p">[</span><span class="n">random_indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">perturbation</span><span class="p">,</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">][</span><span class="n">random_indices</span><span class="p">]))</span>
+                <span class="n">x</span><span class="p">[</span><span class="n">random_indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">column_stack</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">perturbation</span><span class="p">,</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">][</span><span class="n">random_indices</span><span class="p">])</span>
+                <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># (5.1.2) Perturb input via relations : Sample random indices for relations.</span>
-                <span class="n">perturbation</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span>
-                                             <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">num_of_perturbed_data</span><span class="p">,),</span>
-                                             <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">perturbation</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span>
+                    <span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">high</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span>
+                    <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">num_of_perturbed_data</span><span class="p">,),</span>
+                    <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+                <span class="p">)</span>
                 <span class="c1"># Replace the relations with (5.1.2) on given randomly selected data points in a mini-batch.</span>
                 <span class="n">x</span><span class="p">[</span><span class="n">random_indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">column_stack</span><span class="p">(</span>
-                    <span class="p">(</span><span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">][</span><span class="n">random_indices</span><span class="p">],</span> <span class="n">perturbation</span><span class="p">))</span>
+                    <span class="p">(</span><span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">][</span><span class="n">random_indices</span><span class="p">],</span> <span class="n">perturbation</span><span class="p">)</span>
+                <span class="p">)</span>
         <span class="c1"># (5.2) Apply Parameter level perturbation.</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">==</span> <span class="s2">&quot;param&quot;</span><span class="p">:</span>
             <span class="n">h</span><span class="p">,</span> <span class="n">r</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
@@ -629,33 +1150,46 @@
                     <span class="c1"># (5.2.1.1) Apply Gaussian Perturbation on heads.</span>
                     <span class="n">h_selected</span> <span class="o">=</span> <span class="n">h</span><span class="p">[</span><span class="n">random_indices</span><span class="p">]</span>
                     <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
-                        <span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">[</span><span class="n">h_selected</span><span class="p">]</span> <span class="o">+=</span> <span class="n">torch</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="p">,</span>
-                                                                                   <span class="n">size</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">[</span>
-                                                                                       <span class="n">h_selected</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
-                                                                                   <span class="n">device</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                        <span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">[</span><span class="n">h_selected</span><span class="p">]</span> <span class="o">+=</span> <span class="n">torch</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span>
+                            <span class="n">mean</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                            <span class="n">std</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="p">,</span>
+                            <span class="n">size</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">[</span><span class="n">h_selected</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                            <span class="n">device</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                        <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># (5.2.1.2) Apply Gaussian Perturbation on relations.</span>
                     <span class="n">r_selected</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="n">random_indices</span><span class="p">]</span>
-                    <span class="k">with</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()):</span>
-                        <span class="n">model</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">[</span><span class="n">r_selected</span><span class="p">]</span> <span class="o">+=</span> <span class="n">torch</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="p">,</span>
-                                                                                     <span class="n">size</span><span class="o">=</span>
-                                                                                     <span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">[</span>
-                                                                                         <span class="n">r_selected</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
-                                                                                     <span class="n">device</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+                    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+                        <span class="n">model</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">[</span><span class="n">r_selected</span><span class="p">]</span> <span class="o">+=</span> <span class="n">torch</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span>
+                            <span class="n">mean</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                            <span class="n">std</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="p">,</span>
+                            <span class="n">size</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">[</span><span class="n">r_selected</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                            <span class="n">device</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                        <span class="p">)</span>
             <span class="c1"># (5.2.2) Apply Random Perturbation</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;RN&quot;</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">:</span>
                     <span class="c1"># (5.2.2.1) Apply Random Perturbation on heads.</span>
                     <span class="n">h_selected</span> <span class="o">=</span> <span class="n">h</span><span class="p">[</span><span class="n">random_indices</span><span class="p">]</span>
                     <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
-                        <span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">[</span><span class="n">h_selected</span><span class="p">]</span> <span class="o">+=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span>
-                            <span class="n">size</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">[</span><span class="n">h_selected</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span>
+                        <span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">[</span><span class="n">h_selected</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span>
+                            <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span>
+                                <span class="n">size</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">[</span><span class="n">h_selected</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                                <span class="n">device</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                            <span class="p">)</span>
+                            <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span>
+                        <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># (5.2.2.2) Apply Random Perturbation on relations.</span>
                     <span class="n">r_selected</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="n">random_indices</span><span class="p">]</span>
                     <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
-                        <span class="n">model</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">[</span><span class="n">r_selected</span><span class="p">]</span> <span class="o">+=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span>
-                            <span class="n">size</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">[</span><span class="n">r_selected</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span>
+                        <span class="n">model</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">[</span><span class="n">r_selected</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span>
+                            <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span>
+                                <span class="n">size</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">[</span><span class="n">r_selected</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+                                <span class="n">device</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+                            <span class="p">)</span>
+                            <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span>
+                        <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--method is given as </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="si">}</span><span class="s2">!&quot;</span><span class="p">)</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">==</span> <span class="s2">&quot;out&quot;</span><span class="p">:</span>
@@ -668,10 +1202,14 @@
                 <span class="c1"># 1.0 =&gt; 1.0 - perturb</span>
                 <span class="c1"># 0.0 =&gt; perturb</span>
                 <span class="c1"># (5.3.2) Reduces 1s and increases 0s via (5.2.1)</span>
-                <span class="n">batch</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">random_indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">random_indices</span><span class="p">]</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">perturb</span><span class="p">,</span> <span class="n">perturb</span><span class="p">)</span>
+                <span class="n">batch</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">random_indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+                    <span class="n">batch</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">random_indices</span><span class="p">]</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">perturb</span><span class="p">,</span> <span class="n">perturb</span>
+                <span class="p">)</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;Hard&quot;</span><span class="p">:</span>
                 <span class="c1"># (5.3) Output level hard perturbation flips 1s to 0 and 0s to 1s.</span>
-                <span class="n">batch</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">random_indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">batch</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">random_indices</span><span class="p">]</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+                <span class="n">batch</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">random_indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+                    <span class="n">batch</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">random_indices</span><span class="p">]</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span>
+                <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>

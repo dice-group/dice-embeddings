@@ -96,7 +96,25 @@
 <div class="viewcode-block" id="ReadFromDisk">
 <a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/read_from_disk/index.html#dicee.read_preprocess_save_load_kg.ReadFromDisk">[docs]</a>
 <span class="k">class</span> <span class="nc">ReadFromDisk</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read the data from disk into memory&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Read the data from disk into memory.</span>
+
+<span class="sd">    This class is responsible for loading a knowledge graph from various sources such as</span>
+<span class="sd">    disk files, triple stores, or SPARQL endpoints, and then making it available in memory</span>
+<span class="sd">    for further processing.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    kg : object</span>
+<span class="sd">        An instance representing the knowledge graph.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    start() -&gt; None</span>
+<span class="sd">        Read a knowledge graph from disk into memory.</span>
+<span class="sd">    add_noisy_triples_into_training() -&gt; None</span>
+<span class="sd">        Add noisy triples into the training set of the knowledge graph.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kg</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kg</span> <span class="o">=</span> <span class="n">kg</span>
@@ -105,65 +123,117 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/read_from_disk/index.html#dicee.read_preprocess_save_load_kg.ReadFromDisk.start">[docs]</a>
     <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Read a knowledge graph from disk into memory</span>
+<span class="sd">        Read a knowledge graph from disk into memory.</span>
 
-<span class="sd">        Data will be available at the train_set, test_set, valid_set attributes.</span>
+<span class="sd">        This method reads the knowledge graph data from the specified source (disk, triple store,</span>
+<span class="sd">        or SPARQL endpoint) and loads it into memory. The data is made available in the</span>
+<span class="sd">        train_set, test_set, and valid_set attributes of the knowledge graph instance.</span>
 
-<span class="sd">        Parameter</span>
-<span class="sd">        ---------</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
 <span class="sd">        None</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        None</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        RuntimeError</span>
+<span class="sd">            If the data source is invalid or not specified correctly.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span> <span class="o">=</span> <span class="n">read_from_disk</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">path_single_kg</span><span class="p">,</span>
-                                                   <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">read_only_few</span><span class="p">,</span>
-                                                   <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">sample_triples_ratio</span><span class="p">,</span>
-                                                   <span class="n">backend</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">backend</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span> <span class="o">=</span> <span class="n">read_from_disk</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">path_single_kg</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">read_only_few</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">sample_triples_ratio</span><span class="p">,</span>
+                <span class="n">backend</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">backend</span><span class="p">,</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">add_noise_rate</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">add_noisy_triples_into_training</span><span class="p">()</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">sparql_endpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span> <span class="o">=</span> <span class="n">read_from_triple_store</span><span class="p">(</span><span class="n">endpoint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">sparql_endpoint</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span> <span class="o">=</span> <span class="n">read_from_triple_store</span><span class="p">(</span>
+                <span class="n">endpoint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">sparql_endpoint</span>
+            <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">dataset_dir</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">dataset_dir</span> <span class="o">+</span> <span class="s1">&#39;/*&#39;</span><span class="p">):</span>
-                <span class="k">if</span> <span class="s1">&#39;train&#39;</span> <span class="ow">in</span> <span class="n">i</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span> <span class="o">=</span> <span class="n">read_from_disk</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">read_only_few</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">sample_triples_ratio</span><span class="p">,</span>
-                                                           <span class="n">backend</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">backend</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">dataset_dir</span> <span class="o">+</span> <span class="s2">&quot;/*&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="s2">&quot;train&quot;</span> <span class="ow">in</span> <span class="n">i</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span> <span class="o">=</span> <span class="n">read_from_disk</span><span class="p">(</span>
+                        <span class="n">i</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">read_only_few</span><span class="p">,</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">sample_triples_ratio</span><span class="p">,</span>
+                        <span class="n">backend</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">backend</span><span class="p">,</span>
+                    <span class="p">)</span>
                     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">add_noise_rate</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">add_noisy_triples_into_training</span><span class="p">()</span>
-                <span class="k">elif</span> <span class="s1">&#39;test&#39;</span> <span class="ow">in</span> <span class="n">i</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">eval_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">elif</span> <span class="s2">&quot;test&quot;</span> <span class="ow">in</span> <span class="n">i</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">eval_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_test_set</span> <span class="o">=</span> <span class="n">read_from_disk</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">backend</span><span class="p">)</span>
-                <span class="k">elif</span> <span class="s1">&#39;valid&#39;</span> <span class="ow">in</span> <span class="n">i</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">eval_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">elif</span> <span class="s2">&quot;valid&quot;</span> <span class="ow">in</span> <span class="n">i</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">eval_model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_valid_set</span> <span class="o">=</span> <span class="n">read_from_disk</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">backend</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Not processed data: </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Not processed data: </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid data:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">data_dir</span><span class="si">}</span><span class="se">\t</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">sparql_endpoint</span><span class="si">}</span><span class="se">\t</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">path_single_kg</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Invalid data:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">data_dir</span><span class="si">}</span><span class="se">\t</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">sparql_endpoint</span><span class="si">}</span><span class="se">\t</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">path_single_kg</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ReadFromDisk.add_noisy_triples_into_training">
 <a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/read_from_disk/index.html#dicee.read_preprocess_save_load_kg.ReadFromDisk.add_noisy_triples_into_training">[docs]</a>
-    <span class="k">def</span> <span class="nf">add_noisy_triples_into_training</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">add_noisy_triples_into_training</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add noisy triples into the training set of the knowledge graph.</span>
+
+<span class="sd">        This method injects a specified proportion of noisy triples into the training set.</span>
+<span class="sd">        Noisy triples are randomly generated by shuffling the entities and relations in the</span>
+<span class="sd">        knowledge graph. The purpose of adding noisy triples is often to test the robustness</span>
+<span class="sd">        of the model or to augment the training data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        The number of noisy triples added is determined by the &#39;add_noise_rate&#39; attribute</span>
+<span class="sd">        of the knowledge graph. The method ensures that the total number of triples (original</span>
+<span class="sd">        plus noisy) in the training set matches the expected count after adding the noisy triples.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">num_noisy_triples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">add_noise_rate</span><span class="p">)</span>
         <span class="n">s</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">)</span>
-        <span class="n">list_of_entities</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">[[</span><span class="s1">&#39;subject&#39;</span><span class="p">,</span> <span class="s1">&#39;object&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="s1">&#39;K&#39;</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">,</span>
-                                       <span class="c1"># Noisy triples</span>
-                                       <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
-                                           <span class="p">{</span><span class="s1">&#39;subject&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">list_of_entities</span><span class="p">,</span> <span class="n">num_noisy_triples</span><span class="p">),</span>
-                                            <span class="s1">&#39;relation&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
-                                                <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">[[</span><span class="s1">&#39;relation&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="s1">&#39;K&#39;</span><span class="p">)),</span>
-                                                <span class="n">num_noisy_triples</span><span class="p">),</span>
-                                            <span class="s1">&#39;object&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">list_of_entities</span><span class="p">,</span> <span class="n">num_noisy_triples</span><span class="p">)}</span>
-                                       <span class="p">)</span>
-                                       <span class="p">],</span> <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">list_of_entities</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">[[</span><span class="s2">&quot;subject&quot;</span><span class="p">,</span> <span class="s2">&quot;object&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="s2">&quot;K&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">,</span>
+                <span class="c1"># Noisy triples</span>
+                <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;subject&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+                            <span class="n">list_of_entities</span><span class="p">,</span> <span class="n">num_noisy_triples</span>
+                        <span class="p">),</span>
+                        <span class="s2">&quot;relation&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+                            <span class="n">pd</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">[[</span><span class="s2">&quot;relation&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">(</span><span class="s2">&quot;K&quot;</span><span class="p">)</span>
+                            <span class="p">),</span>
+                            <span class="n">num_noisy_triples</span><span class="p">,</span>
+                        <span class="p">),</span>
+                        <span class="s2">&quot;object&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">list_of_entities</span><span class="p">,</span> <span class="n">num_noisy_triples</span><span class="p">),</span>
+                    <span class="p">}</span>
+                <span class="p">),</span>
+            <span class="p">],</span>
+            <span class="n">ignore_index</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="k">assert</span> <span class="n">s</span> <span class="o">+</span> <span class="n">num_noisy_triples</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">)</span></div>
 </div>

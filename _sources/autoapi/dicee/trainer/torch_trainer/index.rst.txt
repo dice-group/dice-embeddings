@@ -22,49 +22,104 @@ Classes
 
    Bases: :py:obj:`dicee.abstracts.AbstractTrainer`
 
-    TorchTrainer for using single GPU or multi CPUs on a single node
+   A trainer class for PyTorch models that supports training on a single GPU or multiple CPUs.
 
-    Arguments
-   ----------
-   args: ?
+   :param args: Configuration arguments for training, including model hyperparameters and training options.
+   :type args: dict
+   :param callbacks: List of callback functions to be called at various points of the training process.
+   :type callbacks: List[Callable]
 
-   callbacks: list of Abstract callback instances
+   .. attribute:: loss_function
+
+      The loss function used for training.
+
+      :type: Callable
+
+   .. attribute:: optimizer
+
+      The optimizer used for training.
+
+      :type: torch.optim.Optimizer
+
+   .. attribute:: model
+
+      The PyTorch model being trained.
+
+      :type: torch.nn.Module
+
+   .. attribute:: train_dataloaders
+
+      torch.utils.data.DataLoader providing access to the training data.
+
+      :type: torch.utils.data.DataLoader
+
+   .. attribute:: training_step
+
+      The training step function defining the forward pass and loss computation.
+
+      :type: Callable
+
+   .. attribute:: device
+
+      The device (CPU or GPU) on which training is performed.
+
+      :type: torch.device
+
+   .. method:: _run_batch(i: int, x_batch: torch.Tensor, y_batch: torch.Tensor) -> float:
+
+      Executes a training step for a single batch and returns the loss value.
+
+   .. method:: _run_epoch(epoch: int) -> float:
+
+      Executes training for one epoch and returns the average loss.
+
+   .. method:: fit(*args, train_dataloaders: torch.utils.data.DataLoader, \*\*kwargs) -> None:
+
+      Starts the training process for the given model and data.
+
+   .. method:: forward_backward_update(x_batch: torch.Tensor, y_batch: torch.Tensor) -> float:
+
+      Performs the forward pass, computes the loss, and updates model weights.
+
+   .. method:: extract_input_outputs_set_device(batch: list) -> Tuple[torch.Tensor, torch.Tensor]:
+
+      Prepares and moves batch data to the appropriate device.
 
 
-   .. py:method:: fit(*args, train_dataloaders, **kwargs) -> None
+   .. py:method:: fit(*args, train_dataloaders: torch.utils.data.DataLoader, **kwargs) -> None
 
-       Training starts
+      Starts the training process for the given model and training data.
 
-       Arguments
-      ----------
-      args:tuple
-      (BASEKGE,)
-      kwargs:Tuple
-          empty dictionary
-      :rtype: batch loss (float)
+      :param model: The model to be trained.
+      :type model: torch.nn.Module
+      :param train_dataloaders: A DataLoader instance providing access to the training data.
+      :type train_dataloaders: torch.utils.data.DataLoader
 
 
-   .. py:method:: forward_backward_update(x_batch: torch.Tensor, y_batch: torch.Tensor) -> torch.Tensor
+   .. py:method:: forward_backward_update(x_batch: torch.Tensor, y_batch: torch.Tensor) -> float
 
-       Compute forward, loss, backward, and parameter update
+      Performs the forward pass, computes the loss, performs the backward pass to compute gradients,
+      and updates the model weights.
 
-       Arguments
-      ----------
-      x_batch:(torch.Tensor) mini-batch inputs
-      y_batch:(torch.Tensor) mini-batch outputs
+      :param x_batch: The batch of input features.
+      :type x_batch: torch.Tensor
+      :param y_batch: The batch of target outputs.
+      :type y_batch: torch.Tensor
 
-      :rtype: batch loss (float)
+      :returns: The loss value computed for the batch.
+      :rtype: float
 
 
-   .. py:method:: extract_input_outputs_set_device(batch: list) -> Tuple
+   .. py:method:: extract_input_outputs_set_device(batch: list) -> Tuple[torch.Tensor, torch.Tensor]
 
-       Construct inputs and outputs from a batch of inputs with outputs From a batch of inputs and put
+      Prepares a batch by extracting inputs and outputs and moving them to the correct device.
 
-       Arguments
-      ----------
-      batch: (list) mini-batch inputs on CPU
+      :param batch: A list containing inputs and outputs for the batch.
+      :type batch: list
 
-      :rtype: (tuple) mini-batch on select device
+      :returns: A tuple containing the batch of input features and target outputs,
+                both moved to the appropriate device.
+      :rtype: Tuple[torch.Tensor, torch.Tensor]
 
 
 

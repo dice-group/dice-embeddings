@@ -28,64 +28,162 @@ Functions
 
 
 
-.. py:function:: octonion_mul(*, O_1, O_2)
+.. py:function:: octonion_mul(*, O_1: Tuple[float, float, float, float, float, float, float, float], O_2: Tuple[float, float, float, float, float, float, float, float]) -> Tuple[float, float, float, float, float, float, float, float]
+
+   Performs the multiplication of two octonions.
+
+   Octonions are an extension of quaternions and are represented here as 8-tuples of floats.
+   This function computes the product of two octonions using their components.
+
+   :param O_1: The first octonion, represented as an 8-tuple of float components.
+   :type O_1: Tuple[float, float, float, float, float, float, float, float]
+   :param O_2: The second octonion, represented as an 8-tuple of float components.
+   :type O_2: Tuple[float, float, float, float, float, float, float, float]
+
+   :returns: The product of the two octonions, represented as an 8-tuple of float components.
+   :rtype: Tuple[float, float, float, float, float, float, float, float]
 
 
-.. py:function:: octonion_mul_norm(*, O_1, O_2)
+.. py:function:: octonion_mul_norm(*, O_1: Tuple[float, float, float, float, float, float, float, float], O_2: Tuple[float, float, float, float, float, float, float, float]) -> Tuple[float, float, float, float, float, float, float, float]
+
+   Performs the normalized multiplication of two octonions.
+
+   This function first normalizes the second octonion to unit length to eliminate
+   the scaling effect and then computes the product of two octonions using their components.
+
+   :param O_1: The first octonion, represented as an 8-tuple of float components.
+   :type O_1: Tuple[float, float, float, float, float, float, float, float]
+   :param O_2: The second octonion, represented as an 8-tuple of float components.
+   :type O_2: Tuple[float, float, float, float, float, float, float, float]
+
+   :returns: The product of the two octonions, represented as an 8-tuple of float components.
+   :rtype: Tuple[float, float, float, float, float, float, float, float]
+
+   .. rubric:: Notes
+
+   Normalization may cause NaNs due to floating-point precision issues, especially
+   if the second octonion's magnitude is very small.
 
 
-.. py:class:: OMult(args)
+.. py:class:: OMult(args: dict)
 
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   Base class for all neural network modules.
+   OMult extends the base knowledge graph embedding model by integrating octonion
+   algebra. This model leverages the properties of octonions to represent and process
+   the embeddings of entities and relations in a knowledge graph, aiming to capture
+   complex interactions and patterns.
 
-   Your models should also subclass this class.
+   :param args: A dictionary of arguments containing hyperparameters and settings for the model,
+                such as embedding dimensions and learning rate.
+   :type args: dict
 
-   Modules can also contain other Modules, allowing to nest them in
-   a tree structure. You can assign the submodules as regular attributes::
+   .. attribute:: name
 
-       import torch.nn as nn
-       import torch.nn.functional as F
+      The name identifier for the OMult model.
 
-       class Model(nn.Module):
-           def __init__(self):
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
+      :type: str
 
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
+   .. method:: octonion_normalizer(emb_rel_e0: torch.Tensor, emb_rel_e1: torch.Tensor, ..., emb_rel_e7: torch.Tensor) -> Tuple[torch.Tensor, ...]
 
-   Submodules assigned in this way will be registered, and will have their
-   parameters converted too when you call :meth:`to`, etc.
+      Normalizes octonion components to unit length.
 
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
 
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   .. method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor) -> torch.FloatTensor
 
-   .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
+      Computes the score of a triple using octonion multiplication.
+
+
+   .. method:: k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E) -> torch.FloatTensor
+
+      Computes scores in a K-vs-All setting using octonion embeddings.
+
+
+   .. method:: forward_k_vs_all(x) -> torch.FloatTensor
+
+      Performs a forward pass for K-vs-All scoring, returning scores for all entities.
+
+
+   .. py:method:: octonion_normalizer(emb_rel_e0: torch.Tensor, emb_rel_e1: torch.Tensor, emb_rel_e2: torch.Tensor, emb_rel_e3: torch.Tensor, emb_rel_e4: torch.Tensor, emb_rel_e5: torch.Tensor, emb_rel_e6: torch.Tensor, emb_rel_e7: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
       :staticmethod:
 
+      Normalizes the components of an octonion.
 
-   .. py:method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor)
+      Each component of the octonion is divided by the square root of the sum of
+      the squares of all components, normalizing it to unit length.
+
+      :param emb_rel_e0: The eight components of an octonion.
+      :type emb_rel_e0: torch.Tensor
+      :param emb_rel_e1: The eight components of an octonion.
+      :type emb_rel_e1: torch.Tensor
+      :param ...: The eight components of an octonion.
+      :type ...: torch.Tensor
+      :param emb_rel_e7: The eight components of an octonion.
+      :type emb_rel_e7: torch.Tensor
+
+      :returns: The normalized components of the octonion.
+      :rtype: Tuple[torch.Tensor, ...]
 
 
-   .. py:method:: k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
+   .. py:method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor) -> torch.FloatTensor
+
+      Computes the score of a triple using octonion multiplication.
+
+      The method involves splitting the embeddings into real and imaginary parts,
+      normalizing the relation embeddings, performing octonion multiplication,
+      and then calculating the score based on the inner product.
+
+      :param head_ent_emb: Embedding of the head entity.
+      :type head_ent_emb: torch.FloatTensor
+      :param rel_ent_emb: Embedding of the relation.
+      :type rel_ent_emb: torch.FloatTensor
+      :param tail_ent_emb: Embedding of the tail entity.
+      :type tail_ent_emb: torch.FloatTensor
+
+      :returns: The score of the triple.
+      :rtype: torch.FloatTensor
+
+
+   .. py:method:: k_vs_all_score(bpe_head_ent_emb: torch.FloatTensor, bpe_rel_ent_emb: torch.FloatTensor, E: torch.FloatTensor) -> torch.FloatTensor
+
+      Computes scores in a K-vs-All setting using octonion embeddings for a batch of head entities and relations.
+
+      This method splits the head entity and relation embeddings into their octonion components, normalizes
+      the relation embeddings if necessary, and then applies octonion multiplication. It computes the score
+      by performing an inner product with all tail entity embeddings.
+
+      :param bpe_head_ent_emb: Batched embeddings of head entities, each represented as an octonion.
+      :type bpe_head_ent_emb: torch.FloatTensor
+      :param bpe_rel_ent_emb: Batched embeddings of relations, each represented as an octonion.
+      :type bpe_rel_ent_emb: torch.FloatTensor
+      :param E: Embeddings of all possible tail entities.
+      :type E: torch.FloatTensor
+
+      :returns: Scores for all possible triples formed with the given head entities and relations against all entities.
+                The shape of the output is (size of batch, number of entities).
+      :rtype: torch.FloatTensor
+
+      .. rubric:: Notes
+
+      The method is particularly useful in scenarios like link prediction, where the goal is to rank all possible
+      tail entities for a given head entity and relation.
 
 
    .. py:method:: forward_k_vs_all(x)
 
-      Completed.
-      Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,
-      [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
-      Given a batch of head entities and relations => shape (size of batch,| Entities|)
+      Performs a forward pass for K-vs-All scoring.
+
+      TODO: Add mathematical format for sphinx.
+
+      Given a head entity and a relation (h,r), this method computes scores for all
+      possible triples, i.e., [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|), returning a score for each entity in the knowledge graph.
+
+      :param x: Tensor containing indices for head entities and relations.
+      :type x: Tensor
+
+      :returns: Scores for all triples formed with the given head entities and relations against all entities.
+      :rtype: torch.FloatTensor
 
 
 
@@ -94,54 +192,156 @@ Functions
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   Base class for all neural network modules.
+   ConvO extends the base knowledge graph embedding model by integrating convolutional
+   operations with octonion algebra. This model applies convolutional neural networks
+   to octonion-based embeddings, capturing complex interactions in knowledge graphs.
 
-   Your models should also subclass this class.
+   :param args: A dictionary of arguments containing hyperparameters and settings for the model,
+                such as embedding dimensions, number of output channels, kernel size, and dropout rates.
+   :type args: dict
 
-   Modules can also contain other Modules, allowing to nest them in
-   a tree structure. You can assign the submodules as regular attributes::
+   .. attribute:: name
 
-       import torch.nn as nn
-       import torch.nn.functional as F
+      The name identifier for the ConvO model.
 
-       class Model(nn.Module):
-           def __init__(self):
-               super().__init__()
-               self.conv1 = nn.Conv2d(1, 20, 5)
-               self.conv2 = nn.Conv2d(20, 20, 5)
+      :type: str
 
-           def forward(self, x):
-               x = F.relu(self.conv1(x))
-               return F.relu(self.conv2(x))
+   .. attribute:: conv2d
 
-   Submodules assigned in this way will be registered, and will have their
-   parameters converted too when you call :meth:`to`, etc.
+      A 2D convolutional layer used for processing octonion-based embeddings.
 
-   .. note::
-       As per the example above, an ``__init__()`` call to the parent class
-       must be made before assignment on the child.
+      :type: torch.nn.Conv2d
 
-   :ivar training: Boolean represents whether this module is in training or
-                   evaluation mode.
-   :vartype training: bool
+   .. attribute:: fc_num_input
 
-   .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
+      The number of input features for the fully connected layer.
+
+      :type: int
+
+   .. attribute:: fc1
+
+      A fully connected linear layer for compressing the output of the convolutional layer.
+
+      :type: torch.nn.Linear
+
+   .. attribute:: bn_conv2d
+
+      Batch normalization layer applied after the convolutional operation.
+
+      :type: torch.nn.BatchNorm2d
+
+   .. attribute:: norm_fc1
+
+      Normalization layer applied after the fully connected layer.
+
+      :type: Normalizer
+
+   .. attribute:: feature_map_dropout
+
+      Dropout layer applied to the output of the convolutional layer.
+
+      :type: torch.nn.Dropout2d
+
+   .. method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, ..., emb_rel_e7)
+
+      Normalizes octonion components to unit length.
+
+
+   .. method:: residual_convolution(O_1, O_2)
+
+      Performs a residual convolution operation on two octonion embeddings.
+
+
+   .. method:: forward_triples(x: torch.Tensor) -> torch.Tensor
+
+      Computes scores for a batch of triples using convolutional operations.
+
+
+   .. method:: forward_k_vs_all(x: torch.Tensor)
+
+      Computes scores against a sampled subset of entities using convolutional operations.
+
+
+   .. rubric:: Notes
+
+   ConvO aims to enhance the modeling capabilities of knowledge graph embeddings by
+   adding more complex interaction patterns through convolutional layers, potentially
+   improving performance on tasks like link prediction.
+
+   .. py:method:: octonion_normalizer(emb_rel_e0: torch.Tensor, emb_rel_e1: torch.Tensor, emb_rel_e2: torch.Tensor, emb_rel_e3: torch.Tensor, emb_rel_e4: torch.Tensor, emb_rel_e5: torch.Tensor, emb_rel_e6: torch.Tensor, emb_rel_e7: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
       :staticmethod:
 
+      Normalizes the components of an octonion to unit length.
 
-   .. py:method:: residual_convolution(O_1, O_2)
+      Each component of the octonion is divided by the square root of the sum of
+      the squares of all components.
+
+      :param emb_rel_e0: The eight components of an octonion.
+      :type emb_rel_e0: torch.Tensor
+      :param emb_rel_e1: The eight components of an octonion.
+      :type emb_rel_e1: torch.Tensor
+      :param ...: The eight components of an octonion.
+      :type ...: torch.Tensor
+      :param emb_rel_e7: The eight components of an octonion.
+      :type emb_rel_e7: torch.Tensor
+
+      :returns: The normalized components of the octonion.
+      :rtype: Tuple[torch.Tensor, ...]
+
+
+   .. py:method:: residual_convolution(O_1: Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor], O_2: Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
+
+      Performs a residual convolution operation on two sets of octonion embeddings.
+
+      The method combines two octonion embeddings and applies a convolutional operation
+      followed by batch normalization, dropout, and a fully connected layer.
+
+      :param O_1: The first set of octonion embeddings.
+      :type O_1: Tuple[torch.Tensor, ...]
+      :param O_2: The second set of octonion embeddings.
+      :type O_2: Tuple[torch.Tensor, ...]
+
+      :returns: The resulting octonion embeddings after the convolutional operation.
+      :rtype: Tuple[torch.Tensor, ...]
 
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.Tensor
 
-      :param x:
+      Computes scores for a batch of triples using convolutional operations.
+
+      The method processes head, relation, and tail embeddings using convolutional
+      layers and computes the scores of the triples.
+
+      :param x: Tensor containing indices for head entities, relations, and tail entities.
+      :type x: torch.Tensor
+
+      :returns: Scores for the given batch of triples.
+      :rtype: torch.Tensor
 
 
-   .. py:method:: forward_k_vs_all(x: torch.Tensor)
+   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.Tensor
 
-      Given a head entity and a relation (h,r), we compute scores for all entities.
+      Given a batch of head entities and relations (h,r), this method computes scores for all entities.
       [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
       Given a batch of head entities and relations => shape (size of batch,| Entities|)
+
+      :param x: A tensor representing a batch of input triples in the form of (head entities, relations).
+      :type x: torch.Tensor
+
+      :returns: Scores for the input triples against all possible tail entities.
+      :rtype: torch.Tensor
+
+      .. rubric:: Notes
+
+      - The input `x` is a tensor of shape (batch_size, 2), where each row represents a pair of head entities and relations.
+      - The method follows the following steps:
+          (1) Retrieve embeddings & Apply Dropout & Normalization.
+          (2) Split the embeddings into real and imaginary parts.
+          (3) Apply convolution operation on the real and imaginary parts.
+          (4) Perform quaternion multiplication.
+          (5) Compute scores for all entities.
+
+      The method returns a tensor of shape (batch_size, num_entities) where each row contains scores for each entity in the knowledge graph.
 
 
 
@@ -150,25 +350,150 @@ Functions
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   Additive Convolutional Octonion Knowledge Graph Embeddings
+   Additive Convolutional Octonion(AConvO) extends the base knowledge graph embedding model by integrating additive convolutional
+   operations with octonion algebra. This model applies convolutional neural networks to octonion-based
+   embeddings, capturing complex interactions in knowledge graphs.
 
-   .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
+   :param args: A dictionary of arguments containing hyperparameters and settings for the model,
+                such as embedding dimensions, number of output channels, kernel size, and dropout rates.
+   :type args: dict
+
+   .. attribute:: name
+
+      The name identifier for the AConvO model.
+
+      :type: str
+
+   .. attribute:: conv2d
+
+      A 2D convolutional layer used for processing octonion-based embeddings.
+
+      :type: torch.nn.Conv2d
+
+   .. attribute:: fc_num_input
+
+      The number of input features for the fully connected layer.
+
+      :type: int
+
+   .. attribute:: fc1
+
+      A fully connected linear layer for compressing the output of the convolutional layer.
+
+      :type: torch.nn.Linear
+
+   .. attribute:: bn_conv2d
+
+      Batch normalization layer applied after the convolutional operation.
+
+      :type: torch.nn.BatchNorm2d
+
+   .. attribute:: norm_fc1
+
+      Normalization layer applied after the fully connected layer.
+
+      :type: Normalizer
+
+   .. attribute:: feature_map_dropout
+
+      Dropout layer applied to the output of the convolutional layer.
+
+      :type: torch.nn.Dropout2d
+
+   .. method:: octonion_normalizer(emb_rel_e0: torch.Tensor, emb_rel_e1: torch.Tensor, ..., emb_rel_e7: torch.Tensor) -> Tuple[torch.Tensor, ...]
+
+      Normalizes octonion components to unit length.
+
+
+   .. method:: residual_convolution(self, O_1: Tuple[torch.Tensor, ...], O_2: Tuple[torch.Tensor, ...]) -> Tuple[torch.Tensor, ...]
+
+      Performs a residual convolution operation on two octonion embeddings.
+
+
+   .. method:: forward_triples(x: torch.Tensor) -> torch.Tensor
+
+      Computes scores for a batch of triples using convolutional operations.
+
+
+   .. method:: forward_k_vs_all(x: torch.Tensor)
+
+      Computes scores against a sampled subset of entities using convolutional operations.
+
+
+   .. rubric:: Notes
+
+   AConvO aims to enhance the modeling capabilities of knowledge graph embeddings by
+   adding more complex interaction patterns through convolutional layers, potentially
+   improving performance on tasks like link prediction.
+
+   .. py:method:: octonion_normalizer(emb_rel_e0: torch.Tensor, emb_rel_e1: torch.Tensor, emb_rel_e2: torch.Tensor, emb_rel_e3: torch.Tensor, emb_rel_e4: torch.Tensor, emb_rel_e5: torch.Tensor, emb_rel_e6: torch.Tensor, emb_rel_e7: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
       :staticmethod:
 
+      Normalizes the components of an octonion to unit length.
 
-   .. py:method:: residual_convolution(O_1, O_2)
+      Each component of the octonion is divided by the square root of the sum of
+      the squares of all components.
+
+      :param emb_rel_e0: The eight components of an octonion.
+      :type emb_rel_e0: torch.Tensor
+      :param emb_rel_e1: The eight components of an octonion.
+      :type emb_rel_e1: torch.Tensor
+      :param ...: The eight components of an octonion.
+      :type ...: torch.Tensor
+      :param emb_rel_e7: The eight components of an octonion.
+      :type emb_rel_e7: torch.Tensor
+
+      :returns: The normalized components of the octonion.
+      :rtype: Tuple[torch.Tensor, ...]
+
+
+   .. py:method:: residual_convolution(O_1: Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor], O_2: Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
+
+      Performs a residual convolution operation on two sets of octonion embeddings.
+
+      The method combines two octonion embeddings and applies a convolutional operation
+      followed by batch normalization, dropout, and a fully connected layer.
+
+      :param O_1: The first set of octonion embeddings.
+      :type O_1: Tuple[torch.Tensor, ...]
+      :param O_2: The second set of octonion embeddings.
+      :type O_2: Tuple[torch.Tensor, ...]
+
+      :returns: The resulting octonion embeddings after the convolutional operation.
+      :rtype: Tuple[torch.Tensor, ...]
 
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.Tensor
 
-      :param x:
+      Computes scores for a batch of triples using convolutional operations.
+
+      The method processes head, relation, and tail embeddings using convolutional
+      layers and computes the scores of the triples.
+
+      :param x: Tensor containing indices for head entities, relations, and tail entities.
+      :type x: torch.Tensor
+
+      :returns: Scores for the given batch of triples.
+      :rtype: torch.Tensor
 
 
-   .. py:method:: forward_k_vs_all(x: torch.Tensor)
+   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.Tensor
 
-      Given a head entity and a relation (h,r), we compute scores for all entities.
-      [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
-      Given a batch of head entities and relations => shape (size of batch,| Entities|)
+      Compute scores for a head entity and a relation (h,r) against all entities in the knowledge graph.
+
+      Given a head entity and a relation (h, r), this method computes scores for (h, r, x) for all entities x in the knowledge graph.
+
+      :param x: A tensor containing indices for head entities and relations.
+      :type x: torch.Tensor
+
+      :returns: A tensor of scores representing the compatibility of (h, r, x) for all entities x in the knowledge graph.
+      :rtype: torch.Tensor
+
+      .. rubric:: Notes
+
+      This method supports batch processing, allowing the input tensor `x` to contain multiple head entities and relations.
+
+      The scores indicate how well each entity x in the knowledge graph fits the (h, r) pattern, with higher scores indicating better compatibility.
 
 
 

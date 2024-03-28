@@ -38,23 +38,35 @@ Functions
 
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
-   Abstract class for Callback class for knowledge graph embedding models
+   A callback to accumulate and save epoch losses to a CSV file at the end of training.
 
+   This callback listens to the end of the training process and saves the accumulated
+   epoch losses stored in the model's loss history to a CSV file. The file is saved
+   in the specified directory.
 
-   Parameter
-   ---------
+   :param path: The directory path where the epoch loss CSV file will be saved.
+   :type path: str
 
+   .. attribute:: path
 
-   .. py:method:: on_fit_end(trainer, model) -> None
+      Stores the provided directory path for later use in saving the epoch losses.
 
-      Store epoch loss
+      :type: str
 
+   .. py:method:: on_fit_end(trainer: lightning.Trainer, model: torch.nn.Module) -> None
 
-      Parameter
-      ---------
-      trainer:
+      Invoked at the end of the training process to save the epoch losses.
 
-      model:
+      This method is called automatically by the training loop at the end of training.
+      It retrieves the loss history from the model and saves it as a CSV file in the
+      specified directory.
+
+      :param trainer: The trainer instance conducting the training process. Not used in this method,
+                      but required for compatibility with the callback interface.
+      :type trainer: Trainer
+      :param model: The model being trained. This model should have a `loss_history` attribute
+                    containing the losses of each epoch.
+      :type model: torch.nn.Module
 
       :rtype: None
 
@@ -65,62 +77,56 @@ Functions
 
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
-   Abstract class for Callback class for knowledge graph embedding models
+   A callback that prints the start time of training and its total runtime upon completion.
 
+   This callback demonstrates a simple usage of the PyTorch Lightning callback system,
+   printing a message when the training starts and another when it ends, showing how
+   long the training took.
 
-   Parameter
-   ---------
+   .. py:method:: on_fit_start(trainer: lightning.Trainer, pl_module: lightning.LightningModule)
 
+      Invoked at the start of the fit process.
 
-   .. py:method:: on_fit_start(trainer, pl_module)
+      Prints a message indicating that the training is starting, along with the current date and time.
 
-      Call at the beginning of the training.
-
-      Parameter
-      ---------
-      trainer:
-
-      model:
+      :param trainer: The trainer instance conducting the training process.
+      :type trainer: Trainer
+      :param pl_module: The LightningModule instance being trained.
+      :type pl_module: LightningModule
 
       :rtype: None
 
 
-   .. py:method:: on_fit_end(trainer, pl_module)
+   .. py:method:: on_fit_end(trainer: lightning.Trainer, pl_module: lightning.LightningModule)
 
-      Call at the end of the training.
+      Invoked at the end of the fit process.
 
-      Parameter
-      ---------
-      trainer:
+      Calculates and prints the total training time in an appropriate time unit (seconds, minutes, or hours).
 
-      model:
+      :param trainer: The trainer instance conducting the training process.
+      :type trainer: Trainer
+      :param pl_module: The LightningModule instance that was trained.
+      :type pl_module: LightningModule
 
       :rtype: None
 
 
    .. py:method:: on_train_batch_end(*args, **kwargs)
 
-      Call at the end of each mini-batch during the training.
+      Dummy method for handling the end of a training batch. Implemented as a placeholder.
 
-
-      Parameter
-      ---------
-      trainer:
-
-      model:
+      :param \*args: Variable length argument list.
+      :param \*\*kwargs: Arbitrary keyword arguments.
 
       :rtype: None
 
 
    .. py:method:: on_train_epoch_end(*args, **kwargs)
 
-      Call at the end of each epoch during training.
+      Dummy method for handling the end of a training epoch. Implemented as a placeholder.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
+      :param \*args: Variable length argument list.
+      :param \*\*kwargs: Arbitrary keyword arguments.
 
       :rtype: None
 
@@ -131,17 +137,32 @@ Functions
 
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
-   Abstract class for Callback class for knowledge graph embedding models
+   A callback to save the model periodically during training.
 
+   This callback is intended to periodically save the current state of the model during training,
+   allowing for checkpointing and potential recovery of intermediate states.
 
-   Parameter
-   ---------
+   :param every_x_epoch: Interval between epochs to save the model. The model will be saved every 'every_x_epoch' epochs.
+   :type every_x_epoch: int
+   :param max_epochs: The maximum number of epochs for the training. Used to calculate the default saving interval if 'every_x_epoch' is not provided.
+   :type max_epochs: int
+   :param path: The directory path where the model checkpoints will be saved.
+   :type path: str
+
+   .. attribute:: epoch_counter
+
+      A counter to keep track of the current epoch.
+
+      :type: int
+
+   .. method:: on_epoch_end(model, trainer, \*\*kwargs)
+
+      Saves the model at specified intervals.
 
 
    .. py:method:: on_train_batch_end(*args, **kwargs)
 
       Call at the end of each mini-batch during the training.
-
 
       Parameter
       ---------
@@ -154,123 +175,278 @@ Functions
 
    .. py:method:: on_fit_start(trainer, pl_module)
 
-      Call at the beginning of the training.
+      Called at the very beginning of fit.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The trainer instance.
+      :type trainer: pl.Trainer
+      :param pl_module: The model that is being trained.
+      :type pl_module: pl.LightningModule
 
 
    .. py:method:: on_train_epoch_end(*args, **kwargs)
 
-      Call at the end of each epoch during training.
+      Called at the end of the training epoch.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The trainer instance.
+      :type trainer: pl.Trainer
+      :param pl_module: The model that is being trained.
+      :type pl_module: pl.LightningModule
 
 
    .. py:method:: on_fit_end(*args, **kwargs)
 
-      Call at the end of the training.
+      Called at the end of fit.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The trainer instance.
+      :type trainer: pl.Trainer
+      :param pl_module: The model that has been trained.
+      :type pl_module: pl.LightningModule
 
 
-   .. py:method:: on_epoch_end(model, trainer, **kwargs)
+   .. py:method:: on_epoch_end(model: lightning.LightningModule, trainer: lightning.Trainer, **kwargs)
 
+      Invoked at the end of each epoch to potentially save the model.
 
+      Checks if the current epoch matches the saving criteria. If so, the model's state is saved as a checkpoint.
 
-.. py:class:: PseudoLabellingCallback(data_module, kg, batch_size)
-
-
-   Bases: :py:obj:`dicee.abstracts.AbstractCallback`
-
-   Abstract class for Callback class for knowledge graph embedding models
-
-
-   Parameter
-   ---------
-
-
-   .. py:method:: create_random_data()
-
-
-   .. py:method:: on_epoch_end(trainer, model)
-
-
-
-.. py:function:: estimate_q(eps)
-
-   estimate rate of convergence q from sequence esp
-
-
-.. py:function:: compute_convergence(seq, i)
-
-
-.. py:class:: ASWA(num_epochs, path)
-
-
-   Bases: :py:obj:`dicee.abstracts.AbstractCallback`
-
-   Adaptive stochastic weight averaging
-   ASWE keeps track of the validation performance and update s the ensemble model accordingly.
-
-   .. py:method:: on_fit_end(trainer, model)
-
-      Call at the end of the training.
-
-      Parameter
-      ---------
-      trainer:
-
-      model:
+      :param model: The model being trained.
+      :type model: LightningModule
+      :param trainer: The trainer instance conducting the training process.
+      :type trainer: Trainer
+      :param \*\*kwargs: Arbitrary keyword arguments.
 
       :rtype: None
 
 
-   .. py:method:: compute_mrr(trainer, model) -> float
+
+.. py:class:: PseudoLabellingCallback(data_module: lightning.LightningDataModule, kg, batch_size: int)
+
+
+   Bases: :py:obj:`dicee.abstracts.AbstractCallback`
+
+   A callback for implementing pseudo-labelling during training.
+
+   Pseudo-labelling is a semi-supervised learning technique that uses the model's predictions
+   on unlabeled data as labels for retraining the model. This callback generates pseudo-labels
+   for a batch of randomly created or selected unlabeled data and adds them to the training set.
+
+   :param data_module: The data module that provides data loaders for the training process.
+   :type data_module: LightningDataModule
+   :param kg: The knowledge graph object that contains information about the entities, relations, and the unlabeled set.
+   :type kg: KnowledgeGraph
+   :param batch_size: The size of the batch to generate or select for pseudo-labelling.
+   :type batch_size: int
+
+   .. attribute:: num_of_epochs
+
+      Tracks the number of epochs that have been processed.
+
+      :type: int
+
+   .. attribute:: unlabelled_size
+
+      The size of the unlabeled dataset in the knowledge graph.
+
+      :type: int
+
+   .. py:method:: create_random_data() -> torch.Tensor
+
+      Generates a batch of random triples (head entity, relation, tail entity).
+
+      :returns: A batch of randomly generated triples.
+      :rtype: torch.Tensor
+
+
+   .. py:method:: on_epoch_end(trainer: lightning.Trainer, model: lightning.LightningModule) -> None
+
+      Invoked at the end of each epoch to perform pseudo-labelling.
+
+      Generates or selects a batch of unlabeled data, uses the model to predict pseudo-labels,
+      and adds the selected triples with high-confidence pseudo-labels to the training set.
+
+      :param trainer: The trainer instance conducting the training process.
+      :type trainer: Trainer
+      :param model: The model being trained.
+      :type model: LightningModule
+
+      :rtype: None
+
+
+
+.. py:function:: estimate_q(eps) -> float
+
+   Estimate the rate of convergence, q, from a sequence of errors.
+
+   :param eps: A sequence of errors (epsilons) from which the rate of convergence is to be estimated.
+               It's expected that `eps` represents a decreasing sequence of errors as the approximation
+               improves, typically from an iterative numerical method.
+   :type eps: array-like
+
+   :returns: The estimated rate of convergence, q.
+   :rtype: float
+
+   .. rubric:: Notes
+
+   The function estimates the rate of convergence by fitting a line to the logarithm of the
+   absolute difference of the logarithm of the errors. The slope of this line corresponds to
+   the logarithm of the rate of convergence, q. This method assumes exponential convergence,
+   where the error decreases as a power of the number of iterations.
+
+   .. rubric:: Examples
+
+   >>> eps = [1/2**n for n in range(1, 6)]
+   >>> q = estimate_q(eps)
+   >>> print(q)
+   2.0
+
+   This indicates a quadratic convergence rate, as expected for the given sequence of errors
+   that halve at each step.
+
+
+.. py:function:: compute_convergence(seq, i: int) -> float
+
+   Compute the convergence rate of the last `i` elements in a sequence.
+
+   :param seq: The sequence of numeric values for which the convergence rate is to be computed.
+   :type seq: array-like
+   :param i: The number of elements from the end of `seq` to use for computing the convergence rate.
+   :type i: int
+
+   :returns: The estimated rate of convergence over the last `i` elements of `seq`.
+   :rtype: float
+
+   :raises AssertionError: If `i` is not less than or equal to the length of `seq` or if `i` is not greater than 0.
+
+   .. rubric:: Notes
+
+   This function wraps the `estimate_q` function to specifically evaluate the convergence rate
+   of a subsection of a given sequence. It modifies the sequence to fit the model of `estimate_q`
+   by dividing each element by its index (adjusted for Python's 0-indexing), which normalizes
+   the sequence in preparation for estimating the convergence rate.
+
+   .. rubric:: Examples
+
+   >>> seq = np.array([1/2**n for n in range(10)])
+   >>> compute_convergence(seq, 5)
+   2.0
+
+   Here, `compute_convergence` estimates the rate of convergence using the last 5 elements
+   of a sequence exhibiting quadratic convergence. The function should return a value close
+   to 2.0, indicating quadratic convergence.
+
+
+.. py:class:: ASWA(num_epochs: int, path: str)
+
+
+   Bases: :py:obj:`dicee.abstracts.AbstractCallback`
+
+   Implements the Adaptive Stochastic Weight Averaging (ASWA) technique.
+   This technique keeps track of validation performance and updates the ensemble model accordingly.
+
+   :param num_epochs: The total number of epochs to train the model.
+   :type num_epochs: int
+   :param path: Path where the model and intermediate results will be saved.
+   :type path: str
+
+   .. attribute:: initial_eval_setting
+
+      Initial evaluation setting, used to restore the original evaluation mode of the model after ASWA is applied.
+
+      :type: None or str
+
+   .. attribute:: alphas
+
+      Weights for each model state in the ensemble.
+
+      :type: list of float
+
+   .. attribute:: val_aswa
+
+      Validation performance (MRR) of the current ASWA model.
+
+      :type: float
+
+   .. method:: on_fit_end(trainer, model) -> None:
+
+      Applies the ASWA technique at the end of training.
+
+   .. method:: compute_mrr(trainer, model) -> float:
+
+      Computes the Mean Reciprocal Rank (MRR) on the validation dataset.
+
+   .. method:: get_aswa_state_dict(model) -> OrderedDict:
+
+      Retrieves the state dictionary for the ASWA model.
+
+   .. method:: decide(running_model_state_dict, ensemble_state_dict, val_running_model, mrr_updated_ensemble_model) -> None:
+
+      Decides whether to update ASWA based on validation performance.
+
+   .. method:: on_train_epoch_end(trainer, model) -> None:
+
+      Performs the ASWA update process at the end of each training epoch.
+
+
+   .. py:method:: on_fit_end(trainer: lightning.Trainer, model: torch.nn.Module) -> None
+
+      Called at the end of the fit process to apply the ASWA technique.
+
+      :param trainer: The PyTorch Lightning trainer instance.
+      :type trainer: Trainer
+      :param model: The model being trained.
+      :type model: torch.nn.Module
+
+
+   .. py:method:: compute_mrr(trainer: lightning.Trainer, model: torch.nn.Module) -> float
       :staticmethod:
 
+      Computes the Mean Reciprocal Rank (MRR) for the model on the validation dataset.
 
-   .. py:method:: get_aswa_state_dict(model)
+      :param trainer: The PyTorch Lightning trainer instance.
+      :type trainer: Trainer
+      :param model: The model for which MRR will be computed.
+      :type model: torch.nn.Module
 
-
-   .. py:method:: decide(running_model_state_dict, ensemble_state_dict, val_running_model, mrr_updated_ensemble_model)
-
-      Perform Hard Update, software or rejection
-
-      :param running_model_state_dict:
-      :param ensemble_state_dict:
-      :param val_running_model:
-      :param mrr_updated_ensemble_model:
+      :returns: The MRR score of the model on the validation dataset.
+      :rtype: float
 
 
-   .. py:method:: on_train_epoch_end(trainer, model)
+   .. py:method:: get_aswa_state_dict(model: torch.nn.Module) -> OrderedDict
 
-      Call at the end of each epoch during training.
+      Retrieves the state dictionary for the ASWA model.
 
-      Parameter
-      ---------
-      trainer:
+      :param model: The current model from which the ASWA state will be derived.
+      :type model: torch.nn.Module
 
-      model:
+      :returns: The state dictionary of the ASWA model.
+      :rtype: OrderedDict
 
-      :rtype: None
+
+   .. py:method:: decide(running_model_state_dict: OrderedDict, ensemble_state_dict: OrderedDict, val_running_model: float, mrr_updated_ensemble_model: float) -> bool
+
+      Decides whether to update the ASWA model based on the validation performance.
+
+      :param running_model_state_dict: The state dictionary of the current running model.
+      :type running_model_state_dict: OrderedDict
+      :param ensemble_state_dict: The state dictionary of the current ASWA model.
+      :type ensemble_state_dict: OrderedDict
+      :param val_running_model: The validation performance (MRR) of the running model.
+      :type val_running_model: float
+      :param mrr_updated_ensemble_model: The validation performance (MRR) of the updated ASWA model.
+      :type mrr_updated_ensemble_model: float
+
+      :returns: The boolean flag to determine the updation of the ASWA model.
+      :rtype: bool
+
+
+   .. py:method:: on_train_epoch_end(trainer: lightning.Trainer, model: torch.nn.Module)
+
+      Called at the end of each training epoch to possibly update the ASWA model.
+
+      :param trainer: The PyTorch Lightning trainer instance.
+      :type trainer: Trainer
+      :param model: The model being trained.
+      :type model: torch.nn.Module
 
 
 
@@ -279,64 +455,70 @@ Functions
 
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
-   Abstract class for Callback class for knowledge graph embedding models
+   Callback for evaluating the model at certain epochs during training and logging the results.
 
+   :param path: Path where evaluation reports will be saved.
+   :type path: str
+   :param epoch_ratio: Interval of epochs after which the evaluation will be performed. Default is 1, meaning evaluation after every epoch.
+   :type epoch_ratio: int, optional
 
-   Parameter
-   ---------
+   .. attribute:: reports
+
+      List of evaluation reports generated after each evaluation.
+
+      :type: list of dict
+
+   .. attribute:: epoch_counter
+
+      Counter for keeping track of the number of epochs passed.
+
+      :type: int
+
+   .. method:: on_fit_end(trainer, model) -> None:
+
+      Saves the evaluation reports to a file and optionally generates plots for training and validation MRR.
+
+   .. method:: on_train_epoch_end(trainer, model) -> None:
+
+      Evaluates the model if the current epoch matches the specified epoch ratio and appends the report to `reports`.
 
 
    .. py:method:: on_fit_start(trainer, model)
 
-      Call at the beginning of the training.
+      Called at the very beginning of fit.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The trainer instance.
+      :type trainer: pl.Trainer
+      :param pl_module: The model that is being trained.
+      :type pl_module: pl.LightningModule
 
 
-   .. py:method:: on_fit_end(trainer, model)
+   .. py:method:: on_fit_end(trainer: lightning.Trainer, model: torch.nn.Module) -> None
 
-      Call at the end of the training.
+      Called at the end of the fit process. Saves the collected evaluation reports to a file.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The PyTorch Lightning trainer instance.
+      :type trainer: Trainer
+      :param model: The model being trained.
+      :type model: torch.nn.Module
 
 
-   .. py:method:: on_train_epoch_end(trainer, model)
+   .. py:method:: on_train_epoch_end(trainer: lightning.Trainer, model: torch.nn.Module) -> None
 
-      Call at the end of each epoch during training.
+      Called at the end of each training epoch. Performs evaluation if the current epoch matches the epoch_ratio.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The PyTorch Lightning trainer instance.
+      :type trainer: Trainer
+      :param model: The model being trained.
+      :type model: torch.nn.Module
 
 
-   .. py:method:: on_train_batch_end(*args, **kwargs)
+   .. py:method:: on_train_batch_end(*args, **kwargs) -> None
 
-      Call at the end of each mini-batch during the training.
+      Called at the end of each training batch. This method is not implemented in this callback.
 
-
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param \*args: Variable length argument list.
+      :param \*\*kwargs: Arbitrary keyword arguments.
 
 
 
@@ -345,39 +527,54 @@ Functions
 
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
-   Abstract class for Callback class for knowledge graph embedding models
+   Callback for augmenting triple representations with Kronecker product embeddings during training.
+
+   .. method:: batch_kronecker_product(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+
+      Computes the Kronecker product of two tensors with batch dimensions.
+
+   .. method:: get_kronecker_triple_representation(indexed_triple: torch.LongTensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+
+      Augments triple representations with Kronecker product embeddings.
+
+   .. method:: on_fit_start(trainer, model) -> None:
+
+      Overrides the model's method to get triple representations with a method that includes Kronecker product embeddings.
 
 
-   Parameter
-   ---------
-
-
-   .. py:method:: batch_kronecker_product(a, b)
+   .. py:method:: batch_kronecker_product(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor
       :staticmethod:
 
-      Kronecker product of matrices a and b with leading batch dimensions.
-      Batch dimensions are broadcast. The number of them mush
+      Computes the Kronecker product of two tensors `a` and `b` with batch dimensions.
+
+      :param a: The first tensor with batch dimensions.
       :type a: torch.Tensor
+      :param b: The second tensor with batch dimensions.
       :type b: torch.Tensor
+
+      :returns: The Kronecker product of `a` and `b`.
       :rtype: torch.Tensor
 
 
-   .. py:method:: get_kronecker_triple_representation(indexed_triple: torch.LongTensor)
+   .. py:method:: get_kronecker_triple_representation(indexed_triple: torch.LongTensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]
 
-      Get kronecker embeddings
+      Augments triple representations with Kronecker product embeddings.
+
+      :param indexed_triple: Indexed triple representations.
+      :type indexed_triple: torch.LongTensor
+
+      :returns: Augmented head entity, relation, and tail entity embeddings.
+      :rtype: Tuple[torch.Tensor, torch.Tensor, torch.Tensor]
 
 
-   .. py:method:: on_fit_start(trainer, model)
+   .. py:method:: on_fit_start(trainer: lightning.Trainer, model: torch.nn.Module) -> None
 
-      Call at the beginning of the training.
+      Overrides the model's method to get triple representations with a method that includes Kronecker product embeddings.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The PyTorch Lightning trainer instance.
+      :type trainer: Trainer
+      :param model: The model being trained.
+      :type model: torch.nn.Module
 
 
 
@@ -386,20 +583,58 @@ Functions
 
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
-   A callback for a three-Level Perturbation
+   Implements a three-level perturbation technique for knowledge graph embedding models during training.
+   The perturbations can be applied at the input, parameter, or output levels.
 
-   Input Perturbation: During training an input x is perturbed by randomly replacing its element.
-   In the context of knowledge graph embedding models, x can denote a triple, a tuple of an entity and a relation,
-   or a tuple of two entities.
-   A perturbation means that a component of x is randomly replaced by an entity or a relation.
+   .. attribute:: level
 
-   Parameter Perturbation:
+      The perturbation level. Must be one of {"input", "param", "out"}.
 
-   Output Perturbation:
+      :type: str
 
-   .. py:method:: on_train_batch_start(trainer, model, batch, batch_idx)
+   .. attribute:: ratio
 
-      Called when the train batch begins.
+      The ratio of the mini-batch data points to be perturbed, between [0, 1].
+
+      :type: float
+
+   .. attribute:: method
+
+      The method used for perturbation.
+
+      :type: str, optional
+
+   .. attribute:: scaler
+
+      The scaler factor used for perturbation.
+
+      :type: float, optional
+
+   .. attribute:: frequency
+
+      The frequency of perturbation, e.g., per epoch or per mini-batch.
+
+      :type: int, optional
+
+   .. method:: on_train_batch_start(trainer, model, batch, batch_idx):
+
+      Applies perturbation to the batch data points before the training batch starts.
+
+
+   .. py:method:: on_train_batch_start(trainer: lightning.Trainer, model: torch.nn.Module, batch: torch.Tensor, batch_idx: int) -> None
+
+      Applies perturbation to the batch data points before the training batch starts.
+
+      :param trainer: The PyTorch Lightning trainer instance.
+      :type trainer: Trainer
+      :param model: The model being trained.
+      :type model: torch.nn.Module
+      :param batch: The current mini-batch of data.
+      :type batch: torch.Tensor
+      :param batch_idx: The index of the current batch.
+      :type batch_idx: int
+
+      :rtype: None
 
 
 

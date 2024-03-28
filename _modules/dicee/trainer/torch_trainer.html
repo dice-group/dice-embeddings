@@ -99,15 +99,43 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer/index.html#dicee.trainer.torch_trainer.TorchTrainer">[docs]</a>
 <span class="k">class</span> <span class="nc">TorchTrainer</span><span class="p">(</span><span class="n">AbstractTrainer</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        TorchTrainer for using single GPU or multi CPUs on a single node</span>
+<span class="sd">    A trainer class for PyTorch models that supports training on a single GPU or multiple CPUs.</span>
 
-<span class="sd">        Arguments</span>
-<span class="sd">       ----------</span>
-<span class="sd">       args: ?</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    args : dict</span>
+<span class="sd">        Configuration arguments for training, including model hyperparameters and training options.</span>
+<span class="sd">    callbacks : List[Callable]</span>
+<span class="sd">        List of callback functions to be called at various points of the training process.</span>
 
-<span class="sd">       callbacks: list of Abstract callback instances</span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    loss_function : Callable</span>
+<span class="sd">        The loss function used for training.</span>
+<span class="sd">    optimizer : torch.optim.Optimizer</span>
+<span class="sd">        The optimizer used for training.</span>
+<span class="sd">    model : torch.nn.Module</span>
+<span class="sd">        The PyTorch model being trained.</span>
+<span class="sd">    train_dataloaders : torch.utils.data.DataLoader</span>
+<span class="sd">        torch.utils.data.DataLoader providing access to the training data.</span>
+<span class="sd">    training_step : Callable</span>
+<span class="sd">        The training step function defining the forward pass and loss computation.</span>
+<span class="sd">    device : torch.device</span>
+<span class="sd">        The device (CPU or GPU) on which training is performed.</span>
 
-<span class="sd">   &quot;&quot;&quot;</span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    _run_batch(i: int, x_batch: torch.Tensor, y_batch: torch.Tensor) -&gt; float:</span>
+<span class="sd">        Executes a training step for a single batch and returns the loss value.</span>
+<span class="sd">    _run_epoch(epoch: int) -&gt; float:</span>
+<span class="sd">        Executes training for one epoch and returns the average loss.</span>
+<span class="sd">    fit(*args, train_dataloaders: torch.utils.data.DataLoader, **kwargs) -&gt; None:</span>
+<span class="sd">        Starts the training process for the given model and data.</span>
+<span class="sd">    forward_backward_update(x_batch: torch.Tensor, y_batch: torch.Tensor) -&gt; float:</span>
+<span class="sd">        Performs the forward pass, computes the loss, and updates model weights.</span>
+<span class="sd">    extract_input_outputs_set_device(batch: list) -&gt; Tuple[torch.Tensor, torch.Tensor]:</span>
+<span class="sd">        Prepares and moves batch data to the appropriate device.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">)</span>
@@ -119,26 +147,35 @@
         <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">random_seed</span><span class="p">)</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">manual_seed_all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">random_seed</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span><span class="s2">&quot;gpus&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">gpus</span> <span class="ow">and</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;cuda:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">gpus</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;cuda:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">gpus</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="s1">&#39;cpu&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span>
         
         <span class="c1"># https://psutil.readthedocs.io/en/latest/#psutil.Process</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">process</span> <span class="o">=</span> <span class="n">psutil</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">())</span>
 
-    <span class="k">def</span> <span class="nf">_run_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<div class="viewcode-block" id="TorchTrainer._run_batch">
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer/index.html#dicee.trainer.torch_trainer.TorchTrainer._run_batch">[docs]</a>
+    <span class="k">def</span> <span class="nf">_run_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">x_batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            Forward anc Backward according to a mini-batch</span>
+<span class="sd">        Executes a training step for a single batch and returns the loss value.</span>
 
-<span class="sd">            Arguments</span>
-<span class="sd">           ----------</span>
-<span class="sd">           i : index of a batch</span>
-<span class="sd">           x_batch: torch.Tensor on selected device</span>
-<span class="sd">           y_batch: torch.Tensor on selected device</span>
-<span class="sd">           Returns</span>
-<span class="sd">           -------</span>
-<span class="sd">           batch loss (float)</span>
-<span class="sd">       &quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        i : int</span>
+<span class="sd">            The index of the current batch within the epoch.</span>
+<span class="sd">        x_batch : torch.Tensor</span>
+<span class="sd">            The batch of input features, already moved to the correct device.</span>
+<span class="sd">        y_batch : torch.Tensor</span>
+<span class="sd">            The batch of target outputs, already moved to the correct device.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The loss value computed for the batch.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">gradient_accumulation_steps</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="c1"># (1) Update parameters every gradient_accumulation_steps mini-batch.</span>
             <span class="k">if</span> <span class="n">i</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">gradient_accumulation_steps</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -147,18 +184,25 @@
             <span class="c1"># (2) Do not accumulate gradient, zero the gradients per batch.</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">(</span><span class="n">set_to_none</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="c1"># (3) Loss Forward and Backward w.r.t the batch.</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_backward_update</span><span class="p">(</span><span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_backward_update</span><span class="p">(</span><span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span></div>
 
+
+<div class="viewcode-block" id="TorchTrainer._run_epoch">
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer/index.html#dicee.trainer.torch_trainer.TorchTrainer._run_epoch">[docs]</a>
     <span class="k">def</span> <span class="nf">_run_epoch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epoch</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            Iterate over the training dataset</span>
+<span class="sd">        Executes training for one epoch and returns the average loss across all batches.</span>
 
-<span class="sd">            Arguments</span>
-<span class="sd">           ----------</span>
-<span class="sd">           epoch:int</span>
-<span class="sd">           -------</span>
-<span class="sd">           average loss over the dataset</span>
-<span class="sd">       &quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        epoch : int</span>
+<span class="sd">            The current epoch number.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The average loss value across all batches in the epoch.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">construct_mini_batch_time</span> <span class="o">=</span> <span class="kc">None</span>
@@ -180,35 +224,37 @@
                     <span class="sa">f</span><span class="s2">&quot;| ForwardBackwardUpdate:</span><span class="si">{</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">sec &quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;| BatchConst.:</span><span class="si">{</span><span class="n">construct_mini_batch_time</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">sec &quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;| Mem. Usage </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">memory_info</span><span class="p">()</span><span class="o">.</span><span class="n">rss</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">1_000_000</span><span class="si">:</span><span class="s2"> .5</span><span class="si">}</span><span class="s2">MB &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot; (</span><span class="si">{</span><span class="n">psutil</span><span class="o">.</span><span class="n">virtual_memory</span><span class="p">()</span><span class="o">.</span><span class="n">percent</span><span class="si">}</span><span class="s2"> %)&quot;</span><span class="p">)</span>
+                    <span class="sa">f</span><span class="s2">&quot; (</span><span class="si">{</span><span class="n">psutil</span><span class="o">.</span><span class="n">virtual_memory</span><span class="p">()</span><span class="o">.</span><span class="n">percent</span><span class="si">}</span><span class="s2"> %)&quot;</span>
+                <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;Epoch:</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> &quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;| Batch:</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> &quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;| Loss:</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">}</span><span class="s2"> &quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;| ForwardBackwardUpdate:</span><span class="si">{</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">secs &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;| Mem. Usage </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">memory_info</span><span class="p">()</span><span class="o">.</span><span class="n">rss</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">1_000_000</span><span class="si">:</span><span class="s2"> .5</span><span class="si">}</span><span class="s2">MB &quot;</span><span class="p">)</span>
+                    <span class="sa">f</span><span class="s2">&quot;| Mem. Usage </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">memory_info</span><span class="p">()</span><span class="o">.</span><span class="n">rss</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">1_000_000</span><span class="si">:</span><span class="s2"> .5</span><span class="si">}</span><span class="s2">MB &quot;</span>
+                <span class="p">)</span>
             <span class="n">construct_mini_batch_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">epoch_loss</span> <span class="o">/</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">epoch_loss</span> <span class="o">/</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="TorchTrainer.fit">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer/index.html#dicee.trainer.torch_trainer.TorchTrainer.fit">[docs]</a>
-    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">train_dataloaders</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">train_dataloaders</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            Training starts</span>
+<span class="sd">        Starts the training process for the given model and training data.</span>
 
-<span class="sd">            Arguments</span>
-<span class="sd">           ----------</span>
-<span class="sd">           args:tuple</span>
-<span class="sd">           (BASEKGE,)</span>
-<span class="sd">           kwargs:Tuple</span>
-<span class="sd">               empty dictionary</span>
-<span class="sd">           Returns</span>
-<span class="sd">           -------</span>
-<span class="sd">           batch loss (float)</span>
-<span class="sd">       &quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            The model to be trained.</span>
+<span class="sd">        train_dataloaders : torch.utils.data.DataLoader</span>
+<span class="sd">            A DataLoader instance providing access to the training data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
-        <span class="n">model</span><span class="p">,</span> <span class="o">=</span> <span class="n">args</span>
+        <span class="p">(</span><span class="n">model</span><span class="p">,)</span> <span class="o">=</span> <span class="n">args</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">train_dataloaders</span> <span class="o">=</span> <span class="n">train_dataloaders</span>
@@ -218,18 +264,22 @@
         <span class="c1"># (1) Start running callbacks</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">on_fit_start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;NumOfDataPoints:</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataloaders</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span><span class="si">}</span><span class="s1"> &#39;</span>
-              <span class="sa">f</span><span class="s1">&#39;| NumOfEpochs:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">max_epochs</span><span class="si">}</span><span class="s1"> &#39;</span>
-              <span class="sa">f</span><span class="s1">&#39;| LearningRate:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">learning_rate</span><span class="si">}</span><span class="s1"> &#39;</span>
-              <span class="sa">f</span><span class="s1">&#39;| BatchSize:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataloaders</span><span class="o">.</span><span class="n">batch_size</span><span class="si">}</span><span class="s1"> &#39;</span>
-              <span class="sa">f</span><span class="s1">&#39;| EpochBatchsize:</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">train_dataloaders</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;NumOfDataPoints:</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataloaders</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;| NumOfEpochs:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">max_epochs</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;| LearningRate:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">learning_rate</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;| BatchSize:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataloaders</span><span class="o">.</span><span class="n">batch_size</span><span class="si">}</span><span class="s2"> &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;| EpochBatchsize:</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">train_dataloaders</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
         <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">max_epochs</span><span class="p">):</span>
             <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
             <span class="n">avg_epoch_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_epoch</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Epoch:</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> &quot;</span>
-                  <span class="sa">f</span><span class="s2">&quot;| Loss:</span><span class="si">{</span><span class="n">avg_epoch_loss</span><span class="si">:</span><span class="s2">.8f</span><span class="si">}</span><span class="s2"> &quot;</span>
-                  <span class="sa">f</span><span class="s2">&quot;| Runtime:</span><span class="si">{</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">60</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> mins&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Epoch:</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;| Loss:</span><span class="si">{</span><span class="n">avg_epoch_loss</span><span class="si">:</span><span class="s2">.8f</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;| Runtime:</span><span class="si">{</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">60</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> mins&quot;</span>
+            <span class="p">)</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            # Autobatch Finder: Double the current batch size if memory allows and repeat this process at mast 5 times.</span>
 <span class="sd">            if self.attributes.auto_batch_finder and psutil.virtual_memory().percent &lt; 30.0 and counter &lt; 5:</span>
@@ -254,19 +304,25 @@
 
 <div class="viewcode-block" id="TorchTrainer.forward_backward_update">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer/index.html#dicee.trainer.torch_trainer.TorchTrainer.forward_backward_update">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_backward_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">forward_backward_update</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">x_batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            Compute forward, loss, backward, and parameter update</span>
+<span class="sd">        Performs the forward pass, computes the loss, performs the backward pass to compute gradients,</span>
+<span class="sd">        and updates the model weights.</span>
 
-<span class="sd">            Arguments</span>
-<span class="sd">           ----------</span>
-<span class="sd">           x_batch:(torch.Tensor) mini-batch inputs</span>
-<span class="sd">           y_batch:(torch.Tensor) mini-batch outputs</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x_batch : torch.Tensor</span>
+<span class="sd">            The batch of input features.</span>
+<span class="sd">        y_batch : torch.Tensor</span>
+<span class="sd">            The batch of target outputs.</span>
 
-<span class="sd">           Returns</span>
-<span class="sd">           -------</span>
-<span class="sd">           batch loss (float)</span>
-<span class="sd">       &quot;&quot;&quot;</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            The loss value computed for the batch.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">batch_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_step</span><span class="p">(</span><span class="n">batch</span><span class="o">=</span><span class="p">(</span><span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">))</span>
         <span class="n">batch_loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
@@ -275,18 +331,23 @@
 
 <div class="viewcode-block" id="TorchTrainer.extract_input_outputs_set_device">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer/index.html#dicee.trainer.torch_trainer.TorchTrainer.extract_input_outputs_set_device">[docs]</a>
-    <span class="k">def</span> <span class="nf">extract_input_outputs_set_device</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">extract_input_outputs_set_device</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="nb">list</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            Construct inputs and outputs from a batch of inputs with outputs From a batch of inputs and put</span>
+<span class="sd">        Prepares a batch by extracting inputs and outputs and moving them to the correct device.</span>
 
-<span class="sd">            Arguments</span>
-<span class="sd">           ----------</span>
-<span class="sd">           batch: (list) mini-batch inputs on CPU</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        batch : list</span>
+<span class="sd">            A list containing inputs and outputs for the batch.</span>
 
-<span class="sd">           Returns</span>
-<span class="sd">           -------</span>
-<span class="sd">           (tuple) mini-batch on select device</span>
-<span class="sd">       &quot;&quot;&quot;</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Tuple[torch.Tensor, torch.Tensor]</span>
+<span class="sd">            A tuple containing the batch of input features and target outputs,</span>
+<span class="sd">            both moved to the appropriate device.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
             <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">batch</span>
 
@@ -298,13 +359,20 @@
                 <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">batch</span>
                 <span class="k">return</span> <span class="n">x_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">),</span> <span class="n">y_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-            <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_idx_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">,</span> <span class="o">=</span> <span class="n">batch</span>
-            <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_idx_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">x_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">),</span> <span class="n">y_idx_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">),</span> <span class="n">y_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="p">(</span>
+                <span class="n">x_batch</span><span class="p">,</span>
+                <span class="n">y_idx_batch</span><span class="p">,</span>
+                <span class="n">y_batch</span><span class="p">,</span>
+            <span class="p">)</span> <span class="o">=</span> <span class="n">batch</span>
+            <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_idx_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">x_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">),</span>
+                <span class="n">y_idx_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">),</span>
+                <span class="n">y_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">),</span>
+            <span class="p">)</span>
             <span class="k">return</span> <span class="p">(</span><span class="n">x_batch</span><span class="p">,</span> <span class="n">y_idx_batch</span><span class="p">),</span> <span class="n">y_batch</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">))</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unexpected batch shape..&#39;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unexpected batch shape..&quot;</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

@@ -96,12 +96,58 @@
 <div class="viewcode-block" id="LoadSaveToDisk">
 <a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/save_load_disk/index.html#dicee.read_preprocess_save_load_kg.LoadSaveToDisk">[docs]</a>
 <span class="k">class</span> <span class="nc">LoadSaveToDisk</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Handle the saving and loading of a knowledge graph to and from disk.</span>
+
+<span class="sd">    This class provides functionality to serialize and deserialize the components of a knowledge graph, </span>
+<span class="sd">    such as entity and relation indices, datasets, and byte-pair encoding mappings, to and from disk storage.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    kg : object</span>
+<span class="sd">        An instance of the knowledge graph to be saved or loaded.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    save() -&gt; None</span>
+<span class="sd">        Save the knowledge graph components to disk.</span>
+
+<span class="sd">    load() -&gt; None</span>
+<span class="sd">        Load the knowledge graph components from disk.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kg</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kg</span> <span class="o">=</span> <span class="n">kg</span>
 
 <div class="viewcode-block" id="LoadSaveToDisk.save">
 <a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/save_load_disk/index.html#dicee.read_preprocess_save_load_kg.LoadSaveToDisk.save">[docs]</a>
     <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save the knowledge graph components to disk.</span>
+
+<span class="sd">        This method serializes various components of the knowledge graph such as entity and relation indices, </span>
+<span class="sd">        datasets, and byte-pair encoding mappings, and saves them to the specified file paths in the knowledge </span>
+<span class="sd">        graph instance. The method handles different data types and structures based on the configuration of </span>
+<span class="sd">        the knowledge graph.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        AssertionError</span>
+<span class="sd">            If the path for serialization is not set or other required conditions are not met.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        - The method checks if the &#39;path_for_serialization&#39; attribute is set in the knowledge graph instance.</span>
+<span class="sd">        - Depending on the configuration (e.g., whether byte-pair encoding is used), different components are saved.</span>
+<span class="sd">        - The method uses custom functions like &#39;save_pickle&#39; and &#39;save_numpy_ndarray&#39; for serialization.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">path_for_deserialization</span> <span class="ow">is</span> <span class="kc">None</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">path_for_serialization</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -132,6 +178,33 @@
 <div class="viewcode-block" id="LoadSaveToDisk.load">
 <a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/save_load_disk/index.html#dicee.read_preprocess_save_load_kg.LoadSaveToDisk.load">[docs]</a>
     <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load the knowledge graph components from disk.</span>
+
+<span class="sd">        This method deserializes various components of the knowledge graph such as entity and relation indices, </span>
+<span class="sd">        datasets, and byte-pair encoding mappings from the specified file paths in the knowledge graph instance. </span>
+<span class="sd">        The method reconstructs the knowledge graph instance with the loaded data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+
+<span class="sd">        Raises</span>
+<span class="sd">        ------</span>
+<span class="sd">        AssertionError</span>
+<span class="sd">            If the path for deserialization is not set or other required conditions are not met.</span>
+
+<span class="sd">        Notes</span>
+<span class="sd">        -----</span>
+<span class="sd">        - The method checks if the &#39;path_for_deserialization&#39; attribute is set in the knowledge graph instance.</span>
+<span class="sd">        - The method updates the knowledge graph instance with the loaded components.</span>
+<span class="sd">        - The method uses custom functions like &#39;load_pickle&#39; and &#39;load_numpy_ndarray&#39; for deserialization.</span>
+<span class="sd">        - If evaluation models are used, additional components like vocabularies and constraints are also loaded.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">path_for_deserialization</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">path_for_serialization</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">path_for_deserialization</span>
 

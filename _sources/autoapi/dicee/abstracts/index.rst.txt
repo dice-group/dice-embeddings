@@ -23,84 +23,63 @@ Classes
 .. py:class:: AbstractTrainer(args, callbacks)
 
 
-   Abstract class for Trainer class for knowledge graph embedding models
+   Abstract base class for Trainer classes used in training knowledge graph embedding models.
+   Defines common functionalities and lifecycle hooks for training processes.
 
+   :param args: A container for various training configurations and hyperparameters.
+   :type args: Namespace or similar
+   :param callbacks: A list of callback instances to be invoked at various stages of the training process.
+   :type callbacks: list of Callback objects
 
-   Parameter
-   ---------
-   args : str
-       ?
+   .. py:method:: on_fit_start(*args, **kwargs) -> None
 
-   callbacks: list
-           ?
+      Invokes the `on_fit_start` method of each registered callback before the training starts.
 
-   .. py:method:: on_fit_start(*args, **kwargs)
-
-      A function to call callbacks before the training starts.
-
-      Parameter
-      ---------
-      args
-
-      kwargs
-
+      :param \*args: Variable length argument list.
+      :param \*\*kwargs: Arbitrary keyword arguments.
 
       :rtype: None
 
 
-   .. py:method:: on_fit_end(*args, **kwargs)
+   .. py:method:: on_fit_end(*args, **kwargs) -> None
 
-      A function to call callbacks at the ned of the training.
+      Invokes the `on_fit_end` method of each registered callback after the training ends.
 
-      Parameter
-      ---------
-      args
-
-      kwargs
-
+      :param \*args: Variable length argument list.
+      :param \*\*kwargs: Arbitrary keyword arguments.
 
       :rtype: None
 
 
-   .. py:method:: on_train_epoch_end(*args, **kwargs)
+   .. py:method:: on_train_epoch_end(*args, **kwargs) -> None
 
-      A function to call callbacks at the end of an epoch.
+      Invokes the `on_train_epoch_end` method of each registered callback after each epoch ends.
 
-      Parameter
-      ---------
-      args
-
-      kwargs
-
+      :param \*args: Variable length argument list.
+      :param \*\*kwargs: Arbitrary keyword arguments.
 
       :rtype: None
 
 
-   .. py:method:: on_train_batch_end(*args, **kwargs)
+   .. py:method:: on_train_batch_end(*args, **kwargs) -> None
 
-      A function to call callbacks at the end of each mini-batch during training.
+      Invokes the `on_train_batch_end` method of each registered callback after each training batch ends.
 
-      Parameter
-      ---------
-      args
-
-      kwargs
-
+      :param \*args: Variable length argument list.
+      :param \*\*kwargs: Arbitrary keyword arguments.
 
       :rtype: None
 
 
-   .. py:method:: save_checkpoint(full_path: str, model) -> None
+   .. py:method:: save_checkpoint(full_path: str, model: torch.nn.Module) -> None
       :staticmethod:
 
-      A static function to save a model into disk
+      Saves the model's state dictionary to a file.
 
-      Parameter
-      ---------
-      full_path : str
-
-      model:
-
+      :param full_path: The file path where the model checkpoint will be saved.
+      :type full_path: str
+      :param model: The model instance whose parameters are to be saved.
+      :type model: torch.nn.Module
 
       :rtype: None
 
@@ -109,141 +88,264 @@ Classes
 .. py:class:: BaseInteractiveKGE(path: str = None, url: str = None, construct_ensemble: bool = False, model_name: str = None, apply_semantic_constraint: bool = False)
 
 
-   Abstract/base class for using knowledge graph embedding models interactively.
+   Base class for interactively utilizing knowledge graph embedding models.
+   Supports operations such as loading pretrained models, querying the model, and adding new embeddings.
 
+   :param path: Path to the directory where the pretrained model is stored. Either `path` or `url` must be provided.
+   :type path: str, optional
+   :param url: URL to download the pretrained model. If provided, `path` is ignored and the model is downloaded to a local path.
+   :type url: str, optional
+   :param construct_ensemble: Whether to construct an ensemble model from the pretrained models available in the specified directory.
+   :type construct_ensemble: bool, default=False
+   :param model_name: Name of the specific model to load. Required if multiple models are present and `construct_ensemble` is False.
+   :type model_name: str, optional
+   :param apply_semantic_constraint: Whether to apply semantic constraints based on domain and range information during inference.
+   :type apply_semantic_constraint: bool, default=False
 
-   Parameter
-   ---------
-   path_of_pretrained_model_dir : str
-       ?
+   .. attribute:: model
 
-   construct_ensemble: boolean
-           ?
+      The loaded or constructed knowledge graph embedding model.
 
-   model_name: str
-   apply_semantic_constraint : boolean
+      :type: torch.nn.Module
+
+   .. attribute:: entity_to_idx
+
+      Mapping from entity names to their corresponding indices in the embedding matrix.
+
+      :type: dict
+
+   .. attribute:: relation_to_idx
+
+      Mapping from relation names to their corresponding indices in the embedding matrix.
+
+      :type: dict
+
+   .. attribute:: num_entities
+
+      The number of unique entities in the knowledge graph.
+
+      :type: int
+
+   .. attribute:: num_relations
+
+      The number of unique relations in the knowledge graph.
+
+      :type: int
+
+   .. attribute:: configs
+
+      Configuration settings and performance metrics of the pretrained model.
+
+      :type: dict
 
    .. py:property:: name
+      :type: str
 
+      Property that returns the model's name.
+
+      :returns: The name of the model.
+      :rtype: str
 
    .. py:method:: get_eval_report() -> dict
+
+      Retrieves the evaluation report of the pretrained model.
+
+      :returns: A dictionary containing evaluation metrics and their values.
+      :rtype: dict
 
 
    .. py:method:: get_bpe_token_representation(str_entity_or_relation: Union[List[str], str]) -> Union[List[List[int]], List[int]]
 
-      :param str_entity_or_relation:
-      :type str_entity_or_relation: corresponds to a str or a list of strings to be tokenized via BPE and shaped.
+      Converts a string entity or relation name (or a list of them) to its Byte Pair Encoding (BPE) token representation.
 
-      :rtype: A list integer(s) or a list of lists containing integer(s)
+      :param str_entity_or_relation: The entity or relation name(s) to be converted.
+      :type str_entity_or_relation: Union[List[str], str]
+
+      :returns: The BPE token representation as a list of integers or a list of lists of integers.
+      :rtype: Union[List[List[int]], List[int]]
 
 
    .. py:method:: get_padded_bpe_triple_representation(triples: List[List[str]]) -> Tuple[List, List, List]
 
-      :param triples:
+      Converts a list of triples to their padded BPE token representations.
+
+      :param triples: A list of triples, where each triple is a list of strings [head entity, relation, tail entity].
+      :type triples: List[List[str]]
+
+      :returns: Three lists corresponding to the padded BPE token representations of head entities, relations, and tail entities.
+      :rtype: Tuple[List, List, List]
 
 
    .. py:method:: get_domain_of_relation(rel: str) -> List[str]
 
+      Retrieves the domain of a given relation.
+
+      :param rel: The relation name.
+      :type rel: str
+
+      :returns: A list of entity names that constitute the domain of the specified relation.
+      :rtype: List[str]
+
 
    .. py:method:: get_range_of_relation(rel: str) -> List[str]
+
+      Retrieves the range of a given relation.
+
+      :param rel: The relation name.
+      :type rel: str
+
+      :returns: A list of entity names that constitute the range of the specified relation.
+      :rtype: List[str]
 
 
    .. py:method:: set_model_train_mode() -> None
 
-      Setting the model into training mode
-
-
-      Parameter
-      ---------
+      Sets the model to training mode. This enables gradient computation and backpropagation.
 
 
    .. py:method:: set_model_eval_mode() -> None
 
-      Setting the model into eval mode
-
-
-      Parameter
-      ---------
+      Sets the model to evaluation mode. This disables gradient computation, making the model read-only and faster for inference.
 
 
    .. py:method:: sample_entity(n: int) -> List[str]
 
+      Randomly samples a specified number of unique entities from the knowledge graph.
+
+      :param n: The number of entities to sample.
+      :type n: int
+
+      :returns: A list of sampled entity names.
+      :rtype: List[str]
+
 
    .. py:method:: sample_relation(n: int) -> List[str]
+
+      Randomly samples a specified number of unique relations from the knowledge graph.
+
+      :param n: The number of relations to sample.
+      :type n: int
+
+      :returns: A list of sampled relation names.
+      :rtype: List[str]
 
 
    .. py:method:: is_seen(entity: str = None, relation: str = None) -> bool
 
+      Checks if the specified entity or relation is known to the model.
+
+      :param entity: The entity name to check.
+      :type entity: str, optional
+      :param relation: The relation name to check.
+      :type relation: str, optional
+
+      :returns: True if the entity or relation is known; False otherwise.
+      :rtype: bool
+
 
    .. py:method:: save() -> None
 
+      Saves the current state of the model to disk. The filename is timestamped.
 
-   .. py:method:: get_entity_index(x: str)
+      :rtype: None
 
 
-   .. py:method:: get_relation_index(x: str)
+   .. py:method:: get_entity_index(x: str) -> int
+
+      Retrieves the index of the specified entity.
+
+      :param x: The entity name.
+      :type x: str
+
+      :returns: The index of the entity.
+      :rtype: int
+
+
+   .. py:method:: get_relation_index(x: str) -> int
+
+      Retrieves the index of the specified relation.
+
+      :param x: The relation name.
+      :type x: str
+
+      :returns: The index of the relation.
+      :rtype: int
 
 
    .. py:method:: index_triple(head_entity: List[str], relation: List[str], tail_entity: List[str]) -> Tuple[torch.LongTensor, torch.LongTensor, torch.LongTensor]
 
-      Index Triple
+      Converts a list of triples from string representation to tensor indices.
 
-      Parameter
-      ---------
-      head_entity: List[str]
+      :param head_entity: The list of head entities.
+      :type head_entity: List[str]
+      :param relation: The list of relations.
+      :type relation: List[str]
+      :param tail_entity: The list of tail entities.
+      :type tail_entity: List[str]
 
-      String representation of selected entities.
-
-      relation: List[str]
-
-      String representation of selected relations.
-
-      tail_entity: List[str]
-
-      String representation of selected entities.
-
-      Returns: Tuple
-      ---------
-
-      pytorch tensor of triple score
+      :returns: The tensor indices of head entities, relations, and tail entities.
+      :rtype: Tuple[torch.LongTensor, torch.LongTensor, torch.LongTensor]
 
 
-   .. py:method:: add_new_entity_embeddings(entity_name: str = None, embeddings: torch.FloatTensor = None)
+   .. py:method:: add_new_entity_embeddings(entity_name: str = None, embeddings: torch.FloatTensor = None) -> None
+
+      Adds a new entity and its embeddings to the model.
+
+      :param entity_name: The name of the new entity.
+      :type entity_name: str
+      :param embeddings: The embedding vector of the new entity.
+      :type embeddings: torch.FloatTensor
+
+      :rtype: None
 
 
-   .. py:method:: get_entity_embeddings(items: List[str])
+   .. py:method:: get_entity_embeddings(items: List[str]) -> torch.FloatTensor
 
-      Return embedding of an entity given its string representation
+      Retrieves embeddings for a list of entities.
 
+      :param items: A list of entity names.
+      :type items: List[str]
 
-      Parameter
-      ---------
-      items:
-          entities
-
-
-   .. py:method:: get_relation_embeddings(items: List[str])
-
-      Return embedding of a relation given its string representation
+      :returns: A tensor containing the embeddings of the specified entities.
+      :rtype: torch.FloatTensor
 
 
-      Parameter
-      ---------
-      items:
-          relations
+   .. py:method:: get_relation_embeddings(items: List[str]) -> torch.FloatTensor
+
+      Retrieves embeddings for a list of relations.
+
+      :param items: A list of relation names.
+      :type items: List[str]
+
+      :returns: A tensor containing the embeddings of the specified relations.
+      :rtype: torch.FloatTensor
 
 
-   .. py:method:: construct_input_and_output(head_entity: List[str], relation: List[str], tail_entity: List[str], labels)
+   .. py:method:: construct_input_and_output(head_entity: List[str], relation: List[str], tail_entity: List[str], labels) -> Tuple[torch.Tensor, torch.Tensor]
 
-      Construct a data point
-      :param head_entity:
-      :param relation:
-      :param tail_entity:
-      :param labels:
-      :return:
+      Constructs input and output tensors for a given set of triples and labels.
+
+      :param head_entity: A list of head entities.
+      :type head_entity: List[str]
+      :param relation: A list of relations.
+      :type relation: List[str]
+      :param tail_entity: A list of tail entities.
+      :type tail_entity: List[str]
+      :param labels: The labels associated with each triple.
+      :type labels: List[int] or torch.Tensor
+
+      :returns: The input tensor consisting of indexed triples and the output tensor of labels.
+      :rtype: Tuple[torch.Tensor, torch.Tensor]
 
 
    .. py:method:: parameters()
+
+      Retrieves the parameters of the model.
+
+      This method is typically used to access the parameters of the model for optimization or inspection.
+
+      :returns: An iterator over the model parameters, which are instances of torch.nn.parameter.Parameter.
+      :rtype: Iterator[torch.nn.parameter.Parameter]
 
 
 
@@ -252,67 +354,49 @@ Classes
 
    Bases: :py:obj:`abc.ABC`, :py:obj:`lightning.pytorch.callbacks.Callback`
 
-   Abstract class for Callback class for knowledge graph embedding models
+   Abstract base class for implementing custom callbacks for knowledge graph embedding models during training with PyTorch Lightning.
 
-
-   Parameter
-   ---------
-
+   This class is designed to be subclassed, with methods overridden to perform actions at various points during the training life cycle.
 
    .. py:method:: on_init_start(*args, **kwargs)
 
-      Parameter
-      ---------
-      trainer:
+      Called before the trainer initialization starts.
 
-      model:
-
-      :rtype: None
+      :param trainer: The trainer instance.
+      :type trainer: pl.Trainer
 
 
    .. py:method:: on_init_end(*args, **kwargs)
 
-      Call at the beginning of the training.
+      Called after the trainer initialization ends.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The trainer instance.
+      :type trainer: pl.Trainer
 
 
    .. py:method:: on_fit_start(trainer, model)
 
-      Call at the beginning of the training.
+      Called at the very beginning of fit.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The trainer instance.
+      :type trainer: pl.Trainer
+      :param pl_module: The model that is being trained.
+      :type pl_module: pl.LightningModule
 
 
    .. py:method:: on_train_epoch_end(trainer, model)
 
-      Call at the end of each epoch during training.
+      Called at the end of the training epoch.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The trainer instance.
+      :type trainer: pl.Trainer
+      :param pl_module: The model that is being trained.
+      :type pl_module: pl.LightningModule
 
 
    .. py:method:: on_train_batch_end(*args, **kwargs)
 
       Call at the end of each mini-batch during the training.
-
 
       Parameter
       ---------
@@ -325,57 +409,60 @@ Classes
 
    .. py:method:: on_fit_end(*args, **kwargs)
 
-      Call at the end of the training.
+      Called at the end of fit.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The trainer instance.
+      :type trainer: pl.Trainer
+      :param pl_module: The model that has been trained.
+      :type pl_module: pl.LightningModule
 
 
 
-.. py:class:: AbstractPPECallback(num_epochs, path, epoch_to_start, last_percent_to_consider)
+.. py:class:: AbstractPPECallback(num_epochs: int, path: str, epoch_to_start: Optional[int] = None, last_percent_to_consider: Optional[float] = None)
 
 
    Bases: :py:obj:`AbstractCallback`
 
-   Abstract class for Callback class for knowledge graph embedding models
+   Abstract base class for implementing Parameter Prediction Ensemble (PPE) callbacks for knowledge graph embedding models.
 
+   This class provides a structure for creating ensemble models by averaging model parameters over epochs,
+   which can potentially improve model performance and robustness.
 
-   Parameter
-   ---------
-
+   :param num_epochs: Total number of epochs for training.
+   :type num_epochs: int
+   :param path: Path to save or load the ensemble model.
+   :type path: str
+   :param epoch_to_start: The epoch number to start creating the ensemble. If None, a percentage of epochs to consider can be specified instead.
+   :type epoch_to_start: Optional[int]
+   :param last_percent_to_consider: The last percentage of epochs to consider for creating the ensemble. If both `epoch_to_start` and `last_percent_to_consider` are None, ensemble starts from epoch 1.
+   :type last_percent_to_consider: Optional[float]
 
    .. py:method:: on_fit_start(trainer, model)
 
-      Call at the beginning of the training.
+      Called at the very beginning of fit.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The trainer instance.
+      :type trainer: Trainer instance
+      :param model: The model that is being trained.
+      :type model: LightningModule
 
 
    .. py:method:: on_fit_end(trainer, model)
 
-      Call at the end of the training.
+      Called at the end of fit. It loads the ensemble parameters if they exist.
 
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
+      :param trainer: The trainer instance.
+      :type trainer: Trainer instance
+      :param model: The model that has been trained.
+      :type model: LightningModule
 
 
-   .. py:method:: store_ensemble(param_ensemble) -> None
+   .. py:method:: store_ensemble(param_ensemble: torch.Tensor) -> None
+
+      Saves the updated parameter ensemble model to disk.
+
+      :param param_ensemble: The ensemble of model parameters to be saved.
+      :type param_ensemble: torch.Tensor
 
 
 

@@ -123,94 +123,154 @@
 <h3>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h3>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.apply_reciprical_or_noise" title="dicee.read_preprocess_save_load_kg.util.apply_reciprical_or_noise"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_reciprical_or_noise</span></code></a>(add_reciprical, eval_model)</p></td>
-<td><p><ol class="arabic simple">
-<li><p>Add reciprocal triples (2) Add noisy triples</p></li>
-</ol>
-</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.apply_reciprical_or_noise" title="dicee.read_preprocess_save_load_kg.util.apply_reciprical_or_noise"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_reciprical_or_noise</span></code></a>(→ Union[pandas.DataFrame, None])</p></td>
+<td><p>Add reciprocal triples to the knowledge graph dataset.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.timeit" title="dicee.read_preprocess_save_load_kg.util.timeit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">timeit</span></code></a>(func)</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.timeit" title="dicee.read_preprocess_save_load_kg.util.timeit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">timeit</span></code></a>(→ Callable)</p></td>
+<td><p>A decorator to measure the execution time of a function.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.read_with_polars" title="dicee.read_preprocess_save_load_kg.util.read_with_polars"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_with_polars</span></code></a>(→ polars.DataFrame)</p></td>
-<td><p>Load and Preprocess via Polars</p></td>
+<td><p>Load and preprocess a dataset using Polars.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.read_with_pandas" title="dicee.read_preprocess_save_load_kg.util.read_with_pandas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_with_pandas</span></code></a>(data_path[, read_only_few, ...])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.read_from_disk" title="dicee.read_preprocess_save_load_kg.util.read_from_disk"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_from_disk</span></code></a>(data_path[, read_only_few, ...])</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.read_from_disk" title="dicee.read_preprocess_save_load_kg.util.read_from_disk"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_from_disk</span></code></a>(→ Union[pandas.DataFrame, ...)</p></td>
+<td><p>Load and preprocess a dataset from disk using specified backend.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.read_from_triple_store" title="dicee.read_preprocess_save_load_kg.util.read_from_triple_store"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_from_triple_store</span></code></a>([endpoint])</p></td>
-<td><p>Read triples from triple store into pandas dataframe</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.read_from_triple_store" title="dicee.read_preprocess_save_load_kg.util.read_from_triple_store"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_from_triple_store</span></code></a>(→ pandas.DataFrame)</p></td>
+<td><p>Read triples from a SPARQL endpoint (triple store) and load them into a Pandas DataFrame.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.get_er_vocab" title="dicee.read_preprocess_save_load_kg.util.get_er_vocab"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_er_vocab</span></code></a>(data[, file_path])</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.get_er_vocab" title="dicee.read_preprocess_save_load_kg.util.get_er_vocab"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_er_vocab</span></code></a>(→ collections.defaultdict)</p></td>
+<td><p>Create a vocabulary mapping from (entity, relation) pairs to lists of tail entities.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.get_re_vocab" title="dicee.read_preprocess_save_load_kg.util.get_re_vocab"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_re_vocab</span></code></a>(data[, file_path])</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.get_re_vocab" title="dicee.read_preprocess_save_load_kg.util.get_re_vocab"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_re_vocab</span></code></a>(→ collections.defaultdict)</p></td>
+<td><p>Create a vocabulary mapping from (relation, tail entity) pairs to lists of head entities.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.get_ee_vocab" title="dicee.read_preprocess_save_load_kg.util.get_ee_vocab"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_ee_vocab</span></code></a>(data[, file_path])</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.get_ee_vocab" title="dicee.read_preprocess_save_load_kg.util.get_ee_vocab"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_ee_vocab</span></code></a>(→ collections.defaultdict)</p></td>
+<td><p>Create a vocabulary mapping from (head entity, tail entity) pairs to lists of relations.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.create_constraints" title="dicee.read_preprocess_save_load_kg.util.create_constraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_constraints</span></code></a>(triples[, file_path])</p></td>
-<td><p><ol class="arabic simple">
-<li><p>Extract domains and ranges of relations</p></li>
-</ol>
-</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.create_constraints" title="dicee.read_preprocess_save_load_kg.util.create_constraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_constraints</span></code></a>(→ Tuple[dict, dict])</p></td>
+<td><p>Create domain and range constraints for each relation in a set of triples.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.load_with_pandas" title="dicee.read_preprocess_save_load_kg.util.load_with_pandas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_with_pandas</span></code></a>(→ None)</p></td>
-<td><p>Deserialize data</p></td>
+<td><p>Deserialize data and load it into the knowledge graph instance using Pandas.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.save_numpy_ndarray" title="dicee.read_preprocess_save_load_kg.util.save_numpy_ndarray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_numpy_ndarray</span></code></a>(*, data, file_path)</p></td>
-<td><p></p></td>
+<td><p>Save a numpy ndarray to disk.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.load_numpy_ndarray" title="dicee.read_preprocess_save_load_kg.util.load_numpy_ndarray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_numpy_ndarray</span></code></a>(*, file_path)</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.load_numpy_ndarray" title="dicee.read_preprocess_save_load_kg.util.load_numpy_ndarray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_numpy_ndarray</span></code></a>(→ numpy.ndarray)</p></td>
+<td><p>Load a numpy ndarray from a file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.save_pickle" title="dicee.read_preprocess_save_load_kg.util.save_pickle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_pickle</span></code></a>(*, data[, file_path])</p></td>
-<td><p></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.save_pickle" title="dicee.read_preprocess_save_load_kg.util.save_pickle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_pickle</span></code></a>(*, data, file_path)</p></td>
+<td><p>Serialize an object and save it to a file using pickle.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.load_pickle" title="dicee.read_preprocess_save_load_kg.util.load_pickle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_pickle</span></code></a>(*[, file_path])</p></td>
-<td><p></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.load_pickle" title="dicee.read_preprocess_save_load_kg.util.load_pickle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_pickle</span></code></a>(→ Any)</p></td>
+<td><p>Load data from a pickle file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.create_recipriocal_triples" title="dicee.read_preprocess_save_load_kg.util.create_recipriocal_triples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_recipriocal_triples</span></code></a>(x)</p></td>
-<td><p>Add inverse triples into dask dataframe</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.create_reciprocal_triples" title="dicee.read_preprocess_save_load_kg.util.create_reciprocal_triples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_reciprocal_triples</span></code></a>(→ pandas.DataFrame)</p></td>
+<td><p>Add inverse triples to a DataFrame of knowledge graph triples.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.index_triples_with_pandas" title="dicee.read_preprocess_save_load_kg.util.index_triples_with_pandas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">index_triples_with_pandas</span></code></a>(→ pandas.core.frame.DataFrame)</p></td>
-<td><p><dl class="field-list simple">
-<dt class="field-odd">param train_set<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pandas dataframe</p>
-</dd>
-</dl>
-</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.index_triples_with_pandas" title="dicee.read_preprocess_save_load_kg.util.index_triples_with_pandas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">index_triples_with_pandas</span></code></a>(→ pandas.DataFrame)</p></td>
+<td><p>Index knowledge graph triples in a pandas DataFrame using provided entity and relation mappings.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.dataset_sanity_checking" title="dicee.read_preprocess_save_load_kg.util.dataset_sanity_checking"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dataset_sanity_checking</span></code></a>(→ None)</p></td>
-<td><p><dl class="field-list simple">
-<dt class="field-odd">param train_set<span class="colon">:</span></dt>
-<dd class="field-odd"><p></p></dd>
-</dl>
-</p></td>
+<td><p>Perform sanity checks on a knowledge graph dataset.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.apply_reciprical_or_noise">
-<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">apply_reciprical_or_noise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">add_reciprical</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#apply_reciprical_or_noise"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.apply_reciprical_or_noise" title="Link to this definition"></a></dt>
-<dd><ol class="arabic simple">
-<li><p>Add reciprocal triples (2) Add noisy triples</p></li>
-</ol>
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">apply_reciprical_or_noise</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">add_reciprical</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#apply_reciprical_or_noise"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.apply_reciprical_or_noise" title="Link to this definition"></a></dt>
+<dd><p>Add reciprocal triples to the knowledge graph dataset.</p>
+<p>This function augments a dataset by adding reciprocal triples. For each triple (s, p, o) in the dataset,
+it adds a reciprocal triple (o, p_inverse, s). This augmentation is often used in knowledge graph embedding
+models to improve the learning of relation patterns.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>add_reciprical</strong> (<em>bool</em>) – A flag indicating whether to add reciprocal triples.</p></li>
+<li><p><strong>eval_model</strong> (<em>str</em>) – The name of the evaluation model being used, which determines whether the reciprocal triples are required.</p></li>
+<li><p><strong>df</strong> (<em>pd.DataFrame</em><em>, </em><em>optional</em>) – A pandas DataFrame containing the original triples of the knowledge graph. Each row should represent
+a triple (subject, predicate, object).</p></li>
+<li><p><strong>info</strong> (<em>str</em><em>, </em><em>optional</em>) – An informational string describing the dataset being processed (e.g., ‘train’, ‘test’).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The augmented dataset with reciprocal triples added if the conditions are met.
+Returns the original DataFrame if conditions are not met, or None if the input DataFrame is None.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[pd.DataFrame, None]</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The function checks if both ‘add_reciprical’ and ‘eval_model’ are set to truthy values before proceeding
+with the addition of reciprocal triples.</p></li>
+<li><p>If ‘df’ is None, the function returns None, indicating that no dataset was provided for processing.</p></li>
+<li><p>The reciprocal triples are created using a custom function ‘create_reciprocal_triples’.</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.timeit">
-<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">timeit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#timeit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.timeit" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">timeit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Callable</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#timeit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.timeit" title="Link to this definition"></a></dt>
+<dd><p>A decorator to measure the execution time of a function.</p>
+<p>This decorator, when applied to a function, logs the time taken by the function to execute.
+It uses <cite>time.perf_counter()</cite> for precise time measurement. The decorator also reports the
+memory usage of the process at the time of the function’s execution completion.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>func</strong> (<em>Callable</em>) – The function to be decorated.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The decorated function with added execution time and memory usage logging.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Callable</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The decorator uses <cite>functools.wraps</cite> to preserve the metadata of the original function.</p></li>
+<li><p>Time is measured using <cite>time.perf_counter()</cite>, which provides a higher resolution time measurement.</p></li>
+<li><p>Memory usage is obtained using <cite>psutil.Process(os.getpid()).memory_info().rss</cite>, which gives the resident set size.</p></li>
+<li><p>This decorator is useful for performance profiling and debugging.</p></li>
+</ul>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.read_with_polars">
-<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">read_with_polars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only_few</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_triples_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">polars.DataFrame</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#read_with_polars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.read_with_polars" title="Link to this definition"></a></dt>
-<dd><p>Load and Preprocess via Polars</p>
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">read_with_polars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only_few</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_triples_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">polars.DataFrame</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#read_with_polars"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.read_with_polars" title="Link to this definition"></a></dt>
+<dd><p>Load and preprocess a dataset using Polars.</p>
+<p>This function reads a dataset from a specified file path using the Polars library. It can handle CSV, TXT,
+and Parquet file formats. The function also provides options to read only a subset of the data and to sample
+a fraction of the data. Additionally, it applies a heuristic to filter out triples with literal values in RDF
+knowledge graphs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_path</strong> (<em>str</em>) – The file path to the dataset. Supported formats include CSV, TXT, and Parquet.</p></li>
+<li><p><strong>read_only_few</strong> (<em>int</em><em>, </em><em>optional</em>) – If specified, only this number of rows will be read from the dataset. Defaults to reading the entire dataset.</p></li>
+<li><p><strong>sample_triples_ratio</strong> (<em>float</em><em>, </em><em>optional</em>) – If specified, a fraction of the dataset will be randomly sampled. For example, a value of 0.1 samples 10% of the data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The loaded and optionally sampled dataset as a Polars DataFrame.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>polars.DataFrame</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The function determines the file format based on the file extension.</p></li>
+<li><p>If ‘sample_triples_ratio’ is provided, the dataset is subsampled accordingly.</p></li>
+<li><p>A heuristic is applied to remove triples where the subject or object does not start with ‘&lt;’,
+which is common in RDF knowledge graphs to indicate entities.</p></li>
+<li><p>This function uses Polars for efficient data loading and manipulation, especially useful for large datasets.</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py function">
@@ -220,110 +280,390 @@
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.read_from_disk">
-<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">read_from_disk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only_few</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_triples_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#read_from_disk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.read_from_disk" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">read_from_disk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only_few</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_triples_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">polars.DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#read_from_disk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.read_from_disk" title="Link to this definition"></a></dt>
+<dd><p>Load and preprocess a dataset from disk using specified backend.</p>
+<p>This function reads a dataset from a specified file path, supporting different backends such as pandas, polars,
+and rdflib. It can handle various file formats including TTL, OWL, RDF/XML, and others. The function provides
+options to read only a subset of the data and to sample a fraction of the data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data_path</strong> (<em>str</em>) – The file path to the dataset.</p></li>
+<li><p><strong>read_only_few</strong> (<em>int</em><em>, </em><em>optional</em>) – If specified, only this number of rows will be read from the dataset. Defaults to reading the entire dataset.</p></li>
+<li><p><strong>sample_triples_ratio</strong> (<em>float</em><em>, </em><em>optional</em>) – If specified, a fraction of the dataset will be randomly sampled.</p></li>
+<li><p><strong>backend</strong> (<em>str</em>) – The backend to use for reading the dataset. Supported values are ‘pandas’, ‘polars’, and ‘rdflib’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The loaded dataset as a DataFrame, depending on the specified backend. Returns None if the file is not found.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[pd.DataFrame, polars.DataFrame, None]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>RuntimeError</strong> – If the data format is not compatible with the specified backend, or if the backend is not recognized.</p></li>
+<li><p><strong>AssertionError</strong> – If the backend is not provided.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The function automatically detects the data format based on the file extension.</p></li>
+<li><p>For RDF/XML, TTL, OWL, and similar formats, the ‘rdflib’ backend is required.</p></li>
+<li><p>This function is a general interface for loading datasets, allowing flexibility in choosing the backend
+based on data format and processing needs.</p></li>
+</ul>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.read_from_triple_store">
-<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">read_from_triple_store</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">endpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#read_from_triple_store"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.read_from_triple_store" title="Link to this definition"></a></dt>
-<dd><p>Read triples from triple store into pandas dataframe</p>
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">read_from_triple_store</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">endpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#read_from_triple_store"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.read_from_triple_store" title="Link to this definition"></a></dt>
+<dd><p>Read triples from a SPARQL endpoint (triple store) and load them into a Pandas DataFrame.</p>
+<p>This function executes a SPARQL query against a specified SPARQL endpoint to retrieve all triples in the store.
+The result is then formatted into a Pandas DataFrame for further processing or analysis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>endpoint</strong> (<em>str</em>) – The URL of the SPARQL endpoint from which to retrieve triples.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A DataFrame containing the triples retrieved from the triple store, with columns ‘subject’, ‘relation’,
+and ‘object’.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>AssertionError</strong> – If the ‘endpoint’ parameter is None or not a string, or if the response from the endpoint is not successful.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The function sends a SPARQL query to the provided endpoint to retrieve all triples in the format
+{?subject ?predicate ?object}.</p></li>
+<li><p>The response is expected in JSON format, conforming to the SPARQL query results JSON format.</p></li>
+<li><p>This function is specifically designed for reading data from a SPARQL endpoint and requires an endpoint
+that responds to POST requests with SPARQL queries.</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.get_er_vocab">
-<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">get_er_vocab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#get_er_vocab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.get_er_vocab" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">get_er_vocab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">collections.defaultdict</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#get_er_vocab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.get_er_vocab" title="Link to this definition"></a></dt>
+<dd><p>Create a vocabulary mapping from (entity, relation) pairs to lists of tail entities.</p>
+<p>This function processes a dataset of triples and constructs a mapping where each key is a tuple of
+(head entity, relation) and the corresponding value is a list of all tail entities associated with
+that (head entity, relation) pair. Optionally, this vocabulary can be saved to a file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>Iterable</em><em>[</em><em>Tuple</em><em>[</em><em>Any</em><em>, </em><em>Any</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – An iterable of triples, where each triple is a tuple (head entity, relation, tail entity).</p></li>
+<li><p><strong>file_path</strong> (<em>str</em><em>, </em><em>optional</em>) – The file path where the vocabulary should be saved as a pickle file. If not provided, the vocabulary
+is not saved to disk.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A default dictionary where keys are (entity, relation) tuples and values are lists of tail entities.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>defaultdict</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The function uses a <cite>defaultdict</cite> to handle keys that may not exist in the dictionary.</p></li>
+<li><p>It is useful for creating a quick lookup of all possible tail entities for given (entity, relation) pairs,
+which can be used in various knowledge graph tasks like link prediction.</p></li>
+<li><p>If ‘file_path’ is provided, the vocabulary is saved using the <cite>save_pickle</cite> function.</p></li>
+</ul>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.get_re_vocab">
-<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">get_re_vocab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#get_re_vocab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.get_re_vocab" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">get_re_vocab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">collections.defaultdict</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#get_re_vocab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.get_re_vocab" title="Link to this definition"></a></dt>
+<dd><p>Create a vocabulary mapping from (relation, tail entity) pairs to lists of head entities.</p>
+<p>This function processes a dataset of triples and constructs a mapping where each key is a tuple of
+(relation, tail entity) and the corresponding value is a list of all head entities associated with
+that (relation, tail entity) pair. Optionally, this vocabulary can be saved to a file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>Iterable</em><em>[</em><em>Tuple</em><em>[</em><em>Any</em><em>, </em><em>Any</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – An iterable of triples, where each triple is a tuple (head entity, relation, tail entity).</p></li>
+<li><p><strong>file_path</strong> (<em>str</em><em>, </em><em>optional</em>) – The file path where the vocabulary should be saved as a pickle file. If not provided, the vocabulary
+is not saved to disk.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A default dictionary where keys are (relation, tail entity) tuples and values are lists of head entities.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>defaultdict</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The function uses a <cite>defaultdict</cite> to handle keys that may not exist in the dictionary.</p></li>
+<li><p>It is useful for creating a quick lookup of all possible head entities for given (relation, tail entity) pairs,
+which can be used in various knowledge graph tasks like link prediction.</p></li>
+<li><p>If ‘file_path’ is provided, the vocabulary is saved using the <cite>save_pickle</cite> function.</p></li>
+</ul>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.get_ee_vocab">
-<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">get_ee_vocab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#get_ee_vocab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.get_ee_vocab" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">get_ee_vocab</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">collections.defaultdict</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#get_ee_vocab"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.get_ee_vocab" title="Link to this definition"></a></dt>
+<dd><p>Create a vocabulary mapping from (head entity, tail entity) pairs to lists of relations.</p>
+<p>This function processes a dataset of triples and constructs a mapping where each key is a tuple of
+(head entity, tail entity) and the corresponding value is a list of all relations that connect these
+two entities. Optionally, this vocabulary can be saved to a file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>Iterable</em><em>[</em><em>Tuple</em><em>[</em><em>Any</em><em>, </em><em>Any</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – An iterable of triples, where each triple is a tuple (head entity, relation, tail entity).</p></li>
+<li><p><strong>file_path</strong> (<em>str</em><em>, </em><em>optional</em>) – The file path where the vocabulary should be saved as a pickle file. If not provided, the vocabulary
+is not saved to disk.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A default dictionary where keys are (head entity, tail entity) tuples and values are lists of relations.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>defaultdict</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The function uses a <cite>defaultdict</cite> to handle keys that may not exist in the dictionary.</p></li>
+<li><p>This vocabulary is useful for tasks that require knowledge of all relations between specific pairs of entities,
+such as in certain types of link prediction or relation extraction tasks.</p></li>
+<li><p>If ‘file_path’ is provided, the vocabulary is saved using the <cite>save_pickle</cite> function.</p></li>
+</ul>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.create_constraints">
-<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">create_constraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">triples</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#create_constraints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.create_constraints" title="Link to this definition"></a></dt>
-<dd><ol class="arabic simple">
-<li><p>Extract domains and ranges of relations</p></li>
-</ol>
-<p>(2) Store a mapping from relations to entities that are outside of the domain and range.
-Crete constrainted entities based on the range of relations
-:param triples:
-:return:
-Tuple[dict, dict]</p>
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">create_constraints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">triples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#create_constraints"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.create_constraints" title="Link to this definition"></a></dt>
+<dd><p>Create domain and range constraints for each relation in a set of triples.</p>
+<p>This function processes a dataset of triples and constructs domain and range constraints for each relation.
+The domain of a relation is defined as the set of all head entities that appear with that relation, and the range
+is defined as the set of all tail entities. The constraints are formed by finding entities that are not in the
+domain or range of each relation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>triples</strong> (<em>np.ndarray</em>) – A numpy array of triples, where each row is a triple (head entity, relation, tail entity).</p></li>
+<li><p><strong>file_path</strong> (<em>str</em><em>, </em><em>optional</em>) – The file path where the constraints should be saved as a pickle file. If not provided, the constraints
+are not saved to disk.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple containing two dictionaries. The first dictionary maps each relation to a list of entities
+not in its domain, and the second maps each relation to a list of entities not in its range.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tuple[dict, dict]</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The function assumes that the input triples are in the form of a numpy array with three columns.</p></li>
+<li><p>The domain and range constraints are useful in tasks that require understanding the valid head and tail
+entities for each relation, such as in link prediction.</p></li>
+<li><p>If ‘file_path’ is provided, the constraints are saved using the <cite>save_pickle</cite> function.</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.load_with_pandas">
 <span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">load_with_pandas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#load_with_pandas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.load_with_pandas" title="Link to this definition"></a></dt>
-<dd><p>Deserialize data</p>
+<dd><p>Deserialize data and load it into the knowledge graph instance using Pandas.</p>
+<p>This method loads serialized data from disk, converting it into the appropriate data structures for
+use in the knowledge graph instance. It deserializes entity and relation mappings, training, validation,
+and test datasets, and constructs vocabularies and constraints necessary for the evaluation of the model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong> – </p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>This method reads serialized data stored in Parquet format with gzip compression.</p></li>
+<li><p>It deserializes mappings for entities and relations into dictionaries for efficient access.</p></li>
+<li><p>Training, validation, and test sets are loaded into numpy arrays.</p></li>
+<li><p>If evaluation is enabled, vocabularies for entity-relation, relation-entity, and entity-entity pairs
+are created along with domain and range constraints for relations.</p></li>
+<li><p>This method handles the absence of validation or test sets gracefully, setting the corresponding
+attributes to None if the files are not found.</p></li>
+<li><p>Deserialization paths and progress are logged, including time taken for each step.</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.save_numpy_ndarray">
 <span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">save_numpy_ndarray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#save_numpy_ndarray"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.save_numpy_ndarray" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Save a numpy ndarray to disk.</p>
+<p>This function saves a given numpy ndarray to a specified file path using NumPy’s binary format.
+The function is specifically designed to handle arrays with a shape (n, 3), typically representing
+triples in knowledge graphs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>np.ndarray</em>) – A numpy ndarray to be saved, expected to have the shape (n, 3) where ‘n’ is the number of rows
+and ‘d’ is the number of columns (specifically 3).</p></li>
+<li><p><strong>file_path</strong> (<em>str</em>) – The file path where the ndarray will be saved.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>AssertionError</strong> – If the number of rows ‘n’ in ‘data’ is not positive or the number of columns ‘d’ is not equal to 3.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The ndarray is saved in NumPy’s binary format (.npy file).</p></li>
+<li><p>This function is particularly useful for saving datasets of triples in knowledge graph applications.</p></li>
+<li><p>The file is opened in binary write mode and the data is saved using NumPy’s <cite>save</cite> function.</p></li>
+</ul>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.load_numpy_ndarray">
-<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">load_numpy_ndarray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#load_numpy_ndarray"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.load_numpy_ndarray" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">load_numpy_ndarray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">numpy.ndarray</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#load_numpy_ndarray"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.load_numpy_ndarray" title="Link to this definition"></a></dt>
+<dd><p>Load a numpy ndarray from a file.</p>
+<p>This function reads a numpy ndarray from a specified file path. The file is expected to be in
+NumPy’s binary format (.npy file). It’s commonly used to load datasets, especially in knowledge
+graph contexts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> (<em>str</em>) – The path of the file from which the ndarray will be loaded.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The numpy ndarray loaded from the specified file.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>The function opens the file in binary read mode and loads the data using NumPy’s <cite>load</cite> function.</p></li>
+<li><p>This function is particularly useful for loading datasets of triples in knowledge graph applications
+or other numerical data saved in NumPy’s binary format.</p></li>
+<li><p>It’s important to ensure that the file at ‘file_path’ exists and is a valid NumPy binary file to avoid
+runtime errors.</p></li>
+</ul>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.save_pickle">
-<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">save_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#save_pickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.save_pickle" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">save_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#save_pickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.save_pickle" title="Link to this definition"></a></dt>
+<dd><p>Serialize an object and save it to a file using pickle.</p>
+<p>This function serializes a given Python object using the pickle protocol and saves it to the specified file path.
+It’s a general-purpose function that can be used to persist a wide range of Python objects.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>object</em>) – The Python object to be serialized and saved. This can be any object that is serializable by the pickle module.</p></li>
+<li><p><strong>file_path</strong> (<em>str</em>) – The path of the file where the serialized object will be saved. The file will be created if it does not exist.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.load_pickle">
-<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">load_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#load_pickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.load_pickle" title="Link to this definition"></a></dt>
-<dd></dd></dl>
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">load_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#load_pickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.load_pickle" title="Link to this definition"></a></dt>
+<dd><p>Load data from a pickle file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file_path</strong> (<em>str</em>) – The file path to the pickle file to be loaded.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The data loaded from the pickle file.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.create_recipriocal_triples">
-<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">create_recipriocal_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#create_recipriocal_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.create_recipriocal_triples" title="Link to this definition"></a></dt>
-<dd><p>Add inverse triples into dask dataframe
-:param x:
-:return:</p>
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.create_reciprocal_triples">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">create_reciprocal_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#create_reciprocal_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.create_reciprocal_triples" title="Link to this definition"></a></dt>
+<dd><p>Add inverse triples to a DataFrame of knowledge graph triples.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>pd.DataFrame</em>) – The DataFrame containing knowledge graph triples with columns “subject,” “relation,” and “object.”</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A new DataFrame that includes the original triples and their inverse counterparts.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This function takes a DataFrame of knowledge graph triples and adds their inverse triples to it.
+For each triple (s, r, o) in the input DataFrame, an inverse triple (o, r_inverse, s) is added to the output.
+The “relation” column of the inverse triples is created by appending “_inverse” to the original relation.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.index_triples_with_pandas">
-<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">index_triples_with_pandas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entity_to_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relation_to_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#index_triples_with_pandas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.index_triples_with_pandas" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">index_triples_with_pandas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_set</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">pandas.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entity_to_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relation_to_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.DataFrame</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#index_triples_with_pandas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.index_triples_with_pandas" title="Link to this definition"></a></dt>
+<dd><p>Index knowledge graph triples in a pandas DataFrame using provided entity and relation mappings.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>train_set</strong> – pandas dataframe</p></li>
-<li><p><strong>entity_to_idx</strong> – a mapping from str to integer index</p></li>
-<li><p><strong>relation_to_idx</strong> – a mapping from str to integer index</p></li>
-<li><p><strong>num_core</strong> – number of cores to be used</p></li>
+<li><p><strong>train_set</strong> (<em>pd.DataFrame</em>) – A pandas DataFrame containing knowledge graph triples with columns “subject,” “relation,” and “object.”</p></li>
+<li><p><strong>entity_to_idx</strong> (<em>dict</em>) – A mapping from entity names (str) to integer indices.</p></li>
+<li><p><strong>relation_to_idx</strong> (<em>dict</em>) – A mapping from relation names (str) to integer indices.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>indexed triples, i.e., pandas dataframe</p>
+<dd class="field-even"><p>A new pandas DataFrame where the entities and relations in the original triples are replaced with their corresponding integer indices.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>This function takes a pandas DataFrame of knowledge graph triples, along with mappings from entity and relation names to integer indices.
+It replaces the entity and relation names in the DataFrame with their corresponding integer indices, effectively indexing the triples.
+The resulting DataFrame has the same structure as the input, with integer indices replacing entity and relation names.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.util.dataset_sanity_checking">
 <span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.util.</span></span><span class="sig-name descname"><span class="pre">dataset_sanity_checking</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_set</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_entities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_relations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#dataset_sanity_checking"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.util.dataset_sanity_checking" title="Link to this definition"></a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Perform sanity checks on a knowledge graph dataset.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>train_set</strong> – </p></li>
-<li><p><strong>num_entities</strong> – </p></li>
-<li><p><strong>num_relations</strong> – </p></li>
+<li><p><strong>train_set</strong> (<em>np.ndarray</em>) – The training dataset represented as a NumPy array. Each row represents a triple with columns “subject,” “relation,” and “object.”</p></li>
+<li><p><strong>num_entities</strong> (<em>int</em>) – The total number of entities in the knowledge graph.</p></li>
+<li><p><strong>num_relations</strong> (<em>int</em>) – The total number of relations in the knowledge graph.</p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p></p>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>AssertionError</strong> – If any of the sanity checks fail, assertions are raised to indicate potential issues in the dataset.</p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>This function performs a series of sanity checks on a knowledge graph dataset to ensure its integrity and consistency.
+It checks the data type of the dataset, the number of columns, the size of the dataset, and the validity of entity and relation indices.
+If any of the checks fail, assertions are raised to signal potential problems in the dataset.</p>
+<p>The checks performed include:
+- Verifying that the input dataset is a NumPy array.
+- Checking that the dataset has the correct number of columns (3 for subject, relation, and object).
+- Ensuring that the dataset size is greater than 0.
+- Validating that the maximum entity indices in the dataset do not exceed the specified number of entities.
+- Validating that the maximum relation index in the dataset does not exceed the specified number of relations.</p>
 </dd></dl>
 
 </section>

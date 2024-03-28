@@ -121,8 +121,8 @@
 <h3>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h3>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.scripts.run.get_default_arguments" title="dicee.scripts.run.get_default_arguments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_default_arguments</span></code></a>([description])</p></td>
-<td><p>Extends pytorch_lightning Trainer's arguments with ours</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.scripts.run.get_default_arguments" title="dicee.scripts.run.get_default_arguments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_default_arguments</span></code></a>(→ argparse.Namespace)</p></td>
+<td><p>Get default command-line arguments for the knowledge graph embedding execution.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.scripts.run.main" title="dicee.scripts.run.main"><code class="xref py py-obj docutils literal notranslate"><span class="pre">main</span></code></a>()</p></td>
 <td><p></p></td>
@@ -131,8 +131,22 @@
 </table>
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.scripts.run.get_default_arguments">
-<span class="sig-prename descclassname"><span class="pre">dicee.scripts.run.</span></span><span class="sig-name descname"><span class="pre">get_default_arguments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/scripts/run.html#get_default_arguments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.scripts.run.get_default_arguments" title="Link to this definition"></a></dt>
-<dd><p>Extends pytorch_lightning Trainer’s arguments with ours</p>
+<span class="sig-prename descclassname"><span class="pre">dicee.scripts.run.</span></span><span class="sig-name descname"><span class="pre">get_default_arguments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">argparse.Namespace</span></span></span><a class="reference internal" href="../../../../_modules/dicee/scripts/run.html#get_default_arguments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.scripts.run.get_default_arguments" title="Link to this definition"></a></dt>
+<dd><p>Get default command-line arguments for the knowledge graph embedding execution.</p>
+<p>This function returns a set of default command-line arguments that can be used to configure the knowledge graph
+embedding execution. It includes parameters related to dataset paths, model selection, training settings, optimization,
+and more.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>description</strong> (<em>str</em><em>, </em><em>optional</em>) – A description of the command-line arguments (default is None).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A namespace containing the default command-line arguments.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>argparse.Namespace</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">

@@ -91,7 +91,7 @@
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">datetime</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span>
-<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">CMult</span><span class="p">,</span> <span class="n">Pyke</span><span class="p">,</span> <span class="n">DistMult</span><span class="p">,</span> <span class="n">KeciBase</span><span class="p">,</span> <span class="n">Keci</span><span class="p">,</span> <span class="n">TransE</span><span class="p">,</span> <span class="n">DeCaL</span><span class="p">,</span> <span class="n">DualE</span><span class="p">,</span>\
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">CMult</span><span class="p">,</span> <span class="n">Pyke</span><span class="p">,</span> <span class="n">DistMult</span><span class="p">,</span> <span class="n">KeciBase</span><span class="p">,</span> <span class="n">Keci</span><span class="p">,</span> <span class="n">TransE</span><span class="p">,</span> <span class="n">DeCaL</span><span class="p">,</span>\
     <span class="n">ComplEx</span><span class="p">,</span> <span class="n">AConEx</span><span class="p">,</span> <span class="n">AConvO</span><span class="p">,</span> <span class="n">AConvQ</span><span class="p">,</span> <span class="n">ConvQ</span><span class="p">,</span> <span class="n">ConvO</span><span class="p">,</span> <span class="n">ConEx</span><span class="p">,</span> <span class="n">QMult</span><span class="p">,</span> <span class="n">OMult</span><span class="p">,</span> <span class="n">Shallom</span><span class="p">,</span> <span class="n">LFMult</span>
 <span class="kn">from</span> <span class="nn">.models.pykeen_models</span> <span class="kn">import</span> <span class="n">PykeenKGE</span>
 <span class="kn">from</span> <span class="nn">.models.transformers</span> <span class="kn">import</span> <span class="n">BytE</span>
@@ -559,9 +559,6 @@
         <span class="n">form_of_labelling</span> <span class="o">=</span> <span class="s1">&#39;EntityPrediction&#39;</span>
     <span class="k">elif</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s1">&#39;DeCaL&#39;</span><span class="p">:</span>
         <span class="n">model</span> <span class="o">=</span><span class="n">DeCaL</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
-        <span class="n">form_of_labelling</span> <span class="o">=</span> <span class="s1">&#39;EntityPrediction&#39;</span>
-    <span class="k">elif</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s1">&#39;DualE&#39;</span><span class="p">:</span>
-        <span class="n">model</span> <span class="o">=</span><span class="n">DualE</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
         <span class="n">form_of_labelling</span> <span class="o">=</span> <span class="s1">&#39;EntityPrediction&#39;</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--model_name: </span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2"> is not found.&quot;</span><span class="p">)</span>
