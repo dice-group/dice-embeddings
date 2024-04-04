@@ -252,8 +252,9 @@ class LFMult(BaseKGE):
         self.m = int(self.embedding_dim/(1+self.degree))
         self.num_layers = 2
         self.score_func = "comp"
-        self.weight_bias = "diff"
+        self.weight_bias = "diff"# "same"
         self.x_values = torch.linspace(-2, 1, 100).to(self.device_)
+        self.lamda = torch.nn.Parameter(torch.tensor(0.001))
         
     def forward_triples(self, idx_triple): 
 
@@ -383,7 +384,11 @@ class LFMult(BaseKGE):
             out = torch.tanh(weights[:,:,i].unsqueeze(-1)*out  + bias[:,:,i].unsqueeze(-1))
 
         # we apply only a linear transformation on the last layer (works better)
-        out = weights[:,:,self.num_layers-1].unsqueeze(-1)*out  + bias[:,:,self.num_layers-1].unsqueeze(-1)
+        out = weights[:,:,self.num_layers-1].unsqueeze(-1)*out  + bias[:,:,self.num_layers-1].unsqueeze(-1) 
+
+        l2_regularization_term = 0.5*self.lamda * (torch.norm(weights[self.num_layers - 1])**2)
+
+        out = (1-self.lamda) *out - l2_regularization_term
 
         return out
     
