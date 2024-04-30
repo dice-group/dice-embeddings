@@ -251,9 +251,10 @@ class LFMult(BaseKGE):
         self.degree = self.args.get("degree",0)
         self.m = int(self.embedding_dim/(1+self.degree))
         self.num_layers = 2
-        self.score_func = "comp"
+        self.score_func = "comp"#"tri"
         self.weight_bias = "diff"# "same"
-        self.x_values = torch.linspace(-2, 1, 100).to(self.device_)
+        self.a = -2
+        self.b = 1
         self.lamda = torch.nn.Parameter(torch.tensor(0.001))
         
     def forward_triples(self, idx_triple): 
@@ -264,59 +265,76 @@ class LFMult(BaseKGE):
         rel_emb = rel_emb.to(self.device_)
         tail_ent_emb = tail_ent_emb.to(self.device_)
 
-        coeff_head = self.construct_multi_coeff(head_ent_emb)#.cuda()
-        coeff_rel = self.construct_multi_coeff(rel_emb)#.cuda()
-        coeff_tail = self.construct_multi_coeff(tail_ent_emb)#.cuda()
-       
+        coeff_head = self.construct_multi_coeff(head_ent_emb)
+        coeff_rel = self.construct_multi_coeff(rel_emb)
+        coeff_tail = self.construct_multi_coeff(tail_ent_emb)
 
-        if self.weight_bias == "same":
+        
 
-            r, t = self.construct_multi_layers_same(self.x_values,coeff_rel), self.construct_multi_layers_same(self.x_values,coeff_tail)
+        if self.weight_bias == "same": # Use the same bias and weight at every layer
 
-            if self.score_func == "comp":
+            def r(x):
+                return self.construct_multi_layers_same(x,coeff_rel)
+            
+            def t(x):
+                return self.construct_multi_layers_same(x,coeff_tail)
 
-                hor = self.construct_multi_layers_same(r,coeff_head)
+            if self.score_func == "comp": # compositional scoring function
 
-                # wh, bh = coeff_head[:, :self.m,0], coeff_head[:, :self.m,1]
+                def f(x):
 
-                # wh_expanded = wh.unsqueeze(-1)
-                # bh_expanded = bh.unsqueeze(-1)
+                    hor_x = self.construct_multi_layers_same(r(x),coeff_head)
 
-                # hor = torch.tanh(wh_expanded * r + bh_expanded)
+                    return self.scalar_batch_NN(hor_x,t(x))
     
-                score = torch.trapezoid(self.scalar_batch_NN(hor,t),self.x_values)
+                score = self.Gauss_quad(self.a,self.b, f)
 
-            else:
+            elif self.score_func == "tri": # trilinear scoring function
 
-                h = self.construct_multi_layers_same(self.x_values,coeff_head)
+                def f(x):
 
-                score = torch.trapezoid(self.scalar_batch_NN(h,r,t), self.x_values)
+                    h_x = self.construct_multi_layers_same(x,coeff_head)
+
+                    return self.scalar_batch_NN(h_x,r(x),t(x))
+
+                score = self.Gauss_quad(self.a, self.b, f)
 
         
             return score 
         
-        else:
-
-            r, t = self.construct_multi_layers_diff(self.x_values,coeff_rel), self.construct_multi_layers_diff(self.x_values,coeff_tail)
+        elif self.weight_bias == "diff": # Use different bias and weight at every layer
+            
+            def r(x):
+                return self.construct_multi_layers_diff(x,coeff_rel)
+            
+            def t(x):
+                return self.construct_multi_layers_diff(x,coeff_tail)
 
             if self.score_func == "comp":
 
-                hor = self.construct_multi_layers_diff(r,coeff_head)
+                def f(x):
 
-                score = torch.trapezoid(self.scalar_batch_NN(hor,t),self.x_values)
+                    hor_x = self.construct_multi_layers_diff(r(x),coeff_head)
+
+                    return self.scalar_batch_NN(hor_x,t(x))
+                
+                score = self.Gauss_quad(self.a, self.b,f)
 
             else:
 
-                h = self.construct_multi_layers_diff(self.x_values,coeff_head)
+                def f(x):
 
-                score = torch.trapezoid(self.scalar_batch_NN(h,r,t), self.x_values)
+                    h_x = self.construct_multi_layers_diff(x,coeff_head)
+
+                    return self.scalar_batch_NN(h_x,r(x),t(x))
+                    
+                score = self.Gauss_quad(self.a, self.b, f)
 
         
             return score 
+        
 
 
-    
-    
     def construct_multi_coeff(self, x):
 
         coeffs = torch.hsplit(x,self.degree + 1)
@@ -357,6 +375,8 @@ class LFMult(BaseKGE):
 
         k = self.embedding_dim//2//self.num_layers # k = (emb_dim/2)/(num_layers) the dimension vector
 
+        
+
         list_w = torch.hsplit(w,k) # generate weights for each layer
         weights = torch.stack(list_w,dim=1)
         list_b = torch.hsplit(b,k) # generate bias for each layer
@@ -365,20 +385,6 @@ class LFMult(BaseKGE):
 
         out = x     
 
-        # for i in range(self.num_layers):
-
-        #     if i%2==0:
-        #         out = torch.tanh(weights[:,:,i].unsqueeze(-1)*out  + bias[:,:,i].unsqueeze(-1))
-        #     else:
-        #         out = weights[:,:,i].unsqueeze(-1)*out  + bias[:,:,i].unsqueeze(-1)
-
-        # for i in range(self.num_layers):
-
-        #     if i==100:
-        #         out = torch.tanh(weights[:,:,i].unsqueeze(-1)*out  + bias[:,:,i].unsqueeze(-1))
-        #     else:
-        #         out = weights[:,:,i].unsqueeze(-1)*out  + bias[:,:,i].unsqueeze(-1)
-
         for i in range(self.num_layers-1):
 
             out = torch.tanh(weights[:,:,i].unsqueeze(-1)*out  + bias[:,:,i].unsqueeze(-1))
@@ -386,53 +392,26 @@ class LFMult(BaseKGE):
         # we apply only a linear transformation on the last layer (works better)
         out = weights[:,:,self.num_layers-1].unsqueeze(-1)*out  + bias[:,:,self.num_layers-1].unsqueeze(-1) 
 
-        l2_regularization_term = 0.5*self.lamda * (torch.norm(weights[self.num_layers - 1])**2)
+        l2_regularization_term = self.lamda * (torch.norm(weights[self.num_layers - 1])**2)
 
         out = (1-self.lamda) *out - l2_regularization_term
 
         return out
-    
-
-    def poly_NN_compfunct(self, x, coefh, coefr, coeft):
-
-        r, t = self.construct_multi_layers_same(x,coefr), self.construct_multi_layers_same(x,coeft)
-
-        hor = self.construct_multi_layers_same(r,coefh)
-
-        return self.scalar_batch_NN(hor,t)
 
 
-    # def poly_NN_compfunct(self, x, coefh, coefr, coeft):
+    def Gauss_quad(self,a ,b,f):
 
-    #     r, t = self.construct_multi_layers(x,coefr), self.construct_multi_layers(x,coeft)
+        '''Integral approximation using Gaussian Quadrature with 5 points: \int_{a}^{b} f(x)dx = \sum_{i=1}^{5}w_if(x_i).
+         Inputs: a,b function boundaries, f a real valued function
+         Outputs: The value of the integral'''
 
-    #     wh, bh = coefh[:, :self.m,0], coefh[:, :self.m,1]
+        u = (b-a)/2
+        v = (a+b)/2
+        point = torch.tensor([0+v,  1/3*(5-2*(10/7)**.5)**.5*u + v, - 1/3*(5-2*(10/7)**.5)**.5*u + v,  1/3*(5+2*(10/7)**.5)**.5*u+v, \
+                               - 1/3*(5+2*(10/7)**.5)**.5*u+v])
+        weight = torch.tensor([128/225, (322+13*70**.5)/900, (322+13*70**.5)/900, (322-13*70**.5)/900, (322-13*70**.5)/900])
 
-    #     wh_expanded = wh.unsqueeze(-1)
-    #     bh_expanded = bh.unsqueeze(-1)
-
-    #     hor = torch.tanh((wh_expanded * r + bh_expanded))
-
-    #     return self.scalar_batch_NN(hor,t)
-    
-
-
-
-    def poly_NN_trilinear(self, x, coefh, coefr, coeft):
-
-
-        ''' trilinear scoring function with multiple layers'''
-
-        h,r,t = self.construct_multi_layers(x,coefh), self.construct_multi_layers(x,coefr),  self.construct_multi_layers(x,coeft)
-
-        return self.scalar_batch_NN(h, r, t)#(linear(x,wh,bh)*linear(x,wr,br)*linear(x,wt,bt))
-
-
-
-    
-    # def linear(self,x,w,b):
-        
-    #     return torch.tanh((w.reshape(-1,1)*x.unsqueeze(0) + b.reshape(-1,1)))
+        return u * torch.sum(weight*f(point), dim=-1)
     
 
 
