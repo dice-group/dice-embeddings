@@ -242,6 +242,10 @@ class LFMult(BaseKGE):
       f(x) = \sum_{i=0}^{d-1} a_k x^{i%d} and use the three differents scoring function as in the paper to evaluate the score.
       We also consider combining with Neural Networks.'''
     
+#     gpu_available = torch.cuda.is_available()
+
+#     device_type = 'gpu' if gpu_available else 'cpu'
+    
     def __init__(self,args):
         super().__init__(args)
         self.name = 'LFMult'
@@ -250,12 +254,14 @@ class LFMult(BaseKGE):
         self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
         self.degree = self.args.get("degree",0)
         self.m = int(self.embedding_dim/(1+self.degree))
-        self.num_layers = 2
+        self.num_layers = 1
         self.score_func = "comp"#"tri"
         self.weight_bias = "diff"# "same"
-        self.a = -2
+        #boundaries of the integral
+        self.a =-1
         self.b = 1
-        self.lamda = torch.nn.Parameter(torch.tensor(0.001))
+        
+        self.lamda = 0.001 #torch.nn.Parameter(torch.tensor(0.001))
         
     def forward_triples(self, idx_triple): 
 
@@ -265,13 +271,15 @@ class LFMult(BaseKGE):
         rel_emb = rel_emb.to(self.device_)
         tail_ent_emb = tail_ent_emb.to(self.device_)
 
-        coeff_head = self.construct_multi_coeff(head_ent_emb)
-        coeff_rel = self.construct_multi_coeff(rel_emb)
-        coeff_tail = self.construct_multi_coeff(tail_ent_emb)
+        coeff_head = self.construct_multi_coeff(head_ent_emb)#.to(self.device_)
+        coeff_rel = self.construct_multi_coeff(rel_emb)#.to(self.device_)
+        coeff_tail = self.construct_multi_coeff(tail_ent_emb)#.to(self.device_)
 
         
 
-        if self.weight_bias == "same": # Use the same bias and weight at every layer
+        if self.weight_bias == "same":
+
+            # r, t = self.construct_multi_layers_same(self.x_values,coeff_rel), self.construct_multi_layers_same(self.x_values,coeff_tail)
 
             def r(x):
                 return self.construct_multi_layers_same(x,coeff_rel)
@@ -279,7 +287,7 @@ class LFMult(BaseKGE):
             def t(x):
                 return self.construct_multi_layers_same(x,coeff_tail)
 
-            if self.score_func == "comp": # compositional scoring function
+            if self.score_func == "comp":
 
                 def f(x):
 
@@ -289,20 +297,23 @@ class LFMult(BaseKGE):
     
                 score = self.Gauss_quad(self.a,self.b, f)
 
-            elif self.score_func == "tri": # trilinear scoring function
+            else: # score_func == "tri"
 
                 def f(x):
 
-                    h_x = self.construct_multi_layers_same(x,coeff_head)
+                    h = self.construct_multi_layers_same(x,coeff_head)
 
-                    return self.scalar_batch_NN(h_x,r(x),t(x))
+                    return self.scalar_batch_NN(h,r(x),t(x))
 
-                score = self.Gauss_quad(self.a, self.b, f)
+                score = torch.trapezoid(self.a, self.b, f)
 
         
             return score 
         
-        elif self.weight_bias == "diff": # Use different bias and weight at every layer
+        else:
+
+            # r, t = self.construct_multi_layers_diff(self.x_values,coeff_rel), self.construct_multi_layers_diff(self.x_values,coeff_tail)
+
             
             def r(x):
                 return self.construct_multi_layers_diff(x,coeff_rel)
@@ -326,15 +337,15 @@ class LFMult(BaseKGE):
 
                     h_x = self.construct_multi_layers_diff(x,coeff_head)
 
+                    # score = torch.trapezoid(self.scalar_batch_NN(h,r,t), self.x_values)
                     return self.scalar_batch_NN(h_x,r(x),t(x))
                     
                 score = self.Gauss_quad(self.a, self.b, f)
 
         
-            return score 
-        
-
-
+            return score #score.cuda()
+    
+    
     def construct_multi_coeff(self, x):
 
         coeffs = torch.hsplit(x,self.degree + 1)
@@ -351,7 +362,7 @@ class LFMult(BaseKGE):
         w_expanded = w.unsqueeze(-1)
         b_expanded = b.unsqueeze(-1)
 
-        out = x
+        out = x.to(self.device_)
         
 
         for _ in range(self.num_layers-1):
@@ -368,14 +379,9 @@ class LFMult(BaseKGE):
     def construct_multi_layers_diff(self, x, coef):
         """Construct multiple layers with different weigths and bias at every layer"""
 
-        w, b = coef[:, :self.m, 1], coef[:, :self.m, 0] 
-        # w  =  coef[:, :self.m, 0]
-
-        #split weights and bias for every layers
-
+        w, b = coef[:, :self.m, 0], coef[:, :self.m, 1] 
+       
         k = self.embedding_dim//2//self.num_layers # k = (emb_dim/2)/(num_layers) the dimension vector
-
-        
 
         list_w = torch.hsplit(w,k) # generate weights for each layer
         weights = torch.stack(list_w,dim=1)
@@ -383,35 +389,20 @@ class LFMult(BaseKGE):
         bias = torch.stack(list_b,dim=1)
        
 
-        out = x     
+        out = x.to(self.device_) 
 
         for i in range(self.num_layers-1):
 
             out = torch.tanh(weights[:,:,i].unsqueeze(-1)*out  + bias[:,:,i].unsqueeze(-1))
 
         # we apply only a linear transformation on the last layer (works better)
-        out = weights[:,:,self.num_layers-1].unsqueeze(-1)*out  + bias[:,:,self.num_layers-1].unsqueeze(-1) 
+        out = torch.tanh(weights[:,:,self.num_layers-1].unsqueeze(-1)*out  + bias[:,:,self.num_layers-1].unsqueeze(-1))
 
         l2_regularization_term = self.lamda * (torch.norm(weights[self.num_layers - 1])**2)
 
         out = (1-self.lamda) *out - l2_regularization_term
 
         return out
-
-
-    def Gauss_quad(self,a ,b,f):
-
-        '''Integral approximation using Gaussian Quadrature with 5 points: \int_{a}^{b} f(x)dx = \sum_{i=1}^{5}w_if(x_i).
-         Inputs: a,b function boundaries, f a real valued function
-         Outputs: The value of the integral'''
-
-        u = (b-a)/2
-        v = (a+b)/2
-        point = torch.tensor([0+v,  1/3*(5-2*(10/7)**.5)**.5*u + v, - 1/3*(5-2*(10/7)**.5)**.5*u + v,  1/3*(5+2*(10/7)**.5)**.5*u+v, \
-                               - 1/3*(5+2*(10/7)**.5)**.5*u+v])
-        weight = torch.tensor([128/225, (322+13*70**.5)/900, (322+13*70**.5)/900, (322-13*70**.5)/900, (322-13*70**.5)/900])
-
-        return u * torch.sum(weight*f(point), dim=-1)
     
 
 
@@ -438,6 +429,20 @@ class LFMult(BaseKGE):
             mul_result = a_reshaped * b_reshaped 
         
         return mul_result.sum(dim=-1)
+    
+    def Gauss_quad(self,a ,b,f):
+
+        '''Integral approximation using Gaussian Quadrature with 5 points'''
+
+        u = (b-a)/2
+        v = (a+b)/2
+        point = torch.tensor([v,  1/3*(5-2*(10/7)**.5)**.5*u + v, - 1/3*(5-2*(10/7)**.5)**.5*u + v,  1/3*(5+2*(10/7)**.5)**.5*u+v, \
+                               - 1/3*(5+2*(10/7)**.5)**.5*u+v], device = self.device_)
+        
+        
+        weight = torch.tensor([128/225, (322+13*70**.5)/900, (322+13*70**.5)/900, (322-13*70**.5)/900, (322-13*70**.5)/900], device = self.device_)
+        
+        return u * torch.sum(weight*f(point), dim=-1)
 
     
     
@@ -465,7 +470,7 @@ class PolyMult(BaseKGE):
 
         ###### polynomial score with trilinear scoring
 
-        score = self.tri_score(coeff_head,coeff_rel,coeff_tail)
+        score = self.comp_func(coeff_head,coeff_rel,coeff_tail)
         
         score = score.reshape(-1,self.m).sum(dim=1)
     
@@ -498,6 +503,7 @@ class PolyMult(BaseKGE):
         i_range, j_range, k_range = torch.meshgrid(torch.arange(self.degree+1),torch.arange(self.degree+1),torch.arange(self.degree+1))
 
         if self.degree == 0:
+
             terms = 1 / (1 + i_range + j_range + k_range) #%self.degree
         else:
             terms = 1 / (1 + (i_range + j_range + k_range)%self.degree) #%self.degree
@@ -582,8 +588,6 @@ class PolyMult(BaseKGE):
         return Mat
     
 
-
-
 class LFMult1(BaseKGE): 
 
     '''Embedding with trigonometric functions. We represent all entities and relations in the complex number space as:
@@ -594,18 +598,31 @@ class LFMult1(BaseKGE):
         self.name = 'LFMult1'
         self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
         self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
+        self.degree = self.args.get("degree",0)
+        self.m = int(self.embedding_dim/(1+self.degree))
+        
 
     def forward_triples(self, idx_triple): # idx_triplet = (h_idx, r_idx, t_idx) #change this to the forward_triples
 
         head_ent_emb, rel_emb, tail_ent_emb = self.get_triple_representation(idx_triple)
 
-        score = self.vtp_score(head_ent_emb,rel_emb,tail_ent_emb)
+        coeff_head, coeff_rel, coeff_tail = self.construct_multi_coeff(head_ent_emb), self.construct_multi_coeff(rel_emb), self.construct_multi_coeff(tail_ent_emb)
+
+        score = self.tri_score(coeff_head,coeff_rel,coeff_tail)
+
     
-        return score
+        return score.sum(dim=1)
+    
+    def construct_multi_coeff(self, x):
+
+        coeffs = torch.hsplit(x,1+self.degree)
+        coeffs = torch.stack(coeffs,dim=1)
+
+        return coeffs.transpose(1,2)
 
     def tri_score(self,h,r,t):
 
-        i_range, j_range, k_range = torch.meshgrid(torch.arange(self.embedding_dim),torch.arange(self.embedding_dim),torch.arange(self.embedding_dim))
+        i_range, j_range, k_range = torch.meshgrid(torch.arange(1+self.degree),torch.arange(1+self.degree),torch.arange(1+self.degree))
         eps = 10**-6   #for stability reason
         cond = i_range + j_range == k_range
 
@@ -640,3 +657,63 @@ class LFMult1(BaseKGE):
 
         s = s1 - s2 # combine the two sums.
         return s
+
+
+
+# class LFMult1(BaseKGE): 
+
+#     '''Embedding with trigonometric functions. We represent all entities and relations in the complex number space as:
+#       f(x) = \sum_{k=0}^{k=d-1}wk e^{kix}. and use the three differents scoring function as in the paper to evaluate the score'''
+    
+#     def __init__(self,args):
+#         super().__init__(args)
+#         self.name = 'LFMult1'
+#         self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+#         self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
+#         self.embedding_dim = 10
+
+#     def forward_triples(self, idx_triple): # idx_triplet = (h_idx, r_idx, t_idx) #change this to the forward_triples
+
+#         head_ent_emb, rel_emb, tail_ent_emb = self.get_triple_representation(idx_triple)
+
+#         score = self.tri_score(head_ent_emb,rel_emb,tail_ent_emb)
+    
+#         return score
+
+#     def tri_score(self,h,r,t):
+
+#         i_range, j_range, k_range = torch.meshgrid(torch.arange(self.embedding_dim),torch.arange(self.embedding_dim),torch.arange(self.embedding_dim))
+#         eps = 10**-6   #for stability reason
+#         cond = i_range + j_range == k_range
+
+#         s1 = torch.sum(torch.where(~cond, torch.zeros_like(~cond),  h[:, i_range] * r[:, j_range] * t[:, k_range]),dim=(-3,-2,-1)) # sum on i+j = k
+
+#         s2 = torch.sum(torch.where(cond, torch.zeros_like(cond), torch.sin(i_range + j_range - k_range) \
+#                                 * h[:, i_range] * r[:, j_range] * t[:, k_range] /(eps+i_range + j_range - k_range)),dim=(-3,-2,-1))# sum on i+j != k
+#         s = s1 + s2 # combine the two sums.
+#         return s
+    
+#     def vtp_score(self,h,r,t):
+
+#         i_range, j_range = torch.meshgrid(torch.arange(self.embedding_dim),torch.arange(self.embedding_dim))
+#         eps = 10**-6   #for stability reason
+#         cond = i_range == j_range
+
+#         p1 = torch.sum(torch.where(cond, torch.zeros_like(cond), torch.sin(i_range - j_range) \
+#                                 * h[:, i_range] * t[:, j_range] /(eps+i_range - j_range)),dim=(-3,-2,-1)) \
+#                                     + torch.sum(h[:, i_range] * t[:, i_range],dim=(-3,-2,-1))# sum on i != j
+#         i_1 = torch.arange(1,self.embedding_dim)
+#         p2 = torch.sum(r[:, i_1] * torch.sin(i_1)/(i_1) ,dim=-1) + r[:,0]
+        
+#         s1 = p1*p2
+
+#         p3 = torch.sum(torch.where(cond, torch.zeros_like(cond), torch.sin(i_range - j_range) \
+#                                 * r[:, i_range] * t[:, j_range] /(eps+i_range - j_range)),dim=(-3,-2,-1)) \
+#                                     + torch.sum(r[:, i_range] * t[:, i_range],dim=(-3,-2,-1))# sum on i != j
+        
+#         p4 = torch.sum(h[:, i_1] * torch.sin(i_1)/(i_1) ,dim=-1) + h[:,0]
+#         s2 = p3*p4
+
+
+#         s = s1 - s2 # combine the two sums.
+#         return s

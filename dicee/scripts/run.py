@@ -9,7 +9,7 @@ def get_default_arguments(description=None):
     parser = argparse.ArgumentParser(add_help=False)
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Knowledge graph related arguments
-    parser.add_argument("--dataset_dir", type=str, default="KGs/UMLS",
+    parser.add_argument("--dataset_dir", type=str, default="/home/dice/Desktop/dice-embeddings/KGs/UMLS", 
                         help="The path of a folder containing train.txt, and/or valid.txt and/or test.txt"
                              ",e.g., KGs/UMLS")
     parser.add_argument("--sparql_endpoint", type=str, default=None,
@@ -36,7 +36,7 @@ def get_default_arguments(description=None):
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
                                  "Pykeen_HolE", "Pykeen_ProjE", "Pykeen_RotatE",
                                  "Pykeen_TransE", "Pykeen_TransF", "Pykeen_TransH",
-                                 "Pykeen_TransR", "Pykeen_TuckER", "Pykeen_ComplEx","LFMult", "DeCaL"],
+                                 "Pykeen_TransR", "Pykeen_TuckER", "Pykeen_ComplEx","LFMult", "DeCaL", "LFMult1"],
                         help="Available knowledge graph embedding models. "
                              "To use other knowledge graph embedding models available in python, e.g.,"
                              "**Pykeen_BoxE** and add this into choices")
