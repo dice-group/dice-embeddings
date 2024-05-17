@@ -470,7 +470,7 @@ class PolyMult(BaseKGE):
 
         ###### polynomial score with trilinear scoring
 
-        score = self.comp_func(coeff_head,coeff_rel,coeff_tail)
+        score = self.tri_score(coeff_head,coeff_rel,coeff_tail)
         
         score = score.reshape(-1,self.m).sum(dim=1)
     
@@ -588,78 +588,6 @@ class PolyMult(BaseKGE):
         return Mat
     
 
-class LFMult1(BaseKGE): 
-
-    '''Embedding with trigonometric functions. We represent all entities and relations in the complex number space as:
-      f(x) = \sum_{k=0}^{k=d-1}wk e^{kix}. and use the three differents scoring function as in the paper to evaluate the score'''
-    
-    def __init__(self,args):
-        super().__init__(args)
-        self.name = 'LFMult1'
-        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
-        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-        self.degree = self.args.get("degree",0)
-        self.m = int(self.embedding_dim/(1+self.degree))
-        
-
-    def forward_triples(self, idx_triple): # idx_triplet = (h_idx, r_idx, t_idx) #change this to the forward_triples
-
-        head_ent_emb, rel_emb, tail_ent_emb = self.get_triple_representation(idx_triple)
-
-        coeff_head, coeff_rel, coeff_tail = self.construct_multi_coeff(head_ent_emb), self.construct_multi_coeff(rel_emb), self.construct_multi_coeff(tail_ent_emb)
-
-        score = self.tri_score(coeff_head,coeff_rel,coeff_tail)
-
-    
-        return score.sum(dim=1)
-    
-    def construct_multi_coeff(self, x):
-
-        coeffs = torch.hsplit(x,1+self.degree)
-        coeffs = torch.stack(coeffs,dim=1)
-
-        return coeffs.transpose(1,2)
-
-    def tri_score(self,h,r,t):
-
-        i_range, j_range, k_range = torch.meshgrid(torch.arange(1+self.degree),torch.arange(1+self.degree),torch.arange(1+self.degree))
-        eps = 10**-6   #for stability reason
-        cond = i_range + j_range == k_range
-
-        s1 = torch.sum(torch.where(~cond, torch.zeros_like(~cond),  h[:, i_range] * r[:, j_range] * t[:, k_range]),dim=(-3,-2,-1)) # sum on i+j = k
-
-        s2 = torch.sum(torch.where(cond, torch.zeros_like(cond), torch.sin(i_range + j_range - k_range) \
-                                * h[:, i_range] * r[:, j_range] * t[:, k_range] /(eps+i_range + j_range - k_range)),dim=(-3,-2,-1))# sum on i+j != k
-        s = s1 + s2 # combine the two sums.
-        return s
-    
-    def vtp_score(self,h,r,t):
-
-        i_range, j_range = torch.meshgrid(torch.arange(self.embedding_dim),torch.arange(self.embedding_dim))
-        eps = 10**-6   #for stability reason
-        cond = i_range == j_range
-
-        p1 = torch.sum(torch.where(cond, torch.zeros_like(cond), torch.sin(i_range - j_range) \
-                                * h[:, i_range] * t[:, j_range] /(eps+i_range - j_range)),dim=(-3,-2,-1)) \
-                                    + torch.sum(h[:, i_range] * t[:, i_range],dim=(-3,-2,-1))# sum on i != j
-        i_1 = torch.arange(1,self.embedding_dim)
-        p2 = torch.sum(r[:, i_1] * torch.sin(i_1)/(i_1) ,dim=-1) + r[:,0]
-        
-        s1 = p1*p2
-
-        p3 = torch.sum(torch.where(cond, torch.zeros_like(cond), torch.sin(i_range - j_range) \
-                                * r[:, i_range] * t[:, j_range] /(eps+i_range - j_range)),dim=(-3,-2,-1)) \
-                                    + torch.sum(r[:, i_range] * t[:, i_range],dim=(-3,-2,-1))# sum on i != j
-        
-        p4 = torch.sum(h[:, i_1] * torch.sin(i_1)/(i_1) ,dim=-1) + h[:,0]
-        s2 = p3*p4
-
-
-        s = s1 - s2 # combine the two sums.
-        return s
-
-
-
 # class LFMult1(BaseKGE): 
 
 #     '''Embedding with trigonometric functions. We represent all entities and relations in the complex number space as:
@@ -670,26 +598,47 @@ class LFMult1(BaseKGE):
 #         self.name = 'LFMult1'
 #         self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
 #         self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
-#         self.embedding_dim = 10
+#         self.degree = self.args.get("degree",0)
+#         self.m = int(self.embedding_dim/(1+self.degree))
+        
 
 #     def forward_triples(self, idx_triple): # idx_triplet = (h_idx, r_idx, t_idx) #change this to the forward_triples
 
 #         head_ent_emb, rel_emb, tail_ent_emb = self.get_triple_representation(idx_triple)
 
-#         score = self.tri_score(head_ent_emb,rel_emb,tail_ent_emb)
+#         coeff_head, coeff_rel, coeff_tail = self.construct_multi_coeff(head_ent_emb), self.construct_multi_coeff(rel_emb), self.construct_multi_coeff(tail_ent_emb)
+
+#         score = self.tri_score(coeff_head,coeff_rel,coeff_tail)
+
+#         score = score.reshape(-1,self.m).sum(dim=1)
+
+#         # print(score.shape)
+#         # exit(0)
     
 #         return score
+    
+#     def construct_multi_coeff(self, x):
+
+#         coeffs = torch.hsplit(x,1+self.degree)
+#         coeffs = torch.stack(coeffs,dim=1)
+
+#         return coeffs.transpose(1,2)
 
 #     def tri_score(self,h,r,t):
 
-#         i_range, j_range, k_range = torch.meshgrid(torch.arange(self.embedding_dim),torch.arange(self.embedding_dim),torch.arange(self.embedding_dim))
+#         i_range, j_range, k_range = torch.meshgrid(torch.arange(1+self.degree),torch.arange(1+self.degree),torch.arange(1+self.degree))
 #         eps = 10**-6   #for stability reason
 #         cond = i_range + j_range == k_range
 
-#         s1 = torch.sum(torch.where(~cond, torch.zeros_like(~cond),  h[:, i_range] * r[:, j_range] * t[:, k_range]),dim=(-3,-2,-1)) # sum on i+j = k
+#         # s1 = torch.sum(torch.where(~cond, torch.zeros_like(~cond),  h[:, i_range] * r[:, j_range] * t[:, k_range]),dim=(-3,-2,-1)) # sum on i+j = k
+
+#         s1 = torch.sum(torch.where(~cond, torch.zeros_like(~cond),  h.reshape(-1, 1, self.degree+1, 1)*r.reshape(-1, self.degree+1, 1, 1) * t.reshape(-1, 1, 1,self.degree+1))) # sum on i+j = k
+
+#         # s2 = torch.sum(torch.where(cond, torch.zeros_like(cond), torch.sin(i_range + j_range - k_range) \
+#         #                         * h[:, i_range] * r[:, j_range] * t[:, k_range] /(eps+i_range + j_range - k_range)),dim=(-3,-2,-1))# sum on i+j != k
 
 #         s2 = torch.sum(torch.where(cond, torch.zeros_like(cond), torch.sin(i_range + j_range - k_range) \
-#                                 * h[:, i_range] * r[:, j_range] * t[:, k_range] /(eps+i_range + j_range - k_range)),dim=(-3,-2,-1))# sum on i+j != k
+#                                 * h.reshape(-1, 1, self.degree+1, 1)*r.reshape(-1, self.degree+1, 1, 1) * t.reshape(-1, 1, 1,self.degree+1) /(eps+i_range + j_range - k_range)),dim=(-3,-2,-1))# sum on i+j != k
 #         s = s1 + s2 # combine the two sums.
 #         return s
     
@@ -717,3 +666,63 @@ class LFMult1(BaseKGE):
 
 #         s = s1 - s2 # combine the two sums.
 #         return s
+
+
+
+class LFMult1(BaseKGE): 
+
+    '''Embedding with trigonometric functions. We represent all entities and relations in the complex number space as:
+      f(x) = \sum_{k=0}^{k=d-1}wk e^{kix}. and use the three differents scoring function as in the paper to evaluate the score'''
+    
+    def __init__(self,args):
+        super().__init__(args)
+        self.name = 'LFMult1'
+        self.entity_embeddings = torch.nn.Embedding(self.num_entities, self.embedding_dim)
+        self.relation_embeddings = torch.nn.Embedding(self.num_relations, self.embedding_dim)
+        
+
+    def forward_triples(self, idx_triple): # idx_triplet = (h_idx, r_idx, t_idx) #change this to the forward_triples
+
+        head_ent_emb, rel_emb, tail_ent_emb = self.get_triple_representation(idx_triple)
+
+        score = self.tri_score(head_ent_emb,rel_emb,tail_ent_emb)
+    
+        return score
+
+    def tri_score(self,h,r,t):
+
+        i_range, j_range, k_range = torch.meshgrid(torch.arange(self.embedding_dim),torch.arange(self.embedding_dim),torch.arange(self.embedding_dim))
+        eps = 10**-6   #for stability reason
+        cond = i_range + j_range == k_range
+
+        s1 = torch.sum(torch.where(~cond, torch.zeros_like(~cond),  h[:, i_range] * r[:, j_range] * t[:, k_range]),dim=(-3,-2,-1)) # sum on i+j = k
+
+        s2 = torch.sum(torch.where(cond, torch.zeros_like(cond), torch.sin(i_range + j_range - k_range) \
+                                * h[:, i_range] * r[:, j_range] * t[:, k_range] /(eps+i_range + j_range - k_range)),dim=(-3,-2,-1))# sum on i+j != k
+        s = s1**2 + s2**2 # combine the two sums.
+        return s
+    
+    def vtp_score(self,h,r,t):
+
+        i_range, j_range = torch.meshgrid(torch.arange(self.embedding_dim),torch.arange(self.embedding_dim))
+        eps = 10**-6   #for stability reason
+        cond = i_range == j_range
+
+        p1 = torch.sum(torch.where(cond, torch.zeros_like(cond), torch.sin(i_range - j_range) \
+                                * h[:, i_range] * t[:, j_range] /(eps+i_range - j_range)),dim=(-3,-2,-1)) \
+                                    + torch.sum(h[:, i_range] * t[:, i_range],dim=(-3,-2,-1))# sum on i != j
+        i_1 = torch.arange(1,self.embedding_dim)
+        p2 = torch.sum(r[:, i_1] * torch.sin(i_1)/(i_1) ,dim=-1) + r[:,0]
+        
+        s1 = p1*p2
+
+        p3 = torch.sum(torch.where(cond, torch.zeros_like(cond), torch.sin(i_range - j_range) \
+                                * r[:, i_range] * t[:, j_range] /(eps+i_range - j_range)),dim=(-3,-2,-1)) \
+                                    + torch.sum(r[:, i_range] * t[:, i_range],dim=(-3,-2,-1))# sum on i != j
+        
+        p4 = torch.sum(h[:, i_1] * torch.sin(i_1)/(i_1) ,dim=-1) + h[:,0]
+        s2 = p3*p4
+
+
+        s = s1 - s2 # combine the two sums.
+        return s

@@ -9,7 +9,7 @@ def get_default_arguments(description=None):
     parser = argparse.ArgumentParser(add_help=False)
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Knowledge graph related arguments
-    parser.add_argument("--dataset_dir", type=str, default="/home/dice/Desktop/dice-embeddings/KGs/UMLS", 
+    parser.add_argument("--dataset_dir", type=str, default="/home/dice/Desktop/dice-embeddings/KGs/Countries-S1", 
                         help="The path of a folder containing train.txt, and/or valid.txt and/or test.txt"
                              ",e.g., KGs/UMLS")
     parser.add_argument("--sparql_endpoint", type=str, default=None,
