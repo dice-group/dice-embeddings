@@ -1,24 +1,64 @@
-:py:mod:`dicee.evaluator`
-=========================
+dicee.evaluator
+===============
 
 .. py:module:: dicee.evaluator
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   dicee.evaluator.KG
+   dicee.evaluator.Evaluator
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   dicee.evaluator.evaluate_lp
+   dicee.evaluator.evaluate_bpe_lp
 
 
 Module Contents
 ---------------
 
-Classes
-~~~~~~~
+.. py:function:: evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info='Eval Starts')
 
-.. autoapisummary::
+   Evaluate model in a standard link prediction task
 
-   dicee.evaluator.Evaluator
+   for each triple
+   the rank is computed by taking the mean of the filtered missing head entity rank and
+   the filtered missing tail entity rank
+   :param model:
+   :param triple_idx:
+   :param info:
+   :return:
 
 
+.. py:function:: evaluate_bpe_lp(model, triple_idx: List[Tuple], all_bpe_shaped_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info='Eval Starts')
+
+.. py:class:: KG(dataset_dir: str = None, byte_pair_encoding: bool = False, padding: bool = False, add_noise_rate: float = None, sparql_endpoint: str = None, path_single_kg: str = None, path_for_deserialization: str = None, add_reciprical: bool = None, eval_model: str = None, read_only_few: int = None, sample_triples_ratio: float = None, path_for_serialization: str = None, entity_to_idx=None, relation_to_idx=None, backend=None, training_technique: str = None)
+
+   Knowledge Graph
+
+
+   .. py:property:: entities_str
+      :type: List
+
+
+
+   .. py:property:: relations_str
+      :type: List
+
+
+
+   .. py:method:: func_triple_to_bpe_representation(triple: List[str])
 
 
 .. py:class:: Evaluator(args, is_continual_training=None)
-
 
     Evaluator class to evaluate KGE models in various downstream tasks
 
@@ -26,12 +66,14 @@ Classes
    ----------
    executor: Executor class instance
 
+
    .. py:method:: vocab_preparation(dataset) -> None
 
       A function to wait future objects for the attributes of executor
 
 
       :rtype: None
+
 
 
    .. py:method:: eval(dataset: dicee.knowledge_graph.KG, trained_model, form_of_labelling, during_training=False) -> None
@@ -48,14 +90,17 @@ Classes
       Evaluate model after reciprocal triples are added
 
 
+
    .. py:method:: eval_with_bpe_vs_all(*, raw_train_set, raw_valid_set=None, raw_test_set=None, trained_model, form_of_labelling) -> None
 
       Evaluate model after reciprocal triples are added
 
 
+
    .. py:method:: eval_with_vs_all(*, train_set, valid_set=None, test_set=None, trained_model, form_of_labelling) -> None
 
       Evaluate model after reciprocal triples are added
+
 
 
    .. py:method:: evaluate_lp_k_vs_all(model, triple_idx, info=None, form_of_labelling=None)
@@ -66,6 +111,7 @@ Classes
       :param info:
       :param form_of_labelling:
       :return:
+
 
 
    .. py:method:: evaluate_lp_with_byte(model, triples: List[List[str]], info=None)
@@ -80,6 +126,7 @@ Classes
       :param form_of_labelling:
 
 
+
    .. py:method:: evaluate_lp(model, triple_idx, info: str)
 
 
@@ -87,6 +134,5 @@ Classes
 
 
    .. py:method:: eval_with_data(dataset, trained_model, triple_idx: numpy.ndarray, form_of_labelling: str)
-
 
 

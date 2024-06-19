@@ -1,5 +1,5 @@
-:py:mod:`dicee.analyse_experiments`
-===================================
+dicee.analyse_experiments
+=========================
 
 .. py:module:: dicee.analyse_experiments
 
@@ -9,20 +9,16 @@
 
 
 
-Module Contents
----------------
-
 Classes
-~~~~~~~
+-------
 
 .. autoapisummary::
 
    dicee.analyse_experiments.Experiment
 
 
-
 Functions
-~~~~~~~~~
+---------
 
 .. autoapisummary::
 
@@ -30,160 +26,18 @@ Functions
    dicee.analyse_experiments.analyse
 
 
+Module Contents
+---------------
 
 .. py:function:: get_default_arguments()
 
-   Returns the default arguments for the script.
-
-   :returns: **args** -- The namespace containing the default argument values.
-   :rtype: argparse.Namespace
-
-
 .. py:class:: Experiment
 
+   .. py:method:: save_experiment(x)
 
-   A class to store and manage data from experiments.
 
-   .. attribute:: model_name
-
-      A list storing the names of the models used in experiments.
-
-      :type: list
-
-   .. attribute:: embedding_dim
-
-      Dimensions of embeddings used in experiments.
-
-      :type: list
-
-   .. attribute:: num_params
-
-      The number of parameters in the models.
-
-      :type: list
-
-   .. attribute:: num_epochs
-
-      Number of epochs training was run for each experiment.
-
-      :type: list
-
-   .. attribute:: batch_size
-
-      Batch sizes used in experiments.
-
-      :type: list
-
-   .. attribute:: lr
-
-      Learning rates used in experiments.
-
-      :type: list
-
-   .. attribute:: byte_pair_encoding
-
-      Indicates whether byte pair encoding was used.
-
-      :type: list
-
-   .. attribute:: aswa
-
-      Indicates whether adaptive SWA was used.
-
-      :type: list
-
-   .. attribute:: path_dataset_folder
-
-      Paths to dataset folders used in experiments.
-
-      :type: list
-
-   .. attribute:: pq
-
-      P and Q parameters used in experiments, for models that require them.
-
-      :type: list
-
-   .. attribute:: train_mrr, train_h1, train_h3, train_h10
-
-      Training metrics: Mean Reciprocal Rank, Hits@1, Hits@3, and Hits@10.
-
-      :type: list
-
-   .. attribute:: val_mrr, val_h1, val_h3, val_h10
-
-      Validation metrics.
-
-      :type: list
-
-   .. attribute:: test_mrr, test_h1, test_h3, test_h10
-
-      Test metrics.
-
-      :type: list
-
-   .. attribute:: runtime
-
-      Runtime of each experiment.
-
-      :type: list
-
-   .. attribute:: normalization
-
-      Indicates whether normalization was applied.
-
-      :type: list
-
-   .. attribute:: scoring_technique
-
-      Scoring techniques used in experiments.
-
-      :type: list
-
-   .. attribute:: callbacks
-
-      Callbacks used in experiments.
-
-      :type: list
-
-   .. method:: save_experiment(x: dict)
-
-      Saves the data from a single experiment into the class's attributes.
-
-   .. method:: to_df() -> pd.DataFrame
-
-      Converts the accumulated experiment data into a pandas DataFrame.
-
-
-   .. py:method:: save_experiment(x: dict)
-
-      Saves the data from a single experiment into the class's attributes.
-
-      :param x: A dictionary containing the data from a single experiment.
-      :type x: dict
-
-
-   .. py:method:: to_df() -> pandas.DataFrame
-
-      Converts the accumulated experiment data into a pandas DataFrame.
-
-      :returns: A DataFrame containing the accumulated data from all experiments.
-      :rtype: pd.DataFrame
-
+   .. py:method:: to_df()
 
 
 .. py:function:: analyse(args)
-
-   Analyzes and summarizes the results of experiments stored in subdirectories.
-
-   This function reads configurations and evaluation reports from each experiment,
-   compiles a summary, and saves it to a CSV file. It also prints the summary
-   and its LaTeX format to the console.
-
-   :param args: Command line arguments passed to the script. Expected to contain:
-                - args.dir: The directory containing subdirectories of experiments.
-   :type args: argparse.Namespace
-
-   :rtype: None
-
 

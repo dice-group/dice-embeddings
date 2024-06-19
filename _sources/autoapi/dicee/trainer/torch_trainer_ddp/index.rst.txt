@@ -1,281 +1,175 @@
-:py:mod:`dicee.trainer.torch_trainer_ddp`
-=========================================
+dicee.trainer.torch_trainer_ddp
+===============================
 
 .. py:module:: dicee.trainer.torch_trainer_ddp
 
 
-Module Contents
----------------
-
 Classes
-~~~~~~~
+-------
 
 .. autoapisummary::
 
+   dicee.trainer.torch_trainer_ddp.AbstractTrainer
    dicee.trainer.torch_trainer_ddp.TorchDDPTrainer
    dicee.trainer.torch_trainer_ddp.NodeTrainer
    dicee.trainer.torch_trainer_ddp.DDPTrainer
 
 
-
 Functions
-~~~~~~~~~
+---------
 
 .. autoapisummary::
 
+   dicee.trainer.torch_trainer_ddp.efficient_zero_grad
    dicee.trainer.torch_trainer_ddp.print_peak_memory
 
 
+Module Contents
+---------------
 
-.. py:function:: print_peak_memory(prefix: str, device: int) -> None
+.. py:class:: AbstractTrainer(args, callbacks)
 
-   Prints the peak memory usage for the specified device during the execution.
-
-   :param prefix: A prefix string to include in the print statement for context or identification
-                  of the memory usage check point.
-   :type prefix: str
-   :param device: The device index for which to check the peak memory usage. This is typically
-                  used for CUDA devices. For example, `device=0` refers to the first CUDA device.
-   :type device: int
-
-   :rtype: None
-
-   .. rubric:: Notes
-
-   This function is specifically useful for monitoring the peak memory usage of GPU
-   devices in CUDA context. The memory usage is reported in megabytes (MB). This can
-   help in debugging memory issues or for optimizing memory usage in deep learning models.
-   It requires PyTorch's CUDA utilities to be available and will print the peak allocated
-   memory on the specified CUDA device. If the device is not a CUDA device or if PyTorch
-   is not compiled with CUDA support, this function will not display memory usage.
+   Abstract class for Trainer class for knowledge graph embedding models
 
 
-.. py:class:: TorchDDPTrainer(args, callbacks: List[lightning.Callback])
+   Parameter
+   ---------
+   args : str
+       ?
 
+   callbacks: list
+           ?
+
+
+   .. py:method:: on_fit_start(*args, **kwargs)
+
+      A function to call callbacks before the training starts.
+
+      Parameter
+      ---------
+      args
+
+      kwargs
+
+
+      :rtype: None
+
+
+
+   .. py:method:: on_fit_end(*args, **kwargs)
+
+      A function to call callbacks at the ned of the training.
+
+      Parameter
+      ---------
+      args
+
+      kwargs
+
+
+      :rtype: None
+
+
+
+   .. py:method:: on_train_epoch_end(*args, **kwargs)
+
+      A function to call callbacks at the end of an epoch.
+
+      Parameter
+      ---------
+      args
+
+      kwargs
+
+
+      :rtype: None
+
+
+
+   .. py:method:: on_train_batch_end(*args, **kwargs)
+
+      A function to call callbacks at the end of each mini-batch during training.
+
+      Parameter
+      ---------
+      args
+
+      kwargs
+
+
+      :rtype: None
+
+
+
+   .. py:method:: save_checkpoint(full_path: str, model) -> None
+      :staticmethod:
+
+
+      A static function to save a model into disk
+
+      Parameter
+      ---------
+      full_path : str
+
+      model:
+
+
+      :rtype: None
+
+
+
+.. py:function:: efficient_zero_grad(model)
+
+.. py:function:: print_peak_memory(prefix, device)
+
+.. py:class:: TorchDDPTrainer(args, callbacks)
 
    Bases: :py:obj:`dicee.abstracts.AbstractTrainer`
 
-   A Trainer class that leverages PyTorch's DistributedDataParallel (DDP) for distributed training across
-   multiple GPUs. This trainer is designed for training models in a distributed fashion using multiple
-   GPUs either on a single machine or across multiple nodes.
 
-   :param args: The command-line arguments namespace, containing training hyperparameters and configurations.
-   :type args: argparse.Namespace
-   :param callbacks: A list of PyTorch Lightning Callbacks to be called during the training process.
-   :type callbacks: List[lightening.Callback]
+    A Trainer based on torch.nn.parallel.DistributedDataParallel
 
-   .. attribute:: train_set_idx
+    Arguments
+   ----------
+   train_set_idx
+       Indexed triples for the training.
+   entity_idxs
+       mapping.
+   relation_idxs
+       mapping.
+   form
+       ?
+   store
+        ?
+   label_smoothing_rate
+        Using hard targets (0,1) drives weights to infinity.
+        An outlier produces enormous gradients.
 
-      An array of indexed triples for training the model.
+   :rtype: torch.utils.data.Dataset
 
-      :type: np.ndarray
-
-   .. attribute:: entity_idxs
-
-      A dictionary mapping entity names to their corresponding indexes.
-
-      :type: Dict[str, int]
-
-   .. attribute:: relation_idxs
-
-      A dictionary mapping relation names to their corresponding indexes.
-
-      :type: Dict[str, int]
-
-   .. attribute:: form
-
-      The form of training to be used. This parameter specifies how the training data is presented
-      to the model, e.g., 'EntityPrediction', 'RelationPrediction'.
-
-      :type: str
-
-   .. attribute:: store
-
-      The path to where the trained model and other artifacts are stored.
-
-      :type: str
-
-   .. attribute:: label_smoothing_rate
-
-      The rate of label smoothing to apply to the loss function. Using label smoothing helps in
-      regularizing the model and preventing overfitting by softening the hard targets.
-
-      :type: float
-
-   .. method:: fit(self, \*args, \*\*kwargs):
-
-      Trains the model using distributed data parallelism. This method initializes the distributed
-      process group, creates a distributed data loader, and starts the training process using a
-      NodeTrainer instance. It handles the setup and teardown of the distributed training environment.
-
-
-   .. rubric:: Notes
-
-   - This trainer requires the PyTorch library and is designed to work with GPUs.
-   - Proper setup of the distributed environment variables (e.g., WORLD_SIZE, RANK, LOCAL_RANK) is
-     necessary before using this trainer.
-   - The 'nccl' backend is used for GPU-based distributed training.
-   - It's important to ensure that the same number of batches is available across all participating
-     processes to avoid hanging issues.
 
    .. py:method:: fit(*args, **kwargs)
 
-      Trains the model using Distributed Data Parallel (DDP). This method initializes the
-      distributed environment, creates a distributed sampler for the DataLoader, and starts
-      the training process.
-
-      :param \*args: The model to be trained. Passed as a positional argument.
-      :type \*args: Model
-      :param \*\*kwargs: Additional keyword arguments, including:
-                         - train_dataloaders: DataLoader
-                             The DataLoader for the training dataset. Must contain a 'dataset' attribute.
-      :type \*\*kwargs: dict
-
-      :raises AssertionError: If the number of arguments is not equal to 1 (i.e., the model is not provided).
-
-      :rtype: None
+      Train model
 
 
 
 .. py:class:: NodeTrainer(trainer, model: torch.nn.Module, train_dataset_loader: torch.utils.data.DataLoader, optimizer: torch.optim.Optimizer, callbacks, num_epochs: int)
 
-
-   Manages the training process of a PyTorch model on a single node in a distributed training setup using
-   DistributedDataParallel (DDP). This class orchestrates the training process across multiple GPUs on the node,
-   handling batch processing, loss computation, and optimizer steps.
-
-   :param trainer: The higher-level trainer instance managing the overall training process.
-   :type trainer: AbstractTrainer
-   :param model: The PyTorch model to be trained.
-   :type model: torch.nn.Module
-   :param train_dataset_loader: The DataLoader providing access to the training data, properly batched and shuffled.
-   :type train_dataset_loader: DataLoader
-   :param optimizer: The optimizer used for updating model parameters.
-   :type optimizer: torch.optim.Optimizer
-   :param callbacks: A list of callbacks to be executed during training, such as model checkpointing.
-   :type callbacks: list
-   :param num_epochs: The total number of epochs to train the model.
-   :type num_epochs: int
-
-   .. attribute:: local_rank
-
-      The rank of the GPU on the current node, used for GPU-specific operations.
-
-      :type: int
-
-   .. attribute:: global_rank
-
-      The global rank of the process in the distributed training setup.
-
-      :type: int
-
-   .. attribute:: loss_func
-
-      The loss function used to compute the difference between the model predictions and targets.
-
-      :type: callable
-
-   .. attribute:: loss_history
-
-      A list to record the history of loss values over epochs.
-
-      :type: list
-
-   .. method:: _run_batch(self, source, targets):
-
-      Processes a single batch of data, performing a forward pass, loss computation, and an optimizer step.
-
-   .. method:: extract_input_outputs(self, z):
-
-      Extracts and sends input data and targets to the appropriate device.
-
-   .. method:: _run_epoch(self, epoch):
-
-      Performs a single pass over the training dataset, returning the average loss for the epoch.
-
-   .. method:: train(self):
-
-      Executes the training process, iterating over epochs and managing DDP-specific configurations.
+   .. py:method:: extract_input_outputs(z: list)
 
 
-   .. py:method:: extract_input_outputs(z: list) -> tuple
+   .. py:method:: train()
 
-      Processes the batch data, ensuring it is on the correct device.
-
-      :param z: The batch data, which can vary in structure depending on the training setup.
-      :type z: list
-
-      :returns: The processed input and output data, ready for model training.
-      :rtype: tuple
-
-
-   .. py:method:: train() -> None
-
-      The main training loop. Iterates over all epochs, processing each batch of data.
-
-      :rtype: None
+      Training loop for DDP
 
 
 
-.. py:class:: DDPTrainer(model: torch.nn.Module, train_dataset_loader: torch.utils.data.DataLoader, optimizer: torch.optim.Optimizer, gpu_id: int, callbacks: List[Callable], num_epochs: int)
+.. py:class:: DDPTrainer(model: torch.nn.Module, train_dataset_loader: torch.utils.data.DataLoader, optimizer: torch.optim.Optimizer, gpu_id: int, callbacks, num_epochs)
+
+   .. py:method:: extract_input_outputs(z: list)
 
 
-   Distributed Data Parallel (DDP) Trainer for PyTorch models. Orchestrates the model training across multiple GPUs
-   by wrapping the model with PyTorch's DDP. It manages the training loop, loss computation, and optimization steps.
-
-   :param model: The model to be trained in a distributed manner.
-   :type model: torch.nn.Module
-   :param train_dataset_loader: DataLoader providing access to the training data, properly batched and shuffled.
-   :type train_dataset_loader: DataLoader
-   :param optimizer: The optimizer to be used for updating the model's parameters.
-   :type optimizer: torch.optim.Optimizer
-   :param gpu_id: The GPU identifier where the model is to be placed.
-   :type gpu_id: int
-   :param callbacks: A list of callback functions to be called during training.
-   :type callbacks: List[Callable]
-   :param num_epochs: The number of epochs for which the model will be trained.
-   :type num_epochs: int
-
-   .. attribute:: loss_history
-
-      Records the history of loss values over training epochs.
-
-      :type: list
-
-   .. method:: _run_batch(source: torch.Tensor, targets: torch.Tensor) -> float:
-
-      Executes a forward pass, computes the loss, performs a backward pass, and updates the model parameters for
-      a single batch of data.
-
-   .. method:: extract_input_outputs(z: List[torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]:
-
-      Processes the batch data, ensuring it is on the correct device.
-
-   .. method:: _run_epoch(epoch: int) -> float:
-
-      Completes one full pass over the entire dataset and computes the average loss for the epoch.
-
-   .. method:: train() -> None:
-
-      Starts the training process, iterating through epochs and managing the distributed training operations.
-
-
-   .. py:method:: extract_input_outputs(z: List[torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
-
-      Extracts and moves input and target tensors to the correct device.
-
-      :param z: A batch of data from the DataLoader.
-      :type z: List[torch.Tensor]
-
-      :returns: Inputs and targets, moved to the correct device.
-      :rtype: Tuple[torch.Tensor, torch.Tensor]
-
-
-   .. py:method:: train() -> None
-
-      Trains the model across specified epochs and GPUs using DDP.
-
-      :rtype: None
-
+   .. py:method:: train()
 
 

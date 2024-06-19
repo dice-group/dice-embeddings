@@ -1,36 +1,121 @@
-:py:mod:`dicee.knowledge_graph`
-===============================
+dicee.knowledge_graph
+=====================
 
 .. py:module:: dicee.knowledge_graph
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   dicee.knowledge_graph.ReadFromDisk
+   dicee.knowledge_graph.PreprocessKG
+   dicee.knowledge_graph.LoadSaveToDisk
+   dicee.knowledge_graph.KG
 
 
 Module Contents
 ---------------
 
-Classes
-~~~~~~~
+.. py:class:: ReadFromDisk(kg)
 
-.. autoapisummary::
-
-   dicee.knowledge_graph.KG
+   Read the data from disk into memory
 
 
+   .. py:method:: start() -> None
+
+      Read a knowledge graph from disk into memory
+
+      Data will be available at the train_set, test_set, valid_set attributes.
+
+      Parameter
+      ---------
+      None
+
+      :rtype: None
+
+
+
+   .. py:method:: add_noisy_triples_into_training()
+
+
+.. py:class:: PreprocessKG(kg)
+
+   Preprocess the data in memory
+
+
+   .. py:method:: start() -> None
+
+      Preprocess train, valid and test datasets stored in knowledge graph instance
+
+      Parameter
+      ---------
+
+      :rtype: None
+
+
+
+   .. py:method:: preprocess_with_byte_pair_encoding()
+
+
+   .. py:method:: preprocess_with_byte_pair_encoding_with_padding() -> None
+
+
+   .. py:method:: preprocess_with_pandas() -> None
+
+      Preprocess train, valid and test datasets stored in knowledge graph instance with pandas
+
+      (1) Add recipriocal or noisy triples
+      (2) Construct vocabulary
+      (3) Index datasets
+
+      Parameter
+      ---------
+
+      :rtype: None
+
+
+
+   .. py:method:: preprocess_with_polars() -> None
+
+
+   .. py:method:: sequential_vocabulary_construction() -> None
+
+      (1) Read input data into memory
+      (2) Remove triples with a condition
+      (3) Serialize vocabularies in a pandas dataframe where
+                  => the index is integer and
+                  => a single column is string (e.g. URI)
+
+
+
+   .. py:method:: remove_triples_from_train_with_condition()
+
+
+.. py:class:: LoadSaveToDisk(kg)
+
+   .. py:method:: save()
+
+
+   .. py:method:: load()
 
 
 .. py:class:: KG(dataset_dir: str = None, byte_pair_encoding: bool = False, padding: bool = False, add_noise_rate: float = None, sparql_endpoint: str = None, path_single_kg: str = None, path_for_deserialization: str = None, add_reciprical: bool = None, eval_model: str = None, read_only_few: int = None, sample_triples_ratio: float = None, path_for_serialization: str = None, entity_to_idx=None, relation_to_idx=None, backend=None, training_technique: str = None)
 
-
    Knowledge Graph
+
 
    .. py:property:: entities_str
       :type: List
+
 
 
    .. py:property:: relations_str
       :type: List
 
 
-   .. py:method:: func_triple_to_bpe_representation(triple: List[str])
 
+   .. py:method:: func_triple_to_bpe_representation(triple: List[str])
 
 

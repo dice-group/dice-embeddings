@@ -1,15 +1,11 @@
-:py:mod:`dicee.scripts.index`
-=============================
+dicee.scripts.index
+===================
 
 .. py:module:: dicee.scripts.index
 
 
-Module Contents
----------------
-
-
 Functions
-~~~~~~~~~
+---------
 
 .. autoapisummary::
 
@@ -17,10 +13,10 @@ Functions
    dicee.scripts.index.main
 
 
+Module Contents
+---------------
 
 .. py:function:: get_default_arguments()
 
-
 .. py:function:: main()
-
 

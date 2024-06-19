@@ -1,15 +1,20 @@
-:py:mod:`dicee.scripts.run`
-===========================
+dicee.scripts.run
+=================
 
 .. py:module:: dicee.scripts.run
 
 
-Module Contents
----------------
+Classes
+-------
+
+.. autoapisummary::
+
+   dicee.scripts.run.Execute
+   dicee.scripts.run.ContinuousExecute
 
 
 Functions
-~~~~~~~~~
+---------
 
 .. autoapisummary::
 
@@ -17,22 +22,134 @@ Functions
    dicee.scripts.run.main
 
 
+Module Contents
+---------------
 
-.. py:function:: get_default_arguments(description: Optional[str] = None) -> argparse.Namespace
+.. py:class:: Execute(args, continuous_training=False)
 
-   Get default command-line arguments for the knowledge graph embedding execution.
+   A class for Training, Retraining and Evaluation a model.
 
-   This function returns a set of default command-line arguments that can be used to configure the knowledge graph
-   embedding execution. It includes parameters related to dataset paths, model selection, training settings, optimization,
-   and more.
+   (1) Loading & Preprocessing & Serializing input data.
+   (2) Training & Validation & Testing
+   (3) Storing all necessary info
 
-   :param description: A description of the command-line arguments (default is None).
-   :type description: str, optional
 
-   :returns: A namespace containing the default command-line arguments.
-   :rtype: argparse.Namespace
+   .. py:method:: read_or_load_kg()
+
+
+   .. py:method:: read_preprocess_index_serialize_data() -> None
+
+      Read & Preprocess & Index & Serialize Input Data
+
+      (1) Read or load the data from disk into memory.
+      (2) Store the statistics of the data.
+
+      Parameter
+      ----------
+
+      :rtype: None
+
+
+
+   .. py:method:: load_indexed_data() -> None
+
+      Load the indexed data from disk into memory
+
+      Parameter
+      ----------
+
+      :rtype: None
+
+
+
+   .. py:method:: save_trained_model() -> None
+
+      Save a knowledge graph embedding model
+
+      (1) Send model to eval mode and cpu.
+      (2) Store the memory footprint of the model.
+      (3) Save the model into disk.
+      (4) Update the stats of KG again ?
+
+      Parameter
+      ----------
+
+      :rtype: None
+
+
+
+   .. py:method:: end(form_of_labelling: str) -> dict
+
+      End training
+
+      (1) Store trained model.
+      (2) Report runtimes.
+      (3) Eval model if required.
+
+      Parameter
+      ---------
+
+      :rtype: A dict containing information about the training and/or evaluation
+
+
+
+   .. py:method:: write_report() -> None
+
+      Report training related information in a report.json file
+
+
+
+   .. py:method:: start() -> dict
+
+      Start training
+
+      # (1) Loading the Data
+      # (2) Create an evaluator object.
+      # (3) Create a trainer object.
+      # (4) Start the training
+
+      Parameter
+      ---------
+
+      :rtype: A dict containing information about the training and/or evaluation
+
+
+
+.. py:class:: ContinuousExecute(args)
+
+   Bases: :py:obj:`Execute`
+
+
+   A subclass of Execute Class for retraining
+
+   (1) Loading & Preprocessing & Serializing input data.
+   (2) Training & Validation & Testing
+   (3) Storing all necessary info
+
+   During the continual learning we can only modify *** num_epochs *** parameter.
+   Trained model stored in the same folder as the seed model for the training.
+   Trained model is noted with the current time.
+
+
+   .. py:method:: continual_start() -> dict
+
+      Start Continual Training
+
+      (1) Initialize training.
+      (2) Start continual training.
+      (3) Save trained model.
+
+      Parameter
+      ---------
+
+      :rtype: A dict containing information about the training and/or evaluation
+
+
+
+.. py:function:: get_default_arguments(description=None)
+
+   Extends pytorch_lightning Trainer's arguments with ours
 
 
 .. py:function:: main()
-
 

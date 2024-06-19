@@ -1,18 +1,23 @@
-:py:mod:`dicee.static_preprocess_funcs`
-=======================================
+dicee.static_preprocess_funcs
+=============================
 
 .. py:module:: dicee.static_preprocess_funcs
 
 
-Module Contents
----------------
-
-
-Functions
-~~~~~~~~~
+Attributes
+----------
 
 .. autoapisummary::
 
+   dicee.static_preprocess_funcs.enable_log
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   dicee.static_preprocess_funcs.sanity_checking_with_arguments
    dicee.static_preprocess_funcs.timeit
    dicee.static_preprocess_funcs.preprocesses_input_args
    dicee.static_preprocess_funcs.create_constraints
@@ -22,22 +27,16 @@ Functions
    dicee.static_preprocess_funcs.mapping_from_first_two_cols_to_third
 
 
+Module Contents
+---------------
 
-Attributes
-~~~~~~~~~~
-
-.. autoapisummary::
-
-   dicee.static_preprocess_funcs.enable_log
-
+.. py:function:: sanity_checking_with_arguments(args)
 
 .. py:data:: enable_log
    :value: False
 
-   
 
 .. py:function:: timeit(func)
-
 
 .. py:function:: preprocesses_input_args(args)
 
@@ -55,13 +54,9 @@ Attributes
 
 .. py:function:: get_er_vocab(data)
 
-
 .. py:function:: get_re_vocab(data)
-
 
 .. py:function:: get_ee_vocab(data)
 
-
 .. py:function:: mapping_from_first_two_cols_to_third(train_set_idx)
-
 

@@ -1,31 +1,247 @@
-:py:mod:`dicee.executer`
-========================
+dicee.executer
+==============
 
 .. py:module:: dicee.executer
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   dicee.executer.KG
+   dicee.executer.Evaluator
+   dicee.executer.DICE_Trainer
+   dicee.executer.Execute
+   dicee.executer.ContinuousExecute
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   dicee.executer.preprocesses_input_args
+   dicee.executer.timeit
+   dicee.executer.continual_training_setup_executor
+   dicee.executer.read_or_load_kg
+   dicee.executer.load_json
+   dicee.executer.store
 
 
 Module Contents
 ---------------
 
-Classes
-~~~~~~~
+.. py:class:: KG(dataset_dir: str = None, byte_pair_encoding: bool = False, padding: bool = False, add_noise_rate: float = None, sparql_endpoint: str = None, path_single_kg: str = None, path_for_deserialization: str = None, add_reciprical: bool = None, eval_model: str = None, read_only_few: int = None, sample_triples_ratio: float = None, path_for_serialization: str = None, entity_to_idx=None, relation_to_idx=None, backend=None, training_technique: str = None)
 
-.. autoapisummary::
-
-   dicee.executer.Execute
-   dicee.executer.ContinuousExecute
+   Knowledge Graph
 
 
+   .. py:property:: entities_str
+      :type: List
+
+
+
+   .. py:property:: relations_str
+      :type: List
+
+
+
+   .. py:method:: func_triple_to_bpe_representation(triple: List[str])
+
+
+.. py:class:: Evaluator(args, is_continual_training=None)
+
+    Evaluator class to evaluate KGE models in various downstream tasks
+
+    Arguments
+   ----------
+   executor: Executor class instance
+
+
+   .. py:method:: vocab_preparation(dataset) -> None
+
+      A function to wait future objects for the attributes of executor
+
+
+      :rtype: None
+
+
+
+   .. py:method:: eval(dataset: dicee.knowledge_graph.KG, trained_model, form_of_labelling, during_training=False) -> None
+
+
+   .. py:method:: eval_rank_of_head_and_tail_entity(*, train_set, valid_set=None, test_set=None, trained_model)
+
+
+   .. py:method:: eval_rank_of_head_and_tail_byte_pair_encoded_entity(*, train_set=None, valid_set=None, test_set=None, ordered_bpe_entities, trained_model)
+
+
+   .. py:method:: eval_with_byte(*, raw_train_set, raw_valid_set=None, raw_test_set=None, trained_model, form_of_labelling) -> None
+
+      Evaluate model after reciprocal triples are added
+
+
+
+   .. py:method:: eval_with_bpe_vs_all(*, raw_train_set, raw_valid_set=None, raw_test_set=None, trained_model, form_of_labelling) -> None
+
+      Evaluate model after reciprocal triples are added
+
+
+
+   .. py:method:: eval_with_vs_all(*, train_set, valid_set=None, test_set=None, trained_model, form_of_labelling) -> None
+
+      Evaluate model after reciprocal triples are added
+
+
+
+   .. py:method:: evaluate_lp_k_vs_all(model, triple_idx, info=None, form_of_labelling=None)
+
+      Filtered link prediction evaluation.
+      :param model:
+      :param triple_idx: test triples
+      :param info:
+      :param form_of_labelling:
+      :return:
+
+
+
+   .. py:method:: evaluate_lp_with_byte(model, triples: List[List[str]], info=None)
+
+
+   .. py:method:: evaluate_lp_bpe_k_vs_all(model, triples: List[List[str]], info=None, form_of_labelling=None)
+
+      :param model:
+      :param triples:
+      :type triples: List of lists
+      :param info:
+      :param form_of_labelling:
+
+
+
+   .. py:method:: evaluate_lp(model, triple_idx, info: str)
+
+
+   .. py:method:: dummy_eval(trained_model, form_of_labelling: str)
+
+
+   .. py:method:: eval_with_data(dataset, trained_model, triple_idx: numpy.ndarray, form_of_labelling: str)
+
+
+.. py:function:: preprocesses_input_args(args)
+
+   Sanity Checking in input arguments
+
+
+.. py:class:: DICE_Trainer(args, is_continual_training, storage_path, evaluator=None)
+
+   DICE_Trainer implement
+    1- Pytorch Lightning trainer (https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html)
+    2- Multi-GPU Trainer(https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html)
+    3- CPU Trainer
+
+    Parameter
+    ---------
+    args
+
+    is_continual_training:bool
+
+    storage_path:str
+
+    evaluator:
+
+    Returns
+    -------
+    report:dict
+
+
+
+   .. py:method:: continual_start()
+
+      (1) Initialize training.
+      (2) Load model
+      (3) Load trainer
+      (3) Fit model
+
+      Parameter
+      ---------
+
+      :returns: * *model*
+                * **form_of_labelling** (*str*)
+
+
+
+   .. py:method:: initialize_trainer(callbacks: List) -> lightning.Trainer
+
+      Initialize Trainer from input arguments
+
+
+
+   .. py:method:: initialize_or_load_model()
+
+
+   .. py:method:: initialize_dataloader(dataset: torch.utils.data.Dataset) -> torch.utils.data.DataLoader
+
+
+   .. py:method:: initialize_dataset(dataset: dicee.knowledge_graph.KG, form_of_labelling) -> torch.utils.data.Dataset
+
+
+   .. py:method:: start(knowledge_graph: dicee.knowledge_graph.KG) -> Tuple[dicee.models.base_model.BaseKGE, str]
+
+      Train selected model via the selected training strategy
+
+
+
+   .. py:method:: k_fold_cross_validation(dataset) -> Tuple[dicee.models.base_model.BaseKGE, str]
+
+      Perform K-fold Cross-Validation
+
+      1. Obtain K train and test splits.
+      2. For each split,
+          2.1 initialize trainer and model
+          2.2. Train model with configuration provided in args.
+          2.3. Compute the mean reciprocal rank (MRR) score of the model on the test respective split.
+      3. Report the mean and average MRR .
+
+      :param self:
+      :param dataset:
+      :return: model
+
+
+
+.. py:function:: timeit(func)
+
+.. py:function:: continual_training_setup_executor(executor) -> None
+
+   storage_path:str A path leading to a parent directory, where a subdirectory containing KGE related data
+
+   full_storage_path:str A path leading to a subdirectory containing KGE related data
+
+
+
+.. py:function:: read_or_load_kg(args, cls)
+
+.. py:function:: load_json(p: str) -> dict
+
+.. py:function:: store(trainer, trained_model, model_name: str = 'model', full_storage_path: str = None, save_embeddings_as_csv=False) -> None
+
+   Store trained_model model and save embeddings into csv file.
+   :param trainer: an instance of trainer class
+   :param full_storage_path: path to save parameters.
+   :param model_name: string representation of the name of the model.
+   :param trained_model: an instance of BaseKGE see core.models.base_model .
+   :param save_embeddings_as_csv: for easy access of embeddings.
+   :return:
 
 
 .. py:class:: Execute(args, continuous_training=False)
-
 
    A class for Training, Retraining and Evaluation a model.
 
    (1) Loading & Preprocessing & Serializing input data.
    (2) Training & Validation & Testing
    (3) Storing all necessary info
+
 
    .. py:method:: read_or_load_kg()
 
@@ -43,6 +259,7 @@ Classes
       :rtype: None
 
 
+
    .. py:method:: load_indexed_data() -> None
 
       Load the indexed data from disk into memory
@@ -51,6 +268,7 @@ Classes
       ----------
 
       :rtype: None
+
 
 
    .. py:method:: save_trained_model() -> None
@@ -68,6 +286,7 @@ Classes
       :rtype: None
 
 
+
    .. py:method:: end(form_of_labelling: str) -> dict
 
       End training
@@ -82,9 +301,11 @@ Classes
       :rtype: A dict containing information about the training and/or evaluation
 
 
+
    .. py:method:: write_report() -> None
 
       Report training related information in a report.json file
+
 
 
    .. py:method:: start() -> dict
@@ -105,8 +326,8 @@ Classes
 
 .. py:class:: ContinuousExecute(args)
 
-
    Bases: :py:obj:`Execute`
+
 
    A subclass of Execute Class for retraining
 
@@ -117,6 +338,7 @@ Classes
    During the continual learning we can only modify *** num_epochs *** parameter.
    Trained model stored in the same folder as the seed model for the training.
    Trained model is noted with the current time.
+
 
    .. py:method:: continual_start() -> dict
 

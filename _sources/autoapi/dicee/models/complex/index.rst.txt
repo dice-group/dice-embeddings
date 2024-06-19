@@ -1,467 +1,232 @@
-:py:mod:`dicee.models.complex`
-==============================
+dicee.models.complex
+====================
 
 .. py:module:: dicee.models.complex
 
 
-Module Contents
----------------
-
 Classes
-~~~~~~~
+-------
 
 .. autoapisummary::
 
+   dicee.models.complex.BaseKGE
    dicee.models.complex.ConEx
    dicee.models.complex.AConEx
    dicee.models.complex.ComplEx
 
 
+Module Contents
+---------------
+
+.. py:class:: BaseKGE(args: dict)
+
+   Bases: :py:obj:`BaseKGELightning`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
+
+      :param x:
+      :type x: B x 2 x T
+
+
+
+   .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
+
+      byte pair encoded neural link predictors
+
+      :param -------:
+
+
+
+   .. py:method:: init_params_with_sanity_checking()
+
+
+   .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
+
+      :param x:
+      :param y_idx:
+      :param ordered_bpe_entities:
+
+
+
+   .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
+
+      :param x:
+
+
+
+   .. py:method:: forward_k_vs_all(*args, **kwargs)
+
+
+   .. py:method:: forward_k_vs_sample(*args, **kwargs)
+
+
+   .. py:method:: get_triple_representation(idx_hrt)
+
+
+   .. py:method:: get_head_relation_representation(indexed_triple)
+
+
+   .. py:method:: get_sentence_representation(x: torch.LongTensor)
+
+      :param x shape (b:
+      :param 3:
+      :param t):
+
+
+
+   .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
+
+      :param x:
+      :type x: B x 2 x T
+
+
+
+   .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
 
 
 .. py:class:: ConEx(args)
 
-
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   ConEx (Convolutional ComplEx) is a Knowledge Graph Embedding model that extends ComplEx embeddings with convolutional layers.
-   It integrates convolutional neural networks into the embedding process to capture complex patterns in the data.
 
-   :param args: A dictionary of arguments containing hyperparameters and settings for the model, such as embedding dimensions,
-                kernel size, number of output channels, and dropout rates.
-   :type args: dict
-
-   .. attribute:: name
-
-      The name identifier for the ConEx model.
-
-      :type: str
-
-   .. attribute:: conv2d
-
-      A 2D convolutional layer used for processing complex-valued embeddings.
-
-      :type: torch.nn.Conv2d
-
-   .. attribute:: fc1
-
-      A fully connected linear layer for compressing the output of the convolutional layer.
-
-      :type: torch.nn.Linear
-
-   .. attribute:: norm_fc1
-
-      Normalization layer applied after the fully connected layer.
-
-      :type: Normalizer
-
-   .. attribute:: bn_conv2d
-
-      Batch normalization layer applied after the convolutional operation.
-
-      :type: torch.nn.BatchNorm2d
-
-   .. attribute:: feature_map_dropout
-
-      Dropout layer applied to the output of the convolutional layer.
-
-      :type: torch.nn.Dropout2d
-
-   .. method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor], C_2: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor]
-
-      Performs a residual convolution operation on two complex-valued embeddings.
-
-   .. method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
-
-      Computes scores in a K-vs-All setting using convolutional operations on embeddings.
-
-   .. method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
-
-      Computes scores for a batch of triples using convolutional operations.
-
-   .. method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor) -> torch.Tensor
-
-      Computes scores against a sampled subset of entities using convolutional operations.
+   Convolutional ComplEx Knowledge Graph Embeddings
 
 
-   .. rubric:: Notes
+   .. py:method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor], C_2: Tuple[torch.Tensor, torch.Tensor]) -> torch.FloatTensor
 
-   ConEx combines complex-valued embeddings with convolutional neural networks to capture intricate patterns and interactions
-   in the knowledge graph, potentially leading to improved performance on tasks like link prediction.
+      Compute residual score of two complex-valued embeddings.
+      :param C_1: a tuple of two pytorch tensors that corresponds complex-valued embeddings
+      :param C_2: a tuple of two pytorch tensors that corresponds complex-valued embeddings
+      :return:
 
-   .. py:method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor], C_2: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.FloatTensor, torch.FloatTensor]
-
-      Computes the residual score of two complex-valued embeddings by applying convolutional operations.
-      This method is a key component of the ConEx model, combining complex embeddings with convolutional neural networks.
-
-      :param C_1: A tuple consisting of two PyTorch tensors representing the real and imaginary components of the first complex-valued embedding.
-      :type C_1: Tuple[torch.Tensor, torch.Tensor]
-      :param C_2: A tuple consisting of two PyTorch tensors representing the real and imaginary components of the second complex-valued embedding.
-      :type C_2: Tuple[torch.Tensor, torch.Tensor]
-
-      :returns: A tuple of two tensors, representing the real and imaginary parts of the convolutionally transformed embeddings.
-      :rtype: Tuple[torch.FloatTensor, torch.FloatTensor]
-
-      .. rubric:: Notes
-
-      The method involves concatenating the real and imaginary components of the embeddings, applying a 2D convolution,
-      followed by batch normalization, ReLU activation, dropout, and a fully connected layer. This process is intended to
-      capture complex interactions between the embeddings in a convolutional manner.
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
 
-      Computes scores in a K-vs-All setting using convolutional operations on complex-valued embeddings.
-      This method is used for evaluating the performance of the model by computing scores for each head entity
-      and relation pair against all possible tail entities.
-
-      :param x: A tensor representing a batch of head entities and relations. Expected tensor shape: (n, 2),
-                where 'n' is the batch size and '2' represents head entity and relation pairs.
-      :type x: torch.Tensor
-
-      :returns: A tensor containing the scores for each head entity and relation pair against all possible tail entities.
-                Tensor shape: (n, |E|), where '|E|' is the number of entities in the knowledge graph.
-      :rtype: torch.FloatTensor
-
-      .. rubric:: Notes
-
-      The method retrieves embeddings for head entities and relations, splits them into real and imaginary parts,
-      and applies a convolution operation. It then computes the Hermitian product of the transformed embeddings
-      with all tail entity embeddings to generate scores. This approach allows for capturing complex relational patterns
-      in the knowledge graph.
-
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
 
-      Computes scores for a batch of triples using convolutional operations on complex-valued embeddings.
-      This method is crucial for evaluating the performance of the model on individual triples in the
-      knowledge graph.
-
-      :param x: A tensor representing a batch of triples. Each triple consists of indices for a head entity,
-                a relation, and a tail entity. Expected tensor shape: (n, 3), where 'n' is the number of triples.
-      :type x: torch.Tensor
-
-      :returns: A tensor containing the scores for each triple in the batch. Tensor shape: (n,), where 'n'
-                is the number of triples.
-      :rtype: torch.FloatTensor
-
-      .. rubric:: Notes
-
-      The method retrieves embeddings for head entities, relations, and tail entities, and splits them
-      into real and imaginary parts. It then applies a convolution operation on these embeddings and
-      computes the Hermitian inner product, which involves a combination of real and imaginary parts
-      of the embeddings. This process is designed to capture complex relational patterns and interactions
-      within the knowledge graph, leveraging the power of convolutional neural networks.
+      :param x:
 
 
-   .. py:method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor) -> torch.Tensor
 
-      Computes scores against a sampled subset of entities using convolutional operations
-      on complex-valued embeddings. This method is particularly useful for large knowledge graphs
-      where computing scores against all entities is computationally expensive.
-
-      :param x: A tensor representing a batch of head entities and relations. Expected tensor shape:
-                (batch_size, 2), where 'batch_size' is the number of head entity and relation pairs.
-      :type x: torch.Tensor
-      :param target_entity_idx: A tensor of target entity indices for sampling. Tensor shape:
-                                (batch_size, num_selected_entities).
-      :type target_entity_idx: torch.Tensor
-
-      :returns: A tensor containing the scores for each head entity and relation pair against the sampled
-                subset of tail entities. Tensor shape: (batch_size, num_selected_entities).
-      :rtype: torch.Tensor
-
-      .. rubric:: Notes
-
-      The method first retrieves and processes the embeddings for head entities and relations. It then
-      applies a convolution operation and computes the Hermitian inner product with the embeddings of
-      the sampled tail entities. This process enables capturing complex relational patterns in a
-      computationally efficient manner.
-
+   .. py:method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor)
 
 
 .. py:class:: AConEx(args)
 
-
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   AConEx (Additive Convolutional ComplEx) extends the ConEx model by incorporating
-   additive connections in the convolutional operations. This model integrates
-   convolutional neural networks with complex-valued embeddings, emphasizing
-   additive feature interactions for knowledge graph embeddings.
 
-   :param args: A dictionary of arguments containing hyperparameters and settings for the model,
-                such as embedding dimensions, kernel size, number of output channels, and dropout rates.
-   :type args: dict
-
-   .. attribute:: name
-
-      The name identifier for the AConEx model.
-
-      :type: str
-
-   .. attribute:: conv2d
-
-      A 2D convolutional layer used for processing complex-valued embeddings.
-
-      :type: torch.nn.Conv2d
-
-   .. attribute:: fc_num_input
-
-      The number of input features for the fully connected layer.
-
-      :type: int
-
-   .. attribute:: fc1
-
-      A fully connected linear layer for compressing the output of the
-      convolutional layer.
-
-      :type: torch.nn.Linear
-
-   .. attribute:: norm_fc1
-
-      Normalization layer applied after the fully connected layer.
-
-      :type: Normalizer
-
-   .. attribute:: bn_conv2d
-
-      Batch normalization layer applied after the convolutional operation.
-
-      :type: torch.nn.BatchNorm2d
-
-   .. attribute:: feature_map_dropout
-
-      Dropout layer applied to the output of the convolutional layer.
-
-      :type: torch.nn.Dropout2d
-
-   .. method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor],
-
-                       C_2: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
-      Performs a residual convolution operation on two complex-valued embeddings.
-
-   .. method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
-
-      Computes scores in a K-vs-All setting using convolutional operations on embeddings.
-
-   .. method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
-
-      Computes scores for a batch of triples using convolutional operations.
-
-   .. method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor)
-
-      Computes scores against a sampled subset of entities using convolutional operations.
+   Additive Convolutional ComplEx Knowledge Graph Embeddings
 
 
-   .. rubric:: Notes
+   .. py:method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor], C_2: Tuple[torch.Tensor, torch.Tensor]) -> torch.FloatTensor
 
-   AConEx aims to enhance the modeling capabilities of knowledge graph embeddings
-   by adding more complex interaction patterns through convolutional layers, potentially
-   improving performance on tasks like link prediction.
+      Compute residual score of two complex-valued embeddings.
+      :param C_1: a tuple of two pytorch tensors that corresponds complex-valued embeddings
+      :param C_2: a tuple of two pytorch tensors that corresponds complex-valued embeddings
+      :return:
 
-   .. py:method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor], C_2: Tuple[torch.Tensor, torch.Tensor]) -> Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
-
-      Computes the residual convolution of two complex-valued embeddings. This method
-      is a core part of the AConEx model, applying convolutional neural network techniques
-      to complex-valued embeddings to capture intricate relationships in the data.
-
-      :param C_1: A tuple of two PyTorch tensors representing the real and imaginary components
-                  of the first complex-valued embedding.
-      :type C_1: Tuple[torch.Tensor, torch.Tensor]
-      :param C_2: A tuple of two PyTorch tensors representing the real and imaginary components
-                  of the second complex-valued embedding.
-      :type C_2: Tuple[torch.Tensor, torch.Tensor]
-
-      :returns: A tuple of four tensors, each representing a component of the convolutionally
-                transformed embeddings. These components correspond to the modified real
-                and imaginary parts of the input embeddings.
-      :rtype: Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
-
-      .. rubric:: Notes
-
-      The method concatenates the real and imaginary components of the embeddings and
-      applies a 2D convolution, followed by batch normalization, ReLU activation, dropout,
-      and a fully connected layer. This convolutional process is designed to enhance
-      the model's ability to capture complex patterns in knowledge graph embeddings.
 
 
    .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
 
-      Computes scores in a K-vs-All setting using convolutional and additive operations on
-      complex-valued embeddings. This method evaluates the performance of the model by computing
-      scores for each head entity and relation pair against all possible tail entities.
-
-      :param x: A tensor representing a batch of head entities and relations. Expected tensor shape:
-                (batch_size, 2), where 'batch_size' is the number of head entity and relation pairs.
-      :type x: torch.Tensor
-
-      :returns: A tensor containing the scores for each head entity and relation pair against all possible
-                tail entities. Tensor shape: (batch_size, |E|), where '|E|' is the number of entities
-                in the knowledge graph.
-      :rtype: torch.FloatTensor
-
-      .. rubric:: Notes
-
-      The method first retrieves embeddings for head entities and relations, splits them into real
-      and imaginary parts, and applies a convolutional operation. It then computes the Hermitian
-      inner product with all tail entity embeddings, using an additive approach that combines the
-      convolutional results with the original embeddings. This technique aims to capture complex
-      relational patterns in the knowledge graph.
-
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
 
-      Computes scores for a batch of triples using convolutional operations and additive connections
-      on complex-valued embeddings. This method is key for evaluating the model's performance on
-      individual triples within the knowledge graph.
-
-      :param x: A tensor representing a batch of triples. Each triple consists of indices for a head entity,
-                a relation, and a tail entity. Expected tensor shape: (n, 3), where 'n' is the number of triples.
-      :type x: torch.Tensor
-
-      :returns: A tensor containing the scores for each triple in the batch. Tensor shape: (n,), where 'n'
-                is the number of triples.
-      :rtype: torch.FloatTensor
-
-      .. rubric:: Notes
-
-      The method retrieves embeddings for head entities, relations, and tail entities, and splits them
-      into real and imaginary parts. It then applies a convolution operation on these embeddings and
-      computes the Hermitian inner product, enhanced with an additive connection. This approach allows
-      the model to capture complex relational patterns within the knowledge graph, potentially improving
-      prediction accuracy and interpretability.
-
-
-   .. py:method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor) -> torch.FloatTensor
-
-      Computes scores for a batch of samples (entity pairs) given a batch of queries. This method is used
-      to predict the scores for different tail entities for a set of query triples.
-
-      :param x: A tensor representing a batch of query triples. Each triple consists of indices for a head entity,
-                a relation, and a dummy tail entity (used for scoring). Expected tensor shape: (n, 3), where 'n' is
-                the number of query triples.
-      :type x: torch.Tensor
-      :param target_entity_idx: A tensor containing the indices of the target tail entities for which scores are to be predicted.
-                                Expected tensor shape: (n, m), where 'n' is the number of queries and 'm' is the number of target
-                                entities.
-      :type target_entity_idx: torch.Tensor
-
-      :returns: A tensor containing the scores for each query-triple and target-entity pair. Tensor shape: (n, m),
-                where 'n' is the number of queries and 'm' is the number of target entities.
-      :rtype: torch.FloatTensor
-
-      .. rubric:: Notes
-
-      This method retrieves embeddings for the head entities and relations in the query triples, splits them
-      into real and imaginary parts, and applies convolutional operations with additive connections to capture
-      complex patterns. It also retrieves embeddings for the target tail entities and computes Hermitian inner
-      products to obtain scores, allowing the model to rank the tail entities based on their relevance to the queries.
+      :param x:
 
 
 
-.. py:class:: ComplEx(args: dict)
+   .. py:method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor)
 
+
+.. py:class:: ComplEx(args)
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
-   ComplEx (Complex Embeddings for Knowledge Graphs) is a model that extends
-   the base knowledge graph embedding approach by using complex-valued embeddings.
-   It emphasizes the interaction of real and imaginary components of embeddings
-   to capture the asymmetric relationships often found in knowledge graphs.
 
-   :param args: A dictionary of arguments containing hyperparameters and settings for the model,
-                such as embedding dimensions, learning rate, and regularization methods.
-   :type args: dict
+   Base class for all neural network modules.
 
-   .. attribute:: name
+   Your models should also subclass this class.
 
-      The name identifier for the ComplEx model.
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
 
-      :type: str
+       import torch.nn as nn
+       import torch.nn.functional as F
 
-   .. method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor,
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
 
-        tail_ent_emb: torch.FloatTensor) -> torch.FloatTensor
-      Computes the score of a triple using the ComplEx scoring function.
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
 
 
-   .. method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor,
-
-                 emb_E: torch.FloatTensor) -> torch.FloatTensor
-      Computes scores in a K-vs-All setting using complex-valued embeddings.
-
-
-   .. method:: forward_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
-
-      Performs a forward pass for K-vs-All scoring, returning scores for all entities.
-
-
-   .. rubric:: Notes
-
-   ComplEx is particularly suited for modeling asymmetric relations and has been
-   shown to perform well on various knowledge graph benchmarks. The use of complex
-   numbers allows the model to encode additional information compared to real-valued models.
-
-   .. py:method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor) -> torch.FloatTensor
+   .. py:method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor)
       :staticmethod:
 
-      Compute the scoring function for a given triple using complex-valued embeddings.
-
-      :param head_ent_emb: The complex embedding of the head entity.
-      :type head_ent_emb: torch.FloatTensor
-      :param rel_ent_emb: The complex embedding of the relation.
-      :type rel_ent_emb: torch.FloatTensor
-      :param tail_ent_emb: The complex embedding of the tail entity.
-      :type tail_ent_emb: torch.FloatTensor
-
-      :returns: The score of the triple calculated using the Hermitian dot product of complex embeddings.
-      :rtype: torch.FloatTensor
-
-      .. rubric:: Notes
-
-      The scoring function exploits the complex vector space to model the interactions
-      between entities and relations. It involves element-wise multiplication and
-      summation of real and imaginary parts.
 
 
-   .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor) -> torch.FloatTensor
+   .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor)
       :staticmethod:
 
-      Compute scores for a head entity and relation against all entities in a K-vs-All scenario.
 
-      :param emb_h: The complex embedding of the head entity.
-      :type emb_h: torch.FloatTensor
-      :param emb_r: The complex embedding of the relation.
-      :type emb_r: torch.FloatTensor
-      :param emb_E: The complex embeddings of all possible tail entities.
-      :type emb_E: torch.FloatTensor
+      :param emb_h:
+      :param emb_r:
+      :param emb_E:
 
-      :returns: Scores for all possible triples formed with the given head entity and relation.
-      :rtype: torch.FloatTensor
-
-      .. rubric:: Notes
-
-      This method is useful for tasks like link prediction where the model predicts
-      the likelihood of a relation between a given entity pair.
 
 
    .. py:method:: forward_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
-
-      Perform a forward pass for K-vs-all scoring using complex-valued embeddings.
-
-      :param x: Tensor containing indices for head entities and relations.
-      :type x: torch.LongTensor
-
-      :returns: Scores for all triples formed with the given head entities and relations against all entities.
-      :rtype: torch.FloatTensor
-
-      .. rubric:: Notes
-
-      This method is typically used in training and evaluation of the model in a
-      link prediction setting, where the goal is to rank all possible tail entities
-      for a given head entity and relation.
-
 
 

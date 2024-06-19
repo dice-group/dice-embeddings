@@ -7,7 +7,7 @@
   <title>dicee.models.quaternion &mdash; DICE Embeddings 0.1.3.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8775fe07" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
-      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=eafc0fe6" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=fd3f3429" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/theme_tweak.css?v=f0ad19f3" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8775fe07" />
@@ -20,8 +20,9 @@
         <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
         <script src="../../../../_static/documentation_options.js?v=c6726a90"></script>
-        <script src="../../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
@@ -62,35 +63,42 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#docker">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-cite">How to cite</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">dicee</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="../../index.html#subpackages">Subpackages</a><ul class="current">
-<li class="toctree-l3 current"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models</span></code></a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html">dicee.models</a><ul class="current">
 <li class="toctree-l4 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
-<li class="toctree-l5"><a class="reference internal" href="../base_model/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.base_model</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="../clifford/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.clifford</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="../complex/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.complex</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="../dualE/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.dualE</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="../function_space/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.function_space</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="../octonion/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.octonion</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="../pykeen_models/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.pykeen_models</span></code></a></li>
-<li class="toctree-l5 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.quaternion</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="../base_model/index.html">dicee.models.base_model</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../clifford/index.html">dicee.models.clifford</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../complex/index.html">dicee.models.complex</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../dualE/index.html">dicee.models.dualE</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../function_space/index.html">dicee.models.function_space</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../octonion/index.html">dicee.models.octonion</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../pykeen_models/index.html">dicee.models.pykeen_models</a></li>
+<li class="toctree-l5 current"><a class="current reference internal" href="#">dicee.models.quaternion</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#functions">Functions</a></li>
 <li class="toctree-l6"><a class="reference internal" href="#module-contents">Module Contents</a></li>
 </ul>
 </li>
-<li class="toctree-l5"><a class="reference internal" href="../real/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.real</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="../static_funcs/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.static_funcs</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="../transformers/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.transformers</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="../real/index.html">dicee.models.real</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../static_funcs/index.html">dicee.models.static_funcs</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../transformers/index.html">dicee.models.transformers</a></li>
 </ul>
 </li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#functions">Functions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="../../read_preprocess_save_load_kg/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../scripts/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.scripts</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../trainer/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.trainer</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../read_preprocess_save_load_kg/index.html">dicee.read_preprocess_save_load_kg</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../scripts/index.html">dicee.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../trainer/index.html">dicee.trainer</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../../index.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#classes">Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#functions">Functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../index.html#package-contents">Package Contents</a></li>
 </ul>
 </li>
@@ -110,9 +118,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a></li>
-          <li class="breadcrumb-item"><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models</span></code></a></li>
-      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.quaternion</span></code></li>
+          <li class="breadcrumb-item"><a href="../../index.html">dicee</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">dicee.models</a></li>
+      <li class="breadcrumb-item active">dicee.models.quaternion</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../../../_sources/autoapi/dicee/models/quaternion/index.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -123,284 +131,353 @@
            <div itemprop="articleBody">
              
   <section id="module-dicee.models.quaternion">
-<span id="dicee-models-quaternion"></span><h1><a class="reference internal" href="#module-dicee.models.quaternion" title="dicee.models.quaternion"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models.quaternion</span></code></a><a class="headerlink" href="#module-dicee.models.quaternion" title="Link to this heading"></a></h1>
-<section id="module-contents">
-<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<span id="dicee-models-quaternion"></span><h1>dicee.models.quaternion<a class="headerlink" href="#module-dicee.models.quaternion" title="Link to this heading"></a></h1>
 <section id="classes">
-<h3>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h3>
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.quaternion.BaseKGE" title="dicee.models.quaternion.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGE</span></code></a></p></td>
+<td><p>Base class for all neural network modules.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.quaternion.IdentityClass" title="dicee.models.quaternion.IdentityClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IdentityClass</span></code></a></p></td>
+<td><p>Base class for all neural network modules.</p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.quaternion.QMult" title="dicee.models.quaternion.QMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QMult</span></code></a></p></td>
-<td><p>QMult extends the base knowledge graph embedding model by integrating quaternion</p></td>
+<td><p>Base class for all neural network modules.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.quaternion.ConvQ" title="dicee.models.quaternion.ConvQ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConvQ</span></code></a></p></td>
-<td><p>Convolutional Quaternion Knowledge Graph Embeddings (ConvQ) is a model that extends</p></td>
+<td><p>Convolutional Quaternion Knowledge Graph Embeddings</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.quaternion.AConvQ" title="dicee.models.quaternion.AConvQ"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AConvQ</span></code></a></p></td>
-<td><p>Additive Convolutional Quaternion Knowledge Graph Embeddings (AConvQ) model integrates</p></td>
+<td><p>Additive Convolutional Quaternion Knowledge Graph Embeddings</p></td>
 </tr>
 </tbody>
 </table>
 </section>
 <section id="functions">
-<h3>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h3>
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.quaternion.quaternion_mul_with_unit_norm" title="dicee.models.quaternion.quaternion_mul_with_unit_norm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">quaternion_mul_with_unit_norm</span></code></a>(→ Tuple[float, float, ...)</p></td>
-<td><p>Performs the multiplication of two quaternions with unit norm.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.quaternion.quaternion_mul" title="dicee.models.quaternion.quaternion_mul"><code class="xref py py-obj docutils literal notranslate"><span class="pre">quaternion_mul</span></code></a>(→ Tuple[torch.Tensor, torch.Tensor, ...)</p></td>
+<td><p>Perform quaternion multiplication</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.quaternion.quaternion_mul_with_unit_norm" title="dicee.models.quaternion.quaternion_mul_with_unit_norm"><code class="xref py py-obj docutils literal notranslate"><span class="pre">quaternion_mul_with_unit_norm</span></code></a>(*, Q_1, Q_2)</p></td>
+<td><p></p></td>
 </tr>
 </tbody>
 </table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
 <dl class="py function">
-<dt class="sig sig-object py" id="dicee.models.quaternion.quaternion_mul_with_unit_norm">
-<span class="sig-prename descclassname"><span class="pre">dicee.models.quaternion.</span></span><span class="sig-name descname"><span class="pre">quaternion_mul_with_unit_norm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#quaternion_mul_with_unit_norm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.quaternion_mul_with_unit_norm" title="Link to this definition"></a></dt>
-<dd><p>Performs the multiplication of two quaternions with unit norm.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>Q_1</strong> (<em>Tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>]</em>) – The first quaternion represented as a tuple of four real numbers (a_h, b_h, c_h, d_h).</p></li>
-<li><p><strong>Q_2</strong> (<em>Tuple</em><em>[</em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>, </em><em>float</em><em>]</em>) – The second quaternion represented as a tuple of four real numbers (a_r, b_r, c_r, d_r).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The result of the quaternion multiplication, represented as a tuple of four real numbers (r_val, i_val, j_val, k_val).</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[float, float, float, float]</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<p>The function assumes that the input quaternions have unit norm.
-It first normalizes the second quaternion to eliminate the scaling effect, and then performs the Hamilton product of the two quaternions.</p>
+<dt class="sig sig-object py" id="dicee.models.quaternion.quaternion_mul">
+<span class="sig-prename descclassname"><span class="pre">dicee.models.quaternion.</span></span><span class="sig-name descname"><span class="pre">quaternion_mul</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_2</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/static_funcs.html#quaternion_mul"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.quaternion_mul" title="Link to this definition"></a></dt>
+<dd><p>Perform quaternion multiplication
+:param Q_1:
+:param Q_2:
+:return:</p>
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="dicee.models.quaternion.QMult">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.quaternion.</span></span><span class="sig-name descname"><span class="pre">QMult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.QMult" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
-<p>QMult extends the base knowledge graph embedding model by integrating quaternion
-algebra. This model leverages the properties of quaternions to represent and process
-the embeddings of entities and relations in a knowledge graph, aiming to capture
-complex interactions and patterns.</p>
+<dt class="sig sig-object py" id="dicee.models.quaternion.BaseKGE">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.quaternion.</span></span><span class="sig-name descname"><span class="pre">BaseKGE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.BaseKGE" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">BaseKGELightning</span></code></p>
+<p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing to nest them in
+a tree structure. You can assign the submodules as regular attributes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Submodules assigned in this way will be registered, and will have their
+parameters converted too when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>args</strong> (<em>dict</em>) – A dictionary of arguments containing hyperparameters and settings for the model,
-such as embedding dimensions and learning rate.</p>
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
+evaluation mode.</p>
 </dd>
 </dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.quaternion.QMult.name">
-<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#dicee.models.quaternion.QMult.name" title="Link to this definition"></a></dt>
-<dd><p>The name identifier for the QMult model.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.quaternion.BaseKGE.forward_byte_pair_encoded_k_vs_all">
+<span class="sig-name descname"><span class="pre">forward_byte_pair_encoded_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.forward_byte_pair_encoded_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.BaseKGE.forward_byte_pair_encoded_k_vs_all" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>B x 2 x T</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.quaternion.BaseKGE.forward_byte_pair_encoded_triple">
+<span class="sig-name descname"><span class="pre">forward_byte_pair_encoded_triple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.forward_byte_pair_encoded_triple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.BaseKGE.forward_byte_pair_encoded_triple" title="Link to this definition"></a></dt>
+<dd><p>byte pair encoded neural link predictors</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>-------</strong></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.quaternion.BaseKGE.init_params_with_sanity_checking">
+<span class="sig-name descname"><span class="pre">init_params_with_sanity_checking</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.init_params_with_sanity_checking"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.BaseKGE.init_params_with_sanity_checking" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.quaternion.BaseKGE.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.LongTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.BaseKGE.forward" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong></p></li>
+<li><p><strong>y_idx</strong></p></li>
+<li><p><strong>ordered_bpe_entities</strong></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.quaternion.BaseKGE.forward_triples">
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.BaseKGE.forward_triples" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.quaternion.BaseKGE.forward_k_vs_all">
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.BaseKGE.forward_k_vs_all" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.quaternion.BaseKGE.forward_k_vs_sample">
+<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.BaseKGE.forward_k_vs_sample" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.quaternion.BaseKGE.get_triple_representation">
+<span class="sig-name descname"><span class="pre">get_triple_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_hrt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.get_triple_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.BaseKGE.get_triple_representation" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.quaternion.BaseKGE.get_head_relation_representation">
+<span class="sig-name descname"><span class="pre">get_head_relation_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexed_triple</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.get_head_relation_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.BaseKGE.get_head_relation_representation" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.quaternion.BaseKGE.get_sentence_representation">
+<span class="sig-name descname"><span class="pre">get_sentence_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.get_sentence_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.BaseKGE.get_sentence_representation" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>(</strong><strong>b</strong> (<em>x shape</em>)</p></li>
+<li><p><strong>3</strong></p></li>
+<li><p><strong>t</strong><strong>)</strong></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.quaternion.BaseKGE.get_bpe_head_and_relation_representation">
+<span class="sig-name descname"><span class="pre">get_bpe_head_and_relation_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.get_bpe_head_and_relation_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.BaseKGE.get_bpe_head_and_relation_representation" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong> (<em>B x 2 x T</em>)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.quaternion.BaseKGE.get_embeddings">
+<span class="sig-name descname"><span class="pre">get_embeddings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGE.get_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.BaseKGE.get_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.quaternion.IdentityClass">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.quaternion.</span></span><span class="sig-name descname"><span class="pre">IdentityClass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#IdentityClass"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.IdentityClass" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
+<p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing to nest them in
+a tree structure. You can assign the submodules as regular attributes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Submodules assigned in this way will be registered, and will have their
+parameters converted too when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
+evaluation mode.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.quaternion.IdentityClass.__call__">
+<span class="sig-name descname"><span class="pre">__call__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#IdentityClass.__call__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.IdentityClass.__call__" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.quaternion.IdentityClass.forward">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#IdentityClass.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.IdentityClass.forward" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.models.quaternion.quaternion_mul_with_unit_norm">
+<span class="sig-prename descclassname"><span class="pre">dicee.models.quaternion.</span></span><span class="sig-name descname"><span class="pre">quaternion_mul_with_unit_norm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#quaternion_mul_with_unit_norm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.quaternion_mul_with_unit_norm" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.models.quaternion.QMult">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.quaternion.</span></span><span class="sig-name descname"><span class="pre">QMult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.QMult" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
+<p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing to nest them in
+a tree structure. You can assign the submodules as regular attributes:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Submodules assigned in this way will be registered, and will have their
+parameters converted too when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
+must be made before assignment on the child.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
+evaluation mode.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.quaternion.QMult.quaternion_multiplication_followed_by_inner_product">
+<span class="sig-name descname"><span class="pre">quaternion_multiplication_followed_by_inner_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult.quaternion_multiplication_followed_by_inner_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.QMult.quaternion_multiplication_followed_by_inner_product" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>h</strong> – shape: (<cite>*batch_dims</cite>, dim)
+The head representations.</p></li>
+<li><p><strong>r</strong> – shape: (<cite>*batch_dims</cite>, dim)
+The head representations.</p></li>
+<li><p><strong>t</strong> – shape: (<cite>*batch_dims</cite>, dim)
+The tail representations.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Triple scores.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.quaternion.QMult.quaternion_normalizer">
-<span class="sig-name descname"><span class="pre">quaternion_normalizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult.quaternion_normalizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.QMult.quaternion_normalizer" title="Link to this definition"></a></dt>
-<dd><p>Normalizes the length of relation vectors.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.quaternion.QMult.score">
-<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">head_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tail_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.QMult.score" title="Link to this definition"></a></dt>
-<dd><p>Computes the score of a triple using quaternion multiplication.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.quaternion.QMult.k_vs_all_score">
-<span class="sig-name descname"><span class="pre">k_vs_all_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bpe_head_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bpe_rel_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult.k_vs_all_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.QMult.k_vs_all_score" title="Link to this definition"></a></dt>
-<dd><p>Computes scores in a K-vs-All setting using quaternion embeddings.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.quaternion.QMult.forward_k_vs_all">
-<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.QMult.forward_k_vs_all" title="Link to this definition"></a></dt>
-<dd><p>Performs a forward pass for K-vs-All scoring, returning scores for all entities.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.quaternion.QMult.forward_k_vs_sample">
-<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.QMult.forward_k_vs_sample" title="Link to this definition"></a></dt>
-<dd><p>Performs a forward pass for K-vs-Sample scoring, returning scores for the specified entities.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.quaternion.QMult.quaternion_multiplication_followed_by_inner_product">
-<span class="sig-name descname"><span class="pre">quaternion_multiplication_followed_by_inner_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult.quaternion_multiplication_followed_by_inner_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.QMult.quaternion_multiplication_followed_by_inner_product" title="Link to this definition"></a></dt>
-<dd><p>Performs quaternion multiplication followed by inner product, returning triple scores.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id0">
-<span class="sig-name descname"><span class="pre">quaternion_multiplication_followed_by_inner_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult.quaternion_multiplication_followed_by_inner_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
-<dd><p>Performs quaternion multiplication followed by inner product.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">quaternion_normalizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult.quaternion_normalizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.QMult.quaternion_normalizer" title="Link to this definition"></a></dt>
+<dd><p>Normalize the length of relation vectors, if the forward constraint has not been applied yet.</p>
+<p>Absolute value of a quaternion</p>
+<div class="math notranslate nohighlight">
+\[|a + bi + cj + dk| = \sqrt{a^2 + b^2 + c^2 + d^2}\]</div>
+<p>L2 norm of quaternion vector:</p>
+<div class="math notranslate nohighlight">
+\[\|x\|^2 = \sum_{i=1}^d |x_i|^2
+         = \sum_{i=1}^d (x_i.re^2 + x_i.im_1^2 + x_i.im_2^2 + x_i.im_3^2)\]</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>h</strong> (<em>torch.FloatTensor</em>) – The head representations. Shape: (<cite>*batch_dims</cite>, dim)</p></li>
-<li><p><strong>r</strong> (<em>torch.FloatTensor</em>) – The relation representations. Shape: (<cite>*batch_dims</cite>, dim)</p></li>
-<li><p><strong>t</strong> (<em>torch.FloatTensor</em>) – The tail representations. Shape: (<cite>*batch_dims</cite>, dim)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Triple scores.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.FloatTensor</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id1">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">quaternion_normalizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult.quaternion_normalizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
-<dd><p>TODO: Add mathematical format for sphinx.
-Normalize the length of relation vectors, if the forward constraint has not been applied yet.</p>
-<p>The absolute value of a quaternion is calculated as follows:
-.. math:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">|</span><span class="n">a</span> <span class="o">+</span> <span class="n">bi</span> <span class="o">+</span> <span class="n">cj</span> <span class="o">+</span> <span class="n">dk</span><span class="o">|</span> <span class="o">=</span> \<span class="n">sqrt</span><span class="p">{</span><span class="n">a</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">b</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">c</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">d</span><span class="o">^</span><span class="mi">2</span><span class="p">}</span>
-</pre></div>
-</div>
-<p>The L2 norm of a quaternion vector is computed as:
-.. math:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>\<span class="o">|</span><span class="n">x</span>\<span class="o">|^</span><span class="mi">2</span> <span class="o">=</span> \<span class="n">sum_</span><span class="p">{</span><span class="n">i</span><span class="o">=</span><span class="mi">1</span><span class="p">}</span><span class="o">^</span><span class="n">d</span> <span class="o">|</span><span class="n">x_i</span><span class="o">|^</span><span class="mi">2</span>
-         <span class="o">=</span> \<span class="n">sum_</span><span class="p">{</span><span class="n">i</span><span class="o">=</span><span class="mi">1</span><span class="p">}</span><span class="o">^</span><span class="n">d</span> <span class="p">(</span><span class="n">x_i</span><span class="o">.</span><span class="n">re</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">x_i</span><span class="o">.</span><span class="n">im_1</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">x_i</span><span class="o">.</span><span class="n">im_2</span><span class="o">^</span><span class="mi">2</span> <span class="o">+</span> <span class="n">x_i</span><span class="o">.</span><span class="n">im_3</span><span class="o">^</span><span class="mi">2</span><span class="p">)</span>
-</pre></div>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>torch.FloatTensor</em>) – The vector containing quaternion values.</p>
+<dd class="field-odd"><p><strong>x</strong> – The vector.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The normalized vector.</p>
 </dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.FloatTensor</p>
-</dd>
 </dl>
-<p class="rubric">Notes</p>
-<p>This function normalizes the length of relation vectors represented as quaternions. It ensures that
-the absolute value of each quaternion in the vector is equal to 1, preserving the unit length.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id2">
-<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">head_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tail_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
-<dd><p>Compute scores for a batch of triples using octonion-based embeddings.</p>
-<p>This method computes scores for a batch of triples using octonion-based embeddings of head entities,
-relation embeddings, and tail entities. It supports both explicit and non-explicit scoring methods.</p>
-<dl class="field-list simple">
+<dt class="sig sig-object py" id="dicee.models.quaternion.QMult.score">
+<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">head_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tail_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.QMult.score" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.quaternion.QMult.k_vs_all_score">
+<span class="sig-name descname"><span class="pre">k_vs_all_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bpe_head_ent_emb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bpe_rel_ent_emb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult.k_vs_all_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.QMult.k_vs_all_score" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>head_ent_emb</strong> (<em>torch.FloatTensor</em>) – Tensor containing the octonion-based embeddings of head entities.</p></li>
-<li><p><strong>rel_ent_emb</strong> (<em>torch.FloatTensor</em>) – Tensor containing the octonion-based embeddings of relations.</p></li>
-<li><p><strong>tail_ent_emb</strong> (<em>torch.FloatTensor</em>) – Tensor containing the octonion-based embeddings of tail entities.</p></li>
+<li><p><strong>bpe_head_ent_emb</strong></p></li>
+<li><p><strong>bpe_rel_ent_emb</strong></p></li>
+<li><p><strong>E</strong></p></li>
 </ul>
 </dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Scores for the given batch of triples.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.FloatTensor</p>
-</dd>
 </dl>
-<p class="rubric">Notes</p>
-<p>If no normalization is set, this method applies quaternion normalization to relation embeddings.</p>
-<p>If the scoring method is explicit, it computes the scores using quaternion multiplication followed by
-an inner product of the real and imaginary parts of the resulting quaternions.</p>
-<p>If the scoring method is non-explicit, it directly computes the inner product of the real and
-imaginary parts of the octonion-based embeddings.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id3">
-<span class="sig-name descname"><span class="pre">k_vs_all_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bpe_head_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bpe_rel_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">E</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult.k_vs_all_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
-<dd><p>Computes scores in a K-vs-All setting using quaternion embeddings for a batch of head entities and relations.</p>
-<p>This method involves splitting the head entity and relation embeddings into quaternion components,
-optionally normalizing the relation embeddings, performing quaternion multiplication, and then
-calculating the score by performing an inner product with all tail entity embeddings.</p>
-<dl class="field-list simple">
+<dt class="sig sig-object py" id="dicee.models.quaternion.QMult.forward_k_vs_all">
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.QMult.forward_k_vs_all" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>bpe_head_ent_emb</strong> (<em>torch.FloatTensor</em>) – Batched embeddings of head entities, each represented as a quaternion.</p></li>
-<li><p><strong>bpe_rel_ent_emb</strong> (<em>torch.FloatTensor</em>) – Batched embeddings of relations, each represented as a quaternion.</p></li>
-<li><p><strong>E</strong> (<em>torch.FloatTensor</em>) – Embeddings of all possible tail entities.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Scores for all possible triples formed with the given head entities and relations against all entities.
-The shape of the output is (size of batch, number of entities).</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.FloatTensor</p>
+<dd class="field-odd"><p><strong>x</strong></p>
 </dd>
 </dl>
-<p class="rubric">Notes</p>
-<p>The method is particularly useful in scenarios like link prediction, where the goal is to rank all possible
-tail entities for a given head entity and relation. Quaternion algebra is used to enhance the interaction
-modeling between entities and relations.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="id4">
-<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
-<dd><p>Computes scores for all entities in a K-vs-All setting given a batch of head entities and relations.</p>
-<p>This method retrieves embeddings for the head entities and relations from the input tensor <cite>x</cite>,
-applies necessary dropout and normalization, and then uses the <cite>k_vs_all_score</cite> method to compute
-the scores against all possible tail entities in the knowledge graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>torch.FloatTensor</em>) – A tensor containing indices for head entities and relations. The tensor is expected to have
-a specific format suitable for the model’s embedding retrieval process.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A tensor of scores, where each row corresponds to the scores of all tail entities for a
-single head entity and relation pair. The shape of the tensor is (size of the batch, number of entities).</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.FloatTensor</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<p>This method is typically used in evaluating the model’s performance in link prediction tasks,
-where it’s important to rank the likelihood of every possible tail entity for a given head entity
-and relation.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id5">
-<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
-<dd><p>Computes scores for a batch of triples against a sampled subset of entities in a K-vs-Sample setting.</p>
-<p>Given a batch of head entities and relations (h,r), this method computes the scores for all possible triples
-formed with these head entities and relations against a subset of entities, i.e.,
-[score(h,r,x)|x in Entities] =&gt; [0.0,0.1,…,0.8], shape=&gt; (1, <a href="#id12"><span class="problematic" id="id13">|Entities|</span></a>). TODO: Add mathematical format for sphinx.
-The subset of entities is specified by the <cite>target_entity_idx</cite>, which is an integer index representing a specific entity.
-Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<em>torch.FloatTensor</em>) – A tensor containing indices for head entities and relations. The tensor is expected to have
-a specific format suitable for the model’s embedding retrieval process.</p></li>
-<li><p><strong>target_entity_idx</strong> (<em>int</em>) – Index of the target entity against which the scores are to be computed.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A tensor of scores where each element corresponds to the score of the target entity
-for a single head entity and relation pair. The shape of the tensor is (size of the batch, 1).</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.FloatTensor</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<p>This method is particularly useful in scenarios like link prediction, where it’s necessary to
-evaluate the likelihood of a specific relationship between a given head entity and a particular
-target entity.</p>
+<dt class="sig sig-object py" id="dicee.models.quaternion.QMult.forward_k_vs_sample">
+<span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.QMult.forward_k_vs_sample" title="Link to this definition"></a></dt>
+<dd><p>Completed.
+Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,
+[score(h,r,x)|x in Entities] =&gt; [0.0,0.1,…,0.8], shape=&gt; (1, <a href="#id1"><span class="problematic" id="id2">|Entities|</span></a>)
+Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|)</p>
 </dd></dl>
 
 </dd></dl>
@@ -409,196 +486,28 @@ target entity.</p>
 <dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.quaternion.</span></span><span class="sig-name descname"><span class="pre">ConvQ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#ConvQ"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.ConvQ" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
-<p>Convolutional Quaternion Knowledge Graph Embeddings (ConvQ) is a model that extends
-the base knowledge graph embedding approach by using quaternion algebra and convolutional
-neural networks. This model aims to capture complex interactions in knowledge graphs
-by applying convolutions to quaternion-based entity and relation embeddings.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>args</strong> (<em>dict</em>) – A dictionary of arguments containing hyperparameters and settings for the model,
-such as embedding dimensions, number of output channels, kernel size, and dropout rates.</p>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.name">
-<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#dicee.models.quaternion.ConvQ.name" title="Link to this definition"></a></dt>
-<dd><p>The name identifier for the ConvQ model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.entity_embeddings">
-<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.models.quaternion.ConvQ.entity_embeddings" title="Link to this definition"></a></dt>
-<dd><p>Embedding layer for entities in the knowledge graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.nn.Embedding</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.relation_embeddings">
-<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.models.quaternion.ConvQ.relation_embeddings" title="Link to this definition"></a></dt>
-<dd><p>Embedding layer for relations in the knowledge graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.nn.Embedding</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.conv2d">
-<span class="sig-name descname"><span class="pre">conv2d</span></span><a class="headerlink" href="#dicee.models.quaternion.ConvQ.conv2d" title="Link to this definition"></a></dt>
-<dd><p>A 2D convolutional layer used for processing quaternion embeddings.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.nn.Conv2d</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.fc_num_input">
-<span class="sig-name descname"><span class="pre">fc_num_input</span></span><a class="headerlink" href="#dicee.models.quaternion.ConvQ.fc_num_input" title="Link to this definition"></a></dt>
-<dd><p>The number of input features for the fully connected layer.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.fc1">
-<span class="sig-name descname"><span class="pre">fc1</span></span><a class="headerlink" href="#dicee.models.quaternion.ConvQ.fc1" title="Link to this definition"></a></dt>
-<dd><p>A fully connected linear layer for compressing the output of the convolutional layer.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.nn.Linear</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.bn_conv1">
-<span class="sig-name descname"><span class="pre">bn_conv1</span></span><a class="headerlink" href="#dicee.models.quaternion.ConvQ.bn_conv1" title="Link to this definition"></a></dt>
-<dd><p>First batch normalization layer applied after the convolutional operation.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.nn.BatchNorm2d</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.bn_conv2">
-<span class="sig-name descname"><span class="pre">bn_conv2</span></span><a class="headerlink" href="#dicee.models.quaternion.ConvQ.bn_conv2" title="Link to this definition"></a></dt>
-<dd><p>Second normalization layer applied after the fully connected layer.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Normalizer</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.feature_map_dropout">
-<span class="sig-name descname"><span class="pre">feature_map_dropout</span></span><a class="headerlink" href="#dicee.models.quaternion.ConvQ.feature_map_dropout" title="Link to this definition"></a></dt>
-<dd><p>Dropout layer applied to the output of the convolutional layer.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.nn.Dropout2d</p>
-</dd>
-</dl>
-</dd></dl>
-
+<p>Convolutional Quaternion Knowledge Graph Embeddings</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.residual_convolution">
 <span class="sig-name descname"><span class="pre">residual_convolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Q_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#ConvQ.residual_convolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.ConvQ.residual_convolution" title="Link to this definition"></a></dt>
-<dd><p>Performs a residual convolution operation on two sets of quaternion embeddings.</p>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.forward_triples">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexed_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#ConvQ.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.ConvQ.forward_triples" title="Link to this definition"></a></dt>
-<dd><p>Computes scores for a batch of triples using convolutional operations on quaternion embeddings.</p>
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexed_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#ConvQ.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.ConvQ.forward_triples" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.forward_k_vs_all">
-<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#ConvQ.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.ConvQ.forward_k_vs_all" title="Link to this definition"></a></dt>
-<dd><p>Computes scores for all entities in a K-vs-All setting given a batch of head entities and relations.</p>
-</dd></dl>
-
-<p class="rubric">Notes</p>
-<p>ConvQ leverages the properties of quaternions, a number system that extends complex numbers,
-to represent and process the embeddings of entities and relations. The convolutional layers
-aim to capture spatial relationships and complex patterns in the embeddings.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="id6">
-<span class="sig-name descname"><span class="pre">residual_convolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Q_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#ConvQ.residual_convolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
-<dd><p>Performs a residual convolution operation on two sets of quaternion embeddings.</p>
-<p>The method combines two quaternion embeddings and applies a convolutional operation
-followed by batch normalization, dropout, and a fully connected layer.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>Q_1</strong> (<em>Tuple</em><em>[</em><em>torch.FloatTensor</em><em>, </em><em>torch.FloatTensor</em><em>, </em><em>torch.FloatTensor</em><em>, </em><em>torch.FloatTensor</em><em>]</em>) – The first set of quaternion embeddings.</p></li>
-<li><p><strong>Q_2</strong> (<em>Tuple</em><em>[</em><em>torch.FloatTensor</em><em>, </em><em>torch.FloatTensor</em><em>, </em><em>torch.FloatTensor</em><em>, </em><em>torch.FloatTensor</em><em>]</em>) – The second set of quaternion embeddings.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The resulting quaternion embeddings after the convolutional operation.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id7">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexed_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#ConvQ.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
-<dd><p>Computes scores for a batch of triples using convolutional operations on quaternion embeddings.</p>
-<p>The method processes head, relation, and tail embeddings using quaternion algebra and
-convolutional layers and computes the scores of the triples.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>indexed_triple</strong> (<em>torch.FloatTensor</em>) – Tensor containing indices for head entities, relations, and tail entities.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Scores for the given batch of triples.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.FloatTensor</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id8">
-<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#ConvQ.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Link to this definition"></a></dt>
-<dd><p>Computes scores for all entities in a K-vs-All setting given a batch of head entities and relations.</p>
-<p>This method retrieves embeddings for the head entities and relations from the input tensor <cite>x</cite>,
-applies necessary dropout and normalization, and then computes scores against all entities in
-the knowledge graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>torch.FloatTensor</em>) – A tensor containing indices for head entities and relations.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Scores for all entities for the given batch of head entities and relations.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.FloatTensor</p>
-</dd>
-</dl>
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#ConvQ.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.ConvQ.forward_k_vs_all" title="Link to this definition"></a></dt>
+<dd><p>Given a head entity and a relation (h,r), we compute scores for all entities.
+[score(h,r,x)|x in Entities] =&gt; [0.0,0.1,…,0.8], shape=&gt; (1, <a href="#id3"><span class="problematic" id="id4">|Entities|</span></a>)
+Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|)</p>
 </dd></dl>
 
 </dd></dl>
@@ -607,191 +516,32 @@ the knowledge graph.</p>
 <dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.quaternion.</span></span><span class="sig-name descname"><span class="pre">AConvQ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#AConvQ"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.AConvQ" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
-<p>Additive Convolutional Quaternion Knowledge Graph Embeddings (AConvQ) model integrates
-quaternion algebra with convolutional neural networks for knowledge graph embeddings.
-This model is designed to capture complex interactions in knowledge graphs by applying
-additive convolutions to quaternion-based entity and relation embeddings.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.name">
-<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#dicee.models.quaternion.AConvQ.name" title="Link to this definition"></a></dt>
-<dd><p>The name identifier for the AConvQ model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.entity_embeddings">
-<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.models.quaternion.AConvQ.entity_embeddings" title="Link to this definition"></a></dt>
-<dd><p>Embedding layer for entities in the knowledge graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.nn.Embedding</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.relation_embeddings">
-<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.models.quaternion.AConvQ.relation_embeddings" title="Link to this definition"></a></dt>
-<dd><p>Embedding layer for relations in the knowledge graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.nn.Embedding</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.conv2d">
-<span class="sig-name descname"><span class="pre">conv2d</span></span><a class="headerlink" href="#dicee.models.quaternion.AConvQ.conv2d" title="Link to this definition"></a></dt>
-<dd><p>A 2D convolutional layer used for processing quaternion embeddings.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.nn.Conv2d</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.fc_num_input">
-<span class="sig-name descname"><span class="pre">fc_num_input</span></span><a class="headerlink" href="#dicee.models.quaternion.AConvQ.fc_num_input" title="Link to this definition"></a></dt>
-<dd><p>The number of input features for the fully connected layer.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.fc1">
-<span class="sig-name descname"><span class="pre">fc1</span></span><a class="headerlink" href="#dicee.models.quaternion.AConvQ.fc1" title="Link to this definition"></a></dt>
-<dd><p>A fully connected linear layer for compressing the output of the convolutional layer.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.nn.Linear</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.bn_conv1">
-<span class="sig-name descname"><span class="pre">bn_conv1</span></span><a class="headerlink" href="#dicee.models.quaternion.AConvQ.bn_conv1" title="Link to this definition"></a></dt>
-<dd><p>Batch normalization layer applied after the convolutional operation.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.nn.BatchNorm2d</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.bn_conv2">
-<span class="sig-name descname"><span class="pre">bn_conv2</span></span><a class="headerlink" href="#dicee.models.quaternion.AConvQ.bn_conv2" title="Link to this definition"></a></dt>
-<dd><p>Normalization layer applied after the fully connected layer.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Normalizer</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.feature_map_dropout">
-<span class="sig-name descname"><span class="pre">feature_map_dropout</span></span><a class="headerlink" href="#dicee.models.quaternion.AConvQ.feature_map_dropout" title="Link to this definition"></a></dt>
-<dd><p>Dropout layer applied to the output of the convolutional layer.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.nn.Dropout2d</p>
-</dd>
-</dl>
-</dd></dl>
-
+<p>Additive Convolutional Quaternion Knowledge Graph Embeddings</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.residual_convolution">
 <span class="sig-name descname"><span class="pre">residual_convolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Q_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#AConvQ.residual_convolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.AConvQ.residual_convolution" title="Link to this definition"></a></dt>
-<dd><p>Performs an additive residual convolution operation on two sets of quaternion embeddings.</p>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.forward_triples">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexed_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#AConvQ.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.AConvQ.forward_triples" title="Link to this definition"></a></dt>
-<dd><p>Computes scores for a batch of triples using additive convolutional operations on quaternion embeddings.</p>
+<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexed_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#AConvQ.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.AConvQ.forward_triples" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>x</strong></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.forward_k_vs_all">
-<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#AConvQ.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.AConvQ.forward_k_vs_all" title="Link to this definition"></a></dt>
-<dd><p>Computes scores for all entities in a K-vs-All setting given a batch of head entities and relations.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id9">
-<span class="sig-name descname"><span class="pre">residual_convolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Q_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#AConvQ.residual_convolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Link to this definition"></a></dt>
-<dd><p>Performs a residual convolution operation on two sets of quaternion embeddings.</p>
-<p>The method combines two quaternion embeddings and applies a convolutional operation
-followed by batch normalization, dropout, and a fully connected layer.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>Q_1</strong> (<em>Tuple</em><em>[</em><em>torch.FloatTensor</em><em>, </em><em>torch.FloatTensor</em><em>, </em><em>torch.FloatTensor</em><em>, </em><em>torch.FloatTensor</em><em>]</em>) – The first set of quaternion embeddings.</p></li>
-<li><p><strong>Q_2</strong> (<em>Tuple</em><em>[</em><em>torch.FloatTensor</em><em>, </em><em>torch.FloatTensor</em><em>, </em><em>torch.FloatTensor</em><em>, </em><em>torch.FloatTensor</em><em>]</em>) – The second set of quaternion embeddings.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The resulting quaternion embeddings after the convolutional operation.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id10">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">indexed_triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#AConvQ.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Link to this definition"></a></dt>
-<dd><p>Computes scores for a batch of triples using convolutional operations on quaternion embeddings.</p>
-<p>The method processes head, relation, and tail embeddings using quaternion algebra and
-convolutional layers and computes the scores of the triples.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>indexed_triple</strong> (<em>torch.FloatTensor</em>) – Tensor containing indices for head entities, relations, and tail entities.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Scores for the given batch of triples.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.FloatTensor</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id11">
-<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#AConvQ.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Link to this definition"></a></dt>
-<dd><p>Computes scores for all entities in a K-vs-All setting given a batch of head entities and relations.</p>
-<p>This method retrieves embeddings for the head entities and relations from the input tensor <cite>x</cite>,
-applies necessary dropout and normalization, and then computes scores against all entities in
-the knowledge graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>x</strong> (<em>torch.FloatTensor</em>) – A tensor containing indices for head entities and relations.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>Scores for all entities for the given batch of head entities and relations.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.FloatTensor</p>
-</dd>
-</dl>
+<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#AConvQ.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.AConvQ.forward_k_vs_all" title="Link to this definition"></a></dt>
+<dd><p>Given a head entity and a relation (h,r), we compute scores for all entities.
+[score(h,r,x)|x in Entities] =&gt; [0.0,0.1,…,0.8], shape=&gt; (1, <a href="#id5"><span class="problematic" id="id6">|Entities|</span></a>)
+Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|)</p>
 </dd></dl>
 
 </dd></dl>
 
-</section>
 </section>
 </section>
 

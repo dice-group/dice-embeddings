@@ -7,7 +7,7 @@
   <title>dicee.trainer &mdash; DICE Embeddings 0.1.3.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=eafc0fe6" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
@@ -20,7 +20,7 @@
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
         <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
-        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -62,21 +62,28 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">dicee</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="../index.html#subpackages">Subpackages</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="../models/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../read_preprocess_save_load_kg/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../scripts/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.scripts</span></code></a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.trainer</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../models/index.html">dicee.models</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../read_preprocess_save_load_kg/index.html">dicee.read_preprocess_save_load_kg</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../scripts/index.html">dicee.scripts</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">dicee.trainer</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a><ul>
-<li class="toctree-l5"><a class="reference internal" href="dice_trainer/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.trainer.dice_trainer</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="torch_trainer/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.trainer.torch_trainer</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="torch_trainer_ddp/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.trainer.torch_trainer_ddp</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="dice_trainer/index.html">dicee.trainer.dice_trainer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="torch_trainer/index.html">dicee.trainer.torch_trainer</a></li>
+<li class="toctree-l5"><a class="reference internal" href="torch_trainer_ddp/index.html">dicee.trainer.torch_trainer_ddp</a></li>
 </ul>
 </li>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#package-contents">Package Contents</a><ul>
-<li class="toctree-l5"><a class="reference internal" href="#classes">Classes</a><ul>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.trainer.DICE_Trainer"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.trainer.DICE_Trainer"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.trainer.DICE_Trainer.continual_start"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.continual_start()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.trainer.DICE_Trainer.initialize_trainer"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.initialize_trainer()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.trainer.DICE_Trainer.initialize_or_load_model"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.initialize_or_load_model()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.trainer.DICE_Trainer.initialize_dataloader"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.initialize_dataloader()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.trainer.DICE_Trainer.initialize_dataset"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.initialize_dataset()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.trainer.DICE_Trainer.start"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.start()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.trainer.DICE_Trainer.k_fold_cross_validation"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.k_fold_cross_validation()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -86,6 +93,9 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#classes">Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#functions">Functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
 </ul>
 </li>
@@ -105,8 +115,8 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a></li>
-      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.trainer</span></code></li>
+          <li class="breadcrumb-item"><a href="../index.html">dicee</a></li>
+      <li class="breadcrumb-item active">dicee.trainer</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../../_sources/autoapi/dicee/trainer/index.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -117,294 +127,122 @@
            <div itemprop="articleBody">
              
   <section id="module-dicee.trainer">
-<span id="dicee-trainer"></span><h1><a class="reference internal" href="#module-dicee.trainer" title="dicee.trainer"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.trainer</span></code></a><a class="headerlink" href="#module-dicee.trainer" title="Link to this heading"></a></h1>
+<span id="dicee-trainer"></span><h1>dicee.trainer<a class="headerlink" href="#module-dicee.trainer" title="Link to this heading"></a></h1>
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading"></a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="dice_trainer/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.trainer.dice_trainer</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="torch_trainer/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.trainer.torch_trainer</span></code></a></li>
-<li class="toctree-l1"><a class="reference internal" href="torch_trainer_ddp/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.trainer.torch_trainer_ddp</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="dice_trainer/index.html">dicee.trainer.dice_trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torch_trainer/index.html">dicee.trainer.torch_trainer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="torch_trainer_ddp/index.html">dicee.trainer.torch_trainer_ddp</a></li>
 </ul>
 </div>
 </section>
-<section id="package-contents">
-<h2>Package Contents<a class="headerlink" href="#package-contents" title="Link to this heading"></a></h2>
 <section id="classes">
-<h3>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h3>
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.DICE_Trainer" title="dicee.trainer.DICE_Trainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DICE_Trainer</span></code></a></p></td>
-<td><p>Implements a training framework for knowledge graph embedding models using [PyTorch Lightning](<a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html">https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html</a>),</p></td>
+<td><p>DICE_Trainer implement</p></td>
 </tr>
 </tbody>
 </table>
+</section>
+<section id="package-contents">
+<h2>Package Contents<a class="headerlink" href="#package-contents" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.trainer.DICE_Trainer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.trainer.</span></span><span class="sig-name descname"><span class="pre">DICE_Trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_continual_training</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evaluator</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.DICE_Trainer" title="Link to this definition"></a></dt>
-<dd><p>Implements a training framework for knowledge graph embedding models using [PyTorch Lightning](<a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html">https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html</a>),
-supporting [multi-GPU](<a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html">https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html</a>) and CPU training. This trainer can handle continual training scenarios and supports
-different forms of labeling and evaluation methods.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>args</strong> (<a class="reference internal" href="../config/index.html#dicee.config.Namespace" title="dicee.config.Namespace"><em>Namespace</em></a>) – Command line arguments or configurations specifying training parameters and model settings.</p></li>
-<li><p><strong>is_continual_training</strong> (<em>bool</em>) – Flag indicating whether the training session is part of a continual learning process.</p></li>
-<li><p><strong>storage_path</strong> (<em>str</em>) – Path to the directory where training checkpoints and models are stored.</p></li>
-<li><p><strong>evaluator</strong> (<em>object</em><em>, </em><em>optional</em>) – An evaluation object responsible for model evaluation. This can be any object that implements
-an <cite>eval</cite> method accepting model predictions and returning evaluation metrics.</p></li>
-</ul>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.trainer.</span></span><span class="sig-name descname"><span class="pre">DICE_Trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_continual_training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evaluator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.DICE_Trainer" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>DICE_Trainer implement</dt><dd><p>1- Pytorch Lightning trainer (<a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html">https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html</a>)
+2- Multi-GPU Trainer(<a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html">https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html</a>)
+3- CPU Trainer</p>
+<p>args</p>
+<p>is_continual_training:bool</p>
+<p>storage_path:str</p>
+<p>evaluator:</p>
+<p>report:dict</p>
 </dd>
 </dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.trainer.DICE_Trainer.report">
-<span class="sig-name descname"><span class="pre">report</span></span><a class="headerlink" href="#dicee.trainer.DICE_Trainer.report" title="Link to this definition"></a></dt>
-<dd><p>A dictionary to store training reports and metrics.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>dict</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.trainer.DICE_Trainer.trainer">
-<span class="sig-name descname"><span class="pre">trainer</span></span><a class="headerlink" href="#dicee.trainer.DICE_Trainer.trainer" title="Link to this definition"></a></dt>
-<dd><p>The PyTorch Lightning Trainer instance used for model training.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>lightening.Trainer or None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.trainer.DICE_Trainer.form_of_labelling">
-<span class="sig-name descname"><span class="pre">form_of_labelling</span></span><a class="headerlink" href="#dicee.trainer.DICE_Trainer.form_of_labelling" title="Link to this definition"></a></dt>
-<dd><p>The form of labeling used during training, which can be “EntityPrediction”, “RelationPrediction”, or “Pyke”.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>str or None</p>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.trainer.DICE_Trainer.continual_start">
 <span class="sig-name descname"><span class="pre">continual_start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.continual_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.DICE_Trainer.continual_start" title="Link to this definition"></a></dt>
-<dd><p>Initializes and starts the training process, including model loading and fitting.</p>
+<dd><ol class="arabic simple">
+<li><p>Initialize training.</p></li>
+<li><p>Load model</p></li>
+</ol>
+<p>(3) Load trainer
+(3) Fit model</p>
+<section id="parameter">
+<h3>Parameter<a class="headerlink" href="#parameter" title="Link to this heading"></a></h3>
+<dl class="field-list simple">
+<dt class="field-odd">returns<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><em>model</em></p></li>
+<li><p><strong>form_of_labelling</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</section>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.trainer.DICE_Trainer.initialize_trainer">
-<span class="sig-name descname"><span class="pre">initialize_trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callbacks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">lightening.Trainer</span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.initialize_trainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.DICE_Trainer.initialize_trainer" title="Link to this definition"></a></dt>
-<dd><p>Initializes a PyTorch Lightning Trainer instance with the specified callbacks.</p>
+<span class="sig-name descname"><span class="pre">initialize_trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callbacks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">lightning.Trainer</span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.initialize_trainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.DICE_Trainer.initialize_trainer" title="Link to this definition"></a></dt>
+<dd><p>Initialize Trainer from input arguments</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.trainer.DICE_Trainer.initialize_or_load_model">
 <span class="sig-name descname"><span class="pre">initialize_or_load_model</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.initialize_or_load_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.DICE_Trainer.initialize_or_load_model" title="Link to this definition"></a></dt>
-<dd><p>Initializes or loads a model for training based on the training configuration.</p>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.trainer.DICE_Trainer.initialize_dataloader">
 <span class="sig-name descname"><span class="pre">initialize_dataloader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.utils.data.DataLoader</span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.initialize_dataloader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.DICE_Trainer.initialize_dataloader" title="Link to this definition"></a></dt>
-<dd><p>Initializes a DataLoader for the given dataset.</p>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.trainer.DICE_Trainer.initialize_dataset">
-<span class="sig-name descname"><span class="pre">initialize_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../knowledge_graph/index.html#dicee.knowledge_graph.KG" title="dicee.knowledge_graph.KG"><span class="pre">KG</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.utils.data.Dataset</span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.initialize_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.DICE_Trainer.initialize_dataset" title="Link to this definition"></a></dt>
-<dd><p>Prepares and initializes a dataset for training.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">initialize_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../knowledge_graph/index.html#dicee.knowledge_graph.KG" title="dicee.knowledge_graph.KG"><span class="pre">dicee.knowledge_graph.KG</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.utils.data.Dataset</span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.initialize_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.DICE_Trainer.initialize_dataset" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.trainer.DICE_Trainer.start">
-<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">knowledge_graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../knowledge_graph/index.html#dicee.knowledge_graph.KG" title="dicee.knowledge_graph.KG"><span class="pre">KG</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../index.html#dicee.BaseKGE" title="dicee.BaseKGE"><span class="pre">BaseKGE</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.DICE_Trainer.start" title="Link to this definition"></a></dt>
-<dd><p>Starts the training process for a given knowledge graph.</p>
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">knowledge_graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../knowledge_graph/index.html#dicee.knowledge_graph.KG" title="dicee.knowledge_graph.KG"><span class="pre">dicee.knowledge_graph.KG</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><span class="pre">dicee.models.base_model.BaseKGE</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.DICE_Trainer.start" title="Link to this definition"></a></dt>
+<dd><p>Train selected model via the selected training strategy</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.trainer.DICE_Trainer.k_fold_cross_validation">
-<span class="sig-name descname"><span class="pre">k_fold_cross_validation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../index.html#dicee.BaseKGE" title="dicee.BaseKGE"><span class="pre">BaseKGE</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.k_fold_cross_validation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.DICE_Trainer.k_fold_cross_validation" title="Link to this definition"></a></dt>
-<dd><p>Performs K-fold cross-validation on the dataset and returns the trained model and form of labelling.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id0">
-<span class="sig-name descname"><span class="pre">continual_start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.continual_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
-<dd><p>Initializes and starts the training process, including model loading and fitting.
-This method is specifically designed for continual training scenarios.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><ul class="simple">
-<li><p><strong>model</strong> (<em>BaseKGE</em>) – The trained knowledge graph embedding model instance. <cite>BaseKGE</cite> is a placeholder
-for the actual model class, which should be a subclass of the base model class
-used in your framework.</p></li>
-<li><p><strong>form_of_labelling</strong> (<em>str</em>) – The form of labeling used during the training. This can indicate the type of
-prediction task the model is trained for, such as “EntityPrediction”,
-“RelationPrediction”, or other custom labeling forms defined in your implementation.</p></li>
-</ul>
-</p>
+<span class="sig-name descname"><span class="pre">k_fold_cross_validation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><span class="pre">dicee.models.base_model.BaseKGE</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.k_fold_cross_validation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.DICE_Trainer.k_fold_cross_validation" title="Link to this definition"></a></dt>
+<dd><p>Perform K-fold Cross-Validation</p>
+<ol class="arabic simple">
+<li><p>Obtain K train and test splits.</p></li>
+<li><dl class="simple">
+<dt>For each split,</dt><dd><p>2.1 initialize trainer and model
+2.2. Train model with configuration provided in args.
+2.3. Compute the mean reciprocal rank (MRR) score of the model on the test respective split.</p>
 </dd>
 </dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id1">
-<span class="sig-name descname"><span class="pre">initialize_trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callbacks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">lightning.Trainer</span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.initialize_trainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
-<dd><p>Initializes a PyTorch Lightning Trainer instance.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>callbacks</strong> (<em>List</em>) – A list of PyTorch Lightning callbacks to be used during training.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The initialized PyTorch Lightning Trainer instance.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>pl.Trainer</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id2">
-<span class="sig-name descname"><span class="pre">initialize_or_load_model</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><span class="pre">dicee.models.base_model.BaseKGE</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.initialize_or_load_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
-<dd><p>Initializes or loads a knowledge graph embedding model based on the training configuration.
-This method decides whether to start training from scratch or to continue training from a
-previously saved model state, depending on the <cite>is_continual_training</cite> attribute.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><ul class="simple">
-<li><p><strong>model</strong> (<em>BaseKGE</em>) – The model instance that is either initialized from scratch or loaded from a saved state.
-<cite>BaseKGE</cite> is a generic placeholder for the actual model class, which is a subclass of the
-base knowledge graph embedding model class used in your implementation.</p></li>
-<li><p><strong>form_of_labelling</strong> (<em>str</em>) – A string indicating the type of prediction task the model is configured for. Possible values
-include “EntityPrediction” and “RelationPrediction”, which signify whether the model is
-trained to predict missing entities or relations in a knowledge graph. The actual values
-depend on the specific tasks supported by your implementation.</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<p>The method uses the <cite>is_continual_training</cite> attribute to determine if the model should be loaded
-from a saved state. If <cite>is_continual_training</cite> is True, the method attempts to load the model and its
-configuration from the specified <cite>storage_path</cite>. If <cite>is_continual_training</cite> is False or the model
-cannot be loaded, a new model instance is initialized.</p>
-<p>This method also sets the <cite>form_of_labelling</cite> attribute based on the model’s configuration, which
-is used to inform downstream training and evaluation processes about the type of prediction task.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id3">
-<span class="sig-name descname"><span class="pre">initialize_dataloader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.utils.data.DataLoader</span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.initialize_dataloader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
-<dd><p>Initializes and returns a PyTorch DataLoader object for the given dataset.</p>
-<p>This DataLoader is configured based on the training arguments provided,
-including batch size, shuffle status, and the number of workers.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>dataset</strong> (<em>torch.utils.data.Dataset</em>) – The dataset to be loaded into the DataLoader. This dataset should already
-be processed and ready for training or evaluation.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A DataLoader instance ready for training or evaluation, configured with the
-appropriate batch size, shuffle setting, and number of workers.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.utils.data.DataLoader</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id4">
-<span class="sig-name descname"><span class="pre">initialize_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../knowledge_graph/index.html#dicee.knowledge_graph.KG" title="dicee.knowledge_graph.KG"><span class="pre">dicee.knowledge_graph.KG</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.utils.data.Dataset</span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.initialize_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
-<dd><p>Initializes and returns a dataset suitable for training or evaluation, based on the
-knowledge graph data and the specified form of labelling.</p>
+</li>
+<li><p>Report the mean and average MRR .</p></li>
+</ol>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>dataset</strong> (<a class="reference internal" href="../knowledge_graph/index.html#dicee.knowledge_graph.KG" title="dicee.knowledge_graph.KG"><em>KG</em></a>) – The knowledge graph data used to construct the dataset. This should include
-training, validation, and test sets along with any other necessary information
-like entity and relation mappings.</p></li>
-<li><p><strong>form_of_labelling</strong> (<em>str</em>) – The form of labelling to be used for the dataset, indicating the prediction
-task (e.g., “EntityPrediction”, “RelationPrediction”).</p></li>
+<li><p><strong>self</strong></p></li>
+<li><p><strong>dataset</strong></p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A processed dataset ready for use with a PyTorch DataLoader, tailored to the
-specified form of labelling and containing all necessary data for training
-or evaluation.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.utils.data.Dataset</p>
+<dd class="field-even"><p>model</p>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="id5">
-<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">knowledge_graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../knowledge_graph/index.html#dicee.knowledge_graph.KG" title="dicee.knowledge_graph.KG"><span class="pre">dicee.knowledge_graph.KG</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><span class="pre">dicee.models.base_model.BaseKGE</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
-<dd><p>Starts the training process for the selected model using the provided knowledge graph data.
-The method selects and trains the model based on the configuration specified in the arguments.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>knowledge_graph</strong> (<a class="reference internal" href="../knowledge_graph/index.html#dicee.knowledge_graph.KG" title="dicee.knowledge_graph.KG"><em>KG</em></a>) – The knowledge graph data containing entities, relations, and triples, which will be used
-for training the model.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A tuple containing the trained model instance and the form of labelling used during
-training. The form of labelling indicates the type of prediction task.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[<a class="reference internal" href="../index.html#dicee.BaseKGE" title="dicee.BaseKGE">BaseKGE</a>, str]</p>
-</dd>
-</dl>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="id6">
-<span class="sig-name descname"><span class="pre">k_fold_cross_validation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../knowledge_graph/index.html#dicee.knowledge_graph.KG" title="dicee.knowledge_graph.KG"><span class="pre">dicee.knowledge_graph.KG</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><span class="pre">dicee.models.base_model.BaseKGE</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.k_fold_cross_validation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
-<dd><p>Conducts K-fold cross-validation on the provided dataset to assess the performance
-of the model specified in the training arguments. The process involves partitioning
-the dataset into K distinct subsets, iteratively using one subset for testing and
-the remainder for training. The model’s performance is evaluated on each test split
-to compute the Mean Reciprocal Rank (MRR) scores.</p>
-<p>Steps:
-1. The dataset is divided into K train and test splits.
-2. For each split:
-2.1. A trainer and model are initialized based on the provided configuration.
-2.2. The model is trained using the training portion of the split.
-2.3. The MRR score of the trained model is computed using the test portion of the split.
-3. The process aggregates the MRR scores across all splits to report the mean and standard deviation
-of the MRR, providing a comprehensive evaluation of the model’s performance.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>dataset</strong> (<a class="reference internal" href="../knowledge_graph/index.html#dicee.knowledge_graph.KG" title="dicee.knowledge_graph.KG"><em>KG</em></a>) – The dataset to be used for K-fold cross-validation. This dataset should include
-the triples (head entity, relation, tail entity) for the entire knowledge graph.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A tuple containing:
-- The trained model instance from the last fold of the cross-validation.
-- The form of labelling used during training, indicating the prediction task
-(e.g., “EntityPrediction”, “RelationPrediction”).</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Tuple[<a class="reference internal" href="../index.html#dicee.BaseKGE" title="dicee.BaseKGE">BaseKGE</a>, str]</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<p>The function assumes the presence of a predefined number of folds (K) specified in
-the training arguments. It utilizes PyTorch Lightning for model training and evaluation,
-leveraging GPU acceleration if available. The final output includes the model trained
-on the last fold and a summary of the cross-validation performance metrics.</p>
-</dd></dl>
-
-</dd></dl>
-
-</section>
 </section>
 </section>
 

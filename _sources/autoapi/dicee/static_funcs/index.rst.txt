@@ -1,15 +1,40 @@
-:py:mod:`dicee.static_funcs`
-============================
+dicee.static_funcs
+==================
 
 .. py:module:: dicee.static_funcs
 
 
-Module Contents
----------------
+Classes
+-------
+
+.. autoapisummary::
+
+   dicee.static_funcs.CMult
+   dicee.static_funcs.Pyke
+   dicee.static_funcs.DistMult
+   dicee.static_funcs.KeciBase
+   dicee.static_funcs.Keci
+   dicee.static_funcs.TransE
+   dicee.static_funcs.DeCaL
+   dicee.static_funcs.DualE
+   dicee.static_funcs.ComplEx
+   dicee.static_funcs.AConEx
+   dicee.static_funcs.AConvO
+   dicee.static_funcs.AConvQ
+   dicee.static_funcs.ConvQ
+   dicee.static_funcs.ConvO
+   dicee.static_funcs.ConEx
+   dicee.static_funcs.QMult
+   dicee.static_funcs.OMult
+   dicee.static_funcs.Shallom
+   dicee.static_funcs.LFMult
+   dicee.static_funcs.PykeenKGE
+   dicee.static_funcs.BytE
+   dicee.static_funcs.BaseKGE
 
 
 Functions
-~~~~~~~~~
+---------
 
 .. autoapisummary::
 
@@ -48,6 +73,1470 @@ Functions
    dicee.static_funcs.download_pretrained_model
 
 
+Module Contents
+---------------
+
+.. py:class:: CMult(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Cl_(0,0) => Real Numbers
+
+
+   Cl_(0,1) =>
+               A multivector \mathbf{a} = a_0 + a_1 e_1
+               A multivector \mathbf{b} = b_0 + b_1 e_1
+
+               multiplication is isomorphic to the product of two complex numbers
+
+               \mathbf{a}      imes \mathbf{b} = a_0 b_0 + a_0b_1 e1 + a_1 b_1 e_1 e_1
+                                            = (a_0 b_0 - a_1 b_1) + (a_0 b_1 + a_1 b_0) e_1
+   Cl_(2,0) =>
+               A multivector \mathbf{a} = a_0 + a_1 e_1 + a_2 e_2 + a_{12} e_1 e_2
+               A multivector \mathbf{b} = b_0 + b_1 e_1 + b_2 e_2 + b_{12} e_1 e_2
+
+               \mathbf{a}      imes \mathbf{b} = a_0b_0 + a_0b_1 e_1 + a_0b_2e_2 + a_0 b_12 e_1 e_2
+                                           + a_1 b_0 e_1 + a_1b_1 e_1_e1 ..
+
+   Cl_(0,2) => Quaternions
+
+
+   .. py:method:: clifford_mul(x: torch.FloatTensor, y: torch.FloatTensor, p: int, q: int) -> tuple
+
+              Clifford multiplication Cl_{p,q} (\mathbb{R})
+
+              ei ^2 = +1     for i =< i =< p
+              ej ^2 = -1     for p < j =< p+q
+              ei ej = -eje1  for i
+      eq j
+
+              Parameter
+              ---------
+              x: torch.FloatTensor with (n,d) shape
+
+              y: torch.FloatTensor with (n,d) shape
+
+              p: a non-negative integer p>= 0
+              q: a non-negative integer q>= 0
+
+
+
+              Returns
+              -------
+
+
+
+
+
+   .. py:method:: score(head_ent_emb, rel_ent_emb, tail_ent_emb)
+
+
+   .. py:method:: forward_triples(x: torch.LongTensor) -> torch.FloatTensor
+
+      Compute batch triple scores
+
+      Parameter
+      ---------
+      x: torch.LongTensor with shape n by 3
+
+
+      :rtype: torch.LongTensor with shape n
+
+
+
+   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
+
+      Compute batch KvsAll triple scores
+
+      Parameter
+      ---------
+      x: torch.LongTensor with shape n by 3
+
+
+      :rtype: torch.LongTensor with shape n
+
+
+
+.. py:class:: Pyke(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   A Physical Embedding Model for Knowledge Graphs
+
+
+   .. py:method:: forward_triples(x: torch.LongTensor)
+
+      :param x:
+
+
+
+.. py:class:: DistMult(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Embedding Entities and Relations for Learning and Inference in Knowledge Bases
+   https://arxiv.org/abs/1412.6575
+
+
+   .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor)
+
+      :param emb_h:
+      :param emb_r:
+      :param emb_E:
+
+
+
+   .. py:method:: forward_k_vs_all(x: torch.LongTensor)
+
+
+   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor)
+
+
+   .. py:method:: score(h, r, t)
+
+
+.. py:class:: KeciBase(args)
+
+   Bases: :py:obj:`Keci`
+
+
+   Without learning dimension scaling
+
+
+.. py:class:: Keci(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:method:: compute_sigma_pp(hp, rp)
+
+      Compute  sigma_{pp} = \sum_{i=1}^{p-1} \sum_{k=i+1}^p (h_i r_k - h_k r_i) e_i e_k
+
+      sigma_{pp} captures the interactions between along p bases
+      For instance, let p e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
+      This can be implemented with a nested two for loops
+
+                      results = []
+                      for i in range(p - 1):
+                          for k in range(i + 1, p):
+                              results.append(hp[:, :, i] * rp[:, :, k] - hp[:, :, k] * rp[:, :, i])
+                      sigma_pp = torch.stack(results, dim=2)
+                      assert sigma_pp.shape == (b, r, int((p * (p - 1)) / 2))
+
+      Yet, this computation would be quite inefficient. Instead, we compute interactions along all p,
+      e.g., e1e1, e1e2, e1e3,
+            e2e1, e2e2, e2e3,
+            e3e1, e3e2, e3e3
+      Then select the triangular matrix without diagonals: e1e2, e1e3, e2e3.
+
+
+
+   .. py:method:: compute_sigma_qq(hq, rq)
+
+      Compute  sigma_{qq} = \sum_{j=1}^{p+q-1} \sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k
+      sigma_{q} captures the interactions between along q bases
+      For instance, let q e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
+      This can be implemented with a nested two for loops
+
+                      results = []
+                      for j in range(q - 1):
+                          for k in range(j + 1, q):
+                              results.append(hq[:, :, j] * rq[:, :, k] - hq[:, :, k] * rq[:, :, j])
+                      sigma_qq = torch.stack(results, dim=2)
+                      assert sigma_qq.shape == (b, r, int((q * (q - 1)) / 2))
+
+      Yet, this computation would be quite inefficient. Instead, we compute interactions along all p,
+      e.g., e1e1, e1e2, e1e3,
+            e2e1, e2e2, e2e3,
+            e3e1, e3e2, e3e3
+      Then select the triangular matrix without diagonals: e1e2, e1e3, e2e3.
+
+
+
+   .. py:method:: compute_sigma_pq(*, hp, hq, rp, rq)
+
+      \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
+
+      results = []
+      sigma_pq = torch.zeros(b, r, p, q)
+      for i in range(p):
+          for j in range(q):
+              sigma_pq[:, :, i, j] = hp[:, :, i] * rq[:, :, j] - hq[:, :, j] * rp[:, :, i]
+      print(sigma_pq.shape)
+
+
+
+
+   .. py:method:: apply_coefficients(h0, hp, hq, r0, rp, rq)
+
+      Multiplying a base vector with its scalar coefficient
+
+
+
+   .. py:method:: clifford_multiplication(h0, hp, hq, r0, rp, rq)
+
+      Compute our CL multiplication
+
+              h = h_0 + \sum_{i=1}^p h_i e_i + \sum_{j=p+1}^{p+q} h_j e_j
+              r = r_0 + \sum_{i=1}^p r_i e_i + \sum_{j=p+1}^{p+q} r_j e_j
+
+              ei ^2 = +1     for i =< i =< p
+              ej ^2 = -1     for p < j =< p+q
+              ei ej = -eje1  for i
+      eq j
+
+              h r =   sigma_0 + sigma_p + sigma_q + sigma_{pp} + sigma_{q}+ sigma_{pq}
+              where
+                      (1) sigma_0 = h_0 r_0 + \sum_{i=1}^p (h_0 r_i) e_i - \sum_{j=p+1}^{p+q} (h_j r_j) e_j
+
+                      (2) sigma_p = \sum_{i=1}^p (h_0 r_i + h_i r_0) e_i
+
+                      (3) sigma_q = \sum_{j=p+1}^{p+q} (h_0 r_j + h_j r_0) e_j
+
+                      (4) sigma_{pp} = \sum_{i=1}^{p-1} \sum_{k=i+1}^p (h_i r_k - h_k r_i) e_i e_k
+
+                      (5) sigma_{qq} = \sum_{j=1}^{p+q-1} \sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k
+
+                      (6) sigma_{pq} = \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
+
+
+
+
+
+   .. py:method:: construct_cl_multivector(x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+      Construct a batch of multivectors Cl_{p,q}(\mathbb{R}^d)
+
+      Parameter
+      ---------
+      x: torch.FloatTensor with (n,d) shape
+
+      :returns: * **a0** (*torch.FloatTensor with (n,r) shape*)
+                * **ap** (*torch.FloatTensor with (n,r,p) shape*)
+                * **aq** (*torch.FloatTensor with (n,r,q) shape*)
+
+
+
+   .. py:method:: forward_k_vs_with_explicit(x: torch.Tensor)
+
+
+   .. py:method:: k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
+
+
+   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
+
+      Kvsall training
+
+      (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .
+      (2) Construct head entity and relation embeddings according to Cl_{p,q}(\mathbb{R}^d) .
+      (3) Perform Cl multiplication
+      (4) Inner product of (3) and all entity embeddings
+
+      forward_k_vs_with_explicit and this funcitons are identical
+      Parameter
+      ---------
+      x: torch.LongTensor with (n,2) shape
+      :rtype: torch.FloatTensor with (n, |E|) shape
+
+
+
+   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor
+
+      Kvsall training
+
+      (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .
+      (2) Construct head entity and relation embeddings according to Cl_{p,q}(\mathbb{R}^d) .
+      (3) Perform Cl multiplication
+      (4) Inner product of (3) and all entity embeddings
+
+      Parameter
+      ---------
+      x: torch.LongTensor with (n,2) shape
+
+      :rtype: torch.FloatTensor with (n, |E|) shape
+
+
+
+   .. py:method:: score(h, r, t)
+
+
+   .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
+
+      Parameter
+      ---------
+      x: torch.LongTensor with (n,3) shape
+
+      :rtype: torch.FloatTensor with (n) shape
+
+
+
+.. py:class:: TransE(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Translating Embeddings for Modeling
+   Multi-relational Data
+   https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf
+
+
+   .. py:method:: score(head_ent_emb, rel_ent_emb, tail_ent_emb)
+
+
+   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
+
+
+.. py:class:: DeCaL(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
+
+      Parameter
+      ---------
+      x: torch.LongTensor with (n, ) shape
+
+      :rtype: torch.FloatTensor with (n) shape
+
+
+
+   .. py:method:: cl_pqr(a: torch.tensor) -> torch.tensor
+
+      Input: tensor(batch_size, emb_dim) ---> output: tensor with 1+p+q+r components with size (batch_size, emb_dim/(1+p+q+r)) each.
+
+      1) takes a tensor of size (batch_size, emb_dim), split it into 1 + p + q +r components, hence 1+p+q+r must be a divisor
+      of the emb_dim.
+      2) Return a list of the 1+p+q+r components vectors, each are tensors of size (batch_size, emb_dim/(1+p+q+r))
+
+
+
+   .. py:method:: compute_sigmas_single(list_h_emb, list_r_emb, list_t_emb)
+
+      here we compute all the sums with no others vectors interaction taken with the scalar product with t, that is,
+
+      .. math::
+
+           s0 = h_0r_0t_0
+           s1 = \sum_{i=1}^{p}h_ir_it_0
+           s2 = \sum_{j=p+1}^{p+q}h_jr_jt_0
+           s3 = \sum_{i=1}^{q}(h_0r_it_i + h_ir_0t_i)
+           s4 = \sum_{i=p+1}^{p+q}(h_0r_it_i + h_ir_0t_i)
+           s5 = \sum_{i=p+q+1}^{p+q+r}(h_0r_it_i + h_ir_0t_i)
+
+      and return:
+
+      .. math::
+
+          sigma_0t = \sigma_0 \cdot t_0 = s0 + s1 -s2
+          s3, s4 and s5
+
+
+
+
+
+   .. py:method:: compute_sigmas_multivect(list_h_emb, list_r_emb)
+
+      Here we compute and return all the sums with vectors interaction for the same and different bases.
+
+      For same bases vectors interaction we have
+
+      .. math::
+
+           \sigma_pp = \sum_{i=1}^{p-1}\sum_{i'=i+1}^{p}(h_ir_{i'}-h_{i'}r_i) (models the interactions between e_i and e_i' for 1 <= i, i' <= p)
+           \sigma_qq = \sum_{j=p+1}^{p+q-1}\sum_{j'=j+1}^{p+q}(h_jr_{j'}-h_{j'} (models the interactions between e_j and e_j' for p+1 <= j, j' <= p+q)
+           \sigma_rr = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(h_kr_{k'}-h_{k'}r_k) (models the interactions between e_k and e_k' for p+q+1 <= k, k' <= p+q+r)
+
+      For different base vector interactions, we have
+
+       .. math::
+
+           \sigma_pq = \sum_{i=1}^{p}\sum_{j=p+1}^{p+q}(h_ir_j - h_jr_i) (interactionsn between e_i and e_j for 1<=i <=p and p+1<= j <= p+q)
+           \sigma_pr = \sum_{i=1}^{p}\sum_{k=p+q+1}^{p+q+r}(h_ir_k - h_kr_i) (interactionsn between e_i and e_k for 1<=i <=p and p+q+1<= k <= p+q+r)
+           \sigma_qr = \sum_{j=p+1}^{p+q}\sum_{j=p+q+1}^{p+q+r}(h_jr_k - h_kr_j) (interactionsn between e_j and e_k for p+1 <= j <=p+q and p+q+1<= j <= p+q+r)
+
+
+
+
+   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
+
+      Kvsall training
+
+      (1) Retrieve real-valued embedding vectors for heads and relations
+      (2) Construct head entity and relation embeddings according to Cl_{p,q, r}(\mathbb{R}^d) .
+      (3) Perform Cl multiplication
+      (4) Inner product of (3) and all entity embeddings
+
+      forward_k_vs_with_explicit and this funcitons are identical
+      Parameter
+      ---------
+      x: torch.LongTensor with (n, ) shape
+      :rtype: torch.FloatTensor with (n, |E|) shape
+
+
+
+   .. py:method:: apply_coefficients(h0, hp, hq, hk, r0, rp, rq, rk)
+
+      Multiplying a base vector with its scalar coefficient
+
+
+
+   .. py:method:: construct_cl_multivector(x: torch.FloatTensor, re: int, p: int, q: int, r: int) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+      Construct a batch of multivectors Cl_{p,q,r}(\mathbb{R}^d)
+
+      Parameter
+      ---------
+      x: torch.FloatTensor with (n,d) shape
+
+      :returns: * **a0** (*torch.FloatTensor*)
+                * **ap** (*torch.FloatTensor*)
+                * **aq** (*torch.FloatTensor*)
+                * **ar** (*torch.FloatTensor*)
+
+
+
+   .. py:method:: compute_sigma_pp(hp, rp)
+
+      Compute
+      .. math::
+
+          \sigma_{p,p}^* = \sum_{i=1}^{p-1}\sum_{i'=i+1}^{p}(x_iy_{i'}-x_{i'}y_i)
+
+      \sigma_{pp} captures the interactions between along p bases
+      For instance, let p e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
+      This can be implemented with a nested two for loops
+
+                      results = []
+                      for i in range(p - 1):
+                          for k in range(i + 1, p):
+                              results.append(hp[:, :, i] * rp[:, :, k] - hp[:, :, k] * rp[:, :, i])
+                      sigma_pp = torch.stack(results, dim=2)
+                      assert sigma_pp.shape == (b, r, int((p * (p - 1)) / 2))
+
+      Yet, this computation would be quite inefficient. Instead, we compute interactions along all p,
+      e.g., e1e1, e1e2, e1e3,
+            e2e1, e2e2, e2e3,
+            e3e1, e3e2, e3e3
+      Then select the triangular matrix without diagonals: e1e2, e1e3, e2e3.
+
+
+
+   .. py:method:: compute_sigma_qq(hq, rq)
+
+      Compute
+
+      .. math::
+
+          \sigma_{q,q}^* = \sum_{j=p+1}^{p+q-1}\sum_{j'=j+1}^{p+q}(x_jy_{j'}-x_{j'}y_j) Eq. 16
+
+      sigma_{q} captures the interactions between along q bases
+      For instance, let q e_1, e_2, e_3, we compute interactions between e_1 e_2, e_1 e_3 , and e_2 e_3
+      This can be implemented with a nested two for loops
+
+                      results = []
+                      for j in range(q - 1):
+                          for k in range(j + 1, q):
+                              results.append(hq[:, :, j] * rq[:, :, k] - hq[:, :, k] * rq[:, :, j])
+                      sigma_qq = torch.stack(results, dim=2)
+                      assert sigma_qq.shape == (b, r, int((q * (q - 1)) / 2))
+
+      Yet, this computation would be quite inefficient. Instead, we compute interactions along all p,
+      e.g., e1e1, e1e2, e1e3,
+            e2e1, e2e2, e2e3,
+            e3e1, e3e2, e3e3
+      Then select the triangular matrix without diagonals: e1e2, e1e3, e2e3.
+
+
+
+   .. py:method:: compute_sigma_rr(hk, rk)
+
+      .. math::
+
+          \sigma_{r,r}^* = \sum_{k=p+q+1}^{p+q+r-1}\sum_{k'=k+1}^{p}(x_ky_{k'}-x_{k'}y_k)
+
+
+
+
+   .. py:method:: compute_sigma_pq(*, hp, hq, rp, rq)
+
+      Compute
+
+      .. math::
+
+          \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
+
+      results = []
+      sigma_pq = torch.zeros(b, r, p, q)
+      for i in range(p):
+          for j in range(q):
+              sigma_pq[:, :, i, j] = hp[:, :, i] * rq[:, :, j] - hq[:, :, j] * rp[:, :, i]
+      print(sigma_pq.shape)
+
+
+
+
+   .. py:method:: compute_sigma_pr(*, hp, hk, rp, rk)
+
+      Compute
+
+      .. math::
+
+          \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
+
+      results = []
+      sigma_pq = torch.zeros(b, r, p, q)
+      for i in range(p):
+          for j in range(q):
+              sigma_pq[:, :, i, j] = hp[:, :, i] * rq[:, :, j] - hq[:, :, j] * rp[:, :, i]
+      print(sigma_pq.shape)
+
+
+
+
+   .. py:method:: compute_sigma_qr(*, hq, hk, rq, rk)
+
+      .. math::
+
+          \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j
+
+      results = []
+      sigma_pq = torch.zeros(b, r, p, q)
+      for i in range(p):
+          for j in range(q):
+              sigma_pq[:, :, i, j] = hp[:, :, i] * rq[:, :, j] - hq[:, :, j] * rp[:, :, i]
+      print(sigma_pq.shape)
+
+
+
+
+.. py:class:: DualE(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Dual Quaternion Knowledge Graph Embeddings (https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657)
+
+
+   .. py:method:: kvsall_score(e_1_h, e_2_h, e_3_h, e_4_h, e_5_h, e_6_h, e_7_h, e_8_h, e_1_t, e_2_t, e_3_t, e_4_t, e_5_t, e_6_t, e_7_t, e_8_t, r_1, r_2, r_3, r_4, r_5, r_6, r_7, r_8) -> torch.tensor
+
+      KvsAll scoring function
+
+      Input
+      ---------
+      x: torch.LongTensor with (n, ) shape
+
+      Output
+      -------
+      torch.FloatTensor with (n) shape
+
+
+
+   .. py:method:: forward_triples(idx_triple: torch.tensor) -> torch.tensor
+
+      Negative Sampling forward pass:
+
+      Input
+      ---------
+      x: torch.LongTensor with (n, ) shape
+
+      Output
+      -------
+      torch.FloatTensor with (n) shape
+
+
+
+   .. py:method:: forward_k_vs_all(x)
+
+      KvsAll forward pass
+
+      Input
+      ---------
+      x: torch.LongTensor with (n, ) shape
+
+      Output
+      -------
+      torch.FloatTensor with (n) shape
+
+
+
+
+   .. py:method:: T(x: torch.tensor) -> torch.tensor
+
+      Transpose function
+
+      Input: Tensor with shape (nxm)
+      Output: Tensor with shape (mxn)
+
+
+
+.. py:class:: ComplEx(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor)
+      :staticmethod:
+
+
+
+   .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor)
+      :staticmethod:
+
+
+      :param emb_h:
+      :param emb_r:
+      :param emb_E:
+
+
+
+   .. py:method:: forward_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
+
+
+.. py:class:: AConEx(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Additive Convolutional ComplEx Knowledge Graph Embeddings
+
+
+   .. py:method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor], C_2: Tuple[torch.Tensor, torch.Tensor]) -> torch.FloatTensor
+
+      Compute residual score of two complex-valued embeddings.
+      :param C_1: a tuple of two pytorch tensors that corresponds complex-valued embeddings
+      :param C_2: a tuple of two pytorch tensors that corresponds complex-valued embeddings
+      :return:
+
+
+
+   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
+
+
+   .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
+
+      :param x:
+
+
+
+   .. py:method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor)
+
+
+.. py:class:: AConvO(args: dict)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Additive Convolutional Octonion Knowledge Graph Embeddings
+
+
+   .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
+      :staticmethod:
+
+
+
+   .. py:method:: residual_convolution(O_1, O_2)
+
+
+   .. py:method:: forward_triples(x: torch.Tensor) -> torch.Tensor
+
+      :param x:
+
+
+
+   .. py:method:: forward_k_vs_all(x: torch.Tensor)
+
+      Given a head entity and a relation (h,r), we compute scores for all entities.
+      [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
+      Given a batch of head entities and relations => shape (size of batch,| Entities|)
+
+
+
+.. py:class:: AConvQ(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Additive Convolutional Quaternion Knowledge Graph Embeddings
+
+
+   .. py:method:: residual_convolution(Q_1, Q_2)
+
+
+   .. py:method:: forward_triples(indexed_triple: torch.Tensor) -> torch.Tensor
+
+      :param x:
+
+
+
+   .. py:method:: forward_k_vs_all(x: torch.Tensor)
+
+      Given a head entity and a relation (h,r), we compute scores for all entities.
+      [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
+      Given a batch of head entities and relations => shape (size of batch,| Entities|)
+
+
+
+.. py:class:: ConvQ(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Convolutional Quaternion Knowledge Graph Embeddings
+
+
+
+
+   .. py:method:: residual_convolution(Q_1, Q_2)
+
+
+   .. py:method:: forward_triples(indexed_triple: torch.Tensor) -> torch.Tensor
+
+      :param x:
+
+
+
+   .. py:method:: forward_k_vs_all(x: torch.Tensor)
+
+      Given a head entity and a relation (h,r), we compute scores for all entities.
+      [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
+      Given a batch of head entities and relations => shape (size of batch,| Entities|)
+
+
+
+.. py:class:: ConvO(args: dict)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
+      :staticmethod:
+
+
+
+   .. py:method:: residual_convolution(O_1, O_2)
+
+
+   .. py:method:: forward_triples(x: torch.Tensor) -> torch.Tensor
+
+      :param x:
+
+
+
+   .. py:method:: forward_k_vs_all(x: torch.Tensor)
+
+      Given a head entity and a relation (h,r), we compute scores for all entities.
+      [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
+      Given a batch of head entities and relations => shape (size of batch,| Entities|)
+
+
+
+.. py:class:: ConEx(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Convolutional ComplEx Knowledge Graph Embeddings
+
+
+   .. py:method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor], C_2: Tuple[torch.Tensor, torch.Tensor]) -> torch.FloatTensor
+
+      Compute residual score of two complex-valued embeddings.
+      :param C_1: a tuple of two pytorch tensors that corresponds complex-valued embeddings
+      :param C_2: a tuple of two pytorch tensors that corresponds complex-valued embeddings
+      :return:
+
+
+
+   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
+
+
+   .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
+
+      :param x:
+
+
+
+   .. py:method:: forward_k_vs_sample(x: torch.Tensor, target_entity_idx: torch.Tensor)
+
+
+.. py:class:: QMult(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:method:: quaternion_multiplication_followed_by_inner_product(h, r, t)
+
+      :param h: shape: (`*batch_dims`, dim)
+          The head representations.
+      :param r: shape: (`*batch_dims`, dim)
+          The head representations.
+      :param t: shape: (`*batch_dims`, dim)
+          The tail representations.
+      :return:
+          Triple scores.
+
+
+
+   .. py:method:: quaternion_normalizer(x: torch.FloatTensor) -> torch.FloatTensor
+      :staticmethod:
+
+
+      Normalize the length of relation vectors, if the forward constraint has not been applied yet.
+
+      Absolute value of a quaternion
+
+      .. math::
+
+          |a + bi + cj + dk| = \sqrt{a^2 + b^2 + c^2 + d^2}
+
+      L2 norm of quaternion vector:
+
+      .. math::
+          \|x\|^2 = \sum_{i=1}^d |x_i|^2
+                   = \sum_{i=1}^d (x_i.re^2 + x_i.im_1^2 + x_i.im_2^2 + x_i.im_3^2)
+      :param x:
+          The vector.
+
+      :return:
+          The normalized vector.
+
+
+
+   .. py:method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor)
+
+
+   .. py:method:: k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
+
+      :param bpe_head_ent_emb:
+      :param bpe_rel_ent_emb:
+      :param E:
+
+
+
+   .. py:method:: forward_k_vs_all(x)
+
+      :param x:
+
+
+
+   .. py:method:: forward_k_vs_sample(x, target_entity_idx)
+
+      Completed.
+      Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,
+      [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
+      Given a batch of head entities and relations => shape (size of batch,| Entities|)
+
+
+
+.. py:class:: OMult(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
+      :staticmethod:
+
+
+
+   .. py:method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor)
+
+
+   .. py:method:: k_vs_all_score(bpe_head_ent_emb, bpe_rel_ent_emb, E)
+
+
+   .. py:method:: forward_k_vs_all(x)
+
+      Completed.
+      Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,
+      [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
+      Given a batch of head entities and relations => shape (size of batch,| Entities|)
+
+
+
+.. py:class:: Shallom(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090)
+
+
+   .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, None]
+
+
+   .. py:method:: forward_k_vs_all(x) -> torch.FloatTensor
+
+
+   .. py:method:: forward_triples(x) -> torch.FloatTensor
+
+      :param x:
+      :return:
+
+
+
+.. py:class:: LFMult(args)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:
+   f(x) = \sum_{i=0}^{d-1} a_k x^{i%d} and use the three differents scoring function as in the paper to evaluate the score.
+   We also consider combining with Neural Networks.
+
+
+   .. py:method:: forward_triples(idx_triple)
+
+      :param x:
+
+
+
+   .. py:method:: construct_multi_coeff(x)
+
+
+   .. py:method:: poly_NN(x, coefh, coefr, coeft)
+
+      Constructing a 2 layers NN to represent the embeddings.
+      h = \sigma(wh^T x + bh ),  r = \sigma(wr^T x + br ),  t = \sigma(wt^T x + bt )
+
+
+
+   .. py:method:: linear(x, w, b)
+
+
+   .. py:method:: scalar_batch_NN(a, b, c)
+
+      element wise multiplication between a,b and c:
+      Inputs : a, b, c ====> torch.tensor of size batch_size x m x d
+      Output : a tensor of size batch_size x d
+
+
+
+   .. py:method:: tri_score(coeff_h, coeff_r, coeff_t)
+
+      this part implement the trilinear scoring techniques:
+
+      score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*b_j*c_k}{1+(i+j+k)%d}
+
+      1. generate the range for i,j and k from [0 d-1]
+
+      2. perform
+      \dfrac{a_i*b_j*c_k}{1+(i+j+k)%d} in parallel for every batch
+
+      3. take the sum over each batch
+
+
+
+
+   .. py:method:: vtp_score(h, r, t)
+
+      this part implement the vector triple product scoring techniques:
+
+      score(h,r,t) = \int_{0}{1} h(x)r(x)t(x) dx = \sum_{i,j,k = 0}^{d-1} \dfrac{a_i*c_j*b_k - b_i*c_j*a_k}{(1+(i+j)%d)(1+k)}
+
+      1. generate the range for i,j and k from [0 d-1]
+
+      2. Compute the first and second terms of the sum
+
+      3.  Multiply with then denominator and take the sum
+
+      4. take the sum over each batch
+
+
+
+
+   .. py:method:: comp_func(h, r, t)
+
+      this part implement the function composition scoring techniques: i.e. score = <hor, t>
+
+
+
+   .. py:method:: polynomial(coeff, x, degree)
+
+      This function takes a matrix tensor of coefficients (coeff), a tensor vector of points x  and range of integer [0,1,...d]
+      and return a vector tensor (coeff[0][0] + coeff[0][1]x +...+ coeff[0][d]x^d,
+                          coeff[1][0] + coeff[1][1]x +...+ coeff[1][d]x^d)
+                                  ....
+
+
+
+   .. py:method:: pop(coeff, x, degree)
+
+      This function allow us to evaluate the composition of two polynomes without for loops :)
+      it takes a matrix tensor of coefficients (coeff), a matrix tensor of points x  and range of integer [0,1,...d]
+          and return a tensor (coeff[0][0] + coeff[0][1]x +...+ coeff[0][d]x^d,
+                              coeff[1][0] + coeff[1][1]x +...+ coeff[1][d]x^d)
+                                      ....
+
+
+
+.. py:class:: PykeenKGE(args: dict)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   A class for using knowledge graph embedding models implemented in Pykeen
+
+   Notes:
+   Pykeen_DistMult: C
+   Pykeen_ComplEx:
+   Pykeen_QuatE:
+   Pykeen_MuRE:
+   Pykeen_CP:
+   Pykeen_HolE:
+   Pykeen_HolE:
+
+
+   .. py:method:: forward_k_vs_all(x: torch.LongTensor)
+
+      # => Explicit version by this we can apply bn and dropout
+
+      # (1) Retrieve embeddings of heads and relations +  apply Dropout & Normalization if given.
+      h, r = self.get_head_relation_representation(x)
+      # (2) Reshape (1).
+      if self.last_dim > 0:
+          h = h.reshape(len(x), self.embedding_dim, self.last_dim)
+          r = r.reshape(len(x), self.embedding_dim, self.last_dim)
+      # (3) Reshape all entities.
+      if self.last_dim > 0:
+          t = self.entity_embeddings.weight.reshape(self.num_entities, self.embedding_dim, self.last_dim)
+      else:
+          t = self.entity_embeddings.weight
+      # (4) Call the score_t from interactions to generate triple scores.
+      return self.interaction.score_t(h=h, r=r, all_entities=t, slice_size=1)
+
+
+
+   .. py:method:: forward_triples(x: torch.LongTensor) -> torch.FloatTensor
+
+      # => Explicit version by this we can apply bn and dropout
+
+      # (1) Retrieve embeddings of heads, relations and tails and apply Dropout & Normalization if given.
+      h, r, t = self.get_triple_representation(x)
+      # (2) Reshape (1).
+      if self.last_dim > 0:
+          h = h.reshape(len(x), self.embedding_dim, self.last_dim)
+          r = r.reshape(len(x), self.embedding_dim, self.last_dim)
+          t = t.reshape(len(x), self.embedding_dim, self.last_dim)
+      # (3) Compute the triple score
+      return self.interaction.score(h=h, r=r, t=t, slice_size=None, slice_dim=0)
+
+
+
+   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx)
+      :abstractmethod:
+
+
+
+.. py:class:: BytE(*args, **kwargs)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:method:: loss_function(yhat_batch, y_batch)
+
+      :param yhat_batch:
+      :param y_batch:
+
+
+
+   .. py:method:: forward(x: torch.LongTensor)
+
+      :param x:
+      :type x: B by T tensor
+
+
+
+   .. py:method:: generate(idx, max_new_tokens, temperature=1.0, top_k=None)
+
+      Take a conditioning sequence of indices idx (LongTensor of shape (b,t)) and complete
+      the sequence max_new_tokens times, feeding the predictions back into the model each time.
+      Most likely you'll want to make sure to be in model.eval() mode of operation for this.
+
+
+
+   .. py:method:: training_step(batch, batch_idx=None)
+
+      Here you compute and return the training loss and some additional metrics for e.g. the progress bar or
+      logger.
+
+      :param batch: The output of your data iterable, normally a :class:`~torch.utils.data.DataLoader`.
+      :param batch_idx: The index of this batch.
+      :param dataloader_idx: The index of the dataloader that produced this batch.
+                             (only if multiple dataloaders used)
+
+      :returns:
+
+                - :class:`~torch.Tensor` - The loss tensor
+                - ``dict`` - A dictionary which can include any keys, but must include the key ``'loss'`` in the case of
+                  automatic optimization.
+                - ``None`` - In automatic optimization, this will skip to the next batch (but is not supported for
+                  multi-GPU, TPU, or DeepSpeed). For manual optimization, this has no special meaning, as returning
+                  the loss is not required.
+
+      In this step you'd normally do the forward pass and calculate the loss for a batch.
+      You can also do fancier things like multiple forward passes or something model specific.
+
+      Example::
+
+          def training_step(self, batch, batch_idx):
+              x, y, z = batch
+              out = self.encoder(x)
+              loss = self.loss(out, x)
+              return loss
+
+      To use multiple optimizers, you can switch to 'manual optimization' and control their stepping:
+
+      .. code-block:: python
+
+          def __init__(self):
+              super().__init__()
+              self.automatic_optimization = False
+
+
+          # Multiple optimizers (e.g.: GANs)
+          def training_step(self, batch, batch_idx):
+              opt1, opt2 = self.optimizers()
+
+              # do training_step with encoder
+              ...
+              opt1.step()
+              # do training_step with decoder
+              ...
+              opt2.step()
+
+      .. note::
+
+         When ``accumulate_grad_batches`` > 1, the loss returned here will be automatically
+         normalized by ``accumulate_grad_batches`` internally.
+
+
+
+.. py:class:: BaseKGE(args: dict)
+
+   Bases: :py:obj:`BaseKGELightning`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
+
+      :param x:
+      :type x: B x 2 x T
+
+
+
+   .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
+
+      byte pair encoded neural link predictors
+
+      :param -------:
+
+
+
+   .. py:method:: init_params_with_sanity_checking()
+
+
+   .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
+
+      :param x:
+      :param y_idx:
+      :param ordered_bpe_entities:
+
+
+
+   .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
+
+      :param x:
+
+
+
+   .. py:method:: forward_k_vs_all(*args, **kwargs)
+
+
+   .. py:method:: forward_k_vs_sample(*args, **kwargs)
+
+
+   .. py:method:: get_triple_representation(idx_hrt)
+
+
+   .. py:method:: get_head_relation_representation(indexed_triple)
+
+
+   .. py:method:: get_sentence_representation(x: torch.LongTensor)
+
+      :param x shape (b:
+      :param 3:
+      :param t):
+
+
+
+   .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
+
+      :param x:
+      :type x: B x 2 x T
+
+
+
+   .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
+
 
 .. py:function:: create_recipriocal_triples(x)
 
@@ -58,24 +1547,17 @@ Functions
 
 .. py:function:: get_er_vocab(data, file_path: str = None)
 
-
 .. py:function:: get_re_vocab(data, file_path: str = None)
-
 
 .. py:function:: get_ee_vocab(data, file_path: str = None)
 
-
 .. py:function:: timeit(func)
-
 
 .. py:function:: save_pickle(*, data: object = None, file_path=str)
 
-
 .. py:function:: load_pickle(file_path=str)
 
-
 .. py:function:: select_model(args: dict, is_continual_training: bool = None, storage_path: str = None)
-
 
 .. py:function:: load_model(path_of_experiment_folder: str, model_name='model.pt', verbose=0) -> Tuple[object, Tuple[dict, dict]]
 
@@ -93,7 +1575,6 @@ Functions
 
 
 .. py:function:: save_numpy_ndarray(*, data: numpy.ndarray, file_path: str)
-
 
 .. py:function:: numpy_data_type_changer(train_set: numpy.ndarray, num: int) -> numpy.ndarray
 
@@ -129,12 +1610,9 @@ Functions
 
 .. py:function:: read_or_load_kg(args, cls)
 
-
 .. py:function:: intialize_model(args: dict, verbose=0) -> Tuple[object, str]
 
-
 .. py:function:: load_json(p: str) -> dict
-
 
 .. py:function:: save_embeddings(embeddings: numpy.ndarray, indexes, path: str) -> None
 
@@ -147,24 +1625,17 @@ Functions
 
 .. py:function:: random_prediction(pre_trained_kge)
 
-
 .. py:function:: deploy_triple_prediction(pre_trained_kge, str_subject, str_predicate, str_object)
-
 
 .. py:function:: deploy_tail_entity_prediction(pre_trained_kge, str_subject, str_predicate, top_k)
 
-
 .. py:function:: deploy_head_entity_prediction(pre_trained_kge, str_object, str_predicate, top_k)
-
 
 .. py:function:: deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k)
 
-
 .. py:function:: vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into)
 
-
 .. py:function:: create_experiment_folder(folder_name='Experiments')
-
 
 .. py:function:: continual_training_setup_executor(executor) -> None
 
@@ -176,9 +1647,7 @@ Functions
 
 .. py:function:: exponential_function(x: numpy.ndarray, lam: float, ascending_order=True) -> torch.FloatTensor
 
-
 .. py:function:: load_numpy(path) -> numpy.ndarray
-
 
 .. py:function:: evaluate(entity_to_idx, scores, easy_answers, hard_answers)
 
@@ -187,7 +1656,6 @@ Functions
 
 
 .. py:function:: download_file(url, destination_folder='.')
-
 
 .. py:function:: download_files_from_url(base_url: str, destination_folder='.') -> None
 
@@ -198,5 +1666,4 @@ Functions
 
 
 .. py:function:: download_pretrained_model(url: str) -> str
-
 

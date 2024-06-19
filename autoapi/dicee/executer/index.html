@@ -7,7 +7,7 @@
   <title>dicee.executer &mdash; DICE Embeddings 0.1.3.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=eafc0fe6" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
@@ -20,7 +20,7 @@
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
         <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
-        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -62,36 +62,88 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">dicee</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../index.html#subpackages">Subpackages</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="../abstracts/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.abstracts</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../analyse_experiments/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.analyse_experiments</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../callbacks/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.callbacks</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../config/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.config</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../dataset_classes/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.dataset_classes</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../eval_static_funcs/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.eval_static_funcs</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../evaluator/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.evaluator</span></code></a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.executer</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../abstracts/index.html">dicee.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analyse_experiments/index.html">dicee.analyse_experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../callbacks/index.html">dicee.callbacks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../config/index.html">dicee.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataset_classes/index.html">dicee.dataset_classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../eval_static_funcs/index.html">dicee.eval_static_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../evaluator/index.html">dicee.evaluator</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">dicee.executer</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
-<li class="toctree-l5"><a class="reference internal" href="#classes">Classes</a><ul>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute"><code class="docutils literal notranslate"><span class="pre">Execute</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.ContinuousExecute"><code class="docutils literal notranslate"><span class="pre">ContinuousExecute</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.executer.KG"><code class="docutils literal notranslate"><span class="pre">KG</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.KG.entities_str"><code class="docutils literal notranslate"><span class="pre">KG.entities_str</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.KG.relations_str"><code class="docutils literal notranslate"><span class="pre">KG.relations_str</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.KG.func_triple_to_bpe_representation"><code class="docutils literal notranslate"><span class="pre">KG.func_triple_to_bpe_representation()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.executer.Evaluator"><code class="docutils literal notranslate"><span class="pre">Evaluator</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Evaluator.vocab_preparation"><code class="docutils literal notranslate"><span class="pre">Evaluator.vocab_preparation()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Evaluator.eval"><code class="docutils literal notranslate"><span class="pre">Evaluator.eval()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Evaluator.eval_rank_of_head_and_tail_entity"><code class="docutils literal notranslate"><span class="pre">Evaluator.eval_rank_of_head_and_tail_entity()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Evaluator.eval_rank_of_head_and_tail_byte_pair_encoded_entity"><code class="docutils literal notranslate"><span class="pre">Evaluator.eval_rank_of_head_and_tail_byte_pair_encoded_entity()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Evaluator.eval_with_byte"><code class="docutils literal notranslate"><span class="pre">Evaluator.eval_with_byte()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Evaluator.eval_with_bpe_vs_all"><code class="docutils literal notranslate"><span class="pre">Evaluator.eval_with_bpe_vs_all()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Evaluator.eval_with_vs_all"><code class="docutils literal notranslate"><span class="pre">Evaluator.eval_with_vs_all()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Evaluator.evaluate_lp_k_vs_all"><code class="docutils literal notranslate"><span class="pre">Evaluator.evaluate_lp_k_vs_all()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Evaluator.evaluate_lp_with_byte"><code class="docutils literal notranslate"><span class="pre">Evaluator.evaluate_lp_with_byte()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Evaluator.evaluate_lp_bpe_k_vs_all"><code class="docutils literal notranslate"><span class="pre">Evaluator.evaluate_lp_bpe_k_vs_all()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Evaluator.evaluate_lp"><code class="docutils literal notranslate"><span class="pre">Evaluator.evaluate_lp()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Evaluator.dummy_eval"><code class="docutils literal notranslate"><span class="pre">Evaluator.dummy_eval()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Evaluator.eval_with_data"><code class="docutils literal notranslate"><span class="pre">Evaluator.eval_with_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.executer.preprocesses_input_args"><code class="docutils literal notranslate"><span class="pre">preprocesses_input_args()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.executer.DICE_Trainer"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.DICE_Trainer.continual_start"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.continual_start()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.DICE_Trainer.initialize_trainer"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.initialize_trainer()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.DICE_Trainer.initialize_or_load_model"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.initialize_or_load_model()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.DICE_Trainer.initialize_dataloader"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.initialize_dataloader()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.DICE_Trainer.initialize_dataset"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.initialize_dataset()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.DICE_Trainer.start"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.start()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.DICE_Trainer.k_fold_cross_validation"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.k_fold_cross_validation()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.executer.timeit"><code class="docutils literal notranslate"><span class="pre">timeit()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.executer.continual_training_setup_executor"><code class="docutils literal notranslate"><span class="pre">continual_training_setup_executor()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.executer.read_or_load_kg"><code class="docutils literal notranslate"><span class="pre">read_or_load_kg()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.executer.load_json"><code class="docutils literal notranslate"><span class="pre">load_json()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.executer.store"><code class="docutils literal notranslate"><span class="pre">store()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.executer.Execute"><code class="docutils literal notranslate"><span class="pre">Execute</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.read_or_load_kg"><code class="docutils literal notranslate"><span class="pre">Execute.read_or_load_kg()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.read_preprocess_index_serialize_data"><code class="docutils literal notranslate"><span class="pre">Execute.read_preprocess_index_serialize_data()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.load_indexed_data"><code class="docutils literal notranslate"><span class="pre">Execute.load_indexed_data()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.save_trained_model"><code class="docutils literal notranslate"><span class="pre">Execute.save_trained_model()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.end"><code class="docutils literal notranslate"><span class="pre">Execute.end()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.write_report"><code class="docutils literal notranslate"><span class="pre">Execute.write_report()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.start"><code class="docutils literal notranslate"><span class="pre">Execute.start()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.executer.ContinuousExecute"><code class="docutils literal notranslate"><span class="pre">ContinuousExecute</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.ContinuousExecute.continual_start"><code class="docutils literal notranslate"><span class="pre">ContinuousExecute.continual_start()</span></code></a></li>
 </ul>
 </li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="../knowledge_graph/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.knowledge_graph</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../knowledge_graph_embeddings/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.knowledge_graph_embeddings</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../query_generator/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.query_generator</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../sanity_checkers/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.sanity_checkers</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../static_funcs/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.static_funcs</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../static_funcs_training/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.static_funcs_training</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../static_preprocess_funcs/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.static_preprocess_funcs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../knowledge_graph/index.html">dicee.knowledge_graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../knowledge_graph_embeddings/index.html">dicee.knowledge_graph_embeddings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../query_generator/index.html">dicee.query_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sanity_checkers/index.html">dicee.sanity_checkers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../static_funcs/index.html">dicee.static_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../static_funcs_training/index.html">dicee.static_funcs_training</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../static_preprocess_funcs/index.html">dicee.static_preprocess_funcs</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#classes">Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#functions">Functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
 </ul>
 </li>
@@ -111,8 +163,8 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a></li>
-      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.executer</span></code></li>
+          <li class="breadcrumb-item"><a href="../index.html">dicee</a></li>
+      <li class="breadcrumb-item active">dicee.executer</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../../_sources/autoapi/dicee/executer/index.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -123,21 +175,309 @@
            <div itemprop="articleBody">
              
   <section id="module-dicee.executer">
-<span id="dicee-executer"></span><h1><a class="reference internal" href="#module-dicee.executer" title="dicee.executer"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.executer</span></code></a><a class="headerlink" href="#module-dicee.executer" title="Link to this heading"></a></h1>
-<section id="module-contents">
-<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<span id="dicee-executer"></span><h1>dicee.executer<a class="headerlink" href="#module-dicee.executer" title="Link to this heading"></a></h1>
 <section id="classes">
-<h3>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h3>
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.executer.Execute" title="dicee.executer.Execute"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Execute</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.executer.KG" title="dicee.executer.KG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KG</span></code></a></p></td>
+<td><p>Knowledge Graph</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.executer.Evaluator" title="dicee.executer.Evaluator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Evaluator</span></code></a></p></td>
+<td><p>Evaluator class to evaluate KGE models in various downstream tasks</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.executer.DICE_Trainer" title="dicee.executer.DICE_Trainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DICE_Trainer</span></code></a></p></td>
+<td><p>DICE_Trainer implement</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.executer.Execute" title="dicee.executer.Execute"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Execute</span></code></a></p></td>
 <td><p>A class for Training, Retraining and Evaluation a model.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.executer.ContinuousExecute" title="dicee.executer.ContinuousExecute"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ContinuousExecute</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.executer.ContinuousExecute" title="dicee.executer.ContinuousExecute"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ContinuousExecute</span></code></a></p></td>
 <td><p>A subclass of Execute Class for retraining</p></td>
 </tr>
 </tbody>
 </table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.executer.preprocesses_input_args" title="dicee.executer.preprocesses_input_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">preprocesses_input_args</span></code></a>(args)</p></td>
+<td><p>Sanity Checking in input arguments</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.executer.timeit" title="dicee.executer.timeit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">timeit</span></code></a>(func)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.executer.continual_training_setup_executor" title="dicee.executer.continual_training_setup_executor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">continual_training_setup_executor</span></code></a>(→ None)</p></td>
+<td><p>storage_path:str A path leading to a parent directory, where a subdirectory containing KGE related data</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.executer.read_or_load_kg" title="dicee.executer.read_or_load_kg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_or_load_kg</span></code></a>(args, cls)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.executer.load_json" title="dicee.executer.load_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_json</span></code></a>(→ dict)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.executer.store" title="dicee.executer.store"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store</span></code></a>(→ None)</p></td>
+<td><p>Store trained_model model and save embeddings into csv file.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.executer.KG">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.executer.</span></span><span class="sig-name descname"><span class="pre">KG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">byte_pair_encoding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">padding</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_noise_rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sparql_endpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_single_kg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_for_deserialization</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_reciprical</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">eval_model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only_few</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_triples_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_for_serialization</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entity_to_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relation_to_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">training_technique</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/knowledge_graph.html#KG"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.KG" title="Link to this definition"></a></dt>
+<dd><p>Knowledge Graph</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="dicee.executer.KG.entities_str">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">entities_str</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span></em><a class="headerlink" href="#dicee.executer.KG.entities_str" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="dicee.executer.KG.relations_str">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">relations_str</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span></em><a class="headerlink" href="#dicee.executer.KG.relations_str" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.KG.func_triple_to_bpe_representation">
+<span class="sig-name descname"><span class="pre">func_triple_to_bpe_representation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">triple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/knowledge_graph.html#KG.func_triple_to_bpe_representation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.KG.func_triple_to_bpe_representation" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.executer.Evaluator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.executer.</span></span><span class="sig-name descname"><span class="pre">Evaluator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_continual_training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/evaluator.html#Evaluator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Evaluator" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Evaluator class to evaluate KGE models in various downstream tasks</p>
+<p>Arguments</p>
+</div></blockquote>
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.Evaluator.vocab_preparation">
+<span class="sig-name descname"><span class="pre">vocab_preparation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/evaluator.html#Evaluator.vocab_preparation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Evaluator.vocab_preparation" title="Link to this definition"></a></dt>
+<dd><p>A function to wait future objects for the attributes of executor</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.Evaluator.eval">
+<span class="sig-name descname"><span class="pre">eval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../knowledge_graph/index.html#dicee.knowledge_graph.KG" title="dicee.knowledge_graph.KG"><span class="pre">dicee.knowledge_graph.KG</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">during_training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/evaluator.html#Evaluator.eval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Evaluator.eval" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.Evaluator.eval_rank_of_head_and_tail_entity">
+<span class="sig-name descname"><span class="pre">eval_rank_of_head_and_tail_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valid_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/evaluator.html#Evaluator.eval_rank_of_head_and_tail_entity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Evaluator.eval_rank_of_head_and_tail_entity" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.Evaluator.eval_rank_of_head_and_tail_byte_pair_encoded_entity">
+<span class="sig-name descname"><span class="pre">eval_rank_of_head_and_tail_byte_pair_encoded_entity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valid_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ordered_bpe_entities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/evaluator.html#Evaluator.eval_rank_of_head_and_tail_byte_pair_encoded_entity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Evaluator.eval_rank_of_head_and_tail_byte_pair_encoded_entity" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.Evaluator.eval_with_byte">
+<span class="sig-name descname"><span class="pre">eval_with_byte</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_train_set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_valid_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_test_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/evaluator.html#Evaluator.eval_with_byte"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Evaluator.eval_with_byte" title="Link to this definition"></a></dt>
+<dd><p>Evaluate model after reciprocal triples are added</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.Evaluator.eval_with_bpe_vs_all">
+<span class="sig-name descname"><span class="pre">eval_with_bpe_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_train_set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_valid_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_test_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/evaluator.html#Evaluator.eval_with_bpe_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Evaluator.eval_with_bpe_vs_all" title="Link to this definition"></a></dt>
+<dd><p>Evaluate model after reciprocal triples are added</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.Evaluator.eval_with_vs_all">
+<span class="sig-name descname"><span class="pre">eval_with_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_set</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">valid_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_set</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/evaluator.html#Evaluator.eval_with_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Evaluator.eval_with_vs_all" title="Link to this definition"></a></dt>
+<dd><p>Evaluate model after reciprocal triples are added</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.Evaluator.evaluate_lp_k_vs_all">
+<span class="sig-name descname"><span class="pre">evaluate_lp_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triple_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/evaluator.html#Evaluator.evaluate_lp_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Evaluator.evaluate_lp_k_vs_all" title="Link to this definition"></a></dt>
+<dd><p>Filtered link prediction evaluation.
+:param model:
+:param triple_idx: test triples
+:param info:
+:param form_of_labelling:
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.Evaluator.evaluate_lp_with_byte">
+<span class="sig-name descname"><span class="pre">evaluate_lp_with_byte</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/evaluator.html#Evaluator.evaluate_lp_with_byte"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Evaluator.evaluate_lp_with_byte" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.Evaluator.evaluate_lp_bpe_k_vs_all">
+<span class="sig-name descname"><span class="pre">evaluate_lp_bpe_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/evaluator.html#Evaluator.evaluate_lp_bpe_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Evaluator.evaluate_lp_bpe_k_vs_all" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong></p></li>
+<li><p><strong>triples</strong> (<em>List</em><em> of </em><em>lists</em>)</p></li>
+<li><p><strong>info</strong></p></li>
+<li><p><strong>form_of_labelling</strong></p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.Evaluator.evaluate_lp">
+<span class="sig-name descname"><span class="pre">evaluate_lp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triple_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">info</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/evaluator.html#Evaluator.evaluate_lp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Evaluator.evaluate_lp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.Evaluator.dummy_eval">
+<span class="sig-name descname"><span class="pre">dummy_eval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/evaluator.html#Evaluator.dummy_eval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Evaluator.dummy_eval" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.Evaluator.eval_with_data">
+<span class="sig-name descname"><span class="pre">eval_with_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triple_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/evaluator.html#Evaluator.eval_with_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Evaluator.eval_with_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.executer.preprocesses_input_args">
+<span class="sig-prename descclassname"><span class="pre">dicee.executer.</span></span><span class="sig-name descname"><span class="pre">preprocesses_input_args</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/static_preprocess_funcs.html#preprocesses_input_args"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.preprocesses_input_args" title="Link to this definition"></a></dt>
+<dd><p>Sanity Checking in input arguments</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="dicee.executer.DICE_Trainer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.executer.</span></span><span class="sig-name descname"><span class="pre">DICE_Trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_continual_training</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storage_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evaluator</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.DICE_Trainer" title="Link to this definition"></a></dt>
+<dd><dl>
+<dt>DICE_Trainer implement</dt><dd><p>1- Pytorch Lightning trainer (<a class="reference external" href="https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html">https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html</a>)
+2- Multi-GPU Trainer(<a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html">https://pytorch.org/docs/stable/generated/torch.nn.parallel.DistributedDataParallel.html</a>)
+3- CPU Trainer</p>
+<p>args</p>
+<p>is_continual_training:bool</p>
+<p>storage_path:str</p>
+<p>evaluator:</p>
+<p>report:dict</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.DICE_Trainer.continual_start">
+<span class="sig-name descname"><span class="pre">continual_start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.continual_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.DICE_Trainer.continual_start" title="Link to this definition"></a></dt>
+<dd><ol class="arabic simple">
+<li><p>Initialize training.</p></li>
+<li><p>Load model</p></li>
+</ol>
+<p>(3) Load trainer
+(3) Fit model</p>
+<section id="parameter">
+<h3>Parameter<a class="headerlink" href="#parameter" title="Link to this heading"></a></h3>
+<dl class="field-list simple">
+<dt class="field-odd">returns<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><em>model</em></p></li>
+<li><p><strong>form_of_labelling</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.DICE_Trainer.initialize_trainer">
+<span class="sig-name descname"><span class="pre">initialize_trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callbacks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">lightning.Trainer</span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.initialize_trainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.DICE_Trainer.initialize_trainer" title="Link to this definition"></a></dt>
+<dd><p>Initialize Trainer from input arguments</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.DICE_Trainer.initialize_or_load_model">
+<span class="sig-name descname"><span class="pre">initialize_or_load_model</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.initialize_or_load_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.DICE_Trainer.initialize_or_load_model" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.DICE_Trainer.initialize_dataloader">
+<span class="sig-name descname"><span class="pre">initialize_dataloader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.Dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.utils.data.DataLoader</span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.initialize_dataloader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.DICE_Trainer.initialize_dataloader" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.DICE_Trainer.initialize_dataset">
+<span class="sig-name descname"><span class="pre">initialize_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../knowledge_graph/index.html#dicee.knowledge_graph.KG" title="dicee.knowledge_graph.KG"><span class="pre">dicee.knowledge_graph.KG</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.utils.data.Dataset</span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.initialize_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.DICE_Trainer.initialize_dataset" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.DICE_Trainer.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">knowledge_graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="../knowledge_graph/index.html#dicee.knowledge_graph.KG" title="dicee.knowledge_graph.KG"><span class="pre">dicee.knowledge_graph.KG</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><span class="pre">dicee.models.base_model.BaseKGE</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.DICE_Trainer.start" title="Link to this definition"></a></dt>
+<dd><p>Train selected model via the selected training strategy</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.executer.DICE_Trainer.k_fold_cross_validation">
+<span class="sig-name descname"><span class="pre">k_fold_cross_validation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><span class="pre">dicee.models.base_model.BaseKGE</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.k_fold_cross_validation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.DICE_Trainer.k_fold_cross_validation" title="Link to this definition"></a></dt>
+<dd><p>Perform K-fold Cross-Validation</p>
+<ol class="arabic simple">
+<li><p>Obtain K train and test splits.</p></li>
+<li><dl class="simple">
+<dt>For each split,</dt><dd><p>2.1 initialize trainer and model
+2.2. Train model with configuration provided in args.
+2.3. Compute the mean reciprocal rank (MRR) score of the model on the test respective split.</p>
+</dd>
+</dl>
+</li>
+<li><p>Report the mean and average MRR .</p></li>
+</ol>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>self</strong></p></li>
+<li><p><strong>dataset</strong></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>model</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.executer.timeit">
+<span class="sig-prename descclassname"><span class="pre">dicee.executer.</span></span><span class="sig-name descname"><span class="pre">timeit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/static_funcs.html#timeit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.timeit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.executer.continual_training_setup_executor">
+<span class="sig-prename descclassname"><span class="pre">dicee.executer.</span></span><span class="sig-name descname"><span class="pre">continual_training_setup_executor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">executor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/static_funcs.html#continual_training_setup_executor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.continual_training_setup_executor" title="Link to this definition"></a></dt>
+<dd><p>storage_path:str A path leading to a parent directory, where a subdirectory containing KGE related data</p>
+<p>full_storage_path:str A path leading to a subdirectory containing KGE related data</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.executer.read_or_load_kg">
+<span class="sig-prename descclassname"><span class="pre">dicee.executer.</span></span><span class="sig-name descname"><span class="pre">read_or_load_kg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cls</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/static_funcs.html#read_or_load_kg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.read_or_load_kg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.executer.load_json">
+<span class="sig-prename descclassname"><span class="pre">dicee.executer.</span></span><span class="sig-name descname"><span class="pre">load_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../../../_modules/dicee/static_funcs.html#load_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.load_json" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.executer.store">
+<span class="sig-prename descclassname"><span class="pre">dicee.executer.</span></span><span class="sig-name descname"><span class="pre">store</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trained_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'model'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_storage_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_embeddings_as_csv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/static_funcs.html#store"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.store" title="Link to this definition"></a></dt>
+<dd><p>Store trained_model model and save embeddings into csv file.
+:param trainer: an instance of trainer class
+:param full_storage_path: path to save parameters.
+:param model_name: string representation of the name of the model.
+:param trained_model: an instance of BaseKGE see core.models.base_model .
+:param save_embeddings_as_csv: for easy access of embeddings.
+:return:</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.executer.Execute">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.executer.</span></span><span class="sig-name descname"><span class="pre">Execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">continuous_training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute" title="Link to this definition"></a></dt>
@@ -160,8 +500,8 @@
 <li><p>Read or load the data from disk into memory.</p></li>
 <li><p>Store the statistics of the data.</p></li>
 </ol>
-<section id="parameter">
-<h4>Parameter<a class="headerlink" href="#parameter" title="Link to this heading"></a></h4>
+<section id="id1">
+<h3>Parameter<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
 <dl class="field-list simple">
 <dt class="field-odd">rtype<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
@@ -174,8 +514,8 @@
 <dt class="sig sig-object py" id="dicee.executer.Execute.load_indexed_data">
 <span class="sig-name descname"><span class="pre">load_indexed_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute.load_indexed_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute.load_indexed_data" title="Link to this definition"></a></dt>
 <dd><p>Load the indexed data from disk into memory</p>
-<section id="id1">
-<h4>Parameter<a class="headerlink" href="#id1" title="Link to this heading"></a></h4>
+<section id="id2">
+<h3>Parameter<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
 <dl class="field-list simple">
 <dt class="field-odd">rtype<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
@@ -194,8 +534,8 @@
 <li><p>Save the model into disk.</p></li>
 <li><p>Update the stats of KG again ?</p></li>
 </ol>
-<section id="id2">
-<h4>Parameter<a class="headerlink" href="#id2" title="Link to this heading"></a></h4>
+<section id="id3">
+<h3>Parameter<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
 <dl class="field-list simple">
 <dt class="field-odd">rtype<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
@@ -213,8 +553,8 @@
 <li><p>Report runtimes.</p></li>
 <li><p>Eval model if required.</p></li>
 </ol>
-<section id="id3">
-<h4>Parameter<a class="headerlink" href="#id3" title="Link to this heading"></a></h4>
+<section id="id4">
+<h3>Parameter<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
 <dl class="field-list simple">
 <dt class="field-odd">rtype<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A dict containing information about the training and/or evaluation</p>
@@ -237,8 +577,8 @@
 # (2) Create an evaluator object.
 # (3) Create a trainer object.
 # (4) Start the training</p>
-<section id="id4">
-<h4>Parameter<a class="headerlink" href="#id4" title="Link to this heading"></a></h4>
+<section id="id5">
+<h3>Parameter<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
 <dl class="field-list simple">
 <dt class="field-odd">rtype<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A dict containing information about the training and/or evaluation</p>
@@ -271,8 +611,8 @@ Trained model is noted with the current time.</p>
 <li><p>Start continual training.</p></li>
 <li><p>Save trained model.</p></li>
 </ol>
-<section id="id5">
-<h4>Parameter<a class="headerlink" href="#id5" title="Link to this heading"></a></h4>
+<section id="id6">
+<h3>Parameter<a class="headerlink" href="#id6" title="Link to this heading"></a></h3>
 <dl class="field-list simple">
 <dt class="field-odd">rtype<span class="colon">:</span></dt>
 <dd class="field-odd"><p>A dict containing information about the training and/or evaluation</p>
@@ -283,7 +623,6 @@ Trained model is noted with the current time.</p>
 
 </dd></dl>
 
-</section>
 </section>
 </section>
 

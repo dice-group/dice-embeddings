@@ -1,15 +1,11 @@
-:py:mod:`dicee.sanity_checkers`
-===============================
+dicee.sanity_checkers
+=====================
 
 .. py:module:: dicee.sanity_checkers
 
 
-Module Contents
----------------
-
-
 Functions
-~~~~~~~~~
+---------
 
 .. autoapisummary::
 
@@ -18,9 +14,10 @@ Functions
    dicee.sanity_checkers.sanity_checking_with_arguments
 
 
+Module Contents
+---------------
 
 .. py:function:: is_sparql_endpoint_alive(sparql_endpoint: str = None)
-
 
 .. py:function:: validate_knowledge_graph(args)
 
@@ -28,5 +25,4 @@ Functions
 
 
 .. py:function:: sanity_checking_with_arguments(args)
-
 

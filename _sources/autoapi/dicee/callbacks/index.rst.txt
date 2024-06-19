@@ -1,17 +1,15 @@
-:py:mod:`dicee.callbacks`
-=========================
+dicee.callbacks
+===============
 
 .. py:module:: dicee.callbacks
 
 
-Module Contents
----------------
-
 Classes
-~~~~~~~
+-------
 
 .. autoapisummary::
 
+   dicee.callbacks.AbstractCallback
    dicee.callbacks.AccumulateEpochLossCallback
    dicee.callbacks.PrintCallback
    dicee.callbacks.KGESaveCallback
@@ -22,25 +20,135 @@ Classes
    dicee.callbacks.Perturb
 
 
-
 Functions
-~~~~~~~~~
+---------
 
 .. autoapisummary::
 
+   dicee.callbacks.save_checkpoint_model
+   dicee.callbacks.save_pickle
    dicee.callbacks.estimate_q
    dicee.callbacks.compute_convergence
+
+
+Module Contents
+---------------
+
+.. py:function:: save_checkpoint_model(model, path: str) -> None
+
+   Store Pytorch model into disk
+
+
+.. py:function:: save_pickle(*, data: object = None, file_path=str)
+
+.. py:class:: AbstractCallback
+
+   Bases: :py:obj:`abc.ABC`, :py:obj:`lightning.pytorch.callbacks.Callback`
+
+
+   Abstract class for Callback class for knowledge graph embedding models
+
+
+   Parameter
+   ---------
+
+
+
+   .. py:method:: on_init_start(*args, **kwargs)
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      :rtype: None
+
+
+
+   .. py:method:: on_init_end(*args, **kwargs)
+
+      Call at the beginning of the training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      :rtype: None
+
+
+
+   .. py:method:: on_fit_start(trainer, model)
+
+      Call at the beginning of the training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      :rtype: None
+
+
+
+   .. py:method:: on_train_epoch_end(trainer, model)
+
+      Call at the end of each epoch during training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      :rtype: None
+
+
+
+   .. py:method:: on_train_batch_end(*args, **kwargs)
+
+      Call at the end of each mini-batch during the training.
+
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      :rtype: None
+
+
+
+   .. py:method:: on_fit_end(*args, **kwargs)
+
+      Call at the end of the training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      :rtype: None
 
 
 
 .. py:class:: AccumulateEpochLossCallback(path: str)
 
-
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
-   Abstract base class for implementing custom callbacks for knowledge graph embedding models during training with PyTorch Lightning.
 
-   This class is designed to be subclassed, with methods overridden to perform actions at various points during the training life cycle.
+   Abstract class for Callback class for knowledge graph embedding models
+
+
+   Parameter
+   ---------
+
+
 
    .. py:method:: on_fit_end(trainer, model) -> None
 
@@ -59,36 +167,20 @@ Functions
 
 .. py:class:: PrintCallback
 
-
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
-   Abstract base class for implementing custom callbacks for knowledge graph embedding models during training with PyTorch Lightning.
 
-   This class is designed to be subclassed, with methods overridden to perform actions at various points during the training life cycle.
+   Abstract class for Callback class for knowledge graph embedding models
+
+
+   Parameter
+   ---------
+
+
 
    .. py:method:: on_fit_start(trainer, pl_module)
 
-      Called at the very beginning of fit.
-
-      :param trainer: The trainer instance.
-      :type trainer: pl.Trainer
-      :param pl_module: The model that is being trained.
-      :type pl_module: pl.LightningModule
-
-
-   .. py:method:: on_fit_end(trainer, pl_module)
-
-      Called at the end of fit.
-
-      :param trainer: The trainer instance.
-      :type trainer: pl.Trainer
-      :param pl_module: The model that has been trained.
-      :type pl_module: pl.LightningModule
-
-
-   .. py:method:: on_train_batch_end(*args, **kwargs)
-
-      Call at the end of each mini-batch during the training.
+      Call at the beginning of the training.
 
       Parameter
       ---------
@@ -99,29 +191,67 @@ Functions
       :rtype: None
 
 
+
+   .. py:method:: on_fit_end(trainer, pl_module)
+
+      Call at the end of the training.
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      :rtype: None
+
+
+
+   .. py:method:: on_train_batch_end(*args, **kwargs)
+
+      Call at the end of each mini-batch during the training.
+
+
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      :rtype: None
+
+
+
    .. py:method:: on_train_epoch_end(*args, **kwargs)
 
-      Called at the end of the training epoch.
+      Call at the end of each epoch during training.
 
-      :param trainer: The trainer instance.
-      :type trainer: pl.Trainer
-      :param pl_module: The model that is being trained.
-      :type pl_module: pl.LightningModule
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      :rtype: None
 
 
 
 .. py:class:: KGESaveCallback(every_x_epoch: int, max_epochs: int, path: str)
 
-
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
-   Abstract base class for implementing custom callbacks for knowledge graph embedding models during training with PyTorch Lightning.
 
-   This class is designed to be subclassed, with methods overridden to perform actions at various points during the training life cycle.
+   Abstract class for Callback class for knowledge graph embedding models
+
+
+   Parameter
+   ---------
+
+
 
    .. py:method:: on_train_batch_end(*args, **kwargs)
 
       Call at the end of each mini-batch during the training.
+
 
       Parameter
       ---------
@@ -132,54 +262,69 @@ Functions
       :rtype: None
 
 
+
    .. py:method:: on_fit_start(trainer, pl_module)
 
-      Called at the very beginning of fit.
+      Call at the beginning of the training.
 
-      :param trainer: The trainer instance.
-      :type trainer: pl.Trainer
-      :param pl_module: The model that is being trained.
-      :type pl_module: pl.LightningModule
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      :rtype: None
+
 
 
    .. py:method:: on_train_epoch_end(*args, **kwargs)
 
-      Called at the end of the training epoch.
+      Call at the end of each epoch during training.
 
-      :param trainer: The trainer instance.
-      :type trainer: pl.Trainer
-      :param pl_module: The model that is being trained.
-      :type pl_module: pl.LightningModule
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      :rtype: None
+
 
 
    .. py:method:: on_fit_end(*args, **kwargs)
 
-      Called at the end of fit.
+      Call at the end of the training.
 
-      :param trainer: The trainer instance.
-      :type trainer: pl.Trainer
-      :param pl_module: The model that has been trained.
-      :type pl_module: pl.LightningModule
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      :rtype: None
+
 
 
    .. py:method:: on_epoch_end(model, trainer, **kwargs)
 
 
-
 .. py:class:: PseudoLabellingCallback(data_module, kg, batch_size)
-
 
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
-   Abstract base class for implementing custom callbacks for knowledge graph embedding models during training with PyTorch Lightning.
 
-   This class is designed to be subclassed, with methods overridden to perform actions at various points during the training life cycle.
+   Abstract class for Callback class for knowledge graph embedding models
+
+
+   Parameter
+   ---------
+
+
 
    .. py:method:: create_random_data()
 
 
    .. py:method:: on_epoch_end(trainer, model)
-
 
 
 .. py:function:: estimate_q(eps)
@@ -189,27 +334,32 @@ Functions
 
 .. py:function:: compute_convergence(seq, i)
 
-
 .. py:class:: ASWA(num_epochs, path)
 
-
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
+
 
    Adaptive stochastic weight averaging
    ASWE keeps track of the validation performance and update s the ensemble model accordingly.
 
+
    .. py:method:: on_fit_end(trainer, model)
 
-      Called at the end of fit.
+      Call at the end of the training.
 
-      :param trainer: The trainer instance.
-      :type trainer: pl.Trainer
-      :param pl_module: The model that has been trained.
-      :type pl_module: pl.LightningModule
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      :rtype: None
+
 
 
    .. py:method:: compute_mrr(trainer, model) -> float
       :staticmethod:
+
 
 
    .. py:method:: get_aswa_state_dict(model)
@@ -225,59 +375,80 @@ Functions
       :param mrr_updated_ensemble_model:
 
 
+
    .. py:method:: on_train_epoch_end(trainer, model)
 
-      Called at the end of the training epoch.
+      Call at the end of each epoch during training.
 
-      :param trainer: The trainer instance.
-      :type trainer: pl.Trainer
-      :param pl_module: The model that is being trained.
-      :type pl_module: pl.LightningModule
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      :rtype: None
 
 
 
 .. py:class:: Eval(path, epoch_ratio: int = None)
 
-
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
-   Abstract base class for implementing custom callbacks for knowledge graph embedding models during training with PyTorch Lightning.
 
-   This class is designed to be subclassed, with methods overridden to perform actions at various points during the training life cycle.
+   Abstract class for Callback class for knowledge graph embedding models
+
+
+   Parameter
+   ---------
+
+
 
    .. py:method:: on_fit_start(trainer, model)
 
-      Called at the very beginning of fit.
+      Call at the beginning of the training.
 
-      :param trainer: The trainer instance.
-      :type trainer: pl.Trainer
-      :param pl_module: The model that is being trained.
-      :type pl_module: pl.LightningModule
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      :rtype: None
+
 
 
    .. py:method:: on_fit_end(trainer, model)
 
-      Called at the end of fit.
+      Call at the end of the training.
 
-      :param trainer: The trainer instance.
-      :type trainer: pl.Trainer
-      :param pl_module: The model that has been trained.
-      :type pl_module: pl.LightningModule
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      :rtype: None
+
 
 
    .. py:method:: on_train_epoch_end(trainer, model)
 
-      Called at the end of the training epoch.
+      Call at the end of each epoch during training.
 
-      :param trainer: The trainer instance.
-      :type trainer: pl.Trainer
-      :param pl_module: The model that is being trained.
-      :type pl_module: pl.LightningModule
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      :rtype: None
+
 
 
    .. py:method:: on_train_batch_end(*args, **kwargs)
 
       Call at the end of each mini-batch during the training.
+
 
       Parameter
       ---------
@@ -291,15 +462,20 @@ Functions
 
 .. py:class:: KronE
 
-
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
-   Abstract base class for implementing custom callbacks for knowledge graph embedding models during training with PyTorch Lightning.
 
-   This class is designed to be subclassed, with methods overridden to perform actions at various points during the training life cycle.
+   Abstract class for Callback class for knowledge graph embedding models
+
+
+   Parameter
+   ---------
+
+
 
    .. py:method:: batch_kronecker_product(a, b)
       :staticmethod:
+
 
       Kronecker product of matrices a and b with leading batch dimensions.
       Batch dimensions are broadcast. The number of them mush
@@ -308,26 +484,31 @@ Functions
       :rtype: torch.Tensor
 
 
+
    .. py:method:: get_kronecker_triple_representation(indexed_triple: torch.LongTensor)
 
       Get kronecker embeddings
 
 
+
    .. py:method:: on_fit_start(trainer, model)
 
-      Called at the very beginning of fit.
+      Call at the beginning of the training.
 
-      :param trainer: The trainer instance.
-      :type trainer: pl.Trainer
-      :param pl_module: The model that is being trained.
-      :type pl_module: pl.LightningModule
+      Parameter
+      ---------
+      trainer:
+
+      model:
+
+      :rtype: None
 
 
 
 .. py:class:: Perturb(level: str = 'input', ratio: float = 0.0, method: str = None, scaler: float = None, frequency=None)
 
-
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
+
 
    A callback for a three-Level Perturbation
 
@@ -339,6 +520,7 @@ Functions
    Parameter Perturbation:
 
    Output Perturbation:
+
 
    .. py:method:: on_train_batch_start(trainer, model, batch, batch_idx)
 

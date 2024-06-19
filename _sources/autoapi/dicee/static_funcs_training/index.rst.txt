@@ -1,15 +1,11 @@
-:py:mod:`dicee.static_funcs_training`
-=====================================
+dicee.static_funcs_training
+===========================
 
 .. py:module:: dicee.static_funcs_training
 
 
-Module Contents
----------------
-
-
 Functions
-~~~~~~~~~
+---------
 
 .. autoapisummary::
 
@@ -18,6 +14,8 @@ Functions
    dicee.static_funcs_training.efficient_zero_grad
 
 
+Module Contents
+---------------
 
 .. py:function:: evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info='Eval Starts')
 
@@ -34,7 +32,5 @@ Functions
 
 .. py:function:: evaluate_bpe_lp(model, triple_idx: List[Tuple], all_bpe_shaped_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info='Eval Starts')
 
-
 .. py:function:: efficient_zero_grad(model)
-
 

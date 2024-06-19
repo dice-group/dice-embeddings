@@ -6,7 +6,7 @@
   <title>dicee.models.static_funcs &mdash; DICE Embeddings 0.1.3.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=eafc0fe6" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
@@ -19,7 +19,7 @@
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
         <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
-        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -59,7 +59,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/dicee/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/dicee/index.html">dicee</a></li>
 </ul>
 
         </div>
@@ -90,41 +90,16 @@
 <span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 
-
 <div class="viewcode-block" id="quaternion_mul">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/static_funcs/index.html#dicee.models.quaternion_mul">[docs]</a>
-<span class="k">def</span> <span class="nf">quaternion_mul</span><span class="p">(</span>
-    <span class="o">*</span><span class="p">,</span>
-    <span class="n">Q_1</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
-    <span class="n">Q_2</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
+<span class="k">def</span> <span class="nf">quaternion_mul</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">Q_1</span><span class="p">,</span> <span class="n">Q_2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Perform quaternion multiplication.</span>
-
-<span class="sd">    This function multiplies two quaternions, Q_1 and Q_2, and returns the result as a quaternion.</span>
-<span class="sd">    Quaternion multiplication is a non-commutative operation used in various applications,</span>
-<span class="sd">    including 3D rotation and orientation tasks.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    Q_1 : Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]</span>
-<span class="sd">        The first quaternion, represented as a tuple of four components (a_h, b_h, c_h, d_h).</span>
-<span class="sd">    Q_2 : Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]</span>
-<span class="sd">        The second quaternion, represented as a tuple of four components (a_r, b_r, c_r, d_r).</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]</span>
-<span class="sd">        The resulting quaternion from the multiplication, represented as a tuple of four components (r_val, i_val, j_val, k_val).</span>
-
-<span class="sd">    Notes</span>
-<span class="sd">    -----</span>
-<span class="sd">    The quaternion multiplication is defined as:</span>
-<span class="sd">    r_val = a_h * a_r - b_h * b_r - c_h * c_r - d_h * d_r</span>
-<span class="sd">    i_val = a_h * b_r + b_h * a_r + c_h * d_r - d_h * c_r</span>
-<span class="sd">    j_val = a_h * c_r - b_h * d_r + c_h * a_r + d_h * b_r</span>
-<span class="sd">    k_val = a_h * d_r + b_h * c_r - c_h * b_r + d_h * a_r</span>
+<span class="sd">    Perform quaternion multiplication</span>
+<span class="sd">    :param Q_1:</span>
+<span class="sd">    :param Q_2:</span>
+<span class="sd">    :return:</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">a_h</span><span class="p">,</span> <span class="n">b_h</span><span class="p">,</span> <span class="n">c_h</span><span class="p">,</span> <span class="n">d_h</span> <span class="o">=</span> <span class="n">Q_1</span>
     <span class="n">a_r</span><span class="p">,</span> <span class="n">b_r</span><span class="p">,</span> <span class="n">c_r</span><span class="p">,</span> <span class="n">d_r</span> <span class="o">=</span> <span class="n">Q_2</span>
     <span class="n">r_val</span> <span class="o">=</span> <span class="n">a_h</span> <span class="o">*</span> <span class="n">a_r</span> <span class="o">-</span> <span class="n">b_h</span> <span class="o">*</span> <span class="n">b_r</span> <span class="o">-</span> <span class="n">c_h</span> <span class="o">*</span> <span class="n">c_r</span> <span class="o">-</span> <span class="n">d_h</span> <span class="o">*</span> <span class="n">d_r</span>

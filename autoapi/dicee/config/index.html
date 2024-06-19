@@ -7,7 +7,7 @@
   <title>dicee.config &mdash; DICE Embeddings 0.1.3.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=eafc0fe6" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
@@ -20,7 +20,7 @@
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
         <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
-        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -62,35 +62,82 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">dicee</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../index.html#subpackages">Subpackages</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="../abstracts/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.abstracts</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../analyse_experiments/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.analyse_experiments</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../callbacks/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.callbacks</span></code></a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.config</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../abstracts/index.html">dicee.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analyse_experiments/index.html">dicee.analyse_experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../callbacks/index.html">dicee.callbacks</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">dicee.config</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
-<li class="toctree-l5"><a class="reference internal" href="#classes">Classes</a><ul>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace"><code class="docutils literal notranslate"><span class="pre">Namespace</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.config.Namespace"><code class="docutils literal notranslate"><span class="pre">Namespace</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.dataset_dir"><code class="docutils literal notranslate"><span class="pre">Namespace.dataset_dir</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.save_embeddings_as_csv"><code class="docutils literal notranslate"><span class="pre">Namespace.save_embeddings_as_csv</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.storage_path"><code class="docutils literal notranslate"><span class="pre">Namespace.storage_path</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.path_to_store_single_run"><code class="docutils literal notranslate"><span class="pre">Namespace.path_to_store_single_run</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.path_single_kg"><code class="docutils literal notranslate"><span class="pre">Namespace.path_single_kg</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.sparql_endpoint"><code class="docutils literal notranslate"><span class="pre">Namespace.sparql_endpoint</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.model"><code class="docutils literal notranslate"><span class="pre">Namespace.model</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.optim"><code class="docutils literal notranslate"><span class="pre">Namespace.optim</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.embedding_dim"><code class="docutils literal notranslate"><span class="pre">Namespace.embedding_dim</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.num_epochs"><code class="docutils literal notranslate"><span class="pre">Namespace.num_epochs</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.batch_size"><code class="docutils literal notranslate"><span class="pre">Namespace.batch_size</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.lr"><code class="docutils literal notranslate"><span class="pre">Namespace.lr</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.add_noise_rate"><code class="docutils literal notranslate"><span class="pre">Namespace.add_noise_rate</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.gpus"><code class="docutils literal notranslate"><span class="pre">Namespace.gpus</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.callbacks"><code class="docutils literal notranslate"><span class="pre">Namespace.callbacks</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.backend"><code class="docutils literal notranslate"><span class="pre">Namespace.backend</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.trainer"><code class="docutils literal notranslate"><span class="pre">Namespace.trainer</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.scoring_technique"><code class="docutils literal notranslate"><span class="pre">Namespace.scoring_technique</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.neg_ratio"><code class="docutils literal notranslate"><span class="pre">Namespace.neg_ratio</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.weight_decay"><code class="docutils literal notranslate"><span class="pre">Namespace.weight_decay</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.normalization"><code class="docutils literal notranslate"><span class="pre">Namespace.normalization</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.init_param"><code class="docutils literal notranslate"><span class="pre">Namespace.init_param</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.gradient_accumulation_steps"><code class="docutils literal notranslate"><span class="pre">Namespace.gradient_accumulation_steps</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.num_folds_for_cv"><code class="docutils literal notranslate"><span class="pre">Namespace.num_folds_for_cv</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.eval_model"><code class="docutils literal notranslate"><span class="pre">Namespace.eval_model</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.save_model_at_every_epoch"><code class="docutils literal notranslate"><span class="pre">Namespace.save_model_at_every_epoch</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.num_core"><code class="docutils literal notranslate"><span class="pre">Namespace.num_core</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.random_seed"><code class="docutils literal notranslate"><span class="pre">Namespace.random_seed</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.sample_triples_ratio"><code class="docutils literal notranslate"><span class="pre">Namespace.sample_triples_ratio</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.read_only_few"><code class="docutils literal notranslate"><span class="pre">Namespace.read_only_few</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.pykeen_model_kwargs"><code class="docutils literal notranslate"><span class="pre">Namespace.pykeen_model_kwargs</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.kernel_size"><code class="docutils literal notranslate"><span class="pre">Namespace.kernel_size</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.num_of_output_channels"><code class="docutils literal notranslate"><span class="pre">Namespace.num_of_output_channels</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.p"><code class="docutils literal notranslate"><span class="pre">Namespace.p</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.q"><code class="docutils literal notranslate"><span class="pre">Namespace.q</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.input_dropout_rate"><code class="docutils literal notranslate"><span class="pre">Namespace.input_dropout_rate</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.hidden_dropout_rate"><code class="docutils literal notranslate"><span class="pre">Namespace.hidden_dropout_rate</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.feature_map_dropout_rate"><code class="docutils literal notranslate"><span class="pre">Namespace.feature_map_dropout_rate</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.byte_pair_encoding"><code class="docutils literal notranslate"><span class="pre">Namespace.byte_pair_encoding</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.adaptive_swa"><code class="docutils literal notranslate"><span class="pre">Namespace.adaptive_swa</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.swa"><code class="docutils literal notranslate"><span class="pre">Namespace.swa</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.block_size"><code class="docutils literal notranslate"><span class="pre">Namespace.block_size</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.continual_learning"><code class="docutils literal notranslate"><span class="pre">Namespace.continual_learning</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.config.Namespace.__iter__"><code class="docutils literal notranslate"><span class="pre">Namespace.__iter__()</span></code></a></li>
 </ul>
 </li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="../dataset_classes/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.dataset_classes</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../eval_static_funcs/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.eval_static_funcs</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../evaluator/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.evaluator</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../executer/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.executer</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../knowledge_graph/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.knowledge_graph</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../knowledge_graph_embeddings/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.knowledge_graph_embeddings</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../query_generator/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.query_generator</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../sanity_checkers/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.sanity_checkers</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../static_funcs/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.static_funcs</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../static_funcs_training/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.static_funcs_training</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../static_preprocess_funcs/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.static_preprocess_funcs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataset_classes/index.html">dicee.dataset_classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../eval_static_funcs/index.html">dicee.eval_static_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../evaluator/index.html">dicee.evaluator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../executer/index.html">dicee.executer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../knowledge_graph/index.html">dicee.knowledge_graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../knowledge_graph_embeddings/index.html">dicee.knowledge_graph_embeddings</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../query_generator/index.html">dicee.query_generator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sanity_checkers/index.html">dicee.sanity_checkers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../static_funcs/index.html">dicee.static_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../static_funcs_training/index.html">dicee.static_funcs_training</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../static_preprocess_funcs/index.html">dicee.static_preprocess_funcs</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#classes">Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#functions">Functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
 </ul>
 </li>
@@ -110,8 +157,8 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a></li>
-      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.config</span></code></li>
+          <li class="breadcrumb-item"><a href="../index.html">dicee</a></li>
+      <li class="breadcrumb-item active">dicee.config</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../../_sources/autoapi/dicee/config/index.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -122,11 +169,9 @@
            <div itemprop="articleBody">
              
   <section id="module-dicee.config">
-<span id="dicee-config"></span><h1><a class="reference internal" href="#module-dicee.config" title="dicee.config"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.config</span></code></a><a class="headerlink" href="#module-dicee.config" title="Link to this heading"></a></h1>
-<section id="module-contents">
-<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<span id="dicee-config"></span><h1>dicee.config<a class="headerlink" href="#module-dicee.config" title="Link to this heading"></a></h1>
 <section id="classes">
-<h3>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h3>
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.config.Namespace" title="dicee.config.Namespace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Namespace</span></code></a></p></td>
@@ -134,6 +179,9 @@
 </tr>
 </tbody>
 </table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.config.Namespace">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.config.</span></span><span class="sig-name descname"><span class="pre">Namespace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/config.html#Namespace"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.config.Namespace" title="Link to this definition"></a></dt>
@@ -143,7 +191,7 @@
 string representation.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.dataset_dir">
-<span class="sig-name descname"><span class="pre">dataset_dir</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#dicee.config.Namespace.dataset_dir" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">dataset_dir</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.dataset_dir" title="Link to this definition"></a></dt>
 <dd><p>The path of a folder containing train.txt, and/or valid.txt and/or test.txt</p>
 </dd></dl>
 
@@ -161,19 +209,19 @@ string representation.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.path_to_store_single_run">
-<span class="sig-name descname"><span class="pre">path_to_store_single_run</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#dicee.config.Namespace.path_to_store_single_run" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">path_to_store_single_run</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.path_to_store_single_run" title="Link to this definition"></a></dt>
 <dd><p>A single directory created that contains related data about embeddings.</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.path_single_kg">
-<span class="sig-name descname"><span class="pre">path_single_kg</span></span><a class="headerlink" href="#dicee.config.Namespace.path_single_kg" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">path_single_kg</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.path_single_kg" title="Link to this definition"></a></dt>
 <dd><p>Path of a file corresponding to the input knowledge graph</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.sparql_endpoint">
-<span class="sig-name descname"><span class="pre">sparql_endpoint</span></span><a class="headerlink" href="#dicee.config.Namespace.sparql_endpoint" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">sparql_endpoint</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.sparql_endpoint" title="Link to this definition"></a></dt>
 <dd><p>An endpoint of a triple store.</p>
 </dd></dl>
 
@@ -215,13 +263,13 @@ string representation.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.add_noise_rate">
-<span class="sig-name descname"><span class="pre">add_noise_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#dicee.config.Namespace.add_noise_rate" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">add_noise_rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.add_noise_rate" title="Link to this definition"></a></dt>
 <dd><p>The ratio of added random triples into training dataset</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.gpus">
-<span class="sig-name descname"><span class="pre">gpus</span></span><a class="headerlink" href="#dicee.config.Namespace.gpus" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">gpus</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.gpus" title="Link to this definition"></a></dt>
 <dd><p>Number GPUs to be used during training</p>
 </dd></dl>
 
@@ -277,7 +325,7 @@ string representation.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.init_param">
-<span class="sig-name descname"><span class="pre">init_param</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#dicee.config.Namespace.init_param" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">init_param</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.init_param" title="Link to this definition"></a></dt>
 <dd><p>xavier_normal or None</p>
 </dd></dl>
 
@@ -306,7 +354,7 @@ string representation.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.save_model_at_every_epoch">
-<span class="sig-name descname"><span class="pre">save_model_at_every_epoch</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#dicee.config.Namespace.save_model_at_every_epoch" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">save_model_at_every_epoch</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.save_model_at_every_epoch" title="Link to this definition"></a></dt>
 <dd><p>Not tested</p>
 </dd></dl>
 
@@ -324,13 +372,13 @@ string representation.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.sample_triples_ratio">
-<span class="sig-name descname"><span class="pre">sample_triples_ratio</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#dicee.config.Namespace.sample_triples_ratio" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">sample_triples_ratio</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.sample_triples_ratio" title="Link to this definition"></a></dt>
 <dd><p>Read some triples that are uniformly at random sampled. Ratio being between 0 and 1</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.read_only_few">
-<span class="sig-name descname"><span class="pre">read_only_few</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#dicee.config.Namespace.read_only_few" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">read_only_few</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.read_only_few" title="Link to this definition"></a></dt>
 <dd><p>Read only first few triples</p>
 </dd></dl>
 
@@ -407,13 +455,13 @@ string representation.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.block_size">
-<span class="sig-name descname"><span class="pre">block_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#dicee.config.Namespace.block_size" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">block_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.block_size" title="Link to this definition"></a></dt>
 <dd><p>block size of LLM</p>
 </dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.config.Namespace.continual_learning">
-<span class="sig-name descname"><span class="pre">continual_learning</span></span><a class="headerlink" href="#dicee.config.Namespace.continual_learning" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">continual_learning</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.config.Namespace.continual_learning" title="Link to this definition"></a></dt>
 <dd><p>Path of a pretrained model size of LLM</p>
 </dd></dl>
 
@@ -424,7 +472,6 @@ string representation.</p>
 
 </dd></dl>
 
-</section>
 </section>
 </section>
 

@@ -1,77 +1,101 @@
-:py:mod:`dicee.read_preprocess_save_load_kg.preprocess`
-=======================================================
+dicee.read_preprocess_save_load_kg.preprocess
+=============================================
 
 .. py:module:: dicee.read_preprocess_save_load_kg.preprocess
 
 
-Module Contents
----------------
-
 Classes
-~~~~~~~
+-------
 
 .. autoapisummary::
 
    dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG
 
 
+Functions
+---------
+
+.. autoapisummary::
+
+   dicee.read_preprocess_save_load_kg.preprocess.timeit
+   dicee.read_preprocess_save_load_kg.preprocess.index_triples_with_pandas
+   dicee.read_preprocess_save_load_kg.preprocess.dataset_sanity_checking
+   dicee.read_preprocess_save_load_kg.preprocess.numpy_data_type_changer
+   dicee.read_preprocess_save_load_kg.preprocess.get_er_vocab
+   dicee.read_preprocess_save_load_kg.preprocess.get_re_vocab
+   dicee.read_preprocess_save_load_kg.preprocess.get_ee_vocab
+   dicee.read_preprocess_save_load_kg.preprocess.create_constraints
+   dicee.read_preprocess_save_load_kg.preprocess.apply_reciprical_or_noise
+
+
+Module Contents
+---------------
+
+.. py:function:: timeit(func)
+
+.. py:function:: index_triples_with_pandas(train_set, entity_to_idx: dict, relation_to_idx: dict) -> pandas.core.frame.DataFrame
+
+   :param train_set: pandas dataframe
+   :param entity_to_idx: a mapping from str to integer index
+   :param relation_to_idx: a mapping from str to integer index
+   :param num_core: number of cores to be used
+   :return: indexed triples, i.e., pandas dataframe
+
+
+.. py:function:: dataset_sanity_checking(train_set: numpy.ndarray, num_entities: int, num_relations: int) -> None
+
+   :param train_set:
+   :param num_entities:
+   :param num_relations:
+   :return:
+
+
+.. py:function:: numpy_data_type_changer(train_set: numpy.ndarray, num: int) -> numpy.ndarray
+
+   Detect most efficient data type for a given triples
+   :param train_set:
+   :param num:
+   :return:
+
+
+.. py:function:: get_er_vocab(data, file_path: str = None)
+
+.. py:function:: get_re_vocab(data, file_path: str = None)
+
+.. py:function:: get_ee_vocab(data, file_path: str = None)
+
+.. py:function:: create_constraints(triples, file_path: str = None)
+
+   (1) Extract domains and ranges of relations
+   (2) Store a mapping from relations to entities that are outside of the domain and range.
+   Crete constrainted entities based on the range of relations
+   :param triples:
+   :return:
+   Tuple[dict, dict]
+
+
+.. py:function:: apply_reciprical_or_noise(add_reciprical: bool, eval_model: str, df: object = None, info: str = None)
+
+   (1) Add reciprocal triples (2) Add noisy triples
 
 
 .. py:class:: PreprocessKG(kg)
 
+   Preprocess the data in memory
 
-   Preprocess the data in memory for a knowledge graph.
-
-   This class handles the preprocessing of the knowledge graph data which includes
-   reading the data, adding noise or reciprocal triples, constructing vocabularies,
-   and indexing datasets based on the backend being used.
-
-   .. attribute:: kg
-
-      An instance representing the knowledge graph.
-
-      :type: object
 
    .. py:method:: start() -> None
 
-      Preprocess train, valid, and test datasets stored in the knowledge graph instance.
+      Preprocess train, valid and test datasets stored in knowledge graph instance
 
-      This method applies the appropriate preprocessing technique based on the backend
-      specified in the knowledge graph instance.
-
-      :param None:
+      Parameter
+      ---------
 
       :rtype: None
 
-      :raises KeyError: If the specified backend is not supported.
 
 
-   .. py:method:: preprocess_with_byte_pair_encoding() -> None
-
-      Preprocess the datasets using byte-pair encoding (BPE).
-
-      This method applies byte-pair encoding to the raw training, validation, and test sets of
-      the knowledge graph. It transforms string representations of entities and relations into
-      sequences of subword tokens. The method also handles padding of these sequences and
-      constructs the necessary mappings for entities and relations.
-
-      :param None:
-
-      :rtype: None
-
-      .. rubric:: Notes
-
-      - Byte-pair encoding is used to handle the out-of-vocabulary problem in natural language
-      processing by splitting words into more frequently occurring subword units.
-      - This method modifies the knowledge graph instance in place by setting various attributes
-      related to the byte-pair encoding such as padded sequences, mappings, and the maximum
-      length of subword tokens.
-      - The method assumes that the raw datasets are available as Pandas DataFrames within the
-      knowledge graph instance.
-      - If the 'add_reciprical' flag is set in the knowledge graph instance, reciprocal triples are
-      added to the datasets.
-      - After encoding and padding, the method also constructs mappings from the subword token
-      sequences to their corresponding integer indices.
+   .. py:method:: preprocess_with_byte_pair_encoding()
 
 
    .. py:method:: preprocess_with_byte_pair_encoding_with_padding() -> None
@@ -79,103 +103,32 @@ Classes
 
    .. py:method:: preprocess_with_pandas() -> None
 
-      Preprocess train, valid, and test datasets stored in the knowledge graph instance using pandas.
+      Preprocess train, valid and test datasets stored in knowledge graph instance with pandas
 
-      This method involves adding reciprocal or noisy triples, constructing vocabularies for entities and relations,
-      and indexing the datasets. The preprocessing is performed using the pandas library, which facilitates the handling
-      and transformation of the data.
+      (1) Add recipriocal or noisy triples
+      (2) Construct vocabulary
+      (3) Index datasets
 
-      :param None:
+      Parameter
+      ---------
 
       :rtype: None
 
-      .. rubric:: Notes
-
-      - The method begins by optionally adding reciprocal or noisy triples to the raw training, validation, and test sets.
-      - Sequential vocabulary construction is performed to create a bijection mapping of entities and relations to integer indices.
-      - The datasets (train, valid, test) are then indexed based on these mappings.
-      - The method modifies the knowledge graph instance in place by setting various attributes such as the indexed datasets,
-      the number of entities, and the number of relations.
-      - The method assumes that the raw datasets are available as pandas DataFrames within the knowledge graph instance.
-      - This preprocessing is crucial for converting the raw string-based datasets into a numerical format suitable for
-      training machine learning models.
 
 
    .. py:method:: preprocess_with_polars() -> None
 
-      Preprocess train, valid, and test datasets stored in the knowledge graph instance using Polars.
-
-      This method involves preprocessing the datasets with the Polars library, which is designed for efficient data
-      manipulation and indexing. The process includes adding reciprocal triples, indexing entities and relations,
-      and transforming the datasets from string-based to integer-based formats.
-
-      :param None:
-
-      :rtype: None
-
-      .. rubric:: Notes
-
-      - The method begins by adding reciprocal triples to the raw datasets if the 'add_reciprical' flag is set
-      in the knowledge graph instance.
-      - It then constructs a bijection mapping from entities and relations to integer indices, using the unique
-      entities and relations found in the concatenated datasets.
-      - The datasets (train, valid, test) are indexed based on these mappings and converted to NumPy arrays.
-      - The method updates the knowledge graph instance by setting attributes such as the number of entities,
-      the number of relations, and the indexed datasets.
-      - Polars is used for its performance advantages in handling large datasets and its efficient data manipulation capabilities.
-      - This preprocessing step is crucial for converting the raw string-based datasets into a numerical format suitable
-      for training machine learning models.
-
 
    .. py:method:: sequential_vocabulary_construction() -> None
 
-      Construct sequential vocabularies for entities and relations in the knowledge graph.
+      (1) Read input data into memory
+      (2) Remove triples with a condition
+      (3) Serialize vocabularies in a pandas dataframe where
+                  => the index is integer and
+                  => a single column is string (e.g. URI)
 
-      This method processes the raw training, validation, and test sets to create sequential mappings (bijection)
-      of entities and relations to integer indices. These mappings are essential for converting the string-based
-      representations of entities and relations to numerical formats that can be processed by machine learning models.
-
-      :param None:
-
-      :rtype: None
-
-      .. rubric:: Notes
-
-      - The method first concatenates the raw datasets and then creates unique lists of all entities and relations.
-      - It then assigns a unique integer index to each entity and relation, creating two dictionaries:
-      'entity_to_idx' and 'relation_to_idx'.
-      - These dictionaries are used to index entities and relations in the knowledge graph.
-      - The method updates the knowledge graph instance by setting attributes such as 'entity_to_idx',
-      'relation_to_idx', 'num_entities', and 'num_relations'.
-      - This method is a crucial preprocessing step for transforming knowledge graph data into a format suitable
-      for training and evaluating machine learning models.
-      - The method assumes that the raw datasets are available as Pandas DataFrames within the knowledge graph instance.
 
 
    .. py:method:: remove_triples_from_train_with_condition()
-
-      Remove specific triples from the training set based on a predefined condition.
-
-      This method filters out triples from the raw training dataset of the knowledge graph based on
-      a condition, such as the frequency of entities or relations. This is often used to refine the
-      training data, for instance, by removing infrequent entities or relations that may not be
-      significant for the model's training.
-
-      :param None:
-
-      :rtype: None
-
-      .. rubric:: Notes
-
-      - The method specifically targets the removal of triples that contain entities or relations
-      occurring below a certain frequency threshold.
-      - The frequency threshold is determined by the 'min_freq_for_vocab' attribute of the knowledge graph instance.
-      - The method updates the knowledge graph instance by modifying the 'raw_train_set' attribute,
-      which holds the raw training dataset.
-      - This preprocessing step is crucial for ensuring the quality of the training data and can impact
-      the performance and generalization ability of the resulting machine learning models.
-      - The method assumes that the raw training dataset is available as a Pandas DataFrame within the
-      knowledge graph instance.
-
 
 

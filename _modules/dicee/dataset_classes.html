@@ -6,7 +6,7 @@
   <title>dicee.dataset_classes &mdash; DICE Embeddings 0.1.3.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8775fe07" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
-      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=eafc0fe6" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=fd3f3429" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../_static/theme_tweak.css?v=f0ad19f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8775fe07" />
@@ -19,7 +19,7 @@
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
         <script src="../../_static/documentation_options.js?v=c6726a90"></script>
-        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -59,7 +59,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#docker">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#how-to-cite">How to cite</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../autoapi/dicee/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/dicee/index.html">dicee</a></li>
 </ul>
 
         </div>
@@ -97,31 +97,10 @@
 
 
 <div class="viewcode-block" id="reload_dataset">
-<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.reload_dataset">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.dataset_classes.reload_dataset">[docs]</a>
 <span class="nd">@timeit</span>
-<span class="k">def</span> <span class="nf">reload_dataset</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">scoring_technique</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
-                   <span class="n">neg_ratio</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">label_smoothing_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Reloads the dataset from disk and constructs a PyTorch dataset for training.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    path : str</span>
-<span class="sd">        The path to the directory where the dataset is stored.</span>
-<span class="sd">    form_of_labelling : str</span>
-<span class="sd">        The form of labelling used in the dataset. Determines how data points are represented.</span>
-<span class="sd">    scoring_technique : str</span>
-<span class="sd">        The scoring technique used for evaluating the embeddings.</span>
-<span class="sd">    neg_ratio : float</span>
-<span class="sd">        The ratio of negative samples to positive samples in the dataset.</span>
-<span class="sd">    label_smoothing_rate : float</span>
-<span class="sd">        The rate of label smoothing applied to the dataset.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    torch.utils.data.Dataset</span>
-<span class="sd">        A PyTorch dataset object ready for training.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="k">def</span> <span class="nf">reload_dataset</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">,</span> <span class="n">scoring_technique</span><span class="p">,</span> <span class="n">neg_ratio</span><span class="p">,</span> <span class="n">label_smoothing_rate</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Reload the files from disk to construct the Pytorch dataset &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">construct_dataset</span><span class="p">(</span><span class="n">train_set</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span> <span class="o">+</span> <span class="s1">&#39;/train_set.npy&#39;</span><span class="p">),</span>
                              <span class="n">valid_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                              <span class="n">test_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -134,7 +113,7 @@
 
 
 <div class="viewcode-block" id="construct_dataset">
-<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.construct_dataset">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.dataset_classes.construct_dataset">[docs]</a>
 <span class="nd">@timeit</span>
 <span class="k">def</span> <span class="nf">construct_dataset</span><span class="p">(</span><span class="o">*</span><span class="p">,</span>
                       <span class="n">train_set</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">],</span>
@@ -152,45 +131,6 @@
                       <span class="n">byte_pair_encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                       <span class="n">block_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span>
                       <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Constructs a dataset based on the specified parameters and returns a PyTorch Dataset object.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    train_set : Union[np.ndarray, list]</span>
-<span class="sd">        The training set consisting of triples or tokens.</span>
-<span class="sd">    valid_set : Optional</span>
-<span class="sd">        The validation set. Not currently used in dataset construction.</span>
-<span class="sd">    test_set : Optional</span>
-<span class="sd">        The test set. Not currently used in dataset construction.</span>
-<span class="sd">    ordered_bpe_entities : Optional</span>
-<span class="sd">        Ordered byte pair encoding entities for the dataset.</span>
-<span class="sd">    train_target_indices : Optional</span>
-<span class="sd">        Indices of target entities or relations for training.</span>
-<span class="sd">    target_dim : int, optional</span>
-<span class="sd">        The dimension of target entities or relations.</span>
-<span class="sd">    entity_to_idx : dict</span>
-<span class="sd">        A dictionary mapping entity strings to indices.</span>
-<span class="sd">    relation_to_idx : dict</span>
-<span class="sd">        A dictionary mapping relation strings to indices.</span>
-<span class="sd">    form_of_labelling : str</span>
-<span class="sd">        Specifies the form of labelling, such as &#39;EntityPrediction&#39; or &#39;RelationPrediction&#39;.</span>
-<span class="sd">    scoring_technique : str</span>
-<span class="sd">        The scoring technique used for generating negative samples or evaluating the model.</span>
-<span class="sd">    neg_ratio : int</span>
-<span class="sd">        The ratio of negative samples to positive samples.</span>
-<span class="sd">    label_smoothing_rate : float</span>
-<span class="sd">        The rate of label smoothing applied to labels.</span>
-<span class="sd">    byte_pair_encoding : Optional</span>
-<span class="sd">        Indicates if byte pair encoding is used.</span>
-<span class="sd">    block_size : int, optional</span>
-<span class="sd">        The block size for transformer-based models.</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    torch.utils.data.Dataset</span>
-<span class="sd">        A PyTorch dataset object ready for model training.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">ordered_bpe_entities</span> <span class="ow">and</span> <span class="n">byte_pair_encoding</span> <span class="ow">and</span> <span class="n">scoring_technique</span> <span class="o">==</span> <span class="s1">&#39;NegSample&#39;</span><span class="p">:</span>
         <span class="n">train_set</span> <span class="o">=</span> <span class="n">BPE_NegativeSamplingDataset</span><span class="p">(</span>
             <span class="n">train_set</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">),</span>
@@ -252,30 +192,6 @@
 <div class="viewcode-block" id="BPE_NegativeSamplingDataset">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.BPE_NegativeSamplingDataset">[docs]</a>
 <span class="k">class</span> <span class="nc">BPE_NegativeSamplingDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A PyTorch Dataset for handling negative sampling with Byte Pair Encoding (BPE) entities.</span>
-
-<span class="sd">    This dataset extends the PyTorch Dataset class to provide functionality for negative sampling</span>
-<span class="sd">    in the context of knowledge graph embeddings. It uses byte pair encoding for entities</span>
-<span class="sd">    to handle large vocabularies efficiently.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    train_set : torch.LongTensor</span>
-<span class="sd">        A tensor containing the training set triples with byte pair encoded entities and relations.</span>
-<span class="sd">        The shape of the tensor is [N, 3], where N is the number of triples.</span>
-<span class="sd">    ordered_shaped_bpe_entities : torch.LongTensor</span>
-<span class="sd">        A tensor containing the ordered and shaped byte pair encoded entities.</span>
-<span class="sd">    neg_ratio : int</span>
-<span class="sd">        The ratio of negative samples to generate per positive sample.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    num_bpe_entities : int</span>
-<span class="sd">        The number of byte pair encoded entities.</span>
-<span class="sd">    num_datapoints : int</span>
-<span class="sd">        The number of data points (triples) in the training set.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">ordered_shaped_bpe_entities</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">neg_ratio</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span>
@@ -288,68 +204,19 @@
 
 <div class="viewcode-block" id="BPE_NegativeSamplingDataset.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.BPE_NegativeSamplingDataset.__len__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the total number of data points in the dataset.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        int</span>
-<span class="sd">            The number of data points.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_datapoints</span></div>
 
 
 <div class="viewcode-block" id="BPE_NegativeSamplingDataset.__getitem__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.BPE_NegativeSamplingDataset.__getitem__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves the BPE-encoded triple and its corresponding label at the specified index.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        idx : int</span>
-<span class="sd">            Index of the triple to retrieve.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        tuple</span>
-<span class="sd">            A tuple containing the following elements:</span>
-<span class="sd">            - The BPE-encoded triple as a torch.Tensor of shape (3,).</span>
-<span class="sd">            - The label for the triple, where positive examples have a label of 1 and negative examples have a label</span>
-<span class="sd">              of 0, as a torch.Tensor.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="BPE_NegativeSamplingDataset.collate_fn">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.BPE_NegativeSamplingDataset.collate_fn">[docs]</a>
-    <span class="k">def</span> <span class="nf">collate_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_shaped_bpe_triples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Collate function for the BPE_NegativeSamplingDataset. It processes a batch of byte pair encoded triples, </span>
-<span class="sd">        performs negative sampling, and returns the batch along with corresponding labels.</span>
-
-<span class="sd">        This function is designed to be used with a PyTorch DataLoader. It takes a list of byte pair encoded triples</span>
-<span class="sd">        as input and generates negative samples according to the specified negative sampling ratio. The function</span>
-<span class="sd">        ensures that the negative samples are combined with the original triples to form a single batch, which is</span>
-<span class="sd">        suitable for training a knowledge graph embedding model.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        batch_shaped_bpe_triples : List[Tuple[torch.Tensor, torch.Tensor]]</span>
-<span class="sd">            A list of tuples, where each tuple contains byte pair encoded representations of head entities, relations,</span>
-<span class="sd">            and tail entities for a batch of triples.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Tuple[torch.Tensor, torch.Tensor]</span>
-<span class="sd">            A tuple containing two elements:</span>
-<span class="sd">            - The first element is a torch.Tensor of shape [N * (1 + neg_ratio), 3] that contains both the original</span>
-<span class="sd">            byte pair encoded triples and the generated negative samples. N is the original number of triples in the</span>
-<span class="sd">            batch, and neg_ratio is the negative sampling ratio.</span>
-<span class="sd">            - The second element is a torch.Tensor of shape [N * (1 + neg_ratio)] that contains the labels for each</span>
-<span class="sd">            triple in the batch. Positive samples are labeled as 1, and negative samples are labeled as 0.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">collate_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_shaped_bpe_triples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]):</span>
         <span class="n">batch_of_bpe_triples</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">batch_shaped_bpe_triples</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="n">size_of_batch</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">token_length</span> <span class="o">=</span> <span class="n">batch_of_bpe_triples</span><span class="o">.</span><span class="n">shape</span>
@@ -382,44 +249,6 @@
 <div class="viewcode-block" id="MultiLabelDataset">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.MultiLabelDataset">[docs]</a>
 <span class="k">class</span> <span class="nc">MultiLabelDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A dataset class for multi-label knowledge graph embedding tasks. This dataset is designed for models where</span>
-<span class="sd">    the output involves predicting multiple labels (entities or relations) for a given input (e.g., predicting all</span>
-<span class="sd">    possible tail entities given a head entity and a relation).</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    train_set : torch.LongTensor</span>
-<span class="sd">        A tensor containing the training set triples with byte pair encoding, shaped as [num_triples, 3], </span>
-<span class="sd">        where each triple is [head, relation, tail].</span>
-<span class="sd">    </span>
-<span class="sd">    train_indices_target : torch.LongTensor</span>
-<span class="sd">        A tensor where each row corresponds to the indices of the target labels for each training example. </span>
-<span class="sd">        The length of this tensor must match the number of triples in `train_set`.</span>
-<span class="sd">    </span>
-<span class="sd">    target_dim : int</span>
-<span class="sd">        The dimensionality of the target space, typically the total number of possible labels (entities or relations).</span>
-<span class="sd">    </span>
-<span class="sd">    torch_ordered_shaped_bpe_entities : torch.LongTensor</span>
-<span class="sd">        A tensor containing ordered byte pair encoded entities used for creating embeddings. </span>
-<span class="sd">        This tensor is not directly used in generating targets but may be utilized for additional processing </span>
-<span class="sd">        or embedding lookup.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    num_datapoints : int</span>
-<span class="sd">        The number of data points (triples) in the dataset.</span>
-<span class="sd">    </span>
-<span class="sd">    collate_fn : None or callable</span>
-<span class="sd">        Optional custom collate function to be used with a PyTorch DataLoader. </span>
-<span class="sd">        It&#39;s set to None by default and can be specified after initializing the dataset if needed.</span>
-<span class="sd">        </span>
-<span class="sd">    Note</span>
-<span class="sd">    ----</span>
-<span class="sd">    This dataset is particularly suited for KvsAll (K entities vs. All entities) and AllvsAll training strategies </span>
-<span class="sd">    in knowledge graph embedding, where a model predicts a set of possible tail entities given a head entity </span>
-<span class="sd">    and a relation (or vice versa), and where each training example can have multiple correct labels.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">train_indices_target</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">target_dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
                  <span class="n">torch_ordered_shaped_bpe_entities</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -435,37 +264,13 @@
 
 <div class="viewcode-block" id="MultiLabelDataset.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.MultiLabelDataset.__len__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the total number of data points in the dataset.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        int</span>
-<span class="sd">            The number of data points.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_datapoints</span></div>
 
 
 <div class="viewcode-block" id="MultiLabelDataset.__getitem__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.MultiLabelDataset.__getitem__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves the knowledge graph triple and its corresponding multi-label target vector at the specified index.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        idx : int</span>
-<span class="sd">            Index of the triple to retrieve.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        tuple</span>
-<span class="sd">            A tuple containing the following elements:</span>
-<span class="sd">            - The triple as a torch.Tensor of shape (3,).</span>
-<span class="sd">            - The multi-label target vector as a torch.Tensor of shape (`target_dim`,), where each element</span>
-<span class="sd">              indicates the presence (1) or absence (0) of a label for the given triple.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="c1"># (1) Initialize as all zeros.</span>
         <span class="n">y_vec</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_dim</span><span class="p">)</span>
         <span class="c1"># (2) Indices of labels.</span>
@@ -482,37 +287,27 @@
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.MultiClassClassificationDataset">[docs]</a>
 <span class="k">class</span> <span class="nc">MultiClassClassificationDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A dataset class for multi-class classification tasks, specifically designed for the 1vsALL training strategy</span>
-<span class="sd">    in knowledge graph embedding models. This dataset supports tasks where the model predicts a single correct</span>
-<span class="sd">    label from all possible labels for a given input.</span>
+<span class="sd">       Dataset for the 1vsALL training strategy</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    subword_units : np.ndarray</span>
-<span class="sd">        An array of subword unit indices representing the training data. Each row in the array corresponds to a</span>
-<span class="sd">        sequence of subword units (e.g., Byte Pair Encoding tokens) that have been converted to their respective</span>
-<span class="sd">        numeric indices.</span>
-<span class="sd">    </span>
-<span class="sd">    block_size : int, optional</span>
-<span class="sd">        The size of each sequence of subword units to be used as input to the model. This defines the length of</span>
-<span class="sd">        the sequences that the model will receive as input, by default 8.</span>
+<span class="sd">       Parameters</span>
+<span class="sd">       ----------</span>
+<span class="sd">       train_set_idx</span>
+<span class="sd">           Indexed triples for the training.</span>
+<span class="sd">       entity_idxs</span>
+<span class="sd">           mapping.</span>
+<span class="sd">       relation_idxs</span>
+<span class="sd">           mapping.</span>
+<span class="sd">       form</span>
+<span class="sd">           ?</span>
+<span class="sd">       num_workers</span>
+<span class="sd">           int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader</span>
 
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    num_of_data_points : int</span>
-<span class="sd">        The number of sequences or data points available in the dataset, calculated based on the length of the</span>
-<span class="sd">        `subword_units` array and the `block_size`.</span>
-<span class="sd">    </span>
-<span class="sd">    collate_fn : None or callable</span>
-<span class="sd">        An optional custom collate function to be used with a PyTorch DataLoader. It&#39;s set to None by default</span>
-<span class="sd">        and can be specified after initializing the dataset if needed.</span>
-<span class="sd">        </span>
-<span class="sd">    Note</span>
-<span class="sd">    ----</span>
-<span class="sd">    This dataset is tailored for training knowledge graph embedding models on tasks where the output is a single</span>
-<span class="sd">    label out of many possible labels (1vsALL strategy). It is especially suited for models trained with subword</span>
-<span class="sd">    tokenization methods like Byte Pair Encoding (BPE), where inputs are sequences of subword unit indices.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+
+
+<span class="sd">       Returns</span>
+<span class="sd">       -------</span>
+<span class="sd">       torch.utils.data.Dataset</span>
+<span class="sd">       &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subword_units</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">block_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -525,37 +320,13 @@
 
 <div class="viewcode-block" id="MultiClassClassificationDataset.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.MultiClassClassificationDataset.__len__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the total number of sequences or data points available in the dataset.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        int</span>
-<span class="sd">            The number of sequences or data points.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_of_data_points</span></div>
 
 
 <div class="viewcode-block" id="MultiClassClassificationDataset.__getitem__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.MultiClassClassificationDataset.__getitem__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves an input sequence and its subsequent target sequence for next token prediction.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        idx : int</span>
-<span class="sd">            The starting index for the sequence to be retrieved from the dataset.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Tuple[torch.Tensor, torch.Tensor]</span>
-<span class="sd">            A tuple containing two elements:</span>
-<span class="sd">            - `x`: The input sequence as a torch.Tensor of shape (`block_size`,).</span>
-<span class="sd">            - `y`: The target sequence as a torch.Tensor of shape (`block_size`,), offset by one position</span>
-<span class="sd">              from the input sequence.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">[</span><span class="n">idx</span><span class="p">:</span><span class="n">idx</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span><span class="p">]</span>
         <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span> <span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span></div>
@@ -567,37 +338,27 @@
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.OnevsAllDataset">[docs]</a>
 <span class="k">class</span> <span class="nc">OnevsAllDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A dataset for the One-vs-All (1vsAll) training strategy designed for knowledge graph embedding tasks.</span>
-<span class="sd">    This dataset structure is particularly suited for models predicting a single correct label (entity) out of</span>
-<span class="sd">    all possible entities for a given pair of head entity and relation.</span>
+<span class="sd">       Dataset for the 1vsALL training strategy</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    train_set_idx : np.ndarray</span>
-<span class="sd">        An array containing indexed triples from the knowledge graph. Each row represents a triple consisting of</span>
-<span class="sd">        indices for the head entity, relation, and tail entity, respectively.</span>
-<span class="sd">    </span>
-<span class="sd">    entity_idxs : dict</span>
-<span class="sd">        A dictionary mapping entity names to their corresponding unique integer indices. This is used to determine</span>
-<span class="sd">        the dimensionality of the target vector in the 1vsAll setting.</span>
+<span class="sd">       Parameters</span>
+<span class="sd">       ----------</span>
+<span class="sd">       train_set_idx</span>
+<span class="sd">           Indexed triples for the training.</span>
+<span class="sd">       entity_idxs</span>
+<span class="sd">           mapping.</span>
+<span class="sd">       relation_idxs</span>
+<span class="sd">           mapping.</span>
+<span class="sd">       form</span>
+<span class="sd">           ?</span>
+<span class="sd">       num_workers</span>
+<span class="sd">           int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader</span>
 
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    train_data : torch.LongTensor</span>
-<span class="sd">        A tensor version of `train_set_idx`, prepared for use with PyTorch models.</span>
-<span class="sd">    </span>
-<span class="sd">    target_dim : int</span>
-<span class="sd">        The dimensionality of the target vector, equivalent to the total number of unique entities in the dataset.</span>
-<span class="sd">    </span>
-<span class="sd">    collate_fn : None or callable</span>
-<span class="sd">        An optional custom collate function for use with a PyTorch DataLoader. By default, it is set to None and can</span>
-<span class="sd">        be specified after initializing the dataset.</span>
 
-<span class="sd">    Note</span>
-<span class="sd">    ----</span>
-<span class="sd">    This dataset is optimized for training knowledge graph embedding models using the 1vsAll strategy, where the</span>
-<span class="sd">    model aims to correctly predict the tail entity from all possible entities given the head entity and relation.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="sd">       Returns</span>
+<span class="sd">       -------</span>
+<span class="sd">       torch.utils.data.Dataset</span>
+<span class="sd">       &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">entity_idxs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -610,38 +371,12 @@
 <div class="viewcode-block" id="OnevsAllDataset.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.OnevsAllDataset.__len__">[docs]</a>
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the total number of triples in the dataset.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        int</span>
-<span class="sd">            The total number of triples.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="OnevsAllDataset.__getitem__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.OnevsAllDataset.__getitem__">[docs]</a>
     <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves the input data and target vector for the triple at index `idx`.</span>
-
-<span class="sd">        The input data consists of the indices for the head entity and relation, while the target vector is a</span>
-<span class="sd">        one-hot encoded vector with a `1` at the position corresponding to the tail entity&#39;s index and `0`s elsewhere.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        idx : int</span>
-<span class="sd">            The index of the triple to retrieve.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Tuple[torch.Tensor, torch.Tensor]</span>
-<span class="sd">            A tuple containing two elements:</span>
-<span class="sd">            - The input data as a torch.Tensor of shape (2,), containing the indices of the head entity and relation.</span>
-<span class="sd">            - The target vector as a torch.Tensor of shape (`target_dim`,), a one-hot encoded vector for the tail entity.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">y_vec</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_dim</span><span class="p">)</span>
         <span class="n">y_vec</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="mi">2</span><span class="p">]]</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">],</span> <span class="n">y_vec</span></div>
@@ -652,59 +387,40 @@
 <div class="viewcode-block" id="KvsAll">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.KvsAll">[docs]</a>
 <span class="k">class</span> <span class="nc">KvsAll</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Creates a dataset for K-vs-All training strategy, inheriting from torch.utils.data.Dataset.</span>
-<span class="sd">    This dataset is tailored for training scenarios where a model predicts all valid tail entities</span>
-<span class="sd">    given a head entity and relation pair or vice versa. The labels are multi-hot encoded to represent</span>
-<span class="sd">    the presence of multiple valid entities.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Creates a dataset for KvsAll training by inheriting from torch.utils.data.Dataset.</span>
+<span class="sd">    Let D denote a dataset for KvsAll training and be defined as D:= {(x,y)_i}_i ^N, where</span>
+<span class="sd">    x: (h,r) is an unique tuple of an entity h \in E and a relation r \in R that has been seed in the input graph.</span>
+<span class="sd">    y: denotes a multi-label vector \in [0,1]^{|E|} is a binary label. \forall y_i =1 s.t. (h r E_i) \in KG</span>
 
-<span class="sd">    Let \(D\) denote a dataset for KvsAll training and be defined as \(D := \{(x, y)_i\}_{i=1}^{N}\), where:</span>
-<span class="sd">    \(x: (h, r)\) is a unique tuple of an entity \(h \in E\) and a relation \(r \in R\) that has been seen in the input graph.</span>
-<span class="sd">    \(y\) denotes a multi-label vector \(\in [0, 1]^{|E|}\) is a binary label. For all \(y_i = 1\) s.t. \((h, r, E_i) \in KG\).</span>
+<span class="sd">    .. note::</span>
+<span class="sd">        TODO</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    train_set_idx : numpy.ndarray</span>
-<span class="sd">        A numpy array of shape `(n, 3)` representing `n` triples, where each triple consists of</span>
-<span class="sd">        integer indices corresponding to a head entity, a relation, and a tail entity.</span>
-<span class="sd">    entity_idxs : dict</span>
-<span class="sd">        A dictionary mapping entity names (strings) to their unique integer identifiers.</span>
-<span class="sd">    relation_idxs : dict</span>
-<span class="sd">        A dictionary mapping relation names (strings) to their unique integer identifiers.</span>
-<span class="sd">    form : str</span>
-<span class="sd">        A string indicating the prediction form, either &#39;RelationPrediction&#39; or &#39;EntityPrediction&#39;.</span>
-<span class="sd">    store : dict, optional</span>
-<span class="sd">        A precomputed dictionary storing the training data points. If provided, it should map</span>
-<span class="sd">        tuples of entity and relation indices to lists of entity indices. If `None`, the store</span>
-<span class="sd">        will be constructed from `train_set_idx`.</span>
-<span class="sd">    label_smoothing_rate : float, default=0.0</span>
-<span class="sd">        A float representing the rate of label smoothing to be applied. A value of 0 means no</span>
-<span class="sd">        label smoothing is applied.</span>
+<span class="sd">        n by 3 array representing n triples</span>
 
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    train_data : torch.LongTensor</span>
-<span class="sd">        Tensor containing the input features for the model, typically consisting of pairs of</span>
-<span class="sd">        entity and relation indices.</span>
-<span class="sd">    train_target : torch.LongTensor</span>
-<span class="sd">        Tensor containing the target labels for the model, multi-hot encoded to indicate the</span>
-<span class="sd">        presence of multiple valid entities.</span>
-<span class="sd">    target_dim : int</span>
-<span class="sd">        The dimensionality of the target labels, corresponding to the number of unique entities</span>
-<span class="sd">        or relations, depending on the `form`.</span>
-<span class="sd">    collate_fn : None</span>
-<span class="sd">        Placeholder for a custom collate function to be used with a PyTorch DataLoader. This is</span>
-<span class="sd">        typically set to `None` and can be overridden as needed.</span>
-<span class="sd">    </span>
-<span class="sd">    Note</span>
+<span class="sd">    entity_idxs : dictonary</span>
+<span class="sd">        string representation of an entity to its integer id</span>
+
+<span class="sd">    relation_idxs : dictonary</span>
+<span class="sd">        string representation of a relation to its integer id</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    self : torch.utils.data.Dataset</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    Notes</span>
 <span class="sd">    -----</span>
-<span class="sd">    The K-vs-All training strategy is used in scenarios where the task is to predict multiple</span>
-<span class="sd">    valid entities given a single entity and relation pair. This dataset supports both predicting</span>
-<span class="sd">    multiple valid tail entities given a head entity and relation (EntityPrediction) and predicting</span>
-<span class="sd">    multiple valid relations given a pair of entities (RelationPrediction).</span>
 
-<span class="sd">    The label smoothing rate can be adjusted to control the degree of smoothing applied to the</span>
-<span class="sd">    target labels, which can help with regularization and model generalization.</span>
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; a = KvsAll()</span>
+<span class="sd">    &gt;&gt;&gt; a</span>
+<span class="sd">    ? array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">entity_idxs</span><span class="p">,</span> <span class="n">relation_idxs</span><span class="p">,</span> <span class="n">form</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
@@ -753,42 +469,14 @@
 
 <div class="viewcode-block" id="KvsAll.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.KvsAll.__len__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the number of items in the dataset.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        int</span>
-<span class="sd">            The total number of items.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_target</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="KvsAll.__getitem__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.KvsAll.__getitem__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves the input pair (head entity, relation) and the corresponding multi-label target vector for the</span>
-<span class="sd">        item at index `idx`.</span>
-
-<span class="sd">        The target vector is a binary vector of length `target_dim`, where each element indicates the presence or</span>
-<span class="sd">        absence of a tail entity for the given input pair.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        idx : int</span>
-<span class="sd">            The index of the item to retrieve.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Tuple[torch.Tensor, torch.Tensor]</span>
-<span class="sd">            A tuple containing two elements:</span>
-<span class="sd">            - The input pair as a torch.Tensor of shape (2,), containing the indices of the head entity and relation.</span>
-<span class="sd">            - The multi-label target vector as a torch.Tensor of shape (`target_dim`,), indicating the presence or</span>
-<span class="sd">              absence of each possible tail entity.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="c1"># 1. Initialize a vector of output.</span>
         <span class="n">y_vec</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_dim</span><span class="p">)</span>
         <span class="n">y_vec</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">train_target</span><span class="p">[</span><span class="n">idx</span><span class="p">]]</span> <span class="o">=</span> <span class="mf">1.0</span>
@@ -803,42 +491,41 @@
 <div class="viewcode-block" id="AllvsAll">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.AllvsAll">[docs]</a>
 <span class="k">class</span> <span class="nc">AllvsAll</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; </span>
-<span class="sd">    A dataset class for the All-versus-All (AllvsAll) training strategy suitable for knowledge graph embedding models.</span>
-<span class="sd">    This strategy considers all possible pairs of entities and relations, regardless of whether they exist in the</span>
-<span class="sd">    knowledge graph, to predict the associated tail entities.</span>
-<span class="sd">    </span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Creates a dataset for AllvsAll training by inheriting from torch.utils.data.Dataset.</span>
 <span class="sd">    Let D denote a dataset for AllvsAll training and be defined as D:= {(x,y)_i}_i ^N, where</span>
 <span class="sd">    x: (h,r) is a possible unique tuple of an entity h \in E and a relation r \in R. Hence N = |E| x |R|</span>
-<span class="sd">    y: denotes a multi-label vector \in [0,1]^{|E|} is a binary label. \forall y_i =1 s.t. (h, r, E_i) \in KG.</span>
-<span class="sd">    This setup extends beyond observed triples to include all possible combinations of entities and relations,</span>
-<span class="sd">    marking non-existent combinations as negatives. It aims to enrich the training data with hard negatives.</span>
+<span class="sd">    y: denotes a multi-label vector \in [0,1]^{|E|} is a binary label. \forall y_i =1 s.t. (h r E_i) \in KG</span>
+
+<span class="sd">    .. note::</span>
+<span class="sd">        AllvsAll extends KvsAll via none existing (h,r). Hence, it adds data points that are labelled without 1s,</span>
+<span class="sd">         only with 0s.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    train_set_idx : numpy.ndarray</span>
-<span class="sd">        An array of shape `(n, 3)`, where each row represents a triple (head entity index, relation index,</span>
-<span class="sd">        tail entity index).</span>
-<span class="sd">    entity_idxs : dict</span>
-<span class="sd">        A dictionary mapping entity names to their unique integer indices.</span>
-<span class="sd">    relation_idxs : dict</span>
-<span class="sd">        A dictionary mapping relation names to their unique integer indices.</span>
-<span class="sd">    label_smoothing_rate : float, default=0.0</span>
-<span class="sd">        A parameter for label smoothing to mitigate overfitting by softening the hard labels.</span>
+<span class="sd">        n by 3 array representing n triples</span>
 
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    train_data : torch.LongTensor</span>
-<span class="sd">        A tensor containing all possible pairs of entities and relations derived from the input triples.</span>
-<span class="sd">    train_target : Union[np.ndarray, list]</span>
-<span class="sd">        A target structure (either a Numpy array or a list) indicating the existence of a tail entity for</span>
-<span class="sd">        each head entity and relation pair. It supports multi-label classification where a pair can have</span>
-<span class="sd">        multiple correct tail entities.</span>
-<span class="sd">    target_dim : int</span>
-<span class="sd">        The dimension of the target vector, equal to the total number of unique entities.</span>
-<span class="sd">    collate_fn : None or callable</span>
-<span class="sd">        An optional function to merge a list of samples into a batch for loading. If not provided, the default</span>
-<span class="sd">        collate function of PyTorch&#39;s DataLoader will be used.</span>
+<span class="sd">    entity_idxs : dictonary</span>
+<span class="sd">        string representation of an entity to its integer id</span>
+
+<span class="sd">    relation_idxs : dictonary</span>
+<span class="sd">        string representation of a relation to its integer id</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    self : torch.utils.data.Dataset</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; a = AllvsAll()</span>
+<span class="sd">    &gt;&gt;&gt; a</span>
+<span class="sd">    ? array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">entity_idxs</span><span class="p">,</span> <span class="n">relation_idxs</span><span class="p">,</span>
@@ -874,40 +561,14 @@
 
 <div class="viewcode-block" id="AllvsAll.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.AllvsAll.__len__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the number of items in the dataset, including both existing and potential triples.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        int</span>
-<span class="sd">            The total number of items.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_target</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="AllvsAll.__getitem__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.AllvsAll.__getitem__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves the input pair (head entity, relation) and the corresponding multi-label target vector for the</span>
-<span class="sd">        item at index `idx`. The target vector is a binary vector of length `target_dim`, where each element indicates</span>
-<span class="sd">        the presence or absence of a tail entity for the given input pair, including negative samples.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        idx : int</span>
-<span class="sd">            The index of the item to retrieve.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Tuple[torch.Tensor, torch.Tensor]</span>
-<span class="sd">            A tuple containing two elements:</span>
-<span class="sd">            - The input pair as a torch.Tensor of shape (2,), containing the indices of the head entity and relation.</span>
-<span class="sd">            - The multi-label target vector as a torch.Tensor of shape (`target_dim`,), indicating the presence or</span>
-<span class="sd">              absence of each possible tail entity, including negative samples.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="c1"># 1. Initialize a vector of output.</span>
         <span class="n">y_vec</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_dim</span><span class="p">)</span>
         <span class="n">existing_indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_target</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
@@ -925,44 +586,32 @@
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.KvsSampleDataset">[docs]</a>
 <span class="k">class</span> <span class="nc">KvsSampleDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Constructs a dataset for KvsSample training strategy, specifically designed for knowledge graph embedding models.</span>
-<span class="sd">    This dataset formulation is aimed at handling the imbalance between positive and negative examples for each</span>
-<span class="sd">    (head, relation) pair by subsampling tail entities. The subsampling ensures a balanced representation of positive</span>
-<span class="sd">    and negative examples in each training batch, according to the specified negative sampling ratio.</span>
-
-<span class="sd">    The dataset is defined as \(D:= \{(x,y)_i\}_{i=1}^{N}\), where:</span>
-<span class="sd">        - \(x: (h,r)\) is a unique head entity \(h \in E\) and a relation \(r \in R\).</span>
-<span class="sd">        - \(y \in [0,1]^{|E|}\) is a binary label vector. For all \(y_i = 1\) such that \((h, r, E_i) \in KG\).</span>
-
-<span class="sd">    At each mini-batch construction, we subsample \(y\), hence \(|new_y| \ll |E|\).</span>
-<span class="sd">    The new \(y\) contains all 1&#39;s if \(sum(y) &lt;\) neg_sample_ratio, otherwise, it contains a balanced mix of 1&#39;s and 0&#39;s.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    train_set : np.ndarray</span>
-<span class="sd">        An array of shape \((n, 3)\), where \(n\) is the number of triples in the dataset. Each row in the array</span>
-<span class="sd">        represents a triple \((h, r, t)\), consisting of head entity index \(h\), relation index \(r\), and</span>
-<span class="sd">        tail entity index \(t\).</span>
-<span class="sd">    num_entities : int</span>
-<span class="sd">        The total number of unique entities in the dataset.</span>
-<span class="sd">    num_relations : int</span>
-<span class="sd">        The total number of unique relations in the dataset.</span>
-<span class="sd">    neg_sample_ratio : int</span>
-<span class="sd">        The ratio of negative samples to positive samples for each (head, relation) pair. If the number of</span>
-<span class="sd">        available positive samples is less than this ratio, additional negative samples are generated to meet the ratio.</span>
-<span class="sd">    label_smoothing_rate : float, default=0.0</span>
-<span class="sd">        A parameter for label smoothing, aiming to mitigate overfitting by softening the hard labels. The labels</span>
-<span class="sd">        are adjusted towards a uniform distribution, with the smoothing rate determining the degree of softening.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    train_data : torch.IntTensor</span>
-<span class="sd">        A tensor containing the (head, relation) pairs derived from the input triples, used to index the training set.</span>
-<span class="sd">    train_target : list of numpy.ndarray</span>
-<span class="sd">        A list where each element corresponds to the tail entity indices associated with a given (head, relation) pair.</span>
-<span class="sd">    collate_fn : None or callable</span>
-<span class="sd">        A function to merge a list of samples to form a batch. If None, PyTorch&#39;s default collate function is used.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    KvsSample a Dataset:</span>
+<span class="sd">        D:= {(x,y)_i}_i ^N, where</span>
+<span class="sd">            . x:(h,r) is a unique h \in E and a relation r \in R and</span>
+<span class="sd">            . y \in [0,1]^{|E|} is a binary label. \forall y_i =1 s.t. (h r E_i) \in KG</span>
+<span class="sd">           At each mini-batch construction, we subsample(y), hence n</span>
+<span class="sd">            |new_y| &lt;&lt; |E|</span>
+<span class="sd">            new_y contains all 1&#39;s if sum(y)&lt; neg_sample ratio</span>
+<span class="sd">            new_y contains</span>
+<span class="sd">       Parameters</span>
+<span class="sd">       ----------</span>
+<span class="sd">       train_set_idx</span>
+<span class="sd">           Indexed triples for the training.</span>
+<span class="sd">       entity_idxs</span>
+<span class="sd">           mapping.</span>
+<span class="sd">       relation_idxs</span>
+<span class="sd">           mapping.</span>
+<span class="sd">       form</span>
+<span class="sd">           ?</span>
+<span class="sd">       store</span>
+<span class="sd">            ?</span>
+<span class="sd">       label_smoothing_rate</span>
+<span class="sd">           ?</span>
+<span class="sd">       Returns</span>
+<span class="sd">       -------</span>
+<span class="sd">       torch.utils.data.Dataset</span>
+<span class="sd">       &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">,</span> <span class="n">num_relations</span><span class="p">,</span> <span class="n">neg_sample_ratio</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                  <span class="n">label_smoothing_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">):</span>
@@ -999,14 +648,6 @@
 <div class="viewcode-block" id="KvsSampleDataset.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.KvsSampleDataset.__len__">[docs]</a>
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the total number of unique (head, relation) pairs in the dataset.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        int</span>
-<span class="sd">            The number of unique (head, relation) pairs.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_target</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">)</span></div>
 
@@ -1014,25 +655,6 @@
 <div class="viewcode-block" id="KvsSampleDataset.__getitem__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.KvsSampleDataset.__getitem__">[docs]</a>
     <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves the data for the given index, including the (head, relation) pair, selected tail entity indices,</span>
-<span class="sd">        and their labels. Positive examples are sampled from the training set, and negative examples are generated</span>
-<span class="sd">        by randomly selecting tail entities not associated with the (head, relation) pair.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        idx : int</span>
-<span class="sd">            The index of the (head, relation) pair in the dataset.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        tuple</span>
-<span class="sd">            A tuple containing the following elements:</span>
-<span class="sd">            - x: The (head, relation) pair as a torch.Tensor.</span>
-<span class="sd">            - y_idx: The indices of selected tail entities, both positive and negative, as a torch.IntTensor.</span>
-<span class="sd">            - y_vec: The labels for the selected tail entities, with 1s indicating positive and 0s indicating negative</span>
-<span class="sd">                     examples, as a torch.Tensor.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># (1) Get i.th unique (head,relation) pair.</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_data</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
         <span class="c1"># (2) Get tail entities given (1).</span>
@@ -1065,35 +687,6 @@
 <div class="viewcode-block" id="NegSampleDataset">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.NegSampleDataset">[docs]</a>
 <span class="k">class</span> <span class="nc">NegSampleDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A dataset for training knowledge graph embedding models using negative sampling. </span>
-<span class="sd">    For each positive triple from the knowledge graph, a negative triple is generated by corrupting either </span>
-<span class="sd">    the head or the tail entity with a randomly selected entity.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    train_set : np.ndarray</span>
-<span class="sd">        The training set of triples, where each triple consists of indices of the head entity, relation, and tail entity.</span>
-<span class="sd">    num_entities : int</span>
-<span class="sd">        The total number of unique entities in the knowledge graph.</span>
-<span class="sd">    num_relations : int</span>
-<span class="sd">        The total number of unique relations in the knowledge graph.</span>
-<span class="sd">    neg_sample_ratio : int, default=1</span>
-<span class="sd">        The ratio of negative samples to positive samples. Currently, it generates one negative sample per positive sample.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    train_set : torch.Tensor</span>
-<span class="sd">        The training set converted to a PyTorch tensor and expanded to include a batch dimension.</span>
-<span class="sd">    length : int</span>
-<span class="sd">        The total number of triples in the training set.</span>
-<span class="sd">    num_entities : torch.tensor</span>
-<span class="sd">        A tensor containing the total number of entities.</span>
-<span class="sd">    num_relations : torch.tensor</span>
-<span class="sd">        A tensor containing the total number of relations.</span>
-<span class="sd">    neg_sample_ratio : torch.tensor</span>
-<span class="sd">        A tensor containing the ratio of negative to positive samples.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_relations</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">neg_sample_ratio</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
         <span class="c1"># https://pytorch.org/docs/stable/data.html#multi-process-data-loading</span>
@@ -1107,35 +700,13 @@
 
 <div class="viewcode-block" id="NegSampleDataset.__len__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.NegSampleDataset.__len__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the total number of triples in the dataset.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        int</span>
-<span class="sd">            The total number of triples.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span></div>
 
 
 <div class="viewcode-block" id="NegSampleDataset.__getitem__">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.NegSampleDataset.__getitem__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves a pair consisting of a positive triple and a generated negative triple along with their labels.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        idx : int</span>
-<span class="sd">            The index of the triple to retrieve.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Tuple[torch.Tensor, torch.Tensor]</span>
-<span class="sd">            A tuple where the first element is a tensor containing a pair of positive and negative triples,</span>
-<span class="sd">            and the second element is a tensor containing their respective labels (1 for positive, 0 for negative).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="c1"># (1) Get a triple.</span>
         <span class="n">triple</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
         <span class="c1"># (2) Sample an entity.</span>
@@ -1157,42 +728,38 @@
 
 
 <div class="viewcode-block" id="TriplePredictionDataset">
-<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.TriplePredictionDataset">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.dataset_classes.TriplePredictionDataset">[docs]</a>
 <span class="k">class</span> <span class="nc">TriplePredictionDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A dataset for triple prediction using negative sampling and label smoothing.</span>
+<span class="sd">    Triple Dataset</span>
 
-<span class="sd">    D:= {(x)_i}_i ^N, where</span>
-<span class="sd">    - x:(h,r, t) \in KG is a unique h \in E and a relation r \in R and</span>
-<span class="sd">    - collact_fn =&gt; Generates negative triples</span>
+<span class="sd">        D:= {(x)_i}_i ^N, where</span>
+<span class="sd">            . x:(h,r, t) \in KG is a unique h \in E and a relation r \in R and</span>
+<span class="sd">            . collact_fn =&gt; Generates negative triples</span>
 
-<span class="sd">    collect_fn:  \forall (h,r,t) \in G obtain, create negative triples{(h,r,x),(,r,t),(h,m,t)}</span>
+<span class="sd">        collect_fn:  \forall (h,r,t) \in G obtain, create negative triples{(h,r,x),(,r,t),(h,m,t)}</span>
 
-<span class="sd">    y: labels are represented in torch.float16</span>
-<span class="sd">        </span>
-<span class="sd">    This dataset generates negative triples by corrupting either the head or the tail of each positive triple</span>
-<span class="sd">    from the training set. The corruption is performed by randomly replacing the head or the tail with another entity</span>
-<span class="sd">    from the entity set. The dataset supports label smoothing to soften the target labels, which can help improve</span>
-<span class="sd">    generalization.</span>
+<span class="sd">        y:labels are represented in torch.float16</span>
+<span class="sd">       Parameters</span>
+<span class="sd">       ----------</span>
+<span class="sd">       train_set_idx</span>
+<span class="sd">           Indexed triples for the training.</span>
+<span class="sd">       entity_idxs</span>
+<span class="sd">           mapping.</span>
+<span class="sd">       relation_idxs</span>
+<span class="sd">           mapping.</span>
+<span class="sd">       form</span>
+<span class="sd">           ?</span>
+<span class="sd">       store</span>
+<span class="sd">            ?</span>
+<span class="sd">       label_smoothing_rate</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    train_set : np.ndarray</span>
-<span class="sd">        The training set consisting of triples in the form of (head, relation, tail) indices.</span>
-<span class="sd">    num_entities : int</span>
-<span class="sd">        The total number of unique entities in the knowledge graph.</span>
-<span class="sd">    num_relations : int</span>
-<span class="sd">        The total number of unique relations in the knowledge graph.</span>
-<span class="sd">    neg_sample_ratio : int, optional</span>
-<span class="sd">        The ratio of negative samples to generate for each positive sample. Default is 1.</span>
-<span class="sd">    label_smoothing_rate : float, optional</span>
-<span class="sd">        The rate of label smoothing to apply to the target labels. Default is 0.0.</span>
 
-<span class="sd">    Notes</span>
-<span class="sd">    -----</span>
-<span class="sd">    The `collate_fn` should be passed to the DataLoader&#39;s `collate_fn` argument to ensure proper</span>
-<span class="sd">    batch processing and negative sample generation.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">       collate_fn: batch:List[torch.IntTensor]</span>
+<span class="sd">       Returns</span>
+<span class="sd">       -------</span>
+<span class="sd">       torch.utils.data.Dataset</span>
+<span class="sd">       &quot;&quot;&quot;</span>
 
     <span class="nd">@timeit</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_relations</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">neg_sample_ratio</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -1210,54 +777,20 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">num_relations</span><span class="p">)</span>
 
 <div class="viewcode-block" id="TriplePredictionDataset.__len__">
-<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.TriplePredictionDataset.__len__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns the total number of triples in the dataset.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        int</span>
-<span class="sd">            The total number of triples.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.dataset_classes.TriplePredictionDataset.__len__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span></div>
 
 
 <div class="viewcode-block" id="TriplePredictionDataset.__getitem__">
-<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.TriplePredictionDataset.__getitem__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Retrieves a triple for the given index.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        idx : int</span>
-<span class="sd">            The index of the triple to retrieve.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        torch.Tensor</span>
-<span class="sd">            The triple at the specified index.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.dataset_classes.TriplePredictionDataset.__getitem__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="TriplePredictionDataset.collate_fn">
-<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.TriplePredictionDataset.collate_fn">[docs]</a>
-    <span class="k">def</span> <span class="nf">collate_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Custom collate function to generate a batch of positive and negative triples along with their labels.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        batch : List[torch.Tensor]</span>
-<span class="sd">            A list of tensors representing triples.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Tuple[torch.Tensor, torch.Tensor]</span>
-<span class="sd">            A tuple containing a tensor of triples and a tensor of corresponding labels.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.dataset_classes.TriplePredictionDataset.collate_fn">[docs]</a>
+    <span class="k">def</span> <span class="nf">collate_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]):</span>
         <span class="n">batch</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">batch</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">batch</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
         <span class="n">size_of_batch</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">shape</span>
@@ -1322,32 +855,32 @@
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.CVDataModule">[docs]</a>
 <span class="k">class</span> <span class="nc">CVDataModule</span><span class="p">(</span><span class="n">pl</span><span class="o">.</span><span class="n">LightningDataModule</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A LightningDataModule for setting up data loaders for cross-validation training of knowledge graph embedding models.</span>
+<span class="sd">       Create a Dataset for cross validation</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    train_set_idx : np.ndarray</span>
-<span class="sd">        An array of indexed triples for training, where each triple consists of indices of the head entity, relation,</span>
-<span class="sd">        and tail entity.</span>
-<span class="sd">    num_entities : int</span>
-<span class="sd">        The total number of unique entities in the knowledge graph.</span>
-<span class="sd">    num_relations : int</span>
-<span class="sd">        The total number of unique relations in the knowledge graph.</span>
-<span class="sd">    neg_sample_ratio : int</span>
-<span class="sd">        The ratio of negative samples to positive samples for each positive triple.</span>
-<span class="sd">    batch_size : int</span>
-<span class="sd">        The number of samples in each batch of data.</span>
-<span class="sd">    num_workers : int</span>
-<span class="sd">        The number of subprocesses to use for data loading. https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader</span>
+<span class="sd">       Parameters</span>
+<span class="sd">       ----------</span>
+<span class="sd">       train_set_idx</span>
+<span class="sd">           Indexed triples for the training.</span>
+<span class="sd">       num_entities</span>
+<span class="sd">           entity to index mapping.</span>
+<span class="sd">       num_relations</span>
+<span class="sd">           relation to index mapping.</span>
+<span class="sd">       batch_size</span>
+<span class="sd">           int</span>
+<span class="sd">       form</span>
+<span class="sd">           ?</span>
+<span class="sd">       num_workers</span>
+<span class="sd">           int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader</span>
 
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    DataLoader</span>
-<span class="sd">        A PyTorch DataLoader for the training dataset.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_relations</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">neg_sample_ratio</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-                 <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_workers</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+
+<span class="sd">       Returns</span>
+<span class="sd">       -------</span>
+<span class="sd">       ?</span>
+<span class="sd">       &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_set_idx</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">,</span> <span class="n">num_relations</span><span class="p">,</span> <span class="n">neg_sample_ratio</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span>
+                 <span class="n">num_workers</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">train_set_idx</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">train_set_idx</span> <span class="o">=</span> <span class="n">train_set_idx</span>
@@ -1360,14 +893,6 @@
 <div class="viewcode-block" id="CVDataModule.train_dataloader">
 <a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.CVDataModule.train_dataloader">[docs]</a>
     <span class="k">def</span> <span class="nf">train_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataLoader</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates a DataLoader for the training dataset.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        DataLoader</span>
-<span class="sd">            A DataLoader object that loads the training data.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">train_set</span> <span class="o">=</span> <span class="n">TriplePredictionDataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_set_idx</span><span class="p">,</span>
                                             <span class="n">num_entities</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span>
                                             <span class="n">num_relations</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span>

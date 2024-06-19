@@ -1,24 +1,34 @@
-:py:mod:`dicee.query_generator`
-===============================
+dicee.query_generator
+=====================
 
 .. py:module:: dicee.query_generator
 
 
-Module Contents
----------------
-
 Classes
-~~~~~~~
+-------
 
 .. autoapisummary::
 
    dicee.query_generator.QueryGenerator
 
 
+Functions
+---------
 
+.. autoapisummary::
+
+   dicee.query_generator.save_pickle
+   dicee.query_generator.load_pickle
+
+
+Module Contents
+---------------
+
+.. py:function:: save_pickle(*, data: object = None, file_path=str)
+
+.. py:function:: load_pickle(file_path=str)
 
 .. py:class:: QueryGenerator(train_path, val_path: str, test_path: str, ent2id: Dict = None, rel2id: Dict = None, seed: int = 1, gen_valid: bool = False, gen_test: bool = True)
-
 
    .. py:method:: list2tuple(list_data)
 
@@ -28,9 +38,11 @@ Classes
       Convert a nested tuple to a nested list.
 
 
+
    .. py:method:: set_global_seed(seed: int)
 
       Set seed
+
 
 
    .. py:method:: construct_graph(paths: List[str]) -> Tuple[Dict, Dict]
@@ -39,9 +51,11 @@ Classes
       Returns dicts with incoming and outgoing edges
 
 
+
    .. py:method:: fill_query(query_structure: List[Union[str, List]], ent_in: Dict, ent_out: Dict, answer: int) -> bool
 
       Private method for fill_query logic.
+
 
 
    .. py:method:: achieve_answer(query: List[Union[str, List]], ent_in: Dict, ent_out: Dict) -> set
@@ -50,12 +64,14 @@ Classes
       @TODO: Document the code
 
 
+
    .. py:method:: write_links(ent_out, small_ent_out)
 
 
    .. py:method:: ground_queries(query_structure: List[Union[str, List]], ent_in: Dict, ent_out: Dict, small_ent_in: Dict, small_ent_out: Dict, gen_num: int, query_name: str)
 
       Generating queries and achieving answers
+
 
 
    .. py:method:: unmap(query_type, queries, tp_answers, fp_answers, fn_answers)
@@ -71,13 +87,16 @@ Classes
       @ TODO: create a class for each single query struct
 
 
+
    .. py:method:: save_queries(query_type: str, gen_num: int, save_path: str)
 
       
 
 
+
    .. py:method:: load_queries(path)
       :abstractmethod:
+
 
 
    .. py:method:: get_queries(query_type: str, gen_num: int)
@@ -86,11 +105,14 @@ Classes
    .. py:method:: save_queries_and_answers(path: str, data: List[Tuple[str, Tuple[collections.defaultdict]]]) -> None
       :staticmethod:
 
+
       Save Queries into Disk
+
 
 
    .. py:method:: load_queries_and_answers(path: str) -> List[Tuple[str, Tuple[collections.defaultdict]]]
       :staticmethod:
+
 
       Load Queries from Disk to Memory
 

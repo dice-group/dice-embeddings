@@ -7,7 +7,7 @@
   <title>dicee.query_generator &mdash; DICE Embeddings 0.1.3.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=eafc0fe6" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
@@ -20,7 +20,7 @@
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
         <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
-        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -62,35 +62,57 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">dicee</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../index.html#subpackages">Subpackages</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="../abstracts/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.abstracts</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../analyse_experiments/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.analyse_experiments</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../callbacks/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.callbacks</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../config/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.config</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../dataset_classes/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.dataset_classes</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../eval_static_funcs/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.eval_static_funcs</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../evaluator/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.evaluator</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../executer/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.executer</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../knowledge_graph/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.knowledge_graph</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../knowledge_graph_embeddings/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.knowledge_graph_embeddings</span></code></a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.query_generator</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../abstracts/index.html">dicee.abstracts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../analyse_experiments/index.html">dicee.analyse_experiments</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../callbacks/index.html">dicee.callbacks</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../config/index.html">dicee.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../dataset_classes/index.html">dicee.dataset_classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../eval_static_funcs/index.html">dicee.eval_static_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../evaluator/index.html">dicee.evaluator</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../executer/index.html">dicee.executer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../knowledge_graph/index.html">dicee.knowledge_graph</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../knowledge_graph_embeddings/index.html">dicee.knowledge_graph_embeddings</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">dicee.query_generator</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
-<li class="toctree-l5"><a class="reference internal" href="#classes">Classes</a><ul>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.query_generator.QueryGenerator"><code class="docutils literal notranslate"><span class="pre">QueryGenerator</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.query_generator.save_pickle"><code class="docutils literal notranslate"><span class="pre">save_pickle()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.query_generator.load_pickle"><code class="docutils literal notranslate"><span class="pre">load_pickle()</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="#dicee.query_generator.QueryGenerator"><code class="docutils literal notranslate"><span class="pre">QueryGenerator</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.query_generator.QueryGenerator.list2tuple"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.list2tuple()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.query_generator.QueryGenerator.tuple2list"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.tuple2list()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.query_generator.QueryGenerator.set_global_seed"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.set_global_seed()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.query_generator.QueryGenerator.construct_graph"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.construct_graph()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.query_generator.QueryGenerator.fill_query"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.fill_query()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.query_generator.QueryGenerator.achieve_answer"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.achieve_answer()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.query_generator.QueryGenerator.write_links"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.write_links()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.query_generator.QueryGenerator.ground_queries"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.ground_queries()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.query_generator.QueryGenerator.unmap"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.unmap()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.query_generator.QueryGenerator.unmap_query"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.unmap_query()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.query_generator.QueryGenerator.generate_queries"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.generate_queries()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.query_generator.QueryGenerator.save_queries"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.save_queries()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.query_generator.QueryGenerator.load_queries"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.load_queries()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.query_generator.QueryGenerator.get_queries"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.get_queries()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.query_generator.QueryGenerator.save_queries_and_answers"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.save_queries_and_answers()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.query_generator.QueryGenerator.load_queries_and_answers"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.load_queries_and_answers()</span></code></a></li>
 </ul>
 </li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="../sanity_checkers/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.sanity_checkers</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../static_funcs/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.static_funcs</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../static_funcs_training/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.static_funcs_training</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../static_preprocess_funcs/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.static_preprocess_funcs</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../sanity_checkers/index.html">dicee.sanity_checkers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../static_funcs/index.html">dicee.static_funcs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../static_funcs_training/index.html">dicee.static_funcs_training</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../static_preprocess_funcs/index.html">dicee.static_preprocess_funcs</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#classes">Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#functions">Functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
 </ul>
 </li>
@@ -110,8 +132,8 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a></li>
-      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.query_generator</span></code></li>
+          <li class="breadcrumb-item"><a href="../index.html">dicee</a></li>
+      <li class="breadcrumb-item active">dicee.query_generator</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../../_sources/autoapi/dicee/query_generator/index.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -122,11 +144,9 @@
            <div itemprop="articleBody">
              
   <section id="module-dicee.query_generator">
-<span id="dicee-query-generator"></span><h1><a class="reference internal" href="#module-dicee.query_generator" title="dicee.query_generator"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.query_generator</span></code></a><a class="headerlink" href="#module-dicee.query_generator" title="Link to this heading"></a></h1>
-<section id="module-contents">
-<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<span id="dicee-query-generator"></span><h1>dicee.query_generator<a class="headerlink" href="#module-dicee.query_generator" title="Link to this heading"></a></h1>
 <section id="classes">
-<h3>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h3>
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.query_generator.QueryGenerator" title="dicee.query_generator.QueryGenerator"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QueryGenerator</span></code></a></p></td>
@@ -134,6 +154,32 @@
 </tr>
 </tbody>
 </table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.query_generator.save_pickle" title="dicee.query_generator.save_pickle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_pickle</span></code></a>(*[, data, file_path])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.query_generator.load_pickle" title="dicee.query_generator.load_pickle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_pickle</span></code></a>([file_path])</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.query_generator.save_pickle">
+<span class="sig-prename descclassname"><span class="pre">dicee.query_generator.</span></span><span class="sig-name descname"><span class="pre">save_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/static_funcs.html#save_pickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.query_generator.save_pickle" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.query_generator.load_pickle">
+<span class="sig-prename descclassname"><span class="pre">dicee.query_generator.</span></span><span class="sig-name descname"><span class="pre">load_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/static_funcs.html#load_pickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.query_generator.load_pickle" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.query_generator.QueryGenerator">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.query_generator.</span></span><span class="sig-name descname"><span class="pre">QueryGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ent2id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel2id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gen_valid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gen_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/query_generator.html#QueryGenerator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.query_generator.QueryGenerator" title="Link to this definition"></a></dt>
@@ -232,7 +278,6 @@ and getting queries and answers in return
 
 </dd></dl>
 
-</section>
 </section>
 </section>
 

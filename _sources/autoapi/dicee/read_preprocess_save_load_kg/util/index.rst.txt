@@ -1,15 +1,11 @@
-:py:mod:`dicee.read_preprocess_save_load_kg.util`
-=================================================
+dicee.read_preprocess_save_load_kg.util
+=======================================
 
 .. py:module:: dicee.read_preprocess_save_load_kg.util
 
 
-Module Contents
----------------
-
-
 Functions
-~~~~~~~~~
+---------
 
 .. autoapisummary::
 
@@ -28,411 +24,85 @@ Functions
    dicee.read_preprocess_save_load_kg.util.load_numpy_ndarray
    dicee.read_preprocess_save_load_kg.util.save_pickle
    dicee.read_preprocess_save_load_kg.util.load_pickle
-   dicee.read_preprocess_save_load_kg.util.create_reciprocal_triples
+   dicee.read_preprocess_save_load_kg.util.create_recipriocal_triples
    dicee.read_preprocess_save_load_kg.util.index_triples_with_pandas
    dicee.read_preprocess_save_load_kg.util.dataset_sanity_checking
 
 
+Module Contents
+---------------
 
-.. py:function:: apply_reciprical_or_noise(add_reciprical: bool, eval_model: str, df: pandas.DataFrame = None, info: str = None) -> Union[pandas.DataFrame, None]
+.. py:function:: apply_reciprical_or_noise(add_reciprical: bool, eval_model: str, df: object = None, info: str = None)
 
-   Add reciprocal triples to the knowledge graph dataset.
-
-   This function augments a dataset by adding reciprocal triples. For each triple (s, p, o) in the dataset,
-   it adds a reciprocal triple (o, p_inverse, s). This augmentation is often used in knowledge graph embedding
-   models to improve the learning of relation patterns.
-
-   :param add_reciprical: A flag indicating whether to add reciprocal triples.
-   :type add_reciprical: bool
-   :param eval_model: The name of the evaluation model being used, which determines whether the reciprocal triples are required.
-   :type eval_model: str
-   :param df: A pandas DataFrame containing the original triples of the knowledge graph. Each row should represent
-              a triple (subject, predicate, object).
-   :type df: pd.DataFrame, optional
-   :param info: An informational string describing the dataset being processed (e.g., 'train', 'test').
-   :type info: str, optional
-
-   :returns: The augmented dataset with reciprocal triples added if the conditions are met.
-             Returns the original DataFrame if conditions are not met, or None if the input DataFrame is None.
-   :rtype: Union[pd.DataFrame, None]
-
-   .. rubric:: Notes
-
-   - The function checks if both 'add_reciprical' and 'eval_model' are set to truthy values before proceeding
-     with the addition of reciprocal triples.
-   - If 'df' is None, the function returns None, indicating that no dataset was provided for processing.
-   - The reciprocal triples are created using a custom function 'create_reciprocal_triples'.
+   (1) Add reciprocal triples (2) Add noisy triples
 
 
-.. py:function:: timeit(func) -> Callable
+.. py:function:: timeit(func)
 
-   A decorator to measure the execution time of a function.
+.. py:function:: read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None) -> polars.DataFrame
 
-   This decorator, when applied to a function, logs the time taken by the function to execute.
-   It uses `time.perf_counter()` for precise time measurement. The decorator also reports the
-   memory usage of the process at the time of the function's execution completion.
-
-   :param func: The function to be decorated.
-   :type func: Callable
-
-   :returns: The decorated function with added execution time and memory usage logging.
-   :rtype: Callable
-
-   .. rubric:: Notes
-
-   - The decorator uses `functools.wraps` to preserve the metadata of the original function.
-   - Time is measured using `time.perf_counter()`, which provides a higher resolution time measurement.
-   - Memory usage is obtained using `psutil.Process(os.getpid()).memory_info().rss`, which gives the resident set size.
-   - This decorator is useful for performance profiling and debugging.
-
-
-.. py:function:: read_with_polars(data_path: str, read_only_few: int = None, sample_triples_ratio: float = None) -> polars.DataFrame
-
-   Load and preprocess a dataset using Polars.
-
-   This function reads a dataset from a specified file path using the Polars library. It can handle CSV, TXT,
-   and Parquet file formats. The function also provides options to read only a subset of the data and to sample
-   a fraction of the data. Additionally, it applies a heuristic to filter out triples with literal values in RDF
-   knowledge graphs.
-
-   :param data_path: The file path to the dataset. Supported formats include CSV, TXT, and Parquet.
-   :type data_path: str
-   :param read_only_few: If specified, only this number of rows will be read from the dataset. Defaults to reading the entire dataset.
-   :type read_only_few: int, optional
-   :param sample_triples_ratio: If specified, a fraction of the dataset will be randomly sampled. For example, a value of 0.1 samples 10% of the data.
-   :type sample_triples_ratio: float, optional
-
-   :returns: The loaded and optionally sampled dataset as a Polars DataFrame.
-   :rtype: polars.DataFrame
-
-   .. rubric:: Notes
-
-   - The function determines the file format based on the file extension.
-   - If 'sample_triples_ratio' is provided, the dataset is subsampled accordingly.
-   - A heuristic is applied to remove triples where the subject or object does not start with '<',
-     which is common in RDF knowledge graphs to indicate entities.
-   - This function uses Polars for efficient data loading and manipulation, especially useful for large datasets.
+   Load and Preprocess via Polars
 
 
 .. py:function:: read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None)
 
+.. py:function:: read_from_disk(data_path: str, read_only_few: int = None, sample_triples_ratio: float = None, backend=None)
 
-.. py:function:: read_from_disk(data_path: str, read_only_few: int = None, sample_triples_ratio: float = None, backend: str = None) -> Union[pandas.DataFrame, polars.DataFrame, None]
+.. py:function:: read_from_triple_store(endpoint: str = None)
 
-   Load and preprocess a dataset from disk using specified backend.
-
-   This function reads a dataset from a specified file path, supporting different backends such as pandas, polars,
-   and rdflib. It can handle various file formats including TTL, OWL, RDF/XML, and others. The function provides
-   options to read only a subset of the data and to sample a fraction of the data.
-
-   :param data_path: The file path to the dataset.
-   :type data_path: str
-   :param read_only_few: If specified, only this number of rows will be read from the dataset. Defaults to reading the entire dataset.
-   :type read_only_few: int, optional
-   :param sample_triples_ratio: If specified, a fraction of the dataset will be randomly sampled.
-   :type sample_triples_ratio: float, optional
-   :param backend: The backend to use for reading the dataset. Supported values are 'pandas', 'polars', and 'rdflib'.
-   :type backend: str
-
-   :returns: The loaded dataset as a DataFrame, depending on the specified backend. Returns None if the file is not found.
-   :rtype: Union[pd.DataFrame, polars.DataFrame, None]
-
-   :raises RuntimeError: If the data format is not compatible with the specified backend, or if the backend is not recognized.
-   :raises AssertionError: If the backend is not provided.
-
-   .. rubric:: Notes
-
-   - The function automatically detects the data format based on the file extension.
-   - For RDF/XML, TTL, OWL, and similar formats, the 'rdflib' backend is required.
-   - This function is a general interface for loading datasets, allowing flexibility in choosing the backend
-     based on data format and processing needs.
+   Read triples from triple store into pandas dataframe
 
 
-.. py:function:: read_from_triple_store(endpoint: str = None) -> pandas.DataFrame
+.. py:function:: get_er_vocab(data, file_path: str = None)
 
-   Read triples from a SPARQL endpoint (triple store) and load them into a Pandas DataFrame.
+.. py:function:: get_re_vocab(data, file_path: str = None)
 
-   This function executes a SPARQL query against a specified SPARQL endpoint to retrieve all triples in the store.
-   The result is then formatted into a Pandas DataFrame for further processing or analysis.
+.. py:function:: get_ee_vocab(data, file_path: str = None)
 
-   :param endpoint: The URL of the SPARQL endpoint from which to retrieve triples.
-   :type endpoint: str
+.. py:function:: create_constraints(triples, file_path: str = None)
 
-   :returns: A DataFrame containing the triples retrieved from the triple store, with columns 'subject', 'relation',
-             and 'object'.
-   :rtype: pd.DataFrame
-
-   :raises AssertionError: If the 'endpoint' parameter is None or not a string, or if the response from the endpoint is not successful.
-
-   .. rubric:: Notes
-
-   - The function sends a SPARQL query to the provided endpoint to retrieve all triples in the format
-     {?subject ?predicate ?object}.
-   - The response is expected in JSON format, conforming to the SPARQL query results JSON format.
-   - This function is specifically designed for reading data from a SPARQL endpoint and requires an endpoint
-     that responds to POST requests with SPARQL queries.
-
-
-.. py:function:: get_er_vocab(data: Iterable[Tuple[Any, Any, Any]], file_path: str = None) -> collections.defaultdict
-
-   Create a vocabulary mapping from (entity, relation) pairs to lists of tail entities.
-
-   This function processes a dataset of triples and constructs a mapping where each key is a tuple of
-   (head entity, relation) and the corresponding value is a list of all tail entities associated with
-   that (head entity, relation) pair. Optionally, this vocabulary can be saved to a file.
-
-   :param data: An iterable of triples, where each triple is a tuple (head entity, relation, tail entity).
-   :type data: Iterable[Tuple[Any, Any, Any]]
-   :param file_path: The file path where the vocabulary should be saved as a pickle file. If not provided, the vocabulary
-                     is not saved to disk.
-   :type file_path: str, optional
-
-   :returns: A default dictionary where keys are (entity, relation) tuples and values are lists of tail entities.
-   :rtype: defaultdict
-
-   .. rubric:: Notes
-
-   - The function uses a `defaultdict` to handle keys that may not exist in the dictionary.
-   - It is useful for creating a quick lookup of all possible tail entities for given (entity, relation) pairs,
-     which can be used in various knowledge graph tasks like link prediction.
-   - If 'file_path' is provided, the vocabulary is saved using the `save_pickle` function.
-
-
-.. py:function:: get_re_vocab(data: Iterable[Tuple[Any, Any, Any]], file_path: str = None) -> collections.defaultdict
-
-   Create a vocabulary mapping from (relation, tail entity) pairs to lists of head entities.
-
-   This function processes a dataset of triples and constructs a mapping where each key is a tuple of
-   (relation, tail entity) and the corresponding value is a list of all head entities associated with
-   that (relation, tail entity) pair. Optionally, this vocabulary can be saved to a file.
-
-   :param data: An iterable of triples, where each triple is a tuple (head entity, relation, tail entity).
-   :type data: Iterable[Tuple[Any, Any, Any]]
-   :param file_path: The file path where the vocabulary should be saved as a pickle file. If not provided, the vocabulary
-                     is not saved to disk.
-   :type file_path: str, optional
-
-   :returns: A default dictionary where keys are (relation, tail entity) tuples and values are lists of head entities.
-   :rtype: defaultdict
-
-   .. rubric:: Notes
-
-   - The function uses a `defaultdict` to handle keys that may not exist in the dictionary.
-   - It is useful for creating a quick lookup of all possible head entities for given (relation, tail entity) pairs,
-     which can be used in various knowledge graph tasks like link prediction.
-   - If 'file_path' is provided, the vocabulary is saved using the `save_pickle` function.
-
-
-.. py:function:: get_ee_vocab(data: Iterable[Tuple[Any, Any, Any]], file_path: str = None) -> collections.defaultdict
-
-   Create a vocabulary mapping from (head entity, tail entity) pairs to lists of relations.
-
-   This function processes a dataset of triples and constructs a mapping where each key is a tuple of
-   (head entity, tail entity) and the corresponding value is a list of all relations that connect these
-   two entities. Optionally, this vocabulary can be saved to a file.
-
-   :param data: An iterable of triples, where each triple is a tuple (head entity, relation, tail entity).
-   :type data: Iterable[Tuple[Any, Any, Any]]
-   :param file_path: The file path where the vocabulary should be saved as a pickle file. If not provided, the vocabulary
-                     is not saved to disk.
-   :type file_path: str, optional
-
-   :returns: A default dictionary where keys are (head entity, tail entity) tuples and values are lists of relations.
-   :rtype: defaultdict
-
-   .. rubric:: Notes
-
-   - The function uses a `defaultdict` to handle keys that may not exist in the dictionary.
-   - This vocabulary is useful for tasks that require knowledge of all relations between specific pairs of entities,
-     such as in certain types of link prediction or relation extraction tasks.
-   - If 'file_path' is provided, the vocabulary is saved using the `save_pickle` function.
-
-
-.. py:function:: create_constraints(triples: numpy.ndarray, file_path: str = None) -> Tuple[dict, dict]
-
-   Create domain and range constraints for each relation in a set of triples.
-
-   This function processes a dataset of triples and constructs domain and range constraints for each relation.
-   The domain of a relation is defined as the set of all head entities that appear with that relation, and the range
-   is defined as the set of all tail entities. The constraints are formed by finding entities that are not in the
-   domain or range of each relation.
-
-   :param triples: A numpy array of triples, where each row is a triple (head entity, relation, tail entity).
-   :type triples: np.ndarray
-   :param file_path: The file path where the constraints should be saved as a pickle file. If not provided, the constraints
-                     are not saved to disk.
-   :type file_path: str, optional
-
-   :returns: A tuple containing two dictionaries. The first dictionary maps each relation to a list of entities
-             not in its domain, and the second maps each relation to a list of entities not in its range.
-   :rtype: Tuple[dict, dict]
-
-   .. rubric:: Notes
-
-   - The function assumes that the input triples are in the form of a numpy array with three columns.
-   - The domain and range constraints are useful in tasks that require understanding the valid head and tail
-     entities for each relation, such as in link prediction.
-   - If 'file_path' is provided, the constraints are saved using the `save_pickle` function.
+   (1) Extract domains and ranges of relations
+   (2) Store a mapping from relations to entities that are outside of the domain and range.
+   Crete constrainted entities based on the range of relations
+   :param triples:
+   :return:
+   Tuple[dict, dict]
 
 
 .. py:function:: load_with_pandas(self) -> None
 
-   Deserialize data and load it into the knowledge graph instance using Pandas.
-
-   This method loads serialized data from disk, converting it into the appropriate data structures for
-   use in the knowledge graph instance. It deserializes entity and relation mappings, training, validation,
-   and test datasets, and constructs vocabularies and constraints necessary for the evaluation of the model.
-
-   :param None:
-
-   :rtype: None
-
-   .. rubric:: Notes
-
-   - This method reads serialized data stored in Parquet format with gzip compression.
-   - It deserializes mappings for entities and relations into dictionaries for efficient access.
-   - Training, validation, and test sets are loaded into numpy arrays.
-   - If evaluation is enabled, vocabularies for entity-relation, relation-entity, and entity-entity pairs
-     are created along with domain and range constraints for relations.
-   - This method handles the absence of validation or test sets gracefully, setting the corresponding
-     attributes to None if the files are not found.
-   - Deserialization paths and progress are logged, including time taken for each step.
+   Deserialize data
 
 
 .. py:function:: save_numpy_ndarray(*, data: numpy.ndarray, file_path: str)
 
-   Save a numpy ndarray to disk.
+.. py:function:: load_numpy_ndarray(*, file_path: str)
 
-   This function saves a given numpy ndarray to a specified file path using NumPy's binary format.
-   The function is specifically designed to handle arrays with a shape (n, 3), typically representing
-   triples in knowledge graphs.
+.. py:function:: save_pickle(*, data: object, file_path=str)
 
-   :param data: A numpy ndarray to be saved, expected to have the shape (n, 3) where 'n' is the number of rows
-                and 'd' is the number of columns (specifically 3).
-   :type data: np.ndarray
-   :param file_path: The file path where the ndarray will be saved.
-   :type file_path: str
+.. py:function:: load_pickle(*, file_path=str)
 
-   :raises AssertionError: If the number of rows 'n' in 'data' is not positive or the number of columns 'd' is not equal to 3.
+.. py:function:: create_recipriocal_triples(x)
 
-   .. rubric:: Notes
-
-   - The ndarray is saved in NumPy's binary format (.npy file).
-   - This function is particularly useful for saving datasets of triples in knowledge graph applications.
-   - The file is opened in binary write mode and the data is saved using NumPy's `save` function.
+   Add inverse triples into dask dataframe
+   :param x:
+   :return:
 
 
-.. py:function:: load_numpy_ndarray(*, file_path: str) -> numpy.ndarray
+.. py:function:: index_triples_with_pandas(train_set, entity_to_idx: dict, relation_to_idx: dict) -> pandas.core.frame.DataFrame
 
-   Load a numpy ndarray from a file.
-
-   This function reads a numpy ndarray from a specified file path. The file is expected to be in
-   NumPy's binary format (.npy file). It's commonly used to load datasets, especially in knowledge
-   graph contexts.
-
-   :param file_path: The path of the file from which the ndarray will be loaded.
-   :type file_path: str
-
-   :returns: The numpy ndarray loaded from the specified file.
-   :rtype: np.ndarray
-
-   .. rubric:: Notes
-
-   - The function opens the file in binary read mode and loads the data using NumPy's `load` function.
-   - This function is particularly useful for loading datasets of triples in knowledge graph applications
-     or other numerical data saved in NumPy's binary format.
-   - It's important to ensure that the file at 'file_path' exists and is a valid NumPy binary file to avoid
-     runtime errors.
-
-
-.. py:function:: save_pickle(*, data: object, file_path: str)
-
-   Serialize an object and save it to a file using pickle.
-
-   This function serializes a given Python object using the pickle protocol and saves it to the specified file path.
-   It's a general-purpose function that can be used to persist a wide range of Python objects.
-
-   :param data: The Python object to be serialized and saved. This can be any object that is serializable by the pickle module.
-   :type data: object
-   :param file_path: The path of the file where the serialized object will be saved. The file will be created if it does not exist.
-   :type file_path: str
-
-
-.. py:function:: load_pickle(file_path: str) -> Any
-
-   Load data from a pickle file.
-
-   :param file_path: The file path to the pickle file to be loaded.
-   :type file_path: str
-
-   :returns: The data loaded from the pickle file.
-   :rtype: Any
-
-
-.. py:function:: create_reciprocal_triples(x: pandas.DataFrame) -> pandas.DataFrame
-
-   Add inverse triples to a DataFrame of knowledge graph triples.
-
-   :param x: The DataFrame containing knowledge graph triples with columns "subject," "relation," and "object."
-   :type x: pd.DataFrame
-
-   :returns: A new DataFrame that includes the original triples and their inverse counterparts.
-   :rtype: pd.DataFrame
-
-   .. rubric:: Notes
-
-   This function takes a DataFrame of knowledge graph triples and adds their inverse triples to it.
-   For each triple (s, r, o) in the input DataFrame, an inverse triple (o, r_inverse, s) is added to the output.
-   The "relation" column of the inverse triples is created by appending "_inverse" to the original relation.
-
-
-.. py:function:: index_triples_with_pandas(train_set: pandas.DataFrame, entity_to_idx: dict, relation_to_idx: dict) -> pandas.DataFrame
-
-   Index knowledge graph triples in a pandas DataFrame using provided entity and relation mappings.
-
-   :param train_set: A pandas DataFrame containing knowledge graph triples with columns "subject," "relation," and "object."
-   :type train_set: pd.DataFrame
-   :param entity_to_idx: A mapping from entity names (str) to integer indices.
-   :type entity_to_idx: dict
-   :param relation_to_idx: A mapping from relation names (str) to integer indices.
-   :type relation_to_idx: dict
-
-   :returns: A new pandas DataFrame where the entities and relations in the original triples are replaced with their corresponding integer indices.
-   :rtype: pd.DataFrame
-
-   .. rubric:: Notes
-
-   This function takes a pandas DataFrame of knowledge graph triples, along with mappings from entity and relation names to integer indices.
-   It replaces the entity and relation names in the DataFrame with their corresponding integer indices, effectively indexing the triples.
-   The resulting DataFrame has the same structure as the input, with integer indices replacing entity and relation names.
+   :param train_set: pandas dataframe
+   :param entity_to_idx: a mapping from str to integer index
+   :param relation_to_idx: a mapping from str to integer index
+   :param num_core: number of cores to be used
+   :return: indexed triples, i.e., pandas dataframe
 
 
 .. py:function:: dataset_sanity_checking(train_set: numpy.ndarray, num_entities: int, num_relations: int) -> None
 
-   Perform sanity checks on a knowledge graph dataset.
-
-   :param train_set: The training dataset represented as a NumPy array. Each row represents a triple with columns "subject," "relation," and "object."
-   :type train_set: np.ndarray
-   :param num_entities: The total number of entities in the knowledge graph.
-   :type num_entities: int
-   :param num_relations: The total number of relations in the knowledge graph.
-   :type num_relations: int
-
-   :rtype: None
-
-   :raises AssertionError: If any of the sanity checks fail, assertions are raised to indicate potential issues in the dataset.
-
-   .. rubric:: Notes
-
-   This function performs a series of sanity checks on a knowledge graph dataset to ensure its integrity and consistency.
-   It checks the data type of the dataset, the number of columns, the size of the dataset, and the validity of entity and relation indices.
-   If any of the checks fail, assertions are raised to signal potential problems in the dataset.
-
-   The checks performed include:
-   - Verifying that the input dataset is a NumPy array.
-   - Checking that the dataset has the correct number of columns (3 for subject, relation, and object).
-   - Ensuring that the dataset size is greater than 0.
-   - Validating that the maximum entity indices in the dataset do not exceed the specified number of entities.
-   - Validating that the maximum relation index in the dataset does not exceed the specified number of relations.
+   :param train_set:
+   :param num_entities:
+   :param num_relations:
+   :return:
 
 

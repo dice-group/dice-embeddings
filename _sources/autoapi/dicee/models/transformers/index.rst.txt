@@ -1,17 +1,15 @@
-:py:mod:`dicee.models.transformers`
-===================================
+dicee.models.transformers
+=========================
 
 .. py:module:: dicee.models.transformers
 
 
-Module Contents
----------------
-
 Classes
-~~~~~~~
+-------
 
 .. autoapisummary::
 
+   dicee.models.transformers.BaseKGE
    dicee.models.transformers.BytE
    dicee.models.transformers.LayerNorm
    dicee.models.transformers.CausalSelfAttention
@@ -21,12 +19,13 @@ Classes
    dicee.models.transformers.GPT
 
 
+Module Contents
+---------------
 
+.. py:class:: BaseKGE(args: dict)
 
-.. py:class:: BytE(*args, **kwargs)
+   Bases: :py:obj:`BaseKGELightning`
 
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
 
    Base class for all neural network modules.
 
@@ -59,10 +58,111 @@ Classes
                    evaluation mode.
    :vartype training: bool
 
+
+   .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
+
+      :param x:
+      :type x: B x 2 x T
+
+
+
+   .. py:method:: forward_byte_pair_encoded_triple(x: Tuple[torch.LongTensor, torch.LongTensor])
+
+      byte pair encoded neural link predictors
+
+      :param -------:
+
+
+
+   .. py:method:: init_params_with_sanity_checking()
+
+
+   .. py:method:: forward(x: Union[torch.LongTensor, Tuple[torch.LongTensor, torch.LongTensor]], y_idx: torch.LongTensor = None)
+
+      :param x:
+      :param y_idx:
+      :param ordered_bpe_entities:
+
+
+
+   .. py:method:: forward_triples(x: torch.LongTensor) -> torch.Tensor
+
+      :param x:
+
+
+
+   .. py:method:: forward_k_vs_all(*args, **kwargs)
+
+
+   .. py:method:: forward_k_vs_sample(*args, **kwargs)
+
+
+   .. py:method:: get_triple_representation(idx_hrt)
+
+
+   .. py:method:: get_head_relation_representation(indexed_triple)
+
+
+   .. py:method:: get_sentence_representation(x: torch.LongTensor)
+
+      :param x shape (b:
+      :param 3:
+      :param t):
+
+
+
+   .. py:method:: get_bpe_head_and_relation_representation(x: torch.LongTensor) -> Tuple[torch.FloatTensor, torch.FloatTensor]
+
+      :param x:
+      :type x: B x 2 x T
+
+
+
+   .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, numpy.ndarray]
+
+
+.. py:class:: BytE(*args, **kwargs)
+
+   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing to nest them in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+       class Model(nn.Module):
+           def __init__(self):
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will have their
+   parameters converted too when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
    .. py:method:: loss_function(yhat_batch, y_batch)
 
       :param yhat_batch:
       :param y_batch:
+
 
 
    .. py:method:: forward(x: torch.LongTensor)
@@ -71,11 +171,13 @@ Classes
       :type x: B by T tensor
 
 
+
    .. py:method:: generate(idx, max_new_tokens, temperature=1.0, top_k=None)
 
       Take a conditioning sequence of indices idx (LongTensor of shape (b,t)) and complete
       the sequence max_new_tokens times, feeding the predictions back into the model each time.
       Most likely you'll want to make sure to be in model.eval() mode of operation for this.
+
 
 
    .. py:method:: training_step(batch, batch_idx=None)
@@ -137,19 +239,19 @@ Classes
 
 .. py:class:: LayerNorm(ndim, bias)
 
-
    Bases: :py:obj:`torch.nn.Module`
 
+
    LayerNorm but with an optional bias. PyTorch doesn't support simply bias=False
+
 
    .. py:method:: forward(input)
 
 
-
 .. py:class:: CausalSelfAttention(config)
 
-
    Bases: :py:obj:`torch.nn.Module`
+
 
    Base class for all neural network modules.
 
@@ -182,14 +284,14 @@ Classes
                    evaluation mode.
    :vartype training: bool
 
-   .. py:method:: forward(x)
 
+   .. py:method:: forward(x)
 
 
 .. py:class:: MLP(config)
 
-
    Bases: :py:obj:`torch.nn.Module`
+
 
    Base class for all neural network modules.
 
@@ -222,14 +324,14 @@ Classes
                    evaluation mode.
    :vartype training: bool
 
-   .. py:method:: forward(x)
 
+   .. py:method:: forward(x)
 
 
 .. py:class:: Block(config)
 
-
    Bases: :py:obj:`torch.nn.Module`
+
 
    Base class for all neural network modules.
 
@@ -261,61 +363,59 @@ Classes
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
 
    .. py:method:: forward(x)
 
 
-
 .. py:class:: GPTConfig
 
-
    .. py:attribute:: block_size
-      :type: int
+      :type:  int
       :value: 1024
 
-      
+
 
    .. py:attribute:: vocab_size
-      :type: int
+      :type:  int
       :value: 50304
 
-      
+
 
    .. py:attribute:: n_layer
-      :type: int
+      :type:  int
       :value: 12
 
-      
+
 
    .. py:attribute:: n_head
-      :type: int
+      :type:  int
       :value: 12
 
-      
+
 
    .. py:attribute:: n_embd
-      :type: int
+      :type:  int
       :value: 768
 
-      
+
 
    .. py:attribute:: dropout
-      :type: float
+      :type:  float
       :value: 0.0
 
-      
+
 
    .. py:attribute:: bias
-      :type: bool
+      :type:  bool
       :value: False
 
-      
 
 
 .. py:class:: GPT(config)
 
-
    Bases: :py:obj:`torch.nn.Module`
+
 
    Base class for all neural network modules.
 
@@ -347,6 +447,7 @@ Classes
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
 
    .. py:method:: get_num_params(non_embedding=True)
 
@@ -354,6 +455,7 @@ Classes
       For non-embedding count (default), the position embeddings get subtracted.
       The token embeddings would too, except due to the parameter sharing these
       params are actually used as weights in the final layer, so we include them.
+
 
 
    .. py:method:: forward(idx, targets=None)
@@ -364,6 +466,7 @@ Classes
 
    .. py:method:: from_pretrained(model_type, override_args=None)
       :classmethod:
+
 
 
    .. py:method:: configure_optimizers(weight_decay, learning_rate, betas, device_type)

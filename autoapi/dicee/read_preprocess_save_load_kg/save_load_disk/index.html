@@ -7,7 +7,7 @@
   <title>dicee.read_preprocess_save_load_kg.save_load_disk &mdash; DICE Embeddings 0.1.3.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8775fe07" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
-      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=eafc0fe6" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=fd3f3429" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/theme_tweak.css?v=f0ad19f3" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8775fe07" />
@@ -20,7 +20,7 @@
         <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
         <script src="../../../../_static/documentation_options.js?v=c6726a90"></script>
-        <script src="../../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
@@ -62,28 +62,34 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#docker">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-cite">How to cite</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">dicee</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="../../index.html#subpackages">Subpackages</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="../../models/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models</span></code></a></li>
-<li class="toctree-l3 current"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg</span></code></a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../../models/index.html">dicee.models</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html">dicee.read_preprocess_save_load_kg</a><ul class="current">
 <li class="toctree-l4 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
-<li class="toctree-l5"><a class="reference internal" href="../preprocess/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg.preprocess</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="../read_from_disk/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg.read_from_disk</span></code></a></li>
-<li class="toctree-l5 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg.save_load_disk</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="../preprocess/index.html">dicee.read_preprocess_save_load_kg.preprocess</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../read_from_disk/index.html">dicee.read_preprocess_save_load_kg.read_from_disk</a></li>
+<li class="toctree-l5 current"><a class="current reference internal" href="#">dicee.read_preprocess_save_load_kg.save_load_disk</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#functions">Functions</a></li>
 <li class="toctree-l6"><a class="reference internal" href="#module-contents">Module Contents</a></li>
 </ul>
 </li>
-<li class="toctree-l5"><a class="reference internal" href="../util/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg.util</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="../util/index.html">dicee.read_preprocess_save_load_kg.util</a></li>
 </ul>
 </li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#classes">Classes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="../../scripts/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.scripts</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../trainer/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.trainer</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../scripts/index.html">dicee.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../trainer/index.html">dicee.trainer</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../../index.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#classes">Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#functions">Functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../index.html#package-contents">Package Contents</a></li>
 </ul>
 </li>
@@ -103,9 +109,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a></li>
-          <li class="breadcrumb-item"><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg</span></code></a></li>
-      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg.save_load_disk</span></code></li>
+          <li class="breadcrumb-item"><a href="../../index.html">dicee</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">dicee.read_preprocess_save_load_kg</a></li>
+      <li class="breadcrumb-item active">dicee.read_preprocess_save_load_kg.save_load_disk</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../../../_sources/autoapi/dicee/read_preprocess_save_load_kg/save_load_disk/index.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -116,104 +122,73 @@
            <div itemprop="articleBody">
              
   <section id="module-dicee.read_preprocess_save_load_kg.save_load_disk">
-<span id="dicee-read-preprocess-save-load-kg-save-load-disk"></span><h1><a class="reference internal" href="#module-dicee.read_preprocess_save_load_kg.save_load_disk" title="dicee.read_preprocess_save_load_kg.save_load_disk"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg.save_load_disk</span></code></a><a class="headerlink" href="#module-dicee.read_preprocess_save_load_kg.save_load_disk" title="Link to this heading"></a></h1>
-<section id="module-contents">
-<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<span id="dicee-read-preprocess-save-load-kg-save-load-disk"></span><h1>dicee.read_preprocess_save_load_kg.save_load_disk<a class="headerlink" href="#module-dicee.read_preprocess_save_load_kg.save_load_disk" title="Link to this heading"></a></h1>
 <section id="classes">
-<h3>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h3>
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk" title="dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LoadSaveToDisk</span></code></a></p></td>
-<td><p>Handle the saving and loading of a knowledge graph to and from disk.</p></td>
+<td><p></p></td>
 </tr>
 </tbody>
 </table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.save_load_disk.load_pickle" title="dicee.read_preprocess_save_load_kg.save_load_disk.load_pickle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_pickle</span></code></a>(*[, file_path])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.save_load_disk.load_numpy_ndarray" title="dicee.read_preprocess_save_load_kg.save_load_disk.load_numpy_ndarray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_numpy_ndarray</span></code></a>(*, file_path)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.save_load_disk.save_pickle" title="dicee.read_preprocess_save_load_kg.save_load_disk.save_pickle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_pickle</span></code></a>(*[, data, file_path])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.save_load_disk.save_numpy_ndarray" title="dicee.read_preprocess_save_load_kg.save_load_disk.save_numpy_ndarray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_numpy_ndarray</span></code></a>(*, data, file_path)</p></td>
+<td><p></p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.save_load_disk.load_pickle">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.save_load_disk.</span></span><span class="sig-name descname"><span class="pre">load_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#load_pickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.save_load_disk.load_pickle" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.save_load_disk.load_numpy_ndarray">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.save_load_disk.</span></span><span class="sig-name descname"><span class="pre">load_numpy_ndarray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#load_numpy_ndarray"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.save_load_disk.load_numpy_ndarray" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.save_load_disk.save_pickle">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.save_load_disk.</span></span><span class="sig-name descname"><span class="pre">save_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/static_funcs.html#save_pickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.save_load_disk.save_pickle" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.save_load_disk.save_numpy_ndarray">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.save_load_disk.</span></span><span class="sig-name descname"><span class="pre">save_numpy_ndarray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">numpy.ndarray</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/static_funcs.html#save_numpy_ndarray"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.save_load_disk.save_numpy_ndarray" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.save_load_disk.</span></span><span class="sig-name descname"><span class="pre">LoadSaveToDisk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk" title="Link to this definition"></a></dt>
-<dd><p>Handle the saving and loading of a knowledge graph to and from disk.</p>
-<p>This class provides functionality to serialize and deserialize the components of a knowledge graph,
-such as entity and relation indices, datasets, and byte-pair encoding mappings, to and from disk storage.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.kg">
-<span class="sig-name descname"><span class="pre">kg</span></span><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.kg" title="Link to this definition"></a></dt>
-<dd><p>An instance of the knowledge graph to be saved or loaded.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>object</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
+<dd><dl class="py method">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.save">
-<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.save" title="Link to this definition"></a></dt>
-<dd><p>Save the knowledge graph components to disk.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.save" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.load">
-<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.load" title="Link to this definition"></a></dt>
-<dd><p>Load the knowledge graph components from disk.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id0">
-<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
-<dd><p>Save the knowledge graph components to disk.</p>
-<p>This method serializes various components of the knowledge graph such as entity and relation indices,
-datasets, and byte-pair encoding mappings, and saves them to the specified file paths in the knowledge
-graph instance. The method handles different data types and structures based on the configuration of
-the knowledge graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>None</strong> – </p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
-</dd>
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>AssertionError</strong> – If the path for serialization is not set or other required conditions are not met.</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<ul class="simple">
-<li><p>The method checks if the ‘path_for_serialization’ attribute is set in the knowledge graph instance.</p></li>
-<li><p>Depending on the configuration (e.g., whether byte-pair encoding is used), different components are saved.</p></li>
-<li><p>The method uses custom functions like ‘save_pickle’ and ‘save_numpy_ndarray’ for serialization.</p></li>
-</ul>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id1">
-<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
-<dd><p>Load the knowledge graph components from disk.</p>
-<p>This method deserializes various components of the knowledge graph such as entity and relation indices,
-datasets, and byte-pair encoding mappings from the specified file paths in the knowledge graph instance.
-The method reconstructs the knowledge graph instance with the loaded data.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>None</strong> – </p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
-</dd>
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>AssertionError</strong> – If the path for deserialization is not set or other required conditions are not met.</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<ul class="simple">
-<li><p>The method checks if the ‘path_for_deserialization’ attribute is set in the knowledge graph instance.</p></li>
-<li><p>The method updates the knowledge graph instance with the loaded components.</p></li>
-<li><p>The method uses custom functions like ‘load_pickle’ and ‘load_numpy_ndarray’ for deserialization.</p></li>
-<li><p>If evaluation models are used, additional components like vocabularies and constraints are also loaded.</p></li>
-</ul>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">load</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk.load"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.save_load_disk.LoadSaveToDisk.load" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
-</section>
 </section>
 </section>
 

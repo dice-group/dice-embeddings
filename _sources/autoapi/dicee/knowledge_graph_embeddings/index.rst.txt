@@ -1,28 +1,262 @@
-:py:mod:`dicee.knowledge_graph_embeddings`
-==========================================
+dicee.knowledge_graph_embeddings
+================================
 
 .. py:module:: dicee.knowledge_graph_embeddings
+
+
+Classes
+-------
+
+.. autoapisummary::
+
+   dicee.knowledge_graph_embeddings.BaseInteractiveKGE
+   dicee.knowledge_graph_embeddings.TriplePredictionDataset
+   dicee.knowledge_graph_embeddings.KGE
+
+
+Functions
+---------
+
+.. autoapisummary::
+
+   dicee.knowledge_graph_embeddings.random_prediction
+   dicee.knowledge_graph_embeddings.deploy_triple_prediction
+   dicee.knowledge_graph_embeddings.deploy_tail_entity_prediction
+   dicee.knowledge_graph_embeddings.deploy_relation_prediction
+   dicee.knowledge_graph_embeddings.deploy_head_entity_prediction
+   dicee.knowledge_graph_embeddings.load_pickle
+   dicee.knowledge_graph_embeddings.evaluate_lp
 
 
 Module Contents
 ---------------
 
-Classes
-~~~~~~~
+.. py:class:: BaseInteractiveKGE(path: str = None, url: str = None, construct_ensemble: bool = False, model_name: str = None, apply_semantic_constraint: bool = False)
 
-.. autoapisummary::
-
-   dicee.knowledge_graph_embeddings.KGE
+   Abstract/base class for using knowledge graph embedding models interactively.
 
 
+   Parameter
+   ---------
+   path_of_pretrained_model_dir : str
+       ?
+
+   construct_ensemble: boolean
+           ?
+
+   model_name: str
+   apply_semantic_constraint : boolean
+
+
+   .. py:method:: get_eval_report() -> dict
+
+
+   .. py:method:: get_bpe_token_representation(str_entity_or_relation: Union[List[str], str]) -> Union[List[List[int]], List[int]]
+
+      :param str_entity_or_relation:
+      :type str_entity_or_relation: corresponds to a str or a list of strings to be tokenized via BPE and shaped.
+
+      :rtype: A list integer(s) or a list of lists containing integer(s)
+
+
+
+   .. py:method:: get_padded_bpe_triple_representation(triples: List[List[str]]) -> Tuple[List, List, List]
+
+      :param triples:
+
+
+
+   .. py:method:: get_domain_of_relation(rel: str) -> List[str]
+
+
+   .. py:method:: get_range_of_relation(rel: str) -> List[str]
+
+
+   .. py:method:: set_model_train_mode() -> None
+
+      Setting the model into training mode
+
+
+      Parameter
+      ---------
+
+
+
+   .. py:method:: set_model_eval_mode() -> None
+
+      Setting the model into eval mode
+
+
+      Parameter
+      ---------
+
+
+
+   .. py:property:: name
+
+
+   .. py:method:: sample_entity(n: int) -> List[str]
+
+
+   .. py:method:: sample_relation(n: int) -> List[str]
+
+
+   .. py:method:: is_seen(entity: str = None, relation: str = None) -> bool
+
+
+   .. py:method:: save() -> None
+
+
+   .. py:method:: get_entity_index(x: str)
+
+
+   .. py:method:: get_relation_index(x: str)
+
+
+   .. py:method:: index_triple(head_entity: List[str], relation: List[str], tail_entity: List[str]) -> Tuple[torch.LongTensor, torch.LongTensor, torch.LongTensor]
+
+      Index Triple
+
+      Parameter
+      ---------
+      head_entity: List[str]
+
+      String representation of selected entities.
+
+      relation: List[str]
+
+      String representation of selected relations.
+
+      tail_entity: List[str]
+
+      String representation of selected entities.
+
+      Returns: Tuple
+      ---------
+
+      pytorch tensor of triple score
+
+
+
+   .. py:method:: add_new_entity_embeddings(entity_name: str = None, embeddings: torch.FloatTensor = None)
+
+
+   .. py:method:: get_entity_embeddings(items: List[str])
+
+      Return embedding of an entity given its string representation
+
+
+      Parameter
+      ---------
+      items:
+          entities
+
+
+
+   .. py:method:: get_relation_embeddings(items: List[str])
+
+      Return embedding of a relation given its string representation
+
+
+      Parameter
+      ---------
+      items:
+          relations
+
+
+
+   .. py:method:: construct_input_and_output(head_entity: List[str], relation: List[str], tail_entity: List[str], labels)
+
+      Construct a data point
+      :param head_entity:
+      :param relation:
+      :param tail_entity:
+      :param labels:
+      :return:
+
+
+
+   .. py:method:: parameters()
+
+
+.. py:class:: TriplePredictionDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1, label_smoothing_rate: float = 0.0)
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+       Triple Dataset
+
+           D:= {(x)_i}_i ^N, where
+               . x:(h,r, t) \in KG is a unique h \in E and a relation r \in R and
+               . collact_fn => Generates negative triples
+
+           collect_fn:
+   orall (h,r,t) \in G obtain, create negative triples{(h,r,x),(,r,t),(h,m,t)}
+
+           y:labels are represented in torch.float16
+          Parameters
+          ----------
+          train_set_idx
+              Indexed triples for the training.
+          entity_idxs
+              mapping.
+          relation_idxs
+              mapping.
+          form
+              ?
+          store
+               ?
+          label_smoothing_rate
+
+
+          collate_fn: batch:List[torch.IntTensor]
+          Returns
+          -------
+          torch.utils.data.Dataset
+
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: __getitem__(idx)
+
+
+   .. py:method:: collate_fn(batch: List[torch.Tensor])
+
+
+.. py:function:: random_prediction(pre_trained_kge)
+
+.. py:function:: deploy_triple_prediction(pre_trained_kge, str_subject, str_predicate, str_object)
+
+.. py:function:: deploy_tail_entity_prediction(pre_trained_kge, str_subject, str_predicate, top_k)
+
+.. py:function:: deploy_relation_prediction(pre_trained_kge, str_subject, str_object, top_k)
+
+.. py:function:: deploy_head_entity_prediction(pre_trained_kge, str_object, str_predicate, top_k)
+
+.. py:function:: load_pickle(file_path=str)
+
+.. py:function:: evaluate_lp(model, triple_idx, num_entities, er_vocab: Dict[Tuple, List], re_vocab: Dict[Tuple, List], info='Eval Starts')
+
+   Evaluate model in a standard link prediction task
+
+   for each triple
+   the rank is computed by taking the mean of the filtered missing head entity rank and
+   the filtered missing tail entity rank
+   :param model:
+   :param triple_idx:
+   :param info:
+   :return:
 
 
 .. py:class:: KGE(path=None, url=None, construct_ensemble=False, model_name=None, apply_semantic_constraint=False)
 
-
    Bases: :py:obj:`dicee.abstracts.BaseInteractiveKGE`
 
+
    Knowledge Graph Embedding Class for interactive usage of pre-trained models
+
 
    .. py:method:: get_transductive_entity_embeddings(indices: Union[torch.LongTensor, List[str]], as_pytorch=False, as_numpy=False, as_list=True) -> Union[torch.FloatTensor, numpy.ndarray, List[float]]
 
@@ -36,6 +270,7 @@ Classes
    .. py:method:: __str__()
 
       Return str(self).
+
 
 
    .. py:method:: eval_lp_performance(dataset=List[Tuple[str, str, str]], filtered=True)
@@ -68,6 +303,7 @@ Classes
       Highest K scores and entities
 
 
+
    .. py:method:: predict_missing_relations(head_entity: Union[List[str], str], tail_entity: Union[List[str], str], within=None) -> Tuple
 
       Given a head entity and a tail entity, return top k ranked relations.
@@ -96,6 +332,7 @@ Classes
       Highest K scores and entities
 
 
+
    .. py:method:: predict_missing_tail_entity(head_entity: Union[List[str], str], relation: Union[List[str], str], within: List[str] = None) -> torch.FloatTensor
 
       Given a head entity and a relation, return top k ranked entities
@@ -119,6 +356,7 @@ Classes
       scores
 
 
+
    .. py:method:: predict(*, h: Union[List[str], str] = None, r: Union[List[str], str] = None, t: Union[List[str], str] = None, within=None, logits=True) -> torch.FloatTensor
 
       :param logits:
@@ -126,6 +364,7 @@ Classes
       :param r:
       :param t:
       :param within:
+
 
 
    .. py:method:: predict_topk(*, h: List[str] = None, r: List[str] = None, t: List[str] = None, topk: int = 10, within: List[str] = None)
@@ -159,6 +398,7 @@ Classes
       Highest K scores and items
 
 
+
    .. py:method:: triple_score(h: Union[List[str], str] = None, r: Union[List[str], str] = None, t: Union[List[str], str] = None, logits=False) -> torch.FloatTensor
 
       Predict triple score
@@ -187,12 +427,14 @@ Classes
       pytorch tensor of triple score
 
 
+
    .. py:method:: t_norm(tens_1: torch.Tensor, tens_2: torch.Tensor, tnorm: str = 'min') -> torch.Tensor
 
 
    .. py:method:: tensor_t_norm(subquery_scores: torch.FloatTensor, tnorm: str = 'min') -> torch.FloatTensor
 
       Compute T-norm over [0,1] ^{n   imes d} where n denotes the number of hops and d denotes number of entities
+
 
 
    .. py:method:: t_conorm(tens_1: torch.Tensor, tens_2: torch.Tensor, tconorm: str = 'min') -> torch.Tensor
@@ -240,6 +482,7 @@ Classes
                 * *Entities and corresponding scores sorted in the descening order of scores*
 
 
+
    .. py:method:: find_missing_triples(confidence: float, entities: List[str] = None, relations: List[str] = None, topk: int = 10, at_most: int = sys.maxsize) -> Set
 
                Find missing triples
@@ -272,6 +515,7 @@ Classes
 
 
 
+
    .. py:method:: deploy(share: bool = False, top_k: int = 10)
 
 
@@ -286,6 +530,7 @@ Classes
       :param iteration:
       :param lr:
       :return:
+
 
 
    .. py:method:: train(kg, lr=0.1, epoch=10, batch_size=32, neg_sample_ratio=10, num_workers=1) -> None

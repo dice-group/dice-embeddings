@@ -6,7 +6,7 @@
   <title>dicee.models.quaternion &mdash; DICE Embeddings 0.1.3.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=eafc0fe6" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
@@ -19,7 +19,7 @@
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
         <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
-        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -59,7 +59,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/dicee/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/dicee/index.html">dicee</a></li>
 </ul>
 
         </div>
@@ -87,52 +87,19 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.models.quaternion</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
-<span class="kn">import</span> <span class="nn">torch</span>
+<span></span><span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">.static_funcs</span> <span class="kn">import</span> <span class="n">quaternion_mul</span>
 <span class="kn">from</span> <span class="nn">.base_model</span> <span class="kn">import</span> <span class="n">BaseKGE</span><span class="p">,</span> <span class="n">IdentityClass</span>
 
 
 <div class="viewcode-block" id="quaternion_mul_with_unit_norm">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.quaternion_mul_with_unit_norm">[docs]</a>
-<span class="k">def</span> <span class="nf">quaternion_mul_with_unit_norm</span><span class="p">(</span>
-    <span class="o">*</span><span class="p">,</span> <span class="n">Q_1</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">Q_2</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Performs the multiplication of two quaternions with unit norm.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    Q_1 : Tuple[float, float, float, float]</span>
-<span class="sd">        The first quaternion represented as a tuple of four real numbers (a_h, b_h, c_h, d_h).</span>
-<span class="sd">    Q_2 : Tuple[float, float, float, float]</span>
-<span class="sd">        The second quaternion represented as a tuple of four real numbers (a_r, b_r, c_r, d_r).</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    Tuple[float, float, float, float]</span>
-<span class="sd">        The result of the quaternion multiplication, represented as a tuple of four real numbers (r_val, i_val, j_val, k_val).</span>
-
-<span class="sd">    Notes</span>
-<span class="sd">    -----</span>
-<span class="sd">    The function assumes that the input quaternions have unit norm. </span>
-<span class="sd">    It first normalizes the second quaternion to eliminate the scaling effect, and then performs the Hamilton product of the two quaternions.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="p">(</span>
-        <span class="n">a_h</span><span class="p">,</span>
-        <span class="n">b_h</span><span class="p">,</span>
-        <span class="n">c_h</span><span class="p">,</span>
-        <span class="n">d_h</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">=</span> <span class="n">Q_1</span>  <span class="c1"># = {a_h + b_h i + c_h j + d_h k : a_r, b_r, c_r, d_r \in R^k}</span>
-    <span class="p">(</span>
-        <span class="n">a_r</span><span class="p">,</span>
-        <span class="n">b_r</span><span class="p">,</span>
-        <span class="n">c_r</span><span class="p">,</span>
-        <span class="n">d_r</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">=</span> <span class="n">Q_2</span>  <span class="c1"># = {a_r + b_r i + c_r j + d_r k : a_r, b_r, c_r, d_r \in R^k}</span>
+<span class="k">def</span> <span class="nf">quaternion_mul_with_unit_norm</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">Q_1</span><span class="p">,</span> <span class="n">Q_2</span><span class="p">):</span>
+    <span class="n">a_h</span><span class="p">,</span> <span class="n">b_h</span><span class="p">,</span> <span class="n">c_h</span><span class="p">,</span> <span class="n">d_h</span> <span class="o">=</span> <span class="n">Q_1</span>  <span class="c1"># = {a_h + b_h i + c_h j + d_h k : a_r, b_r, c_r, d_r \in R^k}</span>
+    <span class="n">a_r</span><span class="p">,</span> <span class="n">b_r</span><span class="p">,</span> <span class="n">c_r</span><span class="p">,</span> <span class="n">d_r</span> <span class="o">=</span> <span class="n">Q_2</span>  <span class="c1"># = {a_r + b_r i + c_r j + d_r k : a_r, b_r, c_r, d_r \in R^k}</span>
 
     <span class="c1"># Normalize the relation to eliminate the scaling effect</span>
-    <span class="n">denominator</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">a_r</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">b_r</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">c_r</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">d_r</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">denominator</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">a_r</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">b_r</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">c_r</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">d_r</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
     <span class="n">p</span> <span class="o">=</span> <span class="n">a_r</span> <span class="o">/</span> <span class="n">denominator</span>
     <span class="n">q</span> <span class="o">=</span> <span class="n">b_r</span> <span class="o">/</span> <span class="n">denominator</span>
     <span class="n">u</span> <span class="o">=</span> <span class="n">c_r</span> <span class="o">/</span> <span class="n">denominator</span>
@@ -147,49 +114,11 @@
 
 
 <div class="viewcode-block" id="QMult">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.QMult">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.QMult">[docs]</a>
 <span class="k">class</span> <span class="nc">QMult</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    QMult extends the base knowledge graph embedding model by integrating quaternion</span>
-<span class="sd">    algebra. This model leverages the properties of quaternions to represent and process</span>
-<span class="sd">    the embeddings of entities and relations in a knowledge graph, aiming to capture</span>
-<span class="sd">    complex interactions and patterns.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    args : dict</span>
-<span class="sd">        A dictionary of arguments containing hyperparameters and settings for the model,</span>
-<span class="sd">        such as embedding dimensions and learning rate.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    name : str</span>
-<span class="sd">        The name identifier for the QMult model.</span>
-
-<span class="sd">    Methods</span>
-<span class="sd">    -------</span>
-<span class="sd">    quaternion_normalizer(x: torch.FloatTensor) -&gt; torch.FloatTensor</span>
-<span class="sd">        Normalizes the length of relation vectors.</span>
-
-<span class="sd">    score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor) -&gt; torch.FloatTensor</span>
-<span class="sd">        Computes the score of a triple using quaternion multiplication.</span>
-
-<span class="sd">    k_vs_all_score(bpe_head_ent_emb: torch.FloatTensor, bpe_rel_ent_emb: torch.FloatTensor, E: torch.FloatTensor) -&gt; torch.FloatTensor</span>
-<span class="sd">        Computes scores in a K-vs-All setting using quaternion embeddings.</span>
-
-<span class="sd">    forward_k_vs_all(x: torch.FloatTensor) -&gt; torch.FloatTensor</span>
-<span class="sd">        Performs a forward pass for K-vs-All scoring, returning scores for all entities.</span>
-
-<span class="sd">    forward_k_vs_sample(x: torch.FloatTensor, target_entity_idx: int) -&gt; torch.FloatTensor</span>
-<span class="sd">        Performs a forward pass for K-vs-Sample scoring, returning scores for the specified entities.</span>
-
-<span class="sd">    quaternion_multiplication_followed_by_inner_product(h: torch.FloatTensor, r: torch.FloatTensor, t: torch.FloatTensor) -&gt; torch.FloatTensor</span>
-<span class="sd">        Performs quaternion multiplication followed by inner product, returning triple scores.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;QMult&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;QMult&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">explicit</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">explicit</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
             <span class="n">_1</span><span class="p">,</span> <span class="n">_i</span><span class="p">,</span> <span class="n">_j</span><span class="p">,</span> <span class="n">_k</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span>
@@ -220,69 +149,48 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">multiplication_table</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
 
 <div class="viewcode-block" id="QMult.quaternion_multiplication_followed_by_inner_product">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.QMult.quaternion_multiplication_followed_by_inner_product">[docs]</a>
-    <span class="k">def</span> <span class="nf">quaternion_multiplication_followed_by_inner_product</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.QMult.quaternion_multiplication_followed_by_inner_product">[docs]</a>
+    <span class="k">def</span> <span class="nf">quaternion_multiplication_followed_by_inner_product</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Performs quaternion multiplication followed by inner product.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        h : torch.FloatTensor</span>
-<span class="sd">            The head representations. Shape: (`*batch_dims`, dim)</span>
-
-<span class="sd">        r : torch.FloatTensor</span>
-<span class="sd">            The relation representations. Shape: (`*batch_dims`, dim)</span>
-
-<span class="sd">        t : torch.FloatTensor</span>
-<span class="sd">            The tail representations. Shape: (`*batch_dims`, dim)</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        torch.FloatTensor</span>
+<span class="sd">        :param h: shape: (`*batch_dims`, dim)</span>
+<span class="sd">            The head representations.</span>
+<span class="sd">        :param r: shape: (`*batch_dims`, dim)</span>
+<span class="sd">            The head representations.</span>
+<span class="sd">        :param t: shape: (`*batch_dims`, dim)</span>
+<span class="sd">            The tail representations.</span>
+<span class="sd">        :return:</span>
 <span class="sd">            Triple scores.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">shape</span>
         <span class="n">h</span> <span class="o">=</span> <span class="n">h</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
         <span class="n">r</span> <span class="o">=</span> <span class="n">r</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-        <span class="k">return</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s2">&quot;...di, ...dj, ...dk, ijk -&gt; ...&quot;</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiplication_table</span>
-        <span class="p">)</span></div>
+        <span class="k">return</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;...di, ...dj, ...dk, ijk -&gt; ...&quot;</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiplication_table</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="QMult.quaternion_normalizer">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.QMult.quaternion_normalizer">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.QMult.quaternion_normalizer">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">quaternion_normalizer</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        TODO: Add mathematical format for sphinx.</span>
 <span class="sd">        Normalize the length of relation vectors, if the forward constraint has not been applied yet.</span>
 
-<span class="sd">        The absolute value of a quaternion is calculated as follows:</span>
+<span class="sd">        Absolute value of a quaternion</span>
+
 <span class="sd">        .. math::</span>
 
 <span class="sd">            |a + bi + cj + dk| = \sqrt{a^2 + b^2 + c^2 + d^2}</span>
 
-<span class="sd">        The L2 norm of a quaternion vector is computed as:</span>
+<span class="sd">        L2 norm of quaternion vector:</span>
+
 <span class="sd">        .. math::</span>
 <span class="sd">            \|x\|^2 = \sum_{i=1}^d |x_i|^2</span>
 <span class="sd">                     = \sum_{i=1}^d (x_i.re^2 + x_i.im_1^2 + x_i.im_2^2 + x_i.im_3^2)</span>
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        x : torch.FloatTensor</span>
-<span class="sd">            The vector containing quaternion values.</span>
+<span class="sd">        :param x:</span>
+<span class="sd">            The vector.</span>
 
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        torch.FloatTensor</span>
+<span class="sd">        :return:</span>
 <span class="sd">            The normalized vector.</span>
-
-<span class="sd">        Notes</span>
-<span class="sd">        -----</span>
-<span class="sd">        This function normalizes the length of relation vectors represented as quaternions. It ensures that</span>
-<span class="sd">        the absolute value of each quaternion in the vector is equal to 1, preserving the unit length.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Normalize relation embeddings</span>
         <span class="n">shape</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
@@ -292,65 +200,21 @@
 
 
 <div class="viewcode-block" id="QMult.score">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.QMult.score">[docs]</a>
-    <span class="k">def</span> <span class="nf">score</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">head_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span>
-        <span class="n">rel_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span>
-        <span class="n">tail_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Compute scores for a batch of triples using octonion-based embeddings.</span>
-
-<span class="sd">        This method computes scores for a batch of triples using octonion-based embeddings of head entities,</span>
-<span class="sd">        relation embeddings, and tail entities. It supports both explicit and non-explicit scoring methods.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        head_ent_emb : torch.FloatTensor</span>
-<span class="sd">            Tensor containing the octonion-based embeddings of head entities.</span>
-<span class="sd">        rel_ent_emb : torch.FloatTensor</span>
-<span class="sd">            Tensor containing the octonion-based embeddings of relations.</span>
-<span class="sd">        tail_ent_emb : torch.FloatTensor</span>
-<span class="sd">            Tensor containing the octonion-based embeddings of tail entities.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        torch.FloatTensor</span>
-<span class="sd">            Scores for the given batch of triples.</span>
-
-<span class="sd">        Notes</span>
-<span class="sd">        -----</span>
-<span class="sd">        If no normalization is set, this method applies quaternion normalization to relation embeddings.</span>
-
-<span class="sd">        If the scoring method is explicit, it computes the scores using quaternion multiplication followed by</span>
-<span class="sd">        an inner product of the real and imaginary parts of the resulting quaternions.</span>
-
-<span class="sd">        If the scoring method is non-explicit, it directly computes the inner product of the real and</span>
-<span class="sd">        imaginary parts of the octonion-based embeddings.</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.QMult.score">[docs]</a>
+    <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">tail_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">):</span>
         <span class="c1"># (1.1) If No normalization set, we need to apply quaternion normalization</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_relation_embeddings</span><span class="p">,</span> <span class="n">IdentityClass</span><span class="p">):</span>
             <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quaternion_normalizer</span><span class="p">(</span><span class="n">rel_ent_emb</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">explicit</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">quaternion_multiplication_followed_by_inner_product</span><span class="p">(</span>
-                <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span>
-            <span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">quaternion_multiplication_followed_by_inner_product</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span><span class="p">)</span>
         <span class="c1"># (2) Split (1) into real and imaginary parts.</span>
-        <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span>
-            <span class="n">head_ent_emb</span><span class="p">,</span> <span class="mi">4</span>
-        <span class="p">)</span>
+        <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
         <span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-        <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">emb_tail_i</span><span class="p">,</span> <span class="n">emb_tail_j</span><span class="p">,</span> <span class="n">emb_tail_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span>
-            <span class="n">tail_ent_emb</span><span class="p">,</span> <span class="mi">4</span>
-        <span class="p">)</span>
+        <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">emb_tail_i</span><span class="p">,</span> <span class="n">emb_tail_j</span><span class="p">,</span> <span class="n">emb_tail_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">tail_ent_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
         <span class="c1"># (2)</span>
         <span class="c1"># (2.1) Apply quaternion multiplication on (1.1) and (2.1).</span>
-        <span class="n">r_val</span><span class="p">,</span> <span class="n">i_val</span><span class="p">,</span> <span class="n">j_val</span><span class="p">,</span> <span class="n">k_val</span> <span class="o">=</span> <span class="n">quaternion_mul</span><span class="p">(</span>
-            <span class="n">Q_1</span><span class="o">=</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span><span class="p">),</span>
-            <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">),</span>
-        <span class="p">)</span>
+        <span class="n">r_val</span><span class="p">,</span> <span class="n">i_val</span><span class="p">,</span> <span class="n">j_val</span><span class="p">,</span> <span class="n">k_val</span> <span class="o">=</span> <span class="n">quaternion_mul</span><span class="p">(</span><span class="n">Q_1</span><span class="o">=</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span><span class="p">),</span>
+                                                    <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">))</span>
         <span class="c1"># (3)</span>
         <span class="c1"># (3.1) Inner product</span>
         <span class="n">real_score</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">r_val</span> <span class="o">*</span> <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -361,62 +225,32 @@
 
 
 <div class="viewcode-block" id="QMult.k_vs_all_score">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.QMult.k_vs_all_score">[docs]</a>
-    <span class="k">def</span> <span class="nf">k_vs_all_score</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">bpe_head_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span>
-        <span class="n">bpe_rel_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span>
-        <span class="n">E</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.QMult.k_vs_all_score">[docs]</a>
+    <span class="k">def</span> <span class="nf">k_vs_all_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bpe_head_ent_emb</span><span class="p">,</span> <span class="n">bpe_rel_ent_emb</span><span class="p">,</span> <span class="n">E</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Computes scores in a K-vs-All setting using quaternion embeddings for a batch of head entities and relations.</span>
-
-<span class="sd">        This method involves splitting the head entity and relation embeddings into quaternion components,</span>
-<span class="sd">        optionally normalizing the relation embeddings, performing quaternion multiplication, and then</span>
-<span class="sd">        calculating the score by performing an inner product with all tail entity embeddings.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        bpe_head_ent_emb : torch.FloatTensor</span>
-<span class="sd">            Batched embeddings of head entities, each represented as a quaternion.</span>
-<span class="sd">        bpe_rel_ent_emb : torch.FloatTensor</span>
-<span class="sd">            Batched embeddings of relations, each represented as a quaternion.</span>
-<span class="sd">        E : torch.FloatTensor</span>
-<span class="sd">            Embeddings of all possible tail entities.</span>
+<span class="sd">        bpe_head_ent_emb</span>
+<span class="sd">        bpe_rel_ent_emb</span>
+<span class="sd">        E</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        torch.FloatTensor</span>
-<span class="sd">            Scores for all possible triples formed with the given head entities and relations against all entities.</span>
-<span class="sd">            The shape of the output is (size of batch, number of entities).</span>
 
-<span class="sd">        Notes</span>
-<span class="sd">        -----</span>
-<span class="sd">        The method is particularly useful in scenarios like link prediction, where the goal is to rank all possible</span>
-<span class="sd">        tail entities for a given head entity and relation. Quaternion algebra is used to enhance the interaction</span>
-<span class="sd">        modeling between entities and relations.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="c1"># (1.1) If No normalization set, we need to apply quaternion normalization</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_relation_embeddings</span><span class="p">,</span> <span class="n">IdentityClass</span><span class="p">):</span>
             <span class="n">bpe_rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quaternion_normalizer</span><span class="p">(</span><span class="n">bpe_rel_ent_emb</span><span class="p">)</span>
         <span class="c1"># (2) Split (1) into real and imaginary parts.</span>
-        <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span>
-            <span class="n">bpe_head_ent_emb</span><span class="p">,</span> <span class="mi">4</span>
-        <span class="p">)</span>
+        <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">bpe_head_ent_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
         <span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">bpe_rel_ent_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-        <span class="n">r_val</span><span class="p">,</span> <span class="n">i_val</span><span class="p">,</span> <span class="n">j_val</span><span class="p">,</span> <span class="n">k_val</span> <span class="o">=</span> <span class="n">quaternion_mul</span><span class="p">(</span>
-            <span class="n">Q_1</span><span class="o">=</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span><span class="p">),</span>
-            <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">),</span>
-        <span class="p">)</span>
+        <span class="n">r_val</span><span class="p">,</span> <span class="n">i_val</span><span class="p">,</span> <span class="n">j_val</span><span class="p">,</span> <span class="n">k_val</span> <span class="o">=</span> <span class="n">quaternion_mul</span><span class="p">(</span><span class="n">Q_1</span><span class="o">=</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span><span class="p">),</span>
+                                                    <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">))</span>
 
         <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">emb_tail_i</span><span class="p">,</span> <span class="n">emb_tail_j</span><span class="p">,</span> <span class="n">emb_tail_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-        <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">emb_tail_i</span><span class="p">,</span> <span class="n">emb_tail_j</span><span class="p">,</span> <span class="n">emb_tail_k</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">emb_tail_real</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-            <span class="n">emb_tail_i</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-            <span class="n">emb_tail_j</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-            <span class="n">emb_tail_k</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-        <span class="p">)</span>
+        <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">emb_tail_i</span><span class="p">,</span> <span class="n">emb_tail_j</span><span class="p">,</span> <span class="n">emb_tail_k</span> <span class="o">=</span> <span class="n">emb_tail_real</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">emb_tail_i</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> \
+            <span class="n">emb_tail_j</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">emb_tail_k</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
         <span class="c1"># (3)</span>
         <span class="c1"># (3.1) Inner product</span>
@@ -428,74 +262,33 @@
 
 
 <div class="viewcode-block" id="QMult.forward_k_vs_all">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.QMult.forward_k_vs_all">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.QMult.forward_k_vs_all">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Computes scores for all entities in a K-vs-All setting given a batch of head entities and relations.</span>
-
-<span class="sd">        This method retrieves embeddings for the head entities and relations from the input tensor `x`,</span>
-<span class="sd">        applies necessary dropout and normalization, and then uses the `k_vs_all_score` method to compute</span>
-<span class="sd">        the scores against all possible tail entities in the knowledge graph.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        x : torch.FloatTensor</span>
-<span class="sd">            A tensor containing indices for head entities and relations. The tensor is expected to have</span>
-<span class="sd">            a specific format suitable for the model&#39;s embedding retrieval process.</span>
+<span class="sd">        x</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        torch.FloatTensor</span>
-<span class="sd">            A tensor of scores, where each row corresponds to the scores of all tail entities for a</span>
-<span class="sd">            single head entity and relation pair. The shape of the tensor is (size of the batch, number of entities).</span>
 
-<span class="sd">        Notes</span>
-<span class="sd">        -----</span>
-<span class="sd">        This method is typically used in evaluating the model&#39;s performance in link prediction tasks,</span>
-<span class="sd">        where it&#39;s important to rank the likelihood of every possible tail entity for a given head entity</span>
-<span class="sd">        and relation.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_vs_all_score</span><span class="p">(</span>
-            <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span>
-        <span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_vs_all_score</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="QMult.forward_k_vs_sample">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.QMult.forward_k_vs_sample">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_k_vs_sample</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.QMult.forward_k_vs_sample">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Computes scores for a batch of triples against a sampled subset of entities in a K-vs-Sample setting.</span>
-
-<span class="sd">        Given a batch of head entities and relations (h,r), this method computes the scores for all possible triples</span>
-<span class="sd">        formed with these head entities and relations against a subset of entities, i.e., </span>
-<span class="sd">        [score(h,r,x)|x \in Entities] =&gt; [0.0,0.1,...,0.8], shape=&gt; (1, |Entities|). TODO: Add mathematical format for sphinx.</span>
-<span class="sd">        The subset of entities is specified by the `target_entity_idx`, which is an integer index representing a specific entity.</span>
-<span class="sd">        Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|).</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        x : torch.FloatTensor</span>
-<span class="sd">            A tensor containing indices for head entities and relations. The tensor is expected to have</span>
-<span class="sd">            a specific format suitable for the model&#39;s embedding retrieval process.</span>
-<span class="sd">        target_entity_idx : int</span>
-<span class="sd">            Index of the target entity against which the scores are to be computed.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        torch.FloatTensor</span>
-<span class="sd">            A tensor of scores where each element corresponds to the score of the target entity</span>
-<span class="sd">            for a single head entity and relation pair. The shape of the tensor is (size of the batch, 1).</span>
-
-<span class="sd">        Notes</span>
-<span class="sd">        -----</span>
-<span class="sd">        This method is particularly useful in scenarios like link prediction, where it&#39;s necessary to</span>
-<span class="sd">        evaluate the likelihood of a specific relationship between a given head entity and a particular</span>
-<span class="sd">        target entity.</span>
+<span class="sd">        Completed.</span>
+<span class="sd">        Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,</span>
+<span class="sd">        [score(h,r,x)|x \in Entities] =&gt; [0.0,0.1,...,0.8], shape=&gt; (1, |Entities|)</span>
+<span class="sd">        Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="c1"># (1.1) If No normalization set, we need to apply quaternion normalization</span>
@@ -503,21 +296,15 @@
             <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">quaternion_normalizer</span><span class="p">(</span><span class="n">rel_ent_emb</span><span class="p">)</span>
 
         <span class="c1"># (2) Split (1) into real and imaginary parts.</span>
-        <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span>
-            <span class="n">head_ent_emb</span><span class="p">,</span> <span class="mi">4</span>
-        <span class="p">)</span>
+        <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
         <span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-        <span class="n">r_val</span><span class="p">,</span> <span class="n">i_val</span><span class="p">,</span> <span class="n">j_val</span><span class="p">,</span> <span class="n">k_val</span> <span class="o">=</span> <span class="n">quaternion_mul</span><span class="p">(</span>
-            <span class="n">Q_1</span><span class="o">=</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span><span class="p">),</span>
-            <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">),</span>
-        <span class="p">)</span>
+        <span class="n">r_val</span><span class="p">,</span> <span class="n">i_val</span><span class="p">,</span> <span class="n">j_val</span><span class="p">,</span> <span class="n">k_val</span> <span class="o">=</span> <span class="n">quaternion_mul</span><span class="p">(</span><span class="n">Q_1</span><span class="o">=</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span><span class="p">),</span>
+                                                    <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">))</span>
 
         <span class="c1"># (batch size, num. selected entity, dimension)</span>
         <span class="n">tail_entity_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="p">(</span><span class="n">target_entity_idx</span><span class="p">)</span>
         <span class="c1"># quaternion vectors</span>
-        <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">emb_tail_i</span><span class="p">,</span> <span class="n">emb_tail_j</span><span class="p">,</span> <span class="n">emb_tail_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor_split</span><span class="p">(</span>
-            <span class="n">tail_entity_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span>
-        <span class="p">)</span>
+        <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">emb_tail_i</span><span class="p">,</span> <span class="n">emb_tail_j</span><span class="p">,</span> <span class="n">emb_tail_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor_split</span><span class="p">(</span><span class="n">tail_entity_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
         <span class="n">emb_tail_real</span> <span class="o">=</span> <span class="n">emb_tail_real</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
         <span class="n">emb_tail_i</span> <span class="o">=</span> <span class="n">emb_tail_i</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
@@ -541,132 +328,42 @@
 
 
 <div class="viewcode-block" id="ConvQ">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.ConvQ">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.ConvQ">[docs]</a>
 <span class="k">class</span> <span class="nc">ConvQ</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Convolutional Quaternion Knowledge Graph Embeddings (ConvQ) is a model that extends</span>
-<span class="sd">    the base knowledge graph embedding approach by using quaternion algebra and convolutional</span>
-<span class="sd">    neural networks. This model aims to capture complex interactions in knowledge graphs</span>
-<span class="sd">    by applying convolutions to quaternion-based entity and relation embeddings.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Convolutional Quaternion Knowledge Graph Embeddings</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    args : dict</span>
-<span class="sd">        A dictionary of arguments containing hyperparameters and settings for the model,</span>
-<span class="sd">        such as embedding dimensions, number of output channels, kernel size, and dropout rates.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    name : str</span>
-<span class="sd">        The name identifier for the ConvQ model.</span>
-<span class="sd">    entity_embeddings : torch.nn.Embedding</span>
-<span class="sd">        Embedding layer for entities in the knowledge graph.</span>
-<span class="sd">    relation_embeddings : torch.nn.Embedding</span>
-<span class="sd">        Embedding layer for relations in the knowledge graph.</span>
-<span class="sd">    conv2d : torch.nn.Conv2d</span>
-<span class="sd">        A 2D convolutional layer used for processing quaternion embeddings.</span>
-<span class="sd">    fc_num_input : int</span>
-<span class="sd">        The number of input features for the fully connected layer.</span>
-<span class="sd">    fc1 : torch.nn.Linear</span>
-<span class="sd">        A fully connected linear layer for compressing the output of the convolutional layer.</span>
-<span class="sd">    bn_conv1 : torch.nn.BatchNorm2d</span>
-<span class="sd">        First batch normalization layer applied after the convolutional operation.</span>
-<span class="sd">    bn_conv2 : Normalizer</span>
-<span class="sd">        Second normalization layer applied after the fully connected layer.</span>
-<span class="sd">    feature_map_dropout : torch.nn.Dropout2d</span>
-<span class="sd">        Dropout layer applied to the output of the convolutional layer.</span>
-
-<span class="sd">    Methods</span>
-<span class="sd">    -------</span>
-<span class="sd">    residual_convolution(Q_1, Q_2)</span>
-<span class="sd">        Performs a residual convolution operation on two sets of quaternion embeddings.</span>
-
-<span class="sd">    forward_triples(indexed_triple: torch.FloatTensor) -&gt; torch.FloatTensor</span>
-<span class="sd">        Computes scores for a batch of triples using convolutional operations on quaternion embeddings.</span>
-
-<span class="sd">    forward_k_vs_all(x: torch.FloatTensor) -&gt; torch.FloatTensor</span>
-<span class="sd">        Computes scores for all entities in a K-vs-All setting given a batch of head entities and relations.</span>
-
-<span class="sd">    Notes</span>
-<span class="sd">    -----</span>
-<span class="sd">    ConvQ leverages the properties of quaternions, a number system that extends complex numbers,</span>
-<span class="sd">    to represent and process the embeddings of entities and relations. The convolutional layers</span>
-<span class="sd">    aim to capture spatial relationships and complex patterns in the embeddings.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;ConvQ&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span>
-        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;ConvQ&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
         <span class="c1"># Convolution</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv2d</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span>
-            <span class="n">in_channels</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="n">out_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_of_output_channels</span><span class="p">,</span>
-            <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">),</span>
-            <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="n">bias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv2d</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">in_channels</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">out_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_of_output_channels</span><span class="p">,</span>
+                                      <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">),</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">fc_num_input</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_of_output_channels</span>
-        <span class="p">)</span>  <span class="c1"># 8 because of 8 real values in 2 quaternions</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fc1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">fc_num_input</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span>
-        <span class="p">)</span>  <span class="c1"># Hard compression.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc_num_input</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_of_output_channels</span>  <span class="c1"># 8 because of 8 real values in 2 quaternions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc_num_input</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>  <span class="c1"># Hard compression.</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">bn_conv1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_of_output_channels</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bn_conv2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalizer_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">feature_map_dropout</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Dropout2d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">feature_map_dropout_rate</span><span class="p">)</span>
 
 <div class="viewcode-block" id="ConvQ.residual_convolution">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.ConvQ.residual_convolution">[docs]</a>
-    <span class="k">def</span> <span class="nf">residual_convolution</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">Q_1</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">],</span>
-        <span class="n">Q_2</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">],</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Performs a residual convolution operation on two sets of quaternion embeddings.</span>
-
-<span class="sd">        The method combines two quaternion embeddings and applies a convolutional operation</span>
-<span class="sd">        followed by batch normalization, dropout, and a fully connected layer.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        Q_1 : Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]</span>
-<span class="sd">            The first set of quaternion embeddings.</span>
-<span class="sd">        Q_2 : Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]</span>
-<span class="sd">            The second set of quaternion embeddings.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]</span>
-<span class="sd">            The resulting quaternion embeddings after the convolutional operation.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.ConvQ.residual_convolution">[docs]</a>
+    <span class="k">def</span> <span class="nf">residual_convolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Q_1</span><span class="p">,</span> <span class="n">Q_2</span><span class="p">):</span>
         <span class="n">emb_ent_real</span><span class="p">,</span> <span class="n">emb_ent_imag_i</span><span class="p">,</span> <span class="n">emb_ent_imag_j</span><span class="p">,</span> <span class="n">emb_ent_imag_k</span> <span class="o">=</span> <span class="n">Q_1</span>
         <span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_imag_i</span><span class="p">,</span> <span class="n">emb_rel_imag_j</span><span class="p">,</span> <span class="n">emb_rel_imag_k</span> <span class="o">=</span> <span class="n">Q_2</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
-            <span class="p">[</span>
-                <span class="n">emb_ent_real</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
-                <span class="n">emb_ent_imag_i</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
-                <span class="n">emb_ent_imag_j</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
-                <span class="n">emb_ent_imag_k</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
-                <span class="n">emb_rel_real</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
-                <span class="n">emb_rel_imag_i</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
-                <span class="n">emb_rel_imag_j</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
-                <span class="n">emb_rel_imag_k</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
-            <span class="p">],</span>
-            <span class="mi">2</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">emb_ent_real</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
+                       <span class="n">emb_ent_imag_i</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
+                       <span class="n">emb_ent_imag_j</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
+                       <span class="n">emb_ent_imag_k</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
+                       <span class="n">emb_rel_real</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
+                       <span class="n">emb_rel_imag_i</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
+                       <span class="n">emb_rel_imag_j</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
+                       <span class="n">emb_rel_imag_k</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">)],</span> <span class="mi">2</span><span class="p">)</span>
 
         <span class="c1"># n, c_in, h_in, w_in x.shape before conv. h_in=8, w_in embeddings</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv2d</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -680,49 +377,24 @@
 
 
 <div class="viewcode-block" id="ConvQ.forward_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.ConvQ.forward_triples">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indexed_triple</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Computes scores for a batch of triples using convolutional operations on quaternion embeddings.</span>
-
-<span class="sd">        The method processes head, relation, and tail embeddings using quaternion algebra and</span>
-<span class="sd">        convolutional layers and computes the scores of the triples.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        indexed_triple : torch.FloatTensor</span>
-<span class="sd">            Tensor containing indices for head entities, relations, and tail entities.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        torch.FloatTensor</span>
-<span class="sd">            Scores for the given batch of triples.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.ConvQ.forward_triples">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indexed_triple</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
-        <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span>
-            <span class="n">indexed_triple</span>
-        <span class="p">)</span>
+        <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">indexed_triple</span><span class="p">)</span>
         <span class="c1"># (2) Split (1) into real and imaginary parts.</span>
-        <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span>
-            <span class="n">head_ent_emb</span><span class="p">,</span> <span class="mi">4</span>
-        <span class="p">)</span>
+        <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
         <span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-        <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">emb_tail_i</span><span class="p">,</span> <span class="n">emb_tail_j</span><span class="p">,</span> <span class="n">emb_tail_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span>
-            <span class="n">tail_ent_emb</span><span class="p">,</span> <span class="mi">4</span>
-        <span class="p">)</span>
+        <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">emb_tail_i</span><span class="p">,</span> <span class="n">emb_tail_j</span><span class="p">,</span> <span class="n">emb_tail_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">tail_ent_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 
         <span class="c1"># (2) Apply convolution operation on (1.1) and (1.2).</span>
-        <span class="n">Q_3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual_convolution</span><span class="p">(</span>
-            <span class="n">Q_1</span><span class="o">=</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span><span class="p">),</span>
-            <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">),</span>
-        <span class="p">)</span>
+        <span class="n">Q_3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual_convolution</span><span class="p">(</span><span class="n">Q_1</span><span class="o">=</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span><span class="p">),</span>
+                                        <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">))</span>
         <span class="n">conv_real</span><span class="p">,</span> <span class="n">conv_imag_i</span><span class="p">,</span> <span class="n">conv_imag_j</span><span class="p">,</span> <span class="n">conv_imag_k</span> <span class="o">=</span> <span class="n">Q_3</span>
         <span class="c1"># (3)</span>
         <span class="c1"># (3.1) Apply quaternion multiplication on (1.1) and (3.1).</span>
         <span class="n">r_val</span><span class="p">,</span> <span class="n">i_val</span><span class="p">,</span> <span class="n">j_val</span><span class="p">,</span> <span class="n">k_val</span> <span class="o">=</span> <span class="n">quaternion_mul</span><span class="p">(</span>
             <span class="n">Q_1</span><span class="o">=</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span><span class="p">),</span>
-            <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">),</span>
-        <span class="p">)</span>
+            <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">))</span>
         <span class="c1"># (4)</span>
         <span class="c1"># (4.1) Hadamard product of (2) with (3) and inner product with tails</span>
         <span class="n">real_score</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">conv_real</span> <span class="o">*</span> <span class="n">r_val</span> <span class="o">*</span> <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -733,56 +405,34 @@
 
 
 <div class="viewcode-block" id="ConvQ.forward_k_vs_all">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.ConvQ.forward_k_vs_all">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.ConvQ.forward_k_vs_all">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Computes scores for all entities in a K-vs-All setting given a batch of head entities and relations.</span>
-
-<span class="sd">        This method retrieves embeddings for the head entities and relations from the input tensor `x`,</span>
-<span class="sd">        applies necessary dropout and normalization, and then computes scores against all entities in</span>
-<span class="sd">        the knowledge graph.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        x : torch.FloatTensor</span>
-<span class="sd">            A tensor containing indices for head entities and relations.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        torch.FloatTensor</span>
-<span class="sd">            Scores for all entities for the given batch of head entities and relations.</span>
+<span class="sd">        Given a head entity and a relation (h,r), we compute scores for all entities.</span>
+<span class="sd">        [score(h,r,x)|x \in Entities] =&gt; [0.0,0.1,...,0.8], shape=&gt; (1, |Entities|)</span>
+<span class="sd">        Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="c1"># (2) Split (1) into real and imaginary parts.</span>
-        <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span>
-            <span class="n">head_ent_emb</span><span class="p">,</span> <span class="mi">4</span>
-        <span class="p">)</span>
+        <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
         <span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 
         <span class="c1"># (2) Apply convolution operation on (1.1) and (1.2).</span>
-        <span class="n">Q_3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual_convolution</span><span class="p">(</span>
-            <span class="n">Q_1</span><span class="o">=</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span><span class="p">),</span>
-            <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">),</span>
-        <span class="p">)</span>
+        <span class="n">Q_3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual_convolution</span><span class="p">(</span><span class="n">Q_1</span><span class="o">=</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span><span class="p">),</span>
+                                        <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">))</span>
         <span class="n">conv_real</span><span class="p">,</span> <span class="n">conv_imag_i</span><span class="p">,</span> <span class="n">conv_imag_j</span><span class="p">,</span> <span class="n">conv_imag_k</span> <span class="o">=</span> <span class="n">Q_3</span>
 
         <span class="c1"># (3)</span>
         <span class="c1"># (3.1) Apply quaternion multiplication.</span>
-        <span class="n">r_val</span><span class="p">,</span> <span class="n">i_val</span><span class="p">,</span> <span class="n">j_val</span><span class="p">,</span> <span class="n">k_val</span> <span class="o">=</span> <span class="n">quaternion_mul</span><span class="p">(</span>
-            <span class="n">Q_1</span><span class="o">=</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span><span class="p">),</span>
-            <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">),</span>
-        <span class="p">)</span>
+        <span class="n">r_val</span><span class="p">,</span> <span class="n">i_val</span><span class="p">,</span> <span class="n">j_val</span><span class="p">,</span> <span class="n">k_val</span> <span class="o">=</span> <span class="n">quaternion_mul</span><span class="p">(</span><span class="n">Q_1</span><span class="o">=</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span><span class="p">),</span>
+                                                    <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">))</span>
         <span class="c1"># Prepare all entity embeddings.</span>
-        <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">emb_tail_i</span><span class="p">,</span> <span class="n">emb_tail_j</span><span class="p">,</span> <span class="n">emb_tail_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="mi">4</span>
-        <span class="p">)</span>
-        <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">emb_tail_i</span><span class="p">,</span> <span class="n">emb_tail_j</span><span class="p">,</span> <span class="n">emb_tail_k</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">emb_tail_real</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-            <span class="n">emb_tail_i</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-            <span class="n">emb_tail_j</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-            <span class="n">emb_tail_k</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-        <span class="p">)</span>
+        <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">emb_tail_i</span><span class="p">,</span> <span class="n">emb_tail_j</span><span class="p">,</span> <span class="n">emb_tail_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">emb_tail_i</span><span class="p">,</span> <span class="n">emb_tail_j</span><span class="p">,</span> <span class="n">emb_tail_k</span> <span class="o">=</span> <span class="n">emb_tail_real</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> \
+            <span class="n">emb_tail_i</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">emb_tail_j</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
+            <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">emb_tail_k</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
         <span class="c1"># (4)</span>
         <span class="c1"># (4.1) Hadamard product of (2) with (3) and inner product with tails</span>
@@ -797,120 +447,40 @@
 
 
 <div class="viewcode-block" id="AConvQ">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.AConvQ">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.AConvQ">[docs]</a>
 <span class="k">class</span> <span class="nc">AConvQ</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Additive Convolutional Quaternion Knowledge Graph Embeddings (AConvQ) model integrates</span>
-<span class="sd">    quaternion algebra with convolutional neural networks for knowledge graph embeddings.</span>
-<span class="sd">    This model is designed to capture complex interactions in knowledge graphs by applying</span>
-<span class="sd">    additive convolutions to quaternion-based entity and relation embeddings.</span>
-
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    name : str</span>
-<span class="sd">        The name identifier for the AConvQ model.</span>
-<span class="sd">    entity_embeddings : torch.nn.Embedding</span>
-<span class="sd">        Embedding layer for entities in the knowledge graph.</span>
-<span class="sd">    relation_embeddings : torch.nn.Embedding</span>
-<span class="sd">        Embedding layer for relations in the knowledge graph.</span>
-<span class="sd">    conv2d : torch.nn.Conv2d</span>
-<span class="sd">        A 2D convolutional layer used for processing quaternion embeddings.</span>
-<span class="sd">    fc_num_input : int</span>
-<span class="sd">        The number of input features for the fully connected layer.</span>
-<span class="sd">    fc1 : torch.nn.Linear</span>
-<span class="sd">        A fully connected linear layer for compressing the output of the convolutional layer.</span>
-<span class="sd">    bn_conv1 : torch.nn.BatchNorm2d</span>
-<span class="sd">        Batch normalization layer applied after the convolutional operation.</span>
-<span class="sd">    bn_conv2 : Normalizer</span>
-<span class="sd">        Normalization layer applied after the fully connected layer.</span>
-<span class="sd">    feature_map_dropout : torch.nn.Dropout2d</span>
-<span class="sd">        Dropout layer applied to the output of the convolutional layer.</span>
-
-<span class="sd">    Methods</span>
-<span class="sd">    -------</span>
-<span class="sd">    residual_convolution(Q_1, Q_2)</span>
-<span class="sd">        Performs an additive residual convolution operation on two sets of quaternion embeddings.</span>
-
-<span class="sd">    forward_triples(indexed_triple: torch.FloatTensor) -&gt; torch.FloatTensor</span>
-<span class="sd">        Computes scores for a batch of triples using additive convolutional operations on quaternion embeddings.</span>
-
-<span class="sd">    forward_k_vs_all(x: torch.FloatTensor) -&gt; torch.FloatTensor</span>
-<span class="sd">        Computes scores for all entities in a K-vs-All setting given a batch of head entities and relations.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Additive Convolutional Quaternion Knowledge Graph Embeddings &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;AConvQ&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span>
-        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;AConvQ&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
         <span class="c1"># Convolution</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv2d</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span>
-            <span class="n">in_channels</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="n">out_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_of_output_channels</span><span class="p">,</span>
-            <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">),</span>
-            <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="n">bias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv2d</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">in_channels</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">out_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_of_output_channels</span><span class="p">,</span>
+                                      <span class="n">kernel_size</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">),</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">fc_num_input</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_of_output_channels</span>
-        <span class="p">)</span>  <span class="c1"># 8 because of 8 real values in 2 quaternions</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fc1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">fc_num_input</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span>
-        <span class="p">)</span>  <span class="c1"># Hard compression.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc_num_input</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_of_output_channels</span>  <span class="c1"># 8 because of 8 real values in 2 quaternions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fc1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fc_num_input</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>  <span class="c1"># Hard compression.</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">bn_conv1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_of_output_channels</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bn_conv2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">normalizer_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">feature_map_dropout</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Dropout2d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">feature_map_dropout_rate</span><span class="p">)</span>
 
 <div class="viewcode-block" id="AConvQ.residual_convolution">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.AConvQ.residual_convolution">[docs]</a>
-    <span class="k">def</span> <span class="nf">residual_convolution</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">Q_1</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">],</span>
-        <span class="n">Q_2</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">],</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Performs a residual convolution operation on two sets of quaternion embeddings.</span>
-
-<span class="sd">        The method combines two quaternion embeddings and applies a convolutional operation</span>
-<span class="sd">        followed by batch normalization, dropout, and a fully connected layer.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        Q_1 : Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]</span>
-<span class="sd">            The first set of quaternion embeddings.</span>
-<span class="sd">        Q_2 : Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]</span>
-<span class="sd">            The second set of quaternion embeddings.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        Tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]</span>
-<span class="sd">            The resulting quaternion embeddings after the convolutional operation.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.AConvQ.residual_convolution">[docs]</a>
+    <span class="k">def</span> <span class="nf">residual_convolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">Q_1</span><span class="p">,</span> <span class="n">Q_2</span><span class="p">):</span>
         <span class="n">emb_ent_real</span><span class="p">,</span> <span class="n">emb_ent_imag_i</span><span class="p">,</span> <span class="n">emb_ent_imag_j</span><span class="p">,</span> <span class="n">emb_ent_imag_k</span> <span class="o">=</span> <span class="n">Q_1</span>
         <span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_imag_i</span><span class="p">,</span> <span class="n">emb_rel_imag_j</span><span class="p">,</span> <span class="n">emb_rel_imag_k</span> <span class="o">=</span> <span class="n">Q_2</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
-            <span class="p">[</span>
-                <span class="n">emb_ent_real</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
-                <span class="n">emb_ent_imag_i</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
-                <span class="n">emb_ent_imag_j</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
-                <span class="n">emb_ent_imag_k</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
-                <span class="n">emb_rel_real</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
-                <span class="n">emb_rel_imag_i</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
-                <span class="n">emb_rel_imag_j</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
-                <span class="n">emb_rel_imag_k</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
-            <span class="p">],</span>
-            <span class="mi">2</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">emb_ent_real</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
+                       <span class="n">emb_ent_imag_i</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
+                       <span class="n">emb_ent_imag_j</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
+                       <span class="n">emb_ent_imag_k</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
+                       <span class="n">emb_rel_real</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
+                       <span class="n">emb_rel_imag_i</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
+                       <span class="n">emb_rel_imag_j</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">),</span>
+                       <span class="n">emb_rel_imag_k</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">//</span> <span class="mi">4</span><span class="p">)],</span> <span class="mi">2</span><span class="p">)</span>
 
         <span class="c1"># n, c_in, h_in, w_in x.shape before conv. h_in=8, w_in embeddings</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv2d</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -924,49 +494,24 @@
 
 
 <div class="viewcode-block" id="AConvQ.forward_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.AConvQ.forward_triples">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indexed_triple</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Computes scores for a batch of triples using convolutional operations on quaternion embeddings.</span>
-
-<span class="sd">        The method processes head, relation, and tail embeddings using quaternion algebra and</span>
-<span class="sd">        convolutional layers and computes the scores of the triples.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        indexed_triple : torch.FloatTensor</span>
-<span class="sd">            Tensor containing indices for head entities, relations, and tail entities.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        torch.FloatTensor</span>
-<span class="sd">            Scores for the given batch of triples.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.AConvQ.forward_triples">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indexed_triple</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
-        <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span>
-            <span class="n">indexed_triple</span>
-        <span class="p">)</span>
+        <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">indexed_triple</span><span class="p">)</span>
         <span class="c1"># (2) Split (1) into real and imaginary parts.</span>
-        <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span>
-            <span class="n">head_ent_emb</span><span class="p">,</span> <span class="mi">4</span>
-        <span class="p">)</span>
+        <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
         <span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-        <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">emb_tail_i</span><span class="p">,</span> <span class="n">emb_tail_j</span><span class="p">,</span> <span class="n">emb_tail_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span>
-            <span class="n">tail_ent_emb</span><span class="p">,</span> <span class="mi">4</span>
-        <span class="p">)</span>
+        <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">emb_tail_i</span><span class="p">,</span> <span class="n">emb_tail_j</span><span class="p">,</span> <span class="n">emb_tail_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">tail_ent_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 
         <span class="c1"># (2) Apply convolution operation on (1.1) and (1.2).</span>
-        <span class="n">Q_3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual_convolution</span><span class="p">(</span>
-            <span class="n">Q_1</span><span class="o">=</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span><span class="p">),</span>
-            <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">),</span>
-        <span class="p">)</span>
+        <span class="n">Q_3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual_convolution</span><span class="p">(</span><span class="n">Q_1</span><span class="o">=</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span><span class="p">),</span>
+                                        <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">))</span>
         <span class="n">conv_real</span><span class="p">,</span> <span class="n">conv_imag_i</span><span class="p">,</span> <span class="n">conv_imag_j</span><span class="p">,</span> <span class="n">conv_imag_k</span> <span class="o">=</span> <span class="n">Q_3</span>
         <span class="c1"># (3)</span>
         <span class="c1"># (3.1) Apply quaternion multiplication on (1.1) and (3.1).</span>
         <span class="n">r_val</span><span class="p">,</span> <span class="n">i_val</span><span class="p">,</span> <span class="n">j_val</span><span class="p">,</span> <span class="n">k_val</span> <span class="o">=</span> <span class="n">quaternion_mul</span><span class="p">(</span>
             <span class="n">Q_1</span><span class="o">=</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span><span class="p">),</span>
-            <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">),</span>
-        <span class="p">)</span>
+            <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">))</span>
         <span class="c1"># (4)</span>
         <span class="c1"># (4.1) Hadamard product of (2) with (3) and inner product with tails</span>
         <span class="n">real_score</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">conv_real</span> <span class="o">+</span> <span class="n">r_val</span> <span class="o">*</span> <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -977,56 +522,34 @@
 
 
 <div class="viewcode-block" id="AConvQ.forward_k_vs_all">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.AConvQ.forward_k_vs_all">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.AConvQ.forward_k_vs_all">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Computes scores for all entities in a K-vs-All setting given a batch of head entities and relations.</span>
-
-<span class="sd">        This method retrieves embeddings for the head entities and relations from the input tensor `x`,</span>
-<span class="sd">        applies necessary dropout and normalization, and then computes scores against all entities in</span>
-<span class="sd">        the knowledge graph.</span>
-
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        x : torch.FloatTensor</span>
-<span class="sd">            A tensor containing indices for head entities and relations.</span>
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        torch.FloatTensor</span>
-<span class="sd">            Scores for all entities for the given batch of head entities and relations.</span>
+<span class="sd">        Given a head entity and a relation (h,r), we compute scores for all entities.</span>
+<span class="sd">        [score(h,r,x)|x \in Entities] =&gt; [0.0,0.1,...,0.8], shape=&gt; (1, |Entities|)</span>
+<span class="sd">        Given a batch of head entities and relations =&gt; shape (size of batch,| Entities|)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="c1"># (2) Split (1) into real and imaginary parts.</span>
-        <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span>
-            <span class="n">head_ent_emb</span><span class="p">,</span> <span class="mi">4</span>
-        <span class="p">)</span>
+        <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
         <span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 
         <span class="c1"># (2) Apply convolution operation on (1.1) and (1.2).</span>
-        <span class="n">Q_3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual_convolution</span><span class="p">(</span>
-            <span class="n">Q_1</span><span class="o">=</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span><span class="p">),</span>
-            <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">),</span>
-        <span class="p">)</span>
+        <span class="n">Q_3</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual_convolution</span><span class="p">(</span><span class="n">Q_1</span><span class="o">=</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span><span class="p">),</span>
+                                        <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">))</span>
         <span class="n">conv_real</span><span class="p">,</span> <span class="n">conv_imag_i</span><span class="p">,</span> <span class="n">conv_imag_j</span><span class="p">,</span> <span class="n">conv_imag_k</span> <span class="o">=</span> <span class="n">Q_3</span>
 
         <span class="c1"># (3)</span>
         <span class="c1"># (3.1) Apply quaternion multiplication.</span>
-        <span class="n">r_val</span><span class="p">,</span> <span class="n">i_val</span><span class="p">,</span> <span class="n">j_val</span><span class="p">,</span> <span class="n">k_val</span> <span class="o">=</span> <span class="n">quaternion_mul</span><span class="p">(</span>
-            <span class="n">Q_1</span><span class="o">=</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span><span class="p">),</span>
-            <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">),</span>
-        <span class="p">)</span>
+        <span class="n">r_val</span><span class="p">,</span> <span class="n">i_val</span><span class="p">,</span> <span class="n">j_val</span><span class="p">,</span> <span class="n">k_val</span> <span class="o">=</span> <span class="n">quaternion_mul</span><span class="p">(</span><span class="n">Q_1</span><span class="o">=</span><span class="p">(</span><span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_head_i</span><span class="p">,</span> <span class="n">emb_head_j</span><span class="p">,</span> <span class="n">emb_head_k</span><span class="p">),</span>
+                                                    <span class="n">Q_2</span><span class="o">=</span><span class="p">(</span><span class="n">emb_rel_real</span><span class="p">,</span> <span class="n">emb_rel_i</span><span class="p">,</span> <span class="n">emb_rel_j</span><span class="p">,</span> <span class="n">emb_rel_k</span><span class="p">))</span>
         <span class="c1"># Prepare all entity embeddings.</span>
-        <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">emb_tail_i</span><span class="p">,</span> <span class="n">emb_tail_j</span><span class="p">,</span> <span class="n">emb_tail_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="mi">4</span>
-        <span class="p">)</span>
-        <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">emb_tail_i</span><span class="p">,</span> <span class="n">emb_tail_j</span><span class="p">,</span> <span class="n">emb_tail_k</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">emb_tail_real</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-            <span class="n">emb_tail_i</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-            <span class="n">emb_tail_j</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-            <span class="n">emb_tail_k</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
-        <span class="p">)</span>
+        <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">emb_tail_i</span><span class="p">,</span> <span class="n">emb_tail_j</span><span class="p">,</span> <span class="n">emb_tail_k</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="n">emb_tail_real</span><span class="p">,</span> <span class="n">emb_tail_i</span><span class="p">,</span> <span class="n">emb_tail_j</span><span class="p">,</span> <span class="n">emb_tail_k</span> <span class="o">=</span> <span class="n">emb_tail_real</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> \
+            <span class="n">emb_tail_i</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">emb_tail_j</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
+            <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">emb_tail_k</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
         <span class="c1"># (4)</span>
         <span class="c1"># (4.1) Hadamard product of (2) with (3) and inner product with tails</span>

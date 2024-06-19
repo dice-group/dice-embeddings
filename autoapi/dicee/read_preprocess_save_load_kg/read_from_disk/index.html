@@ -7,7 +7,7 @@
   <title>dicee.read_preprocess_save_load_kg.read_from_disk &mdash; DICE Embeddings 0.1.3.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8775fe07" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
-      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=eafc0fe6" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=fd3f3429" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/theme_tweak.css?v=f0ad19f3" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8775fe07" />
@@ -20,7 +20,7 @@
         <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
         <script src="../../../../_static/documentation_options.js?v=c6726a90"></script>
-        <script src="../../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
         <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
@@ -62,28 +62,34 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#docker">Docker</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-cite">How to cite</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../../index.html">dicee</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="../../index.html#subpackages">Subpackages</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="../../models/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.models</span></code></a></li>
-<li class="toctree-l3 current"><a class="reference internal" href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg</span></code></a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../../models/index.html">dicee.models</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html">dicee.read_preprocess_save_load_kg</a><ul class="current">
 <li class="toctree-l4 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
-<li class="toctree-l5"><a class="reference internal" href="../preprocess/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg.preprocess</span></code></a></li>
-<li class="toctree-l5 current"><a class="current reference internal" href="#"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg.read_from_disk</span></code></a><ul>
+<li class="toctree-l5"><a class="reference internal" href="../preprocess/index.html">dicee.read_preprocess_save_load_kg.preprocess</a></li>
+<li class="toctree-l5 current"><a class="current reference internal" href="#">dicee.read_preprocess_save_load_kg.read_from_disk</a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#classes">Classes</a></li>
+<li class="toctree-l6"><a class="reference internal" href="#functions">Functions</a></li>
 <li class="toctree-l6"><a class="reference internal" href="#module-contents">Module Contents</a></li>
 </ul>
 </li>
-<li class="toctree-l5"><a class="reference internal" href="../save_load_disk/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg.save_load_disk</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="../util/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg.util</span></code></a></li>
+<li class="toctree-l5"><a class="reference internal" href="../save_load_disk/index.html">dicee.read_preprocess_save_load_kg.save_load_disk</a></li>
+<li class="toctree-l5"><a class="reference internal" href="../util/index.html">dicee.read_preprocess_save_load_kg.util</a></li>
 </ul>
 </li>
+<li class="toctree-l4"><a class="reference internal" href="../index.html#classes">Classes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../index.html#package-contents">Package Contents</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="../../scripts/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.scripts</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../trainer/index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.trainer</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../scripts/index.html">dicee.scripts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../trainer/index.html">dicee.trainer</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../../index.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#attributes">Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#classes">Classes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../index.html#functions">Functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../../index.html#package-contents">Package Contents</a></li>
 </ul>
 </li>
@@ -103,9 +109,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-          <li class="breadcrumb-item"><a href="../../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee</span></code></a></li>
-          <li class="breadcrumb-item"><a href="../index.html"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg</span></code></a></li>
-      <li class="breadcrumb-item active"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg.read_from_disk</span></code></li>
+          <li class="breadcrumb-item"><a href="../../index.html">dicee</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">dicee.read_preprocess_save_load_kg</a></li>
+      <li class="breadcrumb-item active">dicee.read_preprocess_save_load_kg.read_from_disk</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../../../../_sources/autoapi/dicee/read_preprocess_save_load_kg/read_from_disk/index.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -116,93 +122,70 @@
            <div itemprop="articleBody">
              
   <section id="module-dicee.read_preprocess_save_load_kg.read_from_disk">
-<span id="dicee-read-preprocess-save-load-kg-read-from-disk"></span><h1><a class="reference internal" href="#module-dicee.read_preprocess_save_load_kg.read_from_disk" title="dicee.read_preprocess_save_load_kg.read_from_disk"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.read_preprocess_save_load_kg.read_from_disk</span></code></a><a class="headerlink" href="#module-dicee.read_preprocess_save_load_kg.read_from_disk" title="Link to this heading"></a></h1>
-<section id="module-contents">
-<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<span id="dicee-read-preprocess-save-load-kg-read-from-disk"></span><h1>dicee.read_preprocess_save_load_kg.read_from_disk<a class="headerlink" href="#module-dicee.read_preprocess_save_load_kg.read_from_disk" title="Link to this heading"></a></h1>
 <section id="classes">
-<h3>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h3>
+<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk" title="dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ReadFromDisk</span></code></a></p></td>
-<td><p>Read the data from disk into memory.</p></td>
+<td><p>Read the data from disk into memory</p></td>
 </tr>
 </tbody>
 </table>
+</section>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.read_from_disk.read_from_disk" title="dicee.read_preprocess_save_load_kg.read_from_disk.read_from_disk"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_from_disk</span></code></a>(data_path[, read_only_few, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.read_from_disk.read_from_triple_store" title="dicee.read_preprocess_save_load_kg.read_from_disk.read_from_triple_store"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_from_triple_store</span></code></a>([endpoint])</p></td>
+<td><p>Read triples from triple store into pandas dataframe</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.read_from_disk.read_from_disk">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.read_from_disk.</span></span><span class="sig-name descname"><span class="pre">read_from_disk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_only_few</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_triples_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#read_from_disk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.read_from_disk.read_from_disk" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.read_from_disk.read_from_triple_store">
+<span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.read_from_disk.</span></span><span class="sig-name descname"><span class="pre">read_from_triple_store</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">endpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/util.html#read_from_triple_store"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.read_from_disk.read_from_triple_store" title="Link to this definition"></a></dt>
+<dd><p>Read triples from triple store into pandas dataframe</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.read_from_disk.</span></span><span class="sig-name descname"><span class="pre">ReadFromDisk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk" title="Link to this definition"></a></dt>
-<dd><p>Read the data from disk into memory.</p>
-<p>This class is responsible for loading a knowledge graph from various sources such as
-disk files, triple stores, or SPARQL endpoints, and then making it available in memory
-for further processing.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.kg">
-<span class="sig-name descname"><span class="pre">kg</span></span><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.kg" title="Link to this definition"></a></dt>
-<dd><p>An instance representing the knowledge graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>object</p>
-</dd>
-</dl>
-</dd></dl>
-
+<dd><p>Read the data from disk into memory</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.start">
 <span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.start" title="Link to this definition"></a></dt>
-<dd><p>Read a knowledge graph from disk into memory.</p>
+<dd><p>Read a knowledge graph from disk into memory</p>
+<p>Data will be available at the train_set, test_set, valid_set attributes.</p>
+<section id="parameter">
+<h3>Parameter<a class="headerlink" href="#parameter" title="Link to this heading"></a></h3>
+<p>None</p>
+<dl class="field-list simple">
+<dt class="field-odd">rtype<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</section>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.add_noisy_triples_into_training">
-<span class="sig-name descname"><span class="pre">add_noisy_triples_into_training</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk.add_noisy_triples_into_training"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.add_noisy_triples_into_training" title="Link to this definition"></a></dt>
-<dd><p>Add noisy triples into the training set of the knowledge graph.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id0">
-<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
-<dd><p>Read a knowledge graph from disk into memory.</p>
-<p>This method reads the knowledge graph data from the specified source (disk, triple store,
-or SPARQL endpoint) and loads it into memory. The data is made available in the
-train_set, test_set, and valid_set attributes of the knowledge graph instance.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>None</strong> – </p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
-</dd>
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>RuntimeError</strong> – If the data source is invalid or not specified correctly.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="id1">
-<span class="sig-name descname"><span class="pre">add_noisy_triples_into_training</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk.add_noisy_triples_into_training"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
-<dd><p>Add noisy triples into the training set of the knowledge graph.</p>
-<p>This method injects a specified proportion of noisy triples into the training set.
-Noisy triples are randomly generated by shuffling the entities and relations in the
-knowledge graph. The purpose of adding noisy triples is often to test the robustness
-of the model or to augment the training data.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>None</strong> – </p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-<p class="rubric">Notes</p>
-<p>The number of noisy triples added is determined by the ‘add_noise_rate’ attribute
-of the knowledge graph. The method ensures that the total number of triples (original
-plus noisy) in the training set matches the expected count after adding the noisy triples.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">add_noisy_triples_into_training</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk.add_noisy_triples_into_training"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk.add_noisy_triples_into_training" title="Link to this definition"></a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
-</section>
 </section>
 </section>
 
