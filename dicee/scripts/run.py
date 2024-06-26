@@ -1,5 +1,5 @@
 import json
-from dicee.executer import Execute
+from dicee.executer import Execute, ContinuousExecute
 import argparse
 
 def get_default_arguments(description=None):
@@ -31,7 +31,7 @@ def get_default_arguments(description=None):
     parser.add_argument("--model", type=str,
                         default="Keci",
                         choices=["ComplEx", "Keci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
-                                 "OMult", "Shallom", "DistMult", "TransE", "DeCaL",
+                                 "OMult", "Shallom", "DistMult", "TransE", "DualE",
                                  "BytE",
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
                                  "Pykeen_HolE", "Pykeen_ProjE", "Pykeen_RotatE",
@@ -43,9 +43,9 @@ def get_default_arguments(description=None):
     parser.add_argument('--optim', type=str, default='Adam',
                         help='An optimizer',
                         choices=['Adam', 'AdamW', 'SGD',"NAdam", "Adagrad", "ASGD"])
-    parser.add_argument('--embedding_dim', type=int, default=32,
+    parser.add_argument('--embedding_dim', type=int, default=256,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=500, help='Number of epochs for training. ')
+    parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=1024,
                         help='Mini batch size. If None, automatic batch finder is applied')
     parser.add_argument("--lr", type=float, default=0.01)
@@ -73,14 +73,6 @@ def get_default_arguments(description=None):
     parser.add_argument("--gradient_accumulation_steps", type=int, default=0,
                         help="e.g. gradient_accumulation_steps=2 "
                              "implies that gradients are accumulated at every second mini-batch")
-    parser.add_argument('--num_folds_for_cv', type=int, default=0,
-                        help='Number of folds in k-fold cross validation.'
-                             'If >2 ,no evaluation scenario is applied implies no evaluation.')
-    parser.add_argument("--eval_model", type=str, default="train_val_test",
-                        choices=["None", "train", "train_val", "train_val_test", "test"],
-                        help='Evaluating link prediction performance on data splits. ')
-    parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
-                        help='At every X number of epochs model will be saved. If None, we save 4 times.')
     parser.add_argument("--label_smoothing_rate", type=float, default=0.0, help='None for not using it.')
     parser.add_argument("--kernel_size", type=int, default=3,
                         help="Square kernel size for convolution based models.")
@@ -90,19 +82,34 @@ def get_default_arguments(description=None):
                         help='Number of cores to be used. 0 implies using single CPU')
     parser.add_argument("--random_seed", type=int, default=1,
                         help='Seed for all, see pl seed_everything().')
+    parser.add_argument('--p', type=int, default=0,
+                        help='P for Clifford Algebra')
+    parser.add_argument('--q', type=int, default=1,
+                        help='Q for Clifford Algebra')
+    parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
+
+    # Evaluation Related
+    parser.add_argument('--num_folds_for_cv', type=int, default=0,
+                        help='Number of folds in k-fold cross validation.'
+                             'If >2 ,no evaluation scenario is applied implies no evaluation.')
+    parser.add_argument("--eval_model", type=str, default="train_val_test",
+                        choices=["None", "train", "train_val", "train_val_test", "test"],
+                        help='Evaluating link prediction performance on data splits. ')
+    parser.add_argument("--save_model_at_every_epoch", type=int, default=None,
+                        help='At every X number of epochs model will be saved. If None, we save 4 times.')
+    # Continual Learning
+    parser.add_argument("--continual_learning", type=str, default=None,
+                        help="The path of a folder containing a pretrained model and configurations")
+
     parser.add_argument("--sample_triples_ratio", type=float, default=None, help='Sample input data.')
     parser.add_argument("--read_only_few", type=int, default=None,
                         help='READ only first N triples. If 0, read all.')
     parser.add_argument("--add_noise_rate", type=float, default=0.0,
                         help='Add x % of noisy triples into training dataset.')
-    parser.add_argument('--p', type=int, default=0,
-                        help='P for Clifford Algebra')
-    parser.add_argument('--q', type=int, default=1,
-                        help='Q for Clifford Algebra')
+    # WIP
+
     parser.add_argument('--r', type=int, default=0,
                         help='R for Clifford Algebra')
-    parser.add_argument('--pykeen_model_kwargs', type=json.loads, default={})
-    # WIP
     parser.add_argument('--block_size', type=int, default=8,
                         help='Block size for BytE')
     parser.add_argument("--byte_pair_encoding",
@@ -122,7 +129,12 @@ def get_default_arguments(description=None):
     return parser.parse_args(description)
 
 def main():
-    Execute(get_default_arguments()).start()
+
+    args = get_default_arguments()
+    if args.continual_learning:
+        ContinuousExecute(args).continual_start()
+    else:
+        Execute(get_default_arguments()).start()
 
 if __name__ == '__main__':
     main()

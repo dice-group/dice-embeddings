@@ -133,6 +133,8 @@ class Namespace(argparse.Namespace):
         self.block_size: int = None
         "block size of LLM"
 
+        self.continual_learning=None
+        "Path of a pretrained model size of LLM"
 
     def __iter__(self):
         # Iterate
