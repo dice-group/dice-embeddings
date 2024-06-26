@@ -123,6 +123,7 @@ def get_default_arguments(description=None):
                         help="Stochastic weight averaging")
     parser.add_argument('--degree', type=int, default=0,
                         help='degree for polynomial embeddings')
+    parser.add_argument('--disable_checkpointing', action='store_false', help='Disable creation of checkpoints during training')
 
     if description is None:
         return parser.parse_args()
