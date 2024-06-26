@@ -76,7 +76,7 @@ def initialize_trainer(args, callbacks):
                           min_steps=kwargs.get("min_steps", None),
                           detect_anomaly=False,
                           barebones=False,
-                          enable_checkpointing=kwargs['disable_checkpointing'])
+                          enable_checkpointing=not kwargs.get('disable_checkpointing', False))
     else:
         print('Initialize TorchTrainer CPU Trainer', end='\t')
         return TorchTrainer(args, callbacks=callbacks)
