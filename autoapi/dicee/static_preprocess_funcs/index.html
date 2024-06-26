@@ -82,7 +82,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#attributes">Attributes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.static_preprocess_funcs.sanity_checking_with_arguments"><code class="docutils literal notranslate"><span class="pre">sanity_checking_with_arguments()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_preprocess_funcs.enable_log"><code class="docutils literal notranslate"><span class="pre">enable_log</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_preprocess_funcs.timeit"><code class="docutils literal notranslate"><span class="pre">timeit()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.static_preprocess_funcs.preprocesses_input_args"><code class="docutils literal notranslate"><span class="pre">preprocesses_input_args()</span></code></a></li>
@@ -146,31 +145,28 @@
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_preprocess_funcs.sanity_checking_with_arguments" title="dicee.static_preprocess_funcs.sanity_checking_with_arguments"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sanity_checking_with_arguments</span></code></a>(args)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_preprocess_funcs.timeit" title="dicee.static_preprocess_funcs.timeit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">timeit</span></code></a>(func)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_preprocess_funcs.timeit" title="dicee.static_preprocess_funcs.timeit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">timeit</span></code></a>(func)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_preprocess_funcs.preprocesses_input_args" title="dicee.static_preprocess_funcs.preprocesses_input_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">preprocesses_input_args</span></code></a>(args)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_preprocess_funcs.preprocesses_input_args" title="dicee.static_preprocess_funcs.preprocesses_input_args"><code class="xref py py-obj docutils literal notranslate"><span class="pre">preprocesses_input_args</span></code></a>(args)</p></td>
 <td><p>Sanity Checking in input arguments</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_preprocess_funcs.create_constraints" title="dicee.static_preprocess_funcs.create_constraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_constraints</span></code></a>(→ Tuple[dict, dict, dict, dict])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_preprocess_funcs.create_constraints" title="dicee.static_preprocess_funcs.create_constraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_constraints</span></code></a>(→ Tuple[dict, dict, dict, dict])</p></td>
 <td><p><ol class="arabic simple">
 <li><p>Extract domains and ranges of relations</p></li>
 </ol>
 </p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_preprocess_funcs.get_er_vocab" title="dicee.static_preprocess_funcs.get_er_vocab"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_er_vocab</span></code></a>(data)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_preprocess_funcs.get_er_vocab" title="dicee.static_preprocess_funcs.get_er_vocab"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_er_vocab</span></code></a>(data)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_preprocess_funcs.get_re_vocab" title="dicee.static_preprocess_funcs.get_re_vocab"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_re_vocab</span></code></a>(data)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_preprocess_funcs.get_re_vocab" title="dicee.static_preprocess_funcs.get_re_vocab"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_re_vocab</span></code></a>(data)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_preprocess_funcs.get_ee_vocab" title="dicee.static_preprocess_funcs.get_ee_vocab"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_ee_vocab</span></code></a>(data)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_preprocess_funcs.get_ee_vocab" title="dicee.static_preprocess_funcs.get_ee_vocab"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_ee_vocab</span></code></a>(data)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_preprocess_funcs.mapping_from_first_two_cols_to_third" title="dicee.static_preprocess_funcs.mapping_from_first_two_cols_to_third"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mapping_from_first_two_cols_to_third</span></code></a>(train_set_idx)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_preprocess_funcs.mapping_from_first_two_cols_to_third" title="dicee.static_preprocess_funcs.mapping_from_first_two_cols_to_third"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mapping_from_first_two_cols_to_third</span></code></a>(train_set_idx)</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -178,11 +174,6 @@
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
-<dl class="py function">
-<dt class="sig sig-object py" id="dicee.static_preprocess_funcs.sanity_checking_with_arguments">
-<span class="sig-prename descclassname"><span class="pre">dicee.static_preprocess_funcs.</span></span><span class="sig-name descname"><span class="pre">sanity_checking_with_arguments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/sanity_checkers.html#sanity_checking_with_arguments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.static_preprocess_funcs.sanity_checking_with_arguments" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
 <dl class="py data">
 <dt class="sig sig-object py" id="dicee.static_preprocess_funcs.enable_log">
 <span class="sig-prename descclassname"><span class="pre">dicee.static_preprocess_funcs.</span></span><span class="sig-name descname"><span class="pre">enable_log</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#dicee.static_preprocess_funcs.enable_log" title="Link to this definition"></a></dt>

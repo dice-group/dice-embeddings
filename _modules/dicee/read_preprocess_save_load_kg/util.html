@@ -101,7 +101,7 @@
 
 
 <div class="viewcode-block" id="apply_reciprical_or_noise">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.preprocess.apply_reciprical_or_noise">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.apply_reciprical_or_noise">[docs]</a>
 <span class="k">def</span> <span class="nf">apply_reciprical_or_noise</span><span class="p">(</span><span class="n">add_reciprical</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">eval_model</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="nb">object</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; (1) Add reciprocal triples (2) Add noisy triples &quot;&quot;&quot;</span>
     <span class="c1"># (1) Add reciprocal triples, e.g. KG:= {(s,p,o)} union {(o,p_inverse,s)}</span>
@@ -117,7 +117,7 @@
 
 
 <div class="viewcode-block" id="timeit">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.preprocess.timeit">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.timeit">[docs]</a>
 <span class="k">def</span> <span class="nf">timeit</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
     <span class="nd">@functools</span><span class="o">.</span><span class="n">wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">timeit_wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -135,7 +135,7 @@
 
 
 <div class="viewcode-block" id="read_with_polars">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.preprocess.read_with_polars">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.read_with_polars">[docs]</a>
 <span class="nd">@timeit</span>
 <span class="k">def</span> <span class="nf">read_with_polars</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="n">read_only_few</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sample_triples_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">polars</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Load and Preprocess via Polars &quot;&quot;&quot;</span>
@@ -173,7 +173,7 @@
 
 
 <div class="viewcode-block" id="read_with_pandas">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.preprocess.read_with_pandas">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.read_with_pandas">[docs]</a>
 <span class="nd">@timeit</span>
 <span class="k">def</span> <span class="nf">read_with_pandas</span><span class="p">(</span><span class="n">data_path</span><span class="p">,</span> <span class="n">read_only_few</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sample_triples_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;*** Reading </span><span class="si">{</span><span class="n">data_path</span><span class="si">}</span><span class="s1"> with Pandas ***&#39;</span><span class="p">)</span>
@@ -212,7 +212,7 @@
 
 
 <div class="viewcode-block" id="read_from_disk">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.preprocess.read_from_disk">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.read_from_disk">[docs]</a>
 <span class="k">def</span> <span class="nf">read_from_disk</span><span class="p">(</span><span class="n">data_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">read_only_few</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                    <span class="n">sample_triples_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="k">assert</span> <span class="n">backend</span>
@@ -248,7 +248,7 @@
 
 
 <div class="viewcode-block" id="read_from_triple_store">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.preprocess.read_from_triple_store">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.read_from_triple_store">[docs]</a>
 <span class="k">def</span> <span class="nf">read_from_triple_store</span><span class="p">(</span><span class="n">endpoint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Read triples from triple store into pandas dataframe &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">endpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
@@ -264,7 +264,7 @@
 
 
 <div class="viewcode-block" id="get_er_vocab">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.preprocess.get_er_vocab">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.get_er_vocab">[docs]</a>
 <span class="k">def</span> <span class="nf">get_er_vocab</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
     <span class="c1"># head entity and relation</span>
     <span class="n">er_vocab</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
@@ -278,7 +278,7 @@
 
 
 <div class="viewcode-block" id="get_re_vocab">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.preprocess.get_re_vocab">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.get_re_vocab">[docs]</a>
 <span class="k">def</span> <span class="nf">get_re_vocab</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
     <span class="c1"># head entity and relation</span>
     <span class="n">re_vocab</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
@@ -291,7 +291,7 @@
 
 
 <div class="viewcode-block" id="get_ee_vocab">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.preprocess.get_ee_vocab">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.get_ee_vocab">[docs]</a>
 <span class="k">def</span> <span class="nf">get_ee_vocab</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
     <span class="c1"># head entity and relation</span>
     <span class="n">ee_vocab</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
@@ -304,7 +304,7 @@
 
 
 <div class="viewcode-block" id="create_constraints">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.preprocess.create_constraints">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.create_constraints">[docs]</a>
 <span class="k">def</span> <span class="nf">create_constraints</span><span class="p">(</span><span class="n">triples</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    (1) Extract domains and ranges of relations</span>
@@ -340,7 +340,7 @@
 
 
 <div class="viewcode-block" id="load_with_pandas">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.preprocess.load_with_pandas">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.load_with_pandas">[docs]</a>
 <span class="nd">@timeit</span>
 <span class="k">def</span> <span class="nf">load_with_pandas</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Deserialize data &quot;&quot;&quot;</span>
@@ -405,7 +405,7 @@
 
 
 <div class="viewcode-block" id="save_numpy_ndarray">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.preprocess.save_numpy_ndarray">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.save_numpy_ndarray">[docs]</a>
 <span class="k">def</span> <span class="nf">save_numpy_ndarray</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
     <span class="n">n</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">shape</span>
     <span class="k">assert</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span>
@@ -416,7 +416,7 @@
 
 
 <div class="viewcode-block" id="load_numpy_ndarray">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.preprocess.load_numpy_ndarray">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.load_numpy_ndarray">[docs]</a>
 <span class="k">def</span> <span class="nf">load_numpy_ndarray</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span></div>
@@ -424,14 +424,14 @@
 
 
 <div class="viewcode-block" id="save_pickle">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.preprocess.save_pickle">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.save_pickle">[docs]</a>
 <span class="k">def</span> <span class="nf">save_pickle</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="n">file_path</span><span class="o">=</span><span class="nb">str</span><span class="p">):</span>
     <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">))</span></div>
 
 
 
 <div class="viewcode-block" id="load_pickle">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.preprocess.load_pickle">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.load_pickle">[docs]</a>
 <span class="k">def</span> <span class="nf">load_pickle</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">file_path</span><span class="o">=</span><span class="nb">str</span><span class="p">):</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span></div>
@@ -439,7 +439,7 @@
 
 
 <div class="viewcode-block" id="create_recipriocal_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.preprocess.create_recipriocal_triples">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.create_recipriocal_triples">[docs]</a>
 <span class="k">def</span> <span class="nf">create_recipriocal_triples</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Add inverse triples into dask dataframe</span>
@@ -453,7 +453,7 @@
 
 
 <div class="viewcode-block" id="index_triples_with_pandas">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.preprocess.index_triples_with_pandas">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.index_triples_with_pandas">[docs]</a>
 <span class="k">def</span> <span class="nf">index_triples_with_pandas</span><span class="p">(</span><span class="n">train_set</span><span class="p">,</span> <span class="n">entity_to_idx</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">relation_to_idx</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">frame</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    :param train_set: pandas dataframe</span>
@@ -476,7 +476,7 @@
 
 
 <div class="viewcode-block" id="dataset_sanity_checking">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.preprocess.dataset_sanity_checking">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/util/index.html#dicee.read_preprocess_save_load_kg.util.dataset_sanity_checking">[docs]</a>
 <span class="k">def</span> <span class="nf">dataset_sanity_checking</span><span class="p">(</span><span class="n">train_set</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_relations</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 

@@ -26,21 +26,12 @@ Functions
 
 .. autoapisummary::
 
-   dicee.dataset_classes.mapping_from_first_two_cols_to_third
-   dicee.dataset_classes.timeit
-   dicee.dataset_classes.load_pickle
    dicee.dataset_classes.reload_dataset
    dicee.dataset_classes.construct_dataset
 
 
 Module Contents
 ---------------
-
-.. py:function:: mapping_from_first_two_cols_to_third(train_set_idx)
-
-.. py:function:: timeit(func)
-
-.. py:function:: load_pickle(file_path=str)
 
 .. py:function:: reload_dataset(path: str, form_of_labelling, scoring_technique, neg_ratio, label_smoothing_rate)
 

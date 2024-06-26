@@ -9,7 +9,6 @@ Classes
 
 .. autoapisummary::
 
-   dicee.callbacks.AbstractCallback
    dicee.callbacks.AccumulateEpochLossCallback
    dicee.callbacks.PrintCallback
    dicee.callbacks.KGESaveCallback
@@ -25,117 +24,12 @@ Functions
 
 .. autoapisummary::
 
-   dicee.callbacks.save_checkpoint_model
-   dicee.callbacks.save_pickle
    dicee.callbacks.estimate_q
    dicee.callbacks.compute_convergence
 
 
 Module Contents
 ---------------
-
-.. py:function:: save_checkpoint_model(model, path: str) -> None
-
-   Store Pytorch model into disk
-
-
-.. py:function:: save_pickle(*, data: object = None, file_path=str)
-
-.. py:class:: AbstractCallback
-
-   Bases: :py:obj:`abc.ABC`, :py:obj:`lightning.pytorch.callbacks.Callback`
-
-
-   Abstract class for Callback class for knowledge graph embedding models
-
-
-   Parameter
-   ---------
-
-
-
-   .. py:method:: on_init_start(*args, **kwargs)
-
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
-
-
-
-   .. py:method:: on_init_end(*args, **kwargs)
-
-      Call at the beginning of the training.
-
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
-
-
-
-   .. py:method:: on_fit_start(trainer, model)
-
-      Call at the beginning of the training.
-
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
-
-
-
-   .. py:method:: on_train_epoch_end(trainer, model)
-
-      Call at the end of each epoch during training.
-
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
-
-
-
-   .. py:method:: on_train_batch_end(*args, **kwargs)
-
-      Call at the end of each mini-batch during the training.
-
-
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
-
-
-
-   .. py:method:: on_fit_end(*args, **kwargs)
-
-      Call at the end of the training.
-
-      Parameter
-      ---------
-      trainer:
-
-      model:
-
-      :rtype: None
-
-
 
 .. py:class:: AccumulateEpochLossCallback(path: str)
 

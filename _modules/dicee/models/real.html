@@ -94,7 +94,7 @@
 
 
 <div class="viewcode-block" id="DistMult">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.DistMult">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.DistMult">[docs]</a>
 <span class="k">class</span> <span class="nc">DistMult</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Embedding Entities and Relations for Learning and Inference in Knowledge Bases</span>
@@ -105,7 +105,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;DistMult&#39;</span>
 
 <div class="viewcode-block" id="DistMult.k_vs_all_score">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.DistMult.k_vs_all_score">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.DistMult.k_vs_all_score">[docs]</a>
     <span class="k">def</span> <span class="nf">k_vs_all_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">emb_h</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">emb_r</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">emb_E</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -123,14 +123,14 @@
 
 
 <div class="viewcode-block" id="DistMult.forward_k_vs_all">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.DistMult.forward_k_vs_all">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.DistMult.forward_k_vs_all">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
         <span class="n">emb_head</span><span class="p">,</span> <span class="n">emb_rel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_vs_all_score</span><span class="p">(</span><span class="n">emb_h</span><span class="o">=</span><span class="n">emb_head</span><span class="p">,</span> <span class="n">emb_r</span><span class="o">=</span><span class="n">emb_rel</span><span class="p">,</span> <span class="n">emb_E</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DistMult.forward_k_vs_sample">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.DistMult.forward_k_vs_sample">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.DistMult.forward_k_vs_sample">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
         <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_rel_real</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">hr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden_dropout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_normalizer</span><span class="p">(</span><span class="n">emb_head_real</span> <span class="o">*</span> <span class="n">emb_rel_real</span><span class="p">))</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
@@ -139,7 +139,7 @@
 
 
 <div class="viewcode-block" id="DistMult.score">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.DistMult.score">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.DistMult.score">[docs]</a>
     <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_dropout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden_normalizer</span><span class="p">(</span><span class="n">h</span> <span class="o">*</span> <span class="n">r</span><span class="p">))</span> <span class="o">*</span> <span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
 </div>
@@ -147,7 +147,7 @@
 
 
 <div class="viewcode-block" id="TransE">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.TransE">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.TransE">[docs]</a>
 <span class="k">class</span> <span class="nc">TransE</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Translating Embeddings for Modeling</span>
@@ -161,7 +161,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">margin</span> <span class="o">=</span> <span class="mi">4</span>
 
 <div class="viewcode-block" id="TransE.score">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.TransE.score">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.TransE.score">[docs]</a>
     <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span><span class="p">):</span>
         <span class="c1"># Original d:=|| s+p - t||_2 \approx 0 distance, if true</span>
         <span class="c1"># if d =0 sigma(5-0) =&gt; 1</span>
@@ -172,7 +172,7 @@
 
 
 <div class="viewcode-block" id="TransE.forward_k_vs_all">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.TransE.forward_k_vs_all">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.TransE.forward_k_vs_all">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
         <span class="n">emb_head_real</span><span class="p">,</span> <span class="n">emb_rel_real</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="n">distance</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">pairwise_distance</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">emb_head_real</span> <span class="o">+</span> <span class="n">emb_rel_real</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
@@ -183,7 +183,7 @@
 
 
 <div class="viewcode-block" id="Shallom">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.Shallom">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.Shallom">[docs]</a>
 <span class="k">class</span> <span class="nc">Shallom</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090) &quot;&quot;&quot;</span>
 
@@ -199,13 +199,13 @@
                                            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">shallom_width</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">))</span>
 
 <div class="viewcode-block" id="Shallom.get_embeddings">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.Shallom.get_embeddings">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.Shallom.get_embeddings">[docs]</a>
     <span class="k">def</span> <span class="nf">get_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="kc">None</span></div>
 
 
 <div class="viewcode-block" id="Shallom.forward_k_vs_all">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.Shallom.forward_k_vs_all">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.Shallom.forward_k_vs_all">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
         <span class="n">e1_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
         <span class="n">e2_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
@@ -215,7 +215,7 @@
 
 
 <div class="viewcode-block" id="Shallom.forward_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.Shallom.forward_triples">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.Shallom.forward_triples">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -232,7 +232,7 @@
 
 
 <div class="viewcode-block" id="Pyke">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.Pyke">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.Pyke">[docs]</a>
 <span class="k">class</span> <span class="nc">Pyke</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; A Physical Embedding Model for Knowledge Graphs &quot;&quot;&quot;</span>
 
@@ -243,7 +243,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">margin</span> <span class="o">=</span> <span class="mf">1.0</span>
 
 <div class="viewcode-block" id="Pyke.forward_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.Pyke.forward_triples">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/real/index.html#dicee.Pyke.forward_triples">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
         <span class="c1"># (1) get embeddings for a batch of entities and relations</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>

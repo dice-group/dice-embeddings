@@ -67,13 +67,7 @@
 <li class="toctree-l2 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
 <li class="toctree-l3 current"><a class="current reference internal" href="#">dicee.abstracts</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.abstracts.load_model_ensemble"><code class="docutils literal notranslate"><span class="pre">load_model_ensemble()</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.abstracts.load_model"><code class="docutils literal notranslate"><span class="pre">load_model()</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.abstracts.save_checkpoint_model"><code class="docutils literal notranslate"><span class="pre">save_checkpoint_model()</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.abstracts.load_json"><code class="docutils literal notranslate"><span class="pre">load_json()</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.abstracts.download_pretrained_model"><code class="docutils literal notranslate"><span class="pre">download_pretrained_model()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.abstracts.AbstractTrainer"><code class="docutils literal notranslate"><span class="pre">AbstractTrainer</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.AbstractTrainer.on_fit_start"><code class="docutils literal notranslate"><span class="pre">AbstractTrainer.on_fit_start()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.AbstractTrainer.on_fit_end"><code class="docutils literal notranslate"><span class="pre">AbstractTrainer.on_fit_end()</span></code></a></li>
@@ -194,64 +188,8 @@
 </tbody>
 </table>
 </section>
-<section id="functions">
-<h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
-<table class="autosummary longtable docutils align-default">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.abstracts.load_model_ensemble" title="dicee.abstracts.load_model_ensemble"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_model_ensemble</span></code></a>(...)</p></td>
-<td><p>Construct Ensemble Of weights and initialize pytorch module from namespace arguments</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.abstracts.load_model" title="dicee.abstracts.load_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_model</span></code></a>(→ Tuple[object, Tuple[dict, dict]])</p></td>
-<td><p>Load weights and initialize pytorch module from namespace arguments</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.abstracts.save_checkpoint_model" title="dicee.abstracts.save_checkpoint_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_checkpoint_model</span></code></a>(→ None)</p></td>
-<td><p>Store Pytorch model into disk</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.abstracts.load_json" title="dicee.abstracts.load_json"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_json</span></code></a>(→ dict)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.abstracts.download_pretrained_model" title="dicee.abstracts.download_pretrained_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_pretrained_model</span></code></a>(→ str)</p></td>
-<td><p></p></td>
-</tr>
-</tbody>
-</table>
-</section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
-<dl class="py function">
-<dt class="sig sig-object py" id="dicee.abstracts.load_model_ensemble">
-<span class="sig-prename descclassname"><span class="pre">dicee.abstracts.</span></span><span class="sig-name descname"><span class="pre">load_model_ensemble</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_of_experiment_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="../models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><span class="pre">dicee.models.base_model.BaseKGE</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.DataFrame</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/static_funcs.html#load_model_ensemble"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.load_model_ensemble" title="Link to this definition"></a></dt>
-<dd><p>Construct Ensemble Of weights and initialize pytorch module from namespace arguments</p>
-<ol class="arabic simple">
-<li><p>Detect models under given path</p></li>
-<li><p>Accumulate parameters of detected models</p></li>
-<li><p>Normalize parameters</p></li>
-<li><p>Insert (3) into model.</p></li>
-</ol>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="dicee.abstracts.load_model">
-<span class="sig-prename descclassname"><span class="pre">dicee.abstracts.</span></span><span class="sig-name descname"><span class="pre">load_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_of_experiment_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'model.pt'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">object</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../_modules/dicee/static_funcs.html#load_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.load_model" title="Link to this definition"></a></dt>
-<dd><p>Load weights and initialize pytorch module from namespace arguments</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="dicee.abstracts.save_checkpoint_model">
-<span class="sig-prename descclassname"><span class="pre">dicee.abstracts.</span></span><span class="sig-name descname"><span class="pre">save_checkpoint_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/static_funcs.html#save_checkpoint_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.save_checkpoint_model" title="Link to this definition"></a></dt>
-<dd><p>Store Pytorch model into disk</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="dicee.abstracts.load_json">
-<span class="sig-prename descclassname"><span class="pre">dicee.abstracts.</span></span><span class="sig-name descname"><span class="pre">load_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../../../_modules/dicee/static_funcs.html#load_json"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.load_json" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="dicee.abstracts.download_pretrained_model">
-<span class="sig-prename descclassname"><span class="pre">dicee.abstracts.</span></span><span class="sig-name descname"><span class="pre">download_pretrained_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../../_modules/dicee/static_funcs.html#download_pretrained_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.download_pretrained_model" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.abstracts.AbstractTrainer">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.abstracts.</span></span><span class="sig-name descname"><span class="pre">AbstractTrainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractTrainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.AbstractTrainer" title="Link to this definition"></a></dt>

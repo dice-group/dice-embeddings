@@ -140,14 +140,14 @@
 
 
 <div class="viewcode-block" id="OMult">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.OMult">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/octonion/index.html#dicee.OMult">[docs]</a>
 <span class="k">class</span> <span class="nc">OMult</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;OMult&#39;</span>
 
 <div class="viewcode-block" id="OMult.octonion_normalizer">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.OMult.octonion_normalizer">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/octonion/index.html#dicee.OMult.octonion_normalizer">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">octonion_normalizer</span><span class="p">(</span><span class="n">emb_rel_e0</span><span class="p">,</span> <span class="n">emb_rel_e1</span><span class="p">,</span> <span class="n">emb_rel_e2</span><span class="p">,</span> <span class="n">emb_rel_e3</span><span class="p">,</span> <span class="n">emb_rel_e4</span><span class="p">,</span> <span class="n">emb_rel_e5</span><span class="p">,</span> <span class="n">emb_rel_e6</span><span class="p">,</span>
                             <span class="n">emb_rel_e7</span><span class="p">):</span>
@@ -166,7 +166,7 @@
 
 
 <div class="viewcode-block" id="OMult.score">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.OMult.score">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/octonion/index.html#dicee.OMult.score">[docs]</a>
     <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">tail_ent_emb</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">):</span>
         <span class="c1"># (2) Split (1) into real and imaginary parts.</span>
         <span class="n">emb_head_e0</span><span class="p">,</span> <span class="n">emb_head_e1</span><span class="p">,</span> <span class="n">emb_head_e2</span><span class="p">,</span> <span class="n">emb_head_e3</span><span class="p">,</span> <span class="n">emb_head_e4</span><span class="p">,</span> <span class="n">emb_head_e5</span><span class="p">,</span> <span class="n">emb_head_e6</span><span class="p">,</span> <span class="n">emb_head_e7</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span>
@@ -203,7 +203,7 @@
 
 
 <div class="viewcode-block" id="OMult.k_vs_all_score">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.OMult.k_vs_all_score">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/octonion/index.html#dicee.OMult.k_vs_all_score">[docs]</a>
     <span class="k">def</span> <span class="nf">k_vs_all_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bpe_head_ent_emb</span><span class="p">,</span> <span class="n">bpe_rel_ent_emb</span><span class="p">,</span> <span class="n">E</span><span class="p">):</span>
 
         <span class="c1"># (2) Split (1) into real and imaginary parts.</span>
@@ -250,7 +250,7 @@
 
 
 <div class="viewcode-block" id="OMult.forward_k_vs_all">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.OMult.forward_k_vs_all">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/octonion/index.html#dicee.OMult.forward_k_vs_all">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Completed.</span>
@@ -266,7 +266,7 @@
 
 
 <div class="viewcode-block" id="ConvO">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.ConvO">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/octonion/index.html#dicee.ConvO">[docs]</a>
 <span class="k">class</span> <span class="nc">ConvO</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">args</span><span class="p">)</span>
@@ -281,7 +281,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">feature_map_dropout</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Dropout2d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">feature_map_dropout_rate</span><span class="p">)</span>
 
 <div class="viewcode-block" id="ConvO.octonion_normalizer">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.ConvO.octonion_normalizer">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/octonion/index.html#dicee.ConvO.octonion_normalizer">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">octonion_normalizer</span><span class="p">(</span><span class="n">emb_rel_e0</span><span class="p">,</span> <span class="n">emb_rel_e1</span><span class="p">,</span> <span class="n">emb_rel_e2</span><span class="p">,</span> <span class="n">emb_rel_e3</span><span class="p">,</span> <span class="n">emb_rel_e4</span><span class="p">,</span> <span class="n">emb_rel_e5</span><span class="p">,</span> <span class="n">emb_rel_e6</span><span class="p">,</span>
                             <span class="n">emb_rel_e7</span><span class="p">):</span>
@@ -300,7 +300,7 @@
 
 
 <div class="viewcode-block" id="ConvO.residual_convolution">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.ConvO.residual_convolution">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/octonion/index.html#dicee.ConvO.residual_convolution">[docs]</a>
     <span class="k">def</span> <span class="nf">residual_convolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">O_1</span><span class="p">,</span> <span class="n">O_2</span><span class="p">):</span>
         <span class="n">emb_ent_e0</span><span class="p">,</span> <span class="n">emb_ent_e1</span><span class="p">,</span> <span class="n">emb_ent_e2</span><span class="p">,</span> <span class="n">emb_ent_e3</span><span class="p">,</span> <span class="n">emb_ent_e4</span><span class="p">,</span> <span class="n">emb_ent_e5</span><span class="p">,</span> <span class="n">emb_ent_e6</span><span class="p">,</span> <span class="n">emb_ent_e7</span> <span class="o">=</span> <span class="n">O_1</span>
         <span class="n">emb_rel_e0</span><span class="p">,</span> <span class="n">emb_rel_e1</span><span class="p">,</span> <span class="n">emb_rel_e2</span><span class="p">,</span> <span class="n">emb_rel_e3</span><span class="p">,</span> <span class="n">emb_rel_e4</span><span class="p">,</span> <span class="n">emb_rel_e5</span><span class="p">,</span> <span class="n">emb_rel_e6</span><span class="p">,</span> <span class="n">emb_rel_e7</span> <span class="o">=</span> <span class="n">O_2</span>
@@ -328,7 +328,7 @@
 
 
 <div class="viewcode-block" id="ConvO.forward_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.ConvO.forward_triples">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/octonion/index.html#dicee.ConvO.forward_triples">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -376,7 +376,7 @@
 
 
 <div class="viewcode-block" id="ConvO.forward_k_vs_all">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.ConvO.forward_k_vs_all">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/octonion/index.html#dicee.ConvO.forward_k_vs_all">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Given a head entity and a relation (h,r), we compute scores for all entities.</span>
@@ -439,7 +439,7 @@
 
 
 <div class="viewcode-block" id="AConvO">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.AConvO">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/octonion/index.html#dicee.AConvO">[docs]</a>
 <span class="k">class</span> <span class="nc">AConvO</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Additive Convolutional Octonion Knowledge Graph Embeddings &quot;&quot;&quot;</span>
 
@@ -456,7 +456,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">feature_map_dropout</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Dropout2d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">feature_map_dropout_rate</span><span class="p">)</span>
 
 <div class="viewcode-block" id="AConvO.octonion_normalizer">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.AConvO.octonion_normalizer">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/octonion/index.html#dicee.AConvO.octonion_normalizer">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">octonion_normalizer</span><span class="p">(</span><span class="n">emb_rel_e0</span><span class="p">,</span> <span class="n">emb_rel_e1</span><span class="p">,</span> <span class="n">emb_rel_e2</span><span class="p">,</span> <span class="n">emb_rel_e3</span><span class="p">,</span> <span class="n">emb_rel_e4</span><span class="p">,</span> <span class="n">emb_rel_e5</span><span class="p">,</span> <span class="n">emb_rel_e6</span><span class="p">,</span>
                             <span class="n">emb_rel_e7</span><span class="p">):</span>
@@ -475,7 +475,7 @@
 
 
 <div class="viewcode-block" id="AConvO.residual_convolution">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.AConvO.residual_convolution">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/octonion/index.html#dicee.AConvO.residual_convolution">[docs]</a>
     <span class="k">def</span> <span class="nf">residual_convolution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">O_1</span><span class="p">,</span> <span class="n">O_2</span><span class="p">):</span>
         <span class="n">emb_ent_e0</span><span class="p">,</span> <span class="n">emb_ent_e1</span><span class="p">,</span> <span class="n">emb_ent_e2</span><span class="p">,</span> <span class="n">emb_ent_e3</span><span class="p">,</span> <span class="n">emb_ent_e4</span><span class="p">,</span> <span class="n">emb_ent_e5</span><span class="p">,</span> <span class="n">emb_ent_e6</span><span class="p">,</span> <span class="n">emb_ent_e7</span> <span class="o">=</span> <span class="n">O_1</span>
         <span class="n">emb_rel_e0</span><span class="p">,</span> <span class="n">emb_rel_e1</span><span class="p">,</span> <span class="n">emb_rel_e2</span><span class="p">,</span> <span class="n">emb_rel_e3</span><span class="p">,</span> <span class="n">emb_rel_e4</span><span class="p">,</span> <span class="n">emb_rel_e5</span><span class="p">,</span> <span class="n">emb_rel_e6</span><span class="p">,</span> <span class="n">emb_rel_e7</span> <span class="o">=</span> <span class="n">O_2</span>
@@ -503,7 +503,7 @@
 
 
 <div class="viewcode-block" id="AConvO.forward_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.AConvO.forward_triples">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/octonion/index.html#dicee.AConvO.forward_triples">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="c1"># (1) Retrieve embeddings &amp; Apply Dropout &amp; Normalization.</span>
         <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -552,7 +552,7 @@
 
 
 <div class="viewcode-block" id="AConvO.forward_k_vs_all">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.AConvO.forward_k_vs_all">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/octonion/index.html#dicee.AConvO.forward_k_vs_all">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Given a head entity and a relation (h,r), we compute scores for all entities.</span>

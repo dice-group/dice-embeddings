@@ -109,7 +109,7 @@
 
 
 <div class="viewcode-block" id="initialize_trainer">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.executer.initialize_trainer">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.initialize_trainer">[docs]</a>
 <span class="k">def</span> <span class="nf">initialize_trainer</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">trainer</span> <span class="o">==</span> <span class="s1">&#39;torchCPUTrainer&#39;</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing TorchTrainer CPU Trainer...&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -174,7 +174,7 @@
 
 
 <div class="viewcode-block" id="get_callbacks">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.executer.get_callbacks">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.get_callbacks">[docs]</a>
 <span class="k">def</span> <span class="nf">get_callbacks</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
     <span class="n">callbacks</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">pl</span><span class="o">.</span><span class="n">pytorch</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">ModelSummary</span><span class="p">(),</span>
@@ -205,7 +205,7 @@
 
 
 <div class="viewcode-block" id="DICE_Trainer">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/index.html#dicee.executer.DICE_Trainer">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/index.html#dicee.DICE_Trainer">[docs]</a>
 <span class="k">class</span> <span class="nc">DICE_Trainer</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">   DICE_Trainer implement</span>
@@ -244,7 +244,7 @@
             <span class="nb">print</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">get_device_name</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
 
 <div class="viewcode-block" id="DICE_Trainer.continual_start">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/index.html#dicee.executer.DICE_Trainer.continual_start">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/index.html#dicee.DICE_Trainer.continual_start">[docs]</a>
     <span class="k">def</span> <span class="nf">continual_start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        (1) Initialize training.</span>
@@ -275,7 +275,7 @@
 
 
 <div class="viewcode-block" id="DICE_Trainer.initialize_trainer">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/index.html#dicee.executer.DICE_Trainer.initialize_trainer">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/index.html#dicee.DICE_Trainer.initialize_trainer">[docs]</a>
     <span class="nd">@timeit</span>
     <span class="k">def</span> <span class="nf">initialize_trainer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">:</span> <span class="n">List</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pl</span><span class="o">.</span><span class="n">Trainer</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Initialize Trainer from input arguments &quot;&quot;&quot;</span>
@@ -283,7 +283,7 @@
 
 
 <div class="viewcode-block" id="DICE_Trainer.initialize_or_load_model">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/index.html#dicee.executer.DICE_Trainer.initialize_or_load_model">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/index.html#dicee.DICE_Trainer.initialize_or_load_model">[docs]</a>
     <span class="nd">@timeit</span>
     <span class="k">def</span> <span class="nf">initialize_or_load_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing Model...&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -294,7 +294,7 @@
 
 
 <div class="viewcode-block" id="DICE_Trainer.initialize_dataloader">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/index.html#dicee.executer.DICE_Trainer.initialize_dataloader">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/index.html#dicee.DICE_Trainer.initialize_dataloader">[docs]</a>
     <span class="nd">@timeit</span>
     <span class="k">def</span> <span class="nf">initialize_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing Dataloader...&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -306,7 +306,7 @@
 
 
 <div class="viewcode-block" id="DICE_Trainer.initialize_dataset">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/index.html#dicee.executer.DICE_Trainer.initialize_dataset">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/index.html#dicee.DICE_Trainer.initialize_dataset">[docs]</a>
     <span class="nd">@timeit</span>
     <span class="k">def</span> <span class="nf">initialize_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">KG</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing Dataset...&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -331,7 +331,7 @@
 
 
 <div class="viewcode-block" id="DICE_Trainer.start">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/index.html#dicee.executer.DICE_Trainer.start">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/index.html#dicee.DICE_Trainer.start">[docs]</a>
     <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">knowledge_graph</span><span class="p">:</span> <span class="n">KG</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">BaseKGE</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Train selected model via the selected training strategy &quot;&quot;&quot;</span>
         <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;------------------- Train -------------------&#39;</span><span class="p">)</span>
@@ -353,7 +353,7 @@
 
 
 <div class="viewcode-block" id="DICE_Trainer.k_fold_cross_validation">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/index.html#dicee.executer.DICE_Trainer.k_fold_cross_validation">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/index.html#dicee.DICE_Trainer.k_fold_cross_validation">[docs]</a>
     <span class="k">def</span> <span class="nf">k_fold_cross_validation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">BaseKGE</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Perform K-fold Cross-Validation</span>

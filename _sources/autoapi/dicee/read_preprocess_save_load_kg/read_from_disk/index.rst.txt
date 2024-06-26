@@ -12,24 +12,8 @@ Classes
    dicee.read_preprocess_save_load_kg.read_from_disk.ReadFromDisk
 
 
-Functions
----------
-
-.. autoapisummary::
-
-   dicee.read_preprocess_save_load_kg.read_from_disk.read_from_disk
-   dicee.read_preprocess_save_load_kg.read_from_disk.read_from_triple_store
-
-
 Module Contents
 ---------------
-
-.. py:function:: read_from_disk(data_path: str, read_only_few: int = None, sample_triples_ratio: float = None, backend=None)
-
-.. py:function:: read_from_triple_store(endpoint: str = None)
-
-   Read triples from triple store into pandas dataframe
-
 
 .. py:class:: ReadFromDisk(kg)
 

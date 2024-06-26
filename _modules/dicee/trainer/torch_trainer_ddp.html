@@ -99,7 +99,7 @@
 
 <span class="c1"># DDP with gradiant accumulation https://gist.github.com/mcarilli/bf013d2d2f4b4dd21ade30c9b52d5e2e</span>
 <div class="viewcode-block" id="print_peak_memory">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.dice_trainer.print_peak_memory">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.print_peak_memory">[docs]</a>
 <span class="k">def</span> <span class="nf">print_peak_memory</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">device</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">device</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">max_memory_allocated</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="mf">1e6</span><span class="si">}</span><span class="s2">MB &quot;</span><span class="p">)</span></div>
@@ -107,7 +107,7 @@
 
 
 <div class="viewcode-block" id="TorchDDPTrainer">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.dice_trainer.TorchDDPTrainer">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.TorchDDPTrainer">[docs]</a>
 <span class="k">class</span> <span class="nc">TorchDDPTrainer</span><span class="p">(</span><span class="n">AbstractTrainer</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        A Trainer based on torch.nn.parallel.DistributedDataParallel</span>
@@ -137,7 +137,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">callbacks</span><span class="p">)</span>
 
 <div class="viewcode-block" id="TorchDDPTrainer.fit">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.dice_trainer.TorchDDPTrainer.fit">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.TorchDDPTrainer.fit">[docs]</a>
     <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Train model        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
@@ -171,7 +171,7 @@
 
 
 <div class="viewcode-block" id="NodeTrainer">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.dice_trainer.NodeTrainer">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.NodeTrainer">[docs]</a>
 <span class="k">class</span> <span class="nc">NodeTrainer</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">trainer</span><span class="p">,</span>
@@ -237,7 +237,7 @@
         <span class="k">return</span> <span class="n">batch_loss</span>
 
 <div class="viewcode-block" id="NodeTrainer.extract_input_outputs">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.dice_trainer.NodeTrainer.extract_input_outputs">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.NodeTrainer.extract_input_outputs">[docs]</a>
     <span class="k">def</span> <span class="nf">extract_input_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
             <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">z</span>
@@ -297,7 +297,7 @@
         <span class="k">return</span> <span class="n">epoch_loss</span> <span class="o">/</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
 
 <div class="viewcode-block" id="NodeTrainer.train">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.dice_trainer.NodeTrainer.train">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.NodeTrainer.train">[docs]</a>
     <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Training loop for DDP</span>
@@ -325,7 +325,7 @@
 
 
 <div class="viewcode-block" id="DDPTrainer">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.dice_trainer.DDPTrainer">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.DDPTrainer">[docs]</a>
 <span class="k">class</span> <span class="nc">DDPTrainer</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
@@ -369,7 +369,7 @@
         <span class="k">return</span> <span class="n">batch_loss</span>
 
 <div class="viewcode-block" id="DDPTrainer.extract_input_outputs">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.dice_trainer.DDPTrainer.extract_input_outputs">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.DDPTrainer.extract_input_outputs">[docs]</a>
     <span class="k">def</span> <span class="nf">extract_input_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
             <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="n">z</span>
@@ -411,7 +411,7 @@
         <span class="k">return</span> <span class="n">epoch_loss</span> <span class="o">/</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
 
 <div class="viewcode-block" id="DDPTrainer.train">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.dice_trainer.DDPTrainer.train">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.DDPTrainer.train">[docs]</a>
     <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_epochs</span><span class="p">):</span>
             <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>

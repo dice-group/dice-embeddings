@@ -12,72 +12,8 @@ Classes
    dicee.read_preprocess_save_load_kg.preprocess.PreprocessKG
 
 
-Functions
----------
-
-.. autoapisummary::
-
-   dicee.read_preprocess_save_load_kg.preprocess.timeit
-   dicee.read_preprocess_save_load_kg.preprocess.index_triples_with_pandas
-   dicee.read_preprocess_save_load_kg.preprocess.dataset_sanity_checking
-   dicee.read_preprocess_save_load_kg.preprocess.numpy_data_type_changer
-   dicee.read_preprocess_save_load_kg.preprocess.get_er_vocab
-   dicee.read_preprocess_save_load_kg.preprocess.get_re_vocab
-   dicee.read_preprocess_save_load_kg.preprocess.get_ee_vocab
-   dicee.read_preprocess_save_load_kg.preprocess.create_constraints
-   dicee.read_preprocess_save_load_kg.preprocess.apply_reciprical_or_noise
-
-
 Module Contents
 ---------------
-
-.. py:function:: timeit(func)
-
-.. py:function:: index_triples_with_pandas(train_set, entity_to_idx: dict, relation_to_idx: dict) -> pandas.core.frame.DataFrame
-
-   :param train_set: pandas dataframe
-   :param entity_to_idx: a mapping from str to integer index
-   :param relation_to_idx: a mapping from str to integer index
-   :param num_core: number of cores to be used
-   :return: indexed triples, i.e., pandas dataframe
-
-
-.. py:function:: dataset_sanity_checking(train_set: numpy.ndarray, num_entities: int, num_relations: int) -> None
-
-   :param train_set:
-   :param num_entities:
-   :param num_relations:
-   :return:
-
-
-.. py:function:: numpy_data_type_changer(train_set: numpy.ndarray, num: int) -> numpy.ndarray
-
-   Detect most efficient data type for a given triples
-   :param train_set:
-   :param num:
-   :return:
-
-
-.. py:function:: get_er_vocab(data, file_path: str = None)
-
-.. py:function:: get_re_vocab(data, file_path: str = None)
-
-.. py:function:: get_ee_vocab(data, file_path: str = None)
-
-.. py:function:: create_constraints(triples, file_path: str = None)
-
-   (1) Extract domains and ranges of relations
-   (2) Store a mapping from relations to entities that are outside of the domain and range.
-   Crete constrainted entities based on the range of relations
-   :param triples:
-   :return:
-   Tuple[dict, dict]
-
-
-.. py:function:: apply_reciprical_or_noise(add_reciprical: bool, eval_model: str, df: object = None, info: str = None)
-
-   (1) Add reciprocal triples (2) Add noisy triples
-
 
 .. py:class:: PreprocessKG(kg)
 

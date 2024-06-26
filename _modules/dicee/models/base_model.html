@@ -227,7 +227,7 @@
 
 
 <div class="viewcode-block" id="BaseKGE">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.BaseKGE">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE">[docs]</a>
 <span class="k">class</span> <span class="nc">BaseKGE</span><span class="p">(</span><span class="n">BaseKGELightning</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -286,7 +286,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
 
 <div class="viewcode-block" id="BaseKGE.forward_byte_pair_encoded_k_vs_all">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.BaseKGE.forward_byte_pair_encoded_k_vs_all">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.forward_byte_pair_encoded_k_vs_all">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_byte_pair_encoded_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -334,7 +334,7 @@
 
 
 <div class="viewcode-block" id="BaseKGE.forward_byte_pair_encoded_triple">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.BaseKGE.forward_byte_pair_encoded_triple">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.forward_byte_pair_encoded_triple">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_byte_pair_encoded_triple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        byte pair encoded neural link predictors</span>
@@ -356,7 +356,7 @@
 
 
 <div class="viewcode-block" id="BaseKGE.init_params_with_sanity_checking">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.BaseKGE.init_params_with_sanity_checking">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.init_params_with_sanity_checking">[docs]</a>
     <span class="k">def</span> <span class="nf">init_params_with_sanity_checking</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;weight_decay&#39;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">weight_decay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;weight_decay&#39;</span><span class="p">]</span>
@@ -430,7 +430,7 @@
 
 
 <div class="viewcode-block" id="BaseKGE.forward">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.BaseKGE.forward">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.forward">[docs]</a>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">]],</span>
                 <span class="n">y_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -469,7 +469,7 @@
 
 
 <div class="viewcode-block" id="BaseKGE.forward_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.BaseKGE.forward_triples">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.forward_triples">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -487,19 +487,19 @@
 
 
 <div class="viewcode-block" id="BaseKGE.forward_k_vs_all">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.BaseKGE.forward_k_vs_all">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.forward_k_vs_all">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;MODEL:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> does not have forward_k_vs_all function&#39;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BaseKGE.forward_k_vs_sample">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.BaseKGE.forward_k_vs_sample">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.forward_k_vs_sample">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;MODEL:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> does not have forward_k_vs_sample function&#39;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BaseKGE.get_triple_representation">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.BaseKGE.get_triple_representation">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.get_triple_representation">[docs]</a>
     <span class="k">def</span> <span class="nf">get_triple_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx_hrt</span><span class="p">):</span>
         <span class="c1"># (1) Split input into indexes.</span>
         <span class="n">idx_head_entity</span><span class="p">,</span> <span class="n">idx_relation</span><span class="p">,</span> <span class="n">idx_tail_entity</span> <span class="o">=</span> <span class="n">idx_hrt</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">idx_hrt</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">idx_hrt</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
@@ -512,7 +512,7 @@
 
 
 <div class="viewcode-block" id="BaseKGE.get_head_relation_representation">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.BaseKGE.get_head_relation_representation">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.get_head_relation_representation">[docs]</a>
     <span class="k">def</span> <span class="nf">get_head_relation_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indexed_triple</span><span class="p">):</span>
         <span class="c1"># (1) Split input into indexes.</span>
         <span class="n">idx_head_entity</span><span class="p">,</span> <span class="n">idx_relation</span> <span class="o">=</span> <span class="n">indexed_triple</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">indexed_triple</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
@@ -524,7 +524,7 @@
 
 
 <div class="viewcode-block" id="BaseKGE.get_sentence_representation">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.BaseKGE.get_sentence_representation">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.get_sentence_representation">[docs]</a>
     <span class="k">def</span> <span class="nf">get_sentence_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -544,7 +544,7 @@
 
 
 <div class="viewcode-block" id="BaseKGE.get_bpe_head_and_relation_representation">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.BaseKGE.get_bpe_head_and_relation_representation">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.get_bpe_head_and_relation_representation">[docs]</a>
     <span class="k">def</span> <span class="nf">get_bpe_head_and_relation_representation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -575,7 +575,7 @@
 
 
 <div class="viewcode-block" id="BaseKGE.get_embeddings">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.BaseKGE.get_embeddings">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.BaseKGE.get_embeddings">[docs]</a>
     <span class="k">def</span> <span class="nf">get_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -589,19 +589,19 @@
 
 
 <div class="viewcode-block" id="IdentityClass">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.IdentityClass">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.IdentityClass">[docs]</a>
 <span class="k">class</span> <span class="nc">IdentityClass</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">args</span> <span class="o">=</span> <span class="n">args</span>
 <div class="viewcode-block" id="IdentityClass.__call__">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.IdentityClass.__call__">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.IdentityClass.__call__">[docs]</a>
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">x</span></div>
 
 
 <div class="viewcode-block" id="IdentityClass.forward">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/quaternion/index.html#dicee.IdentityClass.forward">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.IdentityClass.forward">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">x</span></div>

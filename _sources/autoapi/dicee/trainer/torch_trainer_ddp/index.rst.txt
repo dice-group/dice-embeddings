@@ -9,7 +9,6 @@ Classes
 
 .. autoapisummary::
 
-   dicee.trainer.torch_trainer_ddp.AbstractTrainer
    dicee.trainer.torch_trainer_ddp.TorchDDPTrainer
    dicee.trainer.torch_trainer_ddp.NodeTrainer
    dicee.trainer.torch_trainer_ddp.DDPTrainer
@@ -20,105 +19,11 @@ Functions
 
 .. autoapisummary::
 
-   dicee.trainer.torch_trainer_ddp.efficient_zero_grad
    dicee.trainer.torch_trainer_ddp.print_peak_memory
 
 
 Module Contents
 ---------------
-
-.. py:class:: AbstractTrainer(args, callbacks)
-
-   Abstract class for Trainer class for knowledge graph embedding models
-
-
-   Parameter
-   ---------
-   args : str
-       ?
-
-   callbacks: list
-           ?
-
-
-   .. py:method:: on_fit_start(*args, **kwargs)
-
-      A function to call callbacks before the training starts.
-
-      Parameter
-      ---------
-      args
-
-      kwargs
-
-
-      :rtype: None
-
-
-
-   .. py:method:: on_fit_end(*args, **kwargs)
-
-      A function to call callbacks at the ned of the training.
-
-      Parameter
-      ---------
-      args
-
-      kwargs
-
-
-      :rtype: None
-
-
-
-   .. py:method:: on_train_epoch_end(*args, **kwargs)
-
-      A function to call callbacks at the end of an epoch.
-
-      Parameter
-      ---------
-      args
-
-      kwargs
-
-
-      :rtype: None
-
-
-
-   .. py:method:: on_train_batch_end(*args, **kwargs)
-
-      A function to call callbacks at the end of each mini-batch during training.
-
-      Parameter
-      ---------
-      args
-
-      kwargs
-
-
-      :rtype: None
-
-
-
-   .. py:method:: save_checkpoint(full_path: str, model) -> None
-      :staticmethod:
-
-
-      A static function to save a model into disk
-
-      Parameter
-      ---------
-      full_path : str
-
-      model:
-
-
-      :rtype: None
-
-
-
-.. py:function:: efficient_zero_grad(model)
 
 .. py:function:: print_peak_memory(prefix, device)
 

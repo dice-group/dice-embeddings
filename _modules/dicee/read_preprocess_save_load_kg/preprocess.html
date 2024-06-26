@@ -100,7 +100,7 @@
 
 
 <div class="viewcode-block" id="PreprocessKG">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.knowledge_graph.PreprocessKG">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG">[docs]</a>
 <span class="k">class</span> <span class="nc">PreprocessKG</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Preprocess the data in memory &quot;&quot;&quot;</span>
 
@@ -108,7 +108,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">kg</span> <span class="o">=</span> <span class="n">kg</span>
 
 <div class="viewcode-block" id="PreprocessKG.start">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.knowledge_graph.PreprocessKG.start">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG.start">[docs]</a>
     <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Preprocess train, valid and test datasets stored in knowledge graph instance</span>
@@ -320,7 +320,7 @@
         <span class="k">return</span> <span class="n">x</span>
 
 <div class="viewcode-block" id="PreprocessKG.preprocess_with_byte_pair_encoding">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.knowledge_graph.PreprocessKG.preprocess_with_byte_pair_encoding">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_byte_pair_encoding">[docs]</a>
     <span class="k">def</span> <span class="nf">preprocess_with_byte_pair_encoding</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># n b</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">raw_train_set</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span>
@@ -344,7 +344,7 @@
 
 
 <div class="viewcode-block" id="PreprocessKG.preprocess_with_byte_pair_encoding_with_padding">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.knowledge_graph.PreprocessKG.preprocess_with_byte_pair_encoding_with_padding">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_byte_pair_encoding_with_padding">[docs]</a>
     <span class="nd">@timeit</span>
     <span class="k">def</span> <span class="nf">preprocess_with_byte_pair_encoding_with_padding</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -388,7 +388,7 @@
 
 
 <div class="viewcode-block" id="PreprocessKG.preprocess_with_pandas">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.knowledge_graph.PreprocessKG.preprocess_with_pandas">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_pandas">[docs]</a>
     <span class="nd">@timeit</span>
     <span class="k">def</span> <span class="nf">preprocess_with_pandas</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -448,7 +448,7 @@
 
 
 <div class="viewcode-block" id="PreprocessKG.preprocess_with_polars">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.knowledge_graph.PreprocessKG.preprocess_with_polars">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_polars">[docs]</a>
     <span class="nd">@timeit</span>
     <span class="k">def</span> <span class="nf">preprocess_with_polars</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -538,7 +538,7 @@
 
 
 <div class="viewcode-block" id="PreprocessKG.sequential_vocabulary_construction">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.knowledge_graph.PreprocessKG.sequential_vocabulary_construction">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG.sequential_vocabulary_construction">[docs]</a>
     <span class="k">def</span> <span class="nf">sequential_vocabulary_construction</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        (1) Read input data into memory</span>
@@ -582,7 +582,7 @@
 
 
 <div class="viewcode-block" id="PreprocessKG.remove_triples_from_train_with_condition">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.knowledge_graph.PreprocessKG.remove_triples_from_train_with_condition">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/preprocess/index.html#dicee.read_preprocess_save_load_kg.PreprocessKG.remove_triples_from_train_with_condition">[docs]</a>
     <span class="k">def</span> <span class="nf">remove_triples_from_train_with_condition</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># self.kg.min_freq_for_vocab is not</span>

@@ -94,13 +94,13 @@
 
 
 <div class="viewcode-block" id="LoadSaveToDisk">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/save_load_disk/index.html#dicee.knowledge_graph.LoadSaveToDisk">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/save_load_disk/index.html#dicee.read_preprocess_save_load_kg.LoadSaveToDisk">[docs]</a>
 <span class="k">class</span> <span class="nc">LoadSaveToDisk</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kg</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kg</span> <span class="o">=</span> <span class="n">kg</span>
 
 <div class="viewcode-block" id="LoadSaveToDisk.save">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/save_load_disk/index.html#dicee.knowledge_graph.LoadSaveToDisk.save">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/save_load_disk/index.html#dicee.read_preprocess_save_load_kg.LoadSaveToDisk.save">[docs]</a>
     <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">path_for_deserialization</span> <span class="ow">is</span> <span class="kc">None</span>
 
@@ -130,7 +130,7 @@
 
 
 <div class="viewcode-block" id="LoadSaveToDisk.load">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/save_load_disk/index.html#dicee.knowledge_graph.LoadSaveToDisk.load">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/save_load_disk/index.html#dicee.read_preprocess_save_load_kg.LoadSaveToDisk.load">[docs]</a>
     <span class="k">def</span> <span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">path_for_deserialization</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">path_for_serialization</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">path_for_deserialization</span>

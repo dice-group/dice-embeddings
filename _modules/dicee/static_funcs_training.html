@@ -93,7 +93,7 @@
 <span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
 
 <div class="viewcode-block" id="evaluate_lp">
-<a class="viewcode-back" href="../../autoapi/dicee/static_funcs_training/index.html#dicee.evaluator.evaluate_lp">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/static_funcs_training/index.html#dicee.static_funcs_training.evaluate_lp">[docs]</a>
 <span class="k">def</span> <span class="nf">evaluate_lp</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">,</span> <span class="n">num_entities</span><span class="p">,</span> <span class="n">er_vocab</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">],</span> <span class="n">re_vocab</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">],</span>
                 <span class="n">info</span><span class="o">=</span><span class="s1">&#39;Eval Starts&#39;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -203,7 +203,7 @@
 
 
 <div class="viewcode-block" id="evaluate_bpe_lp">
-<a class="viewcode-back" href="../../autoapi/dicee/static_funcs_training/index.html#dicee.evaluator.evaluate_bpe_lp">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/static_funcs_training/index.html#dicee.static_funcs_training.evaluate_bpe_lp">[docs]</a>
 <span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
 <span class="k">def</span> <span class="nf">evaluate_bpe_lp</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">triple_idx</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">],</span> <span class="n">all_bpe_shaped_entities</span><span class="p">,</span>
                     <span class="n">er_vocab</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">],</span> <span class="n">re_vocab</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">],</span>
@@ -311,7 +311,7 @@
 
 
 <div class="viewcode-block" id="efficient_zero_grad">
-<a class="viewcode-back" href="../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.evaluator.efficient_zero_grad">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/static_funcs_training/index.html#dicee.static_funcs_training.efficient_zero_grad">[docs]</a>
 <span class="k">def</span> <span class="nf">efficient_zero_grad</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
     <span class="c1"># Use this instead of</span>
     <span class="c1"># self.optimizer.zero_grad()</span>

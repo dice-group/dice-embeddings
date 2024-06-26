@@ -15,44 +15,8 @@ Classes
    dicee.abstracts.AbstractPPECallback
 
 
-Functions
----------
-
-.. autoapisummary::
-
-   dicee.abstracts.load_model_ensemble
-   dicee.abstracts.load_model
-   dicee.abstracts.save_checkpoint_model
-   dicee.abstracts.load_json
-   dicee.abstracts.download_pretrained_model
-
-
 Module Contents
 ---------------
-
-.. py:function:: load_model_ensemble(path_of_experiment_folder: str) -> Tuple[dicee.models.base_model.BaseKGE, Tuple[pandas.DataFrame, pandas.DataFrame]]
-
-   Construct Ensemble Of weights and initialize pytorch module from namespace arguments
-
-   (1) Detect models under given path
-   (2) Accumulate parameters of detected models
-   (3) Normalize parameters
-   (4) Insert (3) into model.
-
-
-.. py:function:: load_model(path_of_experiment_folder: str, model_name='model.pt', verbose=0) -> Tuple[object, Tuple[dict, dict]]
-
-   Load weights and initialize pytorch module from namespace arguments
-
-
-.. py:function:: save_checkpoint_model(model, path: str) -> None
-
-   Store Pytorch model into disk
-
-
-.. py:function:: load_json(p: str) -> dict
-
-.. py:function:: download_pretrained_model(url: str) -> str
 
 .. py:class:: AbstractTrainer(args, callbacks)
 

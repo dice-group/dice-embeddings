@@ -96,7 +96,7 @@
 
 
 <div class="viewcode-block" id="TorchTrainer">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer/index.html#dicee.trainer.dice_trainer.TorchTrainer">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer/index.html#dicee.trainer.torch_trainer.TorchTrainer">[docs]</a>
 <span class="k">class</span> <span class="nc">TorchTrainer</span><span class="p">(</span><span class="n">AbstractTrainer</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        TorchTrainer for using single GPU or multi CPUs on a single node</span>
@@ -192,7 +192,7 @@
         <span class="k">return</span> <span class="n">epoch_loss</span> <span class="o">/</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
 
 <div class="viewcode-block" id="TorchTrainer.fit">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer/index.html#dicee.trainer.dice_trainer.TorchTrainer.fit">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer/index.html#dicee.trainer.torch_trainer.TorchTrainer.fit">[docs]</a>
     <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">train_dataloaders</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            Training starts</span>
@@ -253,7 +253,7 @@
 
 
 <div class="viewcode-block" id="TorchTrainer.forward_backward_update">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer/index.html#dicee.trainer.dice_trainer.TorchTrainer.forward_backward_update">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer/index.html#dicee.trainer.torch_trainer.TorchTrainer.forward_backward_update">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_backward_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            Compute forward, loss, backward, and parameter update</span>
@@ -274,7 +274,7 @@
 
 
 <div class="viewcode-block" id="TorchTrainer.extract_input_outputs_set_device">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer/index.html#dicee.trainer.dice_trainer.TorchTrainer.extract_input_outputs_set_device">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer/index.html#dicee.trainer.torch_trainer.TorchTrainer.extract_input_outputs_set_device">[docs]</a>
     <span class="k">def</span> <span class="nf">extract_input_outputs_set_device</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            Construct inputs and outputs from a batch of inputs with outputs From a batch of inputs and put</span>

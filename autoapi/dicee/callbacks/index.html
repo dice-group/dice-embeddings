@@ -71,17 +71,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.callbacks.save_checkpoint_model"><code class="docutils literal notranslate"><span class="pre">save_checkpoint_model()</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.callbacks.save_pickle"><code class="docutils literal notranslate"><span class="pre">save_pickle()</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.callbacks.AbstractCallback"><code class="docutils literal notranslate"><span class="pre">AbstractCallback</span></code></a><ul>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.AbstractCallback.on_init_start"><code class="docutils literal notranslate"><span class="pre">AbstractCallback.on_init_start()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.AbstractCallback.on_init_end"><code class="docutils literal notranslate"><span class="pre">AbstractCallback.on_init_end()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.AbstractCallback.on_fit_start"><code class="docutils literal notranslate"><span class="pre">AbstractCallback.on_fit_start()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.AbstractCallback.on_train_epoch_end"><code class="docutils literal notranslate"><span class="pre">AbstractCallback.on_train_epoch_end()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.AbstractCallback.on_train_batch_end"><code class="docutils literal notranslate"><span class="pre">AbstractCallback.on_train_batch_end()</span></code></a></li>
-<li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.AbstractCallback.on_fit_end"><code class="docutils literal notranslate"><span class="pre">AbstractCallback.on_fit_end()</span></code></a></li>
-</ul>
-</li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.callbacks.AccumulateEpochLossCallback"><code class="docutils literal notranslate"><span class="pre">AccumulateEpochLossCallback</span></code></a><ul>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.callbacks.AccumulateEpochLossCallback.on_fit_end"><code class="docutils literal notranslate"><span class="pre">AccumulateEpochLossCallback.on_fit_end()</span></code></a></li>
 </ul>
@@ -190,31 +179,28 @@
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.AbstractCallback" title="dicee.callbacks.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AbstractCallback</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.AccumulateEpochLossCallback" title="dicee.callbacks.AccumulateEpochLossCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AccumulateEpochLossCallback</span></code></a></p></td>
 <td><p>Abstract class for Callback class for knowledge graph embedding models</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.AccumulateEpochLossCallback" title="dicee.callbacks.AccumulateEpochLossCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AccumulateEpochLossCallback</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.PrintCallback" title="dicee.callbacks.PrintCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PrintCallback</span></code></a></p></td>
 <td><p>Abstract class for Callback class for knowledge graph embedding models</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.PrintCallback" title="dicee.callbacks.PrintCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PrintCallback</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.KGESaveCallback" title="dicee.callbacks.KGESaveCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KGESaveCallback</span></code></a></p></td>
 <td><p>Abstract class for Callback class for knowledge graph embedding models</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.KGESaveCallback" title="dicee.callbacks.KGESaveCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KGESaveCallback</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.PseudoLabellingCallback" title="dicee.callbacks.PseudoLabellingCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PseudoLabellingCallback</span></code></a></p></td>
 <td><p>Abstract class for Callback class for knowledge graph embedding models</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.PseudoLabellingCallback" title="dicee.callbacks.PseudoLabellingCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PseudoLabellingCallback</span></code></a></p></td>
-<td><p>Abstract class for Callback class for knowledge graph embedding models</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.ASWA" title="dicee.callbacks.ASWA"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ASWA</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.ASWA" title="dicee.callbacks.ASWA"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ASWA</span></code></a></p></td>
 <td><p>Adaptive stochastic weight averaging</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.Eval" title="dicee.callbacks.Eval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Eval</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.Eval" title="dicee.callbacks.Eval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Eval</span></code></a></p></td>
 <td><p>Abstract class for Callback class for knowledge graph embedding models</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.KronE" title="dicee.callbacks.KronE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KronE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.KronE" title="dicee.callbacks.KronE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KronE</span></code></a></p></td>
 <td><p>Abstract class for Callback class for knowledge graph embedding models</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.Perturb" title="dicee.callbacks.Perturb"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Perturb</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.Perturb" title="dicee.callbacks.Perturb"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Perturb</span></code></a></p></td>
 <td><p>A callback for a three-Level Perturbation</p></td>
 </tr>
 </tbody>
@@ -224,12 +210,6 @@
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.save_checkpoint_model" title="dicee.callbacks.save_checkpoint_model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_checkpoint_model</span></code></a>(→ None)</p></td>
-<td><p>Store Pytorch model into disk</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.callbacks.save_pickle" title="dicee.callbacks.save_pickle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_pickle</span></code></a>(*[, data, file_path])</p></td>
-<td><p></p></td>
-</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.callbacks.estimate_q" title="dicee.callbacks.estimate_q"><code class="xref py py-obj docutils literal notranslate"><span class="pre">estimate_q</span></code></a>(eps)</p></td>
 <td><p>estimate rate of convergence q from sequence esp</p></td>
 </tr>
@@ -241,135 +221,19 @@
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
-<dl class="py function">
-<dt class="sig sig-object py" id="dicee.callbacks.save_checkpoint_model">
-<span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">save_checkpoint_model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/static_funcs.html#save_checkpoint_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.save_checkpoint_model" title="Link to this definition"></a></dt>
-<dd><p>Store Pytorch model into disk</p>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="dicee.callbacks.save_pickle">
-<span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">save_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/static_funcs.html#save_pickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.save_pickle" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="dicee.callbacks.AbstractCallback">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">AbstractCallback</span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractCallback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.AbstractCallback" title="Link to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">abc.ABC</span></code>, <code class="xref py py-obj docutils literal notranslate"><span class="pre">lightning.pytorch.callbacks.Callback</span></code></p>
-<p>Abstract class for Callback class for knowledge graph embedding models</p>
-<section id="parameter">
-<h3>Parameter<a class="headerlink" href="#parameter" title="Link to this heading"></a></h3>
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.callbacks.AbstractCallback.on_init_start">
-<span class="sig-name descname"><span class="pre">on_init_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractCallback.on_init_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.AbstractCallback.on_init_start" title="Link to this definition"></a></dt>
-<dd><section id="id1">
-<h4>Parameter<a class="headerlink" href="#id1" title="Link to this heading"></a></h4>
-<p>trainer:</p>
-<p>model:</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.callbacks.AbstractCallback.on_init_end">
-<span class="sig-name descname"><span class="pre">on_init_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractCallback.on_init_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.AbstractCallback.on_init_end" title="Link to this definition"></a></dt>
-<dd><p>Call at the beginning of the training.</p>
-<section id="id2">
-<h4>Parameter<a class="headerlink" href="#id2" title="Link to this heading"></a></h4>
-<p>trainer:</p>
-<p>model:</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.callbacks.AbstractCallback.on_fit_start">
-<span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractCallback.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.AbstractCallback.on_fit_start" title="Link to this definition"></a></dt>
-<dd><p>Call at the beginning of the training.</p>
-<section id="id3">
-<h4>Parameter<a class="headerlink" href="#id3" title="Link to this heading"></a></h4>
-<p>trainer:</p>
-<p>model:</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.callbacks.AbstractCallback.on_train_epoch_end">
-<span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractCallback.on_train_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.AbstractCallback.on_train_epoch_end" title="Link to this definition"></a></dt>
-<dd><p>Call at the end of each epoch during training.</p>
-<section id="id4">
-<h4>Parameter<a class="headerlink" href="#id4" title="Link to this heading"></a></h4>
-<p>trainer:</p>
-<p>model:</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.callbacks.AbstractCallback.on_train_batch_end">
-<span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractCallback.on_train_batch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.AbstractCallback.on_train_batch_end" title="Link to this definition"></a></dt>
-<dd><p>Call at the end of each mini-batch during the training.</p>
-<section id="id5">
-<h4>Parameter<a class="headerlink" href="#id5" title="Link to this heading"></a></h4>
-<p>trainer:</p>
-<p>model:</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.callbacks.AbstractCallback.on_fit_end">
-<span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractCallback.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.AbstractCallback.on_fit_end" title="Link to this definition"></a></dt>
-<dd><p>Call at the end of the training.</p>
-<section id="id6">
-<h4>Parameter<a class="headerlink" href="#id6" title="Link to this heading"></a></h4>
-<p>trainer:</p>
-<p>model:</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-</section>
-</dd></dl>
-
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.callbacks.AccumulateEpochLossCallback">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">AccumulateEpochLossCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#AccumulateEpochLossCallback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.AccumulateEpochLossCallback" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
 <p>Abstract class for Callback class for knowledge graph embedding models</p>
-<section id="id7">
-<h3>Parameter<a class="headerlink" href="#id7" title="Link to this heading"></a></h3>
+<section id="parameter">
+<h3>Parameter<a class="headerlink" href="#parameter" title="Link to this heading"></a></h3>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.AccumulateEpochLossCallback.on_fit_end">
 <span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#AccumulateEpochLossCallback.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.AccumulateEpochLossCallback.on_fit_end" title="Link to this definition"></a></dt>
 <dd><p>Store epoch loss</p>
-<section id="id8">
-<h4>Parameter<a class="headerlink" href="#id8" title="Link to this heading"></a></h4>
+<section id="id1">
+<h4>Parameter<a class="headerlink" href="#id1" title="Link to this heading"></a></h4>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">
@@ -388,14 +252,14 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">PrintCallback</span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PrintCallback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PrintCallback" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
 <p>Abstract class for Callback class for knowledge graph embedding models</p>
-<section id="id9">
-<h3>Parameter<a class="headerlink" href="#id9" title="Link to this heading"></a></h3>
+<section id="id2">
+<h3>Parameter<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.PrintCallback.on_fit_start">
 <span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PrintCallback.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PrintCallback.on_fit_start" title="Link to this definition"></a></dt>
 <dd><p>Call at the beginning of the training.</p>
-<section id="id10">
-<h4>Parameter<a class="headerlink" href="#id10" title="Link to this heading"></a></h4>
+<section id="id3">
+<h4>Parameter<a class="headerlink" href="#id3" title="Link to this heading"></a></h4>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">
@@ -410,8 +274,8 @@
 <dt class="sig sig-object py" id="dicee.callbacks.PrintCallback.on_fit_end">
 <span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PrintCallback.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PrintCallback.on_fit_end" title="Link to this definition"></a></dt>
 <dd><p>Call at the end of the training.</p>
-<section id="id11">
-<h4>Parameter<a class="headerlink" href="#id11" title="Link to this heading"></a></h4>
+<section id="id4">
+<h4>Parameter<a class="headerlink" href="#id4" title="Link to this heading"></a></h4>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">
@@ -426,8 +290,8 @@
 <dt class="sig sig-object py" id="dicee.callbacks.PrintCallback.on_train_batch_end">
 <span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PrintCallback.on_train_batch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PrintCallback.on_train_batch_end" title="Link to this definition"></a></dt>
 <dd><p>Call at the end of each mini-batch during the training.</p>
-<section id="id12">
-<h4>Parameter<a class="headerlink" href="#id12" title="Link to this heading"></a></h4>
+<section id="id5">
+<h4>Parameter<a class="headerlink" href="#id5" title="Link to this heading"></a></h4>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">
@@ -442,8 +306,8 @@
 <dt class="sig sig-object py" id="dicee.callbacks.PrintCallback.on_train_epoch_end">
 <span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PrintCallback.on_train_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PrintCallback.on_train_epoch_end" title="Link to this definition"></a></dt>
 <dd><p>Call at the end of each epoch during training.</p>
-<section id="id13">
-<h4>Parameter<a class="headerlink" href="#id13" title="Link to this heading"></a></h4>
+<section id="id6">
+<h4>Parameter<a class="headerlink" href="#id6" title="Link to this heading"></a></h4>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">
@@ -462,14 +326,14 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">KGESaveCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">every_x_epoch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KGESaveCallback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KGESaveCallback" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
 <p>Abstract class for Callback class for knowledge graph embedding models</p>
-<section id="id14">
-<h3>Parameter<a class="headerlink" href="#id14" title="Link to this heading"></a></h3>
+<section id="id7">
+<h3>Parameter<a class="headerlink" href="#id7" title="Link to this heading"></a></h3>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.KGESaveCallback.on_train_batch_end">
 <span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KGESaveCallback.on_train_batch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KGESaveCallback.on_train_batch_end" title="Link to this definition"></a></dt>
 <dd><p>Call at the end of each mini-batch during the training.</p>
-<section id="id15">
-<h4>Parameter<a class="headerlink" href="#id15" title="Link to this heading"></a></h4>
+<section id="id8">
+<h4>Parameter<a class="headerlink" href="#id8" title="Link to this heading"></a></h4>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">
@@ -484,8 +348,8 @@
 <dt class="sig sig-object py" id="dicee.callbacks.KGESaveCallback.on_fit_start">
 <span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pl_module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KGESaveCallback.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KGESaveCallback.on_fit_start" title="Link to this definition"></a></dt>
 <dd><p>Call at the beginning of the training.</p>
-<section id="id16">
-<h4>Parameter<a class="headerlink" href="#id16" title="Link to this heading"></a></h4>
+<section id="id9">
+<h4>Parameter<a class="headerlink" href="#id9" title="Link to this heading"></a></h4>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">
@@ -500,8 +364,8 @@
 <dt class="sig sig-object py" id="dicee.callbacks.KGESaveCallback.on_train_epoch_end">
 <span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KGESaveCallback.on_train_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KGESaveCallback.on_train_epoch_end" title="Link to this definition"></a></dt>
 <dd><p>Call at the end of each epoch during training.</p>
-<section id="id17">
-<h4>Parameter<a class="headerlink" href="#id17" title="Link to this heading"></a></h4>
+<section id="id10">
+<h4>Parameter<a class="headerlink" href="#id10" title="Link to this heading"></a></h4>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">
@@ -516,8 +380,8 @@
 <dt class="sig sig-object py" id="dicee.callbacks.KGESaveCallback.on_fit_end">
 <span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KGESaveCallback.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KGESaveCallback.on_fit_end" title="Link to this definition"></a></dt>
 <dd><p>Call at the end of the training.</p>
-<section id="id18">
-<h4>Parameter<a class="headerlink" href="#id18" title="Link to this heading"></a></h4>
+<section id="id11">
+<h4>Parameter<a class="headerlink" href="#id11" title="Link to this heading"></a></h4>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">
@@ -541,8 +405,8 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">PseudoLabellingCallback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PseudoLabellingCallback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PseudoLabellingCallback" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
 <p>Abstract class for Callback class for knowledge graph embedding models</p>
-<section id="id19">
-<h3>Parameter<a class="headerlink" href="#id19" title="Link to this heading"></a></h3>
+<section id="id12">
+<h3>Parameter<a class="headerlink" href="#id12" title="Link to this heading"></a></h3>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.PseudoLabellingCallback.create_random_data">
 <span class="sig-name descname"><span class="pre">create_random_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#PseudoLabellingCallback.create_random_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.PseudoLabellingCallback.create_random_data" title="Link to this definition"></a></dt>
@@ -577,8 +441,8 @@ ASWE keeps track of the validation performance and update s the ensemble model a
 <dt class="sig sig-object py" id="dicee.callbacks.ASWA.on_fit_end">
 <span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#ASWA.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.ASWA.on_fit_end" title="Link to this definition"></a></dt>
 <dd><p>Call at the end of the training.</p>
-<section id="id20">
-<h3>Parameter<a class="headerlink" href="#id20" title="Link to this heading"></a></h3>
+<section id="id13">
+<h3>Parameter<a class="headerlink" href="#id13" title="Link to this heading"></a></h3>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">
@@ -619,8 +483,8 @@ ASWE keeps track of the validation performance and update s the ensemble model a
 <dt class="sig sig-object py" id="dicee.callbacks.ASWA.on_train_epoch_end">
 <span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#ASWA.on_train_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.ASWA.on_train_epoch_end" title="Link to this definition"></a></dt>
 <dd><p>Call at the end of each epoch during training.</p>
-<section id="id21">
-<h3>Parameter<a class="headerlink" href="#id21" title="Link to this heading"></a></h3>
+<section id="id14">
+<h3>Parameter<a class="headerlink" href="#id14" title="Link to this heading"></a></h3>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">
@@ -638,14 +502,14 @@ ASWE keeps track of the validation performance and update s the ensemble model a
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">Eval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epoch_ratio</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#Eval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.Eval" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
 <p>Abstract class for Callback class for knowledge graph embedding models</p>
-<section id="id22">
-<h3>Parameter<a class="headerlink" href="#id22" title="Link to this heading"></a></h3>
+<section id="id15">
+<h3>Parameter<a class="headerlink" href="#id15" title="Link to this heading"></a></h3>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.Eval.on_fit_start">
 <span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#Eval.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.Eval.on_fit_start" title="Link to this definition"></a></dt>
 <dd><p>Call at the beginning of the training.</p>
-<section id="id23">
-<h4>Parameter<a class="headerlink" href="#id23" title="Link to this heading"></a></h4>
+<section id="id16">
+<h4>Parameter<a class="headerlink" href="#id16" title="Link to this heading"></a></h4>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">
@@ -660,8 +524,8 @@ ASWE keeps track of the validation performance and update s the ensemble model a
 <dt class="sig sig-object py" id="dicee.callbacks.Eval.on_fit_end">
 <span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#Eval.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.Eval.on_fit_end" title="Link to this definition"></a></dt>
 <dd><p>Call at the end of the training.</p>
-<section id="id24">
-<h4>Parameter<a class="headerlink" href="#id24" title="Link to this heading"></a></h4>
+<section id="id17">
+<h4>Parameter<a class="headerlink" href="#id17" title="Link to this heading"></a></h4>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">
@@ -676,8 +540,8 @@ ASWE keeps track of the validation performance and update s the ensemble model a
 <dt class="sig sig-object py" id="dicee.callbacks.Eval.on_train_epoch_end">
 <span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#Eval.on_train_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.Eval.on_train_epoch_end" title="Link to this definition"></a></dt>
 <dd><p>Call at the end of each epoch during training.</p>
-<section id="id25">
-<h4>Parameter<a class="headerlink" href="#id25" title="Link to this heading"></a></h4>
+<section id="id18">
+<h4>Parameter<a class="headerlink" href="#id18" title="Link to this heading"></a></h4>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">
@@ -692,8 +556,8 @@ ASWE keeps track of the validation performance and update s the ensemble model a
 <dt class="sig sig-object py" id="dicee.callbacks.Eval.on_train_batch_end">
 <span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#Eval.on_train_batch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.Eval.on_train_batch_end" title="Link to this definition"></a></dt>
 <dd><p>Call at the end of each mini-batch during the training.</p>
-<section id="id26">
-<h4>Parameter<a class="headerlink" href="#id26" title="Link to this heading"></a></h4>
+<section id="id19">
+<h4>Parameter<a class="headerlink" href="#id19" title="Link to this heading"></a></h4>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">
@@ -712,8 +576,8 @@ ASWE keeps track of the validation performance and update s the ensemble model a
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.callbacks.</span></span><span class="sig-name descname"><span class="pre">KronE</span></span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KronE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KronE" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../abstracts/index.html#dicee.abstracts.AbstractCallback" title="dicee.abstracts.AbstractCallback"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.abstracts.AbstractCallback</span></code></a></p>
 <p>Abstract class for Callback class for knowledge graph embedding models</p>
-<section id="id27">
-<h3>Parameter<a class="headerlink" href="#id27" title="Link to this heading"></a></h3>
+<section id="id20">
+<h3>Parameter<a class="headerlink" href="#id20" title="Link to this heading"></a></h3>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.callbacks.KronE.batch_kronecker_product">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">batch_kronecker_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KronE.batch_kronecker_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KronE.batch_kronecker_product" title="Link to this definition"></a></dt>
@@ -734,8 +598,8 @@ Batch dimensions are broadcast. The number of them mush
 <dt class="sig sig-object py" id="dicee.callbacks.KronE.on_fit_start">
 <span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/callbacks.html#KronE.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.callbacks.KronE.on_fit_start" title="Link to this definition"></a></dt>
 <dd><p>Call at the beginning of the training.</p>
-<section id="id28">
-<h4>Parameter<a class="headerlink" href="#id28" title="Link to this heading"></a></h4>
+<section id="id21">
+<h4>Parameter<a class="headerlink" href="#id21" title="Link to this heading"></a></h4>
 <p>trainer:</p>
 <p>model:</p>
 <dl class="field-list simple">

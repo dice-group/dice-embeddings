@@ -73,9 +73,6 @@
 <li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.dataset_classes.mapping_from_first_two_cols_to_third"><code class="docutils literal notranslate"><span class="pre">mapping_from_first_two_cols_to_third()</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.dataset_classes.timeit"><code class="docutils literal notranslate"><span class="pre">timeit()</span></code></a></li>
-<li class="toctree-l5"><a class="reference internal" href="#dicee.dataset_classes.load_pickle"><code class="docutils literal notranslate"><span class="pre">load_pickle()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.dataset_classes.reload_dataset"><code class="docutils literal notranslate"><span class="pre">reload_dataset()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.dataset_classes.construct_dataset"><code class="docutils literal notranslate"><span class="pre">construct_dataset()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.dataset_classes.BPE_NegativeSamplingDataset"><code class="docutils literal notranslate"><span class="pre">BPE_NegativeSamplingDataset</span></code></a><ul>
@@ -224,19 +221,10 @@
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.dataset_classes.mapping_from_first_two_cols_to_third" title="dicee.dataset_classes.mapping_from_first_two_cols_to_third"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mapping_from_first_two_cols_to_third</span></code></a>(train_set_idx)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.dataset_classes.timeit" title="dicee.dataset_classes.timeit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">timeit</span></code></a>(func)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.dataset_classes.load_pickle" title="dicee.dataset_classes.load_pickle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_pickle</span></code></a>([file_path])</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.dataset_classes.reload_dataset" title="dicee.dataset_classes.reload_dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reload_dataset</span></code></a>(path, form_of_labelling, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.dataset_classes.reload_dataset" title="dicee.dataset_classes.reload_dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reload_dataset</span></code></a>(path, form_of_labelling, ...)</p></td>
 <td><p>Reload the files from disk to construct the Pytorch dataset</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.dataset_classes.construct_dataset" title="dicee.dataset_classes.construct_dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">construct_dataset</span></code></a>(→ torch.utils.data.Dataset)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.dataset_classes.construct_dataset" title="dicee.dataset_classes.construct_dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">construct_dataset</span></code></a>(→ torch.utils.data.Dataset)</p></td>
 <td><p></p></td>
 </tr>
 </tbody>
@@ -244,21 +232,6 @@
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
-<dl class="py function">
-<dt class="sig sig-object py" id="dicee.dataset_classes.mapping_from_first_two_cols_to_third">
-<span class="sig-prename descclassname"><span class="pre">dicee.dataset_classes.</span></span><span class="sig-name descname"><span class="pre">mapping_from_first_two_cols_to_third</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_set_idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/static_preprocess_funcs.html#mapping_from_first_two_cols_to_third"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.dataset_classes.mapping_from_first_two_cols_to_third" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="dicee.dataset_classes.timeit">
-<span class="sig-prename descclassname"><span class="pre">dicee.dataset_classes.</span></span><span class="sig-name descname"><span class="pre">timeit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">func</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/static_funcs.html#timeit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.dataset_classes.timeit" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="dicee.dataset_classes.load_pickle">
-<span class="sig-prename descclassname"><span class="pre">dicee.dataset_classes.</span></span><span class="sig-name descname"><span class="pre">load_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/static_funcs.html#load_pickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.dataset_classes.load_pickle" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.dataset_classes.reload_dataset">
 <span class="sig-prename descclassname"><span class="pre">dicee.dataset_classes.</span></span><span class="sig-name descname"><span class="pre">reload_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scoring_technique</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_smoothing_rate</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/dataset_classes.html#reload_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.dataset_classes.reload_dataset" title="Link to this definition"></a></dt>

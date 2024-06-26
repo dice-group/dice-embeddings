@@ -125,10 +125,7 @@
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.torch_trainer.AbstractTrainer" title="dicee.trainer.torch_trainer.AbstractTrainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AbstractTrainer</span></code></a></p></td>
-<td><p>Abstract class for Trainer class for knowledge graph embedding models</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.trainer.torch_trainer.TorchTrainer" title="dicee.trainer.torch_trainer.TorchTrainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TorchTrainer</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.torch_trainer.TorchTrainer" title="dicee.trainer.torch_trainer.TorchTrainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TorchTrainer</span></code></a></p></td>
 <td><p>TorchTrainer for using single GPU or multi CPUs on a single node</p></td>
 </tr>
 </tbody>
@@ -136,101 +133,6 @@
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.AbstractTrainer">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.trainer.torch_trainer.</span></span><span class="sig-name descname"><span class="pre">AbstractTrainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/abstracts.html#AbstractTrainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer.AbstractTrainer" title="Link to this definition"></a></dt>
-<dd><p>Abstract class for Trainer class for knowledge graph embedding models</p>
-<section id="parameter">
-<h3>Parameter<a class="headerlink" href="#parameter" title="Link to this heading"></a></h3>
-<dl class="simple">
-<dt>args<span class="classifier">str</span></dt><dd><p>?</p>
-</dd>
-<dt>callbacks: list</dt><dd><p>?</p>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.AbstractTrainer.on_fit_start">
-<span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/abstracts.html#AbstractTrainer.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer.AbstractTrainer.on_fit_start" title="Link to this definition"></a></dt>
-<dd><p>A function to call callbacks before the training starts.</p>
-<section id="id1">
-<h4>Parameter<a class="headerlink" href="#id1" title="Link to this heading"></a></h4>
-<p>args</p>
-<p>kwargs</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.AbstractTrainer.on_fit_end">
-<span class="sig-name descname"><span class="pre">on_fit_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/abstracts.html#AbstractTrainer.on_fit_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer.AbstractTrainer.on_fit_end" title="Link to this definition"></a></dt>
-<dd><p>A function to call callbacks at the ned of the training.</p>
-<section id="id2">
-<h4>Parameter<a class="headerlink" href="#id2" title="Link to this heading"></a></h4>
-<p>args</p>
-<p>kwargs</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.AbstractTrainer.on_train_epoch_end">
-<span class="sig-name descname"><span class="pre">on_train_epoch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/abstracts.html#AbstractTrainer.on_train_epoch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer.AbstractTrainer.on_train_epoch_end" title="Link to this definition"></a></dt>
-<dd><p>A function to call callbacks at the end of an epoch.</p>
-<section id="id3">
-<h4>Parameter<a class="headerlink" href="#id3" title="Link to this heading"></a></h4>
-<p>args</p>
-<p>kwargs</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.AbstractTrainer.on_train_batch_end">
-<span class="sig-name descname"><span class="pre">on_train_batch_end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/abstracts.html#AbstractTrainer.on_train_batch_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer.AbstractTrainer.on_train_batch_end" title="Link to this definition"></a></dt>
-<dd><p>A function to call callbacks at the end of each mini-batch during training.</p>
-<section id="id4">
-<h4>Parameter<a class="headerlink" href="#id4" title="Link to this heading"></a></h4>
-<p>args</p>
-<p>kwargs</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.trainer.torch_trainer.AbstractTrainer.save_checkpoint">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">save_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">full_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/abstracts.html#AbstractTrainer.save_checkpoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer.AbstractTrainer.save_checkpoint" title="Link to this definition"></a></dt>
-<dd><p>A static function to save a model into disk</p>
-<section id="id5">
-<h4>Parameter<a class="headerlink" href="#id5" title="Link to this heading"></a></h4>
-<p>full_path : str</p>
-<p>model:</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-</section>
-</dd></dl>
-
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.trainer.torch_trainer.TorchTrainer">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.trainer.torch_trainer.</span></span><span class="sig-name descname"><span class="pre">TorchTrainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/torch_trainer.html#TorchTrainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer.TorchTrainer" title="Link to this definition"></a></dt>

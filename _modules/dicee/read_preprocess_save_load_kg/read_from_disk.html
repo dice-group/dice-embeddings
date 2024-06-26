@@ -94,7 +94,7 @@
 
 
 <div class="viewcode-block" id="ReadFromDisk">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/read_from_disk/index.html#dicee.knowledge_graph.ReadFromDisk">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/read_from_disk/index.html#dicee.read_preprocess_save_load_kg.ReadFromDisk">[docs]</a>
 <span class="k">class</span> <span class="nc">ReadFromDisk</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Read the data from disk into memory&quot;&quot;&quot;</span>
 
@@ -102,7 +102,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">kg</span> <span class="o">=</span> <span class="n">kg</span>
 
 <div class="viewcode-block" id="ReadFromDisk.start">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/read_from_disk/index.html#dicee.knowledge_graph.ReadFromDisk.start">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/read_from_disk/index.html#dicee.read_preprocess_save_load_kg.ReadFromDisk.start">[docs]</a>
     <span class="k">def</span> <span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Read a knowledge graph from disk into memory</span>
@@ -149,7 +149,7 @@
 
 
 <div class="viewcode-block" id="ReadFromDisk.add_noisy_triples_into_training">
-<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/read_from_disk/index.html#dicee.knowledge_graph.ReadFromDisk.add_noisy_triples_into_training">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/read_preprocess_save_load_kg/read_from_disk/index.html#dicee.read_preprocess_save_load_kg.ReadFromDisk.add_noisy_triples_into_training">[docs]</a>
     <span class="k">def</span> <span class="nf">add_noisy_triples_into_training</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">num_noisy_triples</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">add_noise_rate</span><span class="p">)</span>
         <span class="n">s</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kg</span><span class="o">.</span><span class="n">train_set</span><span class="p">)</span>

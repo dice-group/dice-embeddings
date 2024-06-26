@@ -70,7 +70,6 @@
 <li class="toctree-l4 current"><a class="reference internal" href="../index.html#submodules">Submodules</a><ul class="current">
 <li class="toctree-l5"><a class="reference internal" href="../index/index.html">dicee.scripts.index</a></li>
 <li class="toctree-l5 current"><a class="current reference internal" href="#">dicee.scripts.run</a><ul>
-<li class="toctree-l6"><a class="reference internal" href="#classes">Classes</a></li>
 <li class="toctree-l6"><a class="reference internal" href="#functions">Functions</a></li>
 <li class="toctree-l6"><a class="reference internal" href="#module-contents">Module Contents</a></li>
 </ul>
@@ -120,19 +119,6 @@
              
   <section id="module-dicee.scripts.run">
 <span id="dicee-scripts-run"></span><h1>dicee.scripts.run<a class="headerlink" href="#module-dicee.scripts.run" title="Link to this heading"></a></h1>
-<section id="classes">
-<h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
-<table class="autosummary longtable docutils align-default">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.scripts.run.Execute" title="dicee.scripts.run.Execute"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Execute</span></code></a></p></td>
-<td><p>A class for Training, Retraining and Evaluation a model.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.scripts.run.ContinuousExecute" title="dicee.scripts.run.ContinuousExecute"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ContinuousExecute</span></code></a></p></td>
-<td><p>A subclass of Execute Class for retraining</p></td>
-</tr>
-</tbody>
-</table>
-</section>
 <section id="functions">
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
@@ -148,151 +134,6 @@
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="dicee.scripts.run.Execute">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.scripts.run.</span></span><span class="sig-name descname"><span class="pre">Execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">continuous_training</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/executer.html#Execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.scripts.run.Execute" title="Link to this definition"></a></dt>
-<dd><p>A class for Training, Retraining and Evaluation a model.</p>
-<ol class="arabic simple">
-<li><p>Loading &amp; Preprocessing &amp; Serializing input data.</p></li>
-<li><p>Training &amp; Validation &amp; Testing</p></li>
-<li><p>Storing all necessary info</p></li>
-</ol>
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.scripts.run.Execute.read_or_load_kg">
-<span class="sig-name descname"><span class="pre">read_or_load_kg</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/executer.html#Execute.read_or_load_kg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.scripts.run.Execute.read_or_load_kg" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.scripts.run.Execute.read_preprocess_index_serialize_data">
-<span class="sig-name descname"><span class="pre">read_preprocess_index_serialize_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/executer.html#Execute.read_preprocess_index_serialize_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.scripts.run.Execute.read_preprocess_index_serialize_data" title="Link to this definition"></a></dt>
-<dd><p>Read &amp; Preprocess &amp; Index &amp; Serialize Input Data</p>
-<ol class="arabic simple">
-<li><p>Read or load the data from disk into memory.</p></li>
-<li><p>Store the statistics of the data.</p></li>
-</ol>
-<section id="parameter">
-<h3>Parameter<a class="headerlink" href="#parameter" title="Link to this heading"></a></h3>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.scripts.run.Execute.load_indexed_data">
-<span class="sig-name descname"><span class="pre">load_indexed_data</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/executer.html#Execute.load_indexed_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.scripts.run.Execute.load_indexed_data" title="Link to this definition"></a></dt>
-<dd><p>Load the indexed data from disk into memory</p>
-<section id="id1">
-<h3>Parameter<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.scripts.run.Execute.save_trained_model">
-<span class="sig-name descname"><span class="pre">save_trained_model</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/executer.html#Execute.save_trained_model"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.scripts.run.Execute.save_trained_model" title="Link to this definition"></a></dt>
-<dd><p>Save a knowledge graph embedding model</p>
-<ol class="arabic simple">
-<li><p>Send model to eval mode and cpu.</p></li>
-<li><p>Store the memory footprint of the model.</p></li>
-<li><p>Save the model into disk.</p></li>
-<li><p>Update the stats of KG again ?</p></li>
-</ol>
-<section id="id2">
-<h3>Parameter<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.scripts.run.Execute.end">
-<span class="sig-name descname"><span class="pre">end</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">form_of_labelling</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../../../../_modules/dicee/executer.html#Execute.end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.scripts.run.Execute.end" title="Link to this definition"></a></dt>
-<dd><p>End training</p>
-<ol class="arabic simple">
-<li><p>Store trained model.</p></li>
-<li><p>Report runtimes.</p></li>
-<li><p>Eval model if required.</p></li>
-</ol>
-<section id="id3">
-<h3>Parameter<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A dict containing information about the training and/or evaluation</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.scripts.run.Execute.write_report">
-<span class="sig-name descname"><span class="pre">write_report</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../../_modules/dicee/executer.html#Execute.write_report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.scripts.run.Execute.write_report" title="Link to this definition"></a></dt>
-<dd><p>Report training related information in a report.json file</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.scripts.run.Execute.start">
-<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../../../../_modules/dicee/executer.html#Execute.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.scripts.run.Execute.start" title="Link to this definition"></a></dt>
-<dd><p>Start training</p>
-<p># (1) Loading the Data
-# (2) Create an evaluator object.
-# (3) Create a trainer object.
-# (4) Start the training</p>
-<section id="id4">
-<h3>Parameter<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A dict containing information about the training and/or evaluation</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="dicee.scripts.run.ContinuousExecute">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.scripts.run.</span></span><span class="sig-name descname"><span class="pre">ContinuousExecute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/executer.html#ContinuousExecute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.scripts.run.ContinuousExecute" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="#dicee.scripts.run.Execute" title="dicee.scripts.run.Execute"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Execute</span></code></a></p>
-<p>A subclass of Execute Class for retraining</p>
-<ol class="arabic simple">
-<li><p>Loading &amp; Preprocessing &amp; Serializing input data.</p></li>
-<li><p>Training &amp; Validation &amp; Testing</p></li>
-<li><p>Storing all necessary info</p></li>
-</ol>
-<p>During the continual learning we can only modify <strong>* num_epochs *</strong> parameter.
-Trained model stored in the same folder as the seed model for the training.
-Trained model is noted with the current time.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.scripts.run.ContinuousExecute.continual_start">
-<span class="sig-name descname"><span class="pre">continual_start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../../../../_modules/dicee/executer.html#ContinuousExecute.continual_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.scripts.run.ContinuousExecute.continual_start" title="Link to this definition"></a></dt>
-<dd><p>Start Continual Training</p>
-<ol class="arabic simple">
-<li><p>Initialize training.</p></li>
-<li><p>Start continual training.</p></li>
-<li><p>Save trained model.</p></li>
-</ol>
-<section id="id5">
-<h3>Parameter<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A dict containing information about the training and/or evaluation</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-</dd></dl>
-
 <dl class="py function">
 <dt class="sig sig-object py" id="dicee.scripts.run.get_default_arguments">
 <span class="sig-prename descclassname"><span class="pre">dicee.scripts.run.</span></span><span class="sig-name descname"><span class="pre">get_default_arguments</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/scripts/run.html#get_default_arguments"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.scripts.run.get_default_arguments" title="Link to this definition"></a></dt>

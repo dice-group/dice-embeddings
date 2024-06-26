@@ -17,7 +17,6 @@ Functions
 
 .. autoapisummary::
 
-   dicee.static_preprocess_funcs.sanity_checking_with_arguments
    dicee.static_preprocess_funcs.timeit
    dicee.static_preprocess_funcs.preprocesses_input_args
    dicee.static_preprocess_funcs.create_constraints
@@ -29,8 +28,6 @@ Functions
 
 Module Contents
 ---------------
-
-.. py:function:: sanity_checking_with_arguments(args)
 
 .. py:data:: enable_log
    :value: False

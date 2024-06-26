@@ -104,7 +104,7 @@
 
 <span class="kn">import</span> <span class="nn">traceback</span>
 <div class="viewcode-block" id="KGE">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE">[docs]</a>
 <span class="k">class</span> <span class="nc">KGE</span><span class="p">(</span><span class="n">BaseInteractiveKGE</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Knowledge Graph Embedding Class for interactive usage of pre-trained models&quot;&quot;&quot;</span>
 
@@ -114,7 +114,7 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">construct_ensemble</span><span class="o">=</span><span class="n">construct_ensemble</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">)</span>
 
 <div class="viewcode-block" id="KGE.get_transductive_entity_embeddings">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.get_transductive_entity_embeddings">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.get_transductive_entity_embeddings">[docs]</a>
     <span class="k">def</span> <span class="nf">get_transductive_entity_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                                            <span class="n">indices</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
                                            <span class="n">as_pytorch</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -138,7 +138,7 @@
 
 
 <div class="viewcode-block" id="KGE.create_vector_database">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.create_vector_database">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.create_vector_database">[docs]</a>
     <span class="k">def</span> <span class="nf">create_vector_database</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">collection_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">distance</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
                                <span class="n">location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;localhost&quot;</span><span class="p">,</span>
                                <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6333</span><span class="p">):</span>
@@ -179,7 +179,7 @@
 
 
 <div class="viewcode-block" id="KGE.generate">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.generate">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.generate">[docs]</a>
     <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">configs</span><span class="p">[</span><span class="s2">&quot;byte_pair_encoding&quot;</span><span class="p">]</span>
 
@@ -219,14 +219,14 @@
 
 
 <div class="viewcode-block" id="KGE.__str__">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.__str__">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.__str__">[docs]</a>
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;KGE | &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span></div>
 
 
     <span class="c1"># given a string, return is bpe encoded embeddings</span>
 <div class="viewcode-block" id="KGE.eval_lp_performance">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.eval_lp_performance">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.eval_lp_performance">[docs]</a>
     <span class="k">def</span> <span class="nf">eval_lp_performance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="o">=</span><span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="n">filtered</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
         <span class="n">idx_dataset</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
@@ -241,7 +241,7 @@
 
 
 <div class="viewcode-block" id="KGE.predict_missing_head_entity">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.predict_missing_head_entity">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.predict_missing_head_entity">[docs]</a>
     <span class="k">def</span> <span class="nf">predict_missing_head_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">relation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span> <span class="n">tail_entity</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span>
                                     <span class="n">within</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -287,7 +287,7 @@
 
 
 <div class="viewcode-block" id="KGE.predict_missing_relations">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.predict_missing_relations">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.predict_missing_relations">[docs]</a>
     <span class="k">def</span> <span class="nf">predict_missing_relations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_entity</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span>
                                   <span class="n">tail_entity</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span> <span class="n">within</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -334,7 +334,7 @@
 
 
 <div class="viewcode-block" id="KGE.predict_missing_tail_entity">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.predict_missing_tail_entity">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.predict_missing_tail_entity">[docs]</a>
     <span class="k">def</span> <span class="nf">predict_missing_tail_entity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_entity</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span>
                                     <span class="n">relation</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span> <span class="n">within</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -401,7 +401,7 @@
 
 
 <div class="viewcode-block" id="KGE.predict">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.predict">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.predict">[docs]</a>
     <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                 <span class="n">t</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">within</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">logits</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -457,7 +457,7 @@
 
 
 <div class="viewcode-block" id="KGE.predict_topk">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.predict_topk">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.predict_topk">[docs]</a>
     <span class="k">def</span> <span class="nf">predict_topk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                      <span class="n">topk</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">within</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -540,7 +540,7 @@
 
 
 <div class="viewcode-block" id="KGE.triple_score">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.triple_score">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.triple_score">[docs]</a>
     <span class="k">def</span> <span class="nf">triple_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                      <span class="n">t</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">logits</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -613,7 +613,7 @@
 
 
 <div class="viewcode-block" id="KGE.t_norm">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.t_norm">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.t_norm">[docs]</a>
     <span class="k">def</span> <span class="nf">t_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tens_1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tens_2</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tnorm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;min&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">if</span> <span class="s1">&#39;min&#39;</span> <span class="ow">in</span> <span class="n">tnorm</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">tens_1</span><span class="p">,</span> <span class="n">tens_2</span><span class="p">)</span>
@@ -622,7 +622,7 @@
 
 
 <div class="viewcode-block" id="KGE.tensor_t_norm">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.tensor_t_norm">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.tensor_t_norm">[docs]</a>
     <span class="k">def</span> <span class="nf">tensor_t_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subquery_scores</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">tnorm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;min&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute T-norm over [0,1] ^{n \times d} where n denotes the number of hops and d denotes number of entities</span>
@@ -641,7 +641,7 @@
 
 
 <div class="viewcode-block" id="KGE.t_conorm">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.t_conorm">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.t_conorm">[docs]</a>
     <span class="k">def</span> <span class="nf">t_conorm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tens_1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tens_2</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">tconorm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;min&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">if</span> <span class="s1">&#39;min&#39;</span> <span class="ow">in</span> <span class="n">tconorm</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">tens_1</span><span class="p">,</span> <span class="n">tens_2</span><span class="p">)</span>
@@ -650,7 +650,7 @@
 
 
 <div class="viewcode-block" id="KGE.negnorm">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.negnorm">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.negnorm">[docs]</a>
     <span class="k">def</span> <span class="nf">negnorm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tens_1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">lambda_</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">neg_norm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;standard&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
         <span class="k">if</span> <span class="s1">&#39;standard&#39;</span> <span class="ow">in</span> <span class="n">neg_norm</span><span class="p">:</span>
             <span class="k">return</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">tens_1</span>
@@ -661,7 +661,7 @@
 
 
 <div class="viewcode-block" id="KGE.return_multi_hop_query_results">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.return_multi_hop_query_results">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.return_multi_hop_query_results">[docs]</a>
     <span class="k">def</span> <span class="nf">return_multi_hop_query_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">aggregated_query_for_all_entities</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">only_scores</span><span class="p">):</span>
         <span class="c1"># @TODO: refactor by torchargmax(aggregated_query_for_all_entities)</span>
         <span class="k">if</span> <span class="n">only_scores</span><span class="p">:</span>
@@ -672,7 +672,7 @@
 
 
 <div class="viewcode-block" id="KGE.single_hop_query_answering">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.single_hop_query_answering">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.single_hop_query_answering">[docs]</a>
     <span class="k">def</span> <span class="nf">single_hop_query_answering</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">only_scores</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="n">h</span><span class="p">,</span> <span class="n">r</span> <span class="o">=</span> <span class="n">query</span>
         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
@@ -685,7 +685,7 @@
 
 
 <div class="viewcode-block" id="KGE.answer_multi_hop_query">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.answer_multi_hop_query">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.answer_multi_hop_query">[docs]</a>
     <span class="k">def</span> <span class="nf">answer_multi_hop_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                                <span class="n">queries</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">tnorm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;prod&quot;</span><span class="p">,</span>
                                <span class="n">neg_norm</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;standard&quot;</span><span class="p">,</span> <span class="n">lambda_</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">only_scores</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> \
@@ -1190,7 +1190,7 @@
 
 
 <div class="viewcode-block" id="KGE.find_missing_triples">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.find_missing_triples">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.find_missing_triples">[docs]</a>
     <span class="k">def</span> <span class="nf">find_missing_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">confidence</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">entities</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">relations</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                              <span class="n">topk</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
                              <span class="n">at_most</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">:</span>
@@ -1285,7 +1285,7 @@
 
 
 <div class="viewcode-block" id="KGE.deploy">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.deploy">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.deploy">[docs]</a>
     <span class="k">def</span> <span class="nf">deploy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">share</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">top_k</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">):</span>
         <span class="c1"># Lazy import</span>
         <span class="kn">import</span> <span class="nn">gradio</span> <span class="k">as</span> <span class="nn">gr</span>
@@ -1331,7 +1331,7 @@
 
     <span class="c1"># @TODO: Do we really need this ?!</span>
 <div class="viewcode-block" id="KGE.train_triples">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.train_triples">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.train_triples">[docs]</a>
     <span class="k">def</span> <span class="nf">train_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">r</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">t</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">labels</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
                       <span class="n">iteration</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">h</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
@@ -1361,7 +1361,7 @@
 
 
 <div class="viewcode-block" id="KGE.train_k_vs_all">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.train_k_vs_all">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.train_k_vs_all">[docs]</a>
     <span class="k">def</span> <span class="nf">train_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">iteration</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">.001</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Train k vs all</span>
@@ -1413,7 +1413,7 @@
 
 
 <div class="viewcode-block" id="KGE.train">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.eval_static_funcs.KGE.train">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.train">[docs]</a>
     <span class="k">def</span> <span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kg</span><span class="p">,</span> <span class="n">lr</span><span class="o">=</span><span class="mf">.1</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">neg_sample_ratio</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Retrained a pretrain model on an input KG via negative sampling.&quot;&quot;&quot;</span>
         <span class="c1"># (1) Create Negative Sampling Setting for training</span>

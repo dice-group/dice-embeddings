@@ -97,7 +97,7 @@
 
 
 <div class="viewcode-block" id="reload_dataset">
-<a class="viewcode-back" href="../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.dataset_classes.reload_dataset">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.reload_dataset">[docs]</a>
 <span class="nd">@timeit</span>
 <span class="k">def</span> <span class="nf">reload_dataset</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">form_of_labelling</span><span class="p">,</span> <span class="n">scoring_technique</span><span class="p">,</span> <span class="n">neg_ratio</span><span class="p">,</span> <span class="n">label_smoothing_rate</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Reload the files from disk to construct the Pytorch dataset &quot;&quot;&quot;</span>
@@ -113,7 +113,7 @@
 
 
 <div class="viewcode-block" id="construct_dataset">
-<a class="viewcode-back" href="../../autoapi/dicee/trainer/dice_trainer/index.html#dicee.dataset_classes.construct_dataset">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.construct_dataset">[docs]</a>
 <span class="nd">@timeit</span>
 <span class="k">def</span> <span class="nf">construct_dataset</span><span class="p">(</span><span class="o">*</span><span class="p">,</span>
                       <span class="n">train_set</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">],</span>
@@ -728,7 +728,7 @@
 
 
 <div class="viewcode-block" id="TriplePredictionDataset">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.dataset_classes.TriplePredictionDataset">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.TriplePredictionDataset">[docs]</a>
 <span class="k">class</span> <span class="nc">TriplePredictionDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Triple Dataset</span>
@@ -777,19 +777,19 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">num_relations</span><span class="p">)</span>
 
 <div class="viewcode-block" id="TriplePredictionDataset.__len__">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.dataset_classes.TriplePredictionDataset.__len__">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.TriplePredictionDataset.__len__">[docs]</a>
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span></div>
 
 
 <div class="viewcode-block" id="TriplePredictionDataset.__getitem__">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.dataset_classes.TriplePredictionDataset.__getitem__">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.TriplePredictionDataset.__getitem__">[docs]</a>
     <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_set</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="TriplePredictionDataset.collate_fn">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.dataset_classes.TriplePredictionDataset.collate_fn">[docs]</a>
+<a class="viewcode-back" href="../../autoapi/dicee/index.html#dicee.dataset_classes.TriplePredictionDataset.collate_fn">[docs]</a>
     <span class="k">def</span> <span class="nf">collate_fn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]):</span>
         <span class="n">batch</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">batch</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">batch</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>

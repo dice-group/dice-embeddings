@@ -94,7 +94,7 @@
 
 
 <div class="viewcode-block" id="CMult">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.CMult">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.CMult">[docs]</a>
 <span class="k">class</span> <span class="nc">CMult</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Cl_(0,0) =&gt; Real Numbers</span>
@@ -133,7 +133,7 @@
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">p:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="se">\t</span><span class="s1">q:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="CMult.clifford_mul">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.CMult.clifford_mul">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.CMult.clifford_mul">[docs]</a>
     <span class="k">def</span> <span class="nf">clifford_mul</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Clifford multiplication Cl_{p,q} (\mathbb{R})</span>
@@ -213,7 +213,7 @@
 
 
 <div class="viewcode-block" id="CMult.score">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.CMult.score">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.CMult.score">[docs]</a>
     <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span><span class="p">):</span>
         <span class="n">ab</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">clifford_mul</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
 
@@ -235,7 +235,7 @@
 
 
 <div class="viewcode-block" id="CMult.forward_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.CMult.forward_triples">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.CMult.forward_triples">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute batch triple scores</span>
@@ -273,7 +273,7 @@
 
 
 <div class="viewcode-block" id="CMult.forward_k_vs_all">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.CMult.forward_k_vs_all">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.CMult.forward_k_vs_all">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute batch KvsAll triple scores</span>
@@ -330,7 +330,7 @@
 
 
 <div class="viewcode-block" id="Keci">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.Keci">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci">[docs]</a>
 <span class="k">class</span> <span class="nc">Keci</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
@@ -358,7 +358,7 @@
             <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">zeros_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_coefficients</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Keci.compute_sigma_pp">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.Keci.compute_sigma_pp">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.compute_sigma_pp">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigma_pp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">rp</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute  sigma_{pp} = \sum_{i=1}^{p-1} \sum_{k=i+1}^p (h_i r_k - h_k r_i) e_i e_k</span>
@@ -389,7 +389,7 @@
 
 
 <div class="viewcode-block" id="Keci.compute_sigma_qq">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.Keci.compute_sigma_qq">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.compute_sigma_qq">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigma_qq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rq</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute  sigma_{qq} = \sum_{j=1}^{p+q-1} \sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k</span>
@@ -423,7 +423,7 @@
 
 
 <div class="viewcode-block" id="Keci.compute_sigma_pq">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.Keci.compute_sigma_pq">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.compute_sigma_pq">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigma_pq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j</span>
@@ -442,7 +442,7 @@
 
 
 <div class="viewcode-block" id="Keci.apply_coefficients">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.Keci.apply_coefficients">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.apply_coefficients">[docs]</a>
     <span class="k">def</span> <span class="nf">apply_coefficients</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Multiplying a base vector with its scalar coefficient &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -455,7 +455,7 @@
 
 
 <div class="viewcode-block" id="Keci.clifford_multiplication">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.Keci.clifford_multiplication">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.clifford_multiplication">[docs]</a>
     <span class="k">def</span> <span class="nf">clifford_multiplication</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Compute our CL multiplication</span>
 
@@ -505,7 +505,7 @@
 
 
 <div class="viewcode-block" id="Keci.construct_cl_multivector">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.Keci.construct_cl_multivector">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.construct_cl_multivector">[docs]</a>
     <span class="k">def</span> <span class="nf">construct_cl_multivector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -538,7 +538,7 @@
 
 
 <div class="viewcode-block" id="Keci.forward_k_vs_with_explicit">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.Keci.forward_k_vs_with_explicit">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.forward_k_vs_with_explicit">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_k_vs_with_explicit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="c1"># (1) Retrieve real-valued embedding vectors.</span>
@@ -605,7 +605,7 @@
 
 
 <div class="viewcode-block" id="Keci.k_vs_all_score">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.Keci.k_vs_all_score">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.k_vs_all_score">[docs]</a>
     <span class="k">def</span> <span class="nf">k_vs_all_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bpe_head_ent_emb</span><span class="p">,</span> <span class="n">bpe_rel_ent_emb</span><span class="p">,</span> <span class="n">E</span><span class="p">):</span>
         <span class="c1"># (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations</span>
         <span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_cl_multivector</span><span class="p">(</span><span class="n">bpe_head_ent_emb</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
@@ -657,7 +657,7 @@
 
 
 <div class="viewcode-block" id="Keci.forward_k_vs_all">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.Keci.forward_k_vs_all">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.forward_k_vs_all">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Kvsall training</span>
@@ -684,7 +684,7 @@
 
 
 <div class="viewcode-block" id="Keci.forward_k_vs_sample">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.Keci.forward_k_vs_sample">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.forward_k_vs_sample">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Kvsall training</span>
@@ -743,7 +743,7 @@
 
 
 <div class="viewcode-block" id="Keci.score">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.Keci.score">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.score">[docs]</a>
     <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
         <span class="c1"># (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations</span>
         <span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_cl_multivector</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
@@ -799,7 +799,7 @@
 
 
 <div class="viewcode-block" id="Keci.forward_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.Keci.forward_triples">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.forward_triples">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -865,7 +865,7 @@
 
 
 <div class="viewcode-block" id="KeciBase">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.KeciBase">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.KeciBase">[docs]</a>
 <span class="k">class</span> <span class="nc">KeciBase</span><span class="p">(</span><span class="n">Keci</span><span class="p">):</span>
     <span class="s2">&quot; Without learning dimension scaling&quot;</span>
 
@@ -884,7 +884,7 @@
 
 
 <div class="viewcode-block" id="DeCaL">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.DeCaL">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL">[docs]</a>
 <span class="k">class</span> <span class="nc">DeCaL</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
@@ -908,7 +908,7 @@
             <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">zeros_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r_coefficients</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span>
 
 <div class="viewcode-block" id="DeCaL.forward_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.DeCaL.forward_triples">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.forward_triples">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -996,7 +996,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.cl_pqr">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.DeCaL.cl_pqr">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.cl_pqr">[docs]</a>
     <span class="k">def</span> <span class="nf">cl_pqr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">:</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">:</span>
 
 <span class="w">        </span><span class="sd">&#39;&#39;&#39; Input: tensor(batch_size, emb_dim) ---&gt; output: tensor with 1+p+q+r components with size (batch_size, emb_dim/(1+p+q+r)) each.</span>
@@ -1013,7 +1013,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.compute_sigmas_single">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.DeCaL.compute_sigmas_single">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.compute_sigmas_single">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigmas_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_h_emb</span><span class="p">,</span> <span class="n">list_r_emb</span><span class="p">,</span> <span class="n">list_t_emb</span><span class="p">):</span>
 
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;here we compute all the sums with no others vectors interaction taken with the scalar product with t, that is,</span>
@@ -1066,7 +1066,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.compute_sigmas_multivect">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.DeCaL.compute_sigmas_multivect">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.compute_sigmas_multivect">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigmas_multivect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_h_emb</span><span class="p">,</span> <span class="n">list_r_emb</span><span class="p">):</span>
 
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;Here we compute and return all the sums with vectors interaction for the same and different bases.</span>
@@ -1126,7 +1126,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.forward_k_vs_all">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.DeCaL.forward_k_vs_all">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.forward_k_vs_all">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1222,7 +1222,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.apply_coefficients">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.DeCaL.apply_coefficients">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.apply_coefficients">[docs]</a>
     <span class="k">def</span> <span class="nf">apply_coefficients</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">hk</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">,</span> <span class="n">rk</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Multiplying a base vector with its scalar coefficient &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -1238,7 +1238,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.construct_cl_multivector">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.DeCaL.construct_cl_multivector">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.construct_cl_multivector">[docs]</a>
     <span class="k">def</span> <span class="nf">construct_cl_multivector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">re</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1277,7 +1277,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.compute_sigma_pp">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.DeCaL.compute_sigma_pp">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.compute_sigma_pp">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigma_pp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">rp</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute </span>
@@ -1311,7 +1311,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.compute_sigma_qq">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.DeCaL.compute_sigma_qq">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.compute_sigma_qq">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigma_qq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rq</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute  </span>
@@ -1351,7 +1351,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.compute_sigma_rr">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.DeCaL.compute_sigma_rr">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.compute_sigma_rr">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigma_rr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hk</span><span class="p">,</span> <span class="n">rk</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        .. math:: </span>
@@ -1372,7 +1372,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.compute_sigma_pq">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.DeCaL.compute_sigma_pq">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.compute_sigma_pq">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigma_pq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute </span>
@@ -1395,7 +1395,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.compute_sigma_pr">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.DeCaL.compute_sigma_pr">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.compute_sigma_pr">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigma_pr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hk</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rk</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute</span>
@@ -1418,7 +1418,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.compute_sigma_qr">
-<a class="viewcode-back" href="../../../autoapi/dicee/static_funcs/index.html#dicee.DeCaL.compute_sigma_qr">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.compute_sigma_qr">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigma_qr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">hk</span><span class="p">,</span> <span class="n">rq</span><span class="p">,</span> <span class="n">rk</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        .. math:: </span>

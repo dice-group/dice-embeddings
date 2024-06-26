@@ -12,21 +12,8 @@ Classes
    dicee.query_generator.QueryGenerator
 
 
-Functions
----------
-
-.. autoapisummary::
-
-   dicee.query_generator.save_pickle
-   dicee.query_generator.load_pickle
-
-
 Module Contents
 ---------------
-
-.. py:function:: save_pickle(*, data: object = None, file_path=str)
-
-.. py:function:: load_pickle(file_path=str)
 
 .. py:class:: QueryGenerator(train_path, val_path: str, test_path: str, ent2id: Dict = None, rel2id: Dict = None, seed: int = 1, gen_valid: bool = False, gen_test: bool = True)
 
