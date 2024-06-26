@@ -35,7 +35,7 @@ Deploy a pre-trained embedding model without writing a single line of code.
 ### Installation from Source
 ``` bash
 git clone https://github.com/dice-group/dice-embeddings.git
-conda create -n dice python=3.10.13 --no-default-packages && conda activate dice && cd dice-embeddings &&
+conda create -n dice python=3.10.13 --no-default-packages && conda activate dice
 pip3 install -e .
 ```
 or
@@ -48,7 +48,7 @@ wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check
 ```
 To test the Installation
 ```bash
-python -m pytest -p no:warnings -x # Runs >114 tests leading to > 15 mins
+python -m pytest -p no:warnings -x # Runs >119 tests leading to > 15 mins
 python -m pytest -p no:warnings --lf # run only the last failed test
 python -m pytest -p no:warnings --ff # to run the failures first and then the rest of the tests.
 ```

@@ -8,6 +8,7 @@ _deps = [
     "torch>=2.2.0",
     "lightning>=2.1.3",
     "pandas>=2.1.0",
+    "numpy==1.26.4",
     "polars>=0.16.14",
     "scikit-learn>=1.2.2",
     "pyarrow>=11.0.0",
@@ -33,12 +34,13 @@ def deps_list(*pkgs):
 extras = dict()
 extras["min"] = deps_list(
     "pandas",
-    "polars", "rdflib",  # Loading KG
+    "polars", "pyarrow", "rdflib",  # Loading KG
     "torch", "lightning",  # Training KGE
     "tiktoken",  # used for BPE
     "psutil",  # Memory tracking: maybe remove later ?
     "matplotlib",  # Unclear why it is needed
-    "pykeen"  # additional kge models
+    "pykeen",  # additional kge models
+    "numpy"
 )
 
 # TODO: Remove polars, rdflib, tiktoken, psutil, matplotlib from min
