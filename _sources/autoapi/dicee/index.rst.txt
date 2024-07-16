@@ -1813,6 +1813,15 @@ Package Contents
    Knowledge Graph Embedding Class for interactive usage of pre-trained models
 
 
+   .. py:method:: __str__()
+
+      Return str(self).
+
+
+
+   .. py:method:: to(device: str) -> None
+
+
    .. py:method:: get_transductive_entity_embeddings(indices: Union[torch.LongTensor, List[str]], as_pytorch=False, as_numpy=False, as_list=True) -> Union[torch.FloatTensor, numpy.ndarray, List[float]]
 
 
@@ -1820,12 +1829,6 @@ Package Contents
 
 
    .. py:method:: generate(h='', r='')
-
-
-   .. py:method:: __str__()
-
-      Return str(self).
-
 
 
    .. py:method:: eval_lp_performance(dataset=List[Tuple[str, str, str]], filtered=True)

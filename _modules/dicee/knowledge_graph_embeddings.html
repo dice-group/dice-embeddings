@@ -99,10 +99,11 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 
-
 <span class="c1"># import gradio as gr</span>
 
 <span class="kn">import</span> <span class="nn">traceback</span>
+
+
 <div class="viewcode-block" id="KGE">
 <a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE">[docs]</a>
 <span class="k">class</span> <span class="nc">KGE</span><span class="p">(</span><span class="n">BaseInteractiveKGE</span><span class="p">):</span>
@@ -112,6 +113,19 @@
                  <span class="n">model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                  <span class="n">apply_semantic_constraint</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">construct_ensemble</span><span class="o">=</span><span class="n">construct_ensemble</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">)</span>
+
+<div class="viewcode-block" id="KGE.__str__">
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.__str__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;KGE | &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KGE.to">
+<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.to">[docs]</a>
+    <span class="k">def</span> <span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="s2">&quot;cpu&quot;</span> <span class="ow">in</span> <span class="n">device</span> <span class="ow">or</span> <span class="s2">&quot;cuda&quot;</span> <span class="ow">in</span> <span class="n">device</span><span class="p">,</span> <span class="s2">&quot;Device must be either cpu or cuda&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="KGE.get_transductive_entity_embeddings">
 <a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.get_transductive_entity_embeddings">[docs]</a>
@@ -218,12 +232,6 @@
             <span class="nb">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">enc</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">tokens</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2"> </span><span class="si">{</span><span class="n">score</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="KGE.__str__">
-<a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.__str__">[docs]</a>
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s2">&quot;KGE | &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span></div>
-
-
     <span class="c1"># given a string, return is bpe encoded embeddings</span>
 <div class="viewcode-block" id="KGE.eval_lp_performance">
 <a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.eval_lp_performance">[docs]</a>
@@ -283,6 +291,7 @@
         <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">head_entity</span><span class="p">,</span>
                          <span class="n">relation</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="p">),</span>
                          <span class="n">tail_entity</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="p">)),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
 
 
@@ -397,6 +406,7 @@
             <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">head_entity</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="p">),</span>
                              <span class="n">relation</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="p">),</span>
                              <span class="n">tail_entity</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
 
 
@@ -606,6 +616,7 @@
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">logits</span><span class="p">:</span>
                     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
@@ -1355,6 +1366,7 @@
         <span class="c1"># (5) Eval</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">set_model_eval_mode</span><span class="p">()</span>
         <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
             <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
             <span class="n">loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Eval Mode:</span><span class="se">\t</span><span class="s2">Loss:</span><span class="si">{</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
