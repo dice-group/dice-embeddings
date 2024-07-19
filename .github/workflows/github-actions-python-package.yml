@@ -22,7 +22,7 @@ jobs:
 
       - name: Lint with ruff
         run: |
-          ruff  --select=E501 --line-length=200 dicee/
+          ruff  check dicee/ --select=E501 --line-length=200
       - name: Test with pytest
         run: |
           wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate && unzip KGs.zip
