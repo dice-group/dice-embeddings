@@ -27,6 +27,11 @@ Module Contents
    https://arxiv.org/abs/1412.6575
 
 
+   .. py:attribute:: name
+      :value: 'DistMult'
+
+
+
    .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor)
 
       :param emb_h:
@@ -54,6 +59,16 @@ Module Contents
    https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf
 
 
+   .. py:attribute:: name
+      :value: 'TransE'
+
+
+
+   .. py:attribute:: margin
+      :value: 4
+
+
+
    .. py:method:: score(head_ent_emb, rel_ent_emb, tail_ent_emb)
 
 
@@ -66,6 +81,17 @@ Module Contents
 
 
    A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090)
+
+
+   .. py:attribute:: name
+      :value: 'Shallom'
+
+
+
+   .. py:attribute:: shallom_width
+
+
+   .. py:attribute:: shallom
 
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, None]
@@ -87,6 +113,19 @@ Module Contents
 
 
    A Physical Embedding Model for Knowledge Graphs
+
+
+   .. py:attribute:: name
+      :value: 'Pyke'
+
+
+
+   .. py:attribute:: dist_func
+
+
+   .. py:attribute:: margin
+      :value: 1.0
+
 
 
    .. py:method:: forward_triples(x: torch.LongTensor)

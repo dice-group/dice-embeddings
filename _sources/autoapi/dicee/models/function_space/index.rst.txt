@@ -27,6 +27,34 @@ Module Contents
    Learning Knowledge Neural Graphs
 
 
+   .. py:attribute:: name
+      :value: 'FMult'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: k
+
+
+   .. py:attribute:: num_sample
+      :value: 50
+
+
+
+   .. py:attribute:: gamma
+
+
+   .. py:attribute:: roots
+
+
+   .. py:attribute:: weights
+
+
    .. py:method:: compute_func(weights: torch.FloatTensor, x) -> torch.FloatTensor
 
 
@@ -47,6 +75,31 @@ Module Contents
    Learning Knowledge Neural Graphs
 
 
+   .. py:attribute:: name
+      :value: 'GFMult'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: k
+
+
+   .. py:attribute:: num_sample
+      :value: 250
+
+
+
+   .. py:attribute:: roots
+
+
+   .. py:attribute:: weights
+
+
    .. py:method:: compute_func(weights: torch.FloatTensor, x) -> torch.FloatTensor
 
 
@@ -65,6 +118,43 @@ Module Contents
 
 
    Learning Knowledge Neural Graphs
+
+
+   .. py:attribute:: name
+      :value: 'FMult2'
+
+
+
+   .. py:attribute:: n_layers
+      :value: 3
+
+
+
+   .. py:attribute:: tuned_embedding_dim
+      :value: False
+
+
+
+   .. py:attribute:: k
+
+
+   .. py:attribute:: n
+      :value: 50
+
+
+
+   .. py:attribute:: score_func
+      :value: 'compositional'
+
+
+
+   .. py:attribute:: discrete_points
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
 
 
    .. py:method:: build_func(Vec)
@@ -97,6 +187,17 @@ Module Contents
    f(x) = \sum_{k=0}^{k=d-1}wk e^{kix}. and use the three differents scoring function as in the paper to evaluate the score
 
 
+   .. py:attribute:: name
+      :value: 'LFMult1'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
    .. py:method:: forward_triples(idx_triple)
 
       :param x:
@@ -117,6 +218,26 @@ Module Contents
    Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:
    f(x) = \sum_{i=0}^{d-1} a_k x^{i%d} and use the three differents scoring function as in the paper to evaluate the score.
    We also consider combining with Neural Networks.
+
+
+   .. py:attribute:: name
+      :value: 'LFMult'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: degree
+
+
+   .. py:attribute:: m
+
+
+   .. py:attribute:: x_values
 
 
    .. py:method:: forward_triples(idx_triple)

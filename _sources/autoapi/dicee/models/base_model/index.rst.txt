@@ -54,6 +54,11 @@ Module Contents
    :vartype training: bool
 
 
+   .. py:attribute:: training_step_outputs
+      :value: []
+
+
+
    .. py:method:: mem_of_model() -> Dict
 
       Size of model in MB and number of params
@@ -407,6 +412,125 @@ Module Contents
    :vartype training: bool
 
 
+   .. py:attribute:: args
+
+
+   .. py:attribute:: embedding_dim
+      :value: None
+
+
+
+   .. py:attribute:: num_entities
+      :value: None
+
+
+
+   .. py:attribute:: num_relations
+      :value: None
+
+
+
+   .. py:attribute:: num_tokens
+      :value: None
+
+
+
+   .. py:attribute:: learning_rate
+      :value: None
+
+
+
+   .. py:attribute:: apply_unit_norm
+      :value: None
+
+
+
+   .. py:attribute:: input_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: hidden_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: optimizer_name
+      :value: None
+
+
+
+   .. py:attribute:: feature_map_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: kernel_size
+      :value: None
+
+
+
+   .. py:attribute:: num_of_output_channels
+      :value: None
+
+
+
+   .. py:attribute:: weight_decay
+      :value: None
+
+
+
+   .. py:attribute:: loss
+
+
+   .. py:attribute:: selected_optimizer
+      :value: None
+
+
+
+   .. py:attribute:: normalizer_class
+      :value: None
+
+
+
+   .. py:attribute:: normalize_head_entity_embeddings
+
+
+   .. py:attribute:: normalize_relation_embeddings
+
+
+   .. py:attribute:: normalize_tail_entity_embeddings
+
+
+   .. py:attribute:: hidden_normalizer
+
+
+   .. py:attribute:: param_init
+
+
+   .. py:attribute:: input_dp_ent_real
+
+
+   .. py:attribute:: input_dp_rel_real
+
+
+   .. py:attribute:: hidden_dropout
+
+
+   .. py:attribute:: loss_history
+      :value: []
+
+
+
+   .. py:attribute:: byte_pair_encoding
+
+
+   .. py:attribute:: max_length_subword_tokens
+
+
+   .. py:attribute:: block_size
+
+
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
 
       :param x:
@@ -504,6 +628,9 @@ Module Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: args
 
 
    .. py:method:: __call__(x)

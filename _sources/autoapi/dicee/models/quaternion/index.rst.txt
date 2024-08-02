@@ -64,6 +64,16 @@ Module Contents
    :vartype training: bool
 
 
+   .. py:attribute:: name
+      :value: 'QMult'
+
+
+
+   .. py:attribute:: explicit
+      :value: True
+
+
+
    .. py:method:: quaternion_multiplication_followed_by_inner_product(h, r, t)
 
       :param h: shape: (`*batch_dims`, dim)
@@ -138,6 +148,35 @@ Module Contents
 
 
 
+   .. py:attribute:: name
+      :value: 'ConvQ'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: conv2d
+
+
+   .. py:attribute:: fc_num_input
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: bn_conv1
+
+
+   .. py:attribute:: bn_conv2
+
+
+   .. py:attribute:: feature_map_dropout
+
+
    .. py:method:: residual_convolution(Q_1, Q_2)
 
 
@@ -161,6 +200,35 @@ Module Contents
 
 
    Additive Convolutional Quaternion Knowledge Graph Embeddings
+
+
+   .. py:attribute:: name
+      :value: 'AConvQ'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: conv2d
+
+
+   .. py:attribute:: fc_num_input
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: bn_conv1
+
+
+   .. py:attribute:: bn_conv2
+
+
+   .. py:attribute:: feature_map_dropout
 
 
    .. py:method:: residual_convolution(Q_1, Q_2)

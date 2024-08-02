@@ -67,6 +67,11 @@ Module Contents
    :vartype training: bool
 
 
+   .. py:attribute:: name
+      :value: 'OMult'
+
+
+
    .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
       :staticmethod:
 
@@ -124,6 +129,29 @@ Module Contents
    :vartype training: bool
 
 
+   .. py:attribute:: name
+      :value: 'ConvO'
+
+
+
+   .. py:attribute:: conv2d
+
+
+   .. py:attribute:: fc_num_input
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: bn_conv2d
+
+
+   .. py:attribute:: norm_fc1
+
+
+   .. py:attribute:: feature_map_dropout
+
+
    .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
       :staticmethod:
 
@@ -152,6 +180,29 @@ Module Contents
 
 
    Additive Convolutional Octonion Knowledge Graph Embeddings
+
+
+   .. py:attribute:: name
+      :value: 'AConvO'
+
+
+
+   .. py:attribute:: conv2d
+
+
+   .. py:attribute:: fc_num_input
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: bn_conv2d
+
+
+   .. py:attribute:: norm_fc1
+
+
+   .. py:attribute:: feature_map_dropout
 
 
    .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)

@@ -61,6 +61,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#coverage-report">Coverage Report</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">dicee</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../index.html#subpackages">Subpackages</a></li>
@@ -72,6 +73,33 @@
 <li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.analyse_experiments.get_default_arguments"><code class="docutils literal notranslate"><span class="pre">get_default_arguments()</span></code></a></li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.analyse_experiments.Experiment"><code class="docutils literal notranslate"><span class="pre">Experiment</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.model_name"><code class="docutils literal notranslate"><span class="pre">Experiment.model_name</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.callbacks"><code class="docutils literal notranslate"><span class="pre">Experiment.callbacks</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.embedding_dim"><code class="docutils literal notranslate"><span class="pre">Experiment.embedding_dim</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.num_params"><code class="docutils literal notranslate"><span class="pre">Experiment.num_params</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.num_epochs"><code class="docutils literal notranslate"><span class="pre">Experiment.num_epochs</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.batch_size"><code class="docutils literal notranslate"><span class="pre">Experiment.batch_size</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.lr"><code class="docutils literal notranslate"><span class="pre">Experiment.lr</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.byte_pair_encoding"><code class="docutils literal notranslate"><span class="pre">Experiment.byte_pair_encoding</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.aswa"><code class="docutils literal notranslate"><span class="pre">Experiment.aswa</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.path_dataset_folder"><code class="docutils literal notranslate"><span class="pre">Experiment.path_dataset_folder</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.full_storage_path"><code class="docutils literal notranslate"><span class="pre">Experiment.full_storage_path</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.pq"><code class="docutils literal notranslate"><span class="pre">Experiment.pq</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.train_mrr"><code class="docutils literal notranslate"><span class="pre">Experiment.train_mrr</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.train_h1"><code class="docutils literal notranslate"><span class="pre">Experiment.train_h1</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.train_h3"><code class="docutils literal notranslate"><span class="pre">Experiment.train_h3</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.train_h10"><code class="docutils literal notranslate"><span class="pre">Experiment.train_h10</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.val_mrr"><code class="docutils literal notranslate"><span class="pre">Experiment.val_mrr</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.val_h1"><code class="docutils literal notranslate"><span class="pre">Experiment.val_h1</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.val_h3"><code class="docutils literal notranslate"><span class="pre">Experiment.val_h3</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.val_h10"><code class="docutils literal notranslate"><span class="pre">Experiment.val_h10</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.test_mrr"><code class="docutils literal notranslate"><span class="pre">Experiment.test_mrr</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.test_h1"><code class="docutils literal notranslate"><span class="pre">Experiment.test_h1</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.test_h3"><code class="docutils literal notranslate"><span class="pre">Experiment.test_h3</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.test_h10"><code class="docutils literal notranslate"><span class="pre">Experiment.test_h10</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.runtime"><code class="docutils literal notranslate"><span class="pre">Experiment.runtime</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.normalization"><code class="docutils literal notranslate"><span class="pre">Experiment.normalization</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.scoring_technique"><code class="docutils literal notranslate"><span class="pre">Experiment.scoring_technique</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.save_experiment"><code class="docutils literal notranslate"><span class="pre">Experiment.save_experiment()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.analyse_experiments.Experiment.to_df"><code class="docutils literal notranslate"><span class="pre">Experiment.to_df()</span></code></a></li>
 </ul>
@@ -165,7 +193,142 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.analyse_experiments.</span></span><span class="sig-name descname"><span class="pre">Experiment</span></span><a class="reference internal" href="../../../_modules/dicee/analyse_experiments.html#Experiment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.analyse_experiments.Experiment" title="Link to this definition"></a></dt>
-<dd><dl class="py method">
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.model_name">
+<span class="sig-name descname"><span class="pre">model_name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.model_name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.callbacks">
+<span class="sig-name descname"><span class="pre">callbacks</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.callbacks" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.embedding_dim">
+<span class="sig-name descname"><span class="pre">embedding_dim</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.embedding_dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.num_params">
+<span class="sig-name descname"><span class="pre">num_params</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.num_params" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.num_epochs">
+<span class="sig-name descname"><span class="pre">num_epochs</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.num_epochs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.batch_size">
+<span class="sig-name descname"><span class="pre">batch_size</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.batch_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.lr">
+<span class="sig-name descname"><span class="pre">lr</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.lr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.byte_pair_encoding">
+<span class="sig-name descname"><span class="pre">byte_pair_encoding</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.byte_pair_encoding" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.aswa">
+<span class="sig-name descname"><span class="pre">aswa</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.aswa" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.path_dataset_folder">
+<span class="sig-name descname"><span class="pre">path_dataset_folder</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.path_dataset_folder" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.full_storage_path">
+<span class="sig-name descname"><span class="pre">full_storage_path</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.full_storage_path" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.pq">
+<span class="sig-name descname"><span class="pre">pq</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.pq" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.train_mrr">
+<span class="sig-name descname"><span class="pre">train_mrr</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.train_mrr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.train_h1">
+<span class="sig-name descname"><span class="pre">train_h1</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.train_h1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.train_h3">
+<span class="sig-name descname"><span class="pre">train_h3</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.train_h3" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.train_h10">
+<span class="sig-name descname"><span class="pre">train_h10</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.train_h10" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.val_mrr">
+<span class="sig-name descname"><span class="pre">val_mrr</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.val_mrr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.val_h1">
+<span class="sig-name descname"><span class="pre">val_h1</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.val_h1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.val_h3">
+<span class="sig-name descname"><span class="pre">val_h3</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.val_h3" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.val_h10">
+<span class="sig-name descname"><span class="pre">val_h10</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.val_h10" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.test_mrr">
+<span class="sig-name descname"><span class="pre">test_mrr</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.test_mrr" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.test_h1">
+<span class="sig-name descname"><span class="pre">test_h1</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.test_h1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.test_h3">
+<span class="sig-name descname"><span class="pre">test_h3</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.test_h3" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.test_h10">
+<span class="sig-name descname"><span class="pre">test_h10</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.test_h10" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.runtime">
+<span class="sig-name descname"><span class="pre">runtime</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.runtime" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.normalization">
+<span class="sig-name descname"><span class="pre">normalization</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.normalization" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.scoring_technique">
+<span class="sig-name descname"><span class="pre">scoring_technique</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.analyse_experiments.Experiment.scoring_technique" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="dicee.analyse_experiments.Experiment.save_experiment">
 <span class="sig-name descname"><span class="pre">save_experiment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/analyse_experiments.html#Experiment.save_experiment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.analyse_experiments.Experiment.save_experiment" title="Link to this definition"></a></dt>
 <dd></dd></dl>

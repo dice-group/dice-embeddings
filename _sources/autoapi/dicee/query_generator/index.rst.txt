@@ -17,6 +17,50 @@ Module Contents
 
 .. py:class:: QueryGenerator(train_path, val_path: str, test_path: str, ent2id: Dict = None, rel2id: Dict = None, seed: int = 1, gen_valid: bool = False, gen_test: bool = True)
 
+   .. py:attribute:: train_path
+
+
+   .. py:attribute:: val_path
+
+
+   .. py:attribute:: test_path
+
+
+   .. py:attribute:: gen_valid
+
+
+   .. py:attribute:: gen_test
+
+
+   .. py:attribute:: seed
+
+
+   .. py:attribute:: max_ans_num
+      :value: 1000000.0
+
+
+
+   .. py:attribute:: mode
+
+
+   .. py:attribute:: ent2id
+
+
+   .. py:attribute:: rel2id
+      :type:  Dict
+
+
+   .. py:attribute:: ent_in
+      :type:  Dict
+
+
+   .. py:attribute:: ent_out
+      :type:  Dict
+
+
+   .. py:attribute:: query_name_to_struct
+
+
    .. py:method:: list2tuple(list_data)
 
 

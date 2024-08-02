@@ -61,6 +61,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#coverage-report">Coverage Report</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-cite">How to cite</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../../index.html">dicee</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="../../index.html#subpackages">Subpackages</a><ul class="current">
@@ -192,7 +193,57 @@ An outlier produces enormous gradients.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.NodeTrainer">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.trainer.torch_trainer_ddp.</span></span><span class="sig-name descname"><span class="pre">NodeTrainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_dataset_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.optim.Optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_epochs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/torch_trainer_ddp.html#NodeTrainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.NodeTrainer" title="Link to this definition"></a></dt>
-<dd><dl class="py method">
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.NodeTrainer.trainer">
+<span class="sig-name descname"><span class="pre">trainer</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.NodeTrainer.trainer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.NodeTrainer.local_rank">
+<span class="sig-name descname"><span class="pre">local_rank</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.NodeTrainer.local_rank" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.NodeTrainer.global_rank">
+<span class="sig-name descname"><span class="pre">global_rank</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.NodeTrainer.global_rank" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.NodeTrainer.model">
+<span class="sig-name descname"><span class="pre">model</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.NodeTrainer.model" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.NodeTrainer.train_dataset_loader">
+<span class="sig-name descname"><span class="pre">train_dataset_loader</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.NodeTrainer.train_dataset_loader" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.NodeTrainer.loss_func">
+<span class="sig-name descname"><span class="pre">loss_func</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.NodeTrainer.loss_func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.NodeTrainer.optimizer">
+<span class="sig-name descname"><span class="pre">optimizer</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.NodeTrainer.optimizer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.NodeTrainer.callbacks">
+<span class="sig-name descname"><span class="pre">callbacks</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.NodeTrainer.callbacks" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.NodeTrainer.num_epochs">
+<span class="sig-name descname"><span class="pre">num_epochs</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.NodeTrainer.num_epochs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.NodeTrainer.loss_history">
+<span class="sig-name descname"><span class="pre">loss_history</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.NodeTrainer.loss_history" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.NodeTrainer.extract_input_outputs">
 <span class="sig-name descname"><span class="pre">extract_input_outputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/torch_trainer_ddp.html#NodeTrainer.extract_input_outputs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.NodeTrainer.extract_input_outputs" title="Link to this definition"></a></dt>
 <dd></dd></dl>
@@ -208,7 +259,47 @@ An outlier produces enormous gradients.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.DDPTrainer">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.trainer.torch_trainer_ddp.</span></span><span class="sig-name descname"><span class="pre">DDPTrainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.nn.Module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_dataset_loader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.utils.data.DataLoader</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.optim.Optimizer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gpu_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_epochs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/torch_trainer_ddp.html#DDPTrainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.DDPTrainer" title="Link to this definition"></a></dt>
-<dd><dl class="py method">
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.DDPTrainer.gpu_id">
+<span class="sig-name descname"><span class="pre">gpu_id</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.DDPTrainer.gpu_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.DDPTrainer.model">
+<span class="sig-name descname"><span class="pre">model</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.DDPTrainer.model" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.DDPTrainer.train_dataset_loader">
+<span class="sig-name descname"><span class="pre">train_dataset_loader</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.DDPTrainer.train_dataset_loader" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.DDPTrainer.loss_func">
+<span class="sig-name descname"><span class="pre">loss_func</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.DDPTrainer.loss_func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.DDPTrainer.optimizer">
+<span class="sig-name descname"><span class="pre">optimizer</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.DDPTrainer.optimizer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.DDPTrainer.callbacks">
+<span class="sig-name descname"><span class="pre">callbacks</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.DDPTrainer.callbacks" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.DDPTrainer.num_epochs">
+<span class="sig-name descname"><span class="pre">num_epochs</span></span><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.DDPTrainer.num_epochs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.DDPTrainer.loss_history">
+<span class="sig-name descname"><span class="pre">loss_history</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.DDPTrainer.loss_history" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="dicee.trainer.torch_trainer_ddp.DDPTrainer.extract_input_outputs">
 <span class="sig-name descname"><span class="pre">extract_input_outputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/trainer/torch_trainer_ddp.html#DDPTrainer.extract_input_outputs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.torch_trainer_ddp.DDPTrainer.extract_input_outputs" title="Link to this definition"></a></dt>
 <dd></dd></dl>

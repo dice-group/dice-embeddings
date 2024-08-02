@@ -20,6 +20,111 @@ Module Contents
    Knowledge Graph
 
 
+   .. py:attribute:: dataset_dir
+
+
+   .. py:attribute:: byte_pair_encoding
+
+
+   .. py:attribute:: ordered_shaped_bpe_tokens
+      :value: None
+
+
+
+   .. py:attribute:: sparql_endpoint
+
+
+   .. py:attribute:: add_noise_rate
+
+
+   .. py:attribute:: num_entities
+      :value: None
+
+
+
+   .. py:attribute:: num_relations
+      :value: None
+
+
+
+   .. py:attribute:: path_single_kg
+
+
+   .. py:attribute:: path_for_deserialization
+
+
+   .. py:attribute:: add_reciprical
+
+
+   .. py:attribute:: eval_model
+
+
+   .. py:attribute:: read_only_few
+
+
+   .. py:attribute:: sample_triples_ratio
+
+
+   .. py:attribute:: path_for_serialization
+
+
+   .. py:attribute:: entity_to_idx
+
+
+   .. py:attribute:: relation_to_idx
+
+
+   .. py:attribute:: backend
+
+
+   .. py:attribute:: training_technique
+
+
+   .. py:attribute:: idx_entity_to_bpe_shaped
+
+
+   .. py:attribute:: enc
+
+
+   .. py:attribute:: num_tokens
+
+
+   .. py:attribute:: num_bpe_entities
+      :value: None
+
+
+
+   .. py:attribute:: padding
+
+
+   .. py:attribute:: dummy_id
+
+
+   .. py:attribute:: max_length_subword_tokens
+      :value: None
+
+
+
+   .. py:attribute:: train_set_target
+      :value: None
+
+
+
+   .. py:attribute:: target_dim
+      :value: None
+
+
+
+   .. py:attribute:: train_target_indices
+      :value: None
+
+
+
+   .. py:attribute:: ordered_bpe_entities
+      :value: None
+
+
+
    .. py:property:: entities_str
       :type: List
 

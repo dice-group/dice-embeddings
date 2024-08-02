@@ -164,6 +164,23 @@ Package Contents
    Cl_(0,2) => Quaternions
 
 
+   .. py:attribute:: name
+      :value: 'CMult'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: p
+
+
+   .. py:attribute:: q
+
+
    .. py:method:: clifford_mul(x: torch.FloatTensor, y: torch.FloatTensor, p: int, q: int) -> tuple
 
               Clifford multiplication Cl_{p,q} (\mathbb{R})
@@ -228,6 +245,19 @@ Package Contents
    A Physical Embedding Model for Knowledge Graphs
 
 
+   .. py:attribute:: name
+      :value: 'Pyke'
+
+
+
+   .. py:attribute:: dist_func
+
+
+   .. py:attribute:: margin
+      :value: 1.0
+
+
+
    .. py:method:: forward_triples(x: torch.LongTensor)
 
       :param x:
@@ -241,6 +271,11 @@ Package Contents
 
    Embedding Entities and Relations for Learning and Inference in Knowledge Bases
    https://arxiv.org/abs/1412.6575
+
+
+   .. py:attribute:: name
+      :value: 'DistMult'
+
 
 
    .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor)
@@ -266,6 +301,16 @@ Package Contents
 
 
    Without learning dimension scaling
+
+
+   .. py:attribute:: name
+      :value: 'KeciBase'
+
+
+
+   .. py:attribute:: requires_grad_for_interactions
+      :value: False
+
 
 
 .. py:class:: Keci(args)
@@ -303,6 +348,25 @@ Package Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: name
+      :value: 'Keci'
+
+
+
+   .. py:attribute:: p
+
+
+   .. py:attribute:: q
+
+
+   .. py:attribute:: r
+
+
+   .. py:attribute:: requires_grad_for_interactions
+      :value: True
+
 
 
    .. py:method:: compute_sigma_pp(hp, rp)
@@ -477,6 +541,16 @@ Package Contents
    https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf
 
 
+   .. py:attribute:: name
+      :value: 'TransE'
+
+
+
+   .. py:attribute:: margin
+      :value: 4
+
+
+
    .. py:method:: score(head_ent_emb, rel_ent_emb, tail_ent_emb)
 
 
@@ -518,6 +592,29 @@ Package Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: name
+      :value: 'DeCaL'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: p
+
+
+   .. py:attribute:: q
+
+
+   .. py:attribute:: r
+
+
+   .. py:attribute:: re
 
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
@@ -747,6 +844,20 @@ Package Contents
    Dual Quaternion Knowledge Graph Embeddings (https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657)
 
 
+   .. py:attribute:: name
+      :value: 'DualE'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: num_ent
+
+
    .. py:method:: kvsall_score(e_1_h, e_2_h, e_3_h, e_4_h, e_5_h, e_6_h, e_7_h, e_8_h, e_1_t, e_2_t, e_3_t, e_4_t, e_5_t, e_6_t, e_7_t, e_8_t, r_1, r_2, r_3, r_4, r_5, r_6, r_7, r_8) -> torch.tensor
 
       KvsAll scoring function
@@ -836,6 +947,11 @@ Package Contents
    :vartype training: bool
 
 
+   .. py:attribute:: name
+      :value: 'ComplEx'
+
+
+
    .. py:method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor)
       :staticmethod:
 
@@ -860,6 +976,29 @@ Package Contents
 
 
    Additive Convolutional ComplEx Knowledge Graph Embeddings
+
+
+   .. py:attribute:: name
+      :value: 'AConEx'
+
+
+
+   .. py:attribute:: conv2d
+
+
+   .. py:attribute:: fc_num_input
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: norm_fc1
+
+
+   .. py:attribute:: bn_conv2d
+
+
+   .. py:attribute:: feature_map_dropout
 
 
    .. py:method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor], C_2: Tuple[torch.Tensor, torch.Tensor]) -> torch.FloatTensor
@@ -889,6 +1028,29 @@ Package Contents
 
 
    Additive Convolutional Octonion Knowledge Graph Embeddings
+
+
+   .. py:attribute:: name
+      :value: 'AConvO'
+
+
+
+   .. py:attribute:: conv2d
+
+
+   .. py:attribute:: fc_num_input
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: bn_conv2d
+
+
+   .. py:attribute:: norm_fc1
+
+
+   .. py:attribute:: feature_map_dropout
 
 
    .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
@@ -921,6 +1083,35 @@ Package Contents
    Additive Convolutional Quaternion Knowledge Graph Embeddings
 
 
+   .. py:attribute:: name
+      :value: 'AConvQ'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: conv2d
+
+
+   .. py:attribute:: fc_num_input
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: bn_conv1
+
+
+   .. py:attribute:: bn_conv2
+
+
+   .. py:attribute:: feature_map_dropout
+
+
    .. py:method:: residual_convolution(Q_1, Q_2)
 
 
@@ -946,6 +1137,35 @@ Package Contents
    Convolutional Quaternion Knowledge Graph Embeddings
 
 
+
+
+   .. py:attribute:: name
+      :value: 'ConvQ'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: conv2d
+
+
+   .. py:attribute:: fc_num_input
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: bn_conv1
+
+
+   .. py:attribute:: bn_conv2
+
+
+   .. py:attribute:: feature_map_dropout
 
 
    .. py:method:: residual_convolution(Q_1, Q_2)
@@ -1002,6 +1222,29 @@ Package Contents
    :vartype training: bool
 
 
+   .. py:attribute:: name
+      :value: 'ConvO'
+
+
+
+   .. py:attribute:: conv2d
+
+
+   .. py:attribute:: fc_num_input
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: bn_conv2d
+
+
+   .. py:attribute:: norm_fc1
+
+
+   .. py:attribute:: feature_map_dropout
+
+
    .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
       :staticmethod:
 
@@ -1030,6 +1273,29 @@ Package Contents
 
 
    Convolutional ComplEx Knowledge Graph Embeddings
+
+
+   .. py:attribute:: name
+      :value: 'ConEx'
+
+
+
+   .. py:attribute:: conv2d
+
+
+   .. py:attribute:: fc_num_input
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: norm_fc1
+
+
+   .. py:attribute:: bn_conv2d
+
+
+   .. py:attribute:: feature_map_dropout
 
 
    .. py:method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor], C_2: Tuple[torch.Tensor, torch.Tensor]) -> torch.FloatTensor
@@ -1088,6 +1354,16 @@ Package Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: name
+      :value: 'QMult'
+
+
+
+   .. py:attribute:: explicit
+      :value: True
+
 
 
    .. py:method:: quaternion_multiplication_followed_by_inner_product(h, r, t)
@@ -1191,6 +1467,11 @@ Package Contents
    :vartype training: bool
 
 
+   .. py:attribute:: name
+      :value: 'OMult'
+
+
+
    .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
       :staticmethod:
 
@@ -1219,6 +1500,17 @@ Package Contents
    A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090)
 
 
+   .. py:attribute:: name
+      :value: 'Shallom'
+
+
+
+   .. py:attribute:: shallom_width
+
+
+   .. py:attribute:: shallom
+
+
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, None]
 
 
@@ -1240,6 +1532,26 @@ Package Contents
    Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:
    f(x) = \sum_{i=0}^{d-1} a_k x^{i%d} and use the three differents scoring function as in the paper to evaluate the score.
    We also consider combining with Neural Networks.
+
+
+   .. py:attribute:: name
+      :value: 'LFMult'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: degree
+
+
+   .. py:attribute:: m
+
+
+   .. py:attribute:: x_values
 
 
    .. py:method:: forward_triples(idx_triple)
@@ -1344,6 +1656,33 @@ Package Contents
    Pykeen_HolE:
 
 
+   .. py:attribute:: model_kwargs
+
+
+   .. py:attribute:: name
+
+
+   .. py:attribute:: model
+
+
+   .. py:attribute:: loss_history
+      :value: []
+
+
+
+   .. py:attribute:: args
+
+
+   .. py:attribute:: entity_embeddings
+      :value: None
+
+
+
+   .. py:attribute:: relation_embeddings
+      :value: None
+
+
+
    .. py:method:: forward_k_vs_all(x: torch.LongTensor)
 
       # => Explicit version by this we can apply bn and dropout
@@ -1420,6 +1759,33 @@ Package Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: name
+      :value: 'BytE'
+
+
+
+   .. py:attribute:: config
+
+
+   .. py:attribute:: temperature
+      :value: 0.5
+
+
+
+   .. py:attribute:: topk
+      :value: 2
+
+
+
+   .. py:attribute:: transformer
+
+
+   .. py:attribute:: lm_head
+
+
+   .. py:attribute:: weight
 
 
    .. py:method:: loss_function(yhat_batch, y_batch)
@@ -1536,6 +1902,125 @@ Package Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: args
+
+
+   .. py:attribute:: embedding_dim
+      :value: None
+
+
+
+   .. py:attribute:: num_entities
+      :value: None
+
+
+
+   .. py:attribute:: num_relations
+      :value: None
+
+
+
+   .. py:attribute:: num_tokens
+      :value: None
+
+
+
+   .. py:attribute:: learning_rate
+      :value: None
+
+
+
+   .. py:attribute:: apply_unit_norm
+      :value: None
+
+
+
+   .. py:attribute:: input_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: hidden_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: optimizer_name
+      :value: None
+
+
+
+   .. py:attribute:: feature_map_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: kernel_size
+      :value: None
+
+
+
+   .. py:attribute:: num_of_output_channels
+      :value: None
+
+
+
+   .. py:attribute:: weight_decay
+      :value: None
+
+
+
+   .. py:attribute:: loss
+
+
+   .. py:attribute:: selected_optimizer
+      :value: None
+
+
+
+   .. py:attribute:: normalizer_class
+      :value: None
+
+
+
+   .. py:attribute:: normalize_head_entity_embeddings
+
+
+   .. py:attribute:: normalize_relation_embeddings
+
+
+   .. py:attribute:: normalize_tail_entity_embeddings
+
+
+   .. py:attribute:: hidden_normalizer
+
+
+   .. py:attribute:: param_init
+
+
+   .. py:attribute:: input_dp_ent_real
+
+
+   .. py:attribute:: input_dp_rel_real
+
+
+   .. py:attribute:: hidden_dropout
+
+
+   .. py:attribute:: loss_history
+      :value: []
+
+
+
+   .. py:attribute:: byte_pair_encoding
+
+
+   .. py:attribute:: max_length_subword_tokens
+
+
+   .. py:attribute:: block_size
 
 
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
@@ -1749,6 +2234,31 @@ Package Contents
     Returns
     -------
     report:dict
+
+
+
+   .. py:attribute:: report
+
+
+   .. py:attribute:: args
+
+
+   .. py:attribute:: trainer
+      :value: None
+
+
+
+   .. py:attribute:: is_continual_training
+
+
+   .. py:attribute:: storage_path
+
+
+   .. py:attribute:: evaluator
+
+
+   .. py:attribute:: form_of_labelling
+      :value: None
 
 
 
@@ -2106,6 +2616,40 @@ Package Contents
    (3) Storing all necessary info
 
 
+   .. py:attribute:: args
+
+
+   .. py:attribute:: is_continual_training
+
+
+   .. py:attribute:: trainer
+      :value: None
+
+
+
+   .. py:attribute:: trained_model
+      :value: None
+
+
+
+   .. py:attribute:: knowledge_graph
+      :value: None
+
+
+
+   .. py:attribute:: report
+
+
+   .. py:attribute:: evaluator
+      :value: None
+
+
+
+   .. py:attribute:: start_time
+      :value: None
+
+
+
    .. py:method:: read_or_load_kg()
 
 
@@ -2223,6 +2767,21 @@ Package Contents
      dataset with non-integral indices/keys, a custom sampler must be provided.
 
 
+   .. py:attribute:: train_set
+
+
+   .. py:attribute:: ordered_bpe_entities
+
+
+   .. py:attribute:: num_bpe_entities
+
+
+   .. py:attribute:: neg_ratio
+
+
+   .. py:attribute:: num_datapoints
+
+
    .. py:method:: __len__()
 
 
@@ -2255,6 +2814,26 @@ Package Contents
      dataset with non-integral indices/keys, a custom sampler must be provided.
 
 
+   .. py:attribute:: train_set
+
+
+   .. py:attribute:: train_indices_target
+
+
+   .. py:attribute:: target_dim
+
+
+   .. py:attribute:: num_datapoints
+
+
+   .. py:attribute:: torch_ordered_shaped_bpe_entities
+
+
+   .. py:attribute:: collate_fn
+      :value: None
+
+
+
    .. py:method:: __len__()
 
 
@@ -2277,6 +2856,20 @@ Package Contents
    :rtype: torch.utils.data.Dataset
 
 
+   .. py:attribute:: train_data
+
+
+   .. py:attribute:: block_size
+
+
+   .. py:attribute:: num_of_data_points
+
+
+   .. py:attribute:: collate_fn
+      :value: None
+
+
+
    .. py:method:: __len__()
 
 
@@ -2297,6 +2890,17 @@ Package Contents
    :param num_workers: int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
 
    :rtype: torch.utils.data.Dataset
+
+
+   .. py:attribute:: train_data
+
+
+   .. py:attribute:: target_dim
+
+
+   .. py:attribute:: collate_fn
+      :value: None
+
 
 
    .. py:method:: __len__()
@@ -2345,6 +2949,24 @@ Package Contents
        >>> a = KvsAll()
        >>> a
        ? array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+
+
+   .. py:attribute:: train_data
+      :value: None
+
+
+
+   .. py:attribute:: train_target
+      :value: None
+
+
+
+   .. py:attribute:: label_smoothing_rate
+
+
+   .. py:attribute:: collate_fn
+      :value: None
 
 
 
@@ -2398,6 +3020,30 @@ Package Contents
 
 
 
+   .. py:attribute:: train_data
+      :value: None
+
+
+
+   .. py:attribute:: train_target
+      :value: None
+
+
+
+   .. py:attribute:: label_smoothing_rate
+
+
+   .. py:attribute:: collate_fn
+      :value: None
+
+
+
+   .. py:attribute:: target_dim
+
+
+   .. py:attribute:: store
+
+
    .. py:method:: __len__()
 
 
@@ -2438,6 +3084,32 @@ Package Contents
 
 
 
+   .. py:attribute:: train_data
+
+
+   .. py:attribute:: num_entities
+
+
+   .. py:attribute:: num_relations
+
+
+   .. py:attribute:: neg_sample_ratio
+
+
+   .. py:attribute:: label_smoothing_rate
+
+
+   .. py:attribute:: collate_fn
+      :value: None
+
+
+
+   .. py:attribute:: store
+
+
+   .. py:attribute:: train_target
+
+
    .. py:method:: __len__()
 
 
@@ -2465,6 +3137,21 @@ Package Contents
      :class:`~torch.utils.data.DataLoader` by default constructs an index
      sampler that yields integral indices.  To make it work with a map-style
      dataset with non-integral indices/keys, a custom sampler must be provided.
+
+
+   .. py:attribute:: neg_sample_ratio
+
+
+   .. py:attribute:: train_set
+
+
+   .. py:attribute:: length
+
+
+   .. py:attribute:: num_entities
+
+
+   .. py:attribute:: num_relations
 
 
    .. py:method:: __len__()
@@ -2510,6 +3197,24 @@ Package Contents
 
 
 
+   .. py:attribute:: label_smoothing_rate
+
+
+   .. py:attribute:: neg_sample_ratio
+
+
+   .. py:attribute:: train_set
+
+
+   .. py:attribute:: length
+
+
+   .. py:attribute:: num_entities
+
+
+   .. py:attribute:: num_relations
+
+
    .. py:method:: __len__()
 
 
@@ -2534,6 +3239,24 @@ Package Contents
    :param num_workers: int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
 
    :rtype: ?
+
+
+   .. py:attribute:: train_set_idx
+
+
+   .. py:attribute:: num_entities
+
+
+   .. py:attribute:: num_relations
+
+
+   .. py:attribute:: neg_sample_ratio
+
+
+   .. py:attribute:: batch_size
+
+
+   .. py:attribute:: num_workers
 
 
    .. py:method:: train_dataloader() -> torch.utils.data.DataLoader
@@ -2702,6 +3425,50 @@ Package Contents
 
 
 .. py:class:: QueryGenerator(train_path, val_path: str, test_path: str, ent2id: Dict = None, rel2id: Dict = None, seed: int = 1, gen_valid: bool = False, gen_test: bool = True)
+
+   .. py:attribute:: train_path
+
+
+   .. py:attribute:: val_path
+
+
+   .. py:attribute:: test_path
+
+
+   .. py:attribute:: gen_valid
+
+
+   .. py:attribute:: gen_test
+
+
+   .. py:attribute:: seed
+
+
+   .. py:attribute:: max_ans_num
+      :value: 1000000.0
+
+
+
+   .. py:attribute:: mode
+
+
+   .. py:attribute:: ent2id
+
+
+   .. py:attribute:: rel2id
+      :type:  Dict
+
+
+   .. py:attribute:: ent_in
+      :type:  Dict
+
+
+   .. py:attribute:: ent_out
+      :type:  Dict
+
+
+   .. py:attribute:: query_name_to_struct
+
 
    .. py:method:: list2tuple(list_data)
 

@@ -61,6 +61,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#coverage-report">Coverage Report</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">dicee</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="../index.html#subpackages">Subpackages</a><ul class="current">
@@ -77,6 +78,13 @@
 <li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#package-contents">Package Contents</a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.trainer.DICE_Trainer"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.trainer.DICE_Trainer.report"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.report</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.trainer.DICE_Trainer.args"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.args</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.trainer.DICE_Trainer.trainer"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.trainer</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.trainer.DICE_Trainer.is_continual_training"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.is_continual_training</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.trainer.DICE_Trainer.storage_path"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.storage_path</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.trainer.DICE_Trainer.evaluator"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.evaluator</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.trainer.DICE_Trainer.form_of_labelling"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.form_of_labelling</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.trainer.DICE_Trainer.continual_start"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.continual_start()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.trainer.DICE_Trainer.initialize_trainer"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.initialize_trainer()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.trainer.DICE_Trainer.initialize_or_load_model"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.initialize_or_load_model()</span></code></a></li>
@@ -164,6 +172,41 @@
 <p>report:dict</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.DICE_Trainer.report">
+<span class="sig-name descname"><span class="pre">report</span></span><a class="headerlink" href="#dicee.trainer.DICE_Trainer.report" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.DICE_Trainer.args">
+<span class="sig-name descname"><span class="pre">args</span></span><a class="headerlink" href="#dicee.trainer.DICE_Trainer.args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.DICE_Trainer.trainer">
+<span class="sig-name descname"><span class="pre">trainer</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.trainer.DICE_Trainer.trainer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.DICE_Trainer.is_continual_training">
+<span class="sig-name descname"><span class="pre">is_continual_training</span></span><a class="headerlink" href="#dicee.trainer.DICE_Trainer.is_continual_training" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.DICE_Trainer.storage_path">
+<span class="sig-name descname"><span class="pre">storage_path</span></span><a class="headerlink" href="#dicee.trainer.DICE_Trainer.storage_path" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.DICE_Trainer.evaluator">
+<span class="sig-name descname"><span class="pre">evaluator</span></span><a class="headerlink" href="#dicee.trainer.DICE_Trainer.evaluator" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.trainer.DICE_Trainer.form_of_labelling">
+<span class="sig-name descname"><span class="pre">form_of_labelling</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.trainer.DICE_Trainer.form_of_labelling" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.trainer.DICE_Trainer.continual_start">
 <span class="sig-name descname"><span class="pre">continual_start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.continual_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.trainer.DICE_Trainer.continual_start" title="Link to this definition"></a></dt>

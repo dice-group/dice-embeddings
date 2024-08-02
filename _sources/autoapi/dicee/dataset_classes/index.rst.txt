@@ -63,6 +63,21 @@ Module Contents
      dataset with non-integral indices/keys, a custom sampler must be provided.
 
 
+   .. py:attribute:: train_set
+
+
+   .. py:attribute:: ordered_bpe_entities
+
+
+   .. py:attribute:: num_bpe_entities
+
+
+   .. py:attribute:: neg_ratio
+
+
+   .. py:attribute:: num_datapoints
+
+
    .. py:method:: __len__()
 
 
@@ -95,6 +110,26 @@ Module Contents
      dataset with non-integral indices/keys, a custom sampler must be provided.
 
 
+   .. py:attribute:: train_set
+
+
+   .. py:attribute:: train_indices_target
+
+
+   .. py:attribute:: target_dim
+
+
+   .. py:attribute:: num_datapoints
+
+
+   .. py:attribute:: torch_ordered_shaped_bpe_entities
+
+
+   .. py:attribute:: collate_fn
+      :value: None
+
+
+
    .. py:method:: __len__()
 
 
@@ -117,6 +152,20 @@ Module Contents
    :rtype: torch.utils.data.Dataset
 
 
+   .. py:attribute:: train_data
+
+
+   .. py:attribute:: block_size
+
+
+   .. py:attribute:: num_of_data_points
+
+
+   .. py:attribute:: collate_fn
+      :value: None
+
+
+
    .. py:method:: __len__()
 
 
@@ -137,6 +186,17 @@ Module Contents
    :param num_workers: int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
 
    :rtype: torch.utils.data.Dataset
+
+
+   .. py:attribute:: train_data
+
+
+   .. py:attribute:: target_dim
+
+
+   .. py:attribute:: collate_fn
+      :value: None
+
 
 
    .. py:method:: __len__()
@@ -185,6 +245,24 @@ Module Contents
        >>> a = KvsAll()
        >>> a
        ? array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+
+
+   .. py:attribute:: train_data
+      :value: None
+
+
+
+   .. py:attribute:: train_target
+      :value: None
+
+
+
+   .. py:attribute:: label_smoothing_rate
+
+
+   .. py:attribute:: collate_fn
+      :value: None
 
 
 
@@ -238,6 +316,30 @@ Module Contents
 
 
 
+   .. py:attribute:: train_data
+      :value: None
+
+
+
+   .. py:attribute:: train_target
+      :value: None
+
+
+
+   .. py:attribute:: label_smoothing_rate
+
+
+   .. py:attribute:: collate_fn
+      :value: None
+
+
+
+   .. py:attribute:: target_dim
+
+
+   .. py:attribute:: store
+
+
    .. py:method:: __len__()
 
 
@@ -278,6 +380,32 @@ Module Contents
 
 
 
+   .. py:attribute:: train_data
+
+
+   .. py:attribute:: num_entities
+
+
+   .. py:attribute:: num_relations
+
+
+   .. py:attribute:: neg_sample_ratio
+
+
+   .. py:attribute:: label_smoothing_rate
+
+
+   .. py:attribute:: collate_fn
+      :value: None
+
+
+
+   .. py:attribute:: store
+
+
+   .. py:attribute:: train_target
+
+
    .. py:method:: __len__()
 
 
@@ -305,6 +433,21 @@ Module Contents
      :class:`~torch.utils.data.DataLoader` by default constructs an index
      sampler that yields integral indices.  To make it work with a map-style
      dataset with non-integral indices/keys, a custom sampler must be provided.
+
+
+   .. py:attribute:: neg_sample_ratio
+
+
+   .. py:attribute:: train_set
+
+
+   .. py:attribute:: length
+
+
+   .. py:attribute:: num_entities
+
+
+   .. py:attribute:: num_relations
 
 
    .. py:method:: __len__()
@@ -350,6 +493,24 @@ Module Contents
 
 
 
+   .. py:attribute:: label_smoothing_rate
+
+
+   .. py:attribute:: neg_sample_ratio
+
+
+   .. py:attribute:: train_set
+
+
+   .. py:attribute:: length
+
+
+   .. py:attribute:: num_entities
+
+
+   .. py:attribute:: num_relations
+
+
    .. py:method:: __len__()
 
 
@@ -374,6 +535,24 @@ Module Contents
    :param num_workers: int for https://pytorch.org/docs/stable/data.html#torch.utils.data.DataLoader
 
    :rtype: ?
+
+
+   .. py:attribute:: train_set_idx
+
+
+   .. py:attribute:: num_entities
+
+
+   .. py:attribute:: num_relations
+
+
+   .. py:attribute:: neg_sample_ratio
+
+
+   .. py:attribute:: batch_size
+
+
+   .. py:attribute:: num_workers
 
 
    .. py:method:: train_dataloader() -> torch.utils.data.DataLoader

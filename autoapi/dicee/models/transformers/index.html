@@ -61,6 +61,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#coverage-report">Coverage Report</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-cite">How to cite</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../../index.html">dicee</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="../../index.html#subpackages">Subpackages</a><ul class="current">
@@ -195,6 +196,41 @@ must be made before assignment on the child.</p>
 evaluation mode.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.BytE.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'BytE'</span></em><a class="headerlink" href="#dicee.models.transformers.BytE.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.BytE.config">
+<span class="sig-name descname"><span class="pre">config</span></span><a class="headerlink" href="#dicee.models.transformers.BytE.config" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.BytE.temperature">
+<span class="sig-name descname"><span class="pre">temperature</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.5</span></em><a class="headerlink" href="#dicee.models.transformers.BytE.temperature" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.BytE.topk">
+<span class="sig-name descname"><span class="pre">topk</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#dicee.models.transformers.BytE.topk" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.BytE.transformer">
+<span class="sig-name descname"><span class="pre">transformer</span></span><a class="headerlink" href="#dicee.models.transformers.BytE.transformer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.BytE.lm_head">
+<span class="sig-name descname"><span class="pre">lm_head</span></span><a class="headerlink" href="#dicee.models.transformers.BytE.lm_head" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.BytE.weight">
+<span class="sig-name descname"><span class="pre">weight</span></span><a class="headerlink" href="#dicee.models.transformers.BytE.weight" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.transformers.BytE.loss_function">
 <span class="sig-name descname"><span class="pre">loss_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">yhat_batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_batch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/transformers.html#BytE.loss_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.transformers.BytE.loss_function" title="Link to this definition"></a></dt>
@@ -294,6 +330,16 @@ normalized by <code class="docutils literal notranslate"><span class="pre">accum
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.transformers.</span></span><span class="sig-name descname"><span class="pre">LayerNorm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ndim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bias</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/transformers.html#LayerNorm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.transformers.LayerNorm" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
 <p>LayerNorm but with an optional bias. PyTorch doesn’t support simply bias=False</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.LayerNorm.weight">
+<span class="sig-name descname"><span class="pre">weight</span></span><a class="headerlink" href="#dicee.models.transformers.LayerNorm.weight" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.LayerNorm.bias">
+<span class="sig-name descname"><span class="pre">bias</span></span><a class="headerlink" href="#dicee.models.transformers.LayerNorm.bias" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.transformers.LayerNorm.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/transformers.html#LayerNorm.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.transformers.LayerNorm.forward" title="Link to this definition"></a></dt>
@@ -336,6 +382,46 @@ must be made before assignment on the child.</p>
 evaluation mode.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.CausalSelfAttention.c_attn">
+<span class="sig-name descname"><span class="pre">c_attn</span></span><a class="headerlink" href="#dicee.models.transformers.CausalSelfAttention.c_attn" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.CausalSelfAttention.c_proj">
+<span class="sig-name descname"><span class="pre">c_proj</span></span><a class="headerlink" href="#dicee.models.transformers.CausalSelfAttention.c_proj" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.CausalSelfAttention.attn_dropout">
+<span class="sig-name descname"><span class="pre">attn_dropout</span></span><a class="headerlink" href="#dicee.models.transformers.CausalSelfAttention.attn_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.CausalSelfAttention.resid_dropout">
+<span class="sig-name descname"><span class="pre">resid_dropout</span></span><a class="headerlink" href="#dicee.models.transformers.CausalSelfAttention.resid_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.CausalSelfAttention.n_head">
+<span class="sig-name descname"><span class="pre">n_head</span></span><a class="headerlink" href="#dicee.models.transformers.CausalSelfAttention.n_head" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.CausalSelfAttention.n_embd">
+<span class="sig-name descname"><span class="pre">n_embd</span></span><a class="headerlink" href="#dicee.models.transformers.CausalSelfAttention.n_embd" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.CausalSelfAttention.dropout">
+<span class="sig-name descname"><span class="pre">dropout</span></span><a class="headerlink" href="#dicee.models.transformers.CausalSelfAttention.dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.CausalSelfAttention.flash">
+<span class="sig-name descname"><span class="pre">flash</span></span><a class="headerlink" href="#dicee.models.transformers.CausalSelfAttention.flash" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.transformers.CausalSelfAttention.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/transformers.html#CausalSelfAttention.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.transformers.CausalSelfAttention.forward" title="Link to this definition"></a></dt>
@@ -378,6 +464,26 @@ must be made before assignment on the child.</p>
 evaluation mode.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.MLP.c_fc">
+<span class="sig-name descname"><span class="pre">c_fc</span></span><a class="headerlink" href="#dicee.models.transformers.MLP.c_fc" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.MLP.gelu">
+<span class="sig-name descname"><span class="pre">gelu</span></span><a class="headerlink" href="#dicee.models.transformers.MLP.gelu" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.MLP.c_proj">
+<span class="sig-name descname"><span class="pre">c_proj</span></span><a class="headerlink" href="#dicee.models.transformers.MLP.c_proj" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.MLP.dropout">
+<span class="sig-name descname"><span class="pre">dropout</span></span><a class="headerlink" href="#dicee.models.transformers.MLP.dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.transformers.MLP.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/transformers.html#MLP.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.transformers.MLP.forward" title="Link to this definition"></a></dt>
@@ -420,6 +526,26 @@ must be made before assignment on the child.</p>
 evaluation mode.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.Block.ln_1">
+<span class="sig-name descname"><span class="pre">ln_1</span></span><a class="headerlink" href="#dicee.models.transformers.Block.ln_1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.Block.attn">
+<span class="sig-name descname"><span class="pre">attn</span></span><a class="headerlink" href="#dicee.models.transformers.Block.attn" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.Block.ln_2">
+<span class="sig-name descname"><span class="pre">ln_2</span></span><a class="headerlink" href="#dicee.models.transformers.Block.ln_2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.Block.mlp">
+<span class="sig-name descname"><span class="pre">mlp</span></span><a class="headerlink" href="#dicee.models.transformers.Block.mlp" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.transformers.Block.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/transformers.html#Block.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.transformers.Block.forward" title="Link to this definition"></a></dt>
@@ -502,6 +628,26 @@ must be made before assignment on the child.</p>
 evaluation mode.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.GPT.config">
+<span class="sig-name descname"><span class="pre">config</span></span><a class="headerlink" href="#dicee.models.transformers.GPT.config" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.GPT.transformer">
+<span class="sig-name descname"><span class="pre">transformer</span></span><a class="headerlink" href="#dicee.models.transformers.GPT.transformer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.GPT.lm_head">
+<span class="sig-name descname"><span class="pre">lm_head</span></span><a class="headerlink" href="#dicee.models.transformers.GPT.lm_head" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.transformers.GPT.weight">
+<span class="sig-name descname"><span class="pre">weight</span></span><a class="headerlink" href="#dicee.models.transformers.GPT.weight" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.transformers.GPT.get_num_params">
 <span class="sig-name descname"><span class="pre">get_num_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">non_embedding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/transformers.html#GPT.get_num_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.transformers.GPT.get_num_params" title="Link to this definition"></a></dt>

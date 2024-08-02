@@ -24,6 +24,50 @@ Module Contents
    executor: Executor class instance
 
 
+   .. py:attribute:: re_vocab
+      :value: None
+
+
+
+   .. py:attribute:: er_vocab
+      :value: None
+
+
+
+   .. py:attribute:: ee_vocab
+      :value: None
+
+
+
+   .. py:attribute:: func_triple_to_bpe_representation
+      :value: None
+
+
+
+   .. py:attribute:: is_continual_training
+
+
+   .. py:attribute:: num_entities
+      :value: None
+
+
+
+   .. py:attribute:: num_relations
+      :value: None
+
+
+
+   .. py:attribute:: args
+
+
+   .. py:attribute:: report
+
+
+   .. py:attribute:: during_training
+      :value: False
+
+
+
    .. py:method:: vocab_preparation(dataset) -> None
 
       A function to wait future objects for the attributes of executor

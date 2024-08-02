@@ -61,6 +61,38 @@ Module Contents
 
 .. py:class:: NodeTrainer(trainer, model: torch.nn.Module, train_dataset_loader: torch.utils.data.DataLoader, optimizer: torch.optim.Optimizer, callbacks, num_epochs: int)
 
+   .. py:attribute:: trainer
+
+
+   .. py:attribute:: local_rank
+
+
+   .. py:attribute:: global_rank
+
+
+   .. py:attribute:: model
+
+
+   .. py:attribute:: train_dataset_loader
+
+
+   .. py:attribute:: loss_func
+
+
+   .. py:attribute:: optimizer
+
+
+   .. py:attribute:: callbacks
+
+
+   .. py:attribute:: num_epochs
+
+
+   .. py:attribute:: loss_history
+      :value: []
+
+
+
    .. py:method:: extract_input_outputs(z: list)
 
 
@@ -71,6 +103,32 @@ Module Contents
 
 
 .. py:class:: DDPTrainer(model: torch.nn.Module, train_dataset_loader: torch.utils.data.DataLoader, optimizer: torch.optim.Optimizer, gpu_id: int, callbacks, num_epochs)
+
+   .. py:attribute:: gpu_id
+
+
+   .. py:attribute:: model
+
+
+   .. py:attribute:: train_dataset_loader
+
+
+   .. py:attribute:: loss_func
+
+
+   .. py:attribute:: optimizer
+
+
+   .. py:attribute:: callbacks
+
+
+   .. py:attribute:: num_epochs
+
+
+   .. py:attribute:: loss_history
+      :value: []
+
+
 
    .. py:method:: extract_input_outputs(z: list)
 

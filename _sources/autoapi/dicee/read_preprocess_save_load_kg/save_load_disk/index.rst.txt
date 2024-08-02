@@ -17,6 +17,9 @@ Module Contents
 
 .. py:class:: LoadSaveToDisk(kg)
 
+   .. py:attribute:: kg
+
+
    .. py:method:: save()
 
 

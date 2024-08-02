@@ -234,6 +234,12 @@ Module Contents
       Not tested
 
 
+   .. py:attribute:: label_smoothing_rate
+      :type:  float
+      :value: 0.0
+
+
+
    .. py:attribute:: num_core
       :type:  int
       :value: 0

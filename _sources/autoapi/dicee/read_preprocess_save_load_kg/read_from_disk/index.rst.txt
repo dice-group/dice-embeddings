@@ -20,6 +20,9 @@ Module Contents
    Read the data from disk into memory
 
 
+   .. py:attribute:: kg
+
+
    .. py:method:: start() -> None
 
       Read a knowledge graph from disk into memory

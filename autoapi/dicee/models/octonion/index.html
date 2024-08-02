@@ -61,6 +61,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#coverage-report">Coverage Report</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-cite">How to cite</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../../index.html">dicee</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="../../index.html#subpackages">Subpackages</a><ul class="current">
@@ -207,6 +208,11 @@ must be made before assignment on the child.</p>
 evaluation mode.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.octonion.OMult.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'OMult'</span></em><a class="headerlink" href="#dicee.models.octonion.OMult.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.octonion.OMult.octonion_normalizer">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">octonion_normalizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">emb_rel_e0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e7</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/octonion.html#OMult.octonion_normalizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.octonion.OMult.octonion_normalizer" title="Link to this definition"></a></dt>
@@ -268,6 +274,41 @@ must be made before assignment on the child.</p>
 evaluation mode.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.octonion.ConvO.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ConvO'</span></em><a class="headerlink" href="#dicee.models.octonion.ConvO.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.octonion.ConvO.conv2d">
+<span class="sig-name descname"><span class="pre">conv2d</span></span><a class="headerlink" href="#dicee.models.octonion.ConvO.conv2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.octonion.ConvO.fc_num_input">
+<span class="sig-name descname"><span class="pre">fc_num_input</span></span><a class="headerlink" href="#dicee.models.octonion.ConvO.fc_num_input" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.octonion.ConvO.fc1">
+<span class="sig-name descname"><span class="pre">fc1</span></span><a class="headerlink" href="#dicee.models.octonion.ConvO.fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.octonion.ConvO.bn_conv2d">
+<span class="sig-name descname"><span class="pre">bn_conv2d</span></span><a class="headerlink" href="#dicee.models.octonion.ConvO.bn_conv2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.octonion.ConvO.norm_fc1">
+<span class="sig-name descname"><span class="pre">norm_fc1</span></span><a class="headerlink" href="#dicee.models.octonion.ConvO.norm_fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.octonion.ConvO.feature_map_dropout">
+<span class="sig-name descname"><span class="pre">feature_map_dropout</span></span><a class="headerlink" href="#dicee.models.octonion.ConvO.feature_map_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.octonion.ConvO.octonion_normalizer">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">octonion_normalizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">emb_rel_e0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e7</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/octonion.html#ConvO.octonion_normalizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.octonion.ConvO.octonion_normalizer" title="Link to this definition"></a></dt>
@@ -303,6 +344,41 @@ Given a batch of head entities and relations =&gt; shape (size of batch,| Entiti
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.octonion.</span></span><span class="sig-name descname"><span class="pre">AConvO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/octonion.html#AConvO"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.octonion.AConvO" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>Additive Convolutional Octonion Knowledge Graph Embeddings</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.octonion.AConvO.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'AConvO'</span></em><a class="headerlink" href="#dicee.models.octonion.AConvO.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.octonion.AConvO.conv2d">
+<span class="sig-name descname"><span class="pre">conv2d</span></span><a class="headerlink" href="#dicee.models.octonion.AConvO.conv2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.octonion.AConvO.fc_num_input">
+<span class="sig-name descname"><span class="pre">fc_num_input</span></span><a class="headerlink" href="#dicee.models.octonion.AConvO.fc_num_input" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.octonion.AConvO.fc1">
+<span class="sig-name descname"><span class="pre">fc1</span></span><a class="headerlink" href="#dicee.models.octonion.AConvO.fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.octonion.AConvO.bn_conv2d">
+<span class="sig-name descname"><span class="pre">bn_conv2d</span></span><a class="headerlink" href="#dicee.models.octonion.AConvO.bn_conv2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.octonion.AConvO.norm_fc1">
+<span class="sig-name descname"><span class="pre">norm_fc1</span></span><a class="headerlink" href="#dicee.models.octonion.AConvO.norm_fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.octonion.AConvO.feature_map_dropout">
+<span class="sig-name descname"><span class="pre">feature_map_dropout</span></span><a class="headerlink" href="#dicee.models.octonion.AConvO.feature_map_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.octonion.AConvO.octonion_normalizer">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">octonion_normalizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">emb_rel_e0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e7</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/octonion.html#AConvO.octonion_normalizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.octonion.AConvO.octonion_normalizer" title="Link to this definition"></a></dt>

@@ -62,6 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#coverage-report">Coverage Report</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-cite">How to cite</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../../index.html">dicee</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="../../index.html#subpackages">Subpackages</a><ul class="current">
@@ -177,6 +178,31 @@ A multivector mathbf{b} = b_0 + b_1 e_1 + b_2 e_2 + b_{12} e_1 e_2</p>
 </dd>
 </dl>
 <p>Cl_(0,2) =&gt; Quaternions</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.CMult.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'CMult'</span></em><a class="headerlink" href="#dicee.models.clifford.CMult.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.CMult.entity_embeddings">
+<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.models.clifford.CMult.entity_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.CMult.relation_embeddings">
+<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.models.clifford.CMult.relation_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.CMult.p">
+<span class="sig-name descname"><span class="pre">p</span></span><a class="headerlink" href="#dicee.models.clifford.CMult.p" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.CMult.q">
+<span class="sig-name descname"><span class="pre">q</span></span><a class="headerlink" href="#dicee.models.clifford.CMult.q" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.clifford.CMult.clifford_mul">
 <span class="sig-name descname"><span class="pre">clifford_mul</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#CMult.clifford_mul"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.CMult.clifford_mul" title="Link to this definition"></a></dt>
@@ -267,6 +293,31 @@ must be made before assignment on the child.</p>
 evaluation mode.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Keci'</span></em><a class="headerlink" href="#dicee.models.clifford.Keci.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.p">
+<span class="sig-name descname"><span class="pre">p</span></span><a class="headerlink" href="#dicee.models.clifford.Keci.p" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.q">
+<span class="sig-name descname"><span class="pre">q</span></span><a class="headerlink" href="#dicee.models.clifford.Keci.q" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.r">
+<span class="sig-name descname"><span class="pre">r</span></span><a class="headerlink" href="#dicee.models.clifford.Keci.r" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.requires_grad_for_interactions">
+<span class="sig-name descname"><span class="pre">requires_grad_for_interactions</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#dicee.models.clifford.Keci.requires_grad_for_interactions" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.clifford.Keci.compute_sigma_pp">
 <span class="sig-name descname"><span class="pre">compute_sigma_pp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.compute_sigma_pp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.compute_sigma_pp" title="Link to this definition"></a></dt>
@@ -466,6 +517,16 @@ x: torch.LongTensor with (n,2) shape
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.clifford.</span></span><span class="sig-name descname"><span class="pre">KeciBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#KeciBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.KeciBase" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#dicee.models.clifford.Keci" title="dicee.models.clifford.Keci"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keci</span></code></a></p>
 <p>Without learning dimension scaling</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.KeciBase.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'KeciBase'</span></em><a class="headerlink" href="#dicee.models.clifford.KeciBase.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.KeciBase.requires_grad_for_interactions">
+<span class="sig-name descname"><span class="pre">requires_grad_for_interactions</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#dicee.models.clifford.KeciBase.requires_grad_for_interactions" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -503,6 +564,41 @@ must be made before assignment on the child.</p>
 evaluation mode.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.DeCaL.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'DeCaL'</span></em><a class="headerlink" href="#dicee.models.clifford.DeCaL.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.DeCaL.entity_embeddings">
+<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.models.clifford.DeCaL.entity_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.DeCaL.relation_embeddings">
+<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.models.clifford.DeCaL.relation_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.DeCaL.p">
+<span class="sig-name descname"><span class="pre">p</span></span><a class="headerlink" href="#dicee.models.clifford.DeCaL.p" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.DeCaL.q">
+<span class="sig-name descname"><span class="pre">q</span></span><a class="headerlink" href="#dicee.models.clifford.DeCaL.q" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.DeCaL.r">
+<span class="sig-name descname"><span class="pre">r</span></span><a class="headerlink" href="#dicee.models.clifford.DeCaL.r" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.clifford.DeCaL.re">
+<span class="sig-name descname"><span class="pre">re</span></span><a class="headerlink" href="#dicee.models.clifford.DeCaL.re" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.clifford.DeCaL.forward_triples">
 <span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#DeCaL.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.DeCaL.forward_triples" title="Link to this definition"></a></dt>

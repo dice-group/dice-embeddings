@@ -30,6 +30,34 @@ Module Contents
 
 
 
+   .. py:attribute:: loss_function
+      :value: None
+
+
+
+   .. py:attribute:: optimizer
+      :value: None
+
+
+
+   .. py:attribute:: model
+      :value: None
+
+
+
+   .. py:attribute:: train_dataloaders
+      :value: None
+
+
+
+   .. py:attribute:: training_step
+      :value: None
+
+
+
+   .. py:attribute:: process
+
+
    .. py:method:: fit(*args, train_dataloaders, **kwargs) -> None
 
        Training starts

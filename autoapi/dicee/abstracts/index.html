@@ -61,6 +61,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#coverage-report">Coverage Report</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">dicee</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../index.html#subpackages">Subpackages</a></li>
@@ -69,6 +70,10 @@
 <li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.abstracts.AbstractTrainer"><code class="docutils literal notranslate"><span class="pre">AbstractTrainer</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.AbstractTrainer.attributes"><code class="docutils literal notranslate"><span class="pre">AbstractTrainer.attributes</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.AbstractTrainer.callbacks"><code class="docutils literal notranslate"><span class="pre">AbstractTrainer.callbacks</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.AbstractTrainer.is_global_zero"><code class="docutils literal notranslate"><span class="pre">AbstractTrainer.is_global_zero</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.AbstractTrainer.strategy"><code class="docutils literal notranslate"><span class="pre">AbstractTrainer.strategy</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.AbstractTrainer.on_fit_start"><code class="docutils literal notranslate"><span class="pre">AbstractTrainer.on_fit_start()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.AbstractTrainer.on_fit_end"><code class="docutils literal notranslate"><span class="pre">AbstractTrainer.on_fit_end()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.AbstractTrainer.on_train_epoch_end"><code class="docutils literal notranslate"><span class="pre">AbstractTrainer.on_train_epoch_end()</span></code></a></li>
@@ -77,6 +82,9 @@
 </ul>
 </li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.abstracts.BaseInteractiveKGE"><code class="docutils literal notranslate"><span class="pre">BaseInteractiveKGE</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.BaseInteractiveKGE.construct_ensemble"><code class="docutils literal notranslate"><span class="pre">BaseInteractiveKGE.construct_ensemble</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.BaseInteractiveKGE.apply_semantic_constraint"><code class="docutils literal notranslate"><span class="pre">BaseInteractiveKGE.apply_semantic_constraint</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.BaseInteractiveKGE.configs"><code class="docutils literal notranslate"><span class="pre">BaseInteractiveKGE.configs</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.BaseInteractiveKGE.get_eval_report"><code class="docutils literal notranslate"><span class="pre">BaseInteractiveKGE.get_eval_report()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.BaseInteractiveKGE.get_bpe_token_representation"><code class="docutils literal notranslate"><span class="pre">BaseInteractiveKGE.get_bpe_token_representation()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.BaseInteractiveKGE.get_padded_bpe_triple_representation"><code class="docutils literal notranslate"><span class="pre">BaseInteractiveKGE.get_padded_bpe_triple_representation()</span></code></a></li>
@@ -109,6 +117,11 @@
 </ul>
 </li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.abstracts.AbstractPPECallback"><code class="docutils literal notranslate"><span class="pre">AbstractPPECallback</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.AbstractPPECallback.num_epochs"><code class="docutils literal notranslate"><span class="pre">AbstractPPECallback.num_epochs</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.AbstractPPECallback.path"><code class="docutils literal notranslate"><span class="pre">AbstractPPECallback.path</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.AbstractPPECallback.sample_counter"><code class="docutils literal notranslate"><span class="pre">AbstractPPECallback.sample_counter</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.AbstractPPECallback.epoch_count"><code class="docutils literal notranslate"><span class="pre">AbstractPPECallback.epoch_count</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.AbstractPPECallback.alphas"><code class="docutils literal notranslate"><span class="pre">AbstractPPECallback.alphas</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.AbstractPPECallback.on_fit_start"><code class="docutils literal notranslate"><span class="pre">AbstractPPECallback.on_fit_start()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.AbstractPPECallback.on_fit_end"><code class="docutils literal notranslate"><span class="pre">AbstractPPECallback.on_fit_end()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.abstracts.AbstractPPECallback.store_ensemble"><code class="docutils literal notranslate"><span class="pre">AbstractPPECallback.store_ensemble()</span></code></a></li>
@@ -202,6 +215,26 @@
 <dt>callbacks: list</dt><dd><p>?</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractTrainer.attributes">
+<span class="sig-name descname"><span class="pre">attributes</span></span><a class="headerlink" href="#dicee.abstracts.AbstractTrainer.attributes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractTrainer.callbacks">
+<span class="sig-name descname"><span class="pre">callbacks</span></span><a class="headerlink" href="#dicee.abstracts.AbstractTrainer.callbacks" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractTrainer.is_global_zero">
+<span class="sig-name descname"><span class="pre">is_global_zero</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#dicee.abstracts.AbstractTrainer.is_global_zero" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractTrainer.strategy">
+<span class="sig-name descname"><span class="pre">strategy</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.abstracts.AbstractTrainer.strategy" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.abstracts.AbstractTrainer.on_fit_start">
 <span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractTrainer.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.AbstractTrainer.on_fit_start" title="Link to this definition"></a></dt>
@@ -299,6 +332,21 @@
 </dl>
 <p>model_name: str
 apply_semantic_constraint : boolean</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.construct_ensemble">
+<span class="sig-name descname"><span class="pre">construct_ensemble</span></span><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.construct_ensemble" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.apply_semantic_constraint">
+<span class="sig-name descname"><span class="pre">apply_semantic_constraint</span></span><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.apply_semantic_constraint" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.configs">
+<span class="sig-name descname"><span class="pre">configs</span></span><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.configs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.abstracts.BaseInteractiveKGE.get_eval_report">
 <span class="sig-name descname"><span class="pre">get_eval_report</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#BaseInteractiveKGE.get_eval_report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.BaseInteractiveKGE.get_eval_report" title="Link to this definition"></a></dt>
@@ -571,6 +619,31 @@ apply_semantic_constraint : boolean</p>
 <p>Abstract class for Callback class for knowledge graph embedding models</p>
 <section id="id19">
 <h3>Parameter<a class="headerlink" href="#id19" title="Link to this heading"></a></h3>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractPPECallback.num_epochs">
+<span class="sig-name descname"><span class="pre">num_epochs</span></span><a class="headerlink" href="#dicee.abstracts.AbstractPPECallback.num_epochs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractPPECallback.path">
+<span class="sig-name descname"><span class="pre">path</span></span><a class="headerlink" href="#dicee.abstracts.AbstractPPECallback.path" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractPPECallback.sample_counter">
+<span class="sig-name descname"><span class="pre">sample_counter</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#dicee.abstracts.AbstractPPECallback.sample_counter" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractPPECallback.epoch_count">
+<span class="sig-name descname"><span class="pre">epoch_count</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#dicee.abstracts.AbstractPPECallback.epoch_count" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.abstracts.AbstractPPECallback.alphas">
+<span class="sig-name descname"><span class="pre">alphas</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.abstracts.AbstractPPECallback.alphas" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.abstracts.AbstractPPECallback.on_fit_start">
 <span class="sig-name descname"><span class="pre">on_fit_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/abstracts.html#AbstractPPECallback.on_fit_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.abstracts.AbstractPPECallback.on_fit_start" title="Link to this definition"></a></dt>

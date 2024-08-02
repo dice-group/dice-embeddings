@@ -34,6 +34,9 @@ Package Contents
    Preprocess the data in memory
 
 
+   .. py:attribute:: kg
+
+
    .. py:method:: start() -> None
 
       Preprocess train, valid and test datasets stored in knowledge graph instance
@@ -84,6 +87,9 @@ Package Contents
 
 .. py:class:: LoadSaveToDisk(kg)
 
+   .. py:attribute:: kg
+
+
    .. py:method:: save()
 
 
@@ -93,6 +99,9 @@ Package Contents
 .. py:class:: ReadFromDisk(kg)
 
    Read the data from disk into memory
+
+
+   .. py:attribute:: kg
 
 
    .. py:method:: start() -> None

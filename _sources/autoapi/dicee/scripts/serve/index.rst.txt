@@ -58,6 +58,15 @@ Module Contents
 
 .. py:class:: NeuralSearcher(args)
 
+   .. py:attribute:: collection_name
+
+
+   .. py:attribute:: model
+
+
+   .. py:attribute:: qdrant_client
+
+
    .. py:method:: get(entity: str)
 
 

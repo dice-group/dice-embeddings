@@ -44,6 +44,9 @@ Module Contents
 
 
 
+   .. py:attribute:: path
+
+
    .. py:method:: on_fit_end(trainer, model) -> None
 
       Store epoch loss
@@ -70,6 +73,9 @@ Module Contents
    Parameter
    ---------
 
+
+
+   .. py:attribute:: start_time
 
 
    .. py:method:: on_fit_start(trainer, pl_module)
@@ -140,6 +146,20 @@ Module Contents
    Parameter
    ---------
 
+
+
+   .. py:attribute:: every_x_epoch
+
+
+   .. py:attribute:: max_epochs
+
+
+   .. py:attribute:: epoch_counter
+      :value: 0
+
+
+
+   .. py:attribute:: path
 
 
    .. py:method:: on_train_batch_end(*args, **kwargs)
@@ -215,6 +235,23 @@ Module Contents
 
 
 
+   .. py:attribute:: data_module
+
+
+   .. py:attribute:: kg
+
+
+   .. py:attribute:: num_of_epochs
+      :value: 0
+
+
+
+   .. py:attribute:: unlabelled_size
+
+
+   .. py:attribute:: batch_size
+
+
    .. py:method:: create_random_data()
 
 
@@ -235,6 +272,30 @@ Module Contents
 
    Adaptive stochastic weight averaging
    ASWE keeps track of the validation performance and update s the ensemble model accordingly.
+
+
+   .. py:attribute:: path
+
+
+   .. py:attribute:: num_epochs
+
+
+   .. py:attribute:: initial_eval_setting
+      :value: None
+
+
+
+   .. py:attribute:: epoch_count
+      :value: 0
+
+
+
+   .. py:attribute:: alphas
+      :value: []
+
+
+
+   .. py:attribute:: val_aswa
 
 
    .. py:method:: on_fit_end(trainer, model)
@@ -294,6 +355,22 @@ Module Contents
 
    Parameter
    ---------
+
+
+
+   .. py:attribute:: path
+
+
+   .. py:attribute:: reports
+      :value: []
+
+
+
+   .. py:attribute:: epoch_ratio
+
+
+   .. py:attribute:: epoch_counter
+      :value: 0
 
 
 
@@ -367,6 +444,11 @@ Module Contents
 
 
 
+   .. py:attribute:: f
+      :value: None
+
+
+
    .. py:method:: batch_kronecker_product(a, b)
       :staticmethod:
 
@@ -414,6 +496,21 @@ Module Contents
    Parameter Perturbation:
 
    Output Perturbation:
+
+
+   .. py:attribute:: level
+
+
+   .. py:attribute:: ratio
+
+
+   .. py:attribute:: method
+
+
+   .. py:attribute:: scaler
+
+
+   .. py:attribute:: frequency
 
 
    .. py:method:: on_train_batch_start(trainer, model, batch, batch_idx)

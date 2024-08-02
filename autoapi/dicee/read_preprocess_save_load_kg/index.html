@@ -61,6 +61,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#coverage-report">Coverage Report</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">dicee</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="../index.html#subpackages">Subpackages</a><ul class="current">
@@ -76,6 +77,7 @@
 <li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#package-contents">Package Contents</a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.PreprocessKG"><code class="docutils literal notranslate"><span class="pre">PreprocessKG</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.PreprocessKG.kg"><code class="docutils literal notranslate"><span class="pre">PreprocessKG.kg</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.PreprocessKG.start"><code class="docutils literal notranslate"><span class="pre">PreprocessKG.start()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_byte_pair_encoding"><code class="docutils literal notranslate"><span class="pre">PreprocessKG.preprocess_with_byte_pair_encoding()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.PreprocessKG.preprocess_with_byte_pair_encoding_with_padding"><code class="docutils literal notranslate"><span class="pre">PreprocessKG.preprocess_with_byte_pair_encoding_with_padding()</span></code></a></li>
@@ -86,11 +88,13 @@
 </ul>
 </li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.LoadSaveToDisk"><code class="docutils literal notranslate"><span class="pre">LoadSaveToDisk</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.LoadSaveToDisk.kg"><code class="docutils literal notranslate"><span class="pre">LoadSaveToDisk.kg</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.LoadSaveToDisk.save"><code class="docutils literal notranslate"><span class="pre">LoadSaveToDisk.save()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.LoadSaveToDisk.load"><code class="docutils literal notranslate"><span class="pre">LoadSaveToDisk.load()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.ReadFromDisk"><code class="docutils literal notranslate"><span class="pre">ReadFromDisk</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.ReadFromDisk.kg"><code class="docutils literal notranslate"><span class="pre">ReadFromDisk.kg</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.ReadFromDisk.start"><code class="docutils literal notranslate"><span class="pre">ReadFromDisk.start()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.ReadFromDisk.add_noisy_triples_into_training"><code class="docutils literal notranslate"><span class="pre">ReadFromDisk.add_noisy_triples_into_training()</span></code></a></li>
 </ul>
@@ -172,6 +176,11 @@
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.PreprocessKG">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.</span></span><span class="sig-name descname"><span class="pre">PreprocessKG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.PreprocessKG" title="Link to this definition"></a></dt>
 <dd><p>Preprocess the data in memory</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.PreprocessKG.kg">
+<span class="sig-name descname"><span class="pre">kg</span></span><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.PreprocessKG.kg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.PreprocessKG.start">
 <span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/preprocess.html#PreprocessKG.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.PreprocessKG.start" title="Link to this definition"></a></dt>
@@ -245,7 +254,12 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.LoadSaveToDisk">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.</span></span><span class="sig-name descname"><span class="pre">LoadSaveToDisk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.LoadSaveToDisk" title="Link to this definition"></a></dt>
-<dd><dl class="py method">
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.LoadSaveToDisk.kg">
+<span class="sig-name descname"><span class="pre">kg</span></span><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.LoadSaveToDisk.kg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.LoadSaveToDisk.save">
 <span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/save_load_disk.html#LoadSaveToDisk.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.LoadSaveToDisk.save" title="Link to this definition"></a></dt>
 <dd></dd></dl>
@@ -261,6 +275,11 @@
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.ReadFromDisk">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.read_preprocess_save_load_kg.</span></span><span class="sig-name descname"><span class="pre">ReadFromDisk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.ReadFromDisk" title="Link to this definition"></a></dt>
 <dd><p>Read the data from disk into memory</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.ReadFromDisk.kg">
+<span class="sig-name descname"><span class="pre">kg</span></span><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.ReadFromDisk.kg" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.read_preprocess_save_load_kg.ReadFromDisk.start">
 <span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../../_modules/dicee/read_preprocess_save_load_kg/read_from_disk.html#ReadFromDisk.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.read_preprocess_save_load_kg.ReadFromDisk.start" title="Link to this definition"></a></dt>

@@ -116,6 +116,11 @@ Package Contents
    :vartype training: bool
 
 
+   .. py:attribute:: training_step_outputs
+      :value: []
+
+
+
    .. py:method:: mem_of_model() -> Dict
 
       Size of model in MB and number of params
@@ -469,6 +474,125 @@ Package Contents
    :vartype training: bool
 
 
+   .. py:attribute:: args
+
+
+   .. py:attribute:: embedding_dim
+      :value: None
+
+
+
+   .. py:attribute:: num_entities
+      :value: None
+
+
+
+   .. py:attribute:: num_relations
+      :value: None
+
+
+
+   .. py:attribute:: num_tokens
+      :value: None
+
+
+
+   .. py:attribute:: learning_rate
+      :value: None
+
+
+
+   .. py:attribute:: apply_unit_norm
+      :value: None
+
+
+
+   .. py:attribute:: input_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: hidden_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: optimizer_name
+      :value: None
+
+
+
+   .. py:attribute:: feature_map_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: kernel_size
+      :value: None
+
+
+
+   .. py:attribute:: num_of_output_channels
+      :value: None
+
+
+
+   .. py:attribute:: weight_decay
+      :value: None
+
+
+
+   .. py:attribute:: loss
+
+
+   .. py:attribute:: selected_optimizer
+      :value: None
+
+
+
+   .. py:attribute:: normalizer_class
+      :value: None
+
+
+
+   .. py:attribute:: normalize_head_entity_embeddings
+
+
+   .. py:attribute:: normalize_relation_embeddings
+
+
+   .. py:attribute:: normalize_tail_entity_embeddings
+
+
+   .. py:attribute:: hidden_normalizer
+
+
+   .. py:attribute:: param_init
+
+
+   .. py:attribute:: input_dp_ent_real
+
+
+   .. py:attribute:: input_dp_rel_real
+
+
+   .. py:attribute:: hidden_dropout
+
+
+   .. py:attribute:: loss_history
+      :value: []
+
+
+
+   .. py:attribute:: byte_pair_encoding
+
+
+   .. py:attribute:: max_length_subword_tokens
+
+
+   .. py:attribute:: block_size
+
+
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
 
       :param x:
@@ -568,6 +692,9 @@ Package Contents
    :vartype training: bool
 
 
+   .. py:attribute:: args
+
+
    .. py:method:: __call__(x)
 
 
@@ -611,6 +738,125 @@ Package Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: args
+
+
+   .. py:attribute:: embedding_dim
+      :value: None
+
+
+
+   .. py:attribute:: num_entities
+      :value: None
+
+
+
+   .. py:attribute:: num_relations
+      :value: None
+
+
+
+   .. py:attribute:: num_tokens
+      :value: None
+
+
+
+   .. py:attribute:: learning_rate
+      :value: None
+
+
+
+   .. py:attribute:: apply_unit_norm
+      :value: None
+
+
+
+   .. py:attribute:: input_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: hidden_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: optimizer_name
+      :value: None
+
+
+
+   .. py:attribute:: feature_map_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: kernel_size
+      :value: None
+
+
+
+   .. py:attribute:: num_of_output_channels
+      :value: None
+
+
+
+   .. py:attribute:: weight_decay
+      :value: None
+
+
+
+   .. py:attribute:: loss
+
+
+   .. py:attribute:: selected_optimizer
+      :value: None
+
+
+
+   .. py:attribute:: normalizer_class
+      :value: None
+
+
+
+   .. py:attribute:: normalize_head_entity_embeddings
+
+
+   .. py:attribute:: normalize_relation_embeddings
+
+
+   .. py:attribute:: normalize_tail_entity_embeddings
+
+
+   .. py:attribute:: hidden_normalizer
+
+
+   .. py:attribute:: param_init
+
+
+   .. py:attribute:: input_dp_ent_real
+
+
+   .. py:attribute:: input_dp_rel_real
+
+
+   .. py:attribute:: hidden_dropout
+
+
+   .. py:attribute:: loss_history
+      :value: []
+
+
+
+   .. py:attribute:: byte_pair_encoding
+
+
+   .. py:attribute:: max_length_subword_tokens
+
+
+   .. py:attribute:: block_size
 
 
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
@@ -684,6 +930,11 @@ Package Contents
    https://arxiv.org/abs/1412.6575
 
 
+   .. py:attribute:: name
+      :value: 'DistMult'
+
+
+
    .. py:method:: k_vs_all_score(emb_h: torch.FloatTensor, emb_r: torch.FloatTensor, emb_E: torch.FloatTensor)
 
       :param emb_h:
@@ -711,6 +962,16 @@ Package Contents
    https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf
 
 
+   .. py:attribute:: name
+      :value: 'TransE'
+
+
+
+   .. py:attribute:: margin
+      :value: 4
+
+
+
    .. py:method:: score(head_ent_emb, rel_ent_emb, tail_ent_emb)
 
 
@@ -723,6 +984,17 @@ Package Contents
 
 
    A shallow neural model for relation prediction (https://arxiv.org/abs/2101.09090)
+
+
+   .. py:attribute:: name
+      :value: 'Shallom'
+
+
+
+   .. py:attribute:: shallom_width
+
+
+   .. py:attribute:: shallom
 
 
    .. py:method:: get_embeddings() -> Tuple[numpy.ndarray, None]
@@ -744,6 +1016,19 @@ Package Contents
 
 
    A Physical Embedding Model for Knowledge Graphs
+
+
+   .. py:attribute:: name
+      :value: 'Pyke'
+
+
+
+   .. py:attribute:: dist_func
+
+
+   .. py:attribute:: margin
+      :value: 1.0
+
 
 
    .. py:method:: forward_triples(x: torch.LongTensor)
@@ -787,6 +1072,125 @@ Package Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: args
+
+
+   .. py:attribute:: embedding_dim
+      :value: None
+
+
+
+   .. py:attribute:: num_entities
+      :value: None
+
+
+
+   .. py:attribute:: num_relations
+      :value: None
+
+
+
+   .. py:attribute:: num_tokens
+      :value: None
+
+
+
+   .. py:attribute:: learning_rate
+      :value: None
+
+
+
+   .. py:attribute:: apply_unit_norm
+      :value: None
+
+
+
+   .. py:attribute:: input_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: hidden_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: optimizer_name
+      :value: None
+
+
+
+   .. py:attribute:: feature_map_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: kernel_size
+      :value: None
+
+
+
+   .. py:attribute:: num_of_output_channels
+      :value: None
+
+
+
+   .. py:attribute:: weight_decay
+      :value: None
+
+
+
+   .. py:attribute:: loss
+
+
+   .. py:attribute:: selected_optimizer
+      :value: None
+
+
+
+   .. py:attribute:: normalizer_class
+      :value: None
+
+
+
+   .. py:attribute:: normalize_head_entity_embeddings
+
+
+   .. py:attribute:: normalize_relation_embeddings
+
+
+   .. py:attribute:: normalize_tail_entity_embeddings
+
+
+   .. py:attribute:: hidden_normalizer
+
+
+   .. py:attribute:: param_init
+
+
+   .. py:attribute:: input_dp_ent_real
+
+
+   .. py:attribute:: input_dp_rel_real
+
+
+   .. py:attribute:: hidden_dropout
+
+
+   .. py:attribute:: loss_history
+      :value: []
+
+
+
+   .. py:attribute:: byte_pair_encoding
+
+
+   .. py:attribute:: max_length_subword_tokens
+
+
+   .. py:attribute:: block_size
 
 
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
@@ -859,6 +1263,29 @@ Package Contents
    Convolutional ComplEx Knowledge Graph Embeddings
 
 
+   .. py:attribute:: name
+      :value: 'ConEx'
+
+
+
+   .. py:attribute:: conv2d
+
+
+   .. py:attribute:: fc_num_input
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: norm_fc1
+
+
+   .. py:attribute:: bn_conv2d
+
+
+   .. py:attribute:: feature_map_dropout
+
+
    .. py:method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor], C_2: Tuple[torch.Tensor, torch.Tensor]) -> torch.FloatTensor
 
       Compute residual score of two complex-valued embeddings.
@@ -886,6 +1313,29 @@ Package Contents
 
 
    Additive Convolutional ComplEx Knowledge Graph Embeddings
+
+
+   .. py:attribute:: name
+      :value: 'AConEx'
+
+
+
+   .. py:attribute:: conv2d
+
+
+   .. py:attribute:: fc_num_input
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: norm_fc1
+
+
+   .. py:attribute:: bn_conv2d
+
+
+   .. py:attribute:: feature_map_dropout
 
 
    .. py:method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor], C_2: Tuple[torch.Tensor, torch.Tensor]) -> torch.FloatTensor
@@ -944,6 +1394,11 @@ Package Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: name
+      :value: 'ComplEx'
+
 
 
    .. py:method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor)
@@ -1007,6 +1462,125 @@ Package Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: args
+
+
+   .. py:attribute:: embedding_dim
+      :value: None
+
+
+
+   .. py:attribute:: num_entities
+      :value: None
+
+
+
+   .. py:attribute:: num_relations
+      :value: None
+
+
+
+   .. py:attribute:: num_tokens
+      :value: None
+
+
+
+   .. py:attribute:: learning_rate
+      :value: None
+
+
+
+   .. py:attribute:: apply_unit_norm
+      :value: None
+
+
+
+   .. py:attribute:: input_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: hidden_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: optimizer_name
+      :value: None
+
+
+
+   .. py:attribute:: feature_map_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: kernel_size
+      :value: None
+
+
+
+   .. py:attribute:: num_of_output_channels
+      :value: None
+
+
+
+   .. py:attribute:: weight_decay
+      :value: None
+
+
+
+   .. py:attribute:: loss
+
+
+   .. py:attribute:: selected_optimizer
+      :value: None
+
+
+
+   .. py:attribute:: normalizer_class
+      :value: None
+
+
+
+   .. py:attribute:: normalize_head_entity_embeddings
+
+
+   .. py:attribute:: normalize_relation_embeddings
+
+
+   .. py:attribute:: normalize_tail_entity_embeddings
+
+
+   .. py:attribute:: hidden_normalizer
+
+
+   .. py:attribute:: param_init
+
+
+   .. py:attribute:: input_dp_ent_real
+
+
+   .. py:attribute:: input_dp_rel_real
+
+
+   .. py:attribute:: hidden_dropout
+
+
+   .. py:attribute:: loss_history
+      :value: []
+
+
+
+   .. py:attribute:: byte_pair_encoding
+
+
+   .. py:attribute:: max_length_subword_tokens
+
+
+   .. py:attribute:: block_size
 
 
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
@@ -1108,6 +1682,9 @@ Package Contents
    :vartype training: bool
 
 
+   .. py:attribute:: args
+
+
    .. py:method:: __call__(x)
 
 
@@ -1153,6 +1730,16 @@ Package Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: name
+      :value: 'QMult'
+
+
+
+   .. py:attribute:: explicit
+      :value: True
+
 
 
    .. py:method:: quaternion_multiplication_followed_by_inner_product(h, r, t)
@@ -1229,6 +1816,35 @@ Package Contents
 
 
 
+   .. py:attribute:: name
+      :value: 'ConvQ'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: conv2d
+
+
+   .. py:attribute:: fc_num_input
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: bn_conv1
+
+
+   .. py:attribute:: bn_conv2
+
+
+   .. py:attribute:: feature_map_dropout
+
+
    .. py:method:: residual_convolution(Q_1, Q_2)
 
 
@@ -1252,6 +1868,35 @@ Package Contents
 
 
    Additive Convolutional Quaternion Knowledge Graph Embeddings
+
+
+   .. py:attribute:: name
+      :value: 'AConvQ'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: conv2d
+
+
+   .. py:attribute:: fc_num_input
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: bn_conv1
+
+
+   .. py:attribute:: bn_conv2
+
+
+   .. py:attribute:: feature_map_dropout
 
 
    .. py:method:: residual_convolution(Q_1, Q_2)
@@ -1306,6 +1951,125 @@ Package Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: args
+
+
+   .. py:attribute:: embedding_dim
+      :value: None
+
+
+
+   .. py:attribute:: num_entities
+      :value: None
+
+
+
+   .. py:attribute:: num_relations
+      :value: None
+
+
+
+   .. py:attribute:: num_tokens
+      :value: None
+
+
+
+   .. py:attribute:: learning_rate
+      :value: None
+
+
+
+   .. py:attribute:: apply_unit_norm
+      :value: None
+
+
+
+   .. py:attribute:: input_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: hidden_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: optimizer_name
+      :value: None
+
+
+
+   .. py:attribute:: feature_map_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: kernel_size
+      :value: None
+
+
+
+   .. py:attribute:: num_of_output_channels
+      :value: None
+
+
+
+   .. py:attribute:: weight_decay
+      :value: None
+
+
+
+   .. py:attribute:: loss
+
+
+   .. py:attribute:: selected_optimizer
+      :value: None
+
+
+
+   .. py:attribute:: normalizer_class
+      :value: None
+
+
+
+   .. py:attribute:: normalize_head_entity_embeddings
+
+
+   .. py:attribute:: normalize_relation_embeddings
+
+
+   .. py:attribute:: normalize_tail_entity_embeddings
+
+
+   .. py:attribute:: hidden_normalizer
+
+
+   .. py:attribute:: param_init
+
+
+   .. py:attribute:: input_dp_ent_real
+
+
+   .. py:attribute:: input_dp_rel_real
+
+
+   .. py:attribute:: hidden_dropout
+
+
+   .. py:attribute:: loss_history
+      :value: []
+
+
+
+   .. py:attribute:: byte_pair_encoding
+
+
+   .. py:attribute:: max_length_subword_tokens
+
+
+   .. py:attribute:: block_size
 
 
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
@@ -1407,6 +2171,9 @@ Package Contents
    :vartype training: bool
 
 
+   .. py:attribute:: args
+
+
    .. py:method:: __call__(x)
 
 
@@ -1454,6 +2221,11 @@ Package Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: name
+      :value: 'OMult'
+
 
 
    .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
@@ -1513,6 +2285,29 @@ Package Contents
    :vartype training: bool
 
 
+   .. py:attribute:: name
+      :value: 'ConvO'
+
+
+
+   .. py:attribute:: conv2d
+
+
+   .. py:attribute:: fc_num_input
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: bn_conv2d
+
+
+   .. py:attribute:: norm_fc1
+
+
+   .. py:attribute:: feature_map_dropout
+
+
    .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
       :staticmethod:
 
@@ -1541,6 +2336,29 @@ Package Contents
 
 
    Additive Convolutional Octonion Knowledge Graph Embeddings
+
+
+   .. py:attribute:: name
+      :value: 'AConvO'
+
+
+
+   .. py:attribute:: conv2d
+
+
+   .. py:attribute:: fc_num_input
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: bn_conv2d
+
+
+   .. py:attribute:: norm_fc1
+
+
+   .. py:attribute:: feature_map_dropout
 
 
    .. py:method:: octonion_normalizer(emb_rel_e0, emb_rel_e1, emb_rel_e2, emb_rel_e3, emb_rel_e4, emb_rel_e5, emb_rel_e6, emb_rel_e7)
@@ -1600,6 +2418,25 @@ Package Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: name
+      :value: 'Keci'
+
+
+
+   .. py:attribute:: p
+
+
+   .. py:attribute:: q
+
+
+   .. py:attribute:: r
+
+
+   .. py:attribute:: requires_grad_for_interactions
+      :value: True
+
 
 
    .. py:method:: compute_sigma_pp(hp, rp)
@@ -1772,6 +2609,16 @@ Package Contents
    Without learning dimension scaling
 
 
+   .. py:attribute:: name
+      :value: 'KeciBase'
+
+
+
+   .. py:attribute:: requires_grad_for_interactions
+      :value: False
+
+
+
 .. py:class:: CMult(args)
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
@@ -1796,6 +2643,23 @@ Package Contents
                                            + a_1 b_0 e_1 + a_1b_1 e_1_e1 ..
 
    Cl_(0,2) => Quaternions
+
+
+   .. py:attribute:: name
+      :value: 'CMult'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: p
+
+
+   .. py:attribute:: q
 
 
    .. py:method:: clifford_mul(x: torch.FloatTensor, y: torch.FloatTensor, p: int, q: int) -> tuple
@@ -1889,6 +2753,29 @@ Package Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: name
+      :value: 'DeCaL'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: p
+
+
+   .. py:attribute:: q
+
+
+   .. py:attribute:: r
+
+
+   .. py:attribute:: re
 
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor
@@ -2147,6 +3034,125 @@ Package Contents
    :vartype training: bool
 
 
+   .. py:attribute:: args
+
+
+   .. py:attribute:: embedding_dim
+      :value: None
+
+
+
+   .. py:attribute:: num_entities
+      :value: None
+
+
+
+   .. py:attribute:: num_relations
+      :value: None
+
+
+
+   .. py:attribute:: num_tokens
+      :value: None
+
+
+
+   .. py:attribute:: learning_rate
+      :value: None
+
+
+
+   .. py:attribute:: apply_unit_norm
+      :value: None
+
+
+
+   .. py:attribute:: input_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: hidden_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: optimizer_name
+      :value: None
+
+
+
+   .. py:attribute:: feature_map_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: kernel_size
+      :value: None
+
+
+
+   .. py:attribute:: num_of_output_channels
+      :value: None
+
+
+
+   .. py:attribute:: weight_decay
+      :value: None
+
+
+
+   .. py:attribute:: loss
+
+
+   .. py:attribute:: selected_optimizer
+      :value: None
+
+
+
+   .. py:attribute:: normalizer_class
+      :value: None
+
+
+
+   .. py:attribute:: normalize_head_entity_embeddings
+
+
+   .. py:attribute:: normalize_relation_embeddings
+
+
+   .. py:attribute:: normalize_tail_entity_embeddings
+
+
+   .. py:attribute:: hidden_normalizer
+
+
+   .. py:attribute:: param_init
+
+
+   .. py:attribute:: input_dp_ent_real
+
+
+   .. py:attribute:: input_dp_rel_real
+
+
+   .. py:attribute:: hidden_dropout
+
+
+   .. py:attribute:: loss_history
+      :value: []
+
+
+
+   .. py:attribute:: byte_pair_encoding
+
+
+   .. py:attribute:: max_length_subword_tokens
+
+
+   .. py:attribute:: block_size
+
+
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
 
       :param x:
@@ -2224,6 +3230,33 @@ Package Contents
    Pykeen_CP:
    Pykeen_HolE:
    Pykeen_HolE:
+
+
+   .. py:attribute:: model_kwargs
+
+
+   .. py:attribute:: name
+
+
+   .. py:attribute:: model
+
+
+   .. py:attribute:: loss_history
+      :value: []
+
+
+
+   .. py:attribute:: args
+
+
+   .. py:attribute:: entity_embeddings
+      :value: None
+
+
+
+   .. py:attribute:: relation_embeddings
+      :value: None
+
 
 
    .. py:method:: forward_k_vs_all(x: torch.LongTensor)
@@ -2304,6 +3337,125 @@ Package Contents
    :vartype training: bool
 
 
+   .. py:attribute:: args
+
+
+   .. py:attribute:: embedding_dim
+      :value: None
+
+
+
+   .. py:attribute:: num_entities
+      :value: None
+
+
+
+   .. py:attribute:: num_relations
+      :value: None
+
+
+
+   .. py:attribute:: num_tokens
+      :value: None
+
+
+
+   .. py:attribute:: learning_rate
+      :value: None
+
+
+
+   .. py:attribute:: apply_unit_norm
+      :value: None
+
+
+
+   .. py:attribute:: input_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: hidden_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: optimizer_name
+      :value: None
+
+
+
+   .. py:attribute:: feature_map_dropout_rate
+      :value: None
+
+
+
+   .. py:attribute:: kernel_size
+      :value: None
+
+
+
+   .. py:attribute:: num_of_output_channels
+      :value: None
+
+
+
+   .. py:attribute:: weight_decay
+      :value: None
+
+
+
+   .. py:attribute:: loss
+
+
+   .. py:attribute:: selected_optimizer
+      :value: None
+
+
+
+   .. py:attribute:: normalizer_class
+      :value: None
+
+
+
+   .. py:attribute:: normalize_head_entity_embeddings
+
+
+   .. py:attribute:: normalize_relation_embeddings
+
+
+   .. py:attribute:: normalize_tail_entity_embeddings
+
+
+   .. py:attribute:: hidden_normalizer
+
+
+   .. py:attribute:: param_init
+
+
+   .. py:attribute:: input_dp_ent_real
+
+
+   .. py:attribute:: input_dp_rel_real
+
+
+   .. py:attribute:: hidden_dropout
+
+
+   .. py:attribute:: loss_history
+      :value: []
+
+
+
+   .. py:attribute:: byte_pair_encoding
+
+
+   .. py:attribute:: max_length_subword_tokens
+
+
+   .. py:attribute:: block_size
+
+
    .. py:method:: forward_byte_pair_encoded_k_vs_all(x: torch.LongTensor)
 
       :param x:
@@ -2374,6 +3526,34 @@ Package Contents
    Learning Knowledge Neural Graphs
 
 
+   .. py:attribute:: name
+      :value: 'FMult'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: k
+
+
+   .. py:attribute:: num_sample
+      :value: 50
+
+
+
+   .. py:attribute:: gamma
+
+
+   .. py:attribute:: roots
+
+
+   .. py:attribute:: weights
+
+
    .. py:method:: compute_func(weights: torch.FloatTensor, x) -> torch.FloatTensor
 
 
@@ -2394,6 +3574,31 @@ Package Contents
    Learning Knowledge Neural Graphs
 
 
+   .. py:attribute:: name
+      :value: 'GFMult'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: k
+
+
+   .. py:attribute:: num_sample
+      :value: 250
+
+
+
+   .. py:attribute:: roots
+
+
+   .. py:attribute:: weights
+
+
    .. py:method:: compute_func(weights: torch.FloatTensor, x) -> torch.FloatTensor
 
 
@@ -2412,6 +3617,43 @@ Package Contents
 
 
    Learning Knowledge Neural Graphs
+
+
+   .. py:attribute:: name
+      :value: 'FMult2'
+
+
+
+   .. py:attribute:: n_layers
+      :value: 3
+
+
+
+   .. py:attribute:: tuned_embedding_dim
+      :value: False
+
+
+
+   .. py:attribute:: k
+
+
+   .. py:attribute:: n
+      :value: 50
+
+
+
+   .. py:attribute:: score_func
+      :value: 'compositional'
+
+
+
+   .. py:attribute:: discrete_points
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
 
 
    .. py:method:: build_func(Vec)
@@ -2444,6 +3686,17 @@ Package Contents
    f(x) = \sum_{k=0}^{k=d-1}wk e^{kix}. and use the three differents scoring function as in the paper to evaluate the score
 
 
+   .. py:attribute:: name
+      :value: 'LFMult1'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
    .. py:method:: forward_triples(idx_triple)
 
       :param x:
@@ -2464,6 +3717,26 @@ Package Contents
    Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:
    f(x) = \sum_{i=0}^{d-1} a_k x^{i%d} and use the three differents scoring function as in the paper to evaluate the score.
    We also consider combining with Neural Networks.
+
+
+   .. py:attribute:: name
+      :value: 'LFMult'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: degree
+
+
+   .. py:attribute:: m
+
+
+   .. py:attribute:: x_values
 
 
    .. py:method:: forward_triples(idx_triple)
@@ -2557,6 +3830,20 @@ Package Contents
 
 
    Dual Quaternion Knowledge Graph Embeddings (https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657)
+
+
+   .. py:attribute:: name
+      :value: 'DualE'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: num_ent
 
 
    .. py:method:: kvsall_score(e_1_h, e_2_h, e_3_h, e_4_h, e_5_h, e_6_h, e_7_h, e_8_h, e_1_t, e_2_t, e_3_t, e_4_t, e_5_t, e_6_t, e_7_t, e_8_t, r_1, r_2, r_3, r_4, r_5, r_6, r_7, r_8) -> torch.tensor

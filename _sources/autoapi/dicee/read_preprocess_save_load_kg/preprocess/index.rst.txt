@@ -20,6 +20,9 @@ Module Contents
    Preprocess the data in memory
 
 
+   .. py:attribute:: kg
+
+
    .. py:method:: start() -> None
 
       Preprocess train, valid and test datasets stored in knowledge graph instance

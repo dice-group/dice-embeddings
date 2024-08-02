@@ -49,6 +49,31 @@ Package Contents
 
 
 
+   .. py:attribute:: report
+
+
+   .. py:attribute:: args
+
+
+   .. py:attribute:: trainer
+      :value: None
+
+
+
+   .. py:attribute:: is_continual_training
+
+
+   .. py:attribute:: storage_path
+
+
+   .. py:attribute:: evaluator
+
+
+   .. py:attribute:: form_of_labelling
+      :value: None
+
+
+
    .. py:method:: continual_start()
 
       (1) Initialize training.

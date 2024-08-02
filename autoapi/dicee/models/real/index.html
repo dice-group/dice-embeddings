@@ -61,6 +61,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#coverage-report">Coverage Report</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-cite">How to cite</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../../index.html">dicee</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="../../index.html#subpackages">Subpackages</a><ul class="current">
@@ -157,6 +158,11 @@
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>Embedding Entities and Relations for Learning and Inference in Knowledge Bases
 <a class="reference external" href="https://arxiv.org/abs/1412.6575">https://arxiv.org/abs/1412.6575</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.real.DistMult.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'DistMult'</span></em><a class="headerlink" href="#dicee.models.real.DistMult.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.real.DistMult.k_vs_all_score">
 <span class="sig-name descname"><span class="pre">k_vs_all_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">emb_h</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_E</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/real.html#DistMult.k_vs_all_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.real.DistMult.k_vs_all_score" title="Link to this definition"></a></dt>
@@ -195,6 +201,16 @@
 <p>Translating Embeddings for Modeling
 Multi-relational Data
 <a class="reference external" href="https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf">https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.real.TransE.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'TransE'</span></em><a class="headerlink" href="#dicee.models.real.TransE.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.real.TransE.margin">
+<span class="sig-name descname"><span class="pre">margin</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#dicee.models.real.TransE.margin" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.real.TransE.score">
 <span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">head_ent_emb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_ent_emb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tail_ent_emb</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/real.html#TransE.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.real.TransE.score" title="Link to this definition"></a></dt>
@@ -212,6 +228,21 @@ Multi-relational Data
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.real.</span></span><span class="sig-name descname"><span class="pre">Shallom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/real.html#Shallom"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.real.Shallom" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>A shallow neural model for relation prediction (<a class="reference external" href="https://arxiv.org/abs/2101.09090">https://arxiv.org/abs/2101.09090</a>)</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.real.Shallom.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Shallom'</span></em><a class="headerlink" href="#dicee.models.real.Shallom.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.real.Shallom.shallom_width">
+<span class="sig-name descname"><span class="pre">shallom_width</span></span><a class="headerlink" href="#dicee.models.real.Shallom.shallom_width" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.real.Shallom.shallom">
+<span class="sig-name descname"><span class="pre">shallom</span></span><a class="headerlink" href="#dicee.models.real.Shallom.shallom" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.real.Shallom.get_embeddings">
 <span class="sig-name descname"><span class="pre">get_embeddings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/real.html#Shallom.get_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.real.Shallom.get_embeddings" title="Link to this definition"></a></dt>
@@ -242,6 +273,21 @@ Multi-relational Data
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.real.</span></span><span class="sig-name descname"><span class="pre">Pyke</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/real.html#Pyke"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.real.Pyke" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>A Physical Embedding Model for Knowledge Graphs</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.real.Pyke.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Pyke'</span></em><a class="headerlink" href="#dicee.models.real.Pyke.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.real.Pyke.dist_func">
+<span class="sig-name descname"><span class="pre">dist_func</span></span><a class="headerlink" href="#dicee.models.real.Pyke.dist_func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.real.Pyke.margin">
+<span class="sig-name descname"><span class="pre">margin</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1.0</span></em><a class="headerlink" href="#dicee.models.real.Pyke.margin" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.real.Pyke.forward_triples">
 <span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/real.html#Pyke.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.real.Pyke.forward_triples" title="Link to this definition"></a></dt>

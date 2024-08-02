@@ -61,6 +61,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#coverage-report">Coverage Report</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-cite">How to cite</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../../index.html">dicee</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="../../index.html#subpackages">Subpackages</a><ul class="current">
@@ -159,6 +160,46 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.function_space.</span></span><span class="sig-name descname"><span class="pre">FMult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>Learning Knowledge Neural Graphs</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.FMult.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'FMult'</span></em><a class="headerlink" href="#dicee.models.function_space.FMult.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.FMult.entity_embeddings">
+<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.models.function_space.FMult.entity_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.FMult.relation_embeddings">
+<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.models.function_space.FMult.relation_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.FMult.k">
+<span class="sig-name descname"><span class="pre">k</span></span><a class="headerlink" href="#dicee.models.function_space.FMult.k" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.FMult.num_sample">
+<span class="sig-name descname"><span class="pre">num_sample</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">50</span></em><a class="headerlink" href="#dicee.models.function_space.FMult.num_sample" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.FMult.gamma">
+<span class="sig-name descname"><span class="pre">gamma</span></span><a class="headerlink" href="#dicee.models.function_space.FMult.gamma" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.FMult.roots">
+<span class="sig-name descname"><span class="pre">roots</span></span><a class="headerlink" href="#dicee.models.function_space.FMult.roots" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.FMult.weights">
+<span class="sig-name descname"><span class="pre">weights</span></span><a class="headerlink" href="#dicee.models.function_space.FMult.weights" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.function_space.FMult.compute_func">
 <span class="sig-name descname"><span class="pre">compute_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult.compute_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult.compute_func" title="Link to this definition"></a></dt>
@@ -186,6 +227,41 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.function_space.</span></span><span class="sig-name descname"><span class="pre">GFMult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#GFMult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.GFMult" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>Learning Knowledge Neural Graphs</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.GFMult.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'GFMult'</span></em><a class="headerlink" href="#dicee.models.function_space.GFMult.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.GFMult.entity_embeddings">
+<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.models.function_space.GFMult.entity_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.GFMult.relation_embeddings">
+<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.models.function_space.GFMult.relation_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.GFMult.k">
+<span class="sig-name descname"><span class="pre">k</span></span><a class="headerlink" href="#dicee.models.function_space.GFMult.k" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.GFMult.num_sample">
+<span class="sig-name descname"><span class="pre">num_sample</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">250</span></em><a class="headerlink" href="#dicee.models.function_space.GFMult.num_sample" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.GFMult.roots">
+<span class="sig-name descname"><span class="pre">roots</span></span><a class="headerlink" href="#dicee.models.function_space.GFMult.roots" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.GFMult.weights">
+<span class="sig-name descname"><span class="pre">weights</span></span><a class="headerlink" href="#dicee.models.function_space.GFMult.weights" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.function_space.GFMult.compute_func">
 <span class="sig-name descname"><span class="pre">compute_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#GFMult.compute_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.GFMult.compute_func" title="Link to this definition"></a></dt>
@@ -213,6 +289,51 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.function_space.</span></span><span class="sig-name descname"><span class="pre">FMult2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult2" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>Learning Knowledge Neural Graphs</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.FMult2.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'FMult2'</span></em><a class="headerlink" href="#dicee.models.function_space.FMult2.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.FMult2.n_layers">
+<span class="sig-name descname"><span class="pre">n_layers</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#dicee.models.function_space.FMult2.n_layers" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.FMult2.tuned_embedding_dim">
+<span class="sig-name descname"><span class="pre">tuned_embedding_dim</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#dicee.models.function_space.FMult2.tuned_embedding_dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.FMult2.k">
+<span class="sig-name descname"><span class="pre">k</span></span><a class="headerlink" href="#dicee.models.function_space.FMult2.k" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.FMult2.n">
+<span class="sig-name descname"><span class="pre">n</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">50</span></em><a class="headerlink" href="#dicee.models.function_space.FMult2.n" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.FMult2.score_func">
+<span class="sig-name descname"><span class="pre">score_func</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'compositional'</span></em><a class="headerlink" href="#dicee.models.function_space.FMult2.score_func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.FMult2.discrete_points">
+<span class="sig-name descname"><span class="pre">discrete_points</span></span><a class="headerlink" href="#dicee.models.function_space.FMult2.discrete_points" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.FMult2.entity_embeddings">
+<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.models.function_space.FMult2.entity_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.FMult2.relation_embeddings">
+<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.models.function_space.FMult2.relation_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.function_space.FMult2.build_func">
 <span class="sig-name descname"><span class="pre">build_func</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Vec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#FMult2.build_func"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.FMult2.build_func" title="Link to this definition"></a></dt>
@@ -256,6 +377,21 @@
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>Embedding with trigonometric functions. We represent all entities and relations in the complex number space as:
 f(x) = sum_{k=0}^{k=d-1}wk e^{kix}. and use the three differents scoring function as in the paper to evaluate the score</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.LFMult1.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'LFMult1'</span></em><a class="headerlink" href="#dicee.models.function_space.LFMult1.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.LFMult1.entity_embeddings">
+<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.models.function_space.LFMult1.entity_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.LFMult1.relation_embeddings">
+<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.models.function_space.LFMult1.relation_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.function_space.LFMult1.forward_triples">
 <span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#LFMult1.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.LFMult1.forward_triples" title="Link to this definition"></a></dt>
@@ -285,6 +421,36 @@ f(x) = sum_{k=0}^{k=d-1}wk e^{kix}. and use the three differents scoring functio
 <p>Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:
 f(x) = sum_{i=0}^{d-1} a_k x^{i%d} and use the three differents scoring function as in the paper to evaluate the score.
 We also consider combining with Neural Networks.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.LFMult.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'LFMult'</span></em><a class="headerlink" href="#dicee.models.function_space.LFMult.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.LFMult.entity_embeddings">
+<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.models.function_space.LFMult.entity_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.LFMult.relation_embeddings">
+<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.models.function_space.LFMult.relation_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.LFMult.degree">
+<span class="sig-name descname"><span class="pre">degree</span></span><a class="headerlink" href="#dicee.models.function_space.LFMult.degree" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.LFMult.m">
+<span class="sig-name descname"><span class="pre">m</span></span><a class="headerlink" href="#dicee.models.function_space.LFMult.m" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.function_space.LFMult.x_values">
+<span class="sig-name descname"><span class="pre">x_values</span></span><a class="headerlink" href="#dicee.models.function_space.LFMult.x_values" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.function_space.LFMult.forward_triples">
 <span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/function_space.html#LFMult.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.function_space.LFMult.forward_triples" title="Link to this definition"></a></dt>

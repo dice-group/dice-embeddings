@@ -61,6 +61,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#coverage-report">Coverage Report</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-cite">How to cite</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../../index.html">dicee</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="../../index.html#subpackages">Subpackages</a><ul class="current">
@@ -153,6 +154,41 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.complex.</span></span><span class="sig-name descname"><span class="pre">ConEx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/complex.html#ConEx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.complex.ConEx" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>Convolutional ComplEx Knowledge Graph Embeddings</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.complex.ConEx.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ConEx'</span></em><a class="headerlink" href="#dicee.models.complex.ConEx.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.complex.ConEx.conv2d">
+<span class="sig-name descname"><span class="pre">conv2d</span></span><a class="headerlink" href="#dicee.models.complex.ConEx.conv2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.complex.ConEx.fc_num_input">
+<span class="sig-name descname"><span class="pre">fc_num_input</span></span><a class="headerlink" href="#dicee.models.complex.ConEx.fc_num_input" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.complex.ConEx.fc1">
+<span class="sig-name descname"><span class="pre">fc1</span></span><a class="headerlink" href="#dicee.models.complex.ConEx.fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.complex.ConEx.norm_fc1">
+<span class="sig-name descname"><span class="pre">norm_fc1</span></span><a class="headerlink" href="#dicee.models.complex.ConEx.norm_fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.complex.ConEx.bn_conv2d">
+<span class="sig-name descname"><span class="pre">bn_conv2d</span></span><a class="headerlink" href="#dicee.models.complex.ConEx.bn_conv2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.complex.ConEx.feature_map_dropout">
+<span class="sig-name descname"><span class="pre">feature_map_dropout</span></span><a class="headerlink" href="#dicee.models.complex.ConEx.feature_map_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.complex.ConEx.residual_convolution">
 <span class="sig-name descname"><span class="pre">residual_convolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">C_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/complex.html#ConEx.residual_convolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.complex.ConEx.residual_convolution" title="Link to this definition"></a></dt>
@@ -189,6 +225,41 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.complex.</span></span><span class="sig-name descname"><span class="pre">AConEx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/complex.html#AConEx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.complex.AConEx" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>Additive Convolutional ComplEx Knowledge Graph Embeddings</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.complex.AConEx.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'AConEx'</span></em><a class="headerlink" href="#dicee.models.complex.AConEx.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.complex.AConEx.conv2d">
+<span class="sig-name descname"><span class="pre">conv2d</span></span><a class="headerlink" href="#dicee.models.complex.AConEx.conv2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.complex.AConEx.fc_num_input">
+<span class="sig-name descname"><span class="pre">fc_num_input</span></span><a class="headerlink" href="#dicee.models.complex.AConEx.fc_num_input" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.complex.AConEx.fc1">
+<span class="sig-name descname"><span class="pre">fc1</span></span><a class="headerlink" href="#dicee.models.complex.AConEx.fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.complex.AConEx.norm_fc1">
+<span class="sig-name descname"><span class="pre">norm_fc1</span></span><a class="headerlink" href="#dicee.models.complex.AConEx.norm_fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.complex.AConEx.bn_conv2d">
+<span class="sig-name descname"><span class="pre">bn_conv2d</span></span><a class="headerlink" href="#dicee.models.complex.AConEx.bn_conv2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.complex.AConEx.feature_map_dropout">
+<span class="sig-name descname"><span class="pre">feature_map_dropout</span></span><a class="headerlink" href="#dicee.models.complex.AConEx.feature_map_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.complex.AConEx.residual_convolution">
 <span class="sig-name descname"><span class="pre">residual_convolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">C_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/complex.html#AConEx.residual_convolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.complex.AConEx.residual_convolution" title="Link to this definition"></a></dt>
@@ -255,6 +326,11 @@ must be made before assignment on the child.</p>
 evaluation mode.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.complex.ComplEx.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ComplEx'</span></em><a class="headerlink" href="#dicee.models.complex.ComplEx.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.complex.ComplEx.score">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">head_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tail_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/complex.html#ComplEx.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.complex.ComplEx.score" title="Link to this definition"></a></dt>

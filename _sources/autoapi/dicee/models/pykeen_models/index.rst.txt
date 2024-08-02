@@ -32,6 +32,33 @@ Module Contents
    Pykeen_HolE:
 
 
+   .. py:attribute:: model_kwargs
+
+
+   .. py:attribute:: name
+
+
+   .. py:attribute:: model
+
+
+   .. py:attribute:: loss_history
+      :value: []
+
+
+
+   .. py:attribute:: args
+
+
+   .. py:attribute:: entity_embeddings
+      :value: None
+
+
+
+   .. py:attribute:: relation_embeddings
+      :value: None
+
+
+
    .. py:method:: forward_k_vs_all(x: torch.LongTensor)
 
       # => Explicit version by this we can apply bn and dropout

@@ -61,6 +61,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#coverage-report">Coverage Report</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../index.html">dicee</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="../index.html#subpackages">Subpackages</a></li>
@@ -76,6 +77,14 @@
 <li class="toctree-l4"><a class="reference internal" href="#classes">Classes</a></li>
 <li class="toctree-l4"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.executer.Execute"><code class="docutils literal notranslate"><span class="pre">Execute</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.args"><code class="docutils literal notranslate"><span class="pre">Execute.args</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.is_continual_training"><code class="docutils literal notranslate"><span class="pre">Execute.is_continual_training</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.trainer"><code class="docutils literal notranslate"><span class="pre">Execute.trainer</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.trained_model"><code class="docutils literal notranslate"><span class="pre">Execute.trained_model</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.knowledge_graph"><code class="docutils literal notranslate"><span class="pre">Execute.knowledge_graph</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.report"><code class="docutils literal notranslate"><span class="pre">Execute.report</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.evaluator"><code class="docutils literal notranslate"><span class="pre">Execute.evaluator</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.start_time"><code class="docutils literal notranslate"><span class="pre">Execute.start_time</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.read_or_load_kg"><code class="docutils literal notranslate"><span class="pre">Execute.read_or_load_kg()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.read_preprocess_index_serialize_data"><code class="docutils literal notranslate"><span class="pre">Execute.read_preprocess_index_serialize_data()</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.Execute.load_indexed_data"><code class="docutils literal notranslate"><span class="pre">Execute.load_indexed_data()</span></code></a></li>
@@ -86,6 +95,8 @@
 </ul>
 </li>
 <li class="toctree-l5"><a class="reference internal" href="#dicee.executer.ContinuousExecute"><code class="docutils literal notranslate"><span class="pre">ContinuousExecute</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.ContinuousExecute.previous_args"><code class="docutils literal notranslate"><span class="pre">ContinuousExecute.previous_args</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#dicee.executer.ContinuousExecute.args"><code class="docutils literal notranslate"><span class="pre">ContinuousExecute.args</span></code></a></li>
 <li class="toctree-l6"><a class="reference internal" href="#dicee.executer.ContinuousExecute.continual_start"><code class="docutils literal notranslate"><span class="pre">ContinuousExecute.continual_start()</span></code></a></li>
 </ul>
 </li>
@@ -161,6 +172,46 @@
 <li><p>Training &amp; Validation &amp; Testing</p></li>
 <li><p>Storing all necessary info</p></li>
 </ol>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.executer.Execute.args">
+<span class="sig-name descname"><span class="pre">args</span></span><a class="headerlink" href="#dicee.executer.Execute.args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.executer.Execute.is_continual_training">
+<span class="sig-name descname"><span class="pre">is_continual_training</span></span><a class="headerlink" href="#dicee.executer.Execute.is_continual_training" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.executer.Execute.trainer">
+<span class="sig-name descname"><span class="pre">trainer</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.executer.Execute.trainer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.executer.Execute.trained_model">
+<span class="sig-name descname"><span class="pre">trained_model</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.executer.Execute.trained_model" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.executer.Execute.knowledge_graph">
+<span class="sig-name descname"><span class="pre">knowledge_graph</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.executer.Execute.knowledge_graph" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.executer.Execute.report">
+<span class="sig-name descname"><span class="pre">report</span></span><a class="headerlink" href="#dicee.executer.Execute.report" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.executer.Execute.evaluator">
+<span class="sig-name descname"><span class="pre">evaluator</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.executer.Execute.evaluator" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.executer.Execute.start_time">
+<span class="sig-name descname"><span class="pre">start_time</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.executer.Execute.start_time" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.executer.Execute.read_or_load_kg">
 <span class="sig-name descname"><span class="pre">read_or_load_kg</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/dicee/executer.html#Execute.read_or_load_kg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.Execute.read_or_load_kg" title="Link to this definition"></a></dt>
@@ -276,6 +327,16 @@
 <p>During the continual learning we can only modify <strong>* num_epochs *</strong> parameter.
 Trained model stored in the same folder as the seed model for the training.
 Trained model is noted with the current time.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.executer.ContinuousExecute.previous_args">
+<span class="sig-name descname"><span class="pre">previous_args</span></span><a class="headerlink" href="#dicee.executer.ContinuousExecute.previous_args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.executer.ContinuousExecute.args">
+<span class="sig-name descname"><span class="pre">args</span></span><a class="headerlink" href="#dicee.executer.ContinuousExecute.args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.executer.ContinuousExecute.continual_start">
 <span class="sig-name descname"><span class="pre">continual_start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../../../_modules/dicee/executer.html#ContinuousExecute.continual_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.executer.ContinuousExecute.continual_start" title="Link to this definition"></a></dt>

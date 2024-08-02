@@ -62,6 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#coverage-report">Coverage Report</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#how-to-cite">How to cite</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">dicee</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#subpackages">Subpackages</a><ul>
@@ -94,6 +95,11 @@
 <li class="toctree-l2"><a class="reference internal" href="#functions">Functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#package-contents">Package Contents</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.CMult"><code class="docutils literal notranslate"><span class="pre">CMult</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CMult.name"><code class="docutils literal notranslate"><span class="pre">CMult.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CMult.entity_embeddings"><code class="docutils literal notranslate"><span class="pre">CMult.entity_embeddings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CMult.relation_embeddings"><code class="docutils literal notranslate"><span class="pre">CMult.relation_embeddings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CMult.p"><code class="docutils literal notranslate"><span class="pre">CMult.p</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CMult.q"><code class="docutils literal notranslate"><span class="pre">CMult.q</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.CMult.clifford_mul"><code class="docutils literal notranslate"><span class="pre">CMult.clifford_mul()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.CMult.score"><code class="docutils literal notranslate"><span class="pre">CMult.score()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.CMult.forward_triples"><code class="docutils literal notranslate"><span class="pre">CMult.forward_triples()</span></code></a></li>
@@ -101,18 +107,31 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.Pyke"><code class="docutils literal notranslate"><span class="pre">Pyke</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Pyke.name"><code class="docutils literal notranslate"><span class="pre">Pyke.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Pyke.dist_func"><code class="docutils literal notranslate"><span class="pre">Pyke.dist_func</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Pyke.margin"><code class="docutils literal notranslate"><span class="pre">Pyke.margin</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Pyke.forward_triples"><code class="docutils literal notranslate"><span class="pre">Pyke.forward_triples()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.DistMult"><code class="docutils literal notranslate"><span class="pre">DistMult</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DistMult.name"><code class="docutils literal notranslate"><span class="pre">DistMult.name</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.DistMult.k_vs_all_score"><code class="docutils literal notranslate"><span class="pre">DistMult.k_vs_all_score()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.DistMult.forward_k_vs_all"><code class="docutils literal notranslate"><span class="pre">DistMult.forward_k_vs_all()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.DistMult.forward_k_vs_sample"><code class="docutils literal notranslate"><span class="pre">DistMult.forward_k_vs_sample()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.DistMult.score"><code class="docutils literal notranslate"><span class="pre">DistMult.score()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#dicee.KeciBase"><code class="docutils literal notranslate"><span class="pre">KeciBase</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#dicee.KeciBase"><code class="docutils literal notranslate"><span class="pre">KeciBase</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.KeciBase.name"><code class="docutils literal notranslate"><span class="pre">KeciBase.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.KeciBase.requires_grad_for_interactions"><code class="docutils literal notranslate"><span class="pre">KeciBase.requires_grad_for_interactions</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.Keci"><code class="docutils literal notranslate"><span class="pre">Keci</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Keci.name"><code class="docutils literal notranslate"><span class="pre">Keci.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Keci.p"><code class="docutils literal notranslate"><span class="pre">Keci.p</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Keci.q"><code class="docutils literal notranslate"><span class="pre">Keci.q</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Keci.r"><code class="docutils literal notranslate"><span class="pre">Keci.r</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Keci.requires_grad_for_interactions"><code class="docutils literal notranslate"><span class="pre">Keci.requires_grad_for_interactions</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Keci.compute_sigma_pp"><code class="docutils literal notranslate"><span class="pre">Keci.compute_sigma_pp()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Keci.compute_sigma_qq"><code class="docutils literal notranslate"><span class="pre">Keci.compute_sigma_qq()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Keci.compute_sigma_pq"><code class="docutils literal notranslate"><span class="pre">Keci.compute_sigma_pq()</span></code></a></li>
@@ -128,11 +147,20 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.TransE"><code class="docutils literal notranslate"><span class="pre">TransE</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.TransE.name"><code class="docutils literal notranslate"><span class="pre">TransE.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.TransE.margin"><code class="docutils literal notranslate"><span class="pre">TransE.margin</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.TransE.score"><code class="docutils literal notranslate"><span class="pre">TransE.score()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.TransE.forward_k_vs_all"><code class="docutils literal notranslate"><span class="pre">TransE.forward_k_vs_all()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.DeCaL"><code class="docutils literal notranslate"><span class="pre">DeCaL</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DeCaL.name"><code class="docutils literal notranslate"><span class="pre">DeCaL.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DeCaL.entity_embeddings"><code class="docutils literal notranslate"><span class="pre">DeCaL.entity_embeddings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DeCaL.relation_embeddings"><code class="docutils literal notranslate"><span class="pre">DeCaL.relation_embeddings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DeCaL.p"><code class="docutils literal notranslate"><span class="pre">DeCaL.p</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DeCaL.q"><code class="docutils literal notranslate"><span class="pre">DeCaL.q</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DeCaL.r"><code class="docutils literal notranslate"><span class="pre">DeCaL.r</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DeCaL.re"><code class="docutils literal notranslate"><span class="pre">DeCaL.re</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.DeCaL.forward_triples"><code class="docutils literal notranslate"><span class="pre">DeCaL.forward_triples()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.DeCaL.cl_pqr"><code class="docutils literal notranslate"><span class="pre">DeCaL.cl_pqr()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.DeCaL.compute_sigmas_single"><code class="docutils literal notranslate"><span class="pre">DeCaL.compute_sigmas_single()</span></code></a></li>
@@ -149,6 +177,10 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.DualE"><code class="docutils literal notranslate"><span class="pre">DualE</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DualE.name"><code class="docutils literal notranslate"><span class="pre">DualE.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DualE.entity_embeddings"><code class="docutils literal notranslate"><span class="pre">DualE.entity_embeddings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DualE.relation_embeddings"><code class="docutils literal notranslate"><span class="pre">DualE.relation_embeddings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DualE.num_ent"><code class="docutils literal notranslate"><span class="pre">DualE.num_ent</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.DualE.kvsall_score"><code class="docutils literal notranslate"><span class="pre">DualE.kvsall_score()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.DualE.forward_triples"><code class="docutils literal notranslate"><span class="pre">DualE.forward_triples()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.DualE.forward_k_vs_all"><code class="docutils literal notranslate"><span class="pre">DualE.forward_k_vs_all()</span></code></a></li>
@@ -156,12 +188,20 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.ComplEx"><code class="docutils literal notranslate"><span class="pre">ComplEx</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ComplEx.name"><code class="docutils literal notranslate"><span class="pre">ComplEx.name</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.ComplEx.score"><code class="docutils literal notranslate"><span class="pre">ComplEx.score()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.ComplEx.k_vs_all_score"><code class="docutils literal notranslate"><span class="pre">ComplEx.k_vs_all_score()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.ComplEx.forward_k_vs_all"><code class="docutils literal notranslate"><span class="pre">ComplEx.forward_k_vs_all()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.AConEx"><code class="docutils literal notranslate"><span class="pre">AConEx</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConEx.name"><code class="docutils literal notranslate"><span class="pre">AConEx.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConEx.conv2d"><code class="docutils literal notranslate"><span class="pre">AConEx.conv2d</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConEx.fc_num_input"><code class="docutils literal notranslate"><span class="pre">AConEx.fc_num_input</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConEx.fc1"><code class="docutils literal notranslate"><span class="pre">AConEx.fc1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConEx.norm_fc1"><code class="docutils literal notranslate"><span class="pre">AConEx.norm_fc1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConEx.bn_conv2d"><code class="docutils literal notranslate"><span class="pre">AConEx.bn_conv2d</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConEx.feature_map_dropout"><code class="docutils literal notranslate"><span class="pre">AConEx.feature_map_dropout</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.AConEx.residual_convolution"><code class="docutils literal notranslate"><span class="pre">AConEx.residual_convolution()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.AConEx.forward_k_vs_all"><code class="docutils literal notranslate"><span class="pre">AConEx.forward_k_vs_all()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.AConEx.forward_triples"><code class="docutils literal notranslate"><span class="pre">AConEx.forward_triples()</span></code></a></li>
@@ -169,6 +209,13 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.AConvO"><code class="docutils literal notranslate"><span class="pre">AConvO</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConvO.name"><code class="docutils literal notranslate"><span class="pre">AConvO.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConvO.conv2d"><code class="docutils literal notranslate"><span class="pre">AConvO.conv2d</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConvO.fc_num_input"><code class="docutils literal notranslate"><span class="pre">AConvO.fc_num_input</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConvO.fc1"><code class="docutils literal notranslate"><span class="pre">AConvO.fc1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConvO.bn_conv2d"><code class="docutils literal notranslate"><span class="pre">AConvO.bn_conv2d</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConvO.norm_fc1"><code class="docutils literal notranslate"><span class="pre">AConvO.norm_fc1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConvO.feature_map_dropout"><code class="docutils literal notranslate"><span class="pre">AConvO.feature_map_dropout</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.AConvO.octonion_normalizer"><code class="docutils literal notranslate"><span class="pre">AConvO.octonion_normalizer()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.AConvO.residual_convolution"><code class="docutils literal notranslate"><span class="pre">AConvO.residual_convolution()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.AConvO.forward_triples"><code class="docutils literal notranslate"><span class="pre">AConvO.forward_triples()</span></code></a></li>
@@ -176,18 +223,43 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.AConvQ"><code class="docutils literal notranslate"><span class="pre">AConvQ</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConvQ.name"><code class="docutils literal notranslate"><span class="pre">AConvQ.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConvQ.entity_embeddings"><code class="docutils literal notranslate"><span class="pre">AConvQ.entity_embeddings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConvQ.relation_embeddings"><code class="docutils literal notranslate"><span class="pre">AConvQ.relation_embeddings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConvQ.conv2d"><code class="docutils literal notranslate"><span class="pre">AConvQ.conv2d</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConvQ.fc_num_input"><code class="docutils literal notranslate"><span class="pre">AConvQ.fc_num_input</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConvQ.fc1"><code class="docutils literal notranslate"><span class="pre">AConvQ.fc1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConvQ.bn_conv1"><code class="docutils literal notranslate"><span class="pre">AConvQ.bn_conv1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConvQ.bn_conv2"><code class="docutils literal notranslate"><span class="pre">AConvQ.bn_conv2</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AConvQ.feature_map_dropout"><code class="docutils literal notranslate"><span class="pre">AConvQ.feature_map_dropout</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.AConvQ.residual_convolution"><code class="docutils literal notranslate"><span class="pre">AConvQ.residual_convolution()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.AConvQ.forward_triples"><code class="docutils literal notranslate"><span class="pre">AConvQ.forward_triples()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.AConvQ.forward_k_vs_all"><code class="docutils literal notranslate"><span class="pre">AConvQ.forward_k_vs_all()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.ConvQ"><code class="docutils literal notranslate"><span class="pre">ConvQ</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConvQ.name"><code class="docutils literal notranslate"><span class="pre">ConvQ.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConvQ.entity_embeddings"><code class="docutils literal notranslate"><span class="pre">ConvQ.entity_embeddings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConvQ.relation_embeddings"><code class="docutils literal notranslate"><span class="pre">ConvQ.relation_embeddings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConvQ.conv2d"><code class="docutils literal notranslate"><span class="pre">ConvQ.conv2d</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConvQ.fc_num_input"><code class="docutils literal notranslate"><span class="pre">ConvQ.fc_num_input</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConvQ.fc1"><code class="docutils literal notranslate"><span class="pre">ConvQ.fc1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConvQ.bn_conv1"><code class="docutils literal notranslate"><span class="pre">ConvQ.bn_conv1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConvQ.bn_conv2"><code class="docutils literal notranslate"><span class="pre">ConvQ.bn_conv2</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConvQ.feature_map_dropout"><code class="docutils literal notranslate"><span class="pre">ConvQ.feature_map_dropout</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.ConvQ.residual_convolution"><code class="docutils literal notranslate"><span class="pre">ConvQ.residual_convolution()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.ConvQ.forward_triples"><code class="docutils literal notranslate"><span class="pre">ConvQ.forward_triples()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.ConvQ.forward_k_vs_all"><code class="docutils literal notranslate"><span class="pre">ConvQ.forward_k_vs_all()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.ConvO"><code class="docutils literal notranslate"><span class="pre">ConvO</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConvO.name"><code class="docutils literal notranslate"><span class="pre">ConvO.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConvO.conv2d"><code class="docutils literal notranslate"><span class="pre">ConvO.conv2d</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConvO.fc_num_input"><code class="docutils literal notranslate"><span class="pre">ConvO.fc_num_input</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConvO.fc1"><code class="docutils literal notranslate"><span class="pre">ConvO.fc1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConvO.bn_conv2d"><code class="docutils literal notranslate"><span class="pre">ConvO.bn_conv2d</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConvO.norm_fc1"><code class="docutils literal notranslate"><span class="pre">ConvO.norm_fc1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConvO.feature_map_dropout"><code class="docutils literal notranslate"><span class="pre">ConvO.feature_map_dropout</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.ConvO.octonion_normalizer"><code class="docutils literal notranslate"><span class="pre">ConvO.octonion_normalizer()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.ConvO.residual_convolution"><code class="docutils literal notranslate"><span class="pre">ConvO.residual_convolution()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.ConvO.forward_triples"><code class="docutils literal notranslate"><span class="pre">ConvO.forward_triples()</span></code></a></li>
@@ -195,6 +267,13 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.ConEx"><code class="docutils literal notranslate"><span class="pre">ConEx</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConEx.name"><code class="docutils literal notranslate"><span class="pre">ConEx.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConEx.conv2d"><code class="docutils literal notranslate"><span class="pre">ConEx.conv2d</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConEx.fc_num_input"><code class="docutils literal notranslate"><span class="pre">ConEx.fc_num_input</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConEx.fc1"><code class="docutils literal notranslate"><span class="pre">ConEx.fc1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConEx.norm_fc1"><code class="docutils literal notranslate"><span class="pre">ConEx.norm_fc1</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConEx.bn_conv2d"><code class="docutils literal notranslate"><span class="pre">ConEx.bn_conv2d</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.ConEx.feature_map_dropout"><code class="docutils literal notranslate"><span class="pre">ConEx.feature_map_dropout</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.ConEx.residual_convolution"><code class="docutils literal notranslate"><span class="pre">ConEx.residual_convolution()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.ConEx.forward_k_vs_all"><code class="docutils literal notranslate"><span class="pre">ConEx.forward_k_vs_all()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.ConEx.forward_triples"><code class="docutils literal notranslate"><span class="pre">ConEx.forward_triples()</span></code></a></li>
@@ -202,6 +281,8 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.QMult"><code class="docutils literal notranslate"><span class="pre">QMult</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.QMult.name"><code class="docutils literal notranslate"><span class="pre">QMult.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.QMult.explicit"><code class="docutils literal notranslate"><span class="pre">QMult.explicit</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.QMult.quaternion_multiplication_followed_by_inner_product"><code class="docutils literal notranslate"><span class="pre">QMult.quaternion_multiplication_followed_by_inner_product()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.QMult.quaternion_normalizer"><code class="docutils literal notranslate"><span class="pre">QMult.quaternion_normalizer()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.QMult.score"><code class="docutils literal notranslate"><span class="pre">QMult.score()</span></code></a></li>
@@ -211,6 +292,7 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.OMult"><code class="docutils literal notranslate"><span class="pre">OMult</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.OMult.name"><code class="docutils literal notranslate"><span class="pre">OMult.name</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.OMult.octonion_normalizer"><code class="docutils literal notranslate"><span class="pre">OMult.octonion_normalizer()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.OMult.score"><code class="docutils literal notranslate"><span class="pre">OMult.score()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.OMult.k_vs_all_score"><code class="docutils literal notranslate"><span class="pre">OMult.k_vs_all_score()</span></code></a></li>
@@ -218,12 +300,21 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.Shallom"><code class="docutils literal notranslate"><span class="pre">Shallom</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Shallom.name"><code class="docutils literal notranslate"><span class="pre">Shallom.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Shallom.shallom_width"><code class="docutils literal notranslate"><span class="pre">Shallom.shallom_width</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Shallom.shallom"><code class="docutils literal notranslate"><span class="pre">Shallom.shallom</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Shallom.get_embeddings"><code class="docutils literal notranslate"><span class="pre">Shallom.get_embeddings()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Shallom.forward_k_vs_all"><code class="docutils literal notranslate"><span class="pre">Shallom.forward_k_vs_all()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Shallom.forward_triples"><code class="docutils literal notranslate"><span class="pre">Shallom.forward_triples()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.LFMult"><code class="docutils literal notranslate"><span class="pre">LFMult</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.LFMult.name"><code class="docutils literal notranslate"><span class="pre">LFMult.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.LFMult.entity_embeddings"><code class="docutils literal notranslate"><span class="pre">LFMult.entity_embeddings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.LFMult.relation_embeddings"><code class="docutils literal notranslate"><span class="pre">LFMult.relation_embeddings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.LFMult.degree"><code class="docutils literal notranslate"><span class="pre">LFMult.degree</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.LFMult.m"><code class="docutils literal notranslate"><span class="pre">LFMult.m</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.LFMult.x_values"><code class="docutils literal notranslate"><span class="pre">LFMult.x_values</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.LFMult.forward_triples"><code class="docutils literal notranslate"><span class="pre">LFMult.forward_triples()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.LFMult.construct_multi_coeff"><code class="docutils literal notranslate"><span class="pre">LFMult.construct_multi_coeff()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.LFMult.poly_NN"><code class="docutils literal notranslate"><span class="pre">LFMult.poly_NN()</span></code></a></li>
@@ -237,12 +328,26 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.PykeenKGE"><code class="docutils literal notranslate"><span class="pre">PykeenKGE</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.PykeenKGE.model_kwargs"><code class="docutils literal notranslate"><span class="pre">PykeenKGE.model_kwargs</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.PykeenKGE.name"><code class="docutils literal notranslate"><span class="pre">PykeenKGE.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.PykeenKGE.model"><code class="docutils literal notranslate"><span class="pre">PykeenKGE.model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.PykeenKGE.loss_history"><code class="docutils literal notranslate"><span class="pre">PykeenKGE.loss_history</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.PykeenKGE.args"><code class="docutils literal notranslate"><span class="pre">PykeenKGE.args</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.PykeenKGE.entity_embeddings"><code class="docutils literal notranslate"><span class="pre">PykeenKGE.entity_embeddings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.PykeenKGE.relation_embeddings"><code class="docutils literal notranslate"><span class="pre">PykeenKGE.relation_embeddings</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.PykeenKGE.forward_k_vs_all"><code class="docutils literal notranslate"><span class="pre">PykeenKGE.forward_k_vs_all()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.PykeenKGE.forward_triples"><code class="docutils literal notranslate"><span class="pre">PykeenKGE.forward_triples()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.PykeenKGE.forward_k_vs_sample"><code class="docutils literal notranslate"><span class="pre">PykeenKGE.forward_k_vs_sample()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.BytE"><code class="docutils literal notranslate"><span class="pre">BytE</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BytE.name"><code class="docutils literal notranslate"><span class="pre">BytE.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BytE.config"><code class="docutils literal notranslate"><span class="pre">BytE.config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BytE.temperature"><code class="docutils literal notranslate"><span class="pre">BytE.temperature</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BytE.topk"><code class="docutils literal notranslate"><span class="pre">BytE.topk</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BytE.transformer"><code class="docutils literal notranslate"><span class="pre">BytE.transformer</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BytE.lm_head"><code class="docutils literal notranslate"><span class="pre">BytE.lm_head</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BytE.weight"><code class="docutils literal notranslate"><span class="pre">BytE.weight</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.BytE.loss_function"><code class="docutils literal notranslate"><span class="pre">BytE.loss_function()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.BytE.forward"><code class="docutils literal notranslate"><span class="pre">BytE.forward()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.BytE.generate"><code class="docutils literal notranslate"><span class="pre">BytE.generate()</span></code></a></li>
@@ -250,6 +355,35 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.BaseKGE"><code class="docutils literal notranslate"><span class="pre">BaseKGE</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.args"><code class="docutils literal notranslate"><span class="pre">BaseKGE.args</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.embedding_dim"><code class="docutils literal notranslate"><span class="pre">BaseKGE.embedding_dim</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.num_entities"><code class="docutils literal notranslate"><span class="pre">BaseKGE.num_entities</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.num_relations"><code class="docutils literal notranslate"><span class="pre">BaseKGE.num_relations</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.num_tokens"><code class="docutils literal notranslate"><span class="pre">BaseKGE.num_tokens</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.learning_rate"><code class="docutils literal notranslate"><span class="pre">BaseKGE.learning_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.apply_unit_norm"><code class="docutils literal notranslate"><span class="pre">BaseKGE.apply_unit_norm</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.input_dropout_rate"><code class="docutils literal notranslate"><span class="pre">BaseKGE.input_dropout_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.hidden_dropout_rate"><code class="docutils literal notranslate"><span class="pre">BaseKGE.hidden_dropout_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.optimizer_name"><code class="docutils literal notranslate"><span class="pre">BaseKGE.optimizer_name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.feature_map_dropout_rate"><code class="docutils literal notranslate"><span class="pre">BaseKGE.feature_map_dropout_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.kernel_size"><code class="docutils literal notranslate"><span class="pre">BaseKGE.kernel_size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.num_of_output_channels"><code class="docutils literal notranslate"><span class="pre">BaseKGE.num_of_output_channels</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.weight_decay"><code class="docutils literal notranslate"><span class="pre">BaseKGE.weight_decay</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.loss"><code class="docutils literal notranslate"><span class="pre">BaseKGE.loss</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.selected_optimizer"><code class="docutils literal notranslate"><span class="pre">BaseKGE.selected_optimizer</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.normalizer_class"><code class="docutils literal notranslate"><span class="pre">BaseKGE.normalizer_class</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.normalize_head_entity_embeddings"><code class="docutils literal notranslate"><span class="pre">BaseKGE.normalize_head_entity_embeddings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.normalize_relation_embeddings"><code class="docutils literal notranslate"><span class="pre">BaseKGE.normalize_relation_embeddings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.normalize_tail_entity_embeddings"><code class="docutils literal notranslate"><span class="pre">BaseKGE.normalize_tail_entity_embeddings</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.hidden_normalizer"><code class="docutils literal notranslate"><span class="pre">BaseKGE.hidden_normalizer</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.param_init"><code class="docutils literal notranslate"><span class="pre">BaseKGE.param_init</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.input_dp_ent_real"><code class="docutils literal notranslate"><span class="pre">BaseKGE.input_dp_ent_real</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.input_dp_rel_real"><code class="docutils literal notranslate"><span class="pre">BaseKGE.input_dp_rel_real</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.hidden_dropout"><code class="docutils literal notranslate"><span class="pre">BaseKGE.hidden_dropout</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.loss_history"><code class="docutils literal notranslate"><span class="pre">BaseKGE.loss_history</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.byte_pair_encoding"><code class="docutils literal notranslate"><span class="pre">BaseKGE.byte_pair_encoding</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.max_length_subword_tokens"><code class="docutils literal notranslate"><span class="pre">BaseKGE.max_length_subword_tokens</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.block_size"><code class="docutils literal notranslate"><span class="pre">BaseKGE.block_size</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.forward_byte_pair_encoded_k_vs_all"><code class="docutils literal notranslate"><span class="pre">BaseKGE.forward_byte_pair_encoded_k_vs_all()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.forward_byte_pair_encoded_triple"><code class="docutils literal notranslate"><span class="pre">BaseKGE.forward_byte_pair_encoded_triple()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.BaseKGE.init_params_with_sanity_checking"><code class="docutils literal notranslate"><span class="pre">BaseKGE.init_params_with_sanity_checking()</span></code></a></li>
@@ -298,6 +432,13 @@
 <li class="toctree-l3"><a class="reference internal" href="#dicee.download_files_from_url"><code class="docutils literal notranslate"><span class="pre">download_files_from_url()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.download_pretrained_model"><code class="docutils literal notranslate"><span class="pre">download_pretrained_model()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.DICE_Trainer"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DICE_Trainer.report"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.report</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DICE_Trainer.args"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.args</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DICE_Trainer.trainer"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.trainer</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DICE_Trainer.is_continual_training"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.is_continual_training</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DICE_Trainer.storage_path"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.storage_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DICE_Trainer.evaluator"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.evaluator</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.DICE_Trainer.form_of_labelling"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.form_of_labelling</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.DICE_Trainer.continual_start"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.continual_start()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.DICE_Trainer.initialize_trainer"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.initialize_trainer()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.DICE_Trainer.initialize_or_load_model"><code class="docutils literal notranslate"><span class="pre">DICE_Trainer.initialize_or_load_model()</span></code></a></li>
@@ -335,6 +476,14 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.Execute"><code class="docutils literal notranslate"><span class="pre">Execute</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.args"><code class="docutils literal notranslate"><span class="pre">Execute.args</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.is_continual_training"><code class="docutils literal notranslate"><span class="pre">Execute.is_continual_training</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.trainer"><code class="docutils literal notranslate"><span class="pre">Execute.trainer</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.trained_model"><code class="docutils literal notranslate"><span class="pre">Execute.trained_model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.knowledge_graph"><code class="docutils literal notranslate"><span class="pre">Execute.knowledge_graph</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.report"><code class="docutils literal notranslate"><span class="pre">Execute.report</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.evaluator"><code class="docutils literal notranslate"><span class="pre">Execute.evaluator</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.start_time"><code class="docutils literal notranslate"><span class="pre">Execute.start_time</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.read_or_load_kg"><code class="docutils literal notranslate"><span class="pre">Execute.read_or_load_kg()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.read_preprocess_index_serialize_data"><code class="docutils literal notranslate"><span class="pre">Execute.read_preprocess_index_serialize_data()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.Execute.load_indexed_data"><code class="docutils literal notranslate"><span class="pre">Execute.load_indexed_data()</span></code></a></li>
@@ -350,53 +499,106 @@
 <li class="toctree-l3"><a class="reference internal" href="#dicee.reload_dataset"><code class="docutils literal notranslate"><span class="pre">reload_dataset()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.construct_dataset"><code class="docutils literal notranslate"><span class="pre">construct_dataset()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.BPE_NegativeSamplingDataset"><code class="docutils literal notranslate"><span class="pre">BPE_NegativeSamplingDataset</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BPE_NegativeSamplingDataset.train_set"><code class="docutils literal notranslate"><span class="pre">BPE_NegativeSamplingDataset.train_set</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BPE_NegativeSamplingDataset.ordered_bpe_entities"><code class="docutils literal notranslate"><span class="pre">BPE_NegativeSamplingDataset.ordered_bpe_entities</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BPE_NegativeSamplingDataset.num_bpe_entities"><code class="docutils literal notranslate"><span class="pre">BPE_NegativeSamplingDataset.num_bpe_entities</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BPE_NegativeSamplingDataset.neg_ratio"><code class="docutils literal notranslate"><span class="pre">BPE_NegativeSamplingDataset.neg_ratio</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.BPE_NegativeSamplingDataset.num_datapoints"><code class="docutils literal notranslate"><span class="pre">BPE_NegativeSamplingDataset.num_datapoints</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.BPE_NegativeSamplingDataset.__len__"><code class="docutils literal notranslate"><span class="pre">BPE_NegativeSamplingDataset.__len__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.BPE_NegativeSamplingDataset.__getitem__"><code class="docutils literal notranslate"><span class="pre">BPE_NegativeSamplingDataset.__getitem__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.BPE_NegativeSamplingDataset.collate_fn"><code class="docutils literal notranslate"><span class="pre">BPE_NegativeSamplingDataset.collate_fn()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.MultiLabelDataset"><code class="docutils literal notranslate"><span class="pre">MultiLabelDataset</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.MultiLabelDataset.train_set"><code class="docutils literal notranslate"><span class="pre">MultiLabelDataset.train_set</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.MultiLabelDataset.train_indices_target"><code class="docutils literal notranslate"><span class="pre">MultiLabelDataset.train_indices_target</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.MultiLabelDataset.target_dim"><code class="docutils literal notranslate"><span class="pre">MultiLabelDataset.target_dim</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.MultiLabelDataset.num_datapoints"><code class="docutils literal notranslate"><span class="pre">MultiLabelDataset.num_datapoints</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.MultiLabelDataset.torch_ordered_shaped_bpe_entities"><code class="docutils literal notranslate"><span class="pre">MultiLabelDataset.torch_ordered_shaped_bpe_entities</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.MultiLabelDataset.collate_fn"><code class="docutils literal notranslate"><span class="pre">MultiLabelDataset.collate_fn</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.MultiLabelDataset.__len__"><code class="docutils literal notranslate"><span class="pre">MultiLabelDataset.__len__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.MultiLabelDataset.__getitem__"><code class="docutils literal notranslate"><span class="pre">MultiLabelDataset.__getitem__()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.MultiClassClassificationDataset"><code class="docutils literal notranslate"><span class="pre">MultiClassClassificationDataset</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.MultiClassClassificationDataset.train_data"><code class="docutils literal notranslate"><span class="pre">MultiClassClassificationDataset.train_data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.MultiClassClassificationDataset.block_size"><code class="docutils literal notranslate"><span class="pre">MultiClassClassificationDataset.block_size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.MultiClassClassificationDataset.num_of_data_points"><code class="docutils literal notranslate"><span class="pre">MultiClassClassificationDataset.num_of_data_points</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.MultiClassClassificationDataset.collate_fn"><code class="docutils literal notranslate"><span class="pre">MultiClassClassificationDataset.collate_fn</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.MultiClassClassificationDataset.__len__"><code class="docutils literal notranslate"><span class="pre">MultiClassClassificationDataset.__len__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.MultiClassClassificationDataset.__getitem__"><code class="docutils literal notranslate"><span class="pre">MultiClassClassificationDataset.__getitem__()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.OnevsAllDataset"><code class="docutils literal notranslate"><span class="pre">OnevsAllDataset</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.OnevsAllDataset.train_data"><code class="docutils literal notranslate"><span class="pre">OnevsAllDataset.train_data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.OnevsAllDataset.target_dim"><code class="docutils literal notranslate"><span class="pre">OnevsAllDataset.target_dim</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.OnevsAllDataset.collate_fn"><code class="docutils literal notranslate"><span class="pre">OnevsAllDataset.collate_fn</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.OnevsAllDataset.__len__"><code class="docutils literal notranslate"><span class="pre">OnevsAllDataset.__len__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.OnevsAllDataset.__getitem__"><code class="docutils literal notranslate"><span class="pre">OnevsAllDataset.__getitem__()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.KvsAll"><code class="docutils literal notranslate"><span class="pre">KvsAll</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.KvsAll.train_data"><code class="docutils literal notranslate"><span class="pre">KvsAll.train_data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.KvsAll.train_target"><code class="docutils literal notranslate"><span class="pre">KvsAll.train_target</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.KvsAll.label_smoothing_rate"><code class="docutils literal notranslate"><span class="pre">KvsAll.label_smoothing_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.KvsAll.collate_fn"><code class="docutils literal notranslate"><span class="pre">KvsAll.collate_fn</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.KvsAll.__len__"><code class="docutils literal notranslate"><span class="pre">KvsAll.__len__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.KvsAll.__getitem__"><code class="docutils literal notranslate"><span class="pre">KvsAll.__getitem__()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.AllvsAll"><code class="docutils literal notranslate"><span class="pre">AllvsAll</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AllvsAll.train_data"><code class="docutils literal notranslate"><span class="pre">AllvsAll.train_data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AllvsAll.train_target"><code class="docutils literal notranslate"><span class="pre">AllvsAll.train_target</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AllvsAll.label_smoothing_rate"><code class="docutils literal notranslate"><span class="pre">AllvsAll.label_smoothing_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AllvsAll.collate_fn"><code class="docutils literal notranslate"><span class="pre">AllvsAll.collate_fn</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AllvsAll.target_dim"><code class="docutils literal notranslate"><span class="pre">AllvsAll.target_dim</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.AllvsAll.store"><code class="docutils literal notranslate"><span class="pre">AllvsAll.store</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.AllvsAll.__len__"><code class="docutils literal notranslate"><span class="pre">AllvsAll.__len__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.AllvsAll.__getitem__"><code class="docutils literal notranslate"><span class="pre">AllvsAll.__getitem__()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.KvsSampleDataset"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.KvsSampleDataset.train_data"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.train_data</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.KvsSampleDataset.num_entities"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.num_entities</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.KvsSampleDataset.num_relations"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.num_relations</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.KvsSampleDataset.neg_sample_ratio"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.neg_sample_ratio</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.KvsSampleDataset.label_smoothing_rate"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.label_smoothing_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.KvsSampleDataset.collate_fn"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.collate_fn</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.KvsSampleDataset.store"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.store</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.KvsSampleDataset.train_target"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.train_target</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.KvsSampleDataset.__len__"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.__len__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.KvsSampleDataset.__getitem__"><code class="docutils literal notranslate"><span class="pre">KvsSampleDataset.__getitem__()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.NegSampleDataset"><code class="docutils literal notranslate"><span class="pre">NegSampleDataset</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.NegSampleDataset.neg_sample_ratio"><code class="docutils literal notranslate"><span class="pre">NegSampleDataset.neg_sample_ratio</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.NegSampleDataset.train_set"><code class="docutils literal notranslate"><span class="pre">NegSampleDataset.train_set</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.NegSampleDataset.length"><code class="docutils literal notranslate"><span class="pre">NegSampleDataset.length</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.NegSampleDataset.num_entities"><code class="docutils literal notranslate"><span class="pre">NegSampleDataset.num_entities</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.NegSampleDataset.num_relations"><code class="docutils literal notranslate"><span class="pre">NegSampleDataset.num_relations</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.NegSampleDataset.__len__"><code class="docutils literal notranslate"><span class="pre">NegSampleDataset.__len__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.NegSampleDataset.__getitem__"><code class="docutils literal notranslate"><span class="pre">NegSampleDataset.__getitem__()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.TriplePredictionDataset"><code class="docutils literal notranslate"><span class="pre">TriplePredictionDataset</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.TriplePredictionDataset.label_smoothing_rate"><code class="docutils literal notranslate"><span class="pre">TriplePredictionDataset.label_smoothing_rate</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.TriplePredictionDataset.neg_sample_ratio"><code class="docutils literal notranslate"><span class="pre">TriplePredictionDataset.neg_sample_ratio</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.TriplePredictionDataset.train_set"><code class="docutils literal notranslate"><span class="pre">TriplePredictionDataset.train_set</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.TriplePredictionDataset.length"><code class="docutils literal notranslate"><span class="pre">TriplePredictionDataset.length</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.TriplePredictionDataset.num_entities"><code class="docutils literal notranslate"><span class="pre">TriplePredictionDataset.num_entities</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.TriplePredictionDataset.num_relations"><code class="docutils literal notranslate"><span class="pre">TriplePredictionDataset.num_relations</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.TriplePredictionDataset.__len__"><code class="docutils literal notranslate"><span class="pre">TriplePredictionDataset.__len__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.TriplePredictionDataset.__getitem__"><code class="docutils literal notranslate"><span class="pre">TriplePredictionDataset.__getitem__()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.TriplePredictionDataset.collate_fn"><code class="docutils literal notranslate"><span class="pre">TriplePredictionDataset.collate_fn()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.CVDataModule"><code class="docutils literal notranslate"><span class="pre">CVDataModule</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CVDataModule.train_set_idx"><code class="docutils literal notranslate"><span class="pre">CVDataModule.train_set_idx</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CVDataModule.num_entities"><code class="docutils literal notranslate"><span class="pre">CVDataModule.num_entities</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CVDataModule.num_relations"><code class="docutils literal notranslate"><span class="pre">CVDataModule.num_relations</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CVDataModule.neg_sample_ratio"><code class="docutils literal notranslate"><span class="pre">CVDataModule.neg_sample_ratio</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CVDataModule.batch_size"><code class="docutils literal notranslate"><span class="pre">CVDataModule.batch_size</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.CVDataModule.num_workers"><code class="docutils literal notranslate"><span class="pre">CVDataModule.num_workers</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.CVDataModule.train_dataloader"><code class="docutils literal notranslate"><span class="pre">CVDataModule.train_dataloader()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.CVDataModule.setup"><code class="docutils literal notranslate"><span class="pre">CVDataModule.setup()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.CVDataModule.transfer_batch_to_device"><code class="docutils literal notranslate"><span class="pre">CVDataModule.transfer_batch_to_device()</span></code></a></li>
@@ -404,6 +606,19 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="#dicee.QueryGenerator"><code class="docutils literal notranslate"><span class="pre">QueryGenerator</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.QueryGenerator.train_path"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.train_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.QueryGenerator.val_path"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.val_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.QueryGenerator.test_path"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.test_path</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.QueryGenerator.gen_valid"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.gen_valid</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.QueryGenerator.gen_test"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.gen_test</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.QueryGenerator.seed"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.seed</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.QueryGenerator.max_ans_num"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.max_ans_num</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.QueryGenerator.mode"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.mode</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.QueryGenerator.ent2id"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.ent2id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.QueryGenerator.rel2id"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.rel2id</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.QueryGenerator.ent_in"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.ent_in</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.QueryGenerator.ent_out"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.ent_out</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#dicee.QueryGenerator.query_name_to_struct"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.query_name_to_struct</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.QueryGenerator.list2tuple"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.list2tuple()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.QueryGenerator.tuple2list"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.tuple2list()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#dicee.QueryGenerator.set_global_seed"><code class="docutils literal notranslate"><span class="pre">QueryGenerator.set_global_seed()</span></code></a></li>
@@ -761,6 +976,31 @@ A multivector mathbf{b} = b_0 + b_1 e_1 + b_2 e_2 + b_{12} e_1 e_2</p>
 </dd>
 </dl>
 <p>Cl_(0,2) =&gt; Quaternions</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.CMult.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'CMult'</span></em><a class="headerlink" href="#dicee.CMult.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.CMult.entity_embeddings">
+<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.CMult.entity_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.CMult.relation_embeddings">
+<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.CMult.relation_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.CMult.p">
+<span class="sig-name descname"><span class="pre">p</span></span><a class="headerlink" href="#dicee.CMult.p" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.CMult.q">
+<span class="sig-name descname"><span class="pre">q</span></span><a class="headerlink" href="#dicee.CMult.q" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.CMult.clifford_mul">
 <span class="sig-name descname"><span class="pre">clifford_mul</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="reference internal" href="../../_modules/dicee/models/clifford.html#CMult.clifford_mul"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.CMult.clifford_mul" title="Link to this definition"></a></dt>
@@ -821,6 +1061,21 @@ q: a non-negative integer q&gt;= 0</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.</span></span><span class="sig-name descname"><span class="pre">Pyke</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/real.html#Pyke"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.Pyke" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>A Physical Embedding Model for Knowledge Graphs</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.Pyke.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Pyke'</span></em><a class="headerlink" href="#dicee.Pyke.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.Pyke.dist_func">
+<span class="sig-name descname"><span class="pre">dist_func</span></span><a class="headerlink" href="#dicee.Pyke.dist_func" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.Pyke.margin">
+<span class="sig-name descname"><span class="pre">margin</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1.0</span></em><a class="headerlink" href="#dicee.Pyke.margin" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.Pyke.forward_triples">
 <span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/real.html#Pyke.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.Pyke.forward_triples" title="Link to this definition"></a></dt>
@@ -839,6 +1094,11 @@ q: a non-negative integer q&gt;= 0</p>
 <dd><p>Bases: <a class="reference internal" href="models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>Embedding Entities and Relations for Learning and Inference in Knowledge Bases
 <a class="reference external" href="https://arxiv.org/abs/1412.6575">https://arxiv.org/abs/1412.6575</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.DistMult.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'DistMult'</span></em><a class="headerlink" href="#dicee.DistMult.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.DistMult.k_vs_all_score">
 <span class="sig-name descname"><span class="pre">k_vs_all_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">emb_h</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_E</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/real.html#DistMult.k_vs_all_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.DistMult.k_vs_all_score" title="Link to this definition"></a></dt>
@@ -875,6 +1135,16 @@ q: a non-negative integer q&gt;= 0</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.</span></span><span class="sig-name descname"><span class="pre">KeciBase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/clifford.html#KeciBase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.KeciBase" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#dicee.Keci" title="dicee.Keci"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keci</span></code></a></p>
 <p>Without learning dimension scaling</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.KeciBase.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'KeciBase'</span></em><a class="headerlink" href="#dicee.KeciBase.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.KeciBase.requires_grad_for_interactions">
+<span class="sig-name descname"><span class="pre">requires_grad_for_interactions</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#dicee.KeciBase.requires_grad_for_interactions" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -912,6 +1182,31 @@ must be made before assignment on the child.</p>
 evaluation mode.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.Keci.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Keci'</span></em><a class="headerlink" href="#dicee.Keci.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.Keci.p">
+<span class="sig-name descname"><span class="pre">p</span></span><a class="headerlink" href="#dicee.Keci.p" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.Keci.q">
+<span class="sig-name descname"><span class="pre">q</span></span><a class="headerlink" href="#dicee.Keci.q" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.Keci.r">
+<span class="sig-name descname"><span class="pre">r</span></span><a class="headerlink" href="#dicee.Keci.r" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.Keci.requires_grad_for_interactions">
+<span class="sig-name descname"><span class="pre">requires_grad_for_interactions</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#dicee.Keci.requires_grad_for_interactions" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.Keci.compute_sigma_pp">
 <span class="sig-name descname"><span class="pre">compute_sigma_pp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/clifford.html#Keci.compute_sigma_pp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.Keci.compute_sigma_pp" title="Link to this definition"></a></dt>
@@ -1113,6 +1408,16 @@ x: torch.LongTensor with (n,2) shape
 <p>Translating Embeddings for Modeling
 Multi-relational Data
 <a class="reference external" href="https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf">https://proceedings.neurips.cc/paper/2013/file/1cecc7a77928ca8133fa24680a88d2f9-Paper.pdf</a></p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.TransE.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'TransE'</span></em><a class="headerlink" href="#dicee.TransE.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.TransE.margin">
+<span class="sig-name descname"><span class="pre">margin</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#dicee.TransE.margin" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.TransE.score">
 <span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">head_ent_emb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_ent_emb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tail_ent_emb</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/real.html#TransE.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.TransE.score" title="Link to this definition"></a></dt>
@@ -1160,6 +1465,41 @@ must be made before assignment on the child.</p>
 evaluation mode.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.DeCaL.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'DeCaL'</span></em><a class="headerlink" href="#dicee.DeCaL.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.DeCaL.entity_embeddings">
+<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.DeCaL.entity_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.DeCaL.relation_embeddings">
+<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.DeCaL.relation_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.DeCaL.p">
+<span class="sig-name descname"><span class="pre">p</span></span><a class="headerlink" href="#dicee.DeCaL.p" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.DeCaL.q">
+<span class="sig-name descname"><span class="pre">q</span></span><a class="headerlink" href="#dicee.DeCaL.q" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.DeCaL.r">
+<span class="sig-name descname"><span class="pre">r</span></span><a class="headerlink" href="#dicee.DeCaL.r" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.DeCaL.re">
+<span class="sig-name descname"><span class="pre">re</span></span><a class="headerlink" href="#dicee.DeCaL.re" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.DeCaL.forward_triples">
 <span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../_modules/dicee/models/clifford.html#DeCaL.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.DeCaL.forward_triples" title="Link to this definition"></a></dt>
@@ -1390,6 +1730,26 @@ for i in range(p):</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.</span></span><span class="sig-name descname"><span class="pre">DualE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/dualE.html#DualE"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.DualE" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>Dual Quaternion Knowledge Graph Embeddings (<a class="reference external" href="https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657">https://ojs.aaai.org/index.php/AAAI/article/download/16850/16657</a>)</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.DualE.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'DualE'</span></em><a class="headerlink" href="#dicee.DualE.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.DualE.entity_embeddings">
+<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.DualE.entity_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.DualE.relation_embeddings">
+<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.DualE.relation_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.DualE.num_ent">
+<span class="sig-name descname"><span class="pre">num_ent</span></span><a class="headerlink" href="#dicee.DualE.num_ent" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.DualE.kvsall_score">
 <span class="sig-name descname"><span class="pre">kvsall_score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">e_1_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_2_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_3_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_4_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_5_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_6_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_7_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_8_h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_1_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_2_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_3_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_4_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_5_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_6_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_7_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_8_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_8</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.tensor</span></span></span><a class="reference internal" href="../../_modules/dicee/models/dualE.html#DualE.kvsall_score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.DualE.kvsall_score" title="Link to this definition"></a></dt>
@@ -1477,6 +1837,11 @@ must be made before assignment on the child.</p>
 evaluation mode.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ComplEx.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ComplEx'</span></em><a class="headerlink" href="#dicee.ComplEx.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.ComplEx.score">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">head_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tail_ent_emb</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/complex.html#ComplEx.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.ComplEx.score" title="Link to this definition"></a></dt>
@@ -1508,6 +1873,41 @@ evaluation mode.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.</span></span><span class="sig-name descname"><span class="pre">AConEx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/complex.html#AConEx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.AConEx" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>Additive Convolutional ComplEx Knowledge Graph Embeddings</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConEx.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'AConEx'</span></em><a class="headerlink" href="#dicee.AConEx.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConEx.conv2d">
+<span class="sig-name descname"><span class="pre">conv2d</span></span><a class="headerlink" href="#dicee.AConEx.conv2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConEx.fc_num_input">
+<span class="sig-name descname"><span class="pre">fc_num_input</span></span><a class="headerlink" href="#dicee.AConEx.fc_num_input" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConEx.fc1">
+<span class="sig-name descname"><span class="pre">fc1</span></span><a class="headerlink" href="#dicee.AConEx.fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConEx.norm_fc1">
+<span class="sig-name descname"><span class="pre">norm_fc1</span></span><a class="headerlink" href="#dicee.AConEx.norm_fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConEx.bn_conv2d">
+<span class="sig-name descname"><span class="pre">bn_conv2d</span></span><a class="headerlink" href="#dicee.AConEx.bn_conv2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConEx.feature_map_dropout">
+<span class="sig-name descname"><span class="pre">feature_map_dropout</span></span><a class="headerlink" href="#dicee.AConEx.feature_map_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.AConEx.residual_convolution">
 <span class="sig-name descname"><span class="pre">residual_convolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">C_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../_modules/dicee/models/complex.html#AConEx.residual_convolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.AConEx.residual_convolution" title="Link to this definition"></a></dt>
@@ -1544,6 +1944,41 @@ evaluation mode.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.</span></span><span class="sig-name descname"><span class="pre">AConvO</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/octonion.html#AConvO"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.AConvO" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>Additive Convolutional Octonion Knowledge Graph Embeddings</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConvO.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'AConvO'</span></em><a class="headerlink" href="#dicee.AConvO.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConvO.conv2d">
+<span class="sig-name descname"><span class="pre">conv2d</span></span><a class="headerlink" href="#dicee.AConvO.conv2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConvO.fc_num_input">
+<span class="sig-name descname"><span class="pre">fc_num_input</span></span><a class="headerlink" href="#dicee.AConvO.fc_num_input" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConvO.fc1">
+<span class="sig-name descname"><span class="pre">fc1</span></span><a class="headerlink" href="#dicee.AConvO.fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConvO.bn_conv2d">
+<span class="sig-name descname"><span class="pre">bn_conv2d</span></span><a class="headerlink" href="#dicee.AConvO.bn_conv2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConvO.norm_fc1">
+<span class="sig-name descname"><span class="pre">norm_fc1</span></span><a class="headerlink" href="#dicee.AConvO.norm_fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConvO.feature_map_dropout">
+<span class="sig-name descname"><span class="pre">feature_map_dropout</span></span><a class="headerlink" href="#dicee.AConvO.feature_map_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.AConvO.octonion_normalizer">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">octonion_normalizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">emb_rel_e0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e7</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/octonion.html#AConvO.octonion_normalizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.AConvO.octonion_normalizer" title="Link to this definition"></a></dt>
@@ -1579,6 +2014,51 @@ Given a batch of head entities and relations =&gt; shape (size of batch,| Entiti
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.</span></span><span class="sig-name descname"><span class="pre">AConvQ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/quaternion.html#AConvQ"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.AConvQ" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>Additive Convolutional Quaternion Knowledge Graph Embeddings</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConvQ.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'AConvQ'</span></em><a class="headerlink" href="#dicee.AConvQ.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConvQ.entity_embeddings">
+<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.AConvQ.entity_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConvQ.relation_embeddings">
+<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.AConvQ.relation_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConvQ.conv2d">
+<span class="sig-name descname"><span class="pre">conv2d</span></span><a class="headerlink" href="#dicee.AConvQ.conv2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConvQ.fc_num_input">
+<span class="sig-name descname"><span class="pre">fc_num_input</span></span><a class="headerlink" href="#dicee.AConvQ.fc_num_input" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConvQ.fc1">
+<span class="sig-name descname"><span class="pre">fc1</span></span><a class="headerlink" href="#dicee.AConvQ.fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConvQ.bn_conv1">
+<span class="sig-name descname"><span class="pre">bn_conv1</span></span><a class="headerlink" href="#dicee.AConvQ.bn_conv1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConvQ.bn_conv2">
+<span class="sig-name descname"><span class="pre">bn_conv2</span></span><a class="headerlink" href="#dicee.AConvQ.bn_conv2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AConvQ.feature_map_dropout">
+<span class="sig-name descname"><span class="pre">feature_map_dropout</span></span><a class="headerlink" href="#dicee.AConvQ.feature_map_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.AConvQ.residual_convolution">
 <span class="sig-name descname"><span class="pre">residual_convolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Q_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/quaternion.html#AConvQ.residual_convolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.AConvQ.residual_convolution" title="Link to this definition"></a></dt>
@@ -1609,6 +2089,51 @@ Given a batch of head entities and relations =&gt; shape (size of batch,| Entiti
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.</span></span><span class="sig-name descname"><span class="pre">ConvQ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/quaternion.html#ConvQ"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.ConvQ" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>Convolutional Quaternion Knowledge Graph Embeddings</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConvQ.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ConvQ'</span></em><a class="headerlink" href="#dicee.ConvQ.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConvQ.entity_embeddings">
+<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.ConvQ.entity_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConvQ.relation_embeddings">
+<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.ConvQ.relation_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConvQ.conv2d">
+<span class="sig-name descname"><span class="pre">conv2d</span></span><a class="headerlink" href="#dicee.ConvQ.conv2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConvQ.fc_num_input">
+<span class="sig-name descname"><span class="pre">fc_num_input</span></span><a class="headerlink" href="#dicee.ConvQ.fc_num_input" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConvQ.fc1">
+<span class="sig-name descname"><span class="pre">fc1</span></span><a class="headerlink" href="#dicee.ConvQ.fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConvQ.bn_conv1">
+<span class="sig-name descname"><span class="pre">bn_conv1</span></span><a class="headerlink" href="#dicee.ConvQ.bn_conv1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConvQ.bn_conv2">
+<span class="sig-name descname"><span class="pre">bn_conv2</span></span><a class="headerlink" href="#dicee.ConvQ.bn_conv2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConvQ.feature_map_dropout">
+<span class="sig-name descname"><span class="pre">feature_map_dropout</span></span><a class="headerlink" href="#dicee.ConvQ.feature_map_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.ConvQ.residual_convolution">
 <span class="sig-name descname"><span class="pre">residual_convolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Q_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/quaternion.html#ConvQ.residual_convolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.ConvQ.residual_convolution" title="Link to this definition"></a></dt>
@@ -1669,6 +2194,41 @@ must be made before assignment on the child.</p>
 evaluation mode.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConvO.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ConvO'</span></em><a class="headerlink" href="#dicee.ConvO.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConvO.conv2d">
+<span class="sig-name descname"><span class="pre">conv2d</span></span><a class="headerlink" href="#dicee.ConvO.conv2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConvO.fc_num_input">
+<span class="sig-name descname"><span class="pre">fc_num_input</span></span><a class="headerlink" href="#dicee.ConvO.fc_num_input" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConvO.fc1">
+<span class="sig-name descname"><span class="pre">fc1</span></span><a class="headerlink" href="#dicee.ConvO.fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConvO.bn_conv2d">
+<span class="sig-name descname"><span class="pre">bn_conv2d</span></span><a class="headerlink" href="#dicee.ConvO.bn_conv2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConvO.norm_fc1">
+<span class="sig-name descname"><span class="pre">norm_fc1</span></span><a class="headerlink" href="#dicee.ConvO.norm_fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConvO.feature_map_dropout">
+<span class="sig-name descname"><span class="pre">feature_map_dropout</span></span><a class="headerlink" href="#dicee.ConvO.feature_map_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.ConvO.octonion_normalizer">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">octonion_normalizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">emb_rel_e0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e7</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/octonion.html#ConvO.octonion_normalizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.ConvO.octonion_normalizer" title="Link to this definition"></a></dt>
@@ -1704,6 +2264,41 @@ Given a batch of head entities and relations =&gt; shape (size of batch,| Entiti
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.</span></span><span class="sig-name descname"><span class="pre">ConEx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/complex.html#ConEx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.ConEx" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>Convolutional ComplEx Knowledge Graph Embeddings</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConEx.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ConEx'</span></em><a class="headerlink" href="#dicee.ConEx.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConEx.conv2d">
+<span class="sig-name descname"><span class="pre">conv2d</span></span><a class="headerlink" href="#dicee.ConEx.conv2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConEx.fc_num_input">
+<span class="sig-name descname"><span class="pre">fc_num_input</span></span><a class="headerlink" href="#dicee.ConEx.fc_num_input" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConEx.fc1">
+<span class="sig-name descname"><span class="pre">fc1</span></span><a class="headerlink" href="#dicee.ConEx.fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConEx.norm_fc1">
+<span class="sig-name descname"><span class="pre">norm_fc1</span></span><a class="headerlink" href="#dicee.ConEx.norm_fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConEx.bn_conv2d">
+<span class="sig-name descname"><span class="pre">bn_conv2d</span></span><a class="headerlink" href="#dicee.ConEx.bn_conv2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.ConEx.feature_map_dropout">
+<span class="sig-name descname"><span class="pre">feature_map_dropout</span></span><a class="headerlink" href="#dicee.ConEx.feature_map_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.ConEx.residual_convolution">
 <span class="sig-name descname"><span class="pre">residual_convolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">C_1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">C_2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.Tensor</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../_modules/dicee/models/complex.html#ConEx.residual_convolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.ConEx.residual_convolution" title="Link to this definition"></a></dt>
@@ -1770,6 +2365,16 @@ must be made before assignment on the child.</p>
 evaluation mode.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.QMult.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'QMult'</span></em><a class="headerlink" href="#dicee.QMult.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.QMult.explicit">
+<span class="sig-name descname"><span class="pre">explicit</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#dicee.QMult.explicit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.QMult.quaternion_multiplication_followed_by_inner_product">
 <span class="sig-name descname"><span class="pre">quaternion_multiplication_followed_by_inner_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/quaternion.html#QMult.quaternion_multiplication_followed_by_inner_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.QMult.quaternion_multiplication_followed_by_inner_product" title="Link to this definition"></a></dt>
@@ -1886,6 +2491,11 @@ must be made before assignment on the child.</p>
 evaluation mode.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.OMult.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'OMult'</span></em><a class="headerlink" href="#dicee.OMult.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.OMult.octonion_normalizer">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">octonion_normalizer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">emb_rel_e0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emb_rel_e7</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/octonion.html#OMult.octonion_normalizer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.OMult.octonion_normalizer" title="Link to this definition"></a></dt>
@@ -1917,6 +2527,21 @@ Given a batch of head entities and relations =&gt; shape (size of batch,| Entiti
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.</span></span><span class="sig-name descname"><span class="pre">Shallom</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/real.html#Shallom"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.Shallom" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="models/base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>A shallow neural model for relation prediction (<a class="reference external" href="https://arxiv.org/abs/2101.09090">https://arxiv.org/abs/2101.09090</a>)</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.Shallom.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Shallom'</span></em><a class="headerlink" href="#dicee.Shallom.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.Shallom.shallom_width">
+<span class="sig-name descname"><span class="pre">shallom_width</span></span><a class="headerlink" href="#dicee.Shallom.shallom_width" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.Shallom.shallom">
+<span class="sig-name descname"><span class="pre">shallom</span></span><a class="headerlink" href="#dicee.Shallom.shallom" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.Shallom.get_embeddings">
 <span class="sig-name descname"><span class="pre">get_embeddings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">numpy.ndarray</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/dicee/models/real.html#Shallom.get_embeddings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.Shallom.get_embeddings" title="Link to this definition"></a></dt>
@@ -1949,6 +2574,36 @@ Given a batch of head entities and relations =&gt; shape (size of batch,| Entiti
 <p>Embedding with polynomial functions. We represent all entities and relations in the polynomial space as:
 f(x) = sum_{i=0}^{d-1} a_k x^{i%d} and use the three differents scoring function as in the paper to evaluate the score.
 We also consider combining with Neural Networks.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.LFMult.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'LFMult'</span></em><a class="headerlink" href="#dicee.LFMult.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.LFMult.entity_embeddings">
+<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.LFMult.entity_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.LFMult.relation_embeddings">
+<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.LFMult.relation_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.LFMult.degree">
+<span class="sig-name descname"><span class="pre">degree</span></span><a class="headerlink" href="#dicee.LFMult.degree" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.LFMult.m">
+<span class="sig-name descname"><span class="pre">m</span></span><a class="headerlink" href="#dicee.LFMult.m" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.LFMult.x_values">
+<span class="sig-name descname"><span class="pre">x_values</span></span><a class="headerlink" href="#dicee.LFMult.x_values" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.LFMult.forward_triples">
 <span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx_triple</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/function_space.html#LFMult.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.LFMult.forward_triples" title="Link to this definition"></a></dt>
@@ -2060,6 +2715,41 @@ Pykeen_MuRE:
 Pykeen_CP:
 Pykeen_HolE:
 Pykeen_HolE:</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.PykeenKGE.model_kwargs">
+<span class="sig-name descname"><span class="pre">model_kwargs</span></span><a class="headerlink" href="#dicee.PykeenKGE.model_kwargs" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.PykeenKGE.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#dicee.PykeenKGE.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.PykeenKGE.model">
+<span class="sig-name descname"><span class="pre">model</span></span><a class="headerlink" href="#dicee.PykeenKGE.model" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.PykeenKGE.loss_history">
+<span class="sig-name descname"><span class="pre">loss_history</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.PykeenKGE.loss_history" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.PykeenKGE.args">
+<span class="sig-name descname"><span class="pre">args</span></span><a class="headerlink" href="#dicee.PykeenKGE.args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.PykeenKGE.entity_embeddings">
+<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.PykeenKGE.entity_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.PykeenKGE.relation_embeddings">
+<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.PykeenKGE.relation_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.PykeenKGE.forward_k_vs_all">
 <span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/pykeen_models.html#PykeenKGE.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.PykeenKGE.forward_k_vs_all" title="Link to this definition"></a></dt>
@@ -2144,6 +2834,41 @@ must be made before assignment on the child.</p>
 evaluation mode.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BytE.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'BytE'</span></em><a class="headerlink" href="#dicee.BytE.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BytE.config">
+<span class="sig-name descname"><span class="pre">config</span></span><a class="headerlink" href="#dicee.BytE.config" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BytE.temperature">
+<span class="sig-name descname"><span class="pre">temperature</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.5</span></em><a class="headerlink" href="#dicee.BytE.temperature" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BytE.topk">
+<span class="sig-name descname"><span class="pre">topk</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#dicee.BytE.topk" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BytE.transformer">
+<span class="sig-name descname"><span class="pre">transformer</span></span><a class="headerlink" href="#dicee.BytE.transformer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BytE.lm_head">
+<span class="sig-name descname"><span class="pre">lm_head</span></span><a class="headerlink" href="#dicee.BytE.lm_head" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BytE.weight">
+<span class="sig-name descname"><span class="pre">weight</span></span><a class="headerlink" href="#dicee.BytE.weight" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.BytE.loss_function">
 <span class="sig-name descname"><span class="pre">loss_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">yhat_batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_batch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/transformers.html#BytE.loss_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.BytE.loss_function" title="Link to this definition"></a></dt>
@@ -2273,6 +2998,151 @@ must be made before assignment on the child.</p>
 evaluation mode.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.args">
+<span class="sig-name descname"><span class="pre">args</span></span><a class="headerlink" href="#dicee.BaseKGE.args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.embedding_dim">
+<span class="sig-name descname"><span class="pre">embedding_dim</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.BaseKGE.embedding_dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.num_entities">
+<span class="sig-name descname"><span class="pre">num_entities</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.BaseKGE.num_entities" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.num_relations">
+<span class="sig-name descname"><span class="pre">num_relations</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.BaseKGE.num_relations" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.num_tokens">
+<span class="sig-name descname"><span class="pre">num_tokens</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.BaseKGE.num_tokens" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.learning_rate">
+<span class="sig-name descname"><span class="pre">learning_rate</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.BaseKGE.learning_rate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.apply_unit_norm">
+<span class="sig-name descname"><span class="pre">apply_unit_norm</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.BaseKGE.apply_unit_norm" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.input_dropout_rate">
+<span class="sig-name descname"><span class="pre">input_dropout_rate</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.BaseKGE.input_dropout_rate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.hidden_dropout_rate">
+<span class="sig-name descname"><span class="pre">hidden_dropout_rate</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.BaseKGE.hidden_dropout_rate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.optimizer_name">
+<span class="sig-name descname"><span class="pre">optimizer_name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.BaseKGE.optimizer_name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.feature_map_dropout_rate">
+<span class="sig-name descname"><span class="pre">feature_map_dropout_rate</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.BaseKGE.feature_map_dropout_rate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.kernel_size">
+<span class="sig-name descname"><span class="pre">kernel_size</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.BaseKGE.kernel_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.num_of_output_channels">
+<span class="sig-name descname"><span class="pre">num_of_output_channels</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.BaseKGE.num_of_output_channels" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.weight_decay">
+<span class="sig-name descname"><span class="pre">weight_decay</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.BaseKGE.weight_decay" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.loss">
+<span class="sig-name descname"><span class="pre">loss</span></span><a class="headerlink" href="#dicee.BaseKGE.loss" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.selected_optimizer">
+<span class="sig-name descname"><span class="pre">selected_optimizer</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.BaseKGE.selected_optimizer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.normalizer_class">
+<span class="sig-name descname"><span class="pre">normalizer_class</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.BaseKGE.normalizer_class" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.normalize_head_entity_embeddings">
+<span class="sig-name descname"><span class="pre">normalize_head_entity_embeddings</span></span><a class="headerlink" href="#dicee.BaseKGE.normalize_head_entity_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.normalize_relation_embeddings">
+<span class="sig-name descname"><span class="pre">normalize_relation_embeddings</span></span><a class="headerlink" href="#dicee.BaseKGE.normalize_relation_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.normalize_tail_entity_embeddings">
+<span class="sig-name descname"><span class="pre">normalize_tail_entity_embeddings</span></span><a class="headerlink" href="#dicee.BaseKGE.normalize_tail_entity_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.hidden_normalizer">
+<span class="sig-name descname"><span class="pre">hidden_normalizer</span></span><a class="headerlink" href="#dicee.BaseKGE.hidden_normalizer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.param_init">
+<span class="sig-name descname"><span class="pre">param_init</span></span><a class="headerlink" href="#dicee.BaseKGE.param_init" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.input_dp_ent_real">
+<span class="sig-name descname"><span class="pre">input_dp_ent_real</span></span><a class="headerlink" href="#dicee.BaseKGE.input_dp_ent_real" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.input_dp_rel_real">
+<span class="sig-name descname"><span class="pre">input_dp_rel_real</span></span><a class="headerlink" href="#dicee.BaseKGE.input_dp_rel_real" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.hidden_dropout">
+<span class="sig-name descname"><span class="pre">hidden_dropout</span></span><a class="headerlink" href="#dicee.BaseKGE.hidden_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.loss_history">
+<span class="sig-name descname"><span class="pre">loss_history</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">[]</span></em><a class="headerlink" href="#dicee.BaseKGE.loss_history" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.byte_pair_encoding">
+<span class="sig-name descname"><span class="pre">byte_pair_encoding</span></span><a class="headerlink" href="#dicee.BaseKGE.byte_pair_encoding" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.max_length_subword_tokens">
+<span class="sig-name descname"><span class="pre">max_length_subword_tokens</span></span><a class="headerlink" href="#dicee.BaseKGE.max_length_subword_tokens" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BaseKGE.block_size">
+<span class="sig-name descname"><span class="pre">block_size</span></span><a class="headerlink" href="#dicee.BaseKGE.block_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.BaseKGE.forward_byte_pair_encoded_k_vs_all">
 <span class="sig-name descname"><span class="pre">forward_byte_pair_encoded_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/models/base_model.html#BaseKGE.forward_byte_pair_encoded_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.BaseKGE.forward_byte_pair_encoded_k_vs_all" title="Link to this definition"></a></dt>
@@ -2597,6 +3467,41 @@ Evaluate multi hop query answering on different query types</p>
 <p>report:dict</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.DICE_Trainer.report">
+<span class="sig-name descname"><span class="pre">report</span></span><a class="headerlink" href="#dicee.DICE_Trainer.report" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.DICE_Trainer.args">
+<span class="sig-name descname"><span class="pre">args</span></span><a class="headerlink" href="#dicee.DICE_Trainer.args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.DICE_Trainer.trainer">
+<span class="sig-name descname"><span class="pre">trainer</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.DICE_Trainer.trainer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.DICE_Trainer.is_continual_training">
+<span class="sig-name descname"><span class="pre">is_continual_training</span></span><a class="headerlink" href="#dicee.DICE_Trainer.is_continual_training" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.DICE_Trainer.storage_path">
+<span class="sig-name descname"><span class="pre">storage_path</span></span><a class="headerlink" href="#dicee.DICE_Trainer.storage_path" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.DICE_Trainer.evaluator">
+<span class="sig-name descname"><span class="pre">evaluator</span></span><a class="headerlink" href="#dicee.DICE_Trainer.evaluator" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.DICE_Trainer.form_of_labelling">
+<span class="sig-name descname"><span class="pre">form_of_labelling</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.DICE_Trainer.form_of_labelling" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.DICE_Trainer.continual_start">
 <span class="sig-name descname"><span class="pre">continual_start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/trainer/dice_trainer.html#DICE_Trainer.continual_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.DICE_Trainer.continual_start" title="Link to this definition"></a></dt>
@@ -2954,6 +3859,46 @@ orall r in R f(e,r,x)</p>
 <li><p>Training &amp; Validation &amp; Testing</p></li>
 <li><p>Storing all necessary info</p></li>
 </ol>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.Execute.args">
+<span class="sig-name descname"><span class="pre">args</span></span><a class="headerlink" href="#dicee.Execute.args" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.Execute.is_continual_training">
+<span class="sig-name descname"><span class="pre">is_continual_training</span></span><a class="headerlink" href="#dicee.Execute.is_continual_training" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.Execute.trainer">
+<span class="sig-name descname"><span class="pre">trainer</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.Execute.trainer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.Execute.trained_model">
+<span class="sig-name descname"><span class="pre">trained_model</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.Execute.trained_model" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.Execute.knowledge_graph">
+<span class="sig-name descname"><span class="pre">knowledge_graph</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.Execute.knowledge_graph" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.Execute.report">
+<span class="sig-name descname"><span class="pre">report</span></span><a class="headerlink" href="#dicee.Execute.report" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.Execute.evaluator">
+<span class="sig-name descname"><span class="pre">evaluator</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.Execute.evaluator" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.Execute.start_time">
+<span class="sig-name descname"><span class="pre">start_time</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.Execute.start_time" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.Execute.read_or_load_kg">
 <span class="sig-name descname"><span class="pre">read_or_load_kg</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/executer.html#Execute.read_or_load_kg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.Execute.read_or_load_kg" title="Link to this definition"></a></dt>
@@ -3102,6 +4047,31 @@ list of samples.</p>
 sampler that yields integral indices.  To make it work with a map-style
 dataset with non-integral indices/keys, a custom sampler must be provided.</p>
 </div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BPE_NegativeSamplingDataset.train_set">
+<span class="sig-name descname"><span class="pre">train_set</span></span><a class="headerlink" href="#dicee.BPE_NegativeSamplingDataset.train_set" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BPE_NegativeSamplingDataset.ordered_bpe_entities">
+<span class="sig-name descname"><span class="pre">ordered_bpe_entities</span></span><a class="headerlink" href="#dicee.BPE_NegativeSamplingDataset.ordered_bpe_entities" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BPE_NegativeSamplingDataset.num_bpe_entities">
+<span class="sig-name descname"><span class="pre">num_bpe_entities</span></span><a class="headerlink" href="#dicee.BPE_NegativeSamplingDataset.num_bpe_entities" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BPE_NegativeSamplingDataset.neg_ratio">
+<span class="sig-name descname"><span class="pre">neg_ratio</span></span><a class="headerlink" href="#dicee.BPE_NegativeSamplingDataset.neg_ratio" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.BPE_NegativeSamplingDataset.num_datapoints">
+<span class="sig-name descname"><span class="pre">num_datapoints</span></span><a class="headerlink" href="#dicee.BPE_NegativeSamplingDataset.num_datapoints" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.BPE_NegativeSamplingDataset.__len__">
 <span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/dataset_classes.html#BPE_NegativeSamplingDataset.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.BPE_NegativeSamplingDataset.__len__" title="Link to this definition"></a></dt>
@@ -3139,6 +4109,36 @@ list of samples.</p>
 sampler that yields integral indices.  To make it work with a map-style
 dataset with non-integral indices/keys, a custom sampler must be provided.</p>
 </div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.MultiLabelDataset.train_set">
+<span class="sig-name descname"><span class="pre">train_set</span></span><a class="headerlink" href="#dicee.MultiLabelDataset.train_set" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.MultiLabelDataset.train_indices_target">
+<span class="sig-name descname"><span class="pre">train_indices_target</span></span><a class="headerlink" href="#dicee.MultiLabelDataset.train_indices_target" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.MultiLabelDataset.target_dim">
+<span class="sig-name descname"><span class="pre">target_dim</span></span><a class="headerlink" href="#dicee.MultiLabelDataset.target_dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.MultiLabelDataset.num_datapoints">
+<span class="sig-name descname"><span class="pre">num_datapoints</span></span><a class="headerlink" href="#dicee.MultiLabelDataset.num_datapoints" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.MultiLabelDataset.torch_ordered_shaped_bpe_entities">
+<span class="sig-name descname"><span class="pre">torch_ordered_shaped_bpe_entities</span></span><a class="headerlink" href="#dicee.MultiLabelDataset.torch_ordered_shaped_bpe_entities" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.MultiLabelDataset.collate_fn">
+<span class="sig-name descname"><span class="pre">collate_fn</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.MultiLabelDataset.collate_fn" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.MultiLabelDataset.__len__">
 <span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/dataset_classes.html#MultiLabelDataset.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.MultiLabelDataset.__len__" title="Link to this definition"></a></dt>
@@ -3171,6 +4171,26 @@ dataset with non-integral indices/keys, a custom sampler must be provided.</p>
 <dd class="field-even"><p>torch.utils.data.Dataset</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.MultiClassClassificationDataset.train_data">
+<span class="sig-name descname"><span class="pre">train_data</span></span><a class="headerlink" href="#dicee.MultiClassClassificationDataset.train_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.MultiClassClassificationDataset.block_size">
+<span class="sig-name descname"><span class="pre">block_size</span></span><a class="headerlink" href="#dicee.MultiClassClassificationDataset.block_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.MultiClassClassificationDataset.num_of_data_points">
+<span class="sig-name descname"><span class="pre">num_of_data_points</span></span><a class="headerlink" href="#dicee.MultiClassClassificationDataset.num_of_data_points" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.MultiClassClassificationDataset.collate_fn">
+<span class="sig-name descname"><span class="pre">collate_fn</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.MultiClassClassificationDataset.collate_fn" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.MultiClassClassificationDataset.__len__">
 <span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/dataset_classes.html#MultiClassClassificationDataset.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.MultiClassClassificationDataset.__len__" title="Link to this definition"></a></dt>
@@ -3203,6 +4223,21 @@ dataset with non-integral indices/keys, a custom sampler must be provided.</p>
 <dd class="field-even"><p>torch.utils.data.Dataset</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.OnevsAllDataset.train_data">
+<span class="sig-name descname"><span class="pre">train_data</span></span><a class="headerlink" href="#dicee.OnevsAllDataset.train_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.OnevsAllDataset.target_dim">
+<span class="sig-name descname"><span class="pre">target_dim</span></span><a class="headerlink" href="#dicee.OnevsAllDataset.target_dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.OnevsAllDataset.collate_fn">
+<span class="sig-name descname"><span class="pre">collate_fn</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.OnevsAllDataset.collate_fn" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.OnevsAllDataset.__len__">
 <span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/dataset_classes.html#OnevsAllDataset.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.OnevsAllDataset.__len__" title="Link to this definition"></a></dt>
@@ -3246,6 +4281,26 @@ y: denotes a multi-label vector in [0,1]^{<a href="#id48"><span class="problemat
 </pre></div>
 </div>
 </div></blockquote>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.KvsAll.train_data">
+<span class="sig-name descname"><span class="pre">train_data</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.KvsAll.train_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.KvsAll.train_target">
+<span class="sig-name descname"><span class="pre">train_target</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.KvsAll.train_target" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.KvsAll.label_smoothing_rate">
+<span class="sig-name descname"><span class="pre">label_smoothing_rate</span></span><a class="headerlink" href="#dicee.KvsAll.label_smoothing_rate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.KvsAll.collate_fn">
+<span class="sig-name descname"><span class="pre">collate_fn</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.KvsAll.collate_fn" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.KvsAll.__len__">
 <span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/dataset_classes.html#KvsAll.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.KvsAll.__len__" title="Link to this definition"></a></dt>
@@ -3292,6 +4347,36 @@ y: denotes a multi-label vector in [0,1]^{<a href="#id54"><span class="problemat
 </pre></div>
 </div>
 </div></blockquote>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AllvsAll.train_data">
+<span class="sig-name descname"><span class="pre">train_data</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.AllvsAll.train_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AllvsAll.train_target">
+<span class="sig-name descname"><span class="pre">train_target</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.AllvsAll.train_target" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AllvsAll.label_smoothing_rate">
+<span class="sig-name descname"><span class="pre">label_smoothing_rate</span></span><a class="headerlink" href="#dicee.AllvsAll.label_smoothing_rate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AllvsAll.collate_fn">
+<span class="sig-name descname"><span class="pre">collate_fn</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.AllvsAll.collate_fn" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AllvsAll.target_dim">
+<span class="sig-name descname"><span class="pre">target_dim</span></span><a class="headerlink" href="#dicee.AllvsAll.target_dim" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.AllvsAll.store">
+<span class="sig-name descname"><span class="pre">store</span></span><a class="headerlink" href="#dicee.AllvsAll.store" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.AllvsAll.__len__">
 <span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/dataset_classes.html#AllvsAll.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.AllvsAll.__len__" title="Link to this definition"></a></dt>
@@ -3344,6 +4429,46 @@ new_y contains</p>
 <p>torch.utils.data.Dataset</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.KvsSampleDataset.train_data">
+<span class="sig-name descname"><span class="pre">train_data</span></span><a class="headerlink" href="#dicee.KvsSampleDataset.train_data" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.KvsSampleDataset.num_entities">
+<span class="sig-name descname"><span class="pre">num_entities</span></span><a class="headerlink" href="#dicee.KvsSampleDataset.num_entities" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.KvsSampleDataset.num_relations">
+<span class="sig-name descname"><span class="pre">num_relations</span></span><a class="headerlink" href="#dicee.KvsSampleDataset.num_relations" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.KvsSampleDataset.neg_sample_ratio">
+<span class="sig-name descname"><span class="pre">neg_sample_ratio</span></span><a class="headerlink" href="#dicee.KvsSampleDataset.neg_sample_ratio" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.KvsSampleDataset.label_smoothing_rate">
+<span class="sig-name descname"><span class="pre">label_smoothing_rate</span></span><a class="headerlink" href="#dicee.KvsSampleDataset.label_smoothing_rate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.KvsSampleDataset.collate_fn">
+<span class="sig-name descname"><span class="pre">collate_fn</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#dicee.KvsSampleDataset.collate_fn" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.KvsSampleDataset.store">
+<span class="sig-name descname"><span class="pre">store</span></span><a class="headerlink" href="#dicee.KvsSampleDataset.store" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.KvsSampleDataset.train_target">
+<span class="sig-name descname"><span class="pre">train_target</span></span><a class="headerlink" href="#dicee.KvsSampleDataset.train_target" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.KvsSampleDataset.__len__">
 <span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/dataset_classes.html#KvsSampleDataset.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.KvsSampleDataset.__len__" title="Link to this definition"></a></dt>
@@ -3376,6 +4501,31 @@ list of samples.</p>
 sampler that yields integral indices.  To make it work with a map-style
 dataset with non-integral indices/keys, a custom sampler must be provided.</p>
 </div>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.NegSampleDataset.neg_sample_ratio">
+<span class="sig-name descname"><span class="pre">neg_sample_ratio</span></span><a class="headerlink" href="#dicee.NegSampleDataset.neg_sample_ratio" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.NegSampleDataset.train_set">
+<span class="sig-name descname"><span class="pre">train_set</span></span><a class="headerlink" href="#dicee.NegSampleDataset.train_set" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.NegSampleDataset.length">
+<span class="sig-name descname"><span class="pre">length</span></span><a class="headerlink" href="#dicee.NegSampleDataset.length" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.NegSampleDataset.num_entities">
+<span class="sig-name descname"><span class="pre">num_entities</span></span><a class="headerlink" href="#dicee.NegSampleDataset.num_entities" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.NegSampleDataset.num_relations">
+<span class="sig-name descname"><span class="pre">num_relations</span></span><a class="headerlink" href="#dicee.NegSampleDataset.num_relations" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.NegSampleDataset.__len__">
 <span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/dataset_classes.html#NegSampleDataset.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.NegSampleDataset.__len__" title="Link to this definition"></a></dt>
@@ -3426,6 +4576,36 @@ Returns
 ——-
 torch.utils.data.Dataset</p>
 </div></blockquote>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.TriplePredictionDataset.label_smoothing_rate">
+<span class="sig-name descname"><span class="pre">label_smoothing_rate</span></span><a class="headerlink" href="#dicee.TriplePredictionDataset.label_smoothing_rate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.TriplePredictionDataset.neg_sample_ratio">
+<span class="sig-name descname"><span class="pre">neg_sample_ratio</span></span><a class="headerlink" href="#dicee.TriplePredictionDataset.neg_sample_ratio" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.TriplePredictionDataset.train_set">
+<span class="sig-name descname"><span class="pre">train_set</span></span><a class="headerlink" href="#dicee.TriplePredictionDataset.train_set" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.TriplePredictionDataset.length">
+<span class="sig-name descname"><span class="pre">length</span></span><a class="headerlink" href="#dicee.TriplePredictionDataset.length" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.TriplePredictionDataset.num_entities">
+<span class="sig-name descname"><span class="pre">num_entities</span></span><a class="headerlink" href="#dicee.TriplePredictionDataset.num_entities" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.TriplePredictionDataset.num_relations">
+<span class="sig-name descname"><span class="pre">num_relations</span></span><a class="headerlink" href="#dicee.TriplePredictionDataset.num_relations" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.TriplePredictionDataset.__len__">
 <span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/dataset_classes.html#TriplePredictionDataset.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.TriplePredictionDataset.__len__" title="Link to this definition"></a></dt>
@@ -3465,6 +4645,36 @@ torch.utils.data.Dataset</p>
 </p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.CVDataModule.train_set_idx">
+<span class="sig-name descname"><span class="pre">train_set_idx</span></span><a class="headerlink" href="#dicee.CVDataModule.train_set_idx" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.CVDataModule.num_entities">
+<span class="sig-name descname"><span class="pre">num_entities</span></span><a class="headerlink" href="#dicee.CVDataModule.num_entities" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.CVDataModule.num_relations">
+<span class="sig-name descname"><span class="pre">num_relations</span></span><a class="headerlink" href="#dicee.CVDataModule.num_relations" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.CVDataModule.neg_sample_ratio">
+<span class="sig-name descname"><span class="pre">neg_sample_ratio</span></span><a class="headerlink" href="#dicee.CVDataModule.neg_sample_ratio" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.CVDataModule.batch_size">
+<span class="sig-name descname"><span class="pre">batch_size</span></span><a class="headerlink" href="#dicee.CVDataModule.batch_size" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.CVDataModule.num_workers">
+<span class="sig-name descname"><span class="pre">num_workers</span></span><a class="headerlink" href="#dicee.CVDataModule.num_workers" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.CVDataModule.train_dataloader">
 <span class="sig-name descname"><span class="pre">train_dataloader</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.utils.data.DataLoader</span></span></span><a class="reference internal" href="../../_modules/dicee/dataset_classes.html#CVDataModule.train_dataloader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.CVDataModule.train_dataloader" title="Link to this definition"></a></dt>
@@ -3645,7 +4855,72 @@ since this is NOT called on every device</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.QueryGenerator">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.</span></span><span class="sig-name descname"><span class="pre">QueryGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">train_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">test_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ent2id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel2id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gen_valid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gen_test</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/query_generator.html#QueryGenerator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.QueryGenerator" title="Link to this definition"></a></dt>
-<dd><dl class="py method">
+<dd><dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.QueryGenerator.train_path">
+<span class="sig-name descname"><span class="pre">train_path</span></span><a class="headerlink" href="#dicee.QueryGenerator.train_path" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.QueryGenerator.val_path">
+<span class="sig-name descname"><span class="pre">val_path</span></span><a class="headerlink" href="#dicee.QueryGenerator.val_path" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.QueryGenerator.test_path">
+<span class="sig-name descname"><span class="pre">test_path</span></span><a class="headerlink" href="#dicee.QueryGenerator.test_path" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.QueryGenerator.gen_valid">
+<span class="sig-name descname"><span class="pre">gen_valid</span></span><a class="headerlink" href="#dicee.QueryGenerator.gen_valid" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.QueryGenerator.gen_test">
+<span class="sig-name descname"><span class="pre">gen_test</span></span><a class="headerlink" href="#dicee.QueryGenerator.gen_test" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.QueryGenerator.seed">
+<span class="sig-name descname"><span class="pre">seed</span></span><a class="headerlink" href="#dicee.QueryGenerator.seed" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.QueryGenerator.max_ans_num">
+<span class="sig-name descname"><span class="pre">max_ans_num</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1000000.0</span></em><a class="headerlink" href="#dicee.QueryGenerator.max_ans_num" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.QueryGenerator.mode">
+<span class="sig-name descname"><span class="pre">mode</span></span><a class="headerlink" href="#dicee.QueryGenerator.mode" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.QueryGenerator.ent2id">
+<span class="sig-name descname"><span class="pre">ent2id</span></span><a class="headerlink" href="#dicee.QueryGenerator.ent2id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.QueryGenerator.rel2id">
+<span class="sig-name descname"><span class="pre">rel2id</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><a class="headerlink" href="#dicee.QueryGenerator.rel2id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.QueryGenerator.ent_in">
+<span class="sig-name descname"><span class="pre">ent_in</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><a class="headerlink" href="#dicee.QueryGenerator.ent_in" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.QueryGenerator.ent_out">
+<span class="sig-name descname"><span class="pre">ent_out</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span></em><a class="headerlink" href="#dicee.QueryGenerator.ent_out" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.QueryGenerator.query_name_to_struct">
+<span class="sig-name descname"><span class="pre">query_name_to_struct</span></span><a class="headerlink" href="#dicee.QueryGenerator.query_name_to_struct" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="dicee.QueryGenerator.list2tuple">
 <span class="sig-name descname"><span class="pre">list2tuple</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">list_data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/dicee/query_generator.html#QueryGenerator.list2tuple"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.QueryGenerator.list2tuple" title="Link to this definition"></a></dt>
 <dd></dd></dl>

@@ -58,6 +58,33 @@ Module Contents
    :vartype training: bool
 
 
+   .. py:attribute:: name
+      :value: 'BytE'
+
+
+
+   .. py:attribute:: config
+
+
+   .. py:attribute:: temperature
+      :value: 0.5
+
+
+
+   .. py:attribute:: topk
+      :value: 2
+
+
+
+   .. py:attribute:: transformer
+
+
+   .. py:attribute:: lm_head
+
+
+   .. py:attribute:: weight
+
+
    .. py:method:: loss_function(yhat_batch, y_batch)
 
       :param yhat_batch:
@@ -145,6 +172,12 @@ Module Contents
    LayerNorm but with an optional bias. PyTorch doesn't support simply bias=False
 
 
+   .. py:attribute:: weight
+
+
+   .. py:attribute:: bias
+
+
    .. py:method:: forward(input)
 
 
@@ -183,6 +216,30 @@ Module Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: c_attn
+
+
+   .. py:attribute:: c_proj
+
+
+   .. py:attribute:: attn_dropout
+
+
+   .. py:attribute:: resid_dropout
+
+
+   .. py:attribute:: n_head
+
+
+   .. py:attribute:: n_embd
+
+
+   .. py:attribute:: dropout
+
+
+   .. py:attribute:: flash
 
 
    .. py:method:: forward(x)
@@ -225,6 +282,18 @@ Module Contents
    :vartype training: bool
 
 
+   .. py:attribute:: c_fc
+
+
+   .. py:attribute:: gelu
+
+
+   .. py:attribute:: c_proj
+
+
+   .. py:attribute:: dropout
+
+
    .. py:method:: forward(x)
 
 
@@ -263,6 +332,18 @@ Module Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: ln_1
+
+
+   .. py:attribute:: attn
+
+
+   .. py:attribute:: ln_2
+
+
+   .. py:attribute:: mlp
 
 
    .. py:method:: forward(x)
@@ -347,6 +428,18 @@ Module Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: config
+
+
+   .. py:attribute:: transformer
+
+
+   .. py:attribute:: lm_head
+
+
+   .. py:attribute:: weight
 
 
    .. py:method:: get_num_params(non_embedding=True)

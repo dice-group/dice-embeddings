@@ -62,6 +62,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#coverage-report">Coverage Report</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../usage/main.html#how-to-cite">How to cite</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../../index.html">dicee</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="../../index.html#subpackages">Subpackages</a><ul class="current">
@@ -200,6 +201,16 @@ must be made before assignment on the child.</p>
 evaluation mode.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.quaternion.QMult.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'QMult'</span></em><a class="headerlink" href="#dicee.models.quaternion.QMult.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.quaternion.QMult.explicit">
+<span class="sig-name descname"><span class="pre">explicit</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#dicee.models.quaternion.QMult.explicit" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.quaternion.QMult.quaternion_multiplication_followed_by_inner_product">
 <span class="sig-name descname"><span class="pre">quaternion_multiplication_followed_by_inner_product</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#QMult.quaternion_multiplication_followed_by_inner_product"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.QMult.quaternion_multiplication_followed_by_inner_product" title="Link to this definition"></a></dt>
@@ -286,6 +297,51 @@ Given a batch of head entities and relations =&gt; shape (size of batch,| Entiti
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.quaternion.</span></span><span class="sig-name descname"><span class="pre">ConvQ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#ConvQ"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.ConvQ" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>Convolutional Quaternion Knowledge Graph Embeddings</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ConvQ'</span></em><a class="headerlink" href="#dicee.models.quaternion.ConvQ.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.entity_embeddings">
+<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.models.quaternion.ConvQ.entity_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.relation_embeddings">
+<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.models.quaternion.ConvQ.relation_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.conv2d">
+<span class="sig-name descname"><span class="pre">conv2d</span></span><a class="headerlink" href="#dicee.models.quaternion.ConvQ.conv2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.fc_num_input">
+<span class="sig-name descname"><span class="pre">fc_num_input</span></span><a class="headerlink" href="#dicee.models.quaternion.ConvQ.fc_num_input" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.fc1">
+<span class="sig-name descname"><span class="pre">fc1</span></span><a class="headerlink" href="#dicee.models.quaternion.ConvQ.fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.bn_conv1">
+<span class="sig-name descname"><span class="pre">bn_conv1</span></span><a class="headerlink" href="#dicee.models.quaternion.ConvQ.bn_conv1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.bn_conv2">
+<span class="sig-name descname"><span class="pre">bn_conv2</span></span><a class="headerlink" href="#dicee.models.quaternion.ConvQ.bn_conv2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.feature_map_dropout">
+<span class="sig-name descname"><span class="pre">feature_map_dropout</span></span><a class="headerlink" href="#dicee.models.quaternion.ConvQ.feature_map_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.quaternion.ConvQ.residual_convolution">
 <span class="sig-name descname"><span class="pre">residual_convolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Q_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#ConvQ.residual_convolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.ConvQ.residual_convolution" title="Link to this definition"></a></dt>
@@ -316,6 +372,51 @@ Given a batch of head entities and relations =&gt; shape (size of batch,| Entiti
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.quaternion.</span></span><span class="sig-name descname"><span class="pre">AConvQ</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#AConvQ"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.AConvQ" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
 <p>Additive Convolutional Quaternion Knowledge Graph Embeddings</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.name">
+<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'AConvQ'</span></em><a class="headerlink" href="#dicee.models.quaternion.AConvQ.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.entity_embeddings">
+<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.models.quaternion.AConvQ.entity_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.relation_embeddings">
+<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.models.quaternion.AConvQ.relation_embeddings" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.conv2d">
+<span class="sig-name descname"><span class="pre">conv2d</span></span><a class="headerlink" href="#dicee.models.quaternion.AConvQ.conv2d" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.fc_num_input">
+<span class="sig-name descname"><span class="pre">fc_num_input</span></span><a class="headerlink" href="#dicee.models.quaternion.AConvQ.fc_num_input" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.fc1">
+<span class="sig-name descname"><span class="pre">fc1</span></span><a class="headerlink" href="#dicee.models.quaternion.AConvQ.fc1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.bn_conv1">
+<span class="sig-name descname"><span class="pre">bn_conv1</span></span><a class="headerlink" href="#dicee.models.quaternion.AConvQ.bn_conv1" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.bn_conv2">
+<span class="sig-name descname"><span class="pre">bn_conv2</span></span><a class="headerlink" href="#dicee.models.quaternion.AConvQ.bn_conv2" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.feature_map_dropout">
+<span class="sig-name descname"><span class="pre">feature_map_dropout</span></span><a class="headerlink" href="#dicee.models.quaternion.AConvQ.feature_map_dropout" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.quaternion.AConvQ.residual_convolution">
 <span class="sig-name descname"><span class="pre">residual_convolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Q_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Q_2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/quaternion.html#AConvQ.residual_convolution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.quaternion.AConvQ.residual_convolution" title="Link to this definition"></a></dt>

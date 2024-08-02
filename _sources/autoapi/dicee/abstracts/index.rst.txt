@@ -32,6 +32,22 @@ Module Contents
            ?
 
 
+   .. py:attribute:: attributes
+
+
+   .. py:attribute:: callbacks
+
+
+   .. py:attribute:: is_global_zero
+      :value: True
+
+
+
+   .. py:attribute:: strategy
+      :value: None
+
+
+
    .. py:method:: on_fit_start(*args, **kwargs)
 
       A function to call callbacks before the training starts.
@@ -124,6 +140,15 @@ Module Contents
 
    model_name: str
    apply_semantic_constraint : boolean
+
+
+   .. py:attribute:: construct_ensemble
+
+
+   .. py:attribute:: apply_semantic_constraint
+
+
+   .. py:attribute:: configs
 
 
    .. py:method:: get_eval_report() -> dict
@@ -363,6 +388,27 @@ Module Contents
 
    Parameter
    ---------
+
+
+
+   .. py:attribute:: num_epochs
+
+
+   .. py:attribute:: path
+
+
+   .. py:attribute:: sample_counter
+      :value: 0
+
+
+
+   .. py:attribute:: epoch_count
+      :value: 0
+
+
+
+   .. py:attribute:: alphas
+      :value: None
 
 
 

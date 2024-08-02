@@ -25,6 +25,29 @@ Module Contents
    Convolutional ComplEx Knowledge Graph Embeddings
 
 
+   .. py:attribute:: name
+      :value: 'ConEx'
+
+
+
+   .. py:attribute:: conv2d
+
+
+   .. py:attribute:: fc_num_input
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: norm_fc1
+
+
+   .. py:attribute:: bn_conv2d
+
+
+   .. py:attribute:: feature_map_dropout
+
+
    .. py:method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor], C_2: Tuple[torch.Tensor, torch.Tensor]) -> torch.FloatTensor
 
       Compute residual score of two complex-valued embeddings.
@@ -52,6 +75,29 @@ Module Contents
 
 
    Additive Convolutional ComplEx Knowledge Graph Embeddings
+
+
+   .. py:attribute:: name
+      :value: 'AConEx'
+
+
+
+   .. py:attribute:: conv2d
+
+
+   .. py:attribute:: fc_num_input
+
+
+   .. py:attribute:: fc1
+
+
+   .. py:attribute:: norm_fc1
+
+
+   .. py:attribute:: bn_conv2d
+
+
+   .. py:attribute:: feature_map_dropout
 
 
    .. py:method:: residual_convolution(C_1: Tuple[torch.Tensor, torch.Tensor], C_2: Tuple[torch.Tensor, torch.Tensor]) -> torch.FloatTensor
@@ -110,6 +156,11 @@ Module Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: name
+      :value: 'ComplEx'
+
 
 
    .. py:method:: score(head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor, tail_ent_emb: torch.FloatTensor)

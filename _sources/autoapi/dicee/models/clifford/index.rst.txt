@@ -44,6 +44,23 @@ Module Contents
    Cl_(0,2) => Quaternions
 
 
+   .. py:attribute:: name
+      :value: 'CMult'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: p
+
+
+   .. py:attribute:: q
+
+
    .. py:method:: clifford_mul(x: torch.FloatTensor, y: torch.FloatTensor, p: int, q: int) -> tuple
 
               Clifford multiplication Cl_{p,q} (\mathbb{R})
@@ -135,6 +152,25 @@ Module Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: name
+      :value: 'Keci'
+
+
+
+   .. py:attribute:: p
+
+
+   .. py:attribute:: q
+
+
+   .. py:attribute:: r
+
+
+   .. py:attribute:: requires_grad_for_interactions
+      :value: True
+
 
 
    .. py:method:: compute_sigma_pp(hp, rp)
@@ -307,6 +343,16 @@ Module Contents
    Without learning dimension scaling
 
 
+   .. py:attribute:: name
+      :value: 'KeciBase'
+
+
+
+   .. py:attribute:: requires_grad_for_interactions
+      :value: False
+
+
+
 .. py:class:: DeCaL(args)
 
    Bases: :py:obj:`dicee.models.base_model.BaseKGE`
@@ -342,6 +388,29 @@ Module Contents
    :ivar training: Boolean represents whether this module is in training or
                    evaluation mode.
    :vartype training: bool
+
+
+   .. py:attribute:: name
+      :value: 'DeCaL'
+
+
+
+   .. py:attribute:: entity_embeddings
+
+
+   .. py:attribute:: relation_embeddings
+
+
+   .. py:attribute:: p
+
+
+   .. py:attribute:: q
+
+
+   .. py:attribute:: r
+
+
+   .. py:attribute:: re
 
 
    .. py:method:: forward_triples(x: torch.Tensor) -> torch.FloatTensor

@@ -25,6 +25,40 @@ Module Contents
    (3) Storing all necessary info
 
 
+   .. py:attribute:: args
+
+
+   .. py:attribute:: is_continual_training
+
+
+   .. py:attribute:: trainer
+      :value: None
+
+
+
+   .. py:attribute:: trained_model
+      :value: None
+
+
+
+   .. py:attribute:: knowledge_graph
+      :value: None
+
+
+
+   .. py:attribute:: report
+
+
+   .. py:attribute:: evaluator
+      :value: None
+
+
+
+   .. py:attribute:: start_time
+      :value: None
+
+
+
    .. py:method:: read_or_load_kg()
 
 
@@ -120,6 +154,12 @@ Module Contents
    During the continual learning we can only modify *** num_epochs *** parameter.
    Trained model stored in the same folder as the seed model for the training.
    Trained model is noted with the current time.
+
+
+   .. py:attribute:: previous_args
+
+
+   .. py:attribute:: args
 
 
    .. py:method:: continual_start() -> dict
