@@ -27,3 +27,8 @@ jobs:
         run: |
           wget https://files.dice-research.org/datasets/dice-embeddings/KGs.zip --no-check-certificate && unzip KGs.zip
           python -m pytest -p no:warnings -x
+      - name: Coverage report
+        run: |
+          pip install coverage
+          coverage run -m pytest
+          coverage report -m
