@@ -2,6 +2,7 @@
 [![Pypi](https://img.shields.io/badge/pypi-0.1.4-blue)](https://pypi.org/project/dicee/0.1.4/)
 [![Docs](https://img.shields.io/badge/documentation-0.1.4-yellow)](https://dice-group.github.io/dice-embeddings/index.html)
 
+![dicee_logo](docs/_static/images/dicee_logo.png)
 
 # DICE Embeddings: Hardware-agnostic Framework for Large-scale Knowledge Graph Embeddings
 
