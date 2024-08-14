@@ -169,12 +169,6 @@ Module Contents
 
 
 
-   .. py:method:: get_domain_of_relation(rel: str) -> List[str]
-
-
-   .. py:method:: get_range_of_relation(rel: str) -> List[str]
-
-
    .. py:method:: set_model_train_mode() -> None
 
       Setting the model into training mode

@@ -101,9 +101,6 @@
 <span class="kn">from</span> <span class="nn">.static_funcs_training</span> <span class="kn">import</span> <span class="n">evaluate_lp</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">sys</span>
-
-<span class="c1"># import gradio as gr</span>
-
 <span class="kn">import</span> <span class="nn">traceback</span>
 
 
@@ -113,8 +110,7 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Knowledge Graph Embedding Class for interactive usage of pre-trained models&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">construct_ensemble</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-                 <span class="n">model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                 <span class="n">apply_semantic_constraint</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                 <span class="n">model_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="n">url</span><span class="p">,</span> <span class="n">construct_ensemble</span><span class="o">=</span><span class="n">construct_ensemble</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">)</span>
 
 <div class="viewcode-block" id="KGE.__str__">

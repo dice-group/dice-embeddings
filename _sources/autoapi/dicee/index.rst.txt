@@ -2315,7 +2315,7 @@ Package Contents
 
 
 
-.. py:class:: KGE(path=None, url=None, construct_ensemble=False, model_name=None, apply_semantic_constraint=False)
+.. py:class:: KGE(path=None, url=None, construct_ensemble=False, model_name=None)
 
    Bases: :py:obj:`dicee.abstracts.BaseInteractiveKGE`
 

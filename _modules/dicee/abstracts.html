@@ -301,10 +301,6 @@
         <span class="c1"># if os.path.exists(self.path + &#39;/train_set.npy&#39;):</span>
         <span class="c1">#    self.train_set = np.load(file=self.path + &#39;/train_set.npy&#39;, mmap_mode=&#39;r&#39;)</span>
 
-        <span class="c1"># if apply_semantic_constraint:</span>
-        <span class="c1">#    (self.domain_constraints_per_rel, self.range_constraints_per_rel,</span>
-        <span class="c1">#     self.domain_per_rel, self.range_per_rel) = create_constraints(self.train_set)</span>
-
 <div class="viewcode-block" id="BaseInteractiveKGE.get_eval_report">
 <a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_eval_report">[docs]</a>
     <span class="k">def</span> <span class="nf">get_eval_report</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
@@ -373,23 +369,6 @@
             <span class="n">padded_bpe_t</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_bpe_token_representation</span><span class="p">(</span><span class="n">str_o</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">padded_bpe_h</span><span class="p">,</span> <span class="n">padded_bpe_r</span><span class="p">,</span> <span class="n">padded_bpe_t</span></div>
 
-
-<div class="viewcode-block" id="BaseInteractiveKGE.get_domain_of_relation">
-<a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_domain_of_relation">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_domain_of_relation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rel</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_to_entity</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">domain_per_rel</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">[</span><span class="n">rel</span><span class="p">]]]</span>
-        <span class="n">res</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">res</span></div>
-
-
-<div class="viewcode-block" id="BaseInteractiveKGE.get_range_of_relation">
-<a class="viewcode-back" href="../../autoapi/dicee/abstracts/index.html#dicee.abstracts.BaseInteractiveKGE.get_range_of_relation">[docs]</a>
-    <span class="k">def</span> <span class="nf">get_range_of_relation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rel</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_to_entity</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">range_per_rel</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">[</span><span class="n">rel</span><span class="p">]]]</span>
-        <span class="n">res</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">res</span></div>
 
 
 <div class="viewcode-block" id="BaseInteractiveKGE.set_model_train_mode">
