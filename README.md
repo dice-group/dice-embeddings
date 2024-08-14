@@ -59,7 +59,7 @@ python -m pytest -p no:warnings --ff # to run the failures first and then the re
 ## Knowledge Graph Embedding Models
 <details> <summary> To see available Models</summary>
 
-1. Decal, Keci, ComplEx, QMult, OMult, ConvQ, ConvO, ConEx, TransE, DistMult, and Shallom
+1. Decal, Keci, DualE, ComplEx, QMult, OMult, ConvQ, ConvO, ConEx, TransE, DistMult, and Shallom
 2. All embedding models available in https://github.com/pykeen/pykeen#models
 
 > For more, please refer to `examples`.
