@@ -35,8 +35,7 @@ Deploy a pre-trained embedding model without writing a single line of code.
 ### Installation from Source
 ``` bash
 git clone https://github.com/dice-group/dice-embeddings.git
-conda create -n dice python=3.10.13 --no-default-packages && conda activate dice
-pip3 install -e .
+conda create -n dice python=3.10.13 --no-default-packages && conda activate dice && pip3 install -e .
 # or
 pip3 install -e .["dev"]
 ```
@@ -60,8 +59,8 @@ python -m pytest -p no:warnings --ff # to run the failures first and then the re
 ## Knowledge Graph Embedding Models
 <details> <summary> To see available Models</summary>
 
-1. TransE, DistMult, ComplEx, ConEx, QMult, OMult, ConvO, ConvQ, Keci
-2. All 44 models available in https://github.com/pykeen/pykeen#models
+1. Decal, Keci, ComplEx, QMult, OMult, ConvQ, ConvO, ConEx, TransE, DistMult, and Shallom
+2. All embedding models available in https://github.com/pykeen/pykeen#models
 
 > For more, please refer to `examples`.
 </details>
@@ -69,7 +68,7 @@ python -m pytest -p no:warnings --ff # to run the failures first and then the re
 ## How to Train
 <details> <summary> To see a code snippet </summary>
 
-To Train a KGE model (KECI) and evaluate it on the train, validation, and test sets of the UMLS benchmark dataset.
+To Train a KGE model and evaluate it on the train, validation, and test sets of the UMLS benchmark dataset.
 ```python
 from dicee.executer import Execute
 from dicee.config import Namespace

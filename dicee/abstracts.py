@@ -189,10 +189,6 @@ class BaseInteractiveKGE:
         # if os.path.exists(self.path + '/train_set.npy'):
         #    self.train_set = np.load(file=self.path + '/train_set.npy', mmap_mode='r')
 
-        # if apply_semantic_constraint:
-        #    (self.domain_constraints_per_rel, self.range_constraints_per_rel,
-        #     self.domain_per_rel, self.range_per_rel) = create_constraints(self.train_set)
-
     def get_eval_report(self) -> dict:
         return load_json(self.path + "/eval_report.json")
 
@@ -253,17 +249,6 @@ class BaseInteractiveKGE:
             padded_bpe_t.append(self.get_bpe_token_representation(str_o))
         return padded_bpe_h, padded_bpe_r, padded_bpe_t
 
-    def get_domain_of_relation(self, rel: str) -> List[str]:
-        x = [self.idx_to_entity[i] for i in self.domain_per_rel[self.relation_to_idx[rel]]]
-        res = set(x)
-        assert len(x) == len(res)
-        return res
-
-    def get_range_of_relation(self, rel: str) -> List[str]:
-        x = [self.idx_to_entity[i] for i in self.range_per_rel[self.relation_to_idx[rel]]]
-        res = set(x)
-        assert len(x) == len(res)
-        return res
 
     def set_model_train_mode(self) -> None:
         """

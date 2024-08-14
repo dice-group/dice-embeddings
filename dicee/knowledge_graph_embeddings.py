@@ -9,9 +9,6 @@ from .static_funcs import random_prediction, deploy_triple_prediction, deploy_ta
 from .static_funcs_training import evaluate_lp
 import numpy as np
 import sys
-
-# import gradio as gr
-
 import traceback
 
 
@@ -19,8 +16,7 @@ class KGE(BaseInteractiveKGE):
     """ Knowledge Graph Embedding Class for interactive usage of pre-trained models"""
 
     def __init__(self, path=None, url=None, construct_ensemble=False,
-                 model_name=None,
-                 apply_semantic_constraint=False):
+                 model_name=None):
         super().__init__(path=path, url=url, construct_ensemble=construct_ensemble, model_name=model_name)
 
     def __str__(self):
