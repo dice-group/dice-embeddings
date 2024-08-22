@@ -109,7 +109,7 @@ class TorchTrainer(AbstractTrainer):
                     tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={epoch_loss/i:.5f}")
                 else:
                     tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}")
-            avg_epoch_loss = epoch_loss / i
+            avg_epoch_loss = epoch_loss / len(self.train_dataloaders)
             """
             # Autobatch Finder: Double the current batch size if memory allows and repeat this process at mast 5 times.
             if self.attributes.auto_batch_finder and psutil.virtual_memory().percent < 30.0 and counter < 5:
