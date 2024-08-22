@@ -153,51 +153,6 @@
         <span class="c1"># (3) Loss Forward and Backward w.r.t the batch.</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward_backward_update</span><span class="p">(</span><span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">_run_epoch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epoch</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            Iterate over the training dataset</span>
-
-<span class="sd">            Arguments</span>
-<span class="sd">           ----------</span>
-<span class="sd">           epoch:int</span>
-<span class="sd">           -------</span>
-<span class="sd">           average loss over the dataset</span>
-<span class="sd">       &quot;&quot;&quot;</span>
-        <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">construct_mini_batch_time</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">batch</span><span class="p">:</span> <span class="nb">list</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataloaders</span><span class="p">):</span>
-            <span class="c1"># (1) Extract Input and Outputs and set them on the dice</span>
-            <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_input_outputs_set_device</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
-            <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">construct_mini_batch_time</span><span class="p">:</span>
-                <span class="n">construct_mini_batch_time</span> <span class="o">=</span> <span class="n">start_time</span> <span class="o">-</span> <span class="n">construct_mini_batch_time</span>
-            <span class="c1"># (2) Forward-Backward-Update.</span>
-            <span class="n">batch_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_batch</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span>
-            <span class="n">epoch_loss</span> <span class="o">+=</span> <span class="n">batch_loss</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            if construct_mini_batch_time:</span>
-<span class="sd">                print(</span>
-<span class="sd">                    f&quot;Epoch:{epoch + 1} &quot;</span>
-<span class="sd">                    f&quot;| Batch:{i + 1} &quot;</span>
-<span class="sd">                    f&quot;| Loss:{batch_loss:.10f} &quot;</span>
-<span class="sd">                    f&quot;| ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec &quot;</span>
-<span class="sd">                    f&quot;| BatchConst.:{construct_mini_batch_time:.2f}sec &quot;</span>
-<span class="sd">                    f&quot;| Mem. Usage {self.process.memory_info().rss / 1_000_000: .5}MB &quot;</span>
-<span class="sd">                    f&quot; ({psutil.virtual_memory().percent} %)&quot;)</span>
-<span class="sd">            else:</span>
-<span class="sd">                print(</span>
-<span class="sd">                    f&quot;Epoch:{epoch + 1} &quot;</span>
-<span class="sd">                    f&quot;| Batch:{i + 1} &quot;</span>
-<span class="sd">                    f&quot;| Loss:{batch_loss} &quot;</span>
-<span class="sd">                    f&quot;| ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs &quot;</span>
-<span class="sd">                    f&quot;| Mem. Usage {self.process.memory_info().rss / 1_000_000: .5}MB &quot;)</span>
-<span class="sd">            &quot;&quot;&quot;</span>
-            
-            <span class="n">construct_mini_batch_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">epoch_loss</span> <span class="o">/</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-
 <div class="viewcode-block" id="TorchTrainer.fit">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer/index.html#dicee.trainer.torch_trainer.TorchTrainer.fit">[docs]</a>
     <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">train_dataloaders</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -232,17 +187,25 @@
               <span class="sa">f</span><span class="s1">&#39;| EpochBatchsize:</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">train_dataloaders</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="p">(</span><span class="n">tqdm_bar</span> <span class="o">:=</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">max_epochs</span><span class="p">))):</span>
-            <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-
-            <span class="n">avg_epoch_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_epoch</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span>
-            <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_description_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Epoch:</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> &quot;</span> <span class="sa">f</span><span class="s2">&quot;| Loss:</span><span class="si">{</span><span class="n">avg_epoch_loss</span><span class="si">:</span><span class="s2">.8f</span><span class="si">}</span><span class="s2"> &quot;</span><span class="sa">f</span><span class="s2">&quot;| Runtime:</span><span class="si">{</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="mi">60</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> mins&quot;</span><span class="p">)</span>
-
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            print(f&quot;Epoch:{epoch + 1} &quot;</span>
-<span class="sd">                  f&quot;| Loss:{avg_epoch_loss:.8f} &quot;</span>
-<span class="sd">                  f&quot;| Runtime:{(time.time() - start_time) / 60:.3f} mins&quot;)</span>
-<span class="sd">            &quot;&quot;&quot;</span>
-<span class="w">            </span>
+            <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">construct_mini_batch_time</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">batch</span><span class="p">:</span> <span class="nb">list</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataloaders</span><span class="p">):</span>
+                <span class="c1"># (1) Extract Input and Outputs and set them on the dice</span>
+                <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_input_outputs_set_device</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+                <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">construct_mini_batch_time</span><span class="p">:</span>
+                    <span class="n">construct_mini_batch_time</span> <span class="o">=</span> <span class="n">start_time</span> <span class="o">-</span> <span class="n">construct_mini_batch_time</span>
+                <span class="c1"># (2) Forward-Backward-Update.</span>
+                <span class="n">batch_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_batch</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span>
+                <span class="n">epoch_loss</span> <span class="o">+=</span> <span class="n">batch_loss</span>
+                <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_description_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Epoch:</span><span class="si">{</span><span class="n">epoch</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">i</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                    <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_postfix_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;loss_step=</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, loss_epoch=</span><span class="si">{</span><span class="n">epoch_loss</span><span class="o">/</span><span class="n">i</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_postfix_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;loss_step=</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, loss_epoch=</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">avg_epoch_loss</span> <span class="o">=</span> <span class="n">epoch_loss</span> <span class="o">/</span> <span class="n">i</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            # Autobatch Finder: Double the current batch size if memory allows and repeat this process at mast 5 times.</span>
 <span class="sd">            if self.attributes.auto_batch_finder and psutil.virtual_memory().percent &lt; 30.0 and counter &lt; 5:</span>
@@ -317,7 +280,8 @@
             <span class="k">return</span> <span class="p">(</span><span class="n">x_batch</span><span class="p">,</span> <span class="n">y_idx_batch</span><span class="p">),</span> <span class="n">y_batch</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">))</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unexpected batch shape..&#39;</span><span class="p">)</span></div>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Unexpected batch shape..&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span></div>
 </div>
 
 </pre></div>
