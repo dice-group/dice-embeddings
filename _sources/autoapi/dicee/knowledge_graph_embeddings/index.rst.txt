@@ -25,9 +25,6 @@ Module Contents
 
    .. py:method:: __str__()
 
-      Return str(self).
-
-
 
    .. py:method:: to(device: str) -> None
 

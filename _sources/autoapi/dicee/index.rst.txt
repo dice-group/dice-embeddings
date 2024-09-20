@@ -22,6 +22,7 @@ Submodules
 .. toctree::
    :maxdepth: 1
 
+   /autoapi/dicee/__main__/index
    /autoapi/dicee/abstracts/index
    /autoapi/dicee/analyse_experiments/index
    /autoapi/dicee/callbacks/index
@@ -2324,9 +2325,6 @@ Package Contents
 
 
    .. py:method:: __str__()
-
-      Return str(self).
-
 
 
    .. py:method:: to(device: str) -> None

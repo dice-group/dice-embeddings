@@ -1,0 +1,6 @@
+dicee.__main__
+==============
+
+.. py:module:: dicee.__main__
+
+
