@@ -103,6 +103,7 @@ A KGE model can also be trained from the command line
 dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
 ```
 dicee automatically detects available GPUs and trains a model with distributed data parallels technique.
+You can choose a suitable backend for your knowledge graph ```--backend pandas | polars  | rdflib ```.
 ```bash
 # Train a model by only using the GPU-0
 CUDA_VISIBLE_DEVICES=0 dicee --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
@@ -121,12 +122,12 @@ CUDA_VISIBLE_DEVICES=0,1 python dicee/scripts/run.py --trainer PL --dataset_dir 
 ```
 Similarly, models can be easily trained with torchrun
 ```bash
-torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee/scripts/run.py --trainer torchDDP --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
+torchrun --standalone --nnodes=1 --nproc_per_node=gpu dicee --trainer torchDDP --dataset_dir "KGs/UMLS" --model Keci --eval_model "train_val_test"
 ```
 You can also train a model in multi-node multi-gpu setting.
 ```bash
-torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee/scripts/run.py --trainer torchDDP --dataset_dir KGs/UMLS
-torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula dicee/scripts/run.py --trainer torchDDP --dataset_dir KGs/UMLS
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer torchDDP --dataset_dir KGs/UMLS
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer torchDDP --dataset_dir KGs/UMLS
 ```
 Train a KGE model by providing the path of a single file and store all parameters under newly created directory
 called `KeciFamilyRun`.

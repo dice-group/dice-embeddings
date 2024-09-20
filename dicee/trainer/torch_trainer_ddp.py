@@ -2,16 +2,22 @@ import os
 import torch
 import time
 from torch.nn.parallel import DistributedDataParallel as DDP
-
+from typing import Iterable
 from dicee.abstracts import AbstractTrainer
 from dicee.static_funcs_training import efficient_zero_grad
 from torch.utils.data import DataLoader
-
+from tqdm import tqdm
 
 # DDP with gradiant accumulation https://gist.github.com/mcarilli/bf013d2d2f4b4dd21ade30c9b52d5e2e
 def print_peak_memory(prefix, device):
     if device == 0:
         print(f"{prefix}: {torch.cuda.max_memory_allocated(device) // 1e6}MB ")
+
+def make_iterable_verbose(iterable_object, verbose, desc="Default", position=None, leave=True) -> Iterable:
+    if verbose:
+        return tqdm(iterable_object, desc=desc, position=position, leave=leave)
+    else:
+        return iterable_object
 
 
 class TorchDDPTrainer(AbstractTrainer):
@@ -96,8 +102,8 @@ class NodeTrainer:
         print("Initializing device on",self.local_rank)
         self.model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[self.local_rank],output_device=self.local_rank)
         self.num_epochs = num_epochs
-        print("HEREEE")
         print_peak_memory("Max memory allocated after creating DDP local local_rank:", self.local_rank)
+        """
         print(f'Global Rank {self.global_rank}\t Local Rank:{self.local_rank}')
         print(self.model)
         print(self.optimizer)
@@ -108,6 +114,8 @@ class NodeTrainer:
               f' | LearningRate:{self.model.module.learning_rate}'
               f' | BatchSize:{self.train_dataset_loader.batch_size}'
               f' | EpochBatchsize:{len(self.train_dataset_loader)}')
+        """
+
 
         self.loss_history = []
 
@@ -168,10 +176,11 @@ class NodeTrainer:
         for i, z in enumerate(self.train_dataset_loader):
             source, targets = self.extract_input_outputs(z)
             start_time = time.time()
-            if construct_mini_batch_time:
-                construct_mini_batch_time = start_time - construct_mini_batch_time
+            # if construct_mini_batch_time:
+            #    construct_mini_batch_time = start_time - construct_mini_batch_time
             batch_loss = self._run_batch(source, targets)
             epoch_loss += batch_loss
+            """
             if True:  # self.local_rank == self.global_rank==0:
                 if construct_mini_batch_time:
                     print(
@@ -190,6 +199,8 @@ class NodeTrainer:
                         f" | Batch:{i + 1}"
                         f" | Loss:{batch_loss}"
                         f" | ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs")
+            """
+
             construct_mini_batch_time = time.time()
         return epoch_loss / (i + 1)
 
@@ -201,18 +212,31 @@ class NodeTrainer:
         -------
 
         """
-        for epoch in range(self.num_epochs):
-            start_time = time.time()
-            epoch_loss = self._run_epoch(epoch)
-
+        for epoch in (tqdm_bar := make_iterable_verbose(range(self.num_epochs),
+                                                      verbose=self.local_rank == self.global_rank == 0,
+                                                      position=0, leave=True)):
+            self.train_dataset_loader.sampler.set_epoch(epoch)
+            epoch_loss = 0
+            for i, z in enumerate(self.train_dataset_loader):
+                source, targets = self.extract_input_outputs(z)
+                batch_loss = self._run_batch(source, targets)
+                epoch_loss += batch_loss
+                tqdm_bar.set_description_str(f"Epoch:{epoch + 1}")
+                if i > 0:
+                    tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={epoch_loss / i:.5f}")
+                else:
+                    tqdm_bar.set_postfix_str(f"loss_step={batch_loss:.5f}, loss_epoch={batch_loss:.5f}")
+            avg_epoch_loss = epoch_loss / len(self.train_dataset_loader)
+            """
             print(f"Global:{self.global_rank}"
                   f" | Local:{self.local_rank}"
                   f" | Epoch:{epoch + 1}"
                   f" | Loss:{epoch_loss:.8f}"
                   f" | Runtime:{(time.time() - start_time) / 60:.3f}mins")
+            """
 
-            if True:  # self.local_rank == self.global_rank == 0:
-                self.model.module.loss_history.append(epoch_loss)
+            if self.local_rank == self.global_rank == 0:
+                self.model.module.loss_history.append(avg_epoch_loss)
                 for c in self.callbacks:
                     c.on_train_epoch_end(self.trainer, self.model.module)
 
