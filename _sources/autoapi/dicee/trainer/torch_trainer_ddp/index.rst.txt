@@ -18,14 +18,11 @@ Functions
 
 .. autoapisummary::
 
-   dicee.trainer.torch_trainer_ddp.print_peak_memory
    dicee.trainer.torch_trainer_ddp.make_iterable_verbose
 
 
 Module Contents
 ---------------
-
-.. py:function:: print_peak_memory(prefix, device)
 
 .. py:function:: make_iterable_verbose(iterable_object, verbose, desc='Default', position=None, leave=True) -> Iterable
 

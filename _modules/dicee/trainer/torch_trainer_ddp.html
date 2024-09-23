@@ -93,22 +93,12 @@
 <span></span><span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">from</span> <span class="nn">torch.nn.parallel</span> <span class="kn">import</span> <span class="n">DistributedDataParallel</span> <span class="k">as</span> <span class="n">DDP</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterable</span>
 <span class="kn">from</span> <span class="nn">dicee.abstracts</span> <span class="kn">import</span> <span class="n">AbstractTrainer</span>
-<span class="kn">from</span> <span class="nn">dicee.static_funcs_training</span> <span class="kn">import</span> <span class="n">efficient_zero_grad</span>
 <span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span>
 <span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
 
 <span class="n">torch</span><span class="o">.</span><span class="n">set_float32_matmul_precision</span><span class="p">(</span><span class="s1">&#39;high&#39;</span><span class="p">)</span>
-
-<span class="c1"># DDP with gradiant accumulation https://gist.github.com/mcarilli/bf013d2d2f4b4dd21ade30c9b52d5e2e</span>
-<div class="viewcode-block" id="print_peak_memory">
-<a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.print_peak_memory">[docs]</a>
-<span class="k">def</span> <span class="nf">print_peak_memory</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="n">device</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">device</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">max_memory_allocated</span><span class="p">(</span><span class="n">device</span><span class="p">)</span><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="mf">1e6</span><span class="si">}</span><span class="s2">MB &quot;</span><span class="p">)</span></div>
-
 
 <div class="viewcode-block" id="make_iterable_verbose">
 <a class="viewcode-back" href="../../../autoapi/dicee/trainer/torch_trainer_ddp/index.html#dicee.trainer.torch_trainer_ddp.make_iterable_verbose">[docs]</a>
@@ -260,36 +250,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">train_dataset_loader</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">set_epoch</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span>
         <span class="n">epoch_loss</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">construct_mini_batch_time</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataset_loader</span><span class="p">):</span>
             <span class="n">source</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extract_input_outputs</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
-            <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="c1"># if construct_mini_batch_time:</span>
-            <span class="c1">#    construct_mini_batch_time = start_time - construct_mini_batch_time</span>
             <span class="n">batch_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_batch</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
             <span class="n">epoch_loss</span> <span class="o">+=</span> <span class="n">batch_loss</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            if True:  # self.local_rank == self.global_rank==0:</span>
-<span class="sd">                if construct_mini_batch_time:</span>
-<span class="sd">                    print(</span>
-<span class="sd">                        f&quot;Global:{self.global_rank}&quot;</span>
-<span class="sd">                        f&quot; | Local:{self.local_rank}&quot;</span>
-<span class="sd">                        f&quot; | Epoch:{epoch + 1}&quot;</span>
-<span class="sd">                        f&quot; | Batch:{i + 1}&quot;</span>
-<span class="sd">                        f&quot; | Loss:{batch_loss}&quot;</span>
-<span class="sd">                        f&quot; | ForwardBackwardUpdate:{(time.time() - start_time):.2f}sec&quot;</span>
-<span class="sd">                        f&quot; | BatchConst.:{construct_mini_batch_time:.2f}sec&quot;)</span>
-<span class="sd">                else:</span>
-<span class="sd">                    print(</span>
-<span class="sd">                        f&quot;Global:{self.global_rank}&quot;</span>
-<span class="sd">                        f&quot; | Local:{self.local_rank}&quot;</span>
-<span class="sd">                        f&quot; | Epoch:{epoch + 1}&quot;</span>
-<span class="sd">                        f&quot; | Batch:{i + 1}&quot;</span>
-<span class="sd">                        f&quot; | Loss:{batch_loss}&quot;</span>
-<span class="sd">                        f&quot; | ForwardBackwardUpdate:{(time.time() - start_time):.2f}secs&quot;)</span>
-<span class="sd">            &quot;&quot;&quot;</span>
-
-            <span class="n">construct_mini_batch_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">epoch_loss</span> <span class="o">/</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
 
 <div class="viewcode-block" id="NodeTrainer.train">
@@ -317,13 +281,6 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">tqdm_bar</span><span class="o">.</span><span class="n">set_postfix_str</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;loss_step=</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">, loss_epoch=</span><span class="si">{</span><span class="n">batch_loss</span><span class="si">:</span><span class="s2">.5f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="n">avg_epoch_loss</span> <span class="o">=</span> <span class="n">epoch_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">train_dataset_loader</span><span class="p">)</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">            print(f&quot;Global:{self.global_rank}&quot;</span>
-<span class="sd">                  f&quot; | Local:{self.local_rank}&quot;</span>
-<span class="sd">                  f&quot; | Epoch:{epoch + 1}&quot;</span>
-<span class="sd">                  f&quot; | Loss:{epoch_loss:.8f}&quot;</span>
-<span class="sd">                  f&quot; | Runtime:{(time.time() - start_time) / 60:.3f}mins&quot;)</span>
-<span class="sd">            &quot;&quot;&quot;</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">local_rank</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">global_rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">loss_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">avg_epoch_loss</span><span class="p">)</span>
