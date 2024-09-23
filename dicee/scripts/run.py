@@ -40,13 +40,13 @@ def get_default_arguments(description=None):
                         help="Available knowledge graph embedding models. "
                              "To use other knowledge graph embedding models available in python, e.g.,"
                              "**Pykeen_BoxE** and add this into choices")
-    parser.add_argument('--optim', type=str, default='Adam',
+    parser.add_argument('--optim', type=str, default='SGD',
                         help='An optimizer',
                         choices=['Adam', 'AdamW', 'SGD',"NAdam", "Adagrad", "ASGD"])
-    parser.add_argument('--embedding_dim', type=int, default=256,
+    parser.add_argument('--embedding_dim', type=int, default=32,
                         help='Number of dimensions for an embedding vector. ')
-    parser.add_argument("--num_epochs", type=int, default=100, help='Number of epochs for training. ')
-    parser.add_argument('--batch_size', type=int, default=1024,
+    parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. ')
+    parser.add_argument('--batch_size', type=int, default=32,
                         help='Mini batch size. If None, automatic batch finder is applied')
     parser.add_argument("--lr", type=float, default=0.01)
     parser.add_argument('--callbacks', type=json.loads,
@@ -56,7 +56,7 @@ def get_default_arguments(description=None):
     parser.add_argument("--trainer", type=str, default='PL',
                         choices=['torchCPUTrainer', 'PL', 'torchDDP'],
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
-    parser.add_argument('--scoring_technique', default="KvsAll",
+    parser.add_argument('--scoring_technique', default="NegSample",
                         help="Training technique for knowledge graph embedding model",
                         choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "KvsSample"])
     parser.add_argument('--neg_ratio', type=int, default=1,
