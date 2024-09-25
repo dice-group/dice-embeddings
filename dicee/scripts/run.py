@@ -40,7 +40,7 @@ def get_default_arguments(description=None):
                         help="Available knowledge graph embedding models. "
                              "To use other knowledge graph embedding models available in python, e.g.,"
                              "**Pykeen_BoxE** and add this into choices")
-    parser.add_argument('--optim', type=str, default='SGD',
+    parser.add_argument('--optim', type=str, default='Adam',
                         help='An optimizer',
                         choices=['Adam', 'AdamW', 'SGD',"NAdam", "Adagrad", "ASGD"])
     parser.add_argument('--embedding_dim', type=int, default=32,
@@ -48,7 +48,7 @@ def get_default_arguments(description=None):
     parser.add_argument("--num_epochs", type=int, default=10, help='Number of epochs for training. ')
     parser.add_argument('--batch_size', type=int, default=32,
                         help='Mini batch size. If None, automatic batch finder is applied')
-    parser.add_argument("--lr", type=float, default=0.01)
+    parser.add_argument("--lr", type=float, default=0.1)
     parser.add_argument('--callbacks', type=json.loads,
                         default={},
                         help='{"PPE":{ "last_percent_to_consider": 10}}'
