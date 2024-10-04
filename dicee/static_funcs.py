@@ -117,6 +117,7 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) 
     # (1) Load weights..
     weights = torch.load(path_of_experiment_folder + f'/{model_name}', torch.device('cpu'))
     configs = load_json(path_of_experiment_folder + '/configuration.json')
+    reports = load_json(path_of_experiment_folder + '/report.json')
 
     if configs.get("byte_pair_encoding", None):
         num_tokens, ent_dim = weights['token_embeddings.weight'].shape
@@ -128,9 +129,9 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) 
         configs["num_tokens"] = num_tokens
         configs["max_length_subword_tokens"] = report["max_length_subword_tokens"]
     else:
-        num_ent, ent_dim = weights['entity_embeddings.weight'].shape
-        num_rel, rel_dim = weights['relation_embeddings.weight'].shape
-        assert ent_dim == rel_dim
+
+        num_ent = reports["num_entities"]
+        num_rel = reports["num_relations"]
         # Update the training configuration
         configs["num_entities"] = num_ent
         configs["num_relations"] = num_rel
@@ -139,7 +140,10 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) 
     # (4) Select the model
     model, _ = intialize_model(configs,verbose)
     # (5) Put (1) into (4)
-    model.load_state_dict(weights)
+    if isinstance(weights,torch.jit._script.RecursiveScriptModule):
+        model.load_state_dict(weights.state_dict())
+    else:
+        model.load_state_dict(weights)
     # (6) Set it into eval model.
     for parameter in model.parameters():
         parameter.requires_grad = False
@@ -155,14 +159,12 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) 
             with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
                 entity_to_idx = pickle.load(f)
         except FileNotFoundError:
-            print("entity_to_idx.p not found")
-            entity_to_idx = dict()
+            entity_to_idx = load_json(path_of_experiment_folder + '/entity_to_idx.json')
         try:
             with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
                 relation_to_idx = pickle.load(f)
         except FileNotFoundError:
-            print("relation_to_idx.p not found")
-            relation_to_idx = dict()
+            relation_to_idx = load_json(path_of_experiment_folder + '/relation_to_idx.json')
         if verbose > 0:
             print(f'Done! It took {time.time() - start_time:.4f}')
         return model, (entity_to_idx, relation_to_idx)
