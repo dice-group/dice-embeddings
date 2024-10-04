@@ -1,7 +1,7 @@
 from typing import List
 from .read_preprocess_save_load_kg import ReadFromDisk, PreprocessKG, LoadSaveToDisk
 import sys
-
+import pandas as pd
 class KG:
     """ Knowledge Graph """
 
@@ -81,6 +81,9 @@ class KG:
         assert len(self.train_set) > 0
 
         self._describe()
+        if self.entity_to_idx is not None:
+            self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
+            self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
 
     def _describe(self) -> None:
         self.description_of_input = f'\n------------------- Description of Dataset {self.dataset_dir} -------------------'
@@ -112,6 +115,18 @@ class KG:
     @property
     def relations_str(self) -> List:
         return list(self.relation_to_idx.keys())
+
+    def exists(self,h:str,r:str,t:str):
+        # Row to check for existence
+        row_to_check = {'subject': self.entity_to_idx[h], 'relation': self.relation_to_idx[r], 'object': self.entity_to_idx[t]}
+        # Check if the row exists
+        return ((self.raw_train_set == pd.Series(row_to_check)).all(axis=1)).any()
+
+    def __iter__(self):
+        for h, r, t in self.raw_train_set.to_numpy().tolist():
+            yield self.idx_to_entity[h], self.idx_to_relations[r], self.idx_to_entity[t]
+    def __len__(self):
+        return len(self.raw_train_set)
 
     def func_triple_to_bpe_representation(self, triple: List[str]):
         result = []
