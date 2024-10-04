@@ -7,7 +7,6 @@ import numpy as np
 import concurrent
 from typing import List, Tuple
 from typing import Union
-import itertools
 
 
 class PreprocessKG:
