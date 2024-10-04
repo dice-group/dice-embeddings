@@ -1,6 +1,5 @@
 import os
 import torch
-import time
 from typing import Iterable
 from dicee.abstracts import AbstractTrainer
 from torch.utils.data import DataLoader
