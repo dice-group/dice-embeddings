@@ -178,16 +178,12 @@ class BaseInteractiveKGE:
             self.num_relations = len(self.relation_to_idx)
             self.entity_to_idx: dict
             self.relation_to_idx: dict
-            assert list(self.entity_to_idx.values()) == list(range(0, len(self.entity_to_idx)))
-            assert list(self.relation_to_idx.values()) == list(range(0, len(self.relation_to_idx)))
+            # 0, ....,
+            assert sorted(list(self.entity_to_idx.values())) == list(range(0, len(self.entity_to_idx)))
+            assert sorted(list(self.relation_to_idx.values())) == list(range(0, len(self.relation_to_idx)))
 
             self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
             self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
-
-        # See https://numpy.org/doc/stable/reference/generated/numpy.memmap.html
-        # @TODO: Ignore temporalryIf file exists
-        # if os.path.exists(self.path + '/train_set.npy'):
-        #    self.train_set = np.load(file=self.path + '/train_set.npy', mmap_mode='r')
 
     def get_eval_report(self) -> dict:
         return load_json(self.path + "/eval_report.json")
