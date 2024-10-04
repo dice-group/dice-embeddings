@@ -135,6 +135,15 @@ Module Contents
 
 
 
+   .. py:method:: exists(h: str, r: str, t: str)
+
+
+   .. py:method:: __iter__()
+
+
+   .. py:method:: __len__()
+
+
    .. py:method:: func_triple_to_bpe_representation(triple: List[str])
 
 

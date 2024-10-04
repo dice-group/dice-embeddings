@@ -235,6 +235,7 @@
     <span class="c1"># (1) Load weights..</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path_of_experiment_folder</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;/</span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">))</span>
     <span class="n">configs</span> <span class="o">=</span> <span class="n">load_json</span><span class="p">(</span><span class="n">path_of_experiment_folder</span> <span class="o">+</span> <span class="s1">&#39;/configuration.json&#39;</span><span class="p">)</span>
+    <span class="n">reports</span> <span class="o">=</span> <span class="n">load_json</span><span class="p">(</span><span class="n">path_of_experiment_folder</span> <span class="o">+</span> <span class="s1">&#39;/report.json&#39;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">configs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;byte_pair_encoding&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
         <span class="n">num_tokens</span><span class="p">,</span> <span class="n">ent_dim</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="s1">&#39;token_embeddings.weight&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
@@ -246,9 +247,9 @@
         <span class="n">configs</span><span class="p">[</span><span class="s2">&quot;num_tokens&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">num_tokens</span>
         <span class="n">configs</span><span class="p">[</span><span class="s2">&quot;max_length_subword_tokens&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="s2">&quot;max_length_subword_tokens&quot;</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">num_ent</span><span class="p">,</span> <span class="n">ent_dim</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="s1">&#39;entity_embeddings.weight&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
-        <span class="n">num_rel</span><span class="p">,</span> <span class="n">rel_dim</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="s1">&#39;relation_embeddings.weight&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
-        <span class="k">assert</span> <span class="n">ent_dim</span> <span class="o">==</span> <span class="n">rel_dim</span>
+
+        <span class="n">num_ent</span> <span class="o">=</span> <span class="n">reports</span><span class="p">[</span><span class="s2">&quot;num_entities&quot;</span><span class="p">]</span>
+        <span class="n">num_rel</span> <span class="o">=</span> <span class="n">reports</span><span class="p">[</span><span class="s2">&quot;num_relations&quot;</span><span class="p">]</span>
         <span class="c1"># Update the training configuration</span>
         <span class="n">configs</span><span class="p">[</span><span class="s2">&quot;num_entities&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">num_ent</span>
         <span class="n">configs</span><span class="p">[</span><span class="s2">&quot;num_relations&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">num_rel</span>
@@ -257,7 +258,10 @@
     <span class="c1"># (4) Select the model</span>
     <span class="n">model</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">intialize_model</span><span class="p">(</span><span class="n">configs</span><span class="p">,</span><span class="n">verbose</span><span class="p">)</span>
     <span class="c1"># (5) Put (1) into (4)</span>
-    <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span><span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">_script</span><span class="o">.</span><span class="n">RecursiveScriptModule</span><span class="p">):</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">state_dict</span><span class="p">())</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
     <span class="c1"># (6) Set it into eval model.</span>
     <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">():</span>
         <span class="n">parameter</span><span class="o">.</span><span class="n">requires_grad</span> <span class="o">=</span> <span class="kc">False</span>
@@ -273,14 +277,12 @@
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_of_experiment_folder</span> <span class="o">+</span> <span class="s1">&#39;/entity_to_idx.p&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                 <span class="n">entity_to_idx</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;entity_to_idx.p not found&quot;</span><span class="p">)</span>
-            <span class="n">entity_to_idx</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="n">entity_to_idx</span> <span class="o">=</span> <span class="n">load_json</span><span class="p">(</span><span class="n">path_of_experiment_folder</span> <span class="o">+</span> <span class="s1">&#39;/entity_to_idx.json&#39;</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_of_experiment_folder</span> <span class="o">+</span> <span class="s1">&#39;/relation_to_idx.p&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                 <span class="n">relation_to_idx</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;relation_to_idx.p not found&quot;</span><span class="p">)</span>
-            <span class="n">relation_to_idx</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="n">relation_to_idx</span> <span class="o">=</span> <span class="n">load_json</span><span class="p">(</span><span class="n">path_of_experiment_folder</span> <span class="o">+</span> <span class="s1">&#39;/relation_to_idx.json&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Done! It took </span><span class="si">{</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start_time</span><span class="si">:</span><span class="s1">.4f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="p">(</span><span class="n">entity_to_idx</span><span class="p">,</span> <span class="n">relation_to_idx</span><span class="p">)</span></div>

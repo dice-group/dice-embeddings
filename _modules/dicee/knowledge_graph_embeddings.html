@@ -467,7 +467,9 @@
 
 <div class="viewcode-block" id="KGE.predict_topk">
 <a class="viewcode-back" href="../../autoapi/dicee/knowledge_graph_embeddings/index.html#dicee.KGE.predict_topk">[docs]</a>
-    <span class="k">def</span> <span class="nf">predict_topk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="k">def</span> <span class="nf">predict_topk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                     <span class="n">r</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                     <span class="n">t</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                      <span class="n">topk</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">within</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Predict missing item in a given triple.</span>
@@ -476,15 +478,15 @@
 
 <span class="sd">        Parameter</span>
 <span class="sd">        ---------</span>
-<span class="sd">        head_entity: List[str]</span>
+<span class="sd">        head_entity: Union[str, List[str]]</span>
 
 <span class="sd">        String representation of selected entities.</span>
 
-<span class="sd">        relation: List[str]</span>
+<span class="sd">        relation: Union[str, List[str]]</span>
 
 <span class="sd">        String representation of selected relations.</span>
 
-<span class="sd">        tail_entity: List[str]</span>
+<span class="sd">        tail_entity: Union[str, List[str]]</span>
 
 <span class="sd">        String representation of selected entities.</span>
 
@@ -501,22 +503,17 @@
 
         <span class="c1"># (1) Sanity checking.</span>
         <span class="k">if</span> <span class="n">h</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">h</span><span class="p">,</span><span class="nb">str</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">r</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="nb">str</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span><span class="nb">str</span><span class="p">)</span>
         <span class="c1"># (2) Predict missing head entity given a relation and a tail entity.</span>
         <span class="k">if</span> <span class="n">h</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">assert</span> <span class="n">r</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
             <span class="k">assert</span> <span class="n">t</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
             <span class="c1"># ? r, t</span>
             <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_missing_head_entity</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">within</span><span class="o">=</span><span class="n">within</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_semantic_constraint</span><span class="p">:</span>
-                <span class="c1"># filter the scores</span>
-                <span class="k">for</span> <span class="n">th</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
-                    <span class="n">scores</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">domain_constraints_per_rel</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]]]</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">inf</span>
-
             <span class="n">sort_scores</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">topk</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">topk</span><span class="p">)</span>
             <span class="k">return</span> <span class="p">[(</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_to_entity</span><span class="p">[</span><span class="n">idx_top_entity</span><span class="p">],</span> <span class="n">scores</span><span class="o">.</span><span class="n">item</span><span class="p">())</span> <span class="k">for</span> <span class="n">idx_top_entity</span><span class="p">,</span> <span class="n">scores</span> <span class="ow">in</span>
                     <span class="nb">zip</span><span class="p">(</span><span class="n">sort_idxs</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">sort_scores</span><span class="p">))]</span>
@@ -537,10 +534,6 @@
             <span class="k">assert</span> <span class="n">r</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
             <span class="c1"># h r ?t</span>
             <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">predict_missing_tail_entity</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">within</span><span class="o">=</span><span class="n">within</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_semantic_constraint</span><span class="p">:</span>
-                <span class="c1"># filter the scores</span>
-                <span class="k">for</span> <span class="n">th</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
-                    <span class="n">scores</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">range_constraints_per_rel</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_to_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]]]</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">inf</span>
             <span class="n">sort_scores</span><span class="p">,</span> <span class="n">sort_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">topk</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">topk</span><span class="p">)</span>
             <span class="k">return</span> <span class="p">[(</span><span class="bp">self</span><span class="o">.</span><span class="n">idx_to_entity</span><span class="p">[</span><span class="n">idx_top_entity</span><span class="p">],</span> <span class="n">scores</span><span class="o">.</span><span class="n">item</span><span class="p">())</span> <span class="k">for</span> <span class="n">idx_top_entity</span><span class="p">,</span> <span class="n">scores</span> <span class="ow">in</span>
                     <span class="nb">zip</span><span class="p">(</span><span class="n">sort_idxs</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">sort_scores</span><span class="p">))]</span>

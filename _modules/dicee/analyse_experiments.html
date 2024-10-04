@@ -266,10 +266,9 @@
     <span class="c1"># print(df.columns)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">df_features</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">args</span><span class="o">.</span><span class="n">features</span><span class="p">]</span>
-    <span class="k">except</span><span class="p">:</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--features (</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">features</span><span class="si">}</span><span class="s2">) is not a subset of </span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-
+        <span class="k">raise</span> <span class="ne">KeyError</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">df_features</span><span class="o">.</span><span class="n">to_latex</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">float_format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%.3f</span><span class="s2">&quot;</span><span class="p">))</span>
     <span class="n">path_to_save</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">dir</span> <span class="o">+</span> <span class="s1">&#39;/summary.csv&#39;</span>
     <span class="n">df_features</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">path_or_buf</span><span class="o">=</span><span class="n">path_to_save</span><span class="p">)</span>

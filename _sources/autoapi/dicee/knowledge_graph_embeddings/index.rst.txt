@@ -132,7 +132,7 @@ Module Contents
 
 
 
-   .. py:method:: predict_topk(*, h: List[str] = None, r: List[str] = None, t: List[str] = None, topk: int = 10, within: List[str] = None)
+   .. py:method:: predict_topk(*, h: Union[str, List[str]] = None, r: Union[str, List[str]] = None, t: Union[str, List[str]] = None, topk: int = 10, within: List[str] = None)
 
       Predict missing item in a given triple.
 
@@ -140,15 +140,15 @@ Module Contents
 
       Parameter
       ---------
-      head_entity: List[str]
+      head_entity: Union[str, List[str]]
 
       String representation of selected entities.
 
-      relation: List[str]
+      relation: Union[str, List[str]]
 
       String representation of selected relations.
 
-      tail_entity: List[str]
+      tail_entity: Union[str, List[str]]
 
       String representation of selected entities.
 
