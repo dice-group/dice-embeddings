@@ -57,7 +57,7 @@ class PykeenKGE(BaseKGE):
         try:
             # lazy import
             from pykeen.models import model_resolver
-        except:
+        except ImportError:
             print(traceback.format_exc())
             print("Pykeen does not work with pytorch>2.0.0. Current pytorch version:",torch.__version__)
             exit(1)
