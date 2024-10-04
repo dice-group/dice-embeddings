@@ -285,7 +285,6 @@ class BaseKGE(BaseKGELightning):
         if self.args.get("optim") in ['AdamW', 'Adam', 'SGD']:
             self.optimizer_name = self.args['optim']
         else:
-            print(f'--optim (***{self.args.get("optim")}***) not found')
             self.optimizer_name = 'Adam'
 
         if self.args.get("init_param") is None:
