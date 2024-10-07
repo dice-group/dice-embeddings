@@ -1,4 +1,9 @@
-# pip install dicee
+"""
+Download a pretrained KGE model
+Evaluate its performance
+python examples/download_pretrained_model.py
+"""
+
 from dicee import KGE
 import pandas as pd
 from dicee.static_funcs import get_er_vocab
