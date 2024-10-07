@@ -33,6 +33,22 @@ Step:9  Seen Triples: 578714291 Current Runtime: 517.766 secs
 Step:10 Seen Triples: 590550727 Current Runtime: 529.929 secs
 Total Runtime:529.9295048713684
 
+$ python examples/handle_kg_larger_than_memory.py --path_dataset dbpedia.nt --path_entity dbpedia_entities.csv --path_relation dbpedia_relations.csv
+Reading entities...     Unique number of entities:      127741846
+Reading relations...    Unique number of relations:     12569
+Batch Processing...
+Step:0  Seen Triples: 59228337  Current Runtime: 35.948 secs
+Step:1  Seen Triples: 118617771 Current Runtime: 62.114 secs
+Step:2  Seen Triples: 177962380 Current Runtime: 88.316 secs
+Step:3  Seen Triples: 237353864 Current Runtime: 114.177 secs
+Step:4  Seen Triples: 296632299 Current Runtime: 140.772 secs
+Step:5  Seen Triples: 355872505 Current Runtime: 166.082 secs
+Step:6  Seen Triples: 415059906 Current Runtime: 193.374 secs
+Step:7  Seen Triples: 474349288 Current Runtime: 218.604 secs
+Step:8  Seen Triples: 533641626 Current Runtime: 245.580 secs
+Step:9  Seen Triples: 578714291 Current Runtime: 265.677 secs
+Step:10 Seen Triples: 590550727 Current Runtime: 275.785 secs
+Total Runtime:275.7852234840393
 
 """
 import argparse
@@ -94,7 +110,6 @@ def run(args):
     # Create directory if it does not exist, without raising an error
     os.makedirs(args.path_dir, exist_ok=True)
 
-    step = 0
     start_row = 0
     end_row = 0
     reader = pl.read_csv_batched(source=args.path_dataset,
@@ -126,7 +141,7 @@ def run(args):
         # Step 4: Select the desired columns
         df_final = df_final.select([pl.col("subject"), pl.col("relation"), pl.col("object")])
 
-        df_final.write_csv(f"{args.path_dir}/Step{step}_start_row_{start_row}_end_row_{end_row}.csv",
+        df_final.write_csv(f"{args.path_dir}/Start_row_{start_row}_End_row_{end_row}.csv",
                            include_header=False)
 
         start_row = end_row
