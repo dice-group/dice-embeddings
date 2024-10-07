@@ -643,8 +643,11 @@ def download_files_from_url(base_url:str, destination_folder=".")->None:
 
     """
     # lazy import
-    from bs4 import BeautifulSoup
-
+    try:
+        from bs4 import BeautifulSoup
+    except ModuleNotFoundError:
+        print("Please install the 'beautifulsoup4' package by running: pip install beautifulsoup4")
+        raise
     response = requests.get(base_url)
     if response.status_code == 200:
         soup = BeautifulSoup(response.text, 'html.parser')
