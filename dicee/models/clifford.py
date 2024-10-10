@@ -550,59 +550,80 @@ class Keci(BaseKGE):
 
     def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor:
         """
-        Kvsall training
-
-        (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .
-        (2) Construct head entity and relation embeddings according to Cl_{p,q}(\mathbb{R}^d) .
-        (3) Perform Cl multiplication
-        (4) Inner product of (3) and all entity embeddings
-
+        TODO: We need to double check the correctness
         Parameter
         ---------
         x: torch.LongTensor with (n,2) shape
 
+        target_entity_idx: torch.LongTensor with (n, k ) shape k denotes the selected number of examples.
+
         Returns
         -------
-        torch.FloatTensor with (n, |E|) shape
+        torch.FloatTensor with (n, k) shape
         """
+
         # (1) Retrieve real-valued embedding vectors.
-        head_ent_emb, rel_emb = self.get_head_relation_representation(x)
-        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities.
-        a0, ap, aq = self.construct_cl_multivector(head_ent_emb, r=self.r, p=self.p, q=self.q)
-        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for relations.
-        b0, bp, bq = self.construct_cl_multivector(rel_emb, r=self.r, p=self.p, q=self.q)
+        head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
 
-        # (4) Clifford multiplication of (2) and (3).
-        # AB_pp, AB_qq, AB_pq
-        # AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq = self.clifford_mul_reduced_interactions(a0, ap, aq, b0, bp, bq)
-        AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq = self.clifford_mul(a0, ap, aq, b0, bp, bq)
+        # (3) Extract all entity embeddings
+        E = self.entity_embeddings(target_entity_idx)
 
-        # b e r
-        selected_tail_entity_embeddings = self.entity_embeddings(target_entity_idx)
-        # (7) Inner product of AB_0 and a0 of all entities.
-        A_score = torch.einsum('br,ber->be', AB_0, selected_tail_entity_embeddings[:, :self.r])
+        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations
+        h0, hp, hq = self.construct_cl_multivector(head_ent_emb, r=self.r, p=self.p, q=self.q)
+        r0, rp, rq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
 
-        # (8) Inner product of AB_p and ap of all entities.
+        h0, hp, hq, h0, rp, rq = self.apply_coefficients(h0, hp, hq, h0, rp, rq)
+        # (3.1) Extract real part
+        t0 = E[:, : , :self.r]
+
+        batch_size, num_of_selected, dim =E.shape
+
+        # b => batch size
+        # r => self.r => number of dimensions in R
+        h0r0t0 = torch.einsum('br,bnr->bn', h0 * r0, t0)
+
+
+        # (5) Compute a triple score based on interactions described by the bases of p {e_1, ..., e_p}. Eq. 21
         if self.p > 0:
-            B_score = torch.einsum('brp,berp->be', AB_p,
-                                   selected_tail_entity_embeddings[:, self.r: self.r + (self.r * self.p)]
-                                   .view(self.num_entities, self.r, self.p))
+            raise NotImplementedError("Not yet implement for kvssample function of Keci")
         else:
-            B_score = 0
-        # (9) Inner product of AB_q and aq of all entities.
+            score_p = 0
+
+        # (5) Compute a triple score based on interactions described by the bases of q {e_{p+1}, ..., e_{p+q}}. Eq. 22
         if self.q > 0:
-            C_score = torch.einsum('brq,berq->be', AB_q,
-                                   selected_tail_entity_embeddings[:, -(self.r * self.q):]
-                                   .view(self.num_entities, self.r, self.q))
+            # b, r, q
+            h0_rq = torch.einsum('br,  brq -> brq', h0, rq)
+            # b, r, q
+            hq_r0 = torch.einsum('brq, br  -> brq', hq, r0)
+            # b, r, q
+            hq_rq = hq * rq
+            # b, n, r, q
+            tq = E[:, :, -(self.r * self.q):].view(batch_size, num_of_selected, self.r, self.q)
+
+            h0_rq_tq = torch.einsum('brq, bnrq -> bn', h0_rq, tq)
+            hq_r0_tq = torch.einsum('brq, bnrq -> bn', hq_r0, tq)
+            hq_rq_t0 = torch.einsum('brq, bnr  -> bn', hq_rq, t0)
+            score_q = h0_rq_tq + hq_r0_tq - hq_rq_t0
         else:
-            C_score = 0
-        # (10) Aggregate (7,8,9).
-        A_B_C_score = A_score + B_score + C_score
-        # (11) Compute inner products of AB_pp, AB_qq, AB_pq and respective identity matrices of all entities.
-        D_E_F_score = (torch.einsum('brpp->b', AB_pp) + torch.einsum('brqq->b', AB_qq) + torch.einsum('brpq->b', AB_pq))
-        D_E_F_score = D_E_F_score.view(len(head_ent_emb), 1)
-        # (12) Score
-        return A_B_C_score + D_E_F_score
+            score_q = 0
+
+        if self.p >= 2:
+            raise NotImplementedError("Not yet implement for kvssample function of Keci")
+        else:
+            sigma_pp = 0
+
+        if self.q >= 2:
+            sigma_qq = torch.sum(self.compute_sigma_qq(hq, rq), dim=[1, 2]).unsqueeze(-1)
+        else:
+            sigma_qq = 0
+
+        if self.p >= 2 and self.q >= 2:
+            raise NotImplementedError("Not yet implement for kvssample function of Keci")
+        else:
+            sigma_pq = 0
+        return h0r0t0 + score_p + score_q + sigma_pp + sigma_qq + sigma_pq
+
+
 
     def score(self, h, r, t):
         # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations
