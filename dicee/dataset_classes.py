@@ -437,6 +437,9 @@ class KvsSampleDataset(torch.utils.data.Dataset):
         super().__init__()
         assert isinstance(train_set, np.ndarray)
         assert isinstance(neg_sample_ratio, int)
+        assert isinstance(num_entities, int) and num_entities>0
+        assert isinstance(num_relations, int) and num_relations>0
+        assert neg_sample_ratio< num_entities, f"Negative sample ratio {neg_sample_ratio} cannot be larger than number of entities ({num_entities})"
         self.train_data = torch.from_numpy(train_set).long()
         self.num_entities = num_entities
         self.num_relations = num_relations
@@ -451,6 +454,8 @@ class KvsSampleDataset(torch.utils.data.Dataset):
         triple = self.train_data[idx]
         x = triple[:2]
         y = triple[-1].unsqueeze(0)
+        # negative_idx = torch.randperm(n=self.num_entities)[self.neg_sample_ratio].unsqueeze(0)
+        # negative_idx can contain multiple duplicate numbers
         negative_idx = torch.randint(low=0, high=self.num_entities, size=(self.neg_sample_ratio,))
         y_idx = torch.cat((y, negative_idx), 0).long()
         y_vec = torch.cat((torch.ones(1)-self.label_smoothing_rate, torch.zeros(len(negative_idx))+self.label_smoothing_rate), 0)
