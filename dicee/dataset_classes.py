@@ -1,4 +1,5 @@
 from numpy import dtype
+from sympy.stats.rv import probability
 from torch.utils.data import DataLoader
 import numpy as np
 import torch
@@ -64,9 +65,9 @@ def construct_dataset(*,
         if scoring_technique == '1vsAll':
             # Multi-class.
             train_set = OnevsAllDataset(train_set, entity_idxs=entity_to_idx)
-        elif scoring_technique == 'KvsSample':
-            # Multi-label.
-            train_set = KvsSampleDataset(train_set=train_set,
+        elif scoring_technique == '1vsSample':
+            # Dynamic Multi-class
+            train_set = OnevsSampleDataset(train_set=train_set,
                                          num_entities=len(entity_to_idx),
                                          num_relations=len(relation_to_idx),
                                          neg_sample_ratio=neg_ratio,
@@ -431,7 +432,7 @@ class AllvsAll(torch.utils.data.Dataset):
         return self.train_data[idx], y_vec
 
 
-class KvsSampleDataset(torch.utils.data.Dataset):
+class OnevsSampleDataset(torch.utils.data.Dataset):
     def __init__(self, train_set: np.ndarray, num_entities, num_relations, neg_sample_ratio: int = None,
                  label_smoothing_rate: float = 0.0):
         super().__init__()
@@ -454,11 +455,14 @@ class KvsSampleDataset(torch.utils.data.Dataset):
         triple = self.train_data[idx]
         x = triple[:2]
         y = triple[-1].unsqueeze(0)
-        # negative_idx = torch.randperm(n=self.num_entities)[self.neg_sample_ratio].unsqueeze(0)
+        # Weights
+        weights = torch.ones(self.num_entities)
+        weights[y] = 0.0
+        negative_idx = torch.multinomial(weights, num_samples=self.neg_sample_ratio, replacement=False)
         # negative_idx can contain multiple duplicate numbers
-        negative_idx = torch.randint(low=0, high=self.num_entities, size=(self.neg_sample_ratio,))
+        # negative_idx = torch.randint(low=0, high=self.num_entities, size=(self.neg_sample_ratio,))
         y_idx = torch.cat((y, negative_idx), 0).long()
-        y_vec = torch.cat((torch.ones(1)-self.label_smoothing_rate, torch.zeros(len(negative_idx))+self.label_smoothing_rate), 0)
+        y_vec = torch.cat((torch.ones(1), torch.zeros(self.neg_sample_ratio)), 0)
         return x, y_idx, y_vec
 
 
