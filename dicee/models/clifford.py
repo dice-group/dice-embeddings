@@ -410,7 +410,6 @@ class Keci(BaseKGE):
         else:
             aq = torch.zeros((batch_size, r, q), device=self.device)
         return a0, ap, aq
-
     def forward_k_vs_with_explicit(self, x: torch.Tensor):
         n = len(x)
         # (1) Retrieve real-valued embedding vectors.
@@ -548,9 +547,41 @@ class Keci(BaseKGE):
         E = self.entity_embeddings.weight
         return self.k_vs_all_score(head_ent_emb, rel_ent_emb, E)
 
+    def construct_batch_selected_cl_multivector(self, x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[
+        torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
+        """
+        Construct a batch of batchs multivectors Cl_{p,q}(\mathbb{R}^d)
+
+        Parameter
+        ---------
+        x: torch.FloatTensor with (n,k, d) shape
+
+        Returns
+        -------
+        a0: torch.FloatTensor with (n,k, m) shape
+        ap: torch.FloatTensor with (n,k, m, p) shape
+        aq: torch.FloatTensor with (n,k, m, q) shape
+        """
+        batch_size, k, d = x.shape
+
+        # (1) Take the first m columns for each k
+        a0 = x[:, :, :r].view(batch_size, k, r)
+
+        # (2) B_{n \times p}, C_{n \times q}: take the self.k * self.p columns after the k. column
+        if p > 0:
+            ap = x[:, :, r: r + (r * p)].view(batch_size, k, r, p)
+        else:
+            ap = torch.zeros((batch_size, k, r, p), device=self.device)
+        if q > 0:
+            # (3) B_{n \times p}, C_{n \times q}: take the last self.r * self.q .
+            aq = x[:, :, -(r * q):].view(batch_size, k, r, q)
+        else:
+            aq = torch.zeros((batch_size, k, r, q), device=self.device)
+        return a0, ap, aq
+
+
     def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor:
         """
-        TODO: We need to double check the correctness
         Parameter
         ---------
         x: torch.LongTensor with (n,2) shape
@@ -561,26 +592,78 @@ class Keci(BaseKGE):
         -------
         torch.FloatTensor with (n, k) shape
         """
-
         # (1) Retrieve real-valued embedding vectors.
+        # (b, d), (b, d)
         head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
 
-        # (3) Extract all entity embeddings
-        E = self.entity_embeddings(target_entity_idx)
 
-        # (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations
+        # (2) Construct multi-vector embeddings in Cl_{p,q} (\mathbb{R}^d) for head entities and relations
+        # (b, m), (b, m, p), (b, m, q)
         h0, hp, hq = self.construct_cl_multivector(head_ent_emb, r=self.r, p=self.p, q=self.q)
+        # (b, m), (b, m, p), (b, m, q)
         r0, rp, rq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
-
         h0, hp, hq, h0, rp, rq = self.apply_coefficients(h0, hp, hq, h0, rp, rq)
-        # (3.1) Extract real part
-        t0 = E[:, : , :self.r]
 
-        batch_size, num_of_selected, dim =E.shape
 
-        # b => batch size
-        # r => self.r => number of dimensions in R
-        h0r0t0 = torch.einsum('br,bnr->bn', h0 * r0, t0)
+        # (3) (b, k, d) Retrieve real-valued embedding vectors of selected entities.
+        E = self.entity_embeddings(target_entity_idx)
+        # (4) Construct multi-vector embeddings in Cl_{p,q} (\mathbb{R}^d) for head entities and relations
+        # (b, k, m), (b, k, m, p), (b, k, m, q)
+        t0, tp, tq = self.construct_batch_selected_cl_multivector(E, r=self.r, p=self.p, q=self.q)
+
+        # (4) Batch vector matrix multiplications
+        # Equivalent computations
+        #                           h0*r0@t0.transpose(1,2)
+        #                           torch.einsum('bm, bmk -> bk', h0 * r0, t0.transpose(1, 2))
+        #                           torch.einsum('bm, bkm -> bk', h0 * r0, t0)
+        h0r0t0 = torch.einsum('bm, bkm -> bk', h0 * r0, t0)
+
+        # (5) Compute a triple score based on interactions described by the bases of p {e_1, ..., e_p}. Eq. 21
+        if self.p > 0:
+            raise NotImplementedError("Sample with p>0 for Keci not implemented")
+            """
+            # Second term in Eq.16
+            hp_rp_t0 = torch.einsum('brp, br  -> b', hp * rp, t0)
+            # Eq. 17
+            # b=e
+            h0_rp_tp = torch.einsum('brp, erp -> b', torch.einsum('br,  brp -> brp', h0, rp), tp)
+            hp_r0_tp = torch.einsum('brp, erp -> b', torch.einsum('brp, br  -> brp', hp, r0), tp)
+            score_p = hp_rp_t0 + h0_rp_tp + hp_r0_tp
+            """
+        else:
+            score_p = 0
+
+        # (6) Compute a triple score based on interactions described by the bases of q {e_{p+1}, ..., e_{p+q}}. Eq. 22
+        if self.q > 0:
+            # \sum_{j=p+1}^{p+q} (h_j r_j t_0) : Third parth of the in Eq 16.
+            # Equivalent computation
+            # torch.einsum('bmq, bkm -> bk', hq*rq, t0) => (hq * rq).transpose(1,2) @ t0.transpose(1,2)
+            hq_rq_t0 = torch.einsum('bmq, bkm -> bk', hq * rq, t0)
+
+            # Eq. 18. Batch elementwise matrix matrix multiplication: bmq -> bkmq
+            rq_tq=torch.einsum('bmq, bkmq -> bkmq', rq, tq)
+            h0_rq_tq = torch.einsum('bm, bkmq  -> bk', h0, rq_tq)
+            hq_tq=torch.einsum('bmq, bkmq -> bkmq',hq, tq)
+            r0_hq_tq = torch.einsum('bm, bkmq  -> bk', r0, hq_tq)
+            score_q = - hq_rq_t0 + (h0_rq_tq + r0_hq_tq)
+        else:
+            score_q = 0
+
+        if self.p >= 2:
+            sigma_pp = torch.sum(self.compute_sigma_pp(hp, rp), dim=[1, 2]).unsqueeze(-1)
+        else:
+            sigma_pp = 0
+
+        if self.q >= 2:
+            sigma_qq = torch.sum(self.compute_sigma_qq(hq, rq), dim=[1, 2]).unsqueeze(-1)
+        else:
+            sigma_qq = 0
+
+        if self.p >= 2 and self.q >= 2:
+            sigma_pq = torch.sum(self.compute_sigma_pq(hp=hp, hq=hq, rp=rp, rq=rq), dim=[1, 2, 3]).unsqueeze(-1)
+        else:
+            sigma_pq = 0
+        return h0r0t0 + score_p + score_q + sigma_pp + sigma_qq + sigma_pq
 
 
         # (5) Compute a triple score based on interactions described by the bases of p {e_1, ..., e_p}. Eq. 21
@@ -591,6 +674,36 @@ class Keci(BaseKGE):
 
         # (5) Compute a triple score based on interactions described by the bases of q {e_{p+1}, ..., e_{p+q}}. Eq. 22
         if self.q > 0:
+
+
+            print("h0 shape",h0.shape)
+            print("rq shape",rq.shape)
+
+            exit(1)
+
+            # (num_entities, r, q)
+            # (b,k,r,q)
+            tq = E[:, :, -(self.r * self.q):].view(b, k,self.r, self.q)
+
+            print(tq.shape)
+            # (b,r,q) batch (b) elementwise multiplications of a row vector (r) and row vectors of a matrix (r,q).
+            # h0.unsqueeze(-1) makes br to br1
+            # assert torch.allclose(h0.unsqueeze(-1) * rq, h0_rq)
+            h0_rq = torch.einsum('br,  brq -> brq', h0, rq)
+
+
+
+            exit(1)
+            # (b,k)
+            h0_rq_tq = torch.einsum('brq, bkrq -> bk', h0_rq, tq)
+            #
+            hq_r0=torch.einsum('brq, br  -> brq', hq, r0)
+
+            hq_r0_tq = torch.einsum('brq, bkrq -> bk', hq_r0, tq)
+            hq_rq_t0 = torch.einsum('brq, er  -> bk', hq * rq, t0)
+            score_q = h0_rq_tq + hq_r0_tq - hq_rq_t0
+
+            exit(1)
             # b, r, q
             h0_rq = torch.einsum('br,  brq -> brq', h0, rq)
             # b, r, q
