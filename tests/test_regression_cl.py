@@ -6,11 +6,12 @@ class TestRegressionAConEx:
     def test_k_vs_all(self):
         args = Namespace()
         args.model = 'AConEx'
-        args.scoring_technique = 'KvsSample'
+        args.scoring_technique = '1vsSample'
         args.optim = 'Adam'
         args.dataset_dir = 'KGs/UMLS'
-        args.num_epochs = 5
-        args.batch_size = 4096
+        args.num_epochs = 10
+        args.neg_ratio = 1
+        args.batch_size = 256
         args.lr = 0.1
         args.embedding_dim = 32
         args.input_dropout_rate = 0.0
