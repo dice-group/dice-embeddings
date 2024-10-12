@@ -97,7 +97,7 @@ class Evaluator:
                                                                      trained_model=trained_model)
         elif self.args.scoring_technique in ["AllvsAll",
                                              "KvsAll",
-                                             'KvsSample',
+                                             '1vsSample',
                                              "1vsAll"] and self.args.byte_pair_encoding:
             if self.args.model != "BytE":
                 self.eval_with_bpe_vs_all(raw_train_set=dataset.raw_train_set,
@@ -474,7 +474,7 @@ class Evaluator:
             return self.evaluate_lp(trained_model, triple_idx,
                                     info=f'Evaluate {trained_model.name} on a given dataset', )
 
-        elif self.args.scoring_technique in ['KvsAll', 'KvsSample', '1vsAll', 'PvsAll', 'CCvsAll']:
+        elif self.args.scoring_technique in ['KvsAll', '1vsSample', '1vsAll', 'PvsAll', 'CCvsAll']:
             return self.evaluate_lp_k_vs_all(trained_model, triple_idx,
                                              info=f'Evaluate {trained_model.name} on a given dataset',
                                              form_of_labelling=form_of_labelling)

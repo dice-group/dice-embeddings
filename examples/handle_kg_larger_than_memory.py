@@ -52,7 +52,6 @@ Total Runtime:275.7852234840393
 
 """
 import argparse
-
 import polars as pl
 import time
 import os
@@ -69,32 +68,36 @@ def get_default_arguments():
 
 def run(args):
     start_time = time.time()
-
     if os.path.exists(args.path_entity) is False:
-        # Step 2: Collect unique entities
-        # Note: Setting maintain_order=True in unique() increases memory usage
+        # () Collect unique entities.
+        # Note: Setting maintain_order=True in unique() increases the memory usage.
         lazy_df = pl.scan_csv(args.path_dataset,
                               has_header=False,
                               separator=" ",
                               new_columns=['subject', 'relation', 'object', "end"]).drop('end')
+        # () Select unique subject entities.
         print("Collecting subject entities...")
         subjects = lazy_df.select(pl.col("subject").unique().alias("entity")).collect()
         print(f"Unique number of subjects:{len(subjects)}")
+        # () Select unique object entities.
         print("Collecting object entities...")
         objects = lazy_df.select(pl.col("object").unique().alias("entity")).collect()
         print(f"Unique number of objects:{len(objects)}")
+        # () Select unique entities.
         entity_to_idx = pl.concat([subjects, objects], how="vertical").unique()
         entity_to_idx = entity_to_idx.with_row_index("index").select(["index", "entity"])
+        # () Write unique entities with indices.
         entity_to_idx.write_csv(file="dbpedia_entities.csv", include_header=True)
         del subjects, objects
     else:
+        # () Read entities with indices.
         print("Reading entities...", end="\t")
         entity_to_idx = pl.read_csv(args.path_entity)
         print(f"Unique number of entities:\t{len(entity_to_idx)}")
 
     if os.path.exists(args.path_relation) is False:
         print("Indexing relations")
-        # Step 3: Collect relations
+        # () Collect relations.
         lazy_df = pl.scan_csv(args.path_dataset,
                               has_header=False,
                               separator=" ",

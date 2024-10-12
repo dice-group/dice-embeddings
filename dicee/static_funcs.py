@@ -75,13 +75,13 @@ def timeit(func):
 
     return timeit_wrapper
 
-
+# TODO:CD: Deprecate the pickle usage for data serialization.
 def save_pickle(*, data: object=None, file_path=str):
     if data:
         pickle.dump(data, open(file_path, "wb"))
     else:
         print("Input data is None. Nothing to save.")
-
+# TODO:CD: Deprecate the pickle usage for data serialization.
 def load_pickle(file_path=str):
     with open(file_path, 'rb') as f:
         return pickle.load(f)
@@ -156,14 +156,20 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) 
             print('Loading entity and relation indexes...', end=' ')
         try:
             # Maybe ? https://docs.python.org/3/library/mmap.html
+            # TODO:CD: Deprecate the pickle usage for data serialization.
+            # TODO: CD: We do not need to keep the mapping in memory
             with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
                 entity_to_idx = pickle.load(f)
         except FileNotFoundError:
+            # TODO: CD: We do not need to keep the mapping in memory
             entity_to_idx = load_json(path_of_experiment_folder + '/entity_to_idx.json')
         try:
+            # TODO:CD: Deprecate the pickle usage for data serialization.
+            # TODO: CD: We do not need to keep the mapping in memory
             with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
                 relation_to_idx = pickle.load(f)
         except FileNotFoundError:
+            # TODO: CD: We do not need to keep the mapping in memory
             relation_to_idx = load_json(path_of_experiment_folder + '/relation_to_idx.json')
         if verbose > 0:
             print(f'Done! It took {time.time() - start_time:.4f}')
@@ -220,6 +226,8 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, Tuple[
     model.eval()
     start_time = time.time()
     print('Loading entity and relation indexes...', end=' ')
+    # TODO: CD: We do not need to keep the mapping in memory
+    # TODO:CD: Deprecate the pickle usage for data serialization.
     with open(path_of_experiment_folder + '/entity_to_idx.p', 'rb') as f:
         entity_to_idx = pickle.load(f)
     with open(path_of_experiment_folder + '/relation_to_idx.p', 'rb') as f:
@@ -290,6 +298,8 @@ def store(trainer,
     save_checkpoint_model(model=trained_model, path=full_storage_path + f'/{model_name}.pt')
     if save_embeddings_as_csv:
         entity_emb, relation_ebm = trained_model.get_embeddings()
+        # TODO: CD: We do not need to keep the mapping in memory
+        # TODO:CD: Deprecate the pickle usage for data serialization.
         entity_to_idx = pickle.load(open(full_storage_path + '/entity_to_idx.p', 'rb'))
         entity_str = entity_to_idx.keys()
         # Ensure that the ordering is correct.
@@ -298,6 +308,8 @@ def store(trainer,
                         path=full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
         del entity_to_idx, entity_str, entity_emb
         if relation_ebm is not None:
+            # TODO: CD: We do not need to keep the mapping in memory
+            # TODO:CD: Deprecate the pickle usage for data serialization.
             relation_to_idx = pickle.load(open(full_storage_path + '/relation_to_idx.p', 'rb'))
             relations_str = relation_to_idx.keys()
 
