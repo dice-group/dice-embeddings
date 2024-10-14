@@ -324,7 +324,7 @@ class Keci(BaseKGE):
         assert sigma_pq.shape[1:] == (self.r, self.p, self.q)
         return sigma_pq
 
-    def apply_coefficients(self, h0, hp, hq, r0, rp, rq):
+    def apply_coefficients(self, hp, hq, rp, rq):
         """ Multiplying a base vector with its scalar coefficient """
         if self.p > 0:
             hp = hp * self.p_coefficients.weight
@@ -332,7 +332,7 @@ class Keci(BaseKGE):
         if self.q > 0:
             hq = hq * self.q_coefficients.weight
             rq = rq * self.q_coefficients.weight
-        return h0, hp, hq, r0, rp, rq
+        return hp, hq, rp, rq
 
     def clifford_multiplication(self, h0, hp, hq, r0, rp, rq):
         """ Compute our CL multiplication
@@ -384,6 +384,7 @@ class Keci(BaseKGE):
     def construct_cl_multivector(self, x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[
         torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]:
         """
+
         Construct a batch of multivectors Cl_{p,q}(\mathbb{R}^d)
 
         Parameter
@@ -395,6 +396,7 @@ class Keci(BaseKGE):
         a0: torch.FloatTensor with (n,r) shape
         ap: torch.FloatTensor with (n,r,p) shape
         aq: torch.FloatTensor with (n,r,q) shape
+
         """
         batch_size, d = x.shape
         # (1) A_{n \times k}: take the first k columns
@@ -410,6 +412,7 @@ class Keci(BaseKGE):
         else:
             aq = torch.zeros((batch_size, r, q), device=self.device)
         return a0, ap, aq
+
     def forward_k_vs_with_explicit(self, x: torch.Tensor):
         n = len(x)
         # (1) Retrieve real-valued embedding vectors.
@@ -479,7 +482,7 @@ class Keci(BaseKGE):
         h0, hp, hq = self.construct_cl_multivector(bpe_head_ent_emb, r=self.r, p=self.p, q=self.q)
         r0, rp, rq = self.construct_cl_multivector(bpe_rel_ent_emb, r=self.r, p=self.p, q=self.q)
 
-        h0, hp, hq, h0, rp, rq = self.apply_coefficients(h0, hp, hq, h0, rp, rq)
+        hp, hq, rp, rq = self.apply_coefficients(hp, hq, rp, rq)
         # (3.1) Extract real part
         t0 = E[:, :self.r]
 
@@ -579,7 +582,6 @@ class Keci(BaseKGE):
             aq = torch.zeros((batch_size, k, r, q), device=self.device)
         return a0, ap, aq
 
-
     def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor:
         """
         Parameter
@@ -595,14 +597,12 @@ class Keci(BaseKGE):
         # (1) Retrieve real-valued embedding vectors.
         # (b, d), (b, d)
         head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
-
-
         # (2) Construct multi-vector embeddings in Cl_{p,q} (\mathbb{R}^d) for head entities and relations
         # (b, m), (b, m, p), (b, m, q)
         h0, hp, hq = self.construct_cl_multivector(head_ent_emb, r=self.r, p=self.p, q=self.q)
         # (b, m), (b, m, p), (b, m, q)
         r0, rp, rq = self.construct_cl_multivector(rel_ent_emb, r=self.r, p=self.p, q=self.q)
-        h0, hp, hq, h0, rp, rq = self.apply_coefficients(h0, hp, hq, h0, rp, rq)
+        hp, hq, rp, rq = self.apply_coefficients(hp, hq, rp, rq)
 
 
         # (3) (b, k, d) Retrieve real-valued embedding vectors of selected entities.
