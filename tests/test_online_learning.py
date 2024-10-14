@@ -24,7 +24,7 @@ class TestRegressionOnlineLearning:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
-        args.backend = 'polars'
+        args.backend = 'pandas'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert os.path.isdir(result['path_experiment_folder'])
