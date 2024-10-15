@@ -1,7 +1,5 @@
 from .base_model import BaseKGE
 import torch
-
-
 class Keci(BaseKGE):
     def __init__(self, args):
         super().__init__(args)
@@ -441,77 +439,6 @@ class Keci(BaseKGE):
 
         if self.p >= 2 and self.q >= 2:
             sigma_pq = torch.sum(self.compute_sigma_pq(hp=hp, hq=hq, rp=rp, rq=rq), dim=[1, 2, 3]).unsqueeze(-1)
-        else:
-            sigma_pq = 0
-        return h0r0t0 + score_p + score_q + sigma_pp + sigma_qq + sigma_pq
-
-
-        # (5) Compute a triple score based on interactions described by the bases of p {e_1, ..., e_p}. Eq. 21
-        if self.p > 0:
-            raise NotImplementedError("Not yet implement for kvssample function of Keci")
-        else:
-            score_p = 0
-
-        # (5) Compute a triple score based on interactions described by the bases of q {e_{p+1}, ..., e_{p+q}}. Eq. 22
-        if self.q > 0:
-
-
-            print("h0 shape",h0.shape)
-            print("rq shape",rq.shape)
-
-            exit(1)
-
-            # (num_entities, r, q)
-            # (b,k,r,q)
-            tq = E[:, :, -(self.r * self.q):].view(b, k,self.r, self.q)
-
-            print(tq.shape)
-            # (b,r,q) batch (b) elementwise multiplications of a row vector (r) and row vectors of a matrix (r,q).
-            # h0.unsqueeze(-1) makes br to br1
-            # assert torch.allclose(h0.unsqueeze(-1) * rq, h0_rq)
-            h0_rq = torch.einsum('br,  brq -> brq', h0, rq)
-
-
-
-            exit(1)
-            # (b,k)
-            h0_rq_tq = torch.einsum('brq, bkrq -> bk', h0_rq, tq)
-            #
-            hq_r0=torch.einsum('brq, br  -> brq', hq, r0)
-
-            hq_r0_tq = torch.einsum('brq, bkrq -> bk', hq_r0, tq)
-            hq_rq_t0 = torch.einsum('brq, er  -> bk', hq * rq, t0)
-            score_q = h0_rq_tq + hq_r0_tq - hq_rq_t0
-
-            exit(1)
-            # b, r, q
-            h0_rq = torch.einsum('br,  brq -> brq', h0, rq)
-            # b, r, q
-            hq_r0 = torch.einsum('brq, br  -> brq', hq, r0)
-            # b, r, q
-            hq_rq = hq * rq
-            # b, n, r, q
-            tq = E[:, :, -(self.r * self.q):].view(batch_size, num_of_selected, self.r, self.q)
-
-            h0_rq_tq = torch.einsum('brq, bnrq -> bn', h0_rq, tq)
-            hq_r0_tq = torch.einsum('brq, bnrq -> bn', hq_r0, tq)
-            hq_rq_t0 = torch.einsum('brq, bnr  -> bn', hq_rq, t0)
-            score_q = h0_rq_tq + hq_r0_tq - hq_rq_t0
-        else:
-            score_q = 0
-
-        if self.p >= 2:
-            raise NotImplementedError("Not yet implement for kvssample function of Keci")
-        else:
-            sigma_pp = 0
-
-        if self.q >= 2:
-            sigma_qq = torch.sum(self.compute_sigma_qq(hq, rq), dim=[1, 2]).unsqueeze(-1)
-        else:
-            sigma_qq = 0
-
-        if self.p >= 2 and self.q >= 2:
-            raise NotImplementedError("Not yet implement for kvssample function of Keci")
         else:
             sigma_pq = 0
         return h0r0t0 + score_p + score_q + sigma_pp + sigma_qq + sigma_pq
