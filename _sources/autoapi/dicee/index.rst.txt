@@ -53,7 +53,6 @@ Classes
 
 .. autoapisummary::
 
-   dicee.CMult
    dicee.Pyke
    dicee.DistMult
    dicee.KeciBase
@@ -84,7 +83,7 @@ Classes
    dicee.OnevsAllDataset
    dicee.KvsAll
    dicee.AllvsAll
-   dicee.KvsSampleDataset
+   dicee.OnevsSampleDataset
    dicee.NegSampleDataset
    dicee.TriplePredictionDataset
    dicee.CVDataModule
@@ -138,105 +137,6 @@ Functions
 
 Package Contents
 ----------------
-
-.. py:class:: CMult(args)
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
-
-
-   Cl_(0,0) => Real Numbers
-
-
-   Cl_(0,1) =>
-               A multivector \mathbf{a} = a_0 + a_1 e_1
-               A multivector \mathbf{b} = b_0 + b_1 e_1
-
-               multiplication is isomorphic to the product of two complex numbers
-
-               \mathbf{a}      imes \mathbf{b} = a_0 b_0 + a_0b_1 e1 + a_1 b_1 e_1 e_1
-                                            = (a_0 b_0 - a_1 b_1) + (a_0 b_1 + a_1 b_0) e_1
-   Cl_(2,0) =>
-               A multivector \mathbf{a} = a_0 + a_1 e_1 + a_2 e_2 + a_{12} e_1 e_2
-               A multivector \mathbf{b} = b_0 + b_1 e_1 + b_2 e_2 + b_{12} e_1 e_2
-
-               \mathbf{a}      imes \mathbf{b} = a_0b_0 + a_0b_1 e_1 + a_0b_2e_2 + a_0 b_12 e_1 e_2
-                                           + a_1 b_0 e_1 + a_1b_1 e_1_e1 ..
-
-   Cl_(0,2) => Quaternions
-
-
-   .. py:attribute:: name
-      :value: 'CMult'
-
-
-
-   .. py:attribute:: entity_embeddings
-
-
-   .. py:attribute:: relation_embeddings
-
-
-   .. py:attribute:: p
-
-
-   .. py:attribute:: q
-
-
-   .. py:method:: clifford_mul(x: torch.FloatTensor, y: torch.FloatTensor, p: int, q: int) -> tuple
-
-              Clifford multiplication Cl_{p,q} (\mathbb{R})
-
-              ei ^2 = +1     for i =< i =< p
-              ej ^2 = -1     for p < j =< p+q
-              ei ej = -eje1  for i
-      eq j
-
-              Parameter
-              ---------
-              x: torch.FloatTensor with (n,d) shape
-
-              y: torch.FloatTensor with (n,d) shape
-
-              p: a non-negative integer p>= 0
-              q: a non-negative integer q>= 0
-
-
-
-              Returns
-              -------
-
-
-
-
-
-   .. py:method:: score(head_ent_emb, rel_ent_emb, tail_ent_emb)
-
-
-   .. py:method:: forward_triples(x: torch.LongTensor) -> torch.FloatTensor
-
-      Compute batch triple scores
-
-      Parameter
-      ---------
-      x: torch.LongTensor with shape n by 3
-
-
-      :rtype: torch.LongTensor with shape n
-
-
-
-   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
-
-      Compute batch KvsAll triple scores
-
-      Parameter
-      ---------
-      x: torch.LongTensor with shape n by 3
-
-
-      :rtype: torch.LongTensor with shape n
-
-
 
 .. py:class:: Pyke(args)
 
@@ -429,7 +329,7 @@ Package Contents
 
 
 
-   .. py:method:: apply_coefficients(h0, hp, hq, r0, rp, rq)
+   .. py:method:: apply_coefficients(hp, hq, rp, rq)
 
       Multiplying a base vector with its scalar coefficient
 
@@ -502,20 +402,29 @@ Package Contents
 
 
 
+   .. py:method:: construct_batch_selected_cl_multivector(x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+      Construct a batch of batchs multivectors Cl_{p,q}(\mathbb{R}^d)
+
+      Parameter
+      ---------
+      x: torch.FloatTensor with (n,k, d) shape
+
+      :returns: * **a0** (*torch.FloatTensor with (n,k, m) shape*)
+                * **ap** (*torch.FloatTensor with (n,k, m, p) shape*)
+                * **aq** (*torch.FloatTensor with (n,k, m, q) shape*)
+
+
+
    .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor
-
-      Kvsall training
-
-      (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .
-      (2) Construct head entity and relation embeddings according to Cl_{p,q}(\mathbb{R}^d) .
-      (3) Perform Cl multiplication
-      (4) Inner product of (3) and all entity embeddings
 
       Parameter
       ---------
       x: torch.LongTensor with (n,2) shape
 
-      :rtype: torch.FloatTensor with (n, |E|) shape
+      target_entity_idx: torch.LongTensor with (n, k ) shape k denotes the selected number of examples.
+
+      :rtype: torch.FloatTensor with (n, k) shape
 
 
 
@@ -969,6 +878,9 @@ Package Contents
 
 
    .. py:method:: forward_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
+
+
+   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor)
 
 
 .. py:class:: AConEx(args)
@@ -3048,38 +2960,64 @@ Package Contents
    .. py:method:: __getitem__(idx)
 
 
-.. py:class:: KvsSampleDataset(train_set: numpy.ndarray, num_entities, num_relations, neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0)
+.. py:class:: OnevsSampleDataset(train_set: numpy.ndarray, num_entities, num_relations, neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0)
 
    Bases: :py:obj:`torch.utils.data.Dataset`
 
 
-       KvsSample a Dataset:
-           D:= {(x,y)_i}_i ^N, where
-               . x:(h,r) is a unique h \in E and a relation r \in R and
-               . y \in [0,1]^{|E|} is a binary label.
-   orall y_i =1 s.t. (h r E_i) \in KG
-              At each mini-batch construction, we subsample(y), hence n
-               |new_y| << |E|
-               new_y contains all 1's if sum(y)< neg_sample ratio
-               new_y contains
-          Parameters
-          ----------
-          train_set_idx
-              Indexed triples for the training.
-          entity_idxs
-              mapping.
-          relation_idxs
-              mapping.
-          form
-              ?
-          store
-               ?
-          label_smoothing_rate
-              ?
-          Returns
-          -------
-          torch.utils.data.Dataset
+   A custom PyTorch Dataset class for knowledge graph embeddings, which includes
+   both positive and negative sampling for a given dataset for multi-class classification problem..
 
+   :param train_set: A numpy array containing triples of knowledge graph data.
+                     Each triple consists of (head_entity, relation, tail_entity).
+   :type train_set: np.ndarray
+   :param num_entities: The number of unique entities in the knowledge graph.
+   :type num_entities: int
+   :param num_relations: The number of unique relations in the knowledge graph.
+   :type num_relations: int
+   :param neg_sample_ratio: The number of negative samples to be generated
+                            per positive sample. Must be a positive integer and less than num_entities.
+   :type neg_sample_ratio: int, optional
+   :param label_smoothing_rate: A label smoothing rate to apply to the
+                                positive and negative labels. Defaults to 0.0.
+   :type label_smoothing_rate: float, optional
+
+   .. attribute:: train_data
+
+      The input data converted into a PyTorch tensor.
+
+      :type: torch.Tensor
+
+   .. attribute:: num_entities
+
+      Number of entities in the dataset.
+
+      :type: int
+
+   .. attribute:: num_relations
+
+      Number of relations in the dataset.
+
+      :type: int
+
+   .. attribute:: neg_sample_ratio
+
+      Ratio of negative samples to be drawn for each positive sample.
+
+      :type: int
+
+   .. attribute:: label_smoothing_rate
+
+      The smoothing factor applied to the labels.
+
+      :type: torch.Tensor
+
+   .. attribute:: collate_fn
+
+      A function that can be used to collate data samples into
+      batches (set to None by default).
+
+      :type: function, optional
 
 
    .. py:attribute:: train_data
@@ -3102,16 +3040,29 @@ Package Contents
 
 
 
-   .. py:attribute:: store
-
-
-   .. py:attribute:: train_target
-
-
    .. py:method:: __len__()
+
+      Returns the number of samples in the dataset.
+
 
 
    .. py:method:: __getitem__(idx)
+
+      Retrieves a single data sample from the dataset at the given index.
+
+      :param idx: The index of the sample to retrieve.
+      :type idx: int
+
+      :returns:
+
+                A tuple consisting of:
+                    - x (torch.Tensor): The head and relation part of the triple.
+                    - y_idx (torch.Tensor): The concatenated indices of the true object (tail entity)
+                      and the indices of the negative samples.
+                    - y_vec (torch.Tensor): A vector containing the labels for the positive and
+                      negative samples, with label smoothing applied.
+      :rtype: tuple
+
 
 
 .. py:class:: NegSampleDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1)

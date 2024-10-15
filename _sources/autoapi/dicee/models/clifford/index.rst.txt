@@ -9,7 +9,6 @@ Classes
 
 .. autoapisummary::
 
-   dicee.models.clifford.CMult
    dicee.models.clifford.Keci
    dicee.models.clifford.KeciBase
    dicee.models.clifford.DeCaL
@@ -17,105 +16,6 @@ Classes
 
 Module Contents
 ---------------
-
-.. py:class:: CMult(args)
-
-   Bases: :py:obj:`dicee.models.base_model.BaseKGE`
-
-
-   Cl_(0,0) => Real Numbers
-
-
-   Cl_(0,1) =>
-               A multivector \mathbf{a} = a_0 + a_1 e_1
-               A multivector \mathbf{b} = b_0 + b_1 e_1
-
-               multiplication is isomorphic to the product of two complex numbers
-
-               \mathbf{a}      imes \mathbf{b} = a_0 b_0 + a_0b_1 e1 + a_1 b_1 e_1 e_1
-                                            = (a_0 b_0 - a_1 b_1) + (a_0 b_1 + a_1 b_0) e_1
-   Cl_(2,0) =>
-               A multivector \mathbf{a} = a_0 + a_1 e_1 + a_2 e_2 + a_{12} e_1 e_2
-               A multivector \mathbf{b} = b_0 + b_1 e_1 + b_2 e_2 + b_{12} e_1 e_2
-
-               \mathbf{a}      imes \mathbf{b} = a_0b_0 + a_0b_1 e_1 + a_0b_2e_2 + a_0 b_12 e_1 e_2
-                                           + a_1 b_0 e_1 + a_1b_1 e_1_e1 ..
-
-   Cl_(0,2) => Quaternions
-
-
-   .. py:attribute:: name
-      :value: 'CMult'
-
-
-
-   .. py:attribute:: entity_embeddings
-
-
-   .. py:attribute:: relation_embeddings
-
-
-   .. py:attribute:: p
-
-
-   .. py:attribute:: q
-
-
-   .. py:method:: clifford_mul(x: torch.FloatTensor, y: torch.FloatTensor, p: int, q: int) -> tuple
-
-              Clifford multiplication Cl_{p,q} (\mathbb{R})
-
-              ei ^2 = +1     for i =< i =< p
-              ej ^2 = -1     for p < j =< p+q
-              ei ej = -eje1  for i
-      eq j
-
-              Parameter
-              ---------
-              x: torch.FloatTensor with (n,d) shape
-
-              y: torch.FloatTensor with (n,d) shape
-
-              p: a non-negative integer p>= 0
-              q: a non-negative integer q>= 0
-
-
-
-              Returns
-              -------
-
-
-
-
-
-   .. py:method:: score(head_ent_emb, rel_ent_emb, tail_ent_emb)
-
-
-   .. py:method:: forward_triples(x: torch.LongTensor) -> torch.FloatTensor
-
-      Compute batch triple scores
-
-      Parameter
-      ---------
-      x: torch.LongTensor with shape n by 3
-
-
-      :rtype: torch.LongTensor with shape n
-
-
-
-   .. py:method:: forward_k_vs_all(x: torch.Tensor) -> torch.FloatTensor
-
-      Compute batch KvsAll triple scores
-
-      Parameter
-      ---------
-      x: torch.LongTensor with shape n by 3
-
-
-      :rtype: torch.LongTensor with shape n
-
-
 
 .. py:class:: Keci(args)
 
@@ -232,7 +132,7 @@ Module Contents
 
 
 
-   .. py:method:: apply_coefficients(h0, hp, hq, r0, rp, rq)
+   .. py:method:: apply_coefficients(hp, hq, rp, rq)
 
       Multiplying a base vector with its scalar coefficient
 
@@ -305,20 +205,29 @@ Module Contents
 
 
 
+   .. py:method:: construct_batch_selected_cl_multivector(x: torch.FloatTensor, r: int, p: int, q: int) -> tuple[torch.FloatTensor, torch.FloatTensor, torch.FloatTensor]
+
+      Construct a batch of batchs multivectors Cl_{p,q}(\mathbb{R}^d)
+
+      Parameter
+      ---------
+      x: torch.FloatTensor with (n,k, d) shape
+
+      :returns: * **a0** (*torch.FloatTensor with (n,k, m) shape*)
+                * **ap** (*torch.FloatTensor with (n,k, m, p) shape*)
+                * **aq** (*torch.FloatTensor with (n,k, m, q) shape*)
+
+
+
    .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor) -> torch.FloatTensor
-
-      Kvsall training
-
-      (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .
-      (2) Construct head entity and relation embeddings according to Cl_{p,q}(\mathbb{R}^d) .
-      (3) Perform Cl multiplication
-      (4) Inner product of (3) and all entity embeddings
 
       Parameter
       ---------
       x: torch.LongTensor with (n,2) shape
 
-      :rtype: torch.FloatTensor with (n, |E|) shape
+      target_entity_idx: torch.LongTensor with (n, k ) shape k denotes the selected number of examples.
+
+      :rtype: torch.FloatTensor with (n, k) shape
 
 
 

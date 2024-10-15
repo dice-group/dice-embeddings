@@ -181,3 +181,6 @@ Module Contents
    .. py:method:: forward_k_vs_all(x: torch.LongTensor) -> torch.FloatTensor
 
 
+   .. py:method:: forward_k_vs_sample(x: torch.LongTensor, target_entity_idx: torch.LongTensor)
+
+

@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
@@ -5,23 +7,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dicee.models.clifford &mdash; DICE Embeddings 0.1.3.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
-      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=fd3f3429" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8775fe07" />
 
   
     <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
-  <!--[if lt IE 9]>
-    <script src="../../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
-        <script src="../../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
+      <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -94,244 +92,8 @@
 <span class="kn">import</span> <span class="nn">torch</span>
 
 
-<div class="viewcode-block" id="CMult">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.CMult">[docs]</a>
-<span class="k">class</span> <span class="nc">CMult</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Cl_(0,0) =&gt; Real Numbers</span>
-
-
-<span class="sd">    Cl_(0,1) =&gt;</span>
-<span class="sd">                A multivector \mathbf{a} = a_0 + a_1 e_1</span>
-<span class="sd">                A multivector \mathbf{b} = b_0 + b_1 e_1</span>
-
-<span class="sd">                multiplication is isomorphic to the product of two complex numbers</span>
-
-<span class="sd">                \mathbf{a} \times \mathbf{b} = a_0 b_0 + a_0b_1 e1 + a_1 b_1 e_1 e_1</span>
-<span class="sd">                                             = (a_0 b_0 - a_1 b_1) + (a_0 b_1 + a_1 b_0) e_1</span>
-<span class="sd">    Cl_(2,0) =&gt;</span>
-<span class="sd">                A multivector \mathbf{a} = a_0 + a_1 e_1 + a_2 e_2 + a_{12} e_1 e_2</span>
-<span class="sd">                A multivector \mathbf{b} = b_0 + b_1 e_1 + b_2 e_2 + b_{12} e_1 e_2</span>
-
-<span class="sd">                \mathbf{a} \times \mathbf{b} = a_0b_0 + a_0b_1 e_1 + a_0b_2e_2 + a_0 b_12 e_1 e_2</span>
-<span class="sd">                                            + a_1 b_0 e_1 + a_1b_1 e_1_e1 ..</span>
-
-<span class="sd">    Cl_(0,2) =&gt; Quaternions</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;CMult&#39;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_relations</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">embedding_dim</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">param_init</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relation_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;p&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s1">&#39;q&#39;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">p:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="se">\t</span><span class="s1">q:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-
-<div class="viewcode-block" id="CMult.clifford_mul">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.CMult.clifford_mul">[docs]</a>
-    <span class="k">def</span> <span class="nf">clifford_mul</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Clifford multiplication Cl_{p,q} (\mathbb{R})</span>
-
-<span class="sd">        ei ^2 = +1     for i =&lt; i =&lt; p</span>
-<span class="sd">        ej ^2 = -1     for p &lt; j =&lt; p+q</span>
-<span class="sd">        ei ej = -eje1  for i \neq j</span>
-
-<span class="sd">        Parameter</span>
-<span class="sd">        ---------</span>
-<span class="sd">        x: torch.FloatTensor with (n,d) shape</span>
-
-<span class="sd">        y: torch.FloatTensor with (n,d) shape</span>
-
-<span class="sd">        p: a non-negative integer p&gt;= 0</span>
-<span class="sd">        q: a non-negative integer q&gt;= 0</span>
-
-
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">if</span> <span class="n">p</span> <span class="o">==</span> <span class="n">q</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">y</span>
-        <span class="k">elif</span> <span class="p">(</span><span class="n">p</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">q</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">p</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">q</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="c1"># {1,e1} e_i^2 = +1 for i</span>
-            <span class="n">a0</span><span class="p">,</span> <span class="n">a1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-            <span class="n">b0</span><span class="p">,</span> <span class="n">b1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">p</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">q</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">ab0</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b0</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b1</span>
-                <span class="n">ab1</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b1</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b0</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">ab0</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b0</span> <span class="o">-</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b1</span>
-                <span class="n">ab1</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b1</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b0</span>
-            <span class="k">return</span> <span class="n">ab0</span><span class="p">,</span> <span class="n">ab1</span>
-        <span class="k">elif</span> <span class="p">(</span><span class="n">p</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">q</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">p</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">q</span> <span class="o">==</span> <span class="mi">2</span><span class="p">):</span>
-            <span class="n">a0</span><span class="p">,</span> <span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">a12</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-            <span class="n">b0</span><span class="p">,</span> <span class="n">b1</span><span class="p">,</span> <span class="n">b2</span><span class="p">,</span> <span class="n">b12</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">p</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">q</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">ab0</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b0</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b1</span> <span class="o">+</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">b2</span> <span class="o">-</span> <span class="n">a12</span> <span class="o">*</span> <span class="n">b12</span>
-                <span class="n">ab1</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b1</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b0</span> <span class="o">-</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">b12</span> <span class="o">+</span> <span class="n">a12</span> <span class="o">*</span> <span class="n">b2</span>
-                <span class="n">ab2</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b2</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b12</span> <span class="o">+</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">b0</span> <span class="o">-</span> <span class="n">a12</span> <span class="o">*</span> <span class="n">b1</span>
-                <span class="n">ab12</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b12</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b2</span> <span class="o">-</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">b1</span> <span class="o">+</span> <span class="n">a12</span> <span class="o">*</span> <span class="n">b0</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">ab0</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b0</span> <span class="o">-</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b1</span> <span class="o">-</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">b2</span> <span class="o">-</span> <span class="n">a12</span> <span class="o">*</span> <span class="n">b12</span>
-                <span class="n">ab1</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b1</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b0</span> <span class="o">+</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">b12</span> <span class="o">-</span> <span class="n">a12</span> <span class="o">*</span> <span class="n">b2</span>
-                <span class="n">ab2</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b2</span> <span class="o">-</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b12</span> <span class="o">+</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">b0</span> <span class="o">+</span> <span class="n">a12</span> <span class="o">*</span> <span class="n">b1</span>
-                <span class="n">ab12</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b12</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b2</span> <span class="o">-</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">b1</span> <span class="o">+</span> <span class="n">a12</span> <span class="o">*</span> <span class="n">b0</span>
-            <span class="k">return</span> <span class="n">ab0</span><span class="p">,</span> <span class="n">ab1</span><span class="p">,</span> <span class="n">ab2</span><span class="p">,</span> <span class="n">ab12</span>
-        <span class="k">elif</span> <span class="n">p</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">q</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">a0</span><span class="p">,</span> <span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">a12</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-            <span class="n">b0</span><span class="p">,</span> <span class="n">b1</span><span class="p">,</span> <span class="n">b2</span><span class="p">,</span> <span class="n">b12</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-
-            <span class="n">ab0</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b0</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b1</span> <span class="o">-</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">b2</span> <span class="o">+</span> <span class="n">a12</span> <span class="o">*</span> <span class="n">b12</span>
-            <span class="n">ab1</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b1</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b0</span> <span class="o">+</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">b12</span> <span class="o">-</span> <span class="n">a12</span> <span class="o">*</span> <span class="n">b2</span>
-            <span class="n">ab2</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b2</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b12</span> <span class="o">+</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">b0</span> <span class="o">-</span> <span class="n">a12</span> <span class="o">*</span> <span class="n">b1</span>
-            <span class="n">ab12</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b12</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b2</span> <span class="o">-</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">b1</span> <span class="o">+</span> <span class="n">a12</span> <span class="o">*</span> <span class="n">b0</span>
-            <span class="k">return</span> <span class="n">ab0</span><span class="p">,</span> <span class="n">ab1</span><span class="p">,</span> <span class="n">ab2</span><span class="p">,</span> <span class="n">ab12</span>
-        <span class="k">elif</span> <span class="n">p</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">q</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c1"># cl3,0 no 0,3</span>
-            <span class="n">a0</span><span class="p">,</span> <span class="n">a1</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">a3</span><span class="p">,</span> <span class="n">a12</span><span class="p">,</span> <span class="n">a13</span><span class="p">,</span> <span class="n">a23</span><span class="p">,</span> <span class="n">a123</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
-            <span class="n">b0</span><span class="p">,</span> <span class="n">b1</span><span class="p">,</span> <span class="n">b2</span><span class="p">,</span> <span class="n">b3</span><span class="p">,</span> <span class="n">b12</span><span class="p">,</span> <span class="n">b13</span><span class="p">,</span> <span class="n">b23</span><span class="p">,</span> <span class="n">b123</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
-
-            <span class="n">ab0</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b0</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b1</span> <span class="o">+</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">b2</span> <span class="o">+</span> <span class="n">a3</span> <span class="o">*</span> <span class="n">b3</span> <span class="o">-</span> <span class="n">a12</span> <span class="o">*</span> <span class="n">b12</span> <span class="o">-</span> <span class="n">a13</span> <span class="o">*</span> <span class="n">b13</span> <span class="o">-</span> <span class="n">a23</span> <span class="o">*</span> <span class="n">b23</span> <span class="o">-</span> <span class="n">a123</span> <span class="o">*</span> <span class="n">b123</span>
-            <span class="n">ab1</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b1</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b0</span> <span class="o">-</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">b12</span> <span class="o">-</span> <span class="n">a3</span> <span class="o">*</span> <span class="n">b13</span> <span class="o">+</span> <span class="n">a12</span> <span class="o">*</span> <span class="n">b2</span> <span class="o">+</span> <span class="n">a13</span> <span class="o">*</span> <span class="n">b3</span> <span class="o">-</span> <span class="n">a23</span> <span class="o">*</span> <span class="n">b123</span> <span class="o">-</span> <span class="n">a123</span> <span class="o">*</span> <span class="n">b23</span>
-            <span class="n">ab2</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b2</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b12</span> <span class="o">+</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">b0</span> <span class="o">-</span> <span class="n">a3</span> <span class="o">*</span> <span class="n">b23</span> <span class="o">-</span> <span class="n">a12</span> <span class="o">*</span> <span class="n">b1</span> <span class="o">+</span> <span class="n">a13</span> <span class="o">*</span> <span class="n">b123</span> <span class="o">+</span> <span class="n">a23</span> <span class="o">*</span> <span class="n">b3</span> <span class="o">+</span> <span class="n">a123</span> <span class="o">*</span> <span class="n">b13</span>
-            <span class="n">ab3</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b3</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b13</span> <span class="o">+</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">b23</span> <span class="o">+</span> <span class="n">a3</span> <span class="o">*</span> <span class="n">b0</span> <span class="o">-</span> <span class="n">a12</span> <span class="o">*</span> <span class="n">b123</span> <span class="o">-</span> <span class="n">a13</span> <span class="o">*</span> <span class="n">b1</span> <span class="o">-</span> <span class="n">a23</span> <span class="o">*</span> <span class="n">b2</span> <span class="o">-</span> <span class="n">a123</span> <span class="o">*</span> <span class="n">b12</span>
-            <span class="n">ab12</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b12</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b2</span> <span class="o">-</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">b1</span> <span class="o">+</span> <span class="n">a3</span> <span class="o">*</span> <span class="n">b123</span> <span class="o">+</span> <span class="n">a12</span> <span class="o">*</span> <span class="n">b0</span> <span class="o">-</span> <span class="n">a13</span> <span class="o">*</span> <span class="n">b23</span> <span class="o">+</span> <span class="n">a23</span> <span class="o">*</span> <span class="n">b13</span> <span class="o">+</span> <span class="n">a123</span> <span class="o">*</span> <span class="n">b3</span>
-            <span class="n">ab13</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b13</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b3</span> <span class="o">-</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">b123</span> <span class="o">-</span> <span class="n">a3</span> <span class="o">*</span> <span class="n">b1</span> <span class="o">+</span> <span class="n">a12</span> <span class="o">*</span> <span class="n">b23</span> <span class="o">+</span> <span class="n">a13</span> <span class="o">*</span> <span class="n">b0</span> <span class="o">-</span> <span class="n">a23</span> <span class="o">*</span> <span class="n">b12</span> <span class="o">-</span> <span class="n">a123</span> <span class="o">*</span> <span class="n">b2</span>
-            <span class="n">ab23</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b23</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b123</span> <span class="o">+</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">b3</span> <span class="o">-</span> <span class="n">a3</span> <span class="o">*</span> <span class="n">b2</span> <span class="o">-</span> <span class="n">a12</span> <span class="o">*</span> <span class="n">b13</span> <span class="o">-</span> <span class="n">a13</span> <span class="o">*</span> <span class="n">b12</span> <span class="o">+</span> <span class="n">a23</span> <span class="o">*</span> <span class="n">b0</span> <span class="o">+</span> <span class="n">a123</span> <span class="o">*</span> <span class="n">b1</span>
-            <span class="n">ab123</span> <span class="o">=</span> <span class="n">a0</span> <span class="o">*</span> <span class="n">b123</span> <span class="o">+</span> <span class="n">a1</span> <span class="o">*</span> <span class="n">b23</span> <span class="o">-</span> <span class="n">a2</span> <span class="o">*</span> <span class="n">b13</span> <span class="o">+</span> <span class="n">a3</span> <span class="o">*</span> <span class="n">b12</span> <span class="o">+</span> <span class="n">a12</span> <span class="o">*</span> <span class="n">b3</span> <span class="o">-</span> <span class="n">a13</span> <span class="o">*</span> <span class="n">b2</span> <span class="o">+</span> <span class="n">a23</span> <span class="o">*</span> <span class="n">b1</span> <span class="o">+</span> <span class="n">a123</span> <span class="o">*</span> <span class="n">b0</span>
-            <span class="k">return</span> <span class="n">ab0</span><span class="p">,</span> <span class="n">ab1</span><span class="p">,</span> <span class="n">ab2</span><span class="p">,</span> <span class="n">ab3</span><span class="p">,</span> <span class="n">ab12</span><span class="p">,</span> <span class="n">ab13</span><span class="p">,</span> <span class="n">ab23</span><span class="p">,</span> <span class="n">ab123</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
-
-
-<div class="viewcode-block" id="CMult.score">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.CMult.score">[docs]</a>
-    <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span><span class="p">):</span>
-        <span class="n">ab</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">clifford_mul</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd,bd-&gt;b&#39;</span><span class="p">,</span> <span class="n">ab</span><span class="p">,</span> <span class="n">tail_ent_emb</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="n">ab0</span><span class="p">,</span> <span class="n">ab1</span> <span class="o">=</span> <span class="n">ab</span>
-            <span class="n">c0</span><span class="p">,</span> <span class="n">c1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">tail_ent_emb</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd,bd-&gt;b&#39;</span><span class="p">,</span> <span class="n">ab0</span><span class="p">,</span> <span class="n">c0</span><span class="p">)</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd,bd-&gt;b&#39;</span><span class="p">,</span> <span class="n">ab1</span><span class="p">,</span> <span class="n">c1</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">2</span><span class="p">):</span>
-            <span class="n">ab0</span><span class="p">,</span> <span class="n">ab1</span><span class="p">,</span> <span class="n">ab2</span><span class="p">,</span> <span class="n">ab12</span> <span class="o">=</span> <span class="n">ab</span>
-            <span class="n">c0</span><span class="p">,</span> <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">c12</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">tail_ent_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd,bd-&gt;b&#39;</span><span class="p">,</span> <span class="n">ab0</span><span class="p">,</span> <span class="n">c0</span><span class="p">)</span> \
-                <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd,bd-&gt;b&#39;</span><span class="p">,</span> <span class="n">ab1</span><span class="p">,</span> <span class="n">c1</span><span class="p">)</span> \
-                <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd,bd-&gt;b&#39;</span><span class="p">,</span> <span class="n">ab2</span><span class="p">,</span> <span class="n">c2</span><span class="p">)</span> \
-                <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd,bd-&gt;b&#39;</span><span class="p">,</span> <span class="n">ab12</span><span class="p">,</span> <span class="n">c12</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
-
-
-<div class="viewcode-block" id="CMult.forward_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.CMult.forward_triples">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Compute batch triple scores</span>
-
-<span class="sd">        Parameter</span>
-<span class="sd">        ---------</span>
-<span class="sd">        x: torch.LongTensor with shape n by 3</span>
-
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        torch.LongTensor with shape n</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="c1"># (1) Retrieve real-valued embedding vectors.</span>
-        <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">tail_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_triple_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="n">ab</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">clifford_mul</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd,bd-&gt;b&#39;</span><span class="p">,</span> <span class="n">ab</span><span class="p">,</span> <span class="n">tail_ent_emb</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="n">ab0</span><span class="p">,</span> <span class="n">ab1</span> <span class="o">=</span> <span class="n">ab</span>
-            <span class="n">c0</span><span class="p">,</span> <span class="n">c1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">tail_ent_emb</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd,bd-&gt;b&#39;</span><span class="p">,</span> <span class="n">ab0</span><span class="p">,</span> <span class="n">c0</span><span class="p">)</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd,bd-&gt;b&#39;</span><span class="p">,</span> <span class="n">ab1</span><span class="p">,</span> <span class="n">c1</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">2</span><span class="p">):</span>
-            <span class="n">ab0</span><span class="p">,</span> <span class="n">ab1</span><span class="p">,</span> <span class="n">ab2</span><span class="p">,</span> <span class="n">ab12</span> <span class="o">=</span> <span class="n">ab</span>
-            <span class="n">c0</span><span class="p">,</span> <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">c12</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="n">tail_ent_emb</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd,bd-&gt;b&#39;</span><span class="p">,</span> <span class="n">ab0</span><span class="p">,</span> <span class="n">c0</span><span class="p">)</span> \
-                <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd,bd-&gt;b&#39;</span><span class="p">,</span> <span class="n">ab1</span><span class="p">,</span> <span class="n">c1</span><span class="p">)</span> \
-                <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd,bd-&gt;b&#39;</span><span class="p">,</span> <span class="n">ab2</span><span class="p">,</span> <span class="n">c2</span><span class="p">)</span> \
-                <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bd,bd-&gt;b&#39;</span><span class="p">,</span> <span class="n">ab12</span><span class="p">,</span> <span class="n">c12</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
-
-
-<div class="viewcode-block" id="CMult.forward_k_vs_all">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.CMult.forward_k_vs_all">[docs]</a>
-    <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Compute batch KvsAll triple scores</span>
-
-<span class="sd">        Parameter</span>
-<span class="sd">        ---------</span>
-<span class="sd">        x: torch.LongTensor with shape n by 3</span>
-
-
-<span class="sd">        Returns</span>
-<span class="sd">        -------</span>
-<span class="sd">        torch.LongTensor with shape n</span>
-
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># (1) Retrieve embedding vectors of heads and relations.</span>
-        <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="c1"># (2) CL multiply (1).</span>
-        <span class="n">ab</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">clifford_mul</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
-        <span class="c1"># (3) Inner product of (2) and all entity embeddings.</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">ab</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-        <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="n">ab0</span><span class="p">,</span> <span class="n">ab1</span> <span class="o">=</span> <span class="n">ab</span>
-            <span class="n">c0</span><span class="p">,</span> <span class="n">c1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">ab0</span><span class="p">,</span> <span class="n">c0</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">ab1</span><span class="p">,</span> <span class="n">c1</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-        <span class="k">elif</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">2</span><span class="p">):</span>
-            <span class="n">ab0</span><span class="p">,</span> <span class="n">ab1</span><span class="p">,</span> <span class="n">ab2</span><span class="p">,</span> <span class="n">ab12</span> <span class="o">=</span> <span class="n">ab</span>
-            <span class="n">c0</span><span class="p">,</span> <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">c12</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">ab0</span><span class="p">,</span> <span class="n">c0</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">+</span> \
-                <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">ab1</span><span class="p">,</span> <span class="n">c1</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">ab2</span><span class="p">,</span> <span class="n">c2</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span>
-                    <span class="n">ab12</span><span class="p">,</span> <span class="n">c12</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-
-            <span class="n">ab0</span><span class="p">,</span> <span class="n">ab1</span><span class="p">,</span> <span class="n">ab2</span><span class="p">,</span> <span class="n">ab3</span><span class="p">,</span> <span class="n">ab12</span><span class="p">,</span> <span class="n">ab13</span><span class="p">,</span> <span class="n">ab23</span><span class="p">,</span> <span class="n">ab123</span> <span class="o">=</span> <span class="n">ab</span>
-            <span class="n">c0</span><span class="p">,</span> <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">c3</span><span class="p">,</span> <span class="n">c12</span><span class="p">,</span> <span class="n">c13</span><span class="p">,</span> <span class="n">c23</span><span class="p">,</span> <span class="n">c123</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="mi">8</span><span class="p">)</span>
-
-            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">ab0</span><span class="p">,</span> <span class="n">c0</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> \
-                <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">ab1</span><span class="p">,</span> <span class="n">c1</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> \
-                <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">ab2</span><span class="p">,</span> <span class="n">c2</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> \
-                <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">ab3</span><span class="p">,</span> <span class="n">c3</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">+</span> \
-                <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">ab12</span><span class="p">,</span> <span class="n">c3</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">ab13</span><span class="p">,</span> <span class="n">c13</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> \
-                <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">ab23</span><span class="p">,</span> <span class="n">c23</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">ab123</span><span class="p">,</span> <span class="n">c123</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">ab0</span><span class="p">,</span> <span class="n">ab1</span><span class="p">,</span> <span class="n">ab2</span><span class="p">,</span> <span class="n">ab12</span> <span class="o">=</span> <span class="n">ab</span>
-            <span class="n">c0</span><span class="p">,</span> <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">c12</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hsplit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">ab0</span><span class="p">,</span> <span class="n">c0</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">ab1</span><span class="p">,</span> <span class="n">c1</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">+</span> \
-                <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">ab2</span><span class="p">,</span> <span class="n">c2</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span>
-                    <span class="n">ab12</span><span class="p">,</span> <span class="n">c12</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
-
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
-</div>
-
-
-
 <div class="viewcode-block" id="Keci">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.Keci">[docs]</a>
 <span class="k">class</span> <span class="nc">Keci</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
@@ -351,6 +113,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">r</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">requires_grad_for_interactions</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="c1"># Initialize parameters for dimension scaling</span>
+        <span class="c1"># TODO:Do we need coefficients for the real part ?</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">p_coefficients</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">(</span><span class="n">num_embeddings</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">embedding_dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">)</span>
             <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">zeros_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">p_coefficients</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span>
@@ -359,7 +122,7 @@
             <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">zeros_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q_coefficients</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Keci.compute_sigma_pp">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.compute_sigma_pp">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.Keci.compute_sigma_pp">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigma_pp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">rp</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute  sigma_{pp} = \sum_{i=1}^{p-1} \sum_{k=i+1}^p (h_i r_k - h_k r_i) e_i e_k</span>
@@ -390,7 +153,7 @@
 
 
 <div class="viewcode-block" id="Keci.compute_sigma_qq">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.compute_sigma_qq">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.Keci.compute_sigma_qq">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigma_qq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rq</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute  sigma_{qq} = \sum_{j=1}^{p+q-1} \sum_{k=j+1}^{p+q} (h_j r_k - h_k r_j) e_j e_k</span>
@@ -424,7 +187,7 @@
 
 
 <div class="viewcode-block" id="Keci.compute_sigma_pq">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.compute_sigma_pq">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.Keci.compute_sigma_pq">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigma_pq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        \sum_{i=1}^{p} \sum_{j=p+1}^{p+q} (h_i r_j - h_j r_i) e_i e_j</span>
@@ -443,8 +206,8 @@
 
 
 <div class="viewcode-block" id="Keci.apply_coefficients">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.apply_coefficients">[docs]</a>
-    <span class="k">def</span> <span class="nf">apply_coefficients</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">):</span>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.Keci.apply_coefficients">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_coefficients</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Multiplying a base vector with its scalar coefficient &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">hp</span> <span class="o">=</span> <span class="n">hp</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">p_coefficients</span><span class="o">.</span><span class="n">weight</span>
@@ -452,11 +215,11 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">hq</span> <span class="o">=</span> <span class="n">hq</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_coefficients</span><span class="o">.</span><span class="n">weight</span>
             <span class="n">rq</span> <span class="o">=</span> <span class="n">rq</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_coefficients</span><span class="o">.</span><span class="n">weight</span>
-        <span class="k">return</span> <span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span></div>
+        <span class="k">return</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span></div>
 
 
 <div class="viewcode-block" id="Keci.clifford_multiplication">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.clifford_multiplication">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.Keci.clifford_multiplication">[docs]</a>
     <span class="k">def</span> <span class="nf">clifford_multiplication</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Compute our CL multiplication</span>
 
@@ -506,10 +269,11 @@
 
 
 <div class="viewcode-block" id="Keci.construct_cl_multivector">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.construct_cl_multivector">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.Keci.construct_cl_multivector">[docs]</a>
     <span class="k">def</span> <span class="nf">construct_cl_multivector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+
 <span class="sd">        Construct a batch of multivectors Cl_{p,q}(\mathbb{R}^d)</span>
 
 <span class="sd">        Parameter</span>
@@ -521,6 +285,7 @@
 <span class="sd">        a0: torch.FloatTensor with (n,r) shape</span>
 <span class="sd">        ap: torch.FloatTensor with (n,r,p) shape</span>
 <span class="sd">        aq: torch.FloatTensor with (n,r,q) shape</span>
+
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">batch_size</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
         <span class="c1"># (1) A_{n \times k}: take the first k columns</span>
@@ -539,7 +304,7 @@
 
 
 <div class="viewcode-block" id="Keci.forward_k_vs_with_explicit">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.forward_k_vs_with_explicit">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.Keci.forward_k_vs_with_explicit">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_k_vs_with_explicit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
         <span class="c1"># (1) Retrieve real-valued embedding vectors.</span>
@@ -606,13 +371,13 @@
 
 
 <div class="viewcode-block" id="Keci.k_vs_all_score">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.k_vs_all_score">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.Keci.k_vs_all_score">[docs]</a>
     <span class="k">def</span> <span class="nf">k_vs_all_score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bpe_head_ent_emb</span><span class="p">,</span> <span class="n">bpe_rel_ent_emb</span><span class="p">,</span> <span class="n">E</span><span class="p">):</span>
         <span class="c1"># (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations</span>
         <span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_cl_multivector</span><span class="p">(</span><span class="n">bpe_head_ent_emb</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
         <span class="n">r0</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_cl_multivector</span><span class="p">(</span><span class="n">bpe_rel_ent_emb</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
 
-        <span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">h0</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_coefficients</span><span class="p">(</span><span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">h0</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">)</span>
+        <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_coefficients</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">)</span>
         <span class="c1"># (3.1) Extract real part</span>
         <span class="n">t0</span> <span class="o">=</span> <span class="n">E</span><span class="p">[:,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">]</span>
 
@@ -658,7 +423,7 @@
 
 
 <div class="viewcode-block" id="Keci.forward_k_vs_all">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.forward_k_vs_all">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.Keci.forward_k_vs_all">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Kvsall training</span>
@@ -684,67 +449,202 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">k_vs_all_score</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">E</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="Keci.construct_batch_selected_cl_multivector">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.Keci.construct_batch_selected_cl_multivector">[docs]</a>
+    <span class="k">def</span> <span class="nf">construct_batch_selected_cl_multivector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Construct a batch of batchs multivectors Cl_{p,q}(\mathbb{R}^d)</span>
+
+<span class="sd">        Parameter</span>
+<span class="sd">        ---------</span>
+<span class="sd">        x: torch.FloatTensor with (n,k, d) shape</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        a0: torch.FloatTensor with (n,k, m) shape</span>
+<span class="sd">        ap: torch.FloatTensor with (n,k, m, p) shape</span>
+<span class="sd">        aq: torch.FloatTensor with (n,k, m, q) shape</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">batch_size</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">d</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+
+        <span class="c1"># (1) Take the first m columns for each k</span>
+        <span class="n">a0</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:</span><span class="n">r</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span>
+
+        <span class="c1"># (2) B_{n \times p}, C_{n \times q}: take the self.k * self.p columns after the k. column</span>
+        <span class="k">if</span> <span class="n">p</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">ap</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">r</span><span class="p">:</span> <span class="n">r</span> <span class="o">+</span> <span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="n">p</span><span class="p">)]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ap</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">q</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># (3) B_{n \times p}, C_{n \times q}: take the last self.r * self.q .</span>
+            <span class="n">aq</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="p">:,</span> <span class="o">-</span><span class="p">(</span><span class="n">r</span> <span class="o">*</span> <span class="n">q</span><span class="p">):]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">aq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">q</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">a0</span><span class="p">,</span> <span class="n">ap</span><span class="p">,</span> <span class="n">aq</span></div>
+
+
 <div class="viewcode-block" id="Keci.forward_k_vs_sample">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.forward_k_vs_sample">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.Keci.forward_k_vs_sample">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_k_vs_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span> <span class="n">target_entity_idx</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Kvsall training</span>
-
-<span class="sd">        (1) Retrieve real-valued embedding vectors for heads and relations \mathbb{R}^d .</span>
-<span class="sd">        (2) Construct head entity and relation embeddings according to Cl_{p,q}(\mathbb{R}^d) .</span>
-<span class="sd">        (3) Perform Cl multiplication</span>
-<span class="sd">        (4) Inner product of (3) and all entity embeddings</span>
-
 <span class="sd">        Parameter</span>
 <span class="sd">        ---------</span>
 <span class="sd">        x: torch.LongTensor with (n,2) shape</span>
 
+<span class="sd">        target_entity_idx: torch.LongTensor with (n, k ) shape k denotes the selected number of examples.</span>
+
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        torch.FloatTensor with (n, |E|) shape</span>
+<span class="sd">        torch.FloatTensor with (n, k) shape</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># (1) Retrieve real-valued embedding vectors.</span>
-        <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="c1"># (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities.</span>
-        <span class="n">a0</span><span class="p">,</span> <span class="n">ap</span><span class="p">,</span> <span class="n">aq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_cl_multivector</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
-        <span class="c1"># (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for relations.</span>
-        <span class="n">b0</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">bq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_cl_multivector</span><span class="p">(</span><span class="n">rel_emb</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
+        <span class="c1"># (b, d), (b, d)</span>
+        <span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">rel_ent_emb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_head_relation_representation</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="c1"># (2) Construct multi-vector embeddings in Cl_{p,q} (\mathbb{R}^d) for head entities and relations</span>
+        <span class="c1"># (b, m), (b, m, p), (b, m, q)</span>
+        <span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_cl_multivector</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
+        <span class="c1"># (b, m), (b, m, p), (b, m, q)</span>
+        <span class="n">r0</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_cl_multivector</span><span class="p">(</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
+        <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_coefficients</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">)</span>
 
-        <span class="c1"># (4) Clifford multiplication of (2) and (3).</span>
-        <span class="c1"># AB_pp, AB_qq, AB_pq</span>
-        <span class="c1"># AB_0, AB_p, AB_q, AB_pp, AB_qq, AB_pq = self.clifford_mul_reduced_interactions(a0, ap, aq, b0, bp, bq)</span>
-        <span class="n">AB_0</span><span class="p">,</span> <span class="n">AB_p</span><span class="p">,</span> <span class="n">AB_q</span><span class="p">,</span> <span class="n">AB_pp</span><span class="p">,</span> <span class="n">AB_qq</span><span class="p">,</span> <span class="n">AB_pq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">clifford_mul</span><span class="p">(</span><span class="n">a0</span><span class="p">,</span> <span class="n">ap</span><span class="p">,</span> <span class="n">aq</span><span class="p">,</span> <span class="n">b0</span><span class="p">,</span> <span class="n">bp</span><span class="p">,</span> <span class="n">bq</span><span class="p">)</span>
 
-        <span class="c1"># b e r</span>
-        <span class="n">selected_tail_entity_embeddings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="p">(</span><span class="n">target_entity_idx</span><span class="p">)</span>
-        <span class="c1"># (7) Inner product of AB_0 and a0 of all entities.</span>
-        <span class="n">A_score</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;br,ber-&gt;be&#39;</span><span class="p">,</span> <span class="n">AB_0</span><span class="p">,</span> <span class="n">selected_tail_entity_embeddings</span><span class="p">[:,</span> <span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">])</span>
+        <span class="c1"># (3) (b, k, d) Retrieve real-valued embedding vectors of selected entities.</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entity_embeddings</span><span class="p">(</span><span class="n">target_entity_idx</span><span class="p">)</span>
+        <span class="c1"># (4) Construct multi-vector embeddings in Cl_{p,q} (\mathbb{R}^d) for head entities and relations</span>
+        <span class="c1"># (b, k, m), (b, k, m, p), (b, k, m, q)</span>
+        <span class="n">t0</span><span class="p">,</span> <span class="n">tp</span><span class="p">,</span> <span class="n">tq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_batch_selected_cl_multivector</span><span class="p">(</span><span class="n">E</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
 
-        <span class="c1"># (8) Inner product of AB_p and ap of all entities.</span>
+        <span class="c1"># (4) Batch vector matrix multiplications</span>
+        <span class="c1"># Equivalent computations</span>
+        <span class="c1">#                           h0*r0@t0.transpose(1,2)</span>
+        <span class="c1">#                           torch.einsum(&#39;bm, bmk -&gt; bk&#39;, h0 * r0, t0.transpose(1, 2))</span>
+        <span class="c1">#                           torch.einsum(&#39;bm, bkm -&gt; bk&#39;, h0 * r0, t0)</span>
+        <span class="n">h0r0t0</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bm, bkm -&gt; bk&#39;</span><span class="p">,</span> <span class="n">h0</span> <span class="o">*</span> <span class="n">r0</span><span class="p">,</span> <span class="n">t0</span><span class="p">)</span>
+
+        <span class="c1"># (5) Compute a triple score based on interactions described by the bases of p {e_1, ..., e_p}. Eq. 21</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">B_score</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;brp,berp-&gt;be&#39;</span><span class="p">,</span> <span class="n">AB_p</span><span class="p">,</span>
-                                   <span class="n">selected_tail_entity_embeddings</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">r</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">)]</span>
-                                   <span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">))</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Sample with p&gt;0 for Keci not implemented&quot;</span><span class="p">)</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            # Second term in Eq.16</span>
+<span class="sd">            hp_rp_t0 = torch.einsum(&#39;brp, br  -&gt; b&#39;, hp * rp, t0)</span>
+<span class="sd">            # Eq. 17</span>
+<span class="sd">            # b=e</span>
+<span class="sd">            h0_rp_tp = torch.einsum(&#39;brp, erp -&gt; b&#39;, torch.einsum(&#39;br,  brp -&gt; brp&#39;, h0, rp), tp)</span>
+<span class="sd">            hp_r0_tp = torch.einsum(&#39;brp, erp -&gt; b&#39;, torch.einsum(&#39;brp, br  -&gt; brp&#39;, hp, r0), tp)</span>
+<span class="sd">            score_p = hp_rp_t0 + h0_rp_tp + hp_r0_tp</span>
+<span class="sd">            &quot;&quot;&quot;</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">B_score</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="c1"># (9) Inner product of AB_q and aq of all entities.</span>
+            <span class="n">score_p</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># (6) Compute a triple score based on interactions described by the bases of q {e_{p+1}, ..., e_{p+q}}. Eq. 22</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">C_score</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;brq,berq-&gt;be&#39;</span><span class="p">,</span> <span class="n">AB_q</span><span class="p">,</span>
-                                   <span class="n">selected_tail_entity_embeddings</span><span class="p">[:,</span> <span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">):]</span>
-                                   <span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_entities</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">))</span>
+            <span class="c1"># \sum_{j=p+1}^{p+q} (h_j r_j t_0) : Third parth of the in Eq 16.</span>
+            <span class="c1"># Equivalent computation</span>
+            <span class="c1"># torch.einsum(&#39;bmq, bkm -&gt; bk&#39;, hq*rq, t0) =&gt; (hq * rq).transpose(1,2) @ t0.transpose(1,2)</span>
+            <span class="n">hq_rq_t0</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bmq, bkm -&gt; bk&#39;</span><span class="p">,</span> <span class="n">hq</span> <span class="o">*</span> <span class="n">rq</span><span class="p">,</span> <span class="n">t0</span><span class="p">)</span>
+
+            <span class="c1"># Eq. 18. Batch elementwise matrix matrix multiplication: bmq -&gt; bkmq</span>
+            <span class="n">rq_tq</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bmq, bkmq -&gt; bkmq&#39;</span><span class="p">,</span> <span class="n">rq</span><span class="p">,</span> <span class="n">tq</span><span class="p">)</span>
+            <span class="n">h0_rq_tq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bm, bkmq  -&gt; bk&#39;</span><span class="p">,</span> <span class="n">h0</span><span class="p">,</span> <span class="n">rq_tq</span><span class="p">)</span>
+            <span class="n">hq_tq</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bmq, bkmq -&gt; bkmq&#39;</span><span class="p">,</span><span class="n">hq</span><span class="p">,</span> <span class="n">tq</span><span class="p">)</span>
+            <span class="n">r0_hq_tq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;bm, bkmq  -&gt; bk&#39;</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="n">hq_tq</span><span class="p">)</span>
+            <span class="n">score_q</span> <span class="o">=</span> <span class="o">-</span> <span class="n">hq_rq_t0</span> <span class="o">+</span> <span class="p">(</span><span class="n">h0_rq_tq</span> <span class="o">+</span> <span class="n">r0_hq_tq</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">C_score</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="c1"># (10) Aggregate (7,8,9).</span>
-        <span class="n">A_B_C_score</span> <span class="o">=</span> <span class="n">A_score</span> <span class="o">+</span> <span class="n">B_score</span> <span class="o">+</span> <span class="n">C_score</span>
-        <span class="c1"># (11) Compute inner products of AB_pp, AB_qq, AB_pq and respective identity matrices of all entities.</span>
-        <span class="n">D_E_F_score</span> <span class="o">=</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;brpp-&gt;b&#39;</span><span class="p">,</span> <span class="n">AB_pp</span><span class="p">)</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;brqq-&gt;b&#39;</span><span class="p">,</span> <span class="n">AB_qq</span><span class="p">)</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;brpq-&gt;b&#39;</span><span class="p">,</span> <span class="n">AB_pq</span><span class="p">))</span>
-        <span class="n">D_E_F_score</span> <span class="o">=</span> <span class="n">D_E_F_score</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="c1"># (12) Score</span>
-        <span class="k">return</span> <span class="n">A_B_C_score</span> <span class="o">+</span> <span class="n">D_E_F_score</span></div>
+            <span class="n">score_q</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">sigma_pp</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_sigma_pp</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">rp</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sigma_pp</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">sigma_qq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_sigma_qq</span><span class="p">(</span><span class="n">hq</span><span class="p">,</span> <span class="n">rq</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sigma_qq</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">sigma_pq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_sigma_pq</span><span class="p">(</span><span class="n">hp</span><span class="o">=</span><span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="o">=</span><span class="n">hq</span><span class="p">,</span> <span class="n">rp</span><span class="o">=</span><span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="o">=</span><span class="n">rq</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sigma_pq</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">h0r0t0</span> <span class="o">+</span> <span class="n">score_p</span> <span class="o">+</span> <span class="n">score_q</span> <span class="o">+</span> <span class="n">sigma_pp</span> <span class="o">+</span> <span class="n">sigma_qq</span> <span class="o">+</span> <span class="n">sigma_pq</span>
+
+
+        <span class="c1"># (5) Compute a triple score based on interactions described by the bases of p {e_1, ..., e_p}. Eq. 21</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Not yet implement for kvssample function of Keci&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">score_p</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c1"># (5) Compute a triple score based on interactions described by the bases of q {e_{p+1}, ..., e_{p+q}}. Eq. 22</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;h0 shape&quot;</span><span class="p">,</span><span class="n">h0</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;rq shape&quot;</span><span class="p">,</span><span class="n">rq</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+            <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="c1"># (num_entities, r, q)</span>
+            <span class="c1"># (b,k,r,q)</span>
+            <span class="n">tq</span> <span class="o">=</span> <span class="n">E</span><span class="p">[:,</span> <span class="p">:,</span> <span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">):]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
+
+            <span class="nb">print</span><span class="p">(</span><span class="n">tq</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+            <span class="c1"># (b,r,q) batch (b) elementwise multiplications of a row vector (r) and row vectors of a matrix (r,q).</span>
+            <span class="c1"># h0.unsqueeze(-1) makes br to br1</span>
+            <span class="c1"># assert torch.allclose(h0.unsqueeze(-1) * rq, h0_rq)</span>
+            <span class="n">h0_rq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;br,  brq -&gt; brq&#39;</span><span class="p">,</span> <span class="n">h0</span><span class="p">,</span> <span class="n">rq</span><span class="p">)</span>
+
+
+
+            <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># (b,k)</span>
+            <span class="n">h0_rq_tq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;brq, bkrq -&gt; bk&#39;</span><span class="p">,</span> <span class="n">h0_rq</span><span class="p">,</span> <span class="n">tq</span><span class="p">)</span>
+            <span class="c1">#</span>
+            <span class="n">hq_r0</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;brq, br  -&gt; brq&#39;</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">r0</span><span class="p">)</span>
+
+            <span class="n">hq_r0_tq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;brq, bkrq -&gt; bk&#39;</span><span class="p">,</span> <span class="n">hq_r0</span><span class="p">,</span> <span class="n">tq</span><span class="p">)</span>
+            <span class="n">hq_rq_t0</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;brq, er  -&gt; bk&#39;</span><span class="p">,</span> <span class="n">hq</span> <span class="o">*</span> <span class="n">rq</span><span class="p">,</span> <span class="n">t0</span><span class="p">)</span>
+            <span class="n">score_q</span> <span class="o">=</span> <span class="n">h0_rq_tq</span> <span class="o">+</span> <span class="n">hq_r0_tq</span> <span class="o">-</span> <span class="n">hq_rq_t0</span>
+
+            <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># b, r, q</span>
+            <span class="n">h0_rq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;br,  brq -&gt; brq&#39;</span><span class="p">,</span> <span class="n">h0</span><span class="p">,</span> <span class="n">rq</span><span class="p">)</span>
+            <span class="c1"># b, r, q</span>
+            <span class="n">hq_r0</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;brq, br  -&gt; brq&#39;</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">r0</span><span class="p">)</span>
+            <span class="c1"># b, r, q</span>
+            <span class="n">hq_rq</span> <span class="o">=</span> <span class="n">hq</span> <span class="o">*</span> <span class="n">rq</span>
+            <span class="c1"># b, n, r, q</span>
+            <span class="n">tq</span> <span class="o">=</span> <span class="n">E</span><span class="p">[:,</span> <span class="p">:,</span> <span class="o">-</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">):]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">num_of_selected</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
+
+            <span class="n">h0_rq_tq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;brq, bnrq -&gt; bn&#39;</span><span class="p">,</span> <span class="n">h0_rq</span><span class="p">,</span> <span class="n">tq</span><span class="p">)</span>
+            <span class="n">hq_r0_tq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;brq, bnrq -&gt; bn&#39;</span><span class="p">,</span> <span class="n">hq_r0</span><span class="p">,</span> <span class="n">tq</span><span class="p">)</span>
+            <span class="n">hq_rq_t0</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;brq, bnr  -&gt; bn&#39;</span><span class="p">,</span> <span class="n">hq_rq</span><span class="p">,</span> <span class="n">t0</span><span class="p">)</span>
+            <span class="n">score_q</span> <span class="o">=</span> <span class="n">h0_rq_tq</span> <span class="o">+</span> <span class="n">hq_r0_tq</span> <span class="o">-</span> <span class="n">hq_rq_t0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">score_q</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Not yet implement for kvssample function of Keci&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sigma_pp</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">sigma_qq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">compute_sigma_qq</span><span class="p">(</span><span class="n">hq</span><span class="p">,</span> <span class="n">rq</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">])</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sigma_qq</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Not yet implement for kvssample function of Keci&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sigma_pq</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">h0r0t0</span> <span class="o">+</span> <span class="n">score_p</span> <span class="o">+</span> <span class="n">score_q</span> <span class="o">+</span> <span class="n">sigma_pp</span> <span class="o">+</span> <span class="n">sigma_qq</span> <span class="o">+</span> <span class="n">sigma_pq</span></div>
+
+
 
 
 <div class="viewcode-block" id="Keci.score">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.score">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.Keci.score">[docs]</a>
     <span class="k">def</span> <span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
         <span class="c1"># (2) Construct multi-vector in Cl_{p,q} (\mathbb{R}^d) for head entities and relations</span>
         <span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_cl_multivector</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
@@ -754,7 +654,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">q_coefficients</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">q_coefficients</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">h0</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">non_blocking</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-        <span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">h0</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_coefficients</span><span class="p">(</span><span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">h0</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">)</span>
+        <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_coefficients</span><span class="p">(</span><span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">)</span>
         <span class="c1"># (4) Compute a triple score based on interactions described by the basis 1. Eq. 20</span>
         <span class="n">h0r0t0</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;br, br -&gt; b&#39;</span><span class="p">,</span> <span class="n">h0</span> <span class="o">*</span> <span class="n">r0</span><span class="p">,</span> <span class="n">t0</span><span class="p">)</span>
 
@@ -800,7 +700,7 @@
 
 
 <div class="viewcode-block" id="Keci.forward_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.Keci.forward_triples">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.Keci.forward_triples">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -818,7 +718,7 @@
         <span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_cl_multivector</span><span class="p">(</span><span class="n">head_ent_emb</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
         <span class="n">r0</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_cl_multivector</span><span class="p">(</span><span class="n">rel_ent_emb</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
         <span class="n">t0</span><span class="p">,</span> <span class="n">tp</span><span class="p">,</span> <span class="n">tq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_cl_multivector</span><span class="p">(</span><span class="n">tail_ent_emb</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">r</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span>
-        <span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">h0</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_coefficients</span><span class="p">(</span><span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">h0</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">)</span>
+        <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_coefficients</span><span class="p">(</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">)</span>
         <span class="c1"># (4) Compute a triple score based on interactions described by the basis 1. Eq. 20</span>
         <span class="n">h0r0t0</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;br, br -&gt; b&#39;</span><span class="p">,</span> <span class="n">h0</span> <span class="o">*</span> <span class="n">r0</span><span class="p">,</span> <span class="n">t0</span><span class="p">)</span>
 
@@ -866,7 +766,7 @@
 
 
 <div class="viewcode-block" id="KeciBase">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.KeciBase">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.KeciBase">[docs]</a>
 <span class="k">class</span> <span class="nc">KeciBase</span><span class="p">(</span><span class="n">Keci</span><span class="p">):</span>
     <span class="s2">&quot; Without learning dimension scaling&quot;</span>
 
@@ -885,7 +785,7 @@
 
 
 <div class="viewcode-block" id="DeCaL">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.DeCaL">[docs]</a>
 <span class="k">class</span> <span class="nc">DeCaL</span><span class="p">(</span><span class="n">BaseKGE</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
@@ -909,7 +809,7 @@
             <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">zeros_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">r_coefficients</span><span class="o">.</span><span class="n">weight</span><span class="p">)</span>
 
 <div class="viewcode-block" id="DeCaL.forward_triples">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.forward_triples">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.DeCaL.forward_triples">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_triples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 
@@ -997,7 +897,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.cl_pqr">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.cl_pqr">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.DeCaL.cl_pqr">[docs]</a>
     <span class="k">def</span> <span class="nf">cl_pqr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">:</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">:</span>
 
 <span class="w">        </span><span class="sd">&#39;&#39;&#39; Input: tensor(batch_size, emb_dim) ---&gt; output: tensor with 1+p+q+r components with size (batch_size, emb_dim/(1+p+q+r)) each.</span>
@@ -1014,7 +914,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.compute_sigmas_single">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.compute_sigmas_single">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.DeCaL.compute_sigmas_single">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigmas_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_h_emb</span><span class="p">,</span> <span class="n">list_r_emb</span><span class="p">,</span> <span class="n">list_t_emb</span><span class="p">):</span>
 
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;here we compute all the sums with no others vectors interaction taken with the scalar product with t, that is,</span>
@@ -1067,7 +967,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.compute_sigmas_multivect">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.compute_sigmas_multivect">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.DeCaL.compute_sigmas_multivect">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigmas_multivect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_h_emb</span><span class="p">,</span> <span class="n">list_r_emb</span><span class="p">):</span>
 
 <span class="w">        </span><span class="sd">&#39;&#39;&#39;Here we compute and return all the sums with vectors interaction for the same and different bases.</span>
@@ -1127,7 +1027,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.forward_k_vs_all">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.forward_k_vs_all">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.DeCaL.forward_k_vs_all">[docs]</a>
     <span class="k">def</span> <span class="nf">forward_k_vs_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
 
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1223,7 +1123,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.apply_coefficients">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.apply_coefficients">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.DeCaL.apply_coefficients">[docs]</a>
     <span class="k">def</span> <span class="nf">apply_coefficients</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">h0</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">hk</span><span class="p">,</span> <span class="n">r0</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">,</span> <span class="n">rk</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Multiplying a base vector with its scalar coefficient &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -1239,7 +1139,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.construct_cl_multivector">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.construct_cl_multivector">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.DeCaL.construct_cl_multivector">[docs]</a>
     <span class="k">def</span> <span class="nf">construct_cl_multivector</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">re</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">p</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1278,7 +1178,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.compute_sigma_pp">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.compute_sigma_pp">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.DeCaL.compute_sigma_pp">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigma_pp</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">rp</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute </span>
@@ -1312,7 +1212,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.compute_sigma_qq">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.compute_sigma_qq">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.DeCaL.compute_sigma_qq">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigma_qq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rq</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute  </span>
@@ -1352,7 +1252,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.compute_sigma_rr">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.compute_sigma_rr">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.DeCaL.compute_sigma_rr">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigma_rr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hk</span><span class="p">,</span> <span class="n">rk</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        .. math:: </span>
@@ -1373,7 +1273,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.compute_sigma_pq">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.compute_sigma_pq">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.DeCaL.compute_sigma_pq">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigma_pq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rq</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute </span>
@@ -1396,7 +1296,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.compute_sigma_pr">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.compute_sigma_pr">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.DeCaL.compute_sigma_pr">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigma_pr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">hp</span><span class="p">,</span> <span class="n">hk</span><span class="p">,</span> <span class="n">rp</span><span class="p">,</span> <span class="n">rk</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Compute</span>
@@ -1419,7 +1319,7 @@
 
 
 <div class="viewcode-block" id="DeCaL.compute_sigma_qr">
-<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.DeCaL.compute_sigma_qr">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/clifford/index.html#dicee.models.clifford.DeCaL.compute_sigma_qr">[docs]</a>
     <span class="k">def</span> <span class="nf">compute_sigma_qr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">hq</span><span class="p">,</span> <span class="n">hk</span><span class="p">,</span> <span class="n">rq</span><span class="p">,</span> <span class="n">rk</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        .. math:: </span>

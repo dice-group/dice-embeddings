@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" data-content_root="../../../../">
 <head>
@@ -6,24 +8,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>dicee.models.clifford &mdash; DICE Embeddings 0.1.3.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8775fe07" />
-      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
-      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=fd3f3429" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/graphviz.css?v=4ae1632d" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/theme.css?v=ea877efc" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/theme_tweak.css?v=f0ad19f3" />
       <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8775fe07" />
 
   
     <link rel="shortcut icon" href="../../../../_static/favicon.ico"/>
-  <!--[if lt IE 9]>
-    <script src="../../../../_static/js/html5shiv.min.js"></script>
-  <![endif]-->
-  
-        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
-        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../../_static/documentation_options.js?v=c6726a90"></script>
-        <script src="../../../../_static/doctools.js?v=9a2dae69"></script>
-        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
-        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=c6726a90"></script>
+      <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="../../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../../genindex.html" />
     <link rel="search" title="Search" href="../../../../search.html" />
@@ -138,16 +136,13 @@
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.clifford.CMult" title="dicee.models.clifford.CMult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CMult</span></code></a></p></td>
-<td><p>Cl_(0,0) =&gt; Real Numbers</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.clifford.Keci" title="dicee.models.clifford.Keci"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keci</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.clifford.Keci" title="dicee.models.clifford.Keci"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keci</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.clifford.KeciBase" title="dicee.models.clifford.KeciBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KeciBase</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.clifford.KeciBase" title="dicee.models.clifford.KeciBase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KeciBase</span></code></a></p></td>
 <td><p>Without learning dimension scaling</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.models.clifford.DeCaL" title="dicee.models.clifford.DeCaL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeCaL</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.models.clifford.DeCaL" title="dicee.models.clifford.DeCaL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeCaL</span></code></a></p></td>
 <td><p>Base class for all neural network modules.</p></td>
 </tr>
 </tbody>
@@ -155,111 +150,6 @@
 </section>
 <section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Link to this heading"></a></h2>
-<dl class="py class">
-<dt class="sig sig-object py" id="dicee.models.clifford.CMult">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.clifford.</span></span><span class="sig-name descname"><span class="pre">CMult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#CMult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.CMult" title="Link to this definition"></a></dt>
-<dd><p>Bases: <a class="reference internal" href="../base_model/index.html#dicee.models.base_model.BaseKGE" title="dicee.models.base_model.BaseKGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dicee.models.base_model.BaseKGE</span></code></a></p>
-<p>Cl_(0,0) =&gt; Real Numbers</p>
-<dl>
-<dt>Cl_(0,1) =&gt;</dt><dd><p>A multivector mathbf{a} = a_0 + a_1 e_1
-A multivector mathbf{b} = b_0 + b_1 e_1</p>
-<p>multiplication is isomorphic to the product of two complex numbers</p>
-<dl class="simple">
-<dt>mathbf{a}      imes mathbf{b} = a_0 b_0 + a_0b_1 e1 + a_1 b_1 e_1 e_1</dt><dd><p>= (a_0 b_0 - a_1 b_1) + (a_0 b_1 + a_1 b_0) e_1</p>
-</dd>
-</dl>
-</dd>
-<dt>Cl_(2,0) =&gt;</dt><dd><p>A multivector mathbf{a} = a_0 + a_1 e_1 + a_2 e_2 + a_{12} e_1 e_2
-A multivector mathbf{b} = b_0 + b_1 e_1 + b_2 e_2 + b_{12} e_1 e_2</p>
-<dl class="simple">
-<dt>mathbf{a}      imes mathbf{b} = a_0b_0 + a_0b_1 e_1 + a_0b_2e_2 + a_0 b_12 e_1 e_2</dt><dd><ul class="simple">
-<li><p>a_1 b_0 e_1 + a_1b_1 e_1_e1 ..</p></li>
-</ul>
-</dd>
-</dl>
-</dd>
-</dl>
-<p>Cl_(0,2) =&gt; Quaternions</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.clifford.CMult.name">
-<span class="sig-name descname"><span class="pre">name</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'CMult'</span></em><a class="headerlink" href="#dicee.models.clifford.CMult.name" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.clifford.CMult.entity_embeddings">
-<span class="sig-name descname"><span class="pre">entity_embeddings</span></span><a class="headerlink" href="#dicee.models.clifford.CMult.entity_embeddings" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.clifford.CMult.relation_embeddings">
-<span class="sig-name descname"><span class="pre">relation_embeddings</span></span><a class="headerlink" href="#dicee.models.clifford.CMult.relation_embeddings" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.clifford.CMult.p">
-<span class="sig-name descname"><span class="pre">p</span></span><a class="headerlink" href="#dicee.models.clifford.CMult.p" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="dicee.models.clifford.CMult.q">
-<span class="sig-name descname"><span class="pre">q</span></span><a class="headerlink" href="#dicee.models.clifford.CMult.q" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.clifford.CMult.clifford_mul">
-<span class="sig-name descname"><span class="pre">clifford_mul</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#CMult.clifford_mul"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.CMult.clifford_mul" title="Link to this definition"></a></dt>
-<dd><blockquote>
-<div><p>Clifford multiplication Cl_{p,q} (mathbb{R})</p>
-<p>ei ^2 = +1     for i =&lt; i =&lt; p
-ej ^2 = -1     for p &lt; j =&lt; p+q
-ei ej = -eje1  for i</p>
-</div></blockquote>
-<p>eq j</p>
-<blockquote>
-<div><p>x: torch.FloatTensor with (n,d) shape</p>
-<p>y: torch.FloatTensor with (n,d) shape</p>
-<p>p: a non-negative integer p&gt;= 0
-q: a non-negative integer q&gt;= 0</p>
-</div></blockquote>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.clifford.CMult.score">
-<span class="sig-name descname"><span class="pre">score</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">head_ent_emb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_ent_emb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tail_ent_emb</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#CMult.score"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.CMult.score" title="Link to this definition"></a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.clifford.CMult.forward_triples">
-<span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#CMult.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.CMult.forward_triples" title="Link to this definition"></a></dt>
-<dd><p>Compute batch triple scores</p>
-<section id="parameter">
-<h3>Parameter<a class="headerlink" href="#parameter" title="Link to this heading"></a></h3>
-<p>x: torch.LongTensor with shape n by 3</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.LongTensor with shape n</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="dicee.models.clifford.CMult.forward_k_vs_all">
-<span class="sig-name descname"><span class="pre">forward_k_vs_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#CMult.forward_k_vs_all"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.CMult.forward_k_vs_all" title="Link to this definition"></a></dt>
-<dd><p>Compute batch KvsAll triple scores</p>
-<section id="id1">
-<h3>Parameter<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
-<p>x: torch.LongTensor with shape n by 3</p>
-<dl class="field-list simple">
-<dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.LongTensor with shape n</p>
-</dd>
-</dl>
-</section>
-</dd></dl>
-
-</dd></dl>
-
 <dl class="py class">
 <dt class="sig sig-object py" id="dicee.models.clifford.Keci">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">dicee.models.clifford.</span></span><span class="sig-name descname"><span class="pre">Keci</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci" title="Link to this definition"></a></dt>
@@ -394,7 +284,7 @@ for i in range(p):</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.clifford.Keci.apply_coefficients">
-<span class="sig-name descname"><span class="pre">apply_coefficients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">h0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rq</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.apply_coefficients"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.apply_coefficients" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply_coefficients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hq</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rq</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.apply_coefficients"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.apply_coefficients" title="Link to this definition"></a></dt>
 <dd><p>Multiplying a base vector with its scalar coefficient</p>
 </dd></dl>
 
@@ -430,8 +320,8 @@ where</p>
 <dt class="sig sig-object py" id="dicee.models.clifford.Keci.construct_cl_multivector">
 <span class="sig-name descname"><span class="pre">construct_cl_multivector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.construct_cl_multivector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.construct_cl_multivector" title="Link to this definition"></a></dt>
 <dd><p>Construct a batch of multivectors Cl_{p,q}(mathbb{R}^d)</p>
-<section id="id2">
-<h3>Parameter<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<section id="parameter">
+<h3>Parameter<a class="headerlink" href="#parameter" title="Link to this heading"></a></h3>
 <p>x: torch.FloatTensor with (n,d) shape</p>
 <dl class="field-list simple">
 <dt class="field-odd">returns<span class="colon">:</span></dt>
@@ -469,25 +359,38 @@ where</p>
 Parameter
 ———
 x: torch.LongTensor with (n,2) shape
-:rtype: torch.FloatTensor with (n, <a href="#id7"><span class="problematic" id="id8">|E|</span></a>) shape</p>
+:rtype: torch.FloatTensor with (n, <a href="#id6"><span class="problematic" id="id7">|E|</span></a>) shape</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="dicee.models.clifford.Keci.construct_batch_selected_cl_multivector">
+<span class="sig-name descname"><span class="pre">construct_batch_selected_cl_multivector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.construct_batch_selected_cl_multivector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.construct_batch_selected_cl_multivector" title="Link to this definition"></a></dt>
+<dd><p>Construct a batch of batchs multivectors Cl_{p,q}(mathbb{R}^d)</p>
+<section id="id1">
+<h3>Parameter<a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<p>x: torch.FloatTensor with (n,k, d) shape</p>
+<dl class="field-list simple">
+<dt class="field-odd">returns<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>a0</strong> (<em>torch.FloatTensor with (n,k, m) shape</em>)</p></li>
+<li><p><strong>ap</strong> (<em>torch.FloatTensor with (n,k, m, p) shape</em>)</p></li>
+<li><p><strong>aq</strong> (<em>torch.FloatTensor with (n,k, m, q) shape</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</section>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.clifford.Keci.forward_k_vs_sample">
 <span class="sig-name descname"><span class="pre">forward_k_vs_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_entity_idx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.LongTensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.forward_k_vs_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.forward_k_vs_sample" title="Link to this definition"></a></dt>
-<dd><p>Kvsall training</p>
-<ol class="arabic simple">
-<li><p>Retrieve real-valued embedding vectors for heads and relations mathbb{R}^d .</p></li>
-<li><p>Construct head entity and relation embeddings according to Cl_{p,q}(mathbb{R}^d) .</p></li>
-<li><p>Perform Cl multiplication</p></li>
-<li><p>Inner product of (3) and all entity embeddings</p></li>
-</ol>
-<section id="id3">
-<h3>Parameter<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<dd><section id="id2">
+<h3>Parameter<a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
 <p>x: torch.LongTensor with (n,2) shape</p>
+<p>target_entity_idx: torch.LongTensor with (n, k ) shape k denotes the selected number of examples.</p>
 <dl class="field-list simple">
 <dt class="field-odd">rtype<span class="colon">:</span></dt>
-<dd class="field-odd"><p>torch.FloatTensor with (n, <a href="#id9"><span class="problematic" id="id10">|E|</span></a>) shape</p>
+<dd class="field-odd"><p>torch.FloatTensor with (n, k) shape</p>
 </dd>
 </dl>
 </section>
@@ -501,8 +404,8 @@ x: torch.LongTensor with (n,2) shape
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.clifford.Keci.forward_triples">
 <span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#Keci.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.Keci.forward_triples" title="Link to this definition"></a></dt>
-<dd><section id="id4">
-<h3>Parameter<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
+<dd><section id="id3">
+<h3>Parameter<a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
 <p>x: torch.LongTensor with (n,3) shape</p>
 <dl class="field-list simple">
 <dt class="field-odd">rtype<span class="colon">:</span></dt>
@@ -604,8 +507,8 @@ evaluation mode.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.clifford.DeCaL.forward_triples">
 <span class="sig-name descname"><span class="pre">forward_triples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.FloatTensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#DeCaL.forward_triples"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.DeCaL.forward_triples" title="Link to this definition"></a></dt>
-<dd><section id="id5">
-<h3>Parameter<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
+<dd><section id="id4">
+<h3>Parameter<a class="headerlink" href="#id4" title="Link to this heading"></a></h3>
 <p>x: torch.LongTensor with (n, ) shape</p>
 <dl class="field-list simple">
 <dt class="field-odd">rtype<span class="colon">:</span></dt>
@@ -673,7 +576,7 @@ s3, s4 and s5\]</div>
 Parameter
 ———
 x: torch.LongTensor with (n, ) shape
-:rtype: torch.FloatTensor with (n, <a href="#id11"><span class="problematic" id="id12">|E|</span></a>) shape</p>
+:rtype: torch.FloatTensor with (n, <a href="#id8"><span class="problematic" id="id9">|E|</span></a>) shape</p>
 </dd></dl>
 
 <dl class="py method">
@@ -686,8 +589,8 @@ x: torch.LongTensor with (n, ) shape
 <dt class="sig sig-object py" id="dicee.models.clifford.DeCaL.construct_cl_multivector">
 <span class="sig-name descname"><span class="pre">construct_cl_multivector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.FloatTensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">re</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">torch.FloatTensor</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/clifford.html#DeCaL.construct_cl_multivector"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.clifford.DeCaL.construct_cl_multivector" title="Link to this definition"></a></dt>
 <dd><p>Construct a batch of multivectors Cl_{p,q,r}(mathbb{R}^d)</p>
-<section id="id6">
-<h3>Parameter<a class="headerlink" href="#id6" title="Link to this heading"></a></h3>
+<section id="id5">
+<h3>Parameter<a class="headerlink" href="#id5" title="Link to this heading"></a></h3>
 <p>x: torch.FloatTensor with (n,d) shape</p>
 <dl class="field-list simple">
 <dt class="field-odd">returns<span class="colon">:</span></dt>

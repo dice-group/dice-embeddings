@@ -15,7 +15,7 @@ Classes
    dicee.dataset_classes.OnevsAllDataset
    dicee.dataset_classes.KvsAll
    dicee.dataset_classes.AllvsAll
-   dicee.dataset_classes.KvsSampleDataset
+   dicee.dataset_classes.OnevsSampleDataset
    dicee.dataset_classes.NegSampleDataset
    dicee.dataset_classes.TriplePredictionDataset
    dicee.dataset_classes.CVDataModule
@@ -346,38 +346,64 @@ Module Contents
    .. py:method:: __getitem__(idx)
 
 
-.. py:class:: KvsSampleDataset(train_set: numpy.ndarray, num_entities, num_relations, neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0)
+.. py:class:: OnevsSampleDataset(train_set: numpy.ndarray, num_entities, num_relations, neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0)
 
    Bases: :py:obj:`torch.utils.data.Dataset`
 
 
-       KvsSample a Dataset:
-           D:= {(x,y)_i}_i ^N, where
-               . x:(h,r) is a unique h \in E and a relation r \in R and
-               . y \in [0,1]^{|E|} is a binary label.
-   orall y_i =1 s.t. (h r E_i) \in KG
-              At each mini-batch construction, we subsample(y), hence n
-               |new_y| << |E|
-               new_y contains all 1's if sum(y)< neg_sample ratio
-               new_y contains
-          Parameters
-          ----------
-          train_set_idx
-              Indexed triples for the training.
-          entity_idxs
-              mapping.
-          relation_idxs
-              mapping.
-          form
-              ?
-          store
-               ?
-          label_smoothing_rate
-              ?
-          Returns
-          -------
-          torch.utils.data.Dataset
+   A custom PyTorch Dataset class for knowledge graph embeddings, which includes
+   both positive and negative sampling for a given dataset for multi-class classification problem..
 
+   :param train_set: A numpy array containing triples of knowledge graph data.
+                     Each triple consists of (head_entity, relation, tail_entity).
+   :type train_set: np.ndarray
+   :param num_entities: The number of unique entities in the knowledge graph.
+   :type num_entities: int
+   :param num_relations: The number of unique relations in the knowledge graph.
+   :type num_relations: int
+   :param neg_sample_ratio: The number of negative samples to be generated
+                            per positive sample. Must be a positive integer and less than num_entities.
+   :type neg_sample_ratio: int, optional
+   :param label_smoothing_rate: A label smoothing rate to apply to the
+                                positive and negative labels. Defaults to 0.0.
+   :type label_smoothing_rate: float, optional
+
+   .. attribute:: train_data
+
+      The input data converted into a PyTorch tensor.
+
+      :type: torch.Tensor
+
+   .. attribute:: num_entities
+
+      Number of entities in the dataset.
+
+      :type: int
+
+   .. attribute:: num_relations
+
+      Number of relations in the dataset.
+
+      :type: int
+
+   .. attribute:: neg_sample_ratio
+
+      Ratio of negative samples to be drawn for each positive sample.
+
+      :type: int
+
+   .. attribute:: label_smoothing_rate
+
+      The smoothing factor applied to the labels.
+
+      :type: torch.Tensor
+
+   .. attribute:: collate_fn
+
+      A function that can be used to collate data samples into
+      batches (set to None by default).
+
+      :type: function, optional
 
 
    .. py:attribute:: train_data
@@ -400,16 +426,29 @@ Module Contents
 
 
 
-   .. py:attribute:: store
-
-
-   .. py:attribute:: train_target
-
-
    .. py:method:: __len__()
+
+      Returns the number of samples in the dataset.
+
 
 
    .. py:method:: __getitem__(idx)
+
+      Retrieves a single data sample from the dataset at the given index.
+
+      :param idx: The index of the sample to retrieve.
+      :type idx: int
+
+      :returns:
+
+                A tuple consisting of:
+                    - x (torch.Tensor): The head and relation part of the triple.
+                    - y_idx (torch.Tensor): The concatenated indices of the true object (tail entity)
+                      and the indices of the negative samples.
+                    - y_vec (torch.Tensor): A vector containing the labels for the positive and
+                      negative samples, with label smoothing applied.
+      :rtype: tuple
+
 
 
 .. py:class:: NegSampleDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1)
