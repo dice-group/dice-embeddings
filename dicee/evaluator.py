@@ -116,7 +116,7 @@ class Evaluator:
                                                    valid_set=dataset.valid_set,
                                                    test_set=dataset.test_set,
                                                    trained_model=trained_model)
-        elif self.args.scoring_technique in ["AllvsAll", "KvsAll", '1vsSample', "1vsAll"]:
+        elif self.args.scoring_technique in ["AllvsAll", "KvsAll", '1vsSample',"KvsSample", "1vsAll"]:
             self.eval_with_vs_all(train_set=dataset.train_set,
                                   valid_set=dataset.valid_set,
                                   test_set=dataset.test_set,
