@@ -1,4 +1,5 @@
 from numpy import dtype
+from numpy.ma.extras import unique
 from sympy.stats.rv import probability
 from torch.utils.data import DataLoader
 import numpy as np
@@ -67,7 +68,7 @@ def construct_dataset(*,
             train_set = OnevsAllDataset(train_set, entity_idxs=entity_to_idx)
         elif scoring_technique == '1vsSample':
             # Dynamic Multi-class
-            train_set = OnevsSampleDataset(train_set=train_set,
+            train_set = OnevsSample(train_set=train_set,
                                          num_entities=len(entity_to_idx),
                                          num_relations=len(relation_to_idx),
                                          neg_sample_ratio=neg_ratio,
@@ -85,6 +86,13 @@ def construct_dataset(*,
                                  entity_idxs=entity_to_idx,
                                  relation_idxs=relation_to_idx,
                                  label_smoothing_rate=label_smoothing_rate)
+        elif scoring_technique == 'KvsSample':
+            # Dynamic Multi-label.
+            train_set = KvsSampleDataset(train_set,
+                               num_entities=len(entity_to_idx),
+                               num_relations=len(relation_to_idx),
+                                neg_sample_ratio=neg_ratio,
+                               label_smoothing_rate=label_smoothing_rate)
         else:
             raise ValueError(f'Invalid scoring technique : {scoring_technique}')
     elif form_of_labelling == 'RelationPrediction':
@@ -432,7 +440,7 @@ class AllvsAll(torch.utils.data.Dataset):
         return self.train_data[idx], y_vec
 
 
-class OnevsSampleDataset(torch.utils.data.Dataset):
+class OnevsSample(torch.utils.data.Dataset):
     """
     A custom PyTorch Dataset class for knowledge graph embeddings, which includes
     both positive and negative sampling for a given dataset for multi-class classification problem..
@@ -504,11 +512,11 @@ class OnevsSampleDataset(torch.utils.data.Dataset):
 
         # Initialize weights for negative sampling
         weights = torch.ones(self.num_entities)
-        weights[y] = 0.0  # Set the weight of the true tail entity to zero
+        # Set the weight of the true tail entity to zero
+        weights[y] = 0.0
 
         # Sample negative examples from the entity set
         negative_idx = torch.multinomial(weights, num_samples=self.neg_sample_ratio, replacement=False)
-
         # Concatenate the true tail entity with the negative samples
         y_idx = torch.cat((y, negative_idx), 0).long()
 
@@ -516,8 +524,98 @@ class OnevsSampleDataset(torch.utils.data.Dataset):
         y_vec = torch.cat(
             (torch.ones(1) - self.label_smoothing_rate,  # Positive label with smoothing
              torch.zeros(self.neg_sample_ratio) + self.label_smoothing_rate),  # Negative labels with smoothing
-            0
-        )
+            0)
+        return x, y_idx, y_vec
+
+
+class KvsSampleDataset(torch.utils.data.Dataset):
+    """
+    KvsSample a Dataset:
+        D:= {(x,y)_i}_i ^N, where
+            . x:(h,r) is a unique h \in E and a relation r \in R and
+            . y \in [0,1]^{|E|} is a binary label. \forall y_i =1 s.t. (h r E_i) \in KG
+           At each mini-batch construction, we subsample(y), hence n
+            |new_y| << |E|
+            new_y contains all 1's if sum(y)< neg_sample ratio
+            new_y contains
+       Parameters
+       ----------
+       train_set_idx
+           Indexed triples for the training.
+       entity_idxs
+           mapping.
+       relation_idxs
+           mapping.
+       form
+           ?
+       store
+            ?
+       label_smoothing_rate
+           ?
+       Returns
+       -------
+       torch.utils.data.Dataset
+       """
+
+    def __init__(self, train_set: np.ndarray, num_entities, num_relations, neg_sample_ratio: int = None,
+                 label_smoothing_rate: float = 0.0):
+        super().__init__()
+        assert isinstance(train_set, np.ndarray)
+        assert isinstance(neg_sample_ratio, int)
+        self.train_data = train_set
+        self.num_entities = num_entities
+        self.num_relations = num_relations
+        self.neg_sample_ratio = neg_sample_ratio
+        self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
+        self.collate_fn = None
+        assert isinstance(self.neg_sample_ratio,int)
+        assert self.neg_sample_ratio>0
+
+        print('Constructing training data...')
+        store = mapping_from_first_two_cols_to_third(train_set)
+        self.train_data = torch.IntTensor(list(store.keys()))
+        # https://pytorch.org/docs/stable/data.html#multi-process-data-loading
+        # TLDL; replace Python objects with non-refcounted representations such as Pandas, Numpy or PyArrow objects
+        # Unsure whether a list of numpy arrays are non-refcounted
+        self.train_target = list([np.array(i) for i in store.values()])
+        del store
+        # @TODO: Investigate reference counts of using list of numpy arrays.
+        # import sys
+        # import gc
+        # print(sys.getrefcount(self.train_target))
+        # print(sys.getrefcount(self.train_target[0]))
+        # print(gc.get_referrers(self.train_target))
+        # print(gc.get_referrers(self.train_target[0]))
+
+    def __len__(self):
+        assert len(self.train_data) == len(self.train_target)
+        return len(self.train_data)
+
+    def __getitem__(self, idx):
+        # (1) Get i.th unique (head,relation) pair.
+        x = self.train_data[idx]
+        # (2) Get tail entities given (1).
+        positives_idx = self.train_target[idx]
+        num_positives = len(positives_idx)
+        # (3) Do we need to subsample (2) to create training data points of same size.
+        if num_positives < self.neg_sample_ratio:
+            # (3.1) Take all tail entities as positive examples
+            positives_idx = torch.IntTensor(positives_idx)
+            # (3.2) Generate more negative entities
+            negative_idx = torch.randint(low=0,
+                                         high=self.num_entities,
+                                         size=(self.neg_sample_ratio + self.neg_sample_ratio - num_positives,))
+        else:
+            # (3.1) Subsample positives without replacement.
+            positives_idx = torch.IntTensor(np.random.choice(positives_idx, size=self.neg_sample_ratio, replace=False))
+            # (3.2) Generate random entities.
+            negative_idx = torch.randint(low=0,
+                                         high=self.num_entities,
+                                         size=(self.neg_sample_ratio,))
+        # (5) Create selected indexes.
+        y_idx = torch.cat((positives_idx, negative_idx), 0)
+        # (6) Create binary labels.
+        y_vec = torch.cat((torch.ones(len(positives_idx)), torch.zeros(len(negative_idx))), 0)
         return x, y_idx, y_vec
 
 
