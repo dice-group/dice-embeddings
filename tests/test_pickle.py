@@ -3,7 +3,7 @@ import os
 import pickle
 import pytest
 from dicee.config import Namespace
-
+# TODO:CD: Using pickle is quite inefficient timewise. Why do we need the pickle models ?!
 class TestPickle:
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_dismult_pickle(self):

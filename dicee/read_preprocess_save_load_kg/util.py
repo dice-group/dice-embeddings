@@ -10,6 +10,75 @@ import os
 import psutil
 import requests
 
+def polars_dataframe_indexer(df_polars:polars.DataFrame, idx_entity:polars.DataFrame, idx_relation:polars.DataFrame)->polars.DataFrame:
+    """
+     Replaces 'subject', 'relation', and 'object' columns in the input Polars DataFrame with their corresponding index values
+     from the entity and relation index DataFrames.
+
+     This function processes the DataFrame in three main steps:
+     1. Replace the 'relation' values with the corresponding index from `idx_relation`.
+     2. Replace the 'subject' values with the corresponding index from `idx_entity`.
+     3. Replace the 'object' values with the corresponding index from `idx_entity`.
+
+     Parameters:
+     -----------
+     df_polars : polars.DataFrame
+         The input Polars DataFrame containing columns: 'subject', 'relation', and 'object'.
+
+     idx_entity : polars.DataFrame
+         A Polars DataFrame that contains the mapping between entity names and their corresponding indices.
+         Must have columns: 'entity' and 'index'.
+
+     idx_relation : polars.DataFrame
+         A Polars DataFrame that contains the mapping between relation names and their corresponding indices.
+         Must have columns: 'relation' and 'index'.
+
+     Returns:
+     --------
+     polars.DataFrame
+         A DataFrame with the 'subject', 'relation', and 'object' columns replaced by their corresponding indices.
+
+     Example Usage:
+     --------------
+     >>> df_polars = pl.DataFrame({
+             "subject": ["Alice", "Bob", "Charlie"],
+             "relation": ["knows", "works_with", "lives_in"],
+             "object": ["Dave", "Eve", "Frank"]
+         })
+     >>> idx_entity = pl.DataFrame({
+             "entity": ["Alice", "Bob", "Charlie", "Dave", "Eve", "Frank"],
+             "index": [0, 1, 2, 3, 4, 5]
+         })
+     >>> idx_relation = pl.DataFrame({
+             "relation": ["knows", "works_with", "lives_in"],
+             "index": [0, 1, 2]
+         })
+     >>> polars_dataframe_indexer(df_polars, idx_entity, idx_relation)
+
+     Steps:
+     ------
+     1. Join the input DataFrame `df_polars` on the 'relation' column with `idx_relation` to replace the relations with their indices.
+     2. Join on 'subject' to replace it with the corresponding entity index using a left join on `idx_entity`.
+     3. Join on 'object' to replace it with the corresponding entity index using a left join on `idx_entity`.
+     4. Select only the 'subject', 'relation', and 'object' columns to return the final result.
+     """
+    assert isinstance(df_polars, polars.DataFrame)
+    assert isinstance(idx_entity, polars.DataFrame)
+    assert isinstance(idx_relation, polars.DataFrame)
+
+    # Step : Join on 'relation' to replace relation with its index
+    df_merged = df_polars.join(idx_relation, on="relation", how="left")
+    df_merged = df_merged.select([polars.col("subject"), polars.col("index").alias("relation"), polars.col("object")])
+    # Step :  Consider Left Table on subject and Right Table on entity with the left join
+    # Returns all rows from the left table, and the matched rows from the right table
+    df_merged = df_merged.join(idx_entity, left_on="subject", right_on="entity", how="left")
+    df_merged = df_merged.drop("subject").rename({"index": "subject"})
+    # Step 3: Join on 'object' to replace object with its index
+    df_final = df_merged.join(idx_entity, left_on="object", right_on="entity", how="left")
+    df_final = df_final.drop("object").rename({"index": "object"})
+    # Step 4: Select the desired columns
+    df_final = df_final.select([polars.col("subject"), polars.col("relation"), polars.col("object")])
+    return df_final
 
 def apply_reciprical_or_noise(add_reciprical: bool, eval_model: str, df: object = None, info: str = None):
     """ (1) Add reciprocal triples (2) Add noisy triples """

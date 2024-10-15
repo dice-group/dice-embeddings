@@ -9,7 +9,7 @@ _deps = [
     "lightning>=2.1.3",
     "pandas>=2.1.0",
     "numpy==1.26.4",
-    "polars==0.16.14",
+    "polars==1.9.0",
     "scikit-learn>=1.2.2",
     "pyarrow>=11.0.0",
     "pykeen>=1.10.2",

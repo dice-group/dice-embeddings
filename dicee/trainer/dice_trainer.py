@@ -140,9 +140,9 @@ class DICE_Trainer:
         # Required for CV.
         self.evaluator = evaluator
         self.form_of_labelling = None
-        print(
-            f'# of CPUs:{os.cpu_count()} | # of GPUs:{torch.cuda.device_count()} | # of CPUs for dataloader:{self.args.num_core}')
-
+        print(f'# of CPUs:{os.cpu_count()} |'
+              f' # of GPUs:{torch.cuda.device_count()} |'
+              f' # of CPUs for dataloader:{self.args.num_core}')
         for i in range(torch.cuda.device_count()):
             print(torch.cuda.get_device_name(i))
 
@@ -165,7 +165,7 @@ class DICE_Trainer:
         self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
         model, form_of_labelling = self.initialize_or_load_model()
         assert form_of_labelling in ['EntityPrediction', 'RelationPrediction', 'Pyke']
-        assert self.args.scoring_technique in ["AllvsAll",'KvsSample', '1vsAll', 'KvsAll', 'NegSample']
+        assert self.args.scoring_technique in ["AllvsAll",'1vsSample', '1vsAll', 'KvsAll', 'NegSample']
         train_loader = self.initialize_dataloader(
             reload_dataset(path=self.storage_path, form_of_labelling=form_of_labelling,
                            scoring_technique=self.args.scoring_technique,

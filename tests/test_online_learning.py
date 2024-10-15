@@ -10,11 +10,12 @@ class TestRegressionOnlineLearning:
     def test_umls(self):
         args = Namespace()
         args.model = 'AConEx'
-        args.scoring_technique = 'KvsSample'
+        args.scoring_technique = '1vsSample'
         args.optim = 'Adam'
         args.dataset_dir = 'KGs/UMLS'
         args.num_epochs = 0
         args.batch_size = 1024
+        args.neg_ratio=1
         args.lr = 0.1
         args.embedding_dim = 32
         args.input_dropout_rate = 0.0
@@ -23,7 +24,7 @@ class TestRegressionOnlineLearning:
         args.read_only_few = None
         args.sample_triples_ratio = None
         args.num_folds_for_cv = None
-        args.backend = 'polars'
+        args.backend = 'pandas'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
         assert os.path.isdir(result['path_experiment_folder'])

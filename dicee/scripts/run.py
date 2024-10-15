@@ -9,7 +9,7 @@ def get_default_arguments(description=None):
     parser = argparse.ArgumentParser(add_help=False)
     # Default Trainer param https://pytorch-lightning.readthedocs.io/en/stable/common/trainer.html#methods
     # Knowledge graph related arguments
-    parser.add_argument("--dataset_dir", type=str, default="KGs/UMLS",
+    parser.add_argument("--dataset_dir", type=str, default=None,
                         help="The path of a folder containing train.txt, and/or valid.txt and/or test.txt"
                              ",e.g., KGs/UMLS")
     parser.add_argument("--sparql_endpoint", type=str, default=None,
@@ -56,10 +56,10 @@ def get_default_arguments(description=None):
     parser.add_argument("--trainer", type=str, default='PL',
                         choices=['torchCPUTrainer', 'PL', 'torchDDP'],
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
-    parser.add_argument('--scoring_technique', default="NegSample",
+    parser.add_argument('--scoring_technique', default="1vsSample",
                         help="Training technique for knowledge graph embedding model",
-                        choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "KvsSample"])
-    parser.add_argument('--neg_ratio', type=int, default=1,
+                        choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "1vsSample"])
+    parser.add_argument('--neg_ratio', type=int, default=10,
                         help='The number of negative triples generated per positive triple.')
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
     parser.add_argument('--input_dropout_rate', type=float, default=0.0)

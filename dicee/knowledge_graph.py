@@ -82,9 +82,12 @@ class KG:
 
         self._describe()
         if self.entity_to_idx is not None:
-            self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
-            self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
-
+            if isinstance(self.entity_to_idx, dict):
+                self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
+                self.idx_to_relations = {v: k for k, v in self.relation_to_idx.items()}
+            else:
+                print(f"No inverse mapping created as self.entity_to_idx is not a type of dictionary but {type(self.entity_to_idx)}\n"
+                      f"Backend might be selected as polars")
     def _describe(self) -> None:
         self.description_of_input = f'\n------------------- Description of Dataset {self.dataset_dir} -------------------'
         if self.byte_pair_encoding:

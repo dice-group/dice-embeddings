@@ -1,11 +1,6 @@
 from dicee.executer import Execute
 from dicee.config import Namespace
 from dicee.knowledge_graph_embeddings import KGE
-from dicee import QueryGenerator
-from dicee.static_funcs import evaluate
-from dicee.static_funcs import load_pickle
-from dicee.static_funcs import load_json
-
 import pytest
 
 class TestQueryAnswering:

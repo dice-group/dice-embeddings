@@ -267,3 +267,22 @@ class ComplEx(BaseKGE):
         # (1) Retrieve embeddings & Apply Dropout & Normalization.
         head_ent_emb, rel_ent_emb = self.get_head_relation_representation(x)
         return self.k_vs_all_score(head_ent_emb,rel_ent_emb,self.entity_embeddings.weight)
+
+    def forward_k_vs_sample(self, x: torch.LongTensor, target_entity_idx: torch.LongTensor):
+        # (b,2d), (b,2d)
+        emb_h, emb_r = self.get_head_relation_representation(x)
+        # (b,k,2d)
+        emb_T = self.entity_embeddings(target_entity_idx)
+        # (b,d), (b,d)
+        emb_head_real, emb_head_imag = torch.hsplit(emb_h, 2)
+        # (b,d), (b,d)
+        emb_rel_real, emb_rel_imag = torch.hsplit(emb_r, 2)
+        # (b,k,d), (b,k,d)
+        emb_tail_real, emb_tail_imag = torch.split(emb_T, self.embedding_dim // 2, dim=-1)
+        # Compute hermitian inner product on embedding vectors.
+        real_real_real = torch.einsum("bd, bkd -> bk",emb_head_real * emb_rel_real, emb_tail_real)
+        real_imag_imag = torch.einsum("bd, bkd -> bk",emb_head_real * emb_rel_imag, emb_tail_imag)
+        imag_real_imag = torch.einsum("bd, bkd -> bk",emb_head_imag * emb_rel_real, emb_tail_imag)
+        imag_imag_real = torch.einsum("bd, bkd -> bk",emb_head_imag * emb_rel_imag, emb_tail_real)
+        return real_real_real + real_imag_imag + imag_real_imag - imag_imag_real
+
