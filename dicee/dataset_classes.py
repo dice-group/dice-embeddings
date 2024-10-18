@@ -1,3 +1,6 @@
+from numpy import dtype
+from numpy.ma.extras import unique
+from sympy.stats.rv import probability
 from torch.utils.data import DataLoader
 import numpy as np
 import torch
@@ -63,9 +66,9 @@ def construct_dataset(*,
         if scoring_technique == '1vsAll':
             # Multi-class.
             train_set = OnevsAllDataset(train_set, entity_idxs=entity_to_idx)
-        elif scoring_technique == 'KvsSample':
-            # Multi-label.
-            train_set = KvsSampleDataset(train_set=train_set,
+        elif scoring_technique == '1vsSample':
+            # Dynamic Multi-class
+            train_set = OnevsSample(train_set=train_set,
                                          num_entities=len(entity_to_idx),
                                          num_relations=len(relation_to_idx),
                                          neg_sample_ratio=neg_ratio,
@@ -83,6 +86,13 @@ def construct_dataset(*,
                                  entity_idxs=entity_to_idx,
                                  relation_idxs=relation_to_idx,
                                  label_smoothing_rate=label_smoothing_rate)
+        elif scoring_technique == 'KvsSample':
+            # Dynamic Multi-label.
+            train_set = KvsSampleDataset(train_set,
+                               num_entities=len(entity_to_idx),
+                               num_relations=len(relation_to_idx),
+                                neg_sample_ratio=neg_ratio,
+                               label_smoothing_rate=label_smoothing_rate)
         else:
             raise ValueError(f'Invalid scoring technique : {scoring_technique}')
     elif form_of_labelling == 'RelationPrediction':
@@ -430,6 +440,94 @@ class AllvsAll(torch.utils.data.Dataset):
         return self.train_data[idx], y_vec
 
 
+class OnevsSample(torch.utils.data.Dataset):
+    """
+    A custom PyTorch Dataset class for knowledge graph embeddings, which includes
+    both positive and negative sampling for a given dataset for multi-class classification problem..
+
+    Args:
+        train_set (np.ndarray): A numpy array containing triples of knowledge graph data.
+            Each triple consists of (head_entity, relation, tail_entity).
+        num_entities (int): The number of unique entities in the knowledge graph.
+        num_relations (int): The number of unique relations in the knowledge graph.
+        neg_sample_ratio (int, optional): The number of negative samples to be generated
+            per positive sample. Must be a positive integer and less than num_entities.
+        label_smoothing_rate (float, optional): A label smoothing rate to apply to the
+            positive and negative labels. Defaults to 0.0.
+
+    Attributes:
+        train_data (torch.Tensor): The input data converted into a PyTorch tensor.
+        num_entities (int): Number of entities in the dataset.
+        num_relations (int): Number of relations in the dataset.
+        neg_sample_ratio (int): Ratio of negative samples to be drawn for each positive sample.
+        label_smoothing_rate (torch.Tensor): The smoothing factor applied to the labels.
+        collate_fn (function, optional): A function that can be used to collate data samples into
+            batches (set to None by default).
+    """
+    def __init__(self, train_set: np.ndarray, num_entities, num_relations, neg_sample_ratio: int = None,
+                 label_smoothing_rate: float = 0.0):
+        super().__init__()
+        # Input validation
+        assert isinstance(train_set, np.ndarray), "train_set must be a numpy array."
+        assert isinstance(neg_sample_ratio, int), "neg_sample_ratio must be an integer."
+        assert isinstance(num_entities, int) and num_entities > 0, "num_entities must be a positive integer."
+        assert isinstance(num_relations, int) and num_relations > 0, "num_relations must be a positive integer."
+        assert neg_sample_ratio < num_entities, (
+            f"Negative sample ratio {neg_sample_ratio} cannot be larger than the number of entities ({num_entities})."
+        )
+        assert neg_sample_ratio > 0, f"Negative sample ratio {neg_sample_ratio} must be greater than 0."
+
+        # Converting the input numpy array to a PyTorch tensor
+        self.train_data = torch.from_numpy(train_set).long()
+        self.num_entities = num_entities
+        self.num_relations = num_relations
+        self.neg_sample_ratio = neg_sample_ratio
+        self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
+        self.collate_fn = None
+
+    def __len__(self):
+        """Returns the number of samples in the dataset."""
+        return len(self.train_data)
+
+    def __getitem__(self, idx):
+        """
+         Retrieves a single data sample from the dataset at the given index.
+
+         Args:
+             idx (int): The index of the sample to retrieve.
+
+         Returns:
+             tuple: A tuple consisting of:
+                 - x (torch.Tensor): The head and relation part of the triple.
+                 - y_idx (torch.Tensor): The concatenated indices of the true object (tail entity)
+                   and the indices of the negative samples.
+                 - y_vec (torch.Tensor): A vector containing the labels for the positive and
+                   negative samples, with label smoothing applied.
+         """
+        # Retrieve the triple (head, relation, tail) from the training data
+        triple = self.train_data[idx]
+        # Separate the head and relation (x) and the tail entity (y)
+        x = triple[:2]
+        y = triple[-1].unsqueeze(0)  # Tail entity
+
+        # Initialize weights for negative sampling
+        weights = torch.ones(self.num_entities)
+        # Set the weight of the true tail entity to zero
+        weights[y] = 0.0
+
+        # Sample negative examples from the entity set
+        negative_idx = torch.multinomial(weights, num_samples=self.neg_sample_ratio, replacement=False)
+        # Concatenate the true tail entity with the negative samples
+        y_idx = torch.cat((y, negative_idx), 0).long()
+
+        # Create a label vector with smoothing for the true and negative examples
+        y_vec = torch.cat(
+            (torch.ones(1) - self.label_smoothing_rate,  # Positive label with smoothing
+             torch.zeros(self.neg_sample_ratio) + self.label_smoothing_rate),  # Negative labels with smoothing
+            0)
+        return x, y_idx, y_vec
+
+
 class KvsSampleDataset(torch.utils.data.Dataset):
     """
     KvsSample a Dataset:
@@ -470,10 +568,8 @@ class KvsSampleDataset(torch.utils.data.Dataset):
         self.neg_sample_ratio = neg_sample_ratio
         self.label_smoothing_rate = torch.tensor(label_smoothing_rate)
         self.collate_fn = None
-
-        if self.neg_sample_ratio == 0:
-            print(f'neg_sample_ratio is {neg_sample_ratio}. It will be set to 10.')
-            self.neg_sample_ratio = 10
+        assert isinstance(self.neg_sample_ratio,int)
+        assert self.neg_sample_ratio>0
 
         print('Constructing training data...')
         store = mapping_from_first_two_cols_to_third(train_set)

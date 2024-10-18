@@ -56,7 +56,7 @@ def preprocesses_input_args(args):
         args.eval_model = None
 
     # reciprocal checking
-    if args.scoring_technique in ["AllvsAll", "KvsSample", "KvsAll", "1vsAll"]:
+    if args.scoring_technique in ["AllvsAll", "1vsSample", "KvsAll", "1vsAll", "KvsSample"]:
         args.apply_reciprical_or_noise = True
     elif args.scoring_technique in ["NegSample", "Sentence"]:
         args.apply_reciprical_or_noise = False
