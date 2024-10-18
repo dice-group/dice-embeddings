@@ -83,7 +83,8 @@ Classes
    dicee.OnevsAllDataset
    dicee.KvsAll
    dicee.AllvsAll
-   dicee.OnevsSampleDataset
+   dicee.OnevsSample
+   dicee.KvsSampleDataset
    dicee.NegSampleDataset
    dicee.TriplePredictionDataset
    dicee.CVDataModule
@@ -230,7 +231,7 @@ Package Contents
        import torch.nn.functional as F
 
        class Model(nn.Module):
-           def __init__(self):
+           def __init__(self) -> None:
                super().__init__()
                self.conv1 = nn.Conv2d(1, 20, 5)
                self.conv2 = nn.Conv2d(20, 20, 5)
@@ -483,7 +484,7 @@ Package Contents
        import torch.nn.functional as F
 
        class Model(nn.Module):
-           def __init__(self):
+           def __init__(self) -> None:
                super().__init__()
                self.conv1 = nn.Conv2d(1, 20, 5)
                self.conv2 = nn.Conv2d(20, 20, 5)
@@ -836,7 +837,7 @@ Package Contents
        import torch.nn.functional as F
 
        class Model(nn.Module):
-           def __init__(self):
+           def __init__(self) -> None:
                super().__init__()
                self.conv1 = nn.Conv2d(1, 20, 5)
                self.conv2 = nn.Conv2d(20, 20, 5)
@@ -1114,7 +1115,7 @@ Package Contents
        import torch.nn.functional as F
 
        class Model(nn.Module):
-           def __init__(self):
+           def __init__(self) -> None:
                super().__init__()
                self.conv1 = nn.Conv2d(1, 20, 5)
                self.conv2 = nn.Conv2d(20, 20, 5)
@@ -1248,7 +1249,7 @@ Package Contents
        import torch.nn.functional as F
 
        class Model(nn.Module):
-           def __init__(self):
+           def __init__(self) -> None:
                super().__init__()
                self.conv1 = nn.Conv2d(1, 20, 5)
                self.conv2 = nn.Conv2d(20, 20, 5)
@@ -1359,7 +1360,7 @@ Package Contents
        import torch.nn.functional as F
 
        class Model(nn.Module):
-           def __init__(self):
+           def __init__(self) -> None:
                super().__init__()
                self.conv1 = nn.Conv2d(1, 20, 5)
                self.conv2 = nn.Conv2d(20, 20, 5)
@@ -1653,7 +1654,7 @@ Package Contents
        import torch.nn.functional as F
 
        class Model(nn.Module):
-           def __init__(self):
+           def __init__(self) -> None:
                super().__init__()
                self.conv1 = nn.Conv2d(1, 20, 5)
                self.conv2 = nn.Conv2d(20, 20, 5)
@@ -1796,7 +1797,7 @@ Package Contents
        import torch.nn.functional as F
 
        class Model(nn.Module):
-           def __init__(self):
+           def __init__(self) -> None:
                super().__init__()
                self.conv1 = nn.Conv2d(1, 20, 5)
                self.conv2 = nn.Conv2d(20, 20, 5)
@@ -2960,7 +2961,7 @@ Package Contents
    .. py:method:: __getitem__(idx)
 
 
-.. py:class:: OnevsSampleDataset(train_set: numpy.ndarray, num_entities, num_relations, neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0)
+.. py:class:: OnevsSample(train_set: numpy.ndarray, num_entities, num_relations, neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0)
 
    Bases: :py:obj:`torch.utils.data.Dataset`
 
@@ -3063,6 +3064,72 @@ Package Contents
                       negative samples, with label smoothing applied.
       :rtype: tuple
 
+
+
+.. py:class:: KvsSampleDataset(train_set: numpy.ndarray, num_entities, num_relations, neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0)
+
+   Bases: :py:obj:`torch.utils.data.Dataset`
+
+
+       KvsSample a Dataset:
+           D:= {(x,y)_i}_i ^N, where
+               . x:(h,r) is a unique h \in E and a relation r \in R and
+               . y \in [0,1]^{|E|} is a binary label.
+   orall y_i =1 s.t. (h r E_i) \in KG
+              At each mini-batch construction, we subsample(y), hence n
+               |new_y| << |E|
+               new_y contains all 1's if sum(y)< neg_sample ratio
+               new_y contains
+          Parameters
+          ----------
+          train_set_idx
+              Indexed triples for the training.
+          entity_idxs
+              mapping.
+          relation_idxs
+              mapping.
+          form
+              ?
+          store
+               ?
+          label_smoothing_rate
+              ?
+          Returns
+          -------
+          torch.utils.data.Dataset
+
+
+
+   .. py:attribute:: train_data
+
+
+   .. py:attribute:: num_entities
+
+
+   .. py:attribute:: num_relations
+
+
+   .. py:attribute:: neg_sample_ratio
+
+
+   .. py:attribute:: label_smoothing_rate
+
+
+   .. py:attribute:: collate_fn
+      :value: None
+
+
+
+   .. py:attribute:: store
+
+
+   .. py:attribute:: train_target
+
+
+   .. py:method:: __len__()
+
+
+   .. py:method:: __getitem__(idx)
 
 
 .. py:class:: NegSampleDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1)

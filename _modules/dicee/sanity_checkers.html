@@ -1,0 +1,228 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dicee.sanity_checkers &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8775fe07" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=c6726a90"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="../../_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/dicee/index.html">dicee</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dicee.sanity_checkers</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dicee.sanity_checkers</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+
+
+<div class="viewcode-block" id="is_sparql_endpoint_alive">
+<a class="viewcode-back" href="../../autoapi/dicee/sanity_checkers/index.html#dicee.sanity_checkers.is_sparql_endpoint_alive">[docs]</a>
+<span class="k">def</span> <span class="nf">is_sparql_endpoint_alive</span><span class="p">(</span><span class="n">sparql_endpoint</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">sparql_endpoint</span><span class="p">:</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;SELECT (COUNT(*) as ?num_triples) WHERE {  ?s ?p ?o .} &quot;&quot;&quot;</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">sparql_endpoint</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;query&#39;</span><span class="p">:</span> <span class="n">query</span><span class="p">})</span>
+        <span class="k">assert</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;SPARQL connection is successful&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">ok</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="validate_knowledge_graph">
+<a class="viewcode-back" href="../../autoapi/dicee/sanity_checkers/index.html#dicee.sanity_checkers.validate_knowledge_graph">[docs]</a>
+<span class="k">def</span> <span class="nf">validate_knowledge_graph</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; Validating the source of knowledge graph &quot;&quot;&quot;</span>
+    <span class="c1"># (1) Validate SPARQL endpoint</span>
+    <span class="k">if</span> <span class="n">is_sparql_endpoint_alive</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeWarning</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The dataset_dir and path_single_kg arguments &#39;</span>
+                                 <span class="sa">f</span><span class="s1">&#39;must be None if sparql_endpoint is given.&#39;</span>
+                                 <span class="sa">f</span><span class="s1">&#39;***</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="si">}</span><span class="s1">***</span><span class="se">\n</span><span class="s1">&#39;</span>
+                                 <span class="sa">f</span><span class="s1">&#39;***</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span><span class="si">}</span><span class="s1">***</span><span class="se">\n</span><span class="s1">&#39;</span>
+                                 <span class="sa">f</span><span class="s1">&#39;These two parameters are set to None.&#39;</span><span class="p">)</span>
+        <span class="c1"># Set None.</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The dataset_dir and sparql_endpoint arguments &#39;</span>
+                  <span class="sa">f</span><span class="s1">&#39;must be None if path_single_kg is given.&#39;</span>
+                  <span class="sa">f</span><span class="s1">&#39;***</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="si">}</span><span class="s1">***</span><span class="se">\n</span><span class="s1">&#39;</span>
+                  <span class="sa">f</span><span class="s1">&#39;***</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span><span class="si">}</span><span class="s1">***</span><span class="se">\n</span><span class="s1">&#39;</span>
+                  <span class="sa">f</span><span class="s1">&#39;These two parameters are set to None.&#39;</span><span class="p">)</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The dataset_dir must be string sparql_endpoint is not given.&#39;</span>
+                                 <span class="sa">f</span><span class="s1">&#39;***</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="si">}</span><span class="s1">***&#39;</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="p">)</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The dataset_dir does not lead to a directory &#39;</span>
+                                 <span class="sa">f</span><span class="s1">&#39;***</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="si">}</span><span class="s1">***&#39;</span><span class="p">)</span>
+        <span class="c1"># Check whether the input parameter leads a standard data format (e.g. FOLDER/train.txt)</span>
+        <span class="k">if</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span> <span class="o">+</span> <span class="s1">&#39;/train*&#39;</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot; all is good we have xxx/train.txt&quot;&quot;&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;---dataset_dir **</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="si">}</span><span class="s2">** must lead to &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;**folder** containing at least train.txt**. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;Use --path_single_kg **folder/dataset.format**, if you have a single file.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The sparql_endpoint and path_single_kg arguments &#39;</span>
+                  <span class="sa">f</span><span class="s1">&#39;must be None if dataset_dir is given.&#39;</span>
+                  <span class="sa">f</span><span class="s1">&#39;***</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span><span class="si">}</span><span class="s1">***</span><span class="se">\n</span><span class="s1">&#39;</span>
+                  <span class="sa">f</span><span class="s1">&#39;***</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span><span class="si">}</span><span class="s1">***</span><span class="se">\n</span><span class="s1">&#39;</span>
+                  <span class="sa">f</span><span class="s1">&#39;These two parameters are set to None.&#39;</span><span class="p">)</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;One of the following arguments must be given: &quot;</span>
+                           <span class="sa">f</span><span class="s2">&quot;--dataset_dir:</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">dataset_dir</span><span class="si">}</span><span class="s2">,</span><span class="se">\t</span><span class="s2">&quot;</span>
+                           <span class="sa">f</span><span class="s2">&quot;--path_single_kg:</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">path_single_kg</span><span class="si">}</span><span class="s2">,</span><span class="se">\t</span><span class="s2">&quot;</span>
+                           <span class="sa">f</span><span class="s2">&quot;--sparql_endpoint:</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">sparql_endpoint</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid computation flow!&#39;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="sanity_checking_with_arguments">
+<a class="viewcode-back" href="../../autoapi/dicee/sanity_checkers/index.html#dicee.sanity_checkers.sanity_checking_with_arguments">[docs]</a>
+<span class="k">def</span> <span class="nf">sanity_checking_with_arguments</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">embedding_dim</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;embedding_dim must be strictly positive. Currently:</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">embedding_dim</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;AllvsAll&quot;</span><span class="p">,</span> <span class="s2">&quot;1vsSample&quot;</span><span class="p">,</span> <span class="s2">&quot;KvsSample&quot;</span><span class="p">,</span><span class="s2">&quot;KvsAll&quot;</span><span class="p">,</span> <span class="s2">&quot;NegSample&quot;</span><span class="p">,</span> <span class="s2">&quot;1vsAll&quot;</span><span class="p">,</span> <span class="s2">&quot;Pyke&quot;</span><span class="p">,</span> <span class="s2">&quot;Sentence&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid training strategy =&gt; </span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">scoring_technique</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">learning_rate</span> <span class="o">&gt;</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">num_folds_for_cv</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">args</span><span class="o">.</span><span class="n">num_folds_for_cv</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">args</span><span class="o">.</span><span class="n">num_folds_for_cv</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+    <span class="k">except</span> <span class="ne">AssertionError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;num_folds_for_cv can not be negative. Currently:</span><span class="si">{</span><span class="n">args</span><span class="o">.</span><span class="n">num_folds_for_cv</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">validate_knowledge_graph</span><span class="p">(</span><span class="n">args</span><span class="p">)</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

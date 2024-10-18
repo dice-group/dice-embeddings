@@ -1,0 +1,700 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dicee.query_generator &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8775fe07" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8775fe07" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.ico"/>
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=c6726a90"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="../../_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../autoapi/dicee/index.html">dicee</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dicee.query_generator</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dicee.query_generator</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">.static_funcs</span> <span class="kn">import</span> <span class="n">save_pickle</span><span class="p">,</span> <span class="n">load_pickle</span>
+
+
+<div class="viewcode-block" id="QueryGenerator">
+<a class="viewcode-back" href="../../autoapi/dicee/query_generator/index.html#dicee.QueryGenerator">[docs]</a>
+<span class="k">class</span> <span class="nc">QueryGenerator</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_path</span><span class="p">,</span> <span class="n">val_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">test_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ent2id</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">rel2id</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                 <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+                 <span class="n">gen_valid</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+                 <span class="n">gen_test</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_path</span> <span class="o">=</span> <span class="n">train_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">val_path</span> <span class="o">=</span> <span class="n">val_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">test_path</span> <span class="o">=</span> <span class="n">test_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gen_valid</span> <span class="o">=</span> <span class="n">gen_valid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gen_test</span> <span class="o">=</span> <span class="n">gen_test</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">seed</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_ans_num</span> <span class="o">=</span> <span class="mf">1e6</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="nb">str</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ent2id</span> <span class="o">=</span> <span class="n">ent2id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rel2id</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="n">rel2id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ent_in</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ent_out</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">query_name_to_struct</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;1p&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]],</span>
+                                     <span class="s2">&quot;2p&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">]],</span>
+                                     <span class="s2">&quot;3p&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">]],</span>
+                                     <span class="s2">&quot;2i&quot;</span><span class="p">:</span> <span class="p">[[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]],</span> <span class="p">[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]]],</span> <span class="c1"># @TODO: double check the evaluation</span>
+                                     <span class="s2">&quot;3i&quot;</span><span class="p">:</span> <span class="p">[[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]],</span> <span class="p">[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]],</span> <span class="p">[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]]],</span>
+                                     <span class="s2">&quot;pi&quot;</span><span class="p">:</span> <span class="p">[[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">]],</span> <span class="p">[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]]],</span>
+                                     <span class="s2">&quot;ip&quot;</span><span class="p">:</span> <span class="p">[[[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]],</span> <span class="p">[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]]],</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]],</span>
+                                     <span class="s2">&quot;2in&quot;</span><span class="p">:</span> <span class="p">[[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]],</span> <span class="p">[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;n&#39;</span><span class="p">]]],</span>
+                                     <span class="s2">&quot;3in&quot;</span><span class="p">:</span> <span class="p">[[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]],</span> <span class="p">[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]],</span> <span class="p">[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;n&#39;</span><span class="p">]]],</span>
+                                     <span class="s2">&quot;pin&quot;</span><span class="p">:</span> <span class="p">[[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">]],</span> <span class="p">[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;n&#39;</span><span class="p">]]],</span>
+                                     <span class="s2">&quot;pni&quot;</span><span class="p">:</span> <span class="p">[[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;n&#39;</span><span class="p">]],</span> <span class="p">[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]]],</span>
+                                     <span class="s2">&quot;inp&quot;</span><span class="p">:</span> <span class="p">[[[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]],</span> <span class="p">[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;n&#39;</span><span class="p">]]],</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]],</span>
+                                     <span class="c1"># union</span>
+                                     <span class="s2">&quot;2u&quot;</span><span class="p">:</span> <span class="p">[[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]],</span> <span class="p">[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]],</span> <span class="p">[</span><span class="s1">&#39;u&#39;</span><span class="p">]],</span>
+                                     <span class="s2">&quot;up&quot;</span><span class="p">:</span> <span class="p">[[[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]],</span> <span class="p">[</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]],</span> <span class="p">[</span><span class="s1">&#39;u&#39;</span><span class="p">]],</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">]]}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_global_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+        <span class="c1"># Sanity checking</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ent2id</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">ent2id</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rel2id</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">rel2id</span> <span class="ow">is</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="QueryGenerator.list2tuple">
+<a class="viewcode-back" href="../../autoapi/dicee/query_generator/index.html#dicee.QueryGenerator.list2tuple">[docs]</a>
+    <span class="k">def</span> <span class="nf">list2tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_data</span><span class="p">):</span>
+        <span class="c1"># @TODO: add description</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list2tuple</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">list_data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="QueryGenerator.tuple2list">
+<a class="viewcode-back" href="../../autoapi/dicee/query_generator/index.html#dicee.QueryGenerator.tuple2list">[docs]</a>
+    <span class="k">def</span> <span class="nf">tuple2list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert a nested tuple to a nested list.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tuple2list</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="k">else</span> <span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">x</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">x</span></div>
+
+
+<div class="viewcode-block" id="QueryGenerator.set_global_seed">
+<a class="viewcode-back" href="../../autoapi/dicee/query_generator/index.html#dicee.QueryGenerator.set_global_seed">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_global_seed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set seed&quot;&quot;&quot;</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="QueryGenerator.construct_graph">
+<a class="viewcode-back" href="../../autoapi/dicee/query_generator/index.html#dicee.QueryGenerator.construct_graph">[docs]</a>
+    <span class="k">def</span> <span class="nf">construct_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">paths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Dict</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Construct graph from triples</span>
+<span class="sd">        Returns dicts with incoming and outgoing edges</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Mapping from tail entity and a relation to heads.</span>
+        <span class="n">tail_relation_to_heads</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">))</span>
+        <span class="c1"># Mapping from head and relation to tails.</span>
+        <span class="n">head_relation_to_tails</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">h</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">))</span>
+                    <span class="n">tail_relation_to_heads</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ent2id</span><span class="p">[</span><span class="n">t</span><span class="p">]][</span><span class="bp">self</span><span class="o">.</span><span class="n">rel2id</span><span class="p">[</span><span class="n">r</span><span class="p">]]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ent2id</span><span class="p">[</span><span class="n">h</span><span class="p">])</span>
+                    <span class="n">head_relation_to_tails</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">ent2id</span><span class="p">[</span><span class="n">h</span><span class="p">]][</span><span class="bp">self</span><span class="o">.</span><span class="n">rel2id</span><span class="p">[</span><span class="n">r</span><span class="p">]]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ent2id</span><span class="p">[</span><span class="n">t</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ent_in</span> <span class="o">=</span> <span class="n">tail_relation_to_heads</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ent_out</span> <span class="o">=</span> <span class="n">head_relation_to_tails</span>
+
+        <span class="k">return</span> <span class="n">tail_relation_to_heads</span><span class="p">,</span> <span class="n">head_relation_to_tails</span></div>
+
+
+<div class="viewcode-block" id="QueryGenerator.fill_query">
+<a class="viewcode-back" href="../../autoapi/dicee/query_generator/index.html#dicee.QueryGenerator.fill_query">[docs]</a>
+    <span class="k">def</span> <span class="nf">fill_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_structure</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">]],</span>
+                   <span class="n">ent_in</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">ent_out</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
+                   <span class="n">answer</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Private method for fill_query logic.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">query_structure</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span>
+        <span class="n">all_relation_flag</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">ele</span> <span class="ow">in</span> <span class="n">query_structure</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">ele</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;n&#39;</span><span class="p">]:</span>
+                <span class="n">all_relation_flag</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="n">all_relation_flag</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">query_structure</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">query_structure</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;n&#39;</span><span class="p">:</span>
+                    <span class="n">query_structure</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span>
+                    <span class="k">continue</span>
+                <span class="n">found</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">40</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ent_in</span><span class="p">[</span><span class="n">answer</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="kc">True</span>  <span class="c1"># not enough relations, return True to indicate broken flag</span>
+                    <span class="n">r_tmp</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">ent_in</span><span class="p">[</span><span class="n">answer</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">r_tmp</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">!=</span> <span class="n">r</span> <span class="o">//</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">r_tmp</span> <span class="o">==</span> <span class="n">r</span><span class="p">:</span>
+                        <span class="n">r</span> <span class="o">=</span> <span class="n">r_tmp</span>
+                        <span class="n">found</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="k">break</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+                <span class="n">query_structure</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">r</span>
+                <span class="n">answer</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">ent_in</span><span class="p">[</span><span class="n">answer</span><span class="p">][</span><span class="n">r</span><span class="p">],</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">query_structure</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;e&#39;</span><span class="p">:</span>
+                <span class="n">query_structure</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">answer</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill_query</span><span class="p">(</span><span class="n">query_structure</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ent_in</span><span class="p">,</span> <span class="n">ent_out</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">same_structure</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">query_structure</span><span class="p">)):</span>
+                <span class="n">same_structure</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">list2tuple</span><span class="p">(</span><span class="n">query_structure</span><span class="p">[</span><span class="n">i</span><span class="p">])]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">query_structure</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">query_structure</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">query_structure</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;u&#39;</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">query_structure</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+                    <span class="n">query_structure</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                    <span class="k">continue</span>
+                <span class="n">broken_flag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill_query</span><span class="p">(</span><span class="n">query_structure</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ent_in</span><span class="p">,</span> <span class="n">ent_out</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">broken_flag</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+            <span class="k">for</span> <span class="n">structure</span> <span class="ow">in</span> <span class="n">same_structure</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">same_structure</span><span class="p">[</span><span class="n">structure</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">structure_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">same_structure</span><span class="p">[</span><span class="n">structure</span><span class="p">]:</span>
+                        <span class="n">structure_set</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list2tuple</span><span class="p">(</span><span class="n">query_structure</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">structure_set</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">same_structure</span><span class="p">[</span><span class="n">structure</span><span class="p">]):</span>
+                        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="QueryGenerator.achieve_answer">
+<a class="viewcode-back" href="../../autoapi/dicee/query_generator/index.html#dicee.QueryGenerator.achieve_answer">[docs]</a>
+    <span class="k">def</span> <span class="nf">achieve_answer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">]],</span>
+                       <span class="n">ent_in</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">ent_out</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Private method for achieve_answer logic.</span>
+<span class="sd">        @TODO: Document the code</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">query</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="nb">list</span><span class="p">)</span>
+        <span class="n">all_relation_flag</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">for</span> <span class="n">ele</span> <span class="ow">in</span> <span class="n">query</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="c1"># @TODO: unclear</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ele</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">ele</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">all_relation_flag</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="n">all_relation_flag</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="c1"># @TODO: unclear</span>
+                <span class="n">ent_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ent_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">achieve_answer</span><span class="p">(</span><span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ent_in</span><span class="p">,</span> <span class="n">ent_out</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">query</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])):</span>
+                <span class="k">if</span> <span class="n">query</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">2</span><span class="p">:</span>
+                    <span class="n">ent_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ent_in</span><span class="p">)))</span> <span class="o">-</span> <span class="n">ent_set</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">ent_set_traverse</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+                    <span class="k">for</span> <span class="n">ent</span> <span class="ow">in</span> <span class="n">ent_set</span><span class="p">:</span>
+                        <span class="n">ent_set_traverse</span> <span class="o">=</span> <span class="n">ent_set_traverse</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">ent_out</span><span class="p">[</span><span class="n">ent</span><span class="p">][</span><span class="n">query</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]])</span>
+                    <span class="n">ent_set</span> <span class="o">=</span> <span class="n">ent_set_traverse</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ent_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">achieve_answer</span><span class="p">(</span><span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ent_in</span><span class="p">,</span> <span class="n">ent_out</span><span class="p">)</span>
+            <span class="n">union_flag</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">query</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">query</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">union_flag</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">query</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">union_flag</span><span class="p">:</span>
+                    <span class="n">ent_set</span> <span class="o">=</span> <span class="n">ent_set</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">achieve_answer</span><span class="p">(</span><span class="n">query</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ent_in</span><span class="p">,</span> <span class="n">ent_out</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="n">ent_set</span> <span class="o">=</span> <span class="n">ent_set</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">achieve_answer</span><span class="p">(</span><span class="n">query</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ent_in</span><span class="p">,</span> <span class="n">ent_out</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">ent_set</span></div>
+
+
+<div class="viewcode-block" id="QueryGenerator.write_links">
+<a class="viewcode-back" href="../../autoapi/dicee/query_generator/index.html#dicee.QueryGenerator.write_links">[docs]</a>
+    <span class="k">def</span> <span class="nf">write_links</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ent_out</span><span class="p">,</span> <span class="n">small_ent_out</span><span class="p">):</span>
+        <span class="c1"># @TODO: Explain why this is needed</span>
+        <span class="n">queries</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="n">tp_answers</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="n">fn_answers</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="n">fp_answers</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="n">num_more_answer</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">ent</span> <span class="ow">in</span> <span class="n">ent_out</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">ent_out</span><span class="p">[</span><span class="n">ent</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ent_out</span><span class="p">[</span><span class="n">ent</span><span class="p">][</span><span class="n">rel</span><span class="p">])</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_ans_num</span><span class="p">:</span>
+                    <span class="n">queries</span><span class="p">[(</span><span class="s1">&#39;e&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s1">&#39;r&#39;</span><span class="p">,))]</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">ent</span><span class="p">,</span> <span class="p">(</span><span class="n">rel</span><span class="p">,)))</span>
+                    <span class="n">tp_answers</span><span class="p">[(</span><span class="n">ent</span><span class="p">,</span> <span class="p">(</span><span class="n">rel</span><span class="p">,))]</span> <span class="o">=</span> <span class="n">small_ent_out</span><span class="p">[</span><span class="n">ent</span><span class="p">][</span><span class="n">rel</span><span class="p">]</span>
+                    <span class="n">fn_answers</span><span class="p">[(</span><span class="n">ent</span><span class="p">,</span> <span class="p">(</span><span class="n">rel</span><span class="p">,))]</span> <span class="o">=</span> <span class="n">ent_out</span><span class="p">[</span><span class="n">ent</span><span class="p">][</span><span class="n">rel</span><span class="p">]</span>
+                    <span class="n">fp_answers</span><span class="p">[(</span><span class="n">ent</span><span class="p">,</span> <span class="p">(</span><span class="n">rel</span><span class="p">,))]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">num_more_answer</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">queries</span><span class="p">,</span> <span class="n">tp_answers</span><span class="p">,</span> <span class="n">fp_answers</span><span class="p">,</span> <span class="n">fn_answers</span></div>
+
+
+<div class="viewcode-block" id="QueryGenerator.ground_queries">
+<a class="viewcode-back" href="../../autoapi/dicee/query_generator/index.html#dicee.QueryGenerator.ground_queries">[docs]</a>
+    <span class="k">def</span> <span class="nf">ground_queries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_structure</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">]],</span>
+                       <span class="n">ent_in</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">ent_out</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">small_ent_in</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">small_ent_out</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
+                       <span class="n">gen_num</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">query_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generating queries and achieving answers&quot;&quot;&quot;</span>
+        <span class="p">(</span><span class="n">num_sampled</span><span class="p">,</span> <span class="n">num_try</span><span class="p">,</span> <span class="n">num_repeat</span><span class="p">,</span> <span class="n">num_more_answer</span><span class="p">,</span> <span class="n">num_broken</span><span class="p">,</span> <span class="n">num_no_extra_answer</span><span class="p">,</span>
+         <span class="n">num_no_extra_negative</span><span class="p">,</span> <span class="n">num_empty</span><span class="p">)</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+        <span class="n">tp_ans_num</span><span class="p">,</span> <span class="n">fp_ans_num</span><span class="p">,</span> <span class="n">fn_ans_num</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[],</span> <span class="p">[]</span>
+        <span class="n">queries</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="n">tp_answers</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="n">fp_answers</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="n">fn_answers</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+
+        <span class="c1"># @TODO: Incorrect reasoning: It can enter an infinite loop</span>
+        <span class="k">while</span> <span class="n">num_sampled</span> <span class="o">&lt;</span> <span class="n">gen_num</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">num_try</span> <span class="o">==</span> <span class="mi">100_000</span><span class="p">:</span>
+                <span class="k">break</span>
+            <span class="n">num_try</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="c1"># @TODO: Why do we need a deep copy here ?</span>
+            <span class="n">query</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">query_structure</span><span class="p">)</span>
+            <span class="n">answer</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">ent_in</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">broken_flag</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill_query</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">ent_in</span><span class="p">,</span> <span class="n">ent_out</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">broken_flag</span><span class="p">:</span>
+                <span class="n">num_broken</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">continue</span>
+
+            <span class="n">answer_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">achieve_answer</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">ent_in</span><span class="p">,</span> <span class="n">ent_out</span><span class="p">)</span>
+            <span class="n">small_answer_set</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">achieve_answer</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">small_ent_in</span><span class="p">,</span> <span class="n">small_ent_out</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">answer_set</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">num_empty</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">answer_set</span> <span class="o">-</span> <span class="n">small_answer_set</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">num_no_extra_answer</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="s1">&#39;n&#39;</span> <span class="ow">in</span> <span class="n">query_name</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">small_answer_set</span> <span class="o">-</span> <span class="n">answer_set</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">num_no_extra_negative</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">answer_set</span> <span class="o">-</span> <span class="n">small_answer_set</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">small_answer_set</span> <span class="o">-</span> <span class="n">answer_set</span><span class="p">))</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_ans_num</span><span class="p">:</span>
+                <span class="n">num_more_answer</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">num_more_answer</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">list2tuple</span><span class="p">(</span><span class="n">query</span><span class="p">)</span> <span class="ow">in</span> <span class="n">queries</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">list2tuple</span><span class="p">(</span><span class="n">query_structure</span><span class="p">)]:</span>
+                <span class="n">num_repeat</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">continue</span>
+
+            <span class="n">queries</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">list2tuple</span><span class="p">(</span><span class="n">query_structure</span><span class="p">)]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list2tuple</span><span class="p">(</span><span class="n">query</span><span class="p">))</span>
+            <span class="n">tp_answers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">list2tuple</span><span class="p">(</span><span class="n">query</span><span class="p">)]</span> <span class="o">=</span> <span class="n">small_answer_set</span>
+            <span class="n">fp_answers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">list2tuple</span><span class="p">(</span><span class="n">query</span><span class="p">)]</span> <span class="o">=</span> <span class="n">small_answer_set</span> <span class="o">-</span> <span class="n">answer_set</span>
+            <span class="n">fn_answers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">list2tuple</span><span class="p">(</span><span class="n">query</span><span class="p">)]</span> <span class="o">=</span> <span class="n">answer_set</span> <span class="o">-</span> <span class="n">small_answer_set</span>
+
+            <span class="n">num_sampled</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">tp_ans_num</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tp_answers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">list2tuple</span><span class="p">(</span><span class="n">query</span><span class="p">)]))</span>
+            <span class="n">fp_ans_num</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fp_answers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">list2tuple</span><span class="p">(</span><span class="n">query</span><span class="p">)]))</span>
+            <span class="n">fn_ans_num</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">fn_answers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">list2tuple</span><span class="p">(</span><span class="n">query</span><span class="p">)]))</span>
+
+        <span class="k">return</span> <span class="n">queries</span><span class="p">,</span> <span class="n">tp_answers</span><span class="p">,</span> <span class="n">fp_answers</span><span class="p">,</span> <span class="n">fn_answers</span></div>
+
+
+<div class="viewcode-block" id="QueryGenerator.unmap">
+<a class="viewcode-back" href="../../autoapi/dicee/query_generator/index.html#dicee.QueryGenerator.unmap">[docs]</a>
+    <span class="k">def</span> <span class="nf">unmap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_type</span><span class="p">,</span> <span class="n">queries</span><span class="p">,</span> <span class="n">tp_answers</span><span class="p">,</span> <span class="n">fp_answers</span><span class="p">,</span> <span class="n">fn_answers</span><span class="p">):</span>
+
+        <span class="c1"># Create id2ent dictionary</span>
+        <span class="n">id2ent</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ent2id</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">id2rel</span> <span class="o">=</span> <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rel2id</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+        <span class="c1"># Unmap queries and create a mapping from ID-based queries to text-based queries</span>
+        <span class="n">unmapped_queries_dict</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="n">query_id_to_text</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">query_structure_tuple</span><span class="p">,</span> <span class="n">query_set</span> <span class="ow">in</span> <span class="n">queries</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">query</span> <span class="ow">in</span> <span class="n">query_set</span><span class="p">:</span>
+                <span class="n">unmapped_query</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unmap_query</span><span class="p">(</span><span class="n">query_structure_tuple</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">id2ent</span><span class="p">,</span> <span class="n">id2rel</span><span class="p">)</span>
+                <span class="n">unmapped_queries_dict</span><span class="p">[</span><span class="n">query_structure_tuple</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">unmapped_query</span><span class="p">)</span>
+                <span class="n">query_id_to_text</span><span class="p">[</span><span class="n">query</span><span class="p">]</span> <span class="o">=</span> <span class="n">unmapped_query</span>
+
+        <span class="n">easy_answers</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="n">false_positives</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="n">hard_answers</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">query</span><span class="p">,</span> <span class="n">answer_set</span> <span class="ow">in</span> <span class="n">tp_answers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">unmapped_answer_set</span> <span class="o">=</span> <span class="p">{</span><span class="n">id2ent</span><span class="p">[</span><span class="n">answer</span><span class="p">]</span> <span class="k">for</span> <span class="n">answer</span> <span class="ow">in</span> <span class="n">answer_set</span><span class="p">}</span>
+            <span class="n">easy_answers</span><span class="p">[</span><span class="n">query_id_to_text</span><span class="p">[</span><span class="n">query</span><span class="p">]]</span> <span class="o">=</span> <span class="n">unmapped_answer_set</span>
+
+            <span class="c1"># Unmap fp_answers and update to false_positives</span>
+        <span class="k">for</span> <span class="n">query</span><span class="p">,</span> <span class="n">answer_set</span> <span class="ow">in</span> <span class="n">fp_answers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">unmapped_answer_set</span> <span class="o">=</span> <span class="p">{</span><span class="n">id2ent</span><span class="p">[</span><span class="n">answer</span><span class="p">]</span> <span class="k">for</span> <span class="n">answer</span> <span class="ow">in</span> <span class="n">answer_set</span><span class="p">}</span>
+            <span class="n">false_positives</span><span class="p">[</span><span class="n">query_id_to_text</span><span class="p">[</span><span class="n">query</span><span class="p">]]</span> <span class="o">=</span> <span class="n">unmapped_answer_set</span>
+
+            <span class="c1"># Unmap fn_answers and update to hard_answers</span>
+        <span class="k">for</span> <span class="n">query</span><span class="p">,</span> <span class="n">answer_set</span> <span class="ow">in</span> <span class="n">fn_answers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">unmapped_answer_set</span> <span class="o">=</span> <span class="p">{</span><span class="n">id2ent</span><span class="p">[</span><span class="n">answer</span><span class="p">]</span> <span class="k">for</span> <span class="n">answer</span> <span class="ow">in</span> <span class="n">answer_set</span><span class="p">}</span>
+            <span class="n">hard_answers</span><span class="p">[</span><span class="n">query_id_to_text</span><span class="p">[</span><span class="n">query</span><span class="p">]]</span> <span class="o">=</span> <span class="n">unmapped_answer_set</span>
+
+        <span class="k">return</span> <span class="n">unmapped_queries_dict</span><span class="p">,</span> <span class="n">easy_answers</span><span class="p">,</span> <span class="n">false_positives</span><span class="p">,</span> <span class="n">hard_answers</span></div>
+
+
+<div class="viewcode-block" id="QueryGenerator.unmap_query">
+<a class="viewcode-back" href="../../autoapi/dicee/query_generator/index.html#dicee.QueryGenerator.unmap_query">[docs]</a>
+    <span class="k">def</span> <span class="nf">unmap_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_structure</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">id2ent</span><span class="p">,</span> <span class="n">id2rel</span><span class="p">):</span>
+        <span class="c1"># 2i</span>
+        <span class="k">if</span> <span class="n">query_structure</span> <span class="o">==</span> <span class="p">((</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,))):</span>
+            <span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel2_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">ent1</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent1</span><span class="p">]</span>
+            <span class="n">ent2</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent2</span><span class="p">]</span>
+            <span class="n">rel1</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel1_id</span><span class="p">]</span>
+            <span class="n">rel2</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel2_id</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">((</span><span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1</span><span class="p">,)),</span> <span class="p">(</span><span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel2</span><span class="p">,)))</span>
+        <span class="c1"># 3i</span>
+        <span class="k">elif</span> <span class="n">query_structure</span> <span class="o">==</span> <span class="p">((</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,))):</span>
+            <span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel2_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">ent3</span><span class="p">,</span> <span class="p">(</span><span class="n">rel3_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">ent1</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent1</span><span class="p">]</span>
+            <span class="n">ent2</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent2</span><span class="p">]</span>
+            <span class="n">ent3</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent3</span><span class="p">]</span>
+            <span class="n">rel1</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel1_id</span><span class="p">]</span>
+            <span class="n">rel2</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel2_id</span><span class="p">]</span>
+            <span class="n">rel3</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel3_id</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">((</span><span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1</span><span class="p">,)),</span> <span class="p">(</span><span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel2</span><span class="p">,)),</span> <span class="p">(</span><span class="n">ent3</span><span class="p">,</span> <span class="p">(</span><span class="n">rel3</span><span class="p">,)))</span>
+        <span class="c1"># 1p</span>
+        <span class="k">elif</span> <span class="n">query_structure</span> <span class="o">==</span> <span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,)):</span>
+            <span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span>
+            <span class="n">ent1</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent1</span><span class="p">]</span>
+            <span class="n">rel1</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel1_id</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1</span><span class="p">,))</span>
+        <span class="c1"># 2p</span>
+        <span class="k">elif</span> <span class="n">query_structure</span> <span class="o">==</span> <span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)):</span>
+            <span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1_id</span><span class="p">,</span> <span class="n">rel2_id</span><span class="p">)</span> <span class="o">=</span> <span class="n">query</span>
+            <span class="n">ent1</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent1</span><span class="p">]</span>
+            <span class="n">rel1</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel1_id</span><span class="p">]</span>
+            <span class="n">rel2</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel2_id</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1</span><span class="p">,</span> <span class="n">rel2</span><span class="p">))</span>
+        <span class="c1"># 3p</span>
+        <span class="k">elif</span> <span class="n">query_structure</span> <span class="o">==</span> <span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)):</span>
+            <span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1_id</span><span class="p">,</span> <span class="n">rel2_id</span><span class="p">,</span> <span class="n">rel3_id</span><span class="p">)</span> <span class="o">=</span> <span class="n">query</span>
+            <span class="n">ent1</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent1</span><span class="p">]</span>
+            <span class="n">rel1</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel1_id</span><span class="p">]</span>
+            <span class="n">rel2</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel2_id</span><span class="p">]</span>
+            <span class="n">rel3</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel3_id</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">(</span><span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1</span><span class="p">,</span> <span class="n">rel2</span><span class="p">,</span> <span class="n">rel3</span><span class="p">))</span>
+        <span class="c1"># pi</span>
+        <span class="k">elif</span> <span class="n">query_structure</span> <span class="o">==</span> <span class="p">((</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)),</span> <span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,))):</span>
+            <span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1_id</span><span class="p">,</span> <span class="n">rel2_id</span><span class="p">)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel3_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">ent1</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent1</span><span class="p">]</span>
+            <span class="n">ent2</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent2</span><span class="p">]</span>
+            <span class="n">rel1</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel1_id</span><span class="p">]</span>
+            <span class="n">rel2</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel2_id</span><span class="p">]</span>
+            <span class="n">rel3</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel3_id</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">((</span><span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1</span><span class="p">,</span> <span class="n">rel2</span><span class="p">)),</span> <span class="p">(</span><span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel3</span><span class="p">,)))</span>
+        <span class="c1"># ip</span>
+        <span class="k">elif</span> <span class="n">query_structure</span> <span class="o">==</span> <span class="p">(((</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,))),</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,)):</span>
+            <span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel2_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="p">(</span><span class="n">rel3_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">ent1</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent1</span><span class="p">]</span>
+            <span class="n">ent2</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent2</span><span class="p">]</span>
+            <span class="n">rel1</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel1_id</span><span class="p">]</span>
+            <span class="n">rel2</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel2_id</span><span class="p">]</span>
+            <span class="n">rel3</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel3_id</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">(((</span><span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1</span><span class="p">,)),</span> <span class="p">(</span><span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel2</span><span class="p">,))),</span> <span class="p">(</span><span class="n">rel3</span><span class="p">,))</span>
+        <span class="c1"># negation</span>
+        <span class="c1"># 2in</span>
+        <span class="k">elif</span> <span class="n">query_structure</span> <span class="o">==</span> <span class="p">((</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;n&quot;</span><span class="p">))):</span>
+            <span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel2_id</span><span class="p">,</span> <span class="n">negation</span><span class="p">)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">ent1</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent1</span><span class="p">]</span>
+            <span class="n">ent2</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent2</span><span class="p">]</span>
+            <span class="n">rel1</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel1_id</span><span class="p">]</span>
+            <span class="n">rel2</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel2_id</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">((</span><span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1</span><span class="p">,)),</span> <span class="p">(</span><span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel2</span><span class="p">,</span> <span class="s2">&quot;not&quot;</span><span class="p">)))</span>
+        <span class="c1"># 3in</span>
+        <span class="k">elif</span> <span class="n">query_structure</span> <span class="o">==</span> <span class="p">((</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;n&quot;</span><span class="p">))):</span>
+            <span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel2_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">ent3</span><span class="p">,</span> <span class="p">(</span><span class="n">rel3_id</span><span class="p">,</span> <span class="n">negation</span><span class="p">)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">ent1</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent1</span><span class="p">]</span>
+            <span class="n">ent2</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent2</span><span class="p">]</span>
+            <span class="n">ent3</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent3</span><span class="p">]</span>
+            <span class="n">rel1</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel1_id</span><span class="p">]</span>
+            <span class="n">rel2</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel2_id</span><span class="p">]</span>
+            <span class="n">rel3</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel3_id</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">((</span><span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1</span><span class="p">,)),</span> <span class="p">(</span><span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel2</span><span class="p">,)),</span> <span class="p">(</span><span class="n">ent3</span><span class="p">,</span> <span class="p">(</span><span class="n">rel3</span><span class="p">,</span> <span class="s2">&quot;not&quot;</span><span class="p">)))</span>
+        <span class="c1"># pin</span>
+        <span class="k">elif</span> <span class="n">query_structure</span> <span class="o">==</span> <span class="p">((</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)),</span> <span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;n&quot;</span><span class="p">))):</span>
+            <span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1_id</span><span class="p">,</span> <span class="n">rel2_id</span><span class="p">)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel3_id</span><span class="p">,</span> <span class="n">negation</span><span class="p">)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">ent1</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent1</span><span class="p">]</span>
+            <span class="n">ent2</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent2</span><span class="p">]</span>
+            <span class="n">rel1</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel1_id</span><span class="p">]</span>
+            <span class="n">rel2</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel2_id</span><span class="p">]</span>
+            <span class="n">rel3</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel3_id</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">((</span><span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1</span><span class="p">,</span> <span class="n">rel2</span><span class="p">)),</span> <span class="p">(</span><span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel3</span><span class="p">,</span> <span class="s2">&quot;not&quot;</span><span class="p">)))</span>
+        <span class="c1"># inp</span>
+        <span class="k">elif</span> <span class="n">query_structure</span> <span class="o">==</span> <span class="p">(((</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;n&quot;</span><span class="p">))),</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,)):</span>
+            <span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel2_id</span><span class="p">,</span> <span class="n">negation</span><span class="p">)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="p">(</span><span class="n">rel3_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">ent1</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent1</span><span class="p">]</span>
+            <span class="n">ent2</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent2</span><span class="p">]</span>
+            <span class="n">rel1</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel1_id</span><span class="p">]</span>
+            <span class="n">rel2</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel2_id</span><span class="p">]</span>
+            <span class="n">rel3</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel3_id</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">(((</span><span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1</span><span class="p">,)),</span> <span class="p">(</span><span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel2</span><span class="p">,</span> <span class="s2">&quot;not&quot;</span><span class="p">))),</span> <span class="p">(</span><span class="n">rel3</span><span class="p">,))</span>
+        <span class="c1"># pni</span>
+        <span class="k">elif</span> <span class="n">query_structure</span> <span class="o">==</span> <span class="p">((</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;n&quot;</span><span class="p">)),</span> <span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,))):</span>
+            <span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1_id</span><span class="p">,</span> <span class="n">rel2_id</span><span class="p">,</span> <span class="n">negation</span><span class="p">)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel3_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">ent1</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent1</span><span class="p">]</span>
+            <span class="n">ent2</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent2</span><span class="p">]</span>
+            <span class="n">rel1</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel1_id</span><span class="p">]</span>
+            <span class="n">rel2</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel2_id</span><span class="p">]</span>
+            <span class="n">rel3</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel3_id</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">((</span><span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1</span><span class="p">,</span> <span class="n">rel2</span><span class="p">,</span> <span class="s2">&quot;not&quot;</span><span class="p">)),</span> <span class="p">(</span><span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel3</span><span class="p">,)))</span>
+        <span class="c1"># union</span>
+        <span class="c1"># 2u</span>
+        <span class="k">elif</span> <span class="n">query_structure</span> <span class="o">==</span> <span class="p">((</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">&quot;u&quot;</span><span class="p">,)):</span>
+            <span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel2_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="n">ent1</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent1</span><span class="p">]</span>
+            <span class="n">ent2</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent2</span><span class="p">]</span>
+            <span class="n">rel1</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel1_id</span><span class="p">]</span>
+            <span class="n">rel2</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel2_id</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">((</span><span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1</span><span class="p">,)),</span> <span class="p">(</span><span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel2</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">&quot;union&quot;</span><span class="p">,))</span>
+        <span class="c1"># up</span>
+        <span class="k">elif</span> <span class="n">query_structure</span> <span class="o">==</span> <span class="p">(((</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">&quot;e&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">&quot;u&quot;</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">&quot;r&quot;</span><span class="p">,)):</span>
+            <span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel2_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="p">(</span><span class="n">rel3_id</span><span class="p">,)</span> <span class="o">=</span> <span class="n">query</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">ent1</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent1</span><span class="p">]</span>
+            <span class="n">ent2</span> <span class="o">=</span> <span class="n">id2ent</span><span class="p">[</span><span class="n">ent2</span><span class="p">]</span>
+            <span class="n">rel1</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel1_id</span><span class="p">]</span>
+            <span class="n">rel2</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel2_id</span><span class="p">]</span>
+            <span class="n">rel3</span> <span class="o">=</span> <span class="n">id2rel</span><span class="p">[</span><span class="n">rel3_id</span><span class="p">]</span>
+            <span class="k">return</span> <span class="p">(((</span><span class="n">ent1</span><span class="p">,</span> <span class="p">(</span><span class="n">rel1</span><span class="p">,)),</span> <span class="p">(</span><span class="n">ent2</span><span class="p">,</span> <span class="p">(</span><span class="n">rel2</span><span class="p">,)),</span> <span class="p">(</span><span class="s2">&quot;union&quot;</span><span class="p">,)),</span> <span class="p">(</span><span class="n">rel3</span><span class="p">,))</span></div>
+
+
+<div class="viewcode-block" id="QueryGenerator.generate_queries">
+<a class="viewcode-back" href="../../autoapi/dicee/query_generator/index.html#dicee.QueryGenerator.generate_queries">[docs]</a>
+    <span class="k">def</span> <span class="nf">generate_queries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_struct</span><span class="p">:</span><span class="n">List</span><span class="p">,</span> <span class="n">gen_num</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">query_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Passing incoming and outgoing edges to ground queries depending on mode [train valid or text]</span>
+<span class="sd">        and getting queries and answers in return</span>
+<span class="sd">        @ TODO: create a class for each single query struct</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+
+        <span class="n">train_tail_relation_to_heads</span><span class="p">,</span> <span class="n">train_head_relation_to_tails</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_graph</span><span class="p">(</span><span class="n">paths</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">train_path</span><span class="p">])</span>
+        <span class="n">val_tail_relation_to_heads</span><span class="p">,</span> <span class="n">val_head_relation_to_tails</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_graph</span><span class="p">(</span>
+            <span class="n">paths</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">train_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">val_path</span><span class="p">])</span>
+        <span class="c1"># ?!</span>
+        <span class="n">valid_only_ent_in</span><span class="p">,</span> <span class="n">valid_only_ent_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_graph</span><span class="p">(</span><span class="n">paths</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">val_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_path</span><span class="p">])</span>
+
+        <span class="n">test_tail_relation_to_heads</span><span class="p">,</span> <span class="n">test_head_relation_to_tails</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_graph</span><span class="p">(</span>
+            <span class="n">paths</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">train_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">val_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">test_path</span><span class="p">])</span>
+        <span class="c1"># ?!</span>
+        <span class="n">test_only_ent_in</span><span class="p">,</span> <span class="n">test_only_ent_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_graph</span><span class="p">(</span><span class="n">paths</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">test_path</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;test&#39;</span>
+        <span class="n">test_queries</span><span class="p">,</span> <span class="n">test_tp_answers</span><span class="p">,</span> <span class="n">test_fp_answers</span><span class="p">,</span> <span class="n">test_fn_answers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ground_queries</span><span class="p">(</span>
+            <span class="n">query_struct</span><span class="p">,</span> <span class="n">test_tail_relation_to_heads</span><span class="p">,</span> <span class="n">test_head_relation_to_tails</span><span class="p">,</span> <span class="n">val_tail_relation_to_heads</span><span class="p">,</span>
+            <span class="n">val_head_relation_to_tails</span><span class="p">,</span> <span class="n">gen_num</span><span class="p">,</span> <span class="n">query_type</span><span class="p">)</span>
+        <span class="c1"># @TODO: test_queries has keys that are tuple ,e.g. (&#39;e&#39;, (&#39;r&#39;,))</span>
+        <span class="c1"># Yet, query structure defined as a list [&#39;e&#39;, [&#39;r&#39;]].</span>
+        <span class="c1"># Fix this inconsistency</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;General structure is </span><span class="si">{</span><span class="n">query_struct</span><span class="si">}</span><span class="s2"> with name </span><span class="si">{</span><span class="n">query_type</span><span class="si">}</span><span class="s2">. Number of queries generated: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">test_tp_answers</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">test_queries</span><span class="p">,</span> <span class="n">test_tp_answers</span><span class="p">,</span> <span class="n">test_fp_answers</span><span class="p">,</span> <span class="n">test_fn_answers</span></div>
+
+
+<div class="viewcode-block" id="QueryGenerator.save_queries">
+<a class="viewcode-back" href="../../autoapi/dicee/query_generator/index.html#dicee.QueryGenerator.save_queries">[docs]</a>
+    <span class="k">def</span> <span class="nf">save_queries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">gen_num</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">save_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Find the index of query_type in query_names</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">gen_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">query_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">query_type</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid query_type: </span><span class="si">{</span><span class="n">query_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="n">queries</span><span class="p">,</span> <span class="n">tp_answers</span><span class="p">,</span> <span class="n">fp_answers</span><span class="p">,</span> <span class="n">fn_answers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_queries</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">query_structures</span><span class="p">[</span><span class="n">gen_id</span><span class="p">:</span><span class="n">gen_id</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+                                                                            <span class="n">gen_num</span><span class="p">,</span> <span class="n">query_type</span><span class="p">)</span>
+        <span class="n">unmapped_queries</span><span class="p">,</span> <span class="n">easy_answers</span><span class="p">,</span> <span class="n">false_positives</span><span class="p">,</span> <span class="n">hard_answers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unmap</span><span class="p">(</span><span class="n">query_type</span><span class="p">,</span> <span class="n">queries</span><span class="p">,</span> <span class="n">tp_answers</span><span class="p">,</span>
+                                                                                   <span class="n">fp_answers</span><span class="p">,</span> <span class="n">fn_answers</span><span class="p">)</span>
+
+        <span class="c1"># Save the unmapped queries and answers</span>
+        <span class="n">name_to_save</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s1">-</span><span class="si">{</span><span class="n">query_type</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">save_path</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">save_path</span><span class="p">)</span>
+        <span class="c1"># TODO: CD: Deprecate the pickle usage for data serialization.</span>
+        <span class="c1"># TODO: CD: yet since this files are small we can get away with them</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">save_path</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">name_to_save</span><span class="si">}</span><span class="s1">-queries.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">unmapped_queries</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">save_path</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">name_to_save</span><span class="si">}</span><span class="s1">-easy-answers.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">easy_answers</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">save_path</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">name_to_save</span><span class="si">}</span><span class="s1">-false-positives.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">false_positives</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">save_path</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">name_to_save</span><span class="si">}</span><span class="s1">-hard-answers.pkl&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">hard_answers</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="QueryGenerator.load_queries">
+<a class="viewcode-back" href="../../autoapi/dicee/query_generator/index.html#dicee.QueryGenerator.load_queries">[docs]</a>
+    <span class="k">def</span> <span class="nf">load_queries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="QueryGenerator.get_queries">
+<a class="viewcode-back" href="../../autoapi/dicee/query_generator/index.html#dicee.QueryGenerator.get_queries">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_queries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">gen_num</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+
+        <span class="n">queries</span><span class="p">,</span> <span class="n">tp_answers</span><span class="p">,</span> <span class="n">fp_answers</span><span class="p">,</span> <span class="n">fn_answers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_queries</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">query_name_to_struct</span><span class="p">[</span><span class="n">query_type</span><span class="p">],</span>
+                                                                            <span class="n">gen_num</span><span class="p">,</span> <span class="n">query_type</span><span class="p">)</span>
+        <span class="n">unmapped_queries</span><span class="p">,</span> <span class="n">easy_answers</span><span class="p">,</span> <span class="n">false_positives</span><span class="p">,</span> <span class="n">hard_answers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">unmap</span><span class="p">(</span><span class="n">query_type</span><span class="p">,</span> <span class="n">queries</span><span class="p">,</span> <span class="n">tp_answers</span><span class="p">,</span>
+                                                                                   <span class="n">fp_answers</span><span class="p">,</span> <span class="n">fn_answers</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">unmapped_queries</span><span class="p">,</span> <span class="n">easy_answers</span><span class="p">,</span> <span class="n">false_positives</span><span class="p">,</span> <span class="n">hard_answers</span></div>
+
+
+<div class="viewcode-block" id="QueryGenerator.save_queries_and_answers">
+<a class="viewcode-back" href="../../autoapi/dicee/query_generator/index.html#dicee.QueryGenerator.save_queries_and_answers">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">save_queries_and_answers</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">defaultdict</span><span class="p">]]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Save Queries into Disk&quot;&quot;&quot;</span>
+        <span class="n">save_pickle</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="QueryGenerator.load_queries_and_answers">
+<a class="viewcode-back" href="../../autoapi/dicee/query_generator/index.html#dicee.QueryGenerator.load_queries_and_answers">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">load_queries_and_answers</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">defaultdict</span><span class="p">]]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Load Queries from Disk to Memory&quot;&quot;&quot;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loading...&quot;</span><span class="p">)</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">load_pickle</span><span class="p">(</span><span class="n">file_path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="nb">str</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">data</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
