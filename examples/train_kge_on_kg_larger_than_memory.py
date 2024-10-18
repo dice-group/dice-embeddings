@@ -66,7 +66,6 @@ Batch [5 | 11812]       Loss [2.4003183841705322]       Forward/Backward/Update 
 
 """
 import argparse
-
 import polars
 import polars as pl
 from torch.nn import functional as F
@@ -77,8 +76,9 @@ from torch.utils.data import Dataset, DataLoader
 import time
 import numpy as np
 from typing import Tuple
+
 class OnevsSampleDataset(Dataset):
-    def __init__(self, mmap_kg, num_entities: int = None, neg_sample_ratio: int = 2):
+    def __init__(self, mmap_kg:np.memmap, num_entities: int = None, neg_sample_ratio: int = 2):
         assert num_entities >= 1
         self.memmap_g = mmap_kg
         self.num_points = len(self.memmap_g)
@@ -93,65 +93,16 @@ class OnevsSampleDataset(Dataset):
         triple = torch.from_numpy(self.memmap_g[idx].copy())
         x = triple[:2]
         y = triple[-1].unsqueeze(-1)
-
-        # Initialize weights for negative sampling
+        # Initialize weights for negative sampling. This corresponds to sampling with replacement
         negative_idx = torch.randint(low=0,
                                      high=self.num_entities,
                                      size=(self.neg_sample_ratio,),
                                      device="cpu")
-
         # Concatenate the true tail entity with the negative samples
         y_idx = torch.cat((y, negative_idx), 0).long()
-        # Create a label vector with smoothing for the true and negative examples
-        # y_vec = torch.cat((torch.ones(1), torch.zeros(self.neg_sample_ratio)), 0)
-        # Pre-allocate the label vector for true/negative examples
         y_vec = torch.zeros(self.neg_sample_ratio + 1, device='cpu')
         y_vec[0] = 1
         return x, y_idx, y_vec
-
-    def _parse_filenames(self, csv_dir):
-        file_ranges = []
-        print("Parsing CSV files...")
-        for filename in os.listdir(csv_dir):
-            if filename.endswith('.csv'):
-                # Extract start and end row numbers from the filename
-                parts = filename.replace('.csv', '').split('_')
-                start_row = int(parts[2])
-                end_row = int(parts[-1])
-                file_path = os.path.join(csv_dir, filename)
-                file_ranges.append((file_path, start_row, end_row))
-        file_ranges = sorted(file_ranges, key=lambda x: x[1])  # Sort by start_row
-        file_shapes = []  # To keep track of the shapes of each numpy array
-        print("Creating a memory-map to a graph stored in a binary file on disk.")
-        created_files = []
-        num_triples = 0
-        for f in file_ranges:
-            csv_path, start_row, end_row = f
-            # csv to pt file name change
-            new_name = csv_path.replace(".csv", ".np")
-            np_triple = pl.read_csv(csv_path, has_header=False).to_numpy()
-            # https://numpy.org/doc/stable/reference/generated/numpy.ndarray.tofile.html#numpy-ndarray-tofile
-            np_triple.tofile(new_name)
-            num_triples += np_triple.size // 3
-            created_files.append(new_name)
-            file_shapes.append(np_triple.shape)
-        # Create a memory-mapped file for the concatenated array
-        output_filename = "indexed_knowledge_graph.npy"
-        concatenated_mmap = np.memmap(output_filename, dtype=np.int64, mode='w+', shape=(num_triples, 3))
-        # Concatenate all the data into the new memory map
-        current_position = 0
-        for file_path, shape in zip(created_files, file_shapes):
-            #     raise ValueError("Cannot load file containing pickled data "
-            # ValueError: Cannot load file containing pickled data when allow_pickle=False
-            g = np.memmap(file_path, mode="r", dtype=np.int64, shape=shape)
-            print("Adding", file_path)
-            concatenated_mmap[current_position:current_position + len(g):, :] = g
-            current_position += len(g)
-        # Flush the memory-mapped file to disk
-        concatenated_mmap.flush()
-        print(f"Concatenated data saved to {output_filename}")
-        return np.memmap(output_filename, dtype=np.int64, mode='r', shape=(num_triples, 3))
-
 
 def get_default_arguments():
     parser = argparse.ArgumentParser(add_help=False)
@@ -161,8 +112,10 @@ def get_default_arguments():
     parser.add_argument("--path_csv_index_relations", type=str, default=None, required=True)
     parser.add_argument("--path_indexed_dataset", type=str, default=None, required=True)
     parser.add_argument("--preprocessing_batch_size", type=int, default=50_000_000)
-    parser.add_argument("--batch_size", type=int, default=50_000, help="Batch size for the SGD training")
-    parser.add_argument("--neg_sample_ratio", type=int, default=10, help="Number of negative examples per positive example")
+    parser.add_argument("--batch_size", type=int, default=50_000, help="Batch size for the SGD training.")
+    parser.add_argument("--neg_sample_ratio", type=int, default=100, help="Number of negative examples per positive example.")
+    parser.add_argument("--num_epochs", type=int, default=100, help="Number of training epochs.")
+    parser.add_argument("--embedding_dim", type=int, default=32, help="Number of training epochs.")
     return parser.parse_args()
 
 def create_indexing(args)->Tuple[polars.DataFrame,polars.DataFrame]:
@@ -241,7 +194,7 @@ def index_knowledge_graph_index(path_dataset:str=None,
 
     print(f"Total Runtime:{time.time() - start_time}")
 
-def prepare_dataset(args)->Tuple[int,int,OnevsSampleDataset]:
+def prepare_dataset(args)->Tuple[int,int,np.memmap]:
     if (os.path.exists(args.path_indexed_dataset) and os.path.exists(args.path_csv_index_entities)
             and os.path.exists(args.path_csv_index_relations)):
             # () Read entities with indices.
@@ -315,14 +268,12 @@ def prepare_dataset(args)->Tuple[int,int,OnevsSampleDataset]:
         n = len(np.memmap(output_filename, dtype=np.int64, mode='r'))#, shape=(num_triples, 3))
         mmap_kg = np.memmap(output_filename, dtype=np.int64, mode='r', shape=(n//3, 3))
 
-    dataset = OnevsSampleDataset(mmap_kg=mmap_kg,
-                                 num_entities=num_entities,
-                                 neg_sample_ratio=args.neg_sample_ratio)
-    return num_entities, num_relations, dataset
+    return num_entities, num_relations, mmap_kg
 
 def run(args):
-    num_entities, num_relations, dataset = prepare_dataset(args)
-    model = Keci(args={"embedding_dim": 32, "p": 0, "q": 0, "num_entities": num_entities, "num_relations": num_relations})
+    num_entities, num_relations, mmap_kg = prepare_dataset(args)
+    model = Keci(args={"embedding_dim": args.embedding_dim, "p": 0, "q": 1,
+                       "num_entities": num_entities, "num_relations": num_relations})
 
     # Number of parameters
     total_params = sum(p.numel() for p in model.parameters())
@@ -332,45 +283,55 @@ def run(args):
     total_memory = sum(p.numel() * p.element_size() for p in model.parameters())
     print(f"Total memory size: {total_memory} bytes")
 
-    opt = torch.optim.SGD(params=model.parameters(),
-                          lr=0.01,
-                          momentum=0,
-                          dampening=0,
-                          nesterov=False)
+    optimizer = torch.optim.SGD(params=model.parameters(), lr=0.01)
+    rows_to_copy = 100
+    sub_mmap_kg = np.memmap('destination_file.dat', dtype=mmap_kg.dtype, mode='w+', shape=(rows_to_copy, 3))
+    # Copy the first few rows from the source to the destination
+    sub_mmap_kg[:] = mmap_kg[:rows_to_copy]
+
+    # Multi-class classification per triple.
+    dataset = OnevsSampleDataset(mmap_kg=sub_mmap_kg,
+                                 num_entities=num_entities,
+                                 neg_sample_ratio=args.neg_sample_ratio)
     dataloader = DataLoader(dataset,
                             batch_size=args.batch_size,
                             shuffle=False)
     num_of_batches = len(dataloader)
-    iter_dataloader = iter(dataloader)
     print(f"Number of batch updates per epoch {num_of_batches}")
-    for batch_id in range(num_of_batches):
-        batch_time = time.time()
-        batch_fetch_time = time.time()
-        # () Get the next batch.
-        x, y_idx, y_label = next(iter_dataloader)
-        batch_fetch_time = time.time() - batch_fetch_time
-        rt_forward_backward_update = time.time()
-        # () Clean gradients
-        opt.zero_grad(set_to_none=True)
-        # () - log(1/N) => -math.log(1/127741846) = 18.83
-        logits = model.forward_k_vs_sample(x=x, target_entity_idx=y_idx)
-        # ()
-        batch_loss = F.binary_cross_entropy_with_logits(logits, y_label)
-        # ()
-        batch_loss_float = batch_loss.item()
-        # ()
-        batch_loss.backward()
-        # ()
-        opt.step()
-        # ()
-        rt_forward_backward_update = time.time() - rt_forward_backward_update
-        # ()
-        print(f"Batch [{batch_id} | {num_of_batches}]\t"
-              f"Loss [{batch_loss_float}]\t"
-              f"Forward/Backward/Update [{rt_forward_backward_update:.3f}]\t"
-              f"BatchFetch [{batch_fetch_time:.3f}]\t"
-              f"RT [{time.time() - batch_time:.3f}]")
-
+    for epoch_id in range(args.num_epochs):
+        iter_dataloader = iter(dataloader)
+        for batch_id in range(num_of_batches):
+            batch_time = time.time()
+            batch_fetch_time = time.time()
+            # () Get the next batch.
+            try:
+                x, y_idx, y_label = next(iter_dataloader)
+            except StopIteration:
+                continue
+            batch_fetch_time = time.time() - batch_fetch_time
+            rt_forward_backward_update = time.time()
+            # () Clean gradients
+            optimizer.zero_grad()
+            # () - log(1/N) => -math.log(1/127741846) = 18.83
+            logits = model.forward_k_vs_sample(x=x, target_entity_idx=y_idx)
+            # ()
+            batch_loss = F.binary_cross_entropy_with_logits(logits, y_label)
+            # ()
+            batch_loss_float = batch_loss.item()
+            # ()
+            batch_loss.backward()
+            # ()
+            optimizer.step()
+            # ()
+            rt_forward_backward_update = time.time() - rt_forward_backward_update
+            # ()
+            print(f"Epoch [{epoch_id} | {args.num_epochs}]\t"
+                  f"Batch [{batch_id} | {num_of_batches}]\t"
+                  f"Loss [{batch_loss_float}]\t"
+                  f"Forward/Backward/Update [{rt_forward_backward_update:.3f}]\t"
+                  f"BatchFetch [{batch_fetch_time:.3f}]\t"
+                  f"RT [{time.time() - batch_time:.3f}]")
+        # TODO: Epochs End Save the model
 if __name__ == '__main__':
     run(get_default_arguments())
 

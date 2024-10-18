@@ -24,7 +24,7 @@ def get_default_arguments(description=None):
                              "that contains related data about embeddings.")
     parser.add_argument("--save_embeddings_as_csv", action="store_true",
                         help="A flag for saving embeddings in csv file.")
-    parser.add_argument("--backend", type=str, default="pandas",
+    parser.add_argument("--backend", type=str, default="polars",
                         choices=["pandas", "polars", "rdflib"],
                         help='Backend for loading, preprocessing, indexing input knowledge graph.')
     # Model related arguments
@@ -56,9 +56,9 @@ def get_default_arguments(description=None):
     parser.add_argument("--trainer", type=str, default='PL',
                         choices=['torchCPUTrainer', 'PL', 'torchDDP'],
                         help='PL (pytorch lightning trainer), torchDDP (custom ddp), torchCPUTrainer (custom cpu only)')
-    parser.add_argument('--scoring_technique', default="1vsSample",
+    parser.add_argument('--scoring_technique', default="AllvsAll",
                         help="Training technique for knowledge graph embedding model",
-                        choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "1vsSample"])
+                        choices=["AllvsAll", "KvsAll", "1vsAll", "NegSample", "1vsSample", "KvsSample"])
     parser.add_argument('--neg_ratio', type=int, default=10,
                         help='The number of negative triples generated per positive triple.')
     parser.add_argument('--weight_decay', type=float, default=0.0, help='L2 penalty e.g.(0.00001)')
