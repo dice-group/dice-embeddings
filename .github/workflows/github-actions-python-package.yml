@@ -30,11 +30,5 @@ jobs:
       - name: Coverage report
         run: |
           pip install coverage
-          coverage run -m pytest
-          coverage report -m
-
-      - name: Upload coverage to Codecov
-        run: |
-          pip install codecov
-          coverage xml
-          codecov
+          coverage run -m pytest -p no:warnings -x
+          coverage report -m 
