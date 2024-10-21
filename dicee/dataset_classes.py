@@ -1,13 +1,10 @@
-from numpy import dtype
-from numpy.ma.extras import unique
-from sympy.stats.rv import probability
 from torch.utils.data import DataLoader
 import numpy as np
 import torch
 import pytorch_lightning as pl
 from typing import List, Tuple, Union
 from .static_preprocess_funcs import mapping_from_first_two_cols_to_third
-from .static_funcs import timeit, load_pickle, load_term_mapping
+from .static_funcs import timeit, load_term_mapping
 
 
 @timeit
