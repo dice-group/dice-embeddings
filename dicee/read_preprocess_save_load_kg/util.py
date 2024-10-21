@@ -113,28 +113,26 @@ def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio:
     """ Load and Preprocess via Polars """
     print(f'*** Reading {data_path} with Polars ***')
     # (1) Load the data.
-    if True:#data_path[-3:] in [".tar.gz",'txt', 'csv']:
-        print('Reading with polars.read_csv with sep **t** ...')
-        # TODO: if byte_pair_encoding=True, we should not use "\s+" as seperator I guess
-        df = polars.read_csv(data_path,
-                             has_header=False,
-                             low_memory=False,
-                             n_rows=None if read_only_few is None else read_only_few,
-                             columns=[0, 1, 2],
-                             dtypes=[polars.Utf8],  # str
-                             new_columns=['subject', 'relation', 'object'],
-                             separator="\t")  # \s+ doesn't work for polars
-    else:
-        if read_only_few is None:
-            df = polars.read_parquet(data_path, use_pyarrow=True)
-        else:
-            df = polars.read_parquet(data_path, n_rows=read_only_few)
+    print('Reading with polars.read_csv with sep **t** ...')
+    df = polars.read_csv(data_path,
+                         has_header=False,
+                         low_memory=False,
+                         n_rows=None if read_only_few is None else read_only_few,
+                         columns=[0, 1, 2],
+                         dtypes=[polars.String],
+                         new_columns=['subject', 'relation', 'object'],
+                         separator="\t")  # \s+ doesn't work for polars
+    # parquet usage deprecated.
+    #if read_only_few is None:
+    #    df = polars.read_parquet(data_path, use_pyarrow=True)
+    #else:
+    #    df = polars.read_parquet(data_path, n_rows=read_only_few)
+    #
     # (2) Sample from (1).
     if sample_triples_ratio:
         print(f'Subsampling {sample_triples_ratio} of input data {df.shape}...')
         df = df.sample(frac=sample_triples_ratio)
         print(df.shape)
-
     # (3) Type heuristic prediction: If KG is an RDF KG, remove all triples where subject is not <?>.
     h = df.head().to_pandas()
     if sum(h["subject"].str.startswith('<')) + sum(h["relation"].str.startswith('<')) > 2:
