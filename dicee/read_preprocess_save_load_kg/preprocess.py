@@ -451,8 +451,6 @@ class PreprocessKG:
         assert isinstance(self.kg.raw_valid_set, pd.DataFrame) or self.kg.raw_valid_set is None
         assert isinstance(self.kg.raw_test_set, pd.DataFrame) or self.kg.raw_test_set is None
 
-        # (4) Remove triples from (1).
-        self.remove_triples_from_train_with_condition()
         # Concatenate dataframes.
         print('Concatenating data to obtain index...')
         x = [self.kg.raw_train_set]
@@ -473,35 +471,3 @@ class PreprocessKG:
         ordered_list = pd.unique(df_str_kg['relation'].values.ravel('K')).tolist()
         self.kg.relation_to_idx = {k: i for i, k in enumerate(ordered_list)}
         del ordered_list
-
-    def dept_remove_triples_from_train_with_condition(self):
-        if None:
-            # self.kg.min_freq_for_vocab is not
-            assert isinstance(self.kg.min_freq_for_vocab, int)
-            assert self.kg.min_freq_for_vocab > 0
-            print(
-                f'[5 / 14] Dropping triples having infrequent entities or relations (>{self.kg.min_freq_for_vocab})...',
-                end=' ')
-            num_triples = self.kg.raw_train_set.size
-            print('Total num triples:', num_triples, end=' ')
-            # Compute entity frequency: index is URI, val is number of occurrences.
-            entity_frequency = pd.concat(
-                [self.kg.raw_train_set['subject'], self.kg.raw_train_set['object']]).value_counts()
-            relation_frequency = self.kg.raw_train_set['relation'].value_counts()
-
-            # low_frequency_entities index and values are the same URIs: dask.dataframe.core.DataFrame
-            low_frequency_entities = entity_frequency[
-                entity_frequency <= self.kg.min_freq_for_vocab].index.values
-            low_frequency_relation = relation_frequency[
-                relation_frequency <= self.kg.min_freq_for_vocab].index.values
-            # If triple contains subject that is in low_freq, set False do not select
-            self.kg.raw_train_set = self.kg.raw_train_set[
-                ~self.kg.raw_train_set['subject'].isin(low_frequency_entities)]
-            # If triple contains object that is in low_freq, set False do not select
-            self.kg.raw_train_set = self.kg.raw_train_set[~self.kg.raw_train_set['object'].isin(low_frequency_entities)]
-            # If triple contains relation that is in low_freq, set False do not select
-            self.kg.raw_train_set = self.kg.raw_train_set[
-                ~self.kg.raw_train_set['relation'].isin(low_frequency_relation)]
-            # print('\t after dropping:', df_str_kg.size.compute(scheduler=scheduler_flag))
-            print('\t after dropping:', self.kg.raw_train_set.size)  # .compute(scheduler=scheduler_flag))
-            del low_frequency_entities
