@@ -29,8 +29,8 @@ class LoadSaveToDisk:
                 save_pickle(data=self.kg.entity_to_idx, file_path=self.kg.path_for_serialization + '/entity_to_idx.p')
                 save_pickle(data=self.kg.relation_to_idx, file_path=self.kg.path_for_serialization + '/relation_to_idx.p')
             else:
-                self.kg.entity_to_idx.write_csv(file="entity_to_idx.csv", include_header=True)
-                self.kg.entity_to_idx.write_csv(file="relation_to_idx.csv", include_header=True)
+                self.kg.entity_to_idx.write_csv(file=self.kg.path_for_serialization + "/entity_to_idx.csv", include_header=True)
+                self.kg.entity_to_idx.write_csv(file=self.kg.path_for_serialization + "/relation_to_idx.csv", include_header=True)
 
             save_numpy_ndarray(data=self.kg.train_set, file_path=self.kg.path_for_serialization + '/train_set.npy')
             if self.kg.valid_set is not None:
