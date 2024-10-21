@@ -2,6 +2,7 @@ from typing import List
 from .read_preprocess_save_load_kg import ReadFromDisk, PreprocessKG, LoadSaveToDisk
 import sys
 import pandas as pd
+import polars as pl
 class KG:
     """ Knowledge Graph """
 
@@ -71,16 +72,19 @@ class KG:
         self.ordered_bpe_entities = None
 
         if self.path_for_deserialization is None:
+            # Read a knowledge graph into memory
             ReadFromDisk(kg=self).start()
+            # Map a knowledge graph into integer indexed.
             PreprocessKG(kg=self).start()
+            # Saving.
             LoadSaveToDisk(kg=self).save()
-
         else:
             LoadSaveToDisk(kg=self).load()
 
-        assert len(self.train_set) > 0
-
+        assert len(self.train_set) > 0, "Training set is empty"
         self._describe()
+        assert isinstance(self.entity_to_idx, dict) or isinstance(self.entity_to_idx, pl.DataFrame), "entity_to_idx must be a dict or a polars DataFrame"
+
         if self.entity_to_idx is not None:
             if isinstance(self.entity_to_idx, dict):
                 self.idx_to_entity = {v: k for k, v in self.entity_to_idx.items()}
@@ -88,6 +92,7 @@ class KG:
             else:
                 print(f"No inverse mapping created as self.entity_to_idx is not a type of dictionary but {type(self.entity_to_idx)}\n"
                       f"Backend might be selected as polars")
+
     def _describe(self) -> None:
         self.description_of_input = f'\n------------------- Description of Dataset {self.dataset_dir} -------------------'
         if self.byte_pair_encoding:
